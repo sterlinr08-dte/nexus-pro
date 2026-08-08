@@ -1,13 +1,18 @@
 // NEXUS PRO POS — helpers para candado atómico de IMEI.
 // Integrar dentro del IIFE real del POS, cerca de los helpers de seriales.
 
+function imeiErrorCode(e) {
+  const s = String((e && (e.message || e.error || e.details)) || e || '');
+  if (s.includes('IMEI_NO_DISPONIBLE')) return 'IMEI_NO_DISPONIBLE';
+  if (s.includes('IMEI_SIN_ORGANIZACION')) return 'IMEI_SIN_ORGANIZACION';
+  return 'IMEI_RPC_ERROR';
+}
+
 async function reservarImeisCart() {
   const ids = [];
   for (const it of _cart) {
     if (it.seriales && it.seriales.length) {
-      for (const s of it.seriales) {
-        if (s && s.id) ids.push(String(s.id));
-      }
+      for (const s of it.seriales) if (s && s.id) ids.push(String(s.id));
     }
   }
   if (!ids.length) return null;
@@ -16,11 +21,15 @@ async function reservarImeisCart() {
     const r = await getAPI().post('rpc/pos_reservar_seriales', { p_serial_ids: ids });
     return Array.isArray(r) ? r[0] : r;
   } catch (e) {
-    for (const it of _cart) {
-      if (it.seriales && it.seriales.length) it.seriales = [];
+    const code = imeiErrorCode(e);
+    if (code === 'IMEI_NO_DISPONIBLE') {
+      for (const it of _cart) if (it.seriales && it.seriales.length) it.seriales = [];
+      toast('err', 'IMEI ya no disponible', 'Otro usuario pudo vender o reservar uno de los IMEI. Vuelve a seleccionarlo.');
+    } else if (code === 'IMEI_SIN_ORGANIZACION') {
+      toast('err', 'No autorizado', 'No se pudo validar la organización para reservar el IMEI.');
+    } else {
+      toast('err', 'No se pudo validar el IMEI', 'Intenta nuevamente. Si persiste, revisa la conexión.');
     }
-    toast('err', 'IMEI ya no disponible',
-      'Otro usuario pudo vender o reservar uno de los IMEI. Vuelve a seleccionarlo.');
     throw e;
   }
 }
@@ -37,18 +46,16 @@ async function confirmarImeisReservados(token, ventaId) {
 async function liberarReservaImeis(token) {
   if (!token) return;
   try {
-    await getAPI().post('rpc/pos_liberar_reserva_seriales', {
-      p_reserva_token: token
-    });
+    await getAPI().post('rpc/pos_liberar_reserva_seriales', { p_reserva_token: token });
   } catch (e) {
     console.warn('No se pudo liberar reserva IMEI:', e);
   }
 }
 
 /*
-INTEGRACIÓN EXACTA EN nxPosConfirmar:
+INTEGRACIÓN EXACTA EN nxPosConfirmar
 
-1) Después de TODAS las validaciones del carrito y ANTES de crear pos_ventas:
+A) Después de TODAS las validaciones del carrito y ANTES de crear pos_ventas:
 
 let _imeiReserva = null;
 try {
@@ -57,31 +64,49 @@ try {
   return;
 }
 
-2) Inmediatamente después de crear `venta`:
+B) Envolver la creación de la venta para liberar la reserva si la venta NO llegó a existir:
 
+let venta = null;
 try {
-  if (_imeiReserva) {
-    const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
-    const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id);
-    if (confirmados !== esperados) {
-      throw new Error('No se pudieron confirmar todos los IMEI reservados');
-    }
-    _imeiReserva = null;
-  }
+  const r = await getAPI().post('pos_ventas', body);
+  venta = (r && r[0]) || null;
+  if (!venta) throw new Error('No se pudo registrar la venta');
 } catch (e) {
-  toast('err', 'Venta registrada con incidencia de IMEI',
-    'La venta existe, pero los IMEI requieren revisión administrativa.');
-  console.error('Confirmación IMEI:', e);
+  if (_imeiReserva) await liberarReservaImeis(_imeiReserva);
   throw e;
 }
 
-3) En el catch exterior de la creación de venta, ANTES de salir:
+C) Inmediatamente después de tener `venta`, confirmar IMEI SIN abortar la venta si algo falla:
 
-if (_imeiReserva) await liberarReservaImeis(_imeiReserva);
+if (_imeiReserva) {
+  const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
+  try {
+    const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id);
+    if (confirmados === esperados) {
+      _imeiReserva = null;
+    } else {
+      try {
+        await logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR',
+          'Venta ' + (venta.numero_factura || venta.id) + ': esperados ' + esperados + ', confirmados ' + confirmados,
+          'Punto de Venta');
+      } catch (e2) {}
+      toast('err', 'Venta registrada con incidencia de IMEI', 'La venta fue registrada, pero los IMEI requieren revisión administrativa.');
+      // NO throw. La venta ya existe y no se revierte por este fallo secundario.
+      // NO liberar a ciegas la reserva: podría volver disponible un equipo ya comprometido por una venta real.
+    }
+  } catch (e) {
+    try {
+      await logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR',
+        'Venta ' + (venta.numero_factura || venta.id) + ': error al confirmar reserva IMEI - ' + String(e && e.message || e),
+        'Punto de Venta');
+    } catch (e2) {}
+    toast('err', 'Venta registrada con incidencia de IMEI', 'La venta fue registrada, pero los IMEI requieren revisión administrativa.');
+    // NO throw y NO liberar aquí.
+  }
+}
 
-4) ELIMINAR el bloque viejo:
-   // Marcar seriales/IMEI vendidos (best-effort)
-   try { for (...) { getAPI().patch(...).catch(() => {}); } } catch (e) {}
+D) ELIMINAR el bloque viejo de `best-effort`:
+   getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {});
 
 No deben coexistir ambos mecanismos.
 */
