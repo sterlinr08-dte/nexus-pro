@@ -5086,15 +5086,16 @@ es un permiso. **Son DOS rutas distintas, no una con excepciones:**
   aclaró después que era para Financiamiento), un diseño que no calzaba con el sistema de diseño real, y
   un botón de "pagar" que no hacía nada. Todo se auditó, se corrigió y se movió a su lugar real — pero es
   el ejemplo concreto de por qué la ruta tiene que ser explícita y con un solo camino, no improvisada.
-- **Descubrimiento de esta misma auditoría — el mecanismo de despliegue real, hoy:** además del Cloudflare
-  Git-integration ya documentado arriba ("Hosting", cada push a `main` se despliega solo), ahora existe
-  también `.github/workflows/deploy-cloudflare.yml` — dispara con CADA push a `main` (o manual,
-  `workflow_dispatch`), corre `cloudflare/wrangler-action@v3` con `command: deploy` usando los secrets ya
-  guardados en el repo (`CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`), wrangler `4.120.0`. **No se
-  verificó si los dos mecanismos corren a la vez** (podría ser redundante, no debería romper nada porque
-  el despliegue es idempotente, pero vale que el dueño lo revise una vez en el dashboard de Cloudflare
-  para no tener dos despliegues peleando). En cualquier caso: **un push a `main` YA dispara producción**,
-  con o sin este workflow — ese es el hecho que importa para la ruta de abajo.
+- **Descubrimiento de esta misma auditoría — el mecanismo de despliegue real, hoy:** el despliegue real
+  SIEMPRE ha sido el Cloudflare Git-integration ya documentado arriba ("Hosting", cada push a `main` se
+  despliega solo). Existió también, un tiempo, `.github/workflows/deploy-cloudflare.yml` (llegado por el
+  mismo episodio de Cliente 360 de arriba, sin revisión) — pero **NUNCA desplegó nada, ni una vez**:
+  le faltaba el secreto `CLOUDFLARE_API_TOKEN` en el repo (`wrangler deploy` fallaba en el primer paso,
+  siempre, confirmado revisando los logs de las últimas corridas — 100% de fallo desde que existía).
+  **Eliminado (8-ago-2026)**, autorizado explícito del dueño tras verle el error real: era ruido puro
+  (mandaba correo de fallo en cada push) sin ningún efecto en producción — `nexusprord.com` se seguía
+  actualizando bien todo este tiempo solo por el Git-integration nativo. Un push a `main` sigue
+  disparando producción exactamente igual, sin este workflow.
 - **La ruta, literal, para cuando SÍ esté autorizada (seguir en este orden, sin saltar pasos):**
   1. Subir `APP_VERSION` en `index.html` **y** agregar la entrada correspondiente al inicio del arreglo
      `cambios[]` de `version.json`, con el MISMO número de versión en los dos archivos — sincronizados.
