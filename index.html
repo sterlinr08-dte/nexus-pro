@@ -1319,7 +1319,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="ni on" onclick="nav('dashboard',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
         <div class="ni" onclick="nav('facturas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
         <div class="ni" onclick="nav('clientes',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
-        <div class="ni" onclick="nav('cliente360',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user-search ni-i"></i><span class="ni-l">Cliente 360</span></div>
         <div class="ni" onclick="nav('polizas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
 
@@ -4181,7 +4180,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.17';
+const APP_VERSION='56.18';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5298,6 +5297,20 @@ async function c360AccionCompartir(id){
     try{await navigator.clipboard.writeText(txt);toast('ok','Copiado','Resumen del expediente copiado al portapapeles.');}catch(e2){toast('err','No se pudo compartir');}
   }
   if(typeof logAudit==='function')logAudit('CLIENTE360_COMPARTIDO',c.nom,'Cliente 360',id);
+}
+
+// ── Puente desde otros módulos (hoy: Financiamiento "Historial crediticio") ──
+// Cliente 360 ya no tiene entrada propia en el sidebar de Seguros — se entra
+// desde el módulo que lo pidió. Esta función busca el cliente de Seguros por
+// cédula/teléfono (mismo criterio de match aproximado que usa el resto del
+// expediente) y, si existe, activa la vista y abre su ficha. Devuelve
+// true/false para que quien llama sepa si debe caer a su propio respaldo.
+function nxC360AbrirPorContacto(cedula,telefono){
+  const m=(ST.clientes||[]).find(c=>c360Match(c,cedula,telefono));
+  if(!m)return false;
+  nav('cliente360',null);
+  nxC360Abrir(m.id);
+  return true;
 }
 
 // ── FAVORITOS / VIP ────────────────────────────────────────────────

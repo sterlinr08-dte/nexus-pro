@@ -1,7 +1,12 @@
 {
-  "version": "56.17",
+  "version": "56.18",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.18",
+      "fecha": "2026-08-08",
+      "texto": "CORREGIDO: Cliente 360 (v56.17) vivía en el menú de Seguros — el dueño aclaró que su lugar real es Financiamiento, no Seguros. Movido: (1) se quitó la entrada del sidebar de Seguros; (2) el botón 'Historial crediticio' de Financiamiento (barra lateral de préstamos, ficha del cliente, fila de cobranza — los 3 puntos donde ya existía) ahora abre Cliente 360 EN VEZ de su ventana de siempre, cuando el prestatario también es cliente del seguro (se busca por cédula/teléfono, mismo criterio de vínculo aproximado que ya usa el propio expediente). Si el prestatario NO tiene póliza, el botón cae honesto al 'Historial crediticio' de siempre (datos reales de Financiamiento, nada se pierde) — no se le muestra un expediente vacío ni un clic muerto. Cero tabla/columna nueva: es un puente (nxC360AbrirPorContacto, en index.html) que reusa exactamente la búsqueda cruzada ya construida — Financiamiento (donde vive el botón) no comparte tabla de clientes con Seguros (donde vive el expediente), así que unirlos es por dato de contacto, no por llave foránea. Verificado: 30/30 del smoke test Playwright (incluida una comprobación de que la función real de Financiamiento cargada en la página de verdad llama al puente antes de armar su modal viejo, no solo el puente aislado). node --check parches.js limpio; los 4 <script> compilan; version.json válido."
+    },
     {
       "v": "56.17",
       "fecha": "2026-08-08",

@@ -13641,6 +13641,12 @@
   let _hcCid = null, _hcTab = 'resumen';
   window.nxPrHistCredito = function (cid) {
     const c = _prClientes.find(x => String(x.id) === String(cid)); if (!c) { toast('err', 'Cliente no encontrado'); return; }
+    // Cliente 360 (Seguros/Financiamiento/POS cruzados) reemplaza este botón cuando
+    // el prestatario también es cliente del seguro (vínculo por cédula/teléfono,
+    // mismo criterio que ya usa el propio expediente). Si no hay match, este
+    // cliente de Financiamiento no existe en Seguros — cae al Historial
+    // Crediticio de siempre (Financiamiento-only), que sigue siendo real y útil.
+    if (typeof window.nxC360AbrirPorContacto === 'function' && window.nxC360AbrirPorContacto(c.cedula, c.telefono)) return;
     _hcCid = cid; _hcTab = 'resumen';
     cerrarModal('nxPrHc');
     const ov = document.createElement('div'); ov.id = 'nxPrHc'; ov.className = 'overlay open';
