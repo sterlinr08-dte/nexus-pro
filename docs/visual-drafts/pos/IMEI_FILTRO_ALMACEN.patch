@@ -1,0 +1,38 @@
+# NEXUS PRO — Filtro de IMEI por almacén
+# Rama: chatgpt/imei-almacen-draft
+# Alcance: SOLO las 2 consultas raíz de venta de IMEI en parches.js.
+# No tocar nxSerialMgr, nxSerialCuadrar, transferencias ni stock en esta pieza.
+
+## Cambio 1 — nxCargarSerialesDet(pid)
+
+ANTES:
+try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+
+DESPUÉS:
+const almFiltro = _almacenes.length ? '&almacen_id=eq.' + _almacenSel : '';
+try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible' + almFiltro + '&order=created_at.asc') || []; } catch (e) {}
+
+## Cambio 2 — window.nxFacSerial(i)
+
+ANTES:
+try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+
+DESPUÉS:
+const almFiltro = _almacenes.length ? '&almacen_id=eq.' + _almacenSel : '';
+try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible' + almFiltro + '&order=created_at.asc') || []; } catch (e) {}
+
+## Regla funcional verificada
+
+- Si `_almacenes.length === 0`: NO se agrega filtro; organizaciones sin multi-almacén conservan el comportamiento actual y los IMEI con `almacen_id IS NULL` siguen siendo válidos.
+- Si `_almacenes.length > 0`: solo se muestran IMEI `disponible` cuyo `almacen_id` coincide con `_almacenSel`; los NULL quedan fuera del flujo de venta.
+- Los catches existentes fallan cerrado: si la consulta falla, `rows=[]`; no hay reintento sin filtro.
+- `ppkSerChipsHTML` y `nxFacSerFiltrar` no consultan Supabase y no deben modificarse.
+
+## Validaciones antes de considerar publicación
+
+1. `node --check parches.js`.
+2. Buscar todas las consultas de `pos_seriales` con `estado=eq.disponible` y confirmar que las dos superficies de venta quedaron filtradas condicionalmente.
+3. Caso A: organización SIN multi-almacén → debe seguir viendo/vendiendo IMEI con `almacen_id NULL`.
+4. Caso B: organización CON multi-almacén → almacén A no debe ver IMEI de B ni IMEI NULL.
+5. Cambiar almacén activo y confirmar que la lista de IMEI cambia con él.
+6. No tocar `main` ni versionado hasta autorización explícita del dueño.
