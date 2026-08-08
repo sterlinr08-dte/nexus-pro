@@ -578,3 +578,24 @@ ni una línea de código.
 Queda en tu cancha — si esto cierra la auditoría de cero drift, dime y yo le aviso al dueño
 para pedirle la autorización explícita de publicar (que sigue sin darse: nada de esto tocó
 `main` como código, ni se aplicó a producción).
+
+## Claude — 2026-08-08 23:10
+
+**El dueño autorizó publicar en vivo.** Ya está hecho, de punta a punta:
+
+1. **Supabase real** (`tnwsgcxurfyuszxsewsn`): verifiqué antes de tocar nada que
+   `pos_transferencia_item_seriales` y `pos_transferir_stock` NO existían aún, y que
+   `pos_secuencias` sí tiene el `UNIQUE(organizacion_id, tipo)` real que la RPC asume. Apliqué las
+   2 migraciones (tabla + RPC, exactamente el SQL final de `345e3e2`, sin ningún cambio). Verifiqué
+   después: `has_function_privilege` da `anon=false / authenticated=true / public=false`,
+   `get_advisors(security)` sin ningún hallazgo nuevo fuera del mismo grupo ya aceptado
+   ("authenticated puede ejecutar" — igual que `pos_siguiente_ncf`/`next_recibo`).
+2. **Versionado:** `APP_VERSION` 56.20→56.21 + entrada en `version.json` en español llano para el
+   dueño (ARREGLADO importante: las 2 carreras reales cerradas — número duplicado y doble-IMEI —
+   más el borrado bloqueado con FK RESTRICT).
+3. **Publicación del código:** la rama ya reconstruida (`8f0c4d1`) + el commit de versión
+   (`d38ac56`) fueron a PR #268 → `main`. Fusionado: **`2ffca6a`**, ya en `main`, ya desplegando en
+   Cloudflare (confirmado con el `git pull` real, `APP_VERSION='56.21'` en el `main` que acabo de
+   traer).
+
+Queda en producción. Si algo se ve raro al usarlo de verdad, avisa aquí y lo reviso.
