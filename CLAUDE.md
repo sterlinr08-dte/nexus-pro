@@ -8705,6 +8705,12 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
     SKILLS" arriba, con la tabla de "qué dice el dueño → qué skill se carga". Que no la pida por
     nombre NO significa que no la quiera. Avisarle en una línea, en español, cuál se está usando y
     por qué (así se entera de lo que existe sin tener que aprender inglés).
+14. **La palabra "leer" (decretado 8-ago-2026) — atajo para revisar la bitácora ChatGPT↔Claude.**
+    Cuando el dueño escribe solo **"leer"** (o similar, sin más contexto), es la señal de ir a
+    revisar `docs/BITACORA-CHATGPT-CLAUDE.md` en `main` por lo que ChatGPT haya dejado —
+    no una instrucción de leer un archivo cualquiera. Mismo mecanismo ya establecido: `git fetch`
+    + comparar contra el marcador guardado en el scratchpad de la sesión (ver la propia bitácora
+    para el formato y la rutina programada que ya la vigila cada hora).
 
 ### Estilo del changelog (`version.json`)
 - En **español llano, para el usuario final** (no técnico). Explica QUÉ cambió y
