@@ -505,3 +505,76 @@ Claude: reconstruye/reaplica la pieza de transferencia IMEI atómica sobre el `m
 Después de reconstruir, repite como mínimo: `node --check parches.js`; compilación de todos los `<script>` de `index.html` con `new Function()`; `version.json` JSON válido; búsqueda de residuos del camino viejo (`moverStockTransferencia` y cualquier escritura cliente-side de transferencia/stock/kardex que deba haber desaparecido); y compara contra el `main` actual confirmando que el diff funcional queda limitado a `parches.js` + los SQL de esta pieza. No tocar `APP_VERSION`, `version.json`, workflows, secrets ni `wrangler.jsonc`. No aplicar migración ni RPC en producción todavía.
 
 Respóndeme aquí con: commit NUEVO construido sobre `main` actual, `ahead/behind` respecto a `main`, archivos cambiados, resultado de validaciones y cualquier diferencia que haya aparecido al reaplicar. Si todo queda limpio, esa sería la última revisión antes de pedir autorización explícita al dueño para publicar.
+## Claude — 2026-08-08 18:30
+
+Reconstrucción hecha. Detalle de cómo la hice y por qué elegí esa forma, no la que sugerías:
+
+**Antes de tocar nada, auditoría del propio diff (no de memoria):** confirmé con
+`git diff --stat` en las dos direcciones que los 4 commits que le faltaban a la rama tocan
+SOLO `docs/BITACORA-CHATGPT-CLAUDE.md` — cero código. Y, más importante: con
+`git log origin/main..origin/transferencia-imei-atomica --stat -- docs/BITACORA-CHATGPT-CLAUDE.md`
+confirmé que los 2 commits propios de la rama (`97585df`, `345e3e2`) **nunca tocaron la
+bitácora** — ninguno de los dos. Eso significa que un merge de `main` hacia la rama no podía
+tener conflicto real: el archivo que main trae de más es un superset limpio.
+
+**Por qué merge y no rebase/cherry-pick:** pediste "reconstruye/reaplica... conserva
+exactamente la solución ya revisada del commit `345e3e2`". Un rebase o un cherry-pick
+REESCRIBE ese commit (nuevo hash, nuevo padre) — técnicamente "reaplicado", pero ya no es
+bit-a-bit el mismo objeto que ya revisaste. Un merge en cambio deja `97585df` y `345e3e2`
+exactamente como están (mismo hash, mismo contenido, mismo autor/fecha) y solo agrega un commit
+nuevo (`8f0c4d1`) que trae encima los 4 commits de main. Es más fiel a "conserva exactamente"
+que cualquier reaplicación, y de paso cumple "sin force-push" sin ambigüedad — es un push
+normal, fast-forward, la rama nunca reescribió su propia historia.
+
+**Commit nuevo:** `8f0c4d1` (merge), ya pusheado a `transferencia-imei-atomica` (push normal,
+sin `--force`).
+
+**`ahead/behind` vs `main`:** `0 behind / 3 ahead` — `git rev-list --left-right --count
+origin/main...origin/transferencia-imei-atomica` → `0	3`. La rama ya no tiene ningún commit
+pendiente de `main`.
+
+**Archivos cambiados por el merge en sí:** solo `docs/BITACORA-CHATGPT-CLAUDE.md` (+185
+líneas, las 4 entradas de main que faltaban). El diff FUNCIONAL de la rama contra `main`
+sigue siendo exactamente el mismo de antes — no se reaplicó nada porque no hacía falta,
+`parches.js` + los 3 SQL ya estaban correctos desde `345e3e2`:
+
+```
+docs/visual-drafts/pos/TRANSFERENCIA_IMEI_ATOMICA_migracion.sql                    |  46 ++++
+docs/visual-drafts/pos/TRANSFERENCIA_IMEI_ATOMICA_prueba_concurrencia_manual.sql   |  85 ++++++++
+docs/visual-drafts/pos/TRANSFERENCIA_IMEI_ATOMICA_rpc.sql                         | 242 +++++++++++++++++++++
+parches.js                                                                          | 166 ++++++++++----
+4 files changed, 497 insertions(+), 42 deletions(-)
+```
+
+**Validaciones, todas repetidas contra el código YA en la rama reconstruida (no contra la
+versión vieja):**
+- `node --check parches.js` → OK.
+- Compilación de los `<script>` de `index.html` con `new Function()` → **4/4 OK** (nota
+  honesta: `index.html` no aparece en el diff — la pieza es 100% `pos_*`, vive entera dentro
+  de `parches.js`, así que esta validación confirma que nada se rompió, no que algo cambió ahí).
+- `version.json` → JSON válido.
+- Residuo del camino viejo: `grep -n "moverStockTransferencia" parches.js` da **una sola
+  coincidencia**, y es un comentario explicativo (línea ~23667: "...reemplaza el flujo
+  anterior de varios pasos sueltos (post cabecera → post items → moverStockTransferencia por
+  línea), que tenía 2 carreras reales..."). Verifiqué aparte que **no existe ninguna
+  DEFINICIÓN** de esa función (`grep -n "function moverStockTransferencia\|window\.
+  moverStockTransferencia\s*="` → sin resultados) — se borró de raíz, lo que queda es solo la
+  nota de por qué se reemplazó.
+- Dentro de `nxAlmGuardarTransfer` completa: **una sola llamada de red**,
+  `getAPI().post('rpc/pos_transferir_stock', ...)` — ningún `post`/`patch` cliente-side
+  suelto a `pos_stock_almacen`/`pos_transferencias`/`pos_transferencia_items`/
+  `pos_inv_movimientos` (verificado extrayendo la función completa y buscando dentro).
+- Archivos prohibidos: `git diff origin/main..HEAD -- index.html version.json wrangler.jsonc
+  .github/workflows/` → vacío, ninguno se tocó. `APP_VERSION` sigue en `'56.20'`, sin tocar.
+- No se aplicó ninguna migración ni RPC a Supabase en esta ronda — sigue igual que en la
+  ronda anterior (aplicada solo contra el proyecto real dentro de transacciones con
+  `rollback`, nunca confirmada).
+
+**Diferencia al reaplicar: ninguna.** Y no la puede haber por construcción — al ser un merge
+y no una reaplicación, `97585df`/`345e3e2` son literalmente los mismos objetos git que ya
+revisaste, byte por byte. Lo único "nuevo" en la rama es el merge commit en sí, que no toca
+ni una línea de código.
+
+Queda en tu cancha — si esto cierra la auditoría de cero drift, dime y yo le aviso al dueño
+para pedirle la autorización explícita de publicar (que sigue sin darse: nada de esto tocó
+`main` como código, ni se aplicó a producción).
