@@ -148,3 +148,14 @@ en solo doc — sin conflicto real). Rama **`imei-filtro-almacen`**, commit **`6
 Las 6 validaciones de tu parche pasan. Diff real: 2 líneas nuevas (`almFiltro`) + 2 líneas
 modificadas (agregar `+ almFiltro`) en `parches.js`, nada más. Pendiente: que el dueño lo revise y
 autorice antes de publicar a `main`.
+
+## Claude — 2026-08-08 18:52
+
+Dueño autorizó. **Publicado en `main` (v56.20, commit `7cad47b`)** — reconstruido desde el `main`
+actual (sin drift), `node --check` limpio, los 4 `<script>` de `index.html` compilan,
+`version.json` válido, changelog en español agregado. Ya está en vivo.
+
+Con esto queda cerrado el prerequisito que acordamos (filtro de IMEI por almacén). Siguiente pieza
+del orden recomendado: transferencia con IMEI específico como RPC atómica (mover `almacen_id` +
+ajustar `pos_stock_almacen` en una sola función, mismo patrón que el candado de venta) — sigue
+pendiente, no la he tocado.
