@@ -5,6 +5,7 @@ function imeiErrorCode(e) {
   const s = String((e && (e.message || e.error || e.details)) || e || '');
   if (s.includes('IMEI_NO_DISPONIBLE')) return 'IMEI_NO_DISPONIBLE';
   if (s.includes('IMEI_SIN_ORGANIZACION')) return 'IMEI_SIN_ORGANIZACION';
+  if (s.includes('IMEI_RESERVA_INCOMPLETA')) return 'IMEI_RESERVA_INCOMPLETA';
   return 'IMEI_RPC_ERROR';
 }
 
@@ -47,11 +48,12 @@ async function reservarImeisCart() {
   }
 }
 
-async function confirmarImeisReservados(token, ventaId) {
+async function confirmarImeisReservados(token, ventaId, esperados) {
   if (!token) return 0;
   const r = await getAPI().post('rpc/pos_confirmar_seriales_reservados', {
     p_reserva_token: token,
-    p_venta_id: ventaId
+    p_venta_id: ventaId,
+    p_esperados: Number(esperados || 0)
   });
   return Number(Array.isArray(r) ? r[0] : r) || 0;
 }
@@ -62,6 +64,22 @@ async function liberarReservaImeis(token) {
     await getAPI().post('rpc/pos_liberar_reserva_seriales', { p_reserva_token: token });
   } catch (e) {
     console.warn('No se pudo liberar reserva IMEI:', e);
+  }
+}
+
+// Si la venta YA existe pero la confirmación final falla, fijar la reserva a esa venta.
+// Así el limpiador de TTL (que solo toca venta_id IS NULL) nunca vuelve a exponer ese teléfono.
+async function fijarReservaImeisAVenta(token, ventaId) {
+  if (!token || !ventaId) return false;
+  try {
+    await getAPI().patch('pos_seriales', 'reserva_token=eq.' + token + '&estado=eq.reservado&venta_id=is.null', {
+      venta_id: ventaId,
+      reserva_hasta: null
+    });
+    return true;
+  } catch (e) {
+    console.error('No se pudo fijar la reserva IMEI a la venta:', e);
+    return false;
   }
 }
 
@@ -90,17 +108,18 @@ C) Inmediatamente después, confirmar IMEI SIN abortar la venta si algo falla:
 if (_imeiReserva) {
   const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
   try {
-    const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id);
+    const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id, esperados);
     if (confirmados === esperados) {
       _imeiReserva = null;
     } else {
+      await fijarReservaImeisAVenta(_imeiReserva, venta.id);
       try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — esperados ' + esperados + ', confirmados ' + confirmados, 'POS'); } catch (e2) {}
       toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
       // NO throw. La venta ya existe y no se revierte por este fallo secundario.
-      // NO liberar a ciegas la reserva: podría volver disponible un equipo comprometido por una venta real.
     }
   } catch (e) {
-    try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e), 'POS'); } catch (e2) {}
+    const fijada = await fijarReservaImeisAVenta(_imeiReserva, venta.id);
+    try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e) + (fijada ? ' · reserva fijada a la venta' : ' · NO se pudo fijar la reserva'), 'POS'); } catch (e2) {}
     toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
     // NO throw y NO liberar aquí.
   }
