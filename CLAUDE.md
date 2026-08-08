@@ -5209,6 +5209,22 @@ implementación después) y esto es lo que separó el borrador bueno del malo, c
   audita simulando el peor camino de falla ANTES de escribirlo — "¿qué pasa si esto truena justo
   DESPUÉS de que el dinero ya se cobró?" — y esa pregunta se responde leyendo el `catch` real que ya
   existe en el archivo, no inventando uno nuevo.
+- **SEGUIMIENTO real, al publicar en producción (8-ago-2026):** aunque el SQL de ChatGPT ya traía
+  `revoke execute ... from public` + `grant execute ... to authenticated` en las 3 funciones nuevas
+  (el propio arreglo que había faltado en su primer borrador), al VERIFICAR después de aplicar la
+  migración en Supabase (`has_function_privilege('anon', ...)`) dio **`true`** — `anon` SÍ podía
+  ejecutar las 3 RPC, pese al `REVOKE FROM public`. Causa real, confirmada mirando `pg_proc.proacl`:
+  **Supabase le concede `EXECUTE` a `anon` (y a `authenticated`/`service_role`) por defecto en TODA
+  función nueva del schema `public`, vía `ALTER DEFAULT PRIVILEGES` a nivel de proyecto — un grant
+  EXPLÍCITO a `anon`, independiente de `PUBLIC`.** Revocar de `PUBLIC` no lo toca. Se cerró con una
+  segunda migración, `revoke execute on function ... from anon;` explícito en cada una de las 3 —
+  reverificado con `has_function_privilege`: `anon=false`, `authenticated=true`, `public=false`.
+  **La lección concreta para cualquier función Postgres nueva en ESTE proyecto (Supabase, no un
+  Postgres genérico):** el `REVOKE FROM public` que ya pedía la regla 4 del mensaje a ChatGPT
+  NO BASTA por sí solo — hay que revocar TAMBIÉN de `anon` explícitamente (la clave anónima es la que
+  va embebida en `index.html`, así que es la que de verdad importa cerrar) y verificar con
+  `has_function_privilege('anon', '<función>'::regproc, 'execute')` DESPUÉS de aplicar, no confiar en
+  que el `REVOKE`/`GRANT` del propio SQL sea suficiente sin comprobarlo contra la base real.
 
 ### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
 ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
