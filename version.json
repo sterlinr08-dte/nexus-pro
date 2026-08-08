@@ -1,7 +1,12 @@
 {
-  "version": "56.18",
+  "version": "56.19",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.19",
+      "fecha": "2026-08-08",
+      "texto": "ARREGLADO (importante): se cerró la posibilidad de que dos cajas vendieran el MISMO IMEI al mismo tiempo. Antes, ver un teléfono como 'disponible' en la pantalla no garantizaba que siguiera disponible unos segundos después — si dos cajeros elegían el mismo IMEI casi al mismo tiempo (o en dos dispositivos distintos), el sistema podía dejar la factura de uno de los dos con ese IMEI 'pisado' por la otra venta. Ahora, al tocar Cobrar, el sistema APARTA los IMEI elegidos de forma segura en la base de datos antes de crear la factura — si otro cajero ya se adelantó con alguno de esos mismos IMEI, se avisa al instante ('IMEI ya no disponible') y pide elegir de nuevo, ANTES de cobrar. Si por cualquier motivo la venta ya se registró y solo falla el último paso de confirmar el IMEI, la venta NUNCA se pierde ni se revierte (el cajero no se queda sin la factura) — queda marcada para revisión administrativa en Auditoría. Verificado con una prueba real de dos ventas compitiendo por el mismo IMEI: solo una gana, la otra queda rechazada correctamente. Cambio interno (sin botones ni pantallas nuevas) — caja, crédito, comprobante fiscal, cuotas, documentos, anulación y devolución siguen funcionando exactamente igual que antes."
+    },
     {
       "v": "56.18",
       "fecha": "2026-08-08",
