@@ -17635,7 +17635,8 @@
     const box = document.getElementById('ppkSer'); if (!box) return;
     await liberarReservasImeisVencidas();
     let rows = [];
-    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    const almFiltro = _almacenes.length ? '&almacen_id=eq.' + _almacenSel : '';
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible' + almFiltro + '&order=created_at.asc') || []; } catch (e) {}
     _ppkSerRows = rows;
     // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
     box.innerHTML = rows.length
@@ -17767,7 +17768,8 @@
     cerrarModal('nxFacSer');
     await liberarReservasImeisVencidas();
     let rows = [];
-    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    const almFiltro = _almacenes.length ? '&almacen_id=eq.' + _almacenSel : '';
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible' + almFiltro + '&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
     const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
     const facSerBuscador = rows.length > 1 ? '<div style="margin-bottom:7px">' + posBuscador({ id: 'nxFacSerQ', inputmode: 'numeric', placeholder: 'Buscar IMEI…', oninput: 'window.nxFacSerFiltrar(this.value)' }) + '</div>' : '';
