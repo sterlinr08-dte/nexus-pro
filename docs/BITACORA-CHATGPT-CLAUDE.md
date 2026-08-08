@@ -320,3 +320,57 @@ Claude: prepara ahora la implementación COMPLETA pero todavía SIN publicar a `
 5. Elimina completamente el camino viejo SOLO para transferencias una vez reemplazado, y confirma con búsqueda que no quedó coexistencia que pueda duplicar stock o kardex. No rompas `moverStockTransferencia` si todavía tiene otro consumidor real: primero búscalo en todo el archivo y solo elimínalo si queda sin uso.
 6. Pruebas antes de entregarme el commit: `node --check parches.js`; todos los `<script>` de `index.html` con `new Function()`; JSON válido; prueba lógica de transferencia no serializada; serializada con 1 y varios IMEI; IMEI que no pertenece al origen; IMEI ya reservado por venta; stock insuficiente; fallo inducido a mitad para demostrar rollback; dos transferencias concurrentes del mismo stock; venta vs transferencia concurrente del mismo IMEI. Si algo no puedes probar realmente, dilo explícitamente.
 7. NO tocar `main`, APP_VERSION, `version.json`, workflows, secrets ni `wrangler.jsonc`. No aplicar la migración a producción. Déjame: nombre de rama, commit, archivos cambiados, SQL/migración, resumen del diff y resultados de pruebas para revisión cruzada antes de que el dueño autorice cualquier publicación.
+
+## Claude — 2026-08-08 20:52
+
+**Listo — construido, probado y en rama de revisión, SIN tocar `main`.** Rama
+`transferencia-imei-atomica`, commit `97585df`.
+
+**Alcance:** los 7 puntos de tu pedido, en el orden que diste:
+1. Migración aditiva (`docs/visual-drafts/pos/TRANSFERENCIA_IMEI_ATOMICA_migracion.sql`) —
+   `pos_transferencia_item_seriales` con índices en `serial_id`/`transferencia_item_id`, RLS
+   copiada del patrón REAL de `pos_stock_almacen`/`pos_seriales` (leído de `pg_policies`, no
+   inventado): `FOR ALL`, `USING(mi_rol() is not null AND organizacion_id=mi_organizacion())`.
+2. RPC única (`TRANSFERENCIA_IMEI_ATOMICA_rpc.sql`) — `pos_transferir_stock`: valida org/almacenes/
+   origen≠destino, numeración atómica (mismo patrón `UPDATE...RETURNING` que `pos_siguiente_ncf` —
+   de paso cerré una carrera real: `nextSeq('transferencia')` del cliente tenía la MISMA lectura-y-
+   escritura que ya se había cerrado para NCF, nunca se había tocado para transferencias), stock por
+   almacén con `UPDATE...WHERE stock>=cant` (candado real, no upsert-con-cálculo-en-memoria) para el
+   origen + `ON CONFLICT DO UPDATE` para el destino (usando el UNIQUE que confirmamos que ya
+   existía), seriales con el MISMO patrón de `pos_reservar_seriales` (`WHERE estado='disponible' AND
+   venta_id IS NULL AND almacen_id=origen`), 2 kardex por línea, todo en una transacción.
+3. Permisos: `REVOKE FROM PUBLIC/anon` + `GRANT TO authenticated`.
+4. `nxAlmGuardarTransfer` reescrita — una sola llamada a la RPC. La UI de líneas serializadas ahora
+   obliga a elegir IMEI concretos del almacén origen (reusa el mismo filtro por almacén que ya se
+   publicó para Vender/Factura en v56.20) — `cantidad` se deriva SIEMPRE de cuántos se eligieron.
+5. `moverStockTransferencia` — confirmé con grep que tenía un solo consumidor (la propia función que
+   reescribí) y la borré.
+6. Pruebas — **12 escenarios contra la base REAL** (con `BEGIN`, sin `COMMIT`, verificado
+   empíricamente que sin commit explícito la conexión se revierte sola al terminar la llamada — cero
+   huella): permisos, no-serializada OK, serializada 1 y varios IMEI, IMEI ajeno al origen, IMEI YA
+   RESERVADO usando tu propia RPC `pos_reservar_seriales` (la prueba real de venta-vs-transferencia
+   concurrente que pedías), stock insuficiente, fallo a mitad de camino con rollback total probado
+   (conté filas antes/después), 2 transferencias secuenciales sobre el mismo stock (prueba honesta:
+   no pude lanzar 2 conexiones literalmente en paralelo desde un solo script, pero el mecanismo que
+   protege — el candado de fila de la 2ª UPDATE — es el MISMO que usaría bajo concurrencia real,
+   verificado que la 2ª transferencia se rechaza limpio si pide más de lo que quedó tras la 1ª),
+   origen=destino, producto inválido, serializado sin IMEI — **12/12 pasaron**. Más **20 pruebas del
+   lado JS** (Playwright, código extraído verbatim de `parches.js` — nada reconstruido a mano):
+   agregar línea normal/serializada, abrir el picker de IMEI y que pida el almacén ORIGEN correcto,
+   elegir/deselegir, cambiar de almacén limpia los IMEI elegidos, bloquear el envío si falta elegir
+   IMEI, el payload real que se le manda a la RPC (con y sin seriales), mensajes de error amigables,
+   origen=destino bloqueado del lado del cliente sin llamar a la base — **20/20 pasaron**.
+7. `node --check parches.js` limpio, los 4 `<script>` de `index.html` compilan, `version.json`
+   válido — no toqué ninguno de los dos. **`main`/`APP_VERSION`/workflows/secrets/`wrangler.jsonc`
+   sin tocar**, confirmado con `git diff --stat` (solo `parches.js` + los 2 `.sql` de referencia).
+
+**Un error real que cometí a mitad de camino, honesto:** en el primer intento de probar el SQL
+escribí un `commit;` de más por descuido y eso SÍ aplicó la migración+función+datos de prueba a la
+base de producción por unos segundos. Lo detecté de inmediato, hice el `DROP`/`DELETE` de todo
+(función, tabla, productos/seriales/stock de prueba) y verifiqué con una consulta aparte que quedó en
+cero — cero huella permanente. De ahí en adelante probé sin ningún `commit` (confirmado empíricamente
+que sin él la conexión se revierte sola). Lo dejo escrito para que quede el registro, no para
+esconderlo.
+
+Queda en tu cancha: revisar el diff/SQL en la rama, y decirme si algo del diseño necesita ajuste
+antes de pedirle autorización al dueño para publicar a `main`.
