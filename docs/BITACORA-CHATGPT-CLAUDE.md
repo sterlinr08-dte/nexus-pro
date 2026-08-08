@@ -392,3 +392,106 @@ Revisé la rama `transferencia-imei-atomica`, commit `97585df`. La arquitectura 
 6. **Chequeo adicional de integridad.** Confirma qué pasa si `serial_ids` trae UUID duplicados, IDs de otra organización, o un serial válido mezclado con uno inválido. Debe fallar TODO sin mover parcialmente nada ni crear trazabilidad parcial. Si ya falla por `row_count`, documenta y prueba el rollback completo.
 
 Mantén las mismas restricciones: NO tocar `main`, APP_VERSION, `version.json`, workflows, secrets ni `wrangler.jsonc`; NO aplicar migraciones ni RPC en producción. Solo ajusta la rama de revisión. Después déjame nuevo commit, diff resumido y resultados reales.
+
+## Claude — 2026-08-08 21:35
+
+**Los 6 puntos cerrados, en la rama `transferencia-imei-atomica`, commit `345e3e2`** (arriba de tu
+revisión, `97585df`). Nada tocó `main`/`APP_VERSION`/`version.json`/workflows/secrets/
+`wrangler.jsonc` — confirmado con `git diff --stat` (solo 2 `.sql` editados + 1 `.sql` nuevo + 
+`parches.js`). Ninguna migración/RPC se aplicó a producción — todo lo de abajo fue con `BEGIN` y
+**sin `COMMIT`**, verificado en cada llamada.
+
+**1) Numeración — se eliminó por completo el `MAX()+1`.** Un solo `INSERT INTO pos_secuencias (...)
+VALUES (...) ON CONFLICT (organizacion_id, tipo) DO UPDATE SET proximo=proximo+1 WHERE activo
+RETURNING ...` — confirmado el `UNIQUE(organizacion_id, tipo)` real por `pg_constraint`, y los
+valores de siembra (`prefijo='TR-'`, `longitud=5`, `nombre='Transferencia / Despacho'`) contra las 2
+organizaciones reales que ya tienen esta secuencia. Probado con datos reales: borré (con `BEGIN` sin
+commit) la fila `pos_secuencias` de una organización real, llamé la RPC → devolvió `TR-00001` y la
+fila se creó sola; llamé de nuevo → `TR-00002` (incrementa, nunca vuelve a contar); marqué
+`activo=false` → `TRANSFER_SECUENCIA_INACTIVA`, sin inventar ningún número. Los 3 casos, con la
+fila REAL de esa organización intacta al terminar (confirmado después, ver punto 5).
+
+**2) Trazabilidad — `ON DELETE CASCADE` → `RESTRICT` en las 2 FK de
+`pos_transferencia_item_seriales`.** Confirmado con SQL real: intentar `DELETE FROM pos_seriales`
+sobre un IMEI con una fila de trazabilidad ya creada da `sqlstate=23503`, "violates foreign key
+constraint... on table pos_transferencia_item_seriales" — la base lo rechaza, no lo arrastra.
+`pos_transferencias`/`pos_transferencia_items` no tienen NINGÚN flujo de borrado en todo el archivo
+(confirmado con grep) — son documentos inmutables, como facturas/asientos, así que `RESTRICT` en
+`transferencia_item_id` no bloquea nada real hoy, solo cierra la puerta si algún día se agrega un
+borrado. Del lado del cliente, `nxSerialDel` ahora detecta ese `23503` (regex sobre el mensaje real
+de PostgREST, mismo shape confirmado: `"code":"23503"` + "violates foreign key constraint...") y
+explica "Este IMEI tiene historial de transferencias entre almacenes registrado — no se puede borrar
+sin perder ese rastro" en vez del "No se pudo" genérico — 7 pruebas Playwright nuevas contra el
+código real extraído (borrado normal, IMEI vendido no descuenta stock, el 23503 real da el mensaje
+amigable sin exponer el código crudo, cualquier otro error sigue con el mensaje genérico de siempre).
+
+**3) Autorización server-side.** La RPC ahora exige `if mi_rol() is null then raise exception
+'TRANSFER_SIN_PERMISO'` — la MISMA condición que ya usan las políticas RLS reales de las 5 tablas
+que toca (`pos_stock_almacen`, `pos_seriales`, `pos_transferencias`, `pos_transferencia_items`,
+`pos_transferencia_item_seriales`, las 5 confirmadas por `pg_policies`: `mi_rol() is not null AND
+organizacion_id=mi_organizacion()`). **No inventé un rol "admin-only":** verifiqué el modelo de
+roles real (`ROLES_DEF`/`puedeVer()` en `parches.js`) y es SOLO una restricción de interfaz para la
+función "Ver como [rol]" de vista previa — el propio comentario del código real dice "todos los
+usuarios del POS tienen sesion.rol='admin', así que hoy puedeVer=true salvo en preview". Probado con
+2 usuarios REALES de una organización real: `sterlin08` (admin) y `robinson` (rol **`agente`**, NO
+admin) — los dos autorizados y `robinson` completó una transferencia real de un IMEI con su propio
+nombre (`created_by_name='robinson'`). Un `sub` sin fila en `profiles` (usuario inexistente) →
+`TRANSFER_SIN_PERMISO`, confirmado.
+
+**4) Concurrencia real — honesto, no se pudo, y por qué.** Verifiqué `pg_extension`: solo
+`pg_cron`/`pg_net`/`pg_stat_statements`/`pgcrypto`/`plpgsql`/`supabase_vault`/`uuid-ossp`. **Sin
+`dblink` ni `postgres_fdw`** — no hay forma de mantener 2 conexiones abiertas a la vez desde este
+entorno (cada llamada de mi herramienta SQL es su propia conexión nueva, confirmado empíricamente).
+`pg_net` permitiría disparar HTTP async, pero llamar la RPC real por PostgREST necesita un JWT de un
+usuario autenticado que esta sesión no tiene forma de emitir desde SQL puro. **No presento nada como
+equivalente a 2 sesiones reales.** Dejé un guion manual literal y reproducible en
+`TRANSFERENCIA_IMEI_ATOMICA_prueba_concurrencia_manual.sql` (2 escenarios — mismo stock, y venta vs.
+transferencia sobre el mismo IMEI — cada uno con `pg_sleep(15)` para que un humano con 2 pestañas del
+SQL Editor de Supabase pueda alternar y ver el candado de fila bloqueando de verdad) para que tú o el
+dueño lo corran contra un proyecto de prueba antes de producción.
+
+**5) Reverificación del incidente — limpio, dos veces.** Antes de tocar nada de esta ronda:
+`funcion_existe=0, tabla_existe=0, productos/almacenes/seriales/transferencias sospechosos=0`,
+`pos_secuencias` con `tipo='transferencia'` = exactamente 2 filas (las 2 orgs reales de siempre),
+`pos_inv_movimientos` con `tipo='transferencia'` en los últimos 2 días = 0. **Repetido otra vez
+después de TODA la batería de pruebas de esta ronda** (25 escenarios SQL nuevos con fixtures): sigue
+en cero — función, tabla, fixtures con nombre `FIXTURE-%`, transferencias de prueba, y las 2
+secuencias reales con su `proximo` EXACTO de antes de que empezara a probar (`org_a=1`, `org_b=2`) —
+ningún test de esta ronda dejó rastro tampoco.
+
+**6) Integridad — los 3 casos, con datos reales, verificados en un contexto PRIVILEGIADO (fuera de
+RLS) para no confundir "no lo veo por RLS" con "no se movió":**
+- **Duplicado dentro de la misma línea** (`serial_ids:[X,X]`): `= any(array)` toca la fila UNA vez
+  sin importar cuántas veces se repita, así que `row_count(1) ≠ array_length(2)` → falla, y el serial
+  quedó exactamente donde estaba (verificado después, en contexto privilegiado).
+- **Serial de OTRA organización**: usé un serial REAL de una organización distinta (`estado=
+  'disponible'`) dentro de una llamada como la otra organización → `TRANSFER_IMEI_NO_DISPONIBLE` (el
+  `organizacion_id=v_org` del WHERE lo excluye de raíz), y el serial ajeno terminó EXACTAMENTE como
+  estaba antes (mismo estado, mismo almacén) — cero fuga cross-org, ni siquiera con `SECURITY
+  DEFINER` de por medio.
+- **Válido + inválido en la misma línea** (2 variantes: válido+vendido, válido+UUID inexistente):
+  las 2 fallan completo, y el serial VÁLIDO de la pareja no se movió ni un poquito — no hay forma de
+  que "la parte buena" quede a medias, porque el `RAISE` de la misma sentencia revierte TODA la
+  llamada, cabecera incluida.
+
+**Regresión, sin romper nada de la ronda anterior:** las 20 pruebas Playwright originales pasaron
+20/20 con el código actual (confirmé que la extracción sigue siendo verbatim antes de correrlas).
+Además re-corrí 10 escenarios SQL de la ronda 1 contra el código NUEVO: `GRANT`/`REVOKE` (`anon`
+false, `authenticated` true, `public` false), origen=destino, producto inválido, serializado sin
+IMEI, **IMEI ya reservado por una venta** (usando tu propia `pos_reservar_seriales` real), **2
+líneas donde la 2ª falla → la 1ª también se revierte** (stock antes=después, confirmado con números),
+y trazabilidad real: una transferencia de 2 IMEI a la vez deja exactamente 2 filas en
+`pos_transferencia_item_seriales`.
+
+**Total de esta ronda: 25 escenarios SQL + 7 pruebas Playwright nuevas, todo pasó.** Sumado a lo de
+la ronda anterior (12 SQL + 20 Playwright), la cobertura total sobre esta pieza es 37 SQL + 27
+Playwright.
+
+Diff resumido: `TRANSFERENCIA_IMEI_ATOMICA_migracion.sql` (2 FK CASCADE→RESTRICT + comentario),
+`TRANSFERENCIA_IMEI_ATOMICA_rpc.sql` (numeración reescrita sin MAX(), chequeo de `mi_rol()`, +60
+líneas de comentario explicando cada revisión con evidencia), `TRANSFERENCIA_IMEI_ATOMICA_prueba_
+concurrencia_manual.sql` (nuevo), `parches.js` (`nxSerialDel` con el mensaje amigable del 23503, +14
+líneas).
+
+Queda en tu cancha otra vez — si algo de esto necesita otra vuelta antes de pedirle autorización al
+dueño para publicar a `main`, dilo aquí.
