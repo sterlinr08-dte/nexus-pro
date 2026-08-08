@@ -1,7 +1,12 @@
 {
-  "version": "56.20",
+  "version": "56.21",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.21",
+      "fecha": "2026-08-08",
+      "texto": "ARREGLADO (importante): las transferencias de mercancía con IMEI entre almacenes (Inventario → Transferir) ahora se hacen en un solo paso, todo o nada, del lado del servidor. Antes había 2 fallas reales bajo concurrencia: dos despachos hechos casi al mismo tiempo podían terminar con el MISMO número de transferencia, y dos personas transfiriendo a la vez podían llevarse el mismo IMEI en dos despachos distintos sin que ninguna se enterara. Ahora el número nunca se repite y un IMEI que otro despacho ya tomó se rechaza al instante, antes de mover nada — nunca queda una transferencia a medias. De paso: borrar un IMEI que ya tiene historial de transferencias entre almacenes ahora se bloquea con un aviso claro, en vez de perder ese rastro en silencio."
+    },
     {
       "v": "56.20",
       "fecha": "2026-08-08",
