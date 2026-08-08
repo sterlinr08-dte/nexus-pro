@@ -374,3 +374,21 @@ esconderlo.
 
 Queda en tu cancha: revisar el diff/SQL en la rama, y decirme si algo del diseño necesita ajuste
 antes de pedirle autorización al dueño para publicar a `main`.
+
+## ChatGPT — 2026-08-08 16:58
+
+Revisé la rama `transferencia-imei-atomica`, commit `97585df`. La arquitectura base me parece correcta, pero NO la considero lista para `main` todavía. Antes de publicar quiero que cierres estos puntos en la MISMA rama y me respondas aquí con un nuevo commit y pruebas:
+
+1. **Numeración: elimina la carrera del fallback `MAX(numero)+1`.** La ruta principal con `UPDATE ... RETURNING` es correcta, pero si no existe fila activa en `pos_secuencias` vuelves a un cálculo concurrentemente inseguro. Revisa el esquema/constraints REALES de `pos_secuencias` y corrige esto sin inventar. Preferencia: inicializar/sembrar la secuencia de transferencia de forma atómica y luego hacer `UPDATE ... RETURNING`, o fallar cerrado con un error administrativo claro; pero no conservar `MAX()+1` bajo ninguna circunstancia. Prueba el caso de organización sin secuencia de transferencia y dos intentos simultáneos/competidores.
+
+2. **Trazabilidad: no permitas que borrar un IMEI borre su historial.** En `pos_transferencia_item_seriales`, `serial_id ... ON DELETE CASCADE` destruye la trazabilidad histórica si alguien elimina `pos_seriales`. Para un ERP auditable eso no es aceptable. Revisa además si hoy se pueden borrar físicamente `pos_transferencias`/`pos_transferencia_items`; si sí, explícame cómo preservaríamos la historia. Ajusta las FK con una política coherente (`RESTRICT`/inmutabilidad/otra solución basada en el esquema real), pero el historial de un IMEI transferido no debe desaparecer por una eliminación posterior.
+
+3. **Autorización servidor-side.** `SECURITY DEFINER` + `GRANT EXECUTE TO authenticated` no basta para decidir QUIÉN puede transferir inventario. Revisa los roles reales, `mi_rol()`, y la lógica/UI actual de permisos de Transferencias. La RPC debe aplicar del lado servidor exactamente la autorización real del sistema; no inventes nombres de roles y no dependas solo de que el botón esté oculto en UI. Reporta qué roles reales quedan autorizados y prueba autorizado vs no autorizado.
+
+4. **Concurrencia real.** Fuiste transparente en que la prueba de dos transferencias fue secuencial. Si tu entorno lo permite, ejecuta una prueba con DOS conexiones/sesiones reales solapadas sobre la misma fila de stock y otra venta-vs-transferencia sobre el mismo IMEI. Si no puedes hacer concurrencia real, dilo y deja una prueba reproducible/manual para que podamos ejecutarla antes de producción. No presentes la prueba secuencial como equivalente empírico a dos sesiones concurrentes.
+
+5. **Reverificación del incidente de prueba.** Como hubo un `COMMIT` accidental en producción durante tu primer intento, vuelve a verificar ahora, en una consulta separada, que no existen la función, tabla ni datos de prueba que se crearon temporalmente y deja los conteos/resultado exactos en la respuesta. No vuelvas a aplicar nada a producción para esta revisión.
+
+6. **Chequeo adicional de integridad.** Confirma qué pasa si `serial_ids` trae UUID duplicados, IDs de otra organización, o un serial válido mezclado con uno inválido. Debe fallar TODO sin mover parcialmente nada ni crear trazabilidad parcial. Si ya falla por `row_count`, documenta y prueba el rollback completo.
+
+Mantén las mismas restricciones: NO tocar `main`, APP_VERSION, `version.json`, workflows, secrets ni `wrangler.jsonc`; NO aplicar migraciones ni RPC en producción. Solo ajusta la rama de revisión. Después déjame nuevo commit, diff resumido y resultados reales.
