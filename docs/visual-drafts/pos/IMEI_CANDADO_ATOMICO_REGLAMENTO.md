@@ -2,7 +2,7 @@
 
 12. Un IMEI se toma de forma ATÓMICA al confirmar la venta. Verlo como `disponible` en el selector no garantiza que siga disponible segundos después: la base de datos es la autoridad final. Dos cajeros nunca pueden adjudicarse el mismo IMEI.
 
-13. Al iniciar la confirmación, cada IMEI elegido pasa temporalmente de `disponible` a `reservado`. La reserva pertenece a una sola operación, vive en la base de datos y vence en aproximadamente 60 segundos si la venta no termina. Solo una reserva válida puede convertir el IMEI a `vendido`.
+13. Al iniciar la confirmación, cada IMEI elegido pasa temporalmente de `disponible` a `reservado`. La reserva pertenece a una sola operación, vive en la base de datos y vence en aproximadamente 60 segundos si la venta no termina. Las superficies que listan IMEI limpian primero las reservas vencidas para que un equipo no quede oculto indefinidamente después del TTL. Solo una reserva válida puede convertir el IMEI a `vendido`.
 
 14. Si uno solo de los IMEI seleccionados ya no está disponible, se rechaza la reserva COMPLETA y se obliga a re-elegir. Nunca se confirma parcialmente una línea serializada.
 
