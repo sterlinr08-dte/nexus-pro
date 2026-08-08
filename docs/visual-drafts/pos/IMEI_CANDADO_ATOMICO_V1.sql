@@ -34,6 +34,7 @@ begin
     return v_token;
   end if;
 
+  -- Solo se liberan reservas vencidas que TODAVÍA no están ligadas a una venta.
   update public.pos_seriales
      set estado = 'disponible', reserva_token = null, reserva_hasta = null
    where organizacion_id = v_org
@@ -42,6 +43,7 @@ begin
      and reserva_hasta < now()
      and venta_id is null;
 
+  -- UPDATE condicional: dos cajeros pueden haber visto el mismo IMEI, pero solo uno lo toma.
   update public.pos_seriales
      set estado = 'reservado',
          reserva_token = v_token,
@@ -53,6 +55,7 @@ begin
 
   get diagnostics v_tomados = row_count;
 
+  -- El RAISE revierte el UPDATE completo de esta llamada: nunca reserva solo parte del grupo.
   if v_tomados <> v_esperados then
     raise exception 'IMEI_NO_DISPONIBLE';
   end if;
@@ -63,7 +66,8 @@ $$;
 
 create or replace function public.pos_confirmar_seriales_reservados(
   p_reserva_token uuid,
-  p_venta_id uuid
+  p_venta_id uuid,
+  p_esperados integer
 )
 returns integer
 language plpgsql
@@ -78,6 +82,10 @@ begin
     raise exception 'IMEI_SIN_ORGANIZACION';
   end if;
 
+  if p_esperados is null or p_esperados < 1 then
+    raise exception 'IMEI_CONFIRMACION_INVALIDA';
+  end if;
+
   update public.pos_seriales
      set estado = 'vendido',
          venta_id = p_venta_id,
@@ -86,9 +94,17 @@ begin
    where organizacion_id = v_org
      and reserva_token = p_reserva_token
      and estado = 'reservado'
-     and venta_id is null;
+     -- Normalmente venta_id es NULL. Si una incidencia ya quedó fijada a esta misma venta,
+     -- la confirmación sigue siendo reintentable e idempotente respecto a esa factura.
+     and (venta_id is null or venta_id = p_venta_id);
 
   get diagnostics v_count = row_count;
+
+  -- Nunca confirmar solo una parte: el RAISE revierte todo el UPDATE de esta RPC.
+  if v_count <> p_esperados then
+    raise exception 'IMEI_RESERVA_INCOMPLETA';
+  end if;
+
   return v_count;
 end;
 $$;
@@ -107,6 +123,7 @@ begin
     raise exception 'IMEI_SIN_ORGANIZACION';
   end if;
 
+  -- Solo se libera una reserva que todavía NO pertenece a una venta real.
   update public.pos_seriales
      set estado = 'disponible', reserva_token = null, reserva_hasta = null
    where organizacion_id = v_org
@@ -120,11 +137,11 @@ end;
 $$;
 
 revoke execute on function public.pos_reservar_seriales(uuid[]) from public;
-revoke execute on function public.pos_confirmar_seriales_reservados(uuid, uuid) from public;
+revoke execute on function public.pos_confirmar_seriales_reservados(uuid, uuid, integer) from public;
 revoke execute on function public.pos_liberar_reserva_seriales(uuid) from public;
 
 grant execute on function public.pos_reservar_seriales(uuid[]) to authenticated;
-grant execute on function public.pos_confirmar_seriales_reservados(uuid, uuid) to authenticated;
+grant execute on function public.pos_confirmar_seriales_reservados(uuid, uuid, integer) to authenticated;
 grant execute on function public.pos_liberar_reserva_seriales(uuid) to authenticated;
 
 commit;
