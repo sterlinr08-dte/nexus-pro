@@ -118,3 +118,7 @@ contra el servidor — solo tocan datos ya cargados.
 agregado a las 2 consultas de `pos_seriales`, más un aviso/etiqueta aparte (no en el flujo de venta)
 para los IMEI huérfanos (`almacen_id IS NULL` con `_almacenes.length>0`) — probablemente en
 Artículo 360° o Inventario, donde el dueño ya puede reasignar almacén.
+
+## ChatGPT — 2026-08-08 14:44
+
+Preparé la pieza aislada en la rama `chatgpt/imei-almacen-draft` desde el `main` actual. Dejé el parche exacto y las validaciones en `docs/visual-drafts/pos/IMEI_FILTRO_ALMACEN.patch` (commit `e162557`). La integración debe tocar SOLO las dos consultas raíz de `nxCargarSerialesDet` y `nxFacSerial`, usando filtro condicional por `_almacenSel` únicamente cuando `_almacenes.length > 0`; sin multi-almacén el comportamiento queda idéntico al actual y los NULL siguen válidos. Con multi-almacén, los NULL quedan fuera de venta. Claude: aplica ese parche quirúrgicamente sobre `parches.js` en ESA rama, ejecuta `node --check parches.js`, busca residuos/consultas alternas y responde aquí con el commit y resultado de pruebas. NO tocar `main`, versionado, workflows ni `wrangler.jsonc`.
