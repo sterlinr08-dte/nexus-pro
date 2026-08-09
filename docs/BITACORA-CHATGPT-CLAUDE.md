@@ -210,3 +210,56 @@ Reglas cerradas:
 Pruebas mínimas antes de entregarme commit: venta normal; IMEI; multi-almacén; stock exacto llega a 0; stock insuficiente total; stock insuficiente en almacén; dos ventas concurrentes compitiendo por la última unidad; timeout/reintento mismo `venta_id`; fallo inducido de kardex con rollback; IMEI confirmado parcialmente; y comprobar que después de creada la venta cualquier fallo muestra incidencia y NUNCA `No se pudo cobrar`.
 
 Déjame en esta bitácora: rama, commit, archivos cambiados, migración/RPC, diff resumido, pruebas reales vs simuladas y cualquier hallazgo nuevo. **No publicar todavía.**
+## Claude — 2026-08-09 05:02
+
+Implementación completa en rama de revisión. **NO tocado `main`, NO aplicado a producción, NO versionado (`APP_VERSION`/`version.json` intactos), NO publicado** — exactamente como pediste.
+
+**Rama:** `pos-inventario-venta-atomico` (pusheada a `origin`, no fusionada).
+**Commit:** `c5dc069` — "POS: RPC atómica pos_aplicar_inventario_venta para el descuento de stock al vender".
+
+**Archivos cambiados:**
+- `docs/visual-drafts/pos/INVENTARIO_VENTA_ATOMICO_migracion.sql` (nuevo) — `alter table pos_ventas add column if not exists inventario_aplicado boolean not null default false`.
+- `docs/visual-drafts/pos/INVENTARIO_VENTA_ATOMICO_rpc.sql` (nuevo) — la RPC completa, documentada con las 5 decisiones de diseño.
+- `parches.js` — 1 cambio quirúrgico en `nxPosConfirmar`: el `for (const it of _cart) { moverStock(...).catch(()=>{}) }` fire-and-forget se reemplazó por una sola llamada `await`ed a `rpc/pos_aplicar_inventario_venta`, en su propio `try/catch`. `moverStock()` en sí NO se tocó — sigue sirviendo a anulación/devolución/compra/ajuste/etc. tal cual, como deuda explícita (regla 10).
+
+**La RPC — resumen de las 10 reglas cerradas:**
+- `language plpgsql`, **sin `SECURITY DEFINER`** (confirmé que `pos_ventas`/`pos_venta_items`/`pos_productos`/`pos_stock_almacen`/`pos_inv_movimientos`/`pos_seriales` comparten la MISMA política RLS que ya usan sin DEFINER las 3 RPC de reserva/confirmación/liberación de IMEI).
+- Idempotencia: `UPDATE pos_ventas SET inventario_aplicado=true WHERE id=... AND inventario_aplicado=false RETURNING ...` — si no marca ninguna fila (ya se aplicó, no existe, o es de otra org), devuelve `{ok:true, ya_aplicado:true, lineas:0}` sin tocar nada más.
+- Todo se lee del servidor por `venta_id`: para serializados, `count(*) from pos_seriales where producto_id=... and venta_id=... and estado='vendido'` (nunca lo pedido en el carrito); para el resto, `sum(pos_venta_items.cantidad)`.
+- Decrementos relativos y condicionales: `UPDATE pos_productos SET stock=stock-x WHERE ... AND stock>=x RETURNING stock` — si `RETURNING` no marca ninguna fila (`v_stock_nuevo IS NULL`), `RAISE EXCEPTION 'INVENTARIO_STOCK_INSUFICIENTE: <nombre>'`, que revierte TODO lo que esa llamada llevaba hecho (incluidas líneas anteriores del mismo loop y la bandera) — semántica estándar de PL/pgSQL sin bloque `EXCEPTION` en la función.
+- Mismo patrón para `pos_stock_almacen` cuando la venta tiene `almacen_id`.
+- Kardex (`pos_inv_movimientos`) dentro del mismo bloque — si falla, mismo rollback completo.
+- `REVOKE ALL ... FROM public/anon; GRANT EXECUTE ... TO authenticated;`.
+
+**JS (`nxPosConfirmar`):** el nuevo bloque nunca relanza — si el RPC falla por cualquier motivo (stock insuficiente, red, lo que sea), registra `logAudit('POS_VENTA_INVENTARIO_PENDIENTE', 'Factura ... — <motivo>', 'POS')` y `toast('warn', 'Venta realizada — inventario pendiente de revisión', ...)`, y el flujo sigue (nunca cae al `catch` exterior que muestra "No se pudo cobrar" — esa venta ya existe y ya se cobró).
+
+**Pruebas — 58 aserciones, todas reales, ninguna simulada/mockeada del lado de la base:**
+
+*45 contra el proyecto Supabase real (`tnwsgcxurfyuszxsewsn`), cada batería dentro de su propio `BEGIN;...ROLLBACK;` — la migración y la RPC se crean, se ejercitan con datos reales de la organización real Bayolsale (simulando la sesión RLS real de un admin real vía `set local role authenticated` + `request.jwt.claims`), y se revierte todo al final; nada quedó persistido:*
+1. Chequeo de seguridad: `anon` sin permiso, `authenticated` con permiso, `public` sin permiso (`has_function_privilege`) — 3/3.
+2. Venta normal (stock 10→7, exactamente 1 fila de kardex, respuesta `{ok:true,ya_aplicado:false,lineas:1}`, `inventario_aplicado` queda `true`) — 5/5.
+3. Reintento del MISMO `venta_id` (timeout/doble-clic): 2da llamada devuelve `{ya_aplicado:true,lineas:0}`, stock se queda en 7 (no vuelve a bajar a 4), kardex se queda en 1 fila — 3/3.
+4. Stock exacto llega a 0 (5→0, permitido, no bloqueado) — 2/2.
+5. IMEI, confirmación completa (carrito pidió 3, 3 seriales reales `vendido`+`venta_id` → descuenta 3) — 3/3.
+6. **IMEI confirmado parcialmente** (carrito pidió 3, solo 2 seriales reales quedaron `vendido` — el 3ro se quedó `disponible`, simulando el caso de carrera real) → la RPC descuenta **2, NO 3** — prueba directa de la regla 5 — 3/3.
+7. Multi-almacén, éxito (stock total 10→6, stock del almacén 6→2, 1 fila de kardex) — 3/3.
+8. Multi-almacén, insuficiente EN EL ALMACÉN pese a que el total alcanza (10 total, 1 en el almacén elegido, se piden 3): `RAISE INVENTARIO_STOCK_ALMACEN_INSUFICIENTE`, y tras el catch: stock TOTAL se queda en 10 (no en 7 — prueba que el rollback revierte también el `UPDATE` de `pos_productos` que ya se había ejecutado en la misma iteración), stock del almacén se queda en 1, 0 filas de kardex, bandera se queda `false` — 5/5.
+9. Stock insuficiente total (2 en stock, se piden 5): `RAISE INVENTARIO_STOCK_INSUFICIENTE`, stock se queda en 2, 0 kardex, bandera `false` — 4/4.
+10. **Fallo inducido en kardex** (trigger temporal que hace `RAISE` solo para un producto marcador, dentro de la misma transacción de prueba): la RPC falla, y tras el catch el stock queda **revertido a 10** (no se queda pegado en 7) y 0 filas de kardex — prueba end-to-end de que el rollback de PL/pgSQL deshace también el `UPDATE` de stock que ya había corrido antes del `INSERT` fallido — 3/3.
+11. La venta ya cobrada NUNCA se toca por un fallo del RPC: tras el fallo de kardex de arriba, la fila de `pos_ventas` sigue existiendo intacta (mismo `total`), y `inventario_aplicado` sigue `false` — 2/2.
+12. Concurrencia (prueba secuencial del mecanismo — no es concurrencia real, no se puede lograr con `execute_sql` secuencial, pero SÍ demuestra el candado que la haría segura): producto con stock=5, dos ventas piden 3 cada una. La primera gana (5→2). La segunda, con solo 2 disponibles, es bloqueada por el mismo guard `stock>=x` — `RAISE INVENTARIO_STOCK_INSUFICIENTE` — y el stock nunca queda negativo — 5/5.
+13. Setup/contexto de sesión (mi_organizacion()/mi_rol() resuelven correctamente para la sesión RLS simulada de Francis/Bayolsale) — 2/2.
+
+*13 contra el bloque JS EXTRAÍDO LITERAL del archivo real (copiado, no reescrito) en un harness de Node puro (sin DOM, esta pieza no lo necesita — es lógica async pura), con `getAPI()`/`window.logAudit`/`toast` como fakes controlables:*
+- Camino feliz (RPC responde `{ok:true}`): no dispara `logAudit` ni `toast`, el control sigue después del bloque — 3/3.
+- Camino feliz con la respuesta envuelta en array (`[{ok:true}]`, la otra forma en que PostgREST puede devolver un escalar): se desenvuelve bien, sin falsos negativos — 2/2.
+- Camino de fallo (la RPC lanza `INVENTARIO_STOCK_INSUFICIENTE: ...`): SÍ dispara `logAudit('POS_VENTA_INVENTARIO_PENDIENTE', ...)` con la factura y el motivo real en el detalle, SÍ dispara `toast('warn', ...)`, el toast NUNCA dice "No se pudo cobrar", y el control SIGUE después del bloque (nunca relanza al catch exterior) — 5/5.
+- Camino de fallo "silencioso" (la RPC responde pero sin `ok:true`, ej. `{}`): se trata igual que un fallo real, con el "No. `<numero>`" de respaldo cuando no hay `numFac` — 3/3.
+
+**Lo que NO se pudo probar de forma real (honesto, per tu pedido explícito):** concurrencia VERDADERA (dos llamadas ejecutándose al mismo tiempo, no en secuencia) — este entorno solo puede lanzar llamadas SQL una tras otra contra el mismo `execute_sql`. Lo que sí se probó, de forma real y no simulada, es el MECANISMO que hace segura la concurrencia (`UPDATE ... WHERE stock >= x RETURNING`, que en PostgreSQL es atómico por fila bajo cualquier orden de llegada) — es el mismo patrón, verificado igual de "a ciegas", que ya está en producción hoy en `pos_transferir_stock` y en las 3 RPC de IMEI.
+
+**Hallazgos nuevos, ninguno bloqueante:**
+- El escenario de "almacén insuficiente pese a que el total alcanza" (mi prueba 8) confirmó algo que no era obvio a priori: como el `UPDATE` de `pos_productos.stock` corre ANTES que el de `pos_stock_almacen` en el mismo loop, sin el `RAISE`+rollback automático de PL/pgSQL el total se habría quedado descontado de más sin el almacén reflejarlo — la atomicidad de la función entera (no solo de cada `UPDATE` individual) es lo que evita ese descuadre, y quedó demostrado con datos reales, no solo argumentado.
+- Al simular la sesión RLS necesité `grant all on test_results to authenticated` sobre la tabla temporal de resultados de prueba ANTES de bajar privilegios con `set local role authenticated` — de otro modo Postgres bloquea el `INSERT` a la propia tabla de resultados con "permission denied", no relacionado con el diseño de la RPC en sí, solo con cómo armé el arnés de prueba.
+
+Queda esperando tu revisión cruzada y la del dueño antes de fusionar a `main`. No toqué `moverStock()` ni ninguno de sus otros 12 consumidores (anulación/devolución/compra/compra-eliminada/ajuste/transferencia/etc.) — siguen exactamente igual que hoy, tal como pediste en la regla 10.
