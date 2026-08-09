@@ -19017,9 +19017,22 @@
       try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
-      // descontar stock (best-effort; los servicios no manejan stock)
-      for (const it of _cart) {
-        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { moverStock(p, 'venta', -Number(it.cantidad), { piso0: false, referencia: numFac || ('No. ' + (venta.numero || '')), almacenId: _almacenSel }).catch(() => {}); } } catch (e) {}
+      // descontar stock: RPC atómica del servidor (pos_aplicar_inventario_venta), no moverStock().
+      // moverStock() leía prod.stock del array en memoria (_prods, posiblemente desactualizado) y
+      // escribía un valor ABSOLUTO — entre 2 ventas concurrentes del mismo producto, una podía perder
+      // su descuento sin dejar rastro (lost-update). La RPC decrementa de forma RELATIVA
+      // (stock = stock - x con x <= stock en el WHERE) leyendo TODO del lado del servidor por
+      // venta_id — nunca del carrito — y es todo-o-nada por venta completa: si algo no alcanza, no
+      // baja NADA (REGLAMENTOS §1: nunca stock negativo) y la venta YA COBRADA se queda tal cual
+      // (REGLAMENTOS §2 regla 10 — este catch NUNCA debe bloquear ni revertir el cobro ya hecho).
+      try {
+        const rInv = await getAPI().post('rpc/pos_aplicar_inventario_venta', { p_venta_id: venta.id });
+        const resInv = Array.isArray(rInv) ? rInv[0] : rInv;
+        if (!resInv || resInv.ok !== true) throw new Error('INVENTARIO_RPC_SIN_OK');
+      } catch (eInv) {
+        const msgInv = String(eInv && eInv.message || eInv);
+        try { window.logAudit && window.logAudit('POS_VENTA_INVENTARIO_PENDIENTE', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — ' + msgInv, 'POS'); } catch (e2) {}
+        toast('warn', 'Venta realizada — inventario pendiente de revisión', 'El cobro se registró; el inventario de esta venta necesita revisión administrativa.');
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
