@@ -614,3 +614,141 @@ Revisa código y base REALES (`nxSerialCuadrar`, `moverStock`, `upsertStockAlm`,
 6. Propón el diseño mínimo profesional: primero DETECTAR y mostrar las 3 cifras (total, suma por almacenes, IMEI físicos por almacén/huérfanos), y solo reparar cuando la fuente de verdad sea inequívoca. Si recomiendas RPC para cuadrar, explica qué debe ser atómico, qué debe quedar como incidencia manual y cuál es el peor camino de falla/concurrencia.
 
 No programes todavía, no cambies producción. Quiero primero cerrar contigo los invariantes exactos y medir cuántos descuadres REALES existen ahora mismo, separados por organización/producto y sin modificar ningún dato.
+## Claude — 2026-08-08 19:45
+
+Diagnóstico puro, como pediste — **cero código, cero cambio en producción**, solo `SELECT` contra el proyecto real
+(`tnwsgcxurfyuszxsewsn`) y lectura del código real de `parches.js`. Voy pregunta por pregunta.
+
+### 1) ¿Un IMEI `reservado` sigue contando como existencia física?
+
+**Los 3 estados reales están fijos por un `CHECK` constraint** (`pos_seriales_estado_check`):
+`disponible`, `reservado`, `vendido` — no hay un 4º valor posible.
+
+Leí las 3 RPC completas (`pos_reservar_seriales`/`pos_confirmar_seriales_reservados`/
+`pos_liberar_reserva_seriales`) y el flujo de venta (`nxPosConfirmar`, línea ~18918-19022) de punta
+a punta: **`pos_reservar_seriales` NUNCA toca `pos_productos.stock` ni `pos_stock_almacen`** — solo
+cambia `estado`, `reserva_token`, `reserva_hasta`. El número (`pos_productos.stock`) se descuenta
+recién DESPUÉS, cuando la venta ya está confirmada (`confirmarImeisReservados` puso `estado=
+'vendido'`), vía `moverStock(p,'venta',-cant,...)` en la línea 19022.
+
+**Respuesta:** NO, el total NO se descuenta al reservar. Durante la ventana de reserva (máx. 60s,
+`reserva_hasta = now()+60s`, con limpieza automática de vencidas), `estado='disponible'` YA excluyó
+esa unidad, pero `pos_productos.stock` **todavía no bajó** — así que `stock > count(disponible)` en
+ese instante es **normal y esperado**, no un descuadre real. Medí las reservas activas ahora mismo:
+**0 en toda la base** — confirma que el TTL está limpiando bien, no hay nada acumulado.
+
+**Recomendación:** para el chequeo de "¿cuadra?", contar `disponible + reservado` como "físicamente
+presente todavía" (nadie se lo llevó de la tienda), y dejar `disponible` solo como filtro de "se
+puede vender ahora mismo" (que es distinto y ya está bien como está).
+
+### 2) Multi-almacén: invariante por almacén + `almacen_id IS NULL`
+
+Confirmado 2 organizaciones con multi-almacén activo (2 almacenes cada una). Medí de verdad, sin
+tocar nada, contra el ÚNICO producto con IMEI reales que existe hoy en la base
+(`CELULAR IPHONE 11 NORMAL`, org con "Almacén Principal" + "MOCA"):
+
+| Medición | Resultado real |
+|---|---|
+| `pos_productos.stock` (total) | 6 |
+| Σ `pos_stock_almacen.stock` (Principal 6 + MOCA 1) | 7 |
+| IMEI reales `disponible` de ese producto | 1 |
+| IMEI reales `vendido` de ese producto | 1 |
+| IMEI con `almacen_id IS NULL` | **2 de 2** (los dos únicos que existen) |
+
+**Los 2 únicos IMEI reales de este producto están huérfanos** (`almacen_id` nulo) — ninguno de los 2
+almacenes tiene NI UN SOLO IMEI real asignado, así que el 6 y el 1 de la tabla por-almacén son
+números sin ningún IMEI físico detrás. Y de paso: el total (6) tampoco coincide con la suma de sus
+propios almacenes (7) — **3 invariantes distintos rotos a la vez en el mismo producto**, lo que
+apunta a que esos números se escribieron/ajustaron por un camino que nunca pasó por un IMEI real
+(edición manual o dato de antes de que existiera esta regla), no a un bug vivo del código actual.
+
+**Sobre tu preferencia de "incidencia visible, no asignación automática":** de acuerdo, y el propio
+código ya se comporta así — `moverStock` solo toca `pos_stock_almacen` si se le pasa `opts.almacenId`
+explícito; nunca inventa un almacén por defecto.
+
+### 3) Sin multi-almacén: ¿se ignora `pos_stock_almacen`?
+
+Sí, confirmado. `cargarInventario()` carga `_almacenes` desde `pos_almacenes` — si la organización
+nunca creó ninguno, el arreglo queda vacío y `moverStock` nunca entra a la rama que toca
+`pos_stock_almacen` (`if (_almacenes.length && opts.almacenId)`). Para esas organizaciones,
+`pos_stock_almacen` simplemente no tiene filas de sus productos — es el estado normal, `NULL` no es
+una incidencia ahí. El único invariante real en ese caso es `pos_productos.stock = IMEI disponibles`
+(+ reservados, ver punto 1).
+
+### 4) Productos NO serializados — ¿evidencia para forzar `total = Σalmacenes` ahora?
+
+**No, y de hecho ya hay un caso real que confirma que NO conviene tocarlo todavía.** En la misma
+organización de arriba, medí los productos sin IMEI: de 1 producto no-serial, **1 ya está
+descuadrado**: `PANTALLA IPHONE 11 NORMAL`, `stock_total=19` vs `Σalmacenes=20`. Nadie sabe hoy cuál
+de los 2 números es el correcto (19 o 20) sin mirar el historial de movimientos a mano — "reparar"
+esto a ciegas ahora, sin construir primero la detección, arriesgaría fijar el número equivocado.
+Coincido: se queda fuera de esta pieza, `pos_productos.stock` sigue siendo autoritativo para
+artículos normales, tal como ya dice el §5.
+
+### 5) `nxSerialCuadrar` completo (líneas 17744-17751 de `parches.js`)
+
+```js
+window.nxSerialCuadrar = async function (pid) {
+  const prod = _prods.find(x => String(x.id) === String(pid)); if (!prod) return;
+  await liberarReservasImeisVencidas();
+  let disp = 0; try { const r = await getAPI().get('pos_seriales', 'select=id&producto_id=eq.' + pid + '&estado=eq.disponible'); disp = (r || []).length; } catch (e) {}
+  const delta = disp - Number(prod.stock || 0);
+  if (delta === 0) { toast('ok', 'Ya está cuadrado'); return; }
+  try { await moverStock(prod, 'ajuste', delta, { referencia: 'Cuadre de IMEI', motivo: 'Stock ajustado a la cuenta de IMEI disponibles' }); ... } catch (e) { toast('err', 'No se pudo'); }
+};
+```
+
+**Qué toca:** cuenta `estado='disponible'` de TODO el producto, **sin filtrar por almacén** (ni
+siquiera excluye los huérfanos `almacen_id IS NULL` — los cuenta igual). Calcula el delta contra el
+total y llama `moverStock(prod,'ajuste',delta,...)` **sin pasar `almacenId`** — así que solo corrige
+`pos_productos.stock` (el total) y deja un kardex (`tipo:'ajuste'`, motivo "Stock ajustado a la
+cuenta de IMEI disponibles"). **`pos_stock_almacen` nunca se toca.**
+
+**¿Puede generar OTRO descuadre? Sí, y lo puedo mostrar con el dato real de arriba, no es
+hipotético:** si alguien tocara "Cuadrar" hoy sobre `CELULAR IPHONE 11 NORMAL`, el total pasaría de
+6 a 1 (arreglando total-vs-IMEI) — pero Σalmacenes se queda en 7, sin tocar. El descuadre
+"total-vs-almacenes" **pasaría de -1 a -6** — lo empeora en vez de arreglarlo. Confirma tu sospecha
+del punto 5: un cuadre parcial (solo el total) puede dejar peor el otro invariante.
+
+**Otras funciones de "cuadre":** ninguna otra toca `pos_productos.stock`/`pos_stock_almacen`/
+`pos_seriales` (grep del archivo completo). Sí existen otros "resync" en dominios sin relación
+(`resyncEstadoFacturas` para el estado cacheado de facturas del seguro, `resyncCuotasPagos` para
+cuotas del POS) — mismo patrón de idea, cero código compartido con esto.
+
+### 6) Diseño mínimo propuesto
+
+**Fase 1 — DETECTAR, cero escritura.** Una vista/consulta (o pantalla admin) que muestre, por
+producto serializado y por almacén, las cifras reales: total registrado, Σ por almacén, IMEI
+`disponible`+`reservado` (global y por almacén), y el conteo de huérfanos — solo marcando en rojo
+las filas que no cuadran. Nada se toca todavía.
+
+**Fase 2 — reparar SOLO donde la fuente de verdad es inequívoca**, que según lo medido es
+exactamente UN caso: producto serializado, **sin huérfanos** (todo IMEI con `almacen_id` puesto) y,
+si hay multi-almacén, con cada IMEI ya asignado a algún almacén real — ahí "contar los IMEI" es
+verificable por una persona parada en la tienda. Con huérfanos de por medio (como el caso real de
+arriba), NO hay ninguna regla automática segura — queda como incidencia manual, igual que tu
+preferencia del punto 2.
+
+**RPC atómica recomendada (para cuando se programe, no ahora):** un `UPDATE` CONDICIONAL en la misma
+transacción — lee la cuenta de IMEI y el stock actual, y escribe con `WHERE stock = <valor leído>`
+(optimistic check, mismo patrón que ya usa `pos_transferir_stock`) — si el valor cambió entre medio
+(otra venta/ajuste corrió al mismo tiempo), aborta y no pisa nada; nunca "gana el último que
+escribió" a ciegas. Por producto, no por lote completo, para no bloquear de más.
+
+**Peor camino de falla que encontré, real y actual (no del reconciliador futuro — del sistema DE
+HOY):** el `moverStock('venta',...)` que descuenta el total al cerrar una venta (línea 19022) se
+llama **sin `await`** y **cada paso de red dentro de `moverStock` está en su propio `try/catch` que
+se traga el error en silencio** (el `PATCH` a `pos_productos`, el `INSERT` al kardex, y el `upsert`
+a `pos_stock_almacen`, cada uno por separado). Si el `PATCH` falla por lo que sea (una caída de red
+de un segundo), el número local en pantalla ya cambió (`prod.stock = ns` se hace ANTES del `PATCH`)
+y el toast dice éxito — pero la base nunca se movió, y **no queda ningún rastro en ningún lado**, ni
+siquiera en Auditoría. Es probablemente la explicación más plausible de cómo un producto real
+termina con los 3 invariantes rotos a la vez sin que nadie haya hecho nada raro — no hace falta un
+bug del reconciliador para producir esto, el camino normal de vender ya puede. Cualquier RPC de
+cuadre que se programe debería, como mínimo, tener este mismo riesgo en la mira: si corre justo
+entre el `INSERT`/`UPDATE` atómico de una venta y el `moverStock` best-effort que la sigue, podría
+"corregir" el total de más y luego la venta lo vuelve a bajar — doble descuento.
+
+Los datos reales de esta medición (2 IMEI totales en toda la base, 1 producto con los 3 invariantes
+rotos, 1 producto no-serial también descuadrado) confirman que el volumen es chico hoy — es el
+momento correcto para diseñar bien antes de que crezca. Queda en tu cancha.
