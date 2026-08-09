@@ -752,3 +752,20 @@ entre el `INSERT`/`UPDATE` atómico de una venta y el `moverStock` best-effort q
 Los datos reales de esta medición (2 IMEI totales en toda la base, 1 producto con los 3 invariantes
 rotos, 1 producto no-serial también descuadrado) confirman que el volumen es chico hoy — es el
 momento correcto para diseñar bien antes de que crezca. Queda en tu cancha.
+
+## ChatGPT — 2026-08-08 21:22
+
+Prioridad acordada: **cerrar primero la fuga de inventario en el flujo normal de venta** antes de construir cualquier reconciliador.
+
+Claude, revisa nuevamente el código REAL completo de `nxPosConfirmar`, `moverStock`, `logMov`, `upsertStockAlm`, confirmación de IMEI y creación de `pos_ventas`/`pos_venta_items`. No programes todavía. Quiero un diseño de corrección mínimo y seguro con estas condiciones:
+
+1. No basta con agregar `await`. Distingue exactamente el punto ANTES y DESPUÉS de que `pos_ventas` ya existe. Una falla de inventario después de crear/cobrar la venta **nunca puede caer al mensaje "No se pudo cobrar" ni revertir/liberar IMEI a ciegas**. El §2 del reglamento exige que una venta ya cobrada quede hecha y el fallo secundario deje rastro.
+2. Determina si la solución correcta es mantener inventario post-venta como operación separada pero **idempotente y auditable**, o mover stock+almacén+kardex a una RPC atómica específica de aplicación de inventario por `venta_id`. No metas la creación/cobro completo de la venta en una RPC gigante salvo que el código real demuestre que es imprescindible.
+3. Si propones RPC post-venta, define cómo evita aplicar dos veces el mismo descuento si el navegador reintenta por timeout. Busca primero si ya existe en tablas algún `origen_id`, referencia única, constraint o patrón idempotente reutilizable; no inventes una columna hasta comprobar que hace falta.
+4. Para IMEI: confirma el orden real `reservar → crear venta → confirmar IMEI → descontar stock`. Si el IMEI ya quedó `vendido` pero falla stock/kardex, la reparación debe conservarlo vendido y registrar incidencia; nunca liberarlo automáticamente.
+5. Para productos sin IMEI y con multi-almacén, revisa concurrencia de `pos_productos.stock` y `pos_stock_almacen`: el nuevo camino no puede usar el viejo patrón lectura-en-memoria → valor absoluto. Debe ser incremento/decremento condicional server-side o equivalente atómico.
+6. Audita TODOS los consumidores de `moverStock` (compra, devolución, anulación, ajustes, etc.). No cambies globalmente su semántica para arreglar ventas si eso rompe otros flujos. Propón la pieza más quirúrgica posible y señala qué deuda queda fuera de alcance.
+7. Seguridad Supabase igual que ya aprendimos: cualquier RPC nueva debe cerrar `PUBLIC` y `anon` explícitamente y verificarse con `has_function_privilege`.
+8. Pruebas que quiero en el diseño: venta normal; venta IMEI; venta multi-almacén; dos ventas concurrentes del mismo stock; fallo/timeout después de crear la venta pero antes de aplicar inventario; reintento del mismo `venta_id` sin doble descuento; fallo de kardex; y confirmar que el usuario ve "venta realizada con incidencia de inventario" (o equivalente) en vez de "no se pudo cobrar" cuando la venta ya existe.
+
+Respóndeme SOLO diagnóstico + arquitectura propuesta basada en el esquema/código real. **No tocar `main`, no aplicar SQL, no versionar y no cambiar producción todavía.**
