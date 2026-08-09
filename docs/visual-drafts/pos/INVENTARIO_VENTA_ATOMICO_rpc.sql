@@ -13,15 +13,26 @@
 -- 2) Idempotencia con UN candado: pos_ventas.inventario_aplicado, marcado en un UPDATE condicional
 --    ANTES de tocar nada más, dentro de la MISMA transacción — si algo más abajo falla (RAISE),
 --    Postgres revierte también esa bandera (semántica estándar de una función sin bloque EXCEPTION).
+--    El corte de la migración deja las ventas HISTÓRICAS en `true` (nunca se re-procesan) y las
+--    NUEVAS en `false` por el DEFAULT de la columna — ver INVENTARIO_VENTA_ATOMICO_migracion.sql.
 -- 3) Lee TODO del lado del servidor por venta_id — nunca recibe el carrito del cliente. Para
 --    productos con IMEI, la cantidad real es la cuenta de pos_seriales.estado='vendido' ligados a
 --    esa venta+producto (no lo pedido) — así una confirmación de IMEI incompleta nunca descuenta de
---    más de lo que en verdad quedó vendido.
+--    más de lo que en verdad quedó vendido. Si la cuenta real NO calza con lo que pos_venta_items
+--    dice que se pidió, es incidencia — NUNCA se aplica parcial (regla nueva, punto 2 de la revisión
+--    de ChatGPT del 2026-08-09 07:52: evita que una unidad quede huérfana para siempre si el IMEI
+--    se corrige después y el reintento queda bloqueado por la idempotencia).
 -- 4) Decrementos RELATIVOS (`stock = stock - x` con `x <= stock` en el WHERE) — nunca lectura-en-
 --    memoria → valor absoluto (la causa real del lost-update entre 2 ventas concurrentes).
--- 5) Todo o nada por venta completa (no por línea): si CUALQUIER línea (total o por almacén) no
---    alcanza, o el kardex falla, el RAISE revierte TODO lo que esta llamada llevaba hecho —
---    incluidas las líneas anteriores del mismo loop y la bandera inventario_aplicado.
+-- 5) Todo o nada por venta completa (no por línea): si CUALQUIER línea (total, por almacén, o
+--    seriales incompletos) no calza, o el kardex falla, el RAISE revierte TODO lo que esta llamada
+--    llevaba hecho — incluidas las líneas anteriores del mismo loop y la bandera inventario_aplicado.
+-- 6) La venta debe tener al menos 1 fila real en pos_venta_items antes de darse por aplicada (punto 3
+--    de la misma revisión) — el INSERT de items en nxPosConfirmar es best-effort con su propio
+--    catch; si ese INSERT falló del todo, la venta quedaría cobrada + marcada "aplicada" para
+--    siempre sin haber tocado nunca el stock, sin este candado. Una venta 100% de servicios SÍ
+--    puede terminar en 0 líneas de INVENTARIO (los servicios no cuentan), pero debe tener sus
+--    filas de pos_venta_items — 0 items en absoluto es la incidencia real.
 
 create or replace function public.pos_aplicar_inventario_venta(p_venta_id uuid)
 returns jsonb
@@ -65,11 +76,20 @@ begin
     return jsonb_build_object('ok', true, 'ya_aplicado', true, 'lineas', 0);
   end if;
 
+  -- Candado nuevo (punto 3): la venta debe tener AL MENOS 1 fila real de items. Si el INSERT de
+  -- pos_venta_items en nxPosConfirmar falló por completo (best-effort, con su propio catch), esto
+  -- lo atrapa aquí en vez de dar la venta por "aplicada" sin haber tocado nunca el inventario.
+  if not exists (select 1 from pos_venta_items where venta_id = p_venta_id) then
+    raise exception 'INVENTARIO_VENTA_SIN_ITEMS';
+  end if;
+
   -- Una fila por producto real de la venta (los combos repiten producto_id — se agrupan solos por
   -- el `group by` implícito de las subconsultas escalares de abajo). Servicios quedan fuera: nunca
   -- manejan stock, igual que el resto del sistema.
   for v_linea in
     select p.id as producto_id, p.nombre, p.serial,
+           (select coalesce(sum(vi.cantidad), 0) from pos_venta_items vi
+             where vi.venta_id = p_venta_id and vi.producto_id = p.id) as esperado,
            case when p.serial then
              (select count(*)::numeric from pos_seriales s
                where s.producto_id = p.id and s.venta_id = p_venta_id and s.estado = 'vendido')
@@ -82,6 +102,15 @@ begin
        and p.tipo <> 'servicio'
        and p.id in (select distinct vi2.producto_id from pos_venta_items vi2 where vi2.venta_id = p_venta_id)
   loop
+    -- Candado nuevo (punto 2): para serializados, lo REALMENTE confirmado (IMEI en estado
+    -- 'vendido') debe calzar EXACTO con lo que el carrito pidió. Si no calza (confirmación de
+    -- IMEI incompleta), es incidencia — se revierte TODA la aplicación, no se descuenta parcial.
+    -- Los IMEI/venta_id existentes NUNCA se tocan ni se liberan aquí — la RPC solo lee pos_seriales.
+    if v_linea.serial and v_linea.esperado <> v_linea.cantidad then
+      raise exception 'INVENTARIO_SERIALES_INCOMPLETOS: % (esperado %, confirmado %)',
+        v_linea.nombre, v_linea.esperado, v_linea.cantidad;
+    end if;
+
     v_cant := v_linea.cantidad;
     if v_cant is null or v_cant <= 0 then continue; end if;
     v_n_lineas := v_n_lineas + 1;
