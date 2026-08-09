@@ -769,3 +769,236 @@ Claude, revisa nuevamente el código REAL completo de `nxPosConfirmar`, `moverSt
 8. Pruebas que quiero en el diseño: venta normal; venta IMEI; venta multi-almacén; dos ventas concurrentes del mismo stock; fallo/timeout después de crear la venta pero antes de aplicar inventario; reintento del mismo `venta_id` sin doble descuento; fallo de kardex; y confirmar que el usuario ve "venta realizada con incidencia de inventario" (o equivalente) en vez de "no se pudo cobrar" cuando la venta ya existe.
 
 Respóndeme SOLO diagnóstico + arquitectura propuesta basada en el esquema/código real. **No tocar `main`, no aplicar SQL, no versionar y no cambiar producción todavía.**
+## Claude — 2026-08-09 (diseño, sin código todavía)
+
+Diagnóstico + arquitectura, como pediste — **cero código, cero SQL aplicado, cero producción tocada**.
+Leí `nxPosConfirmar` completo (línea 18767-19045), `moverStock`/`logMov`/`upsertStockAlm` completos
+(23339-23398), las 4 RPC atómicas reales ya en producción (las 3 de IMEI + `pos_transferir_stock`,
+con `pg_get_functiondef`) y el esquema/RLS real de las 6 tablas involucradas. Voy condición por
+condición.
+
+### 1) El punto exacto antes/después de que `pos_ventas` ya existe
+
+Confirmado línea por línea, es exacto: `pos_ventas` se crea en la línea 18926
+(`const r = await getAPI().post('pos_ventas', body)`), awaited, dentro de un `try` que SÍ puede
+caer al `catch(e)` externo (19039) — pero **solo hasta ahí**. El propio código ya tiene el candado
+correcto justo debajo (18929-18933, comentario real):
+
+> "A partir de aquí la venta YA EXISTE. Cualquier fallo de la confirmación de IMEI es secundario...
+> Nunca throw desde este bloque."
+
+Y en efecto, la confirmación de IMEI (18934-18950) y el insert de `pos_venta_items` (18977-18986)
+YA siguen ese patrón: cada uno en su PROPIO `try/catch` interno, nunca dejan que un fallo suba al
+`catch` externo. **El problema real es que la línea 19022 (el `moverStock('venta',...)` que
+descuenta el número) rompe ese mismo patrón por OMISIÓN, no por diseño** — no está en su propio
+`try/catch` con incidencia, está en un `for` con `.catch(()=>{})` que traga el error en silencio
+Y sin `await`, así que ni siquiera se sabe si falló a tiempo de avisar.
+
+**Hallazgo que cambia el enfoque de tu condición 1 — "no basta con agregar `await`" es más cierto
+de lo que parece:** el `catch(e)` EXTERNO (19039-19044) tiene este código:
+```js
+} catch (e) {
+  if (!_imeiVentaCreada && _imeiReserva) await liberarReservaImeis(_imeiReserva);
+  toast('err', 'No se pudo cobrar', String(e && e.message || e));
+}
+```
+Si yo simplemente agregara `await` al `moverStock` de la línea 19022 SIN sacarlo de ese bloque
+try/catch general, y `moverStock` lanzara, caería aquí — y aunque el `if` ya blinda contra
+re-liberar el IMEI (`!_imeiVentaCreada` sería `false`, así que no lo libera, correcto), **el toast
+seguiría diciendo "No se pudo cobrar" a un cajero cuya venta YA EXISTE, YA se cobró, y cuyo IMEI ya
+quedó vendido.** Es exactamente la mentira que tu condición 1 prohíbe. La solución no es "agregar
+await" — es sacar la aplicación de inventario de ESE bloque y darle su propio `try/catch` interno,
+copiando el patrón que la confirmación de IMEI y el insert de items YA usan tres líneas más arriba.
+
+### 2) ¿Inventario post-venta separado-pero-idempotente, o RPC atómica por `venta_id`?
+
+**RPC atómica por `venta_id`, no una operación separada en JS.** Investigué primero si bastaba con
+"separado pero idempotente" hecho en JS (leer con `await`, decidir, escribir) — no alcanza: el
+`moverStock` actual YA es "separado" (una llamada aparte del insert de la venta) y el bug de fondo
+no es la separación, es que hace **lectura-en-memoria → valor absoluto** en vez de un incremento/
+decremento atómico del lado del servidor (ver hallazgo de la 5). Ninguna cantidad de `await`/
+`try-catch` en JavaScript arregla una carrera entre dos pestañas/dispositivos — eso solo lo resuelve
+Postgres con un `UPDATE ... SET stock = stock - x` (relativo, no absoluto), exactamente el patrón
+que ya usan las 4 RPC reales que audité.
+
+**No mete la creación de la venta en la RPC** — confirmé que no hace falta: la venta y sus items ya
+se crean bien (secuencial, con su propio manejo de error). Lo único que necesita transacción atómica
+de verdad es el AJUSTE DE INVENTARIO en sí (stock total + por-almacén + kardex), porque son 3+
+escrituras relacionadas que hoy se hacen sueltas. Propuesta: una RPC nueva y chica,
+`pos_aplicar_inventario_venta(p_venta_id uuid)`, llamada UNA vez por venta (no una vez por línea del
+carrito como hoy) — lee `pos_venta_items` y `pos_seriales` **del lado del servidor** por `venta_id`
+(nunca recibe el carrito del cliente) y hace todo el ajuste en una sola transacción de Postgres.
+
+### 3) Reintento sin doble descuento
+
+Auditado primero si ya existe algo reusable — **no existe nada**: `pos_venta_items` no tiene ningún
+constraint único ligado a `venta_id`+`producto_id` que sirviera para detectar "esta línea ya se
+aplicó"; `pos_inv_movimientos` no tiene NINGÚN campo de referencia estructurada a `venta_id` (solo un
+`referencia` de texto libre, no indexado, no único); el único `UNIQUE` real en las 6 tablas es
+`pos_stock_almacen(producto_id, almacen_id)` (sirve para el `upsert` per-almacén, no para
+idempotencia de venta). Confirmé esto con `pg_constraint` real, no de memoria.
+
+**Sí hace falta una columna nueva — la más chica posible: `pos_ventas.inventario_aplicado boolean
+not null default false`.** El patrón (el mismo `UPDATE` condicional que ya usan las 4 RPC reales):
+
+```sql
+update pos_ventas set inventario_aplicado = true
+ where id = p_venta_id and inventario_aplicado = false
+returning id into v_marcada;
+
+if v_marcada is null then
+  -- venta no existe, o ya se aplicó antes — cualquiera de los dos casos es "no hay nada que hacer"
+  return jsonb_build_object('ok', true, 'ya_aplicado', true);
+end if;
+
+-- de aquí para abajo, decrementos + kardex, TODOS en la misma transacción de la función.
+-- si CUALQUIER paso hace RAISE, Postgres revierte TODO — incluida la bandera que se acaba
+-- de poner en true. Un reintento la vuelve a encontrar en false y puede repetir todo el
+-- trabajo sin miedo a duplicar nada.
+```
+
+Un solo `UPDATE` condicional decide en una sola operación atómica "¿ya se hizo esto?" — y si el
+resto de la función falla a mitad de camino, el rollback automático de la transacción deshace
+también esa bandera, así que un timeout de red no deja las cosas a medias silenciosamente.
+
+### 4) Orden real y qué pasa si falla DESPUÉS de que el IMEI ya quedó vendido
+
+Confirmado el orden exacto, en el código real (18918-19022): **reservar → crear venta → confirmar
+IMEI → [ahora: aplicar inventario].** No hace falta reordenar nada — la nueva RPC se inserta
+exactamente donde hoy está el `for` de la línea 19021-19023, sin mover ni la reserva ni la
+confirmación de IMEI.
+
+Y ya hay un precedente EXACTO de "consérvalo vendido, registra incidencia, nunca lo liberes solo" —
+es literalmente lo que la propia confirmación de IMEI ya hace 15 líneas más arriba (18941-18942):
+si la confirmación no cubre lo esperado, `fijarReservaImeisAVenta` liga el IMEI a la venta (para que
+el TTL nunca lo vuelva a soltar) y deja `logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', ...)`. La nueva
+pieza de inventario debe copiar EXACTAMENTE ese mismo patrón, no inventar uno nuevo: si la RPC de
+inventario falla, el IMEI se queda tal cual estaba (ya `vendido`, ligado a la venta — la RPC de
+inventario ni siquiera toca `pos_seriales.estado`, solo LEE de ahí para saber cuánto descontar), y
+se deja `logAudit('POS_VENTA_INVENTARIO_PENDIENTE', ...)` con el número de factura.
+
+**Precisión extra que encontré auditando esto, no pedida explícita pero relevante a tu regla del §5
+("stock total = cuenta de IMEI disponibles"):** para productos con serial, la cantidad a descontar
+NO debería salir de `pos_venta_items.cantidad` (lo que se pidió) sino de
+`count(*) from pos_seriales where venta_id=p_venta_id and producto_id=X and estado='vendido'` (lo
+que de VERDAD quedó vendido). Hoy el `moverStock` de la línea 19022 usa ciegamente `it.cantidad` del
+carrito — así que en el escenario de "incidencia de IMEI sin confirmar completo" (confirmados <
+esperados), el número SÍ se descuenta como si los 3 se hubieran vendido aunque solo 2 quedaran
+`vendido` de verdad. Contar los `pos_seriales.estado='vendido'` reales en vez del pedido del carrito
+cierra ese hueco de raíz, sin ningún campo nuevo — ya existe el dato, solo hay que leerlo bien.
+
+### 5) Multi-almacén: por qué "lectura-en-memoria → valor absoluto" es el bug real
+
+Este es el hallazgo central, y lo puedo mostrar con el código exacto (`moverStock`, 23370-23387):
+
+```js
+const prev = Number(prod.stock || 0);   // <- lee de _prods, el arreglo EN MEMORIA del navegador
+let ns = prev + delta;
+...
+prod.stock = ns;                         // <- optimista, ANTES de que el servidor confirme nada
+try { await getAPI().patch('pos_productos', 'id=eq.' + prod.id, { stock: ns }); } catch (e) {}
+```
+
+`prod` es una referencia al mismo objeto en `_prods`, cargado UNA vez al abrir el POS (o la última
+vez que se recargó). Si dos ventas del MISMO producto se confirman casi al mismo tiempo (dos
+cajeros, o dos pestañas del mismo cajero), **las dos parten del mismo `prev` leído en memoria**
+(digamos, stock=10), las dos calculan su propio `ns` (una calcula 9, la otra calcula 9 también si
+ambas venden 1 — o cada una calcula su propio resultado si venden distinto), y las dos mandan un
+`PATCH {stock: ns}` con un **valor ABSOLUTO**. Gana la que responde último — su valor absoluto pisa
+por completo el de la otra. **No es que el stock quede negativo (eso sería visible) — es que una de
+las dos ventas desaparece del conteo sin dejar ningún rastro de que pasó.** Es la misma clase exacta
+de bug que ya se cerró en la migración de transferencias (`transferencia-imei-atomica`) y en las 3
+RPC de reserva de IMEI — aquí simplemente nunca se cerró para el número de `pos_productos.stock` ni
+para `pos_stock_almacen` en el camino de venta.
+
+**El arreglo correcto (y ya probado en producción, mismo patrón de `pos_transferir_stock`):** dentro
+de la RPC, `update pos_productos set stock = stock - v_cant where id = v_pid returning stock into
+v_stock_nuevo` — un decremento RELATIVO que Postgres aplica de forma atómica sobre el valor real de
+la fila en ese instante, nunca sobre una copia leída hace rato en el navegador. Mismo patrón para
+`pos_stock_almacen` (ya lo hace `pos_transferir_stock`, con `on conflict` para crear la fila si no
+existe).
+
+**Una decisión de negocio que dejo abierta, no la tomo por mi cuenta:** hoy `moverStock('venta',...)`
+se llama con `piso0:false` — permite que el stock quede negativo. Con un decremento server-side
+atómico hay 2 caminos honestos: (a) seguir permitiendo negativo (mismo comportamiento de hoy, la
+venta nunca se bloquea por esto — el pre-chequeo de existencia de la línea 18792-18808 ya debería
+evitarlo en el camino normal, y si pasa es una carrera real que debería verse, no esconderse); o
+(b) exigir `stock >= v_cant` en el `WHERE` y, si no alcanza, NO fallar la venta (ya se cobró) sino
+dejarlo como incidencia (mismo patrón que el punto 4). Me inclino por (a) — es el comportamiento ya
+decidido y documentado (`piso0:false`, con su propio comentario explícito en el código) — pero lo
+señalo para que se confirme, no lo cambio en silencio.
+
+### 6) Auditoría de TODOS los consumidores de `moverStock` — qué entra, qué queda fuera
+
+13 sitios reales (grep completo, no de memoria). El mismo patrón (venta 19022, anulación 20831,
+devolución 21003, compra 22198) — moverStock disparado SIN `await` y con `.catch(()=>{})` justo
+DESPUÉS de que la escritura irrevocable ya se hizo (`pos_ventas`/`pos_devoluciones`/`pos_compras` ya
+committed) — se repite en los 4. Los otros 9 (registro/borrado de IMEI, cuadre, edición de producto,
+importaciones CSV/Infoplus, ajuste manual, reversa de compra) ya usan `await` en su mayoría, pero
+TODOS comparten la misma raíz (`moverStock` lee `prod.stock` de memoria), así que la carrera de la
+5 los afecta a todos, no solo a la venta.
+
+**Propuesta quirúrgica: UNA RPC nueva, `pos_aplicar_inventario_venta`, usada SOLO en el reemplazo de
+la línea 19022 (venta).** No toco `moverStock` en absoluto — sus otros 12 consumidores siguen
+exactamente igual que hoy, cero riesgo de romper compras/devoluciones/ajustes/CSV que hoy funcionan.
+
+**Deuda que queda explícitamente fuera de esta pieza, para que quede escrita y no se pierda:**
+- **Anulación (20827-20832) y Devolución (20976-21013):** mismo patrón fire-and-forget, mismo riesgo
+  de carrera — son la imagen espejo de la venta (reversan inventario en vez de descontarlo). El
+  candado atómico que se construya para venta se puede generalizar después
+  (`pos_aplicar_inventario_venta(p_venta_id, p_reverso boolean)` o una RPC hermana) — pero es la
+  SIGUIENTE pieza, no esta.
+- **Compra (22198) + registro de IMEI de la compra (22201):** son 2 escrituras DESACOPLADAS para lo
+  que debería ser un solo evento ("llegó mercancía") — el `POST` a `pos_seriales` (nuevo IMEI
+  disponible) y el `moverStock('compra',...)` (sube el número) no están coordinados entre sí. Esto
+  es, con alta probabilidad, la causa real del descuadre que ya medí en la investigación anterior
+  (el único producto con IMEI real tiene sus 2 seriales huérfanos y el total no cuadra con ninguna de
+  las 2 fuentes) — si uno de los 2 `POST`/`PATCH` falla y el otro no, queda exactamente ese tipo de
+  hueco. Fuera de alcance de esta pieza, pero es el candidato más fuerte para la siguiente.
+- **Compra eliminada (22253-22268):** este es DISTINTO a los demás — dispara `moverStock` (reversa)
+  ANTES del `DELETE` de `pos_compras` (los otros 4 lo hacen DESPUÉS de su escritura irrevocable). Es
+  un orden invertido, aislado, que vale la pena señalar aparte cuando se toque este flujo.
+- **El resto (IMEI mgmt, cuadre, edición de producto, CSV/Infoplus, ajuste manual):** menor volumen,
+  casi siempre un solo admin trabajando (no 2 cajeros compitiendo por el mismo producto al mismo
+  tiempo), y ya usan `await` — comparten la raíz arquitectónica pero el riesgo práctico es bajo hoy.
+  No se tocan.
+
+### 7) Seguridad de la RPC nueva
+
+Mismo candado que ya se aplicó y verificó en `pos_transferir_stock`/las 3 de IMEI:
+`revoke all on function pos_aplicar_inventario_venta(uuid) from public, anon; grant execute ... to
+authenticated;`, verificado después con `has_function_privilege('anon', ..., 'execute')=false` y
+`'authenticated'=true`.
+
+**Un detalle que audité y no doy por sentado:** revisé el RLS real de las 6 tablas que la RPC
+tocaría (`pos_productos`, `pos_stock_almacen`, `pos_inv_movimientos`, `pos_venta_items`,
+`pos_seriales`, `pos_ventas`) — las 6 tienen la MISMA política exacta:
+`mi_rol() is not null AND organizacion_id = mi_organizacion()`. Es idéntica a la de `pos_seriales`,
+que las 3 RPC de reserva/confirmación/liberación ya usan **SIN `SECURITY DEFINER`** (corren como
+invoker, respetando RLS del que llama). Por esa misma razón, esta RPC nueva **no debería necesitar
+`SECURITY DEFINER`** — cualquier cajero logueado ya tiene permiso de escritura directa en las 6
+tablas de todos modos (así funciona hoy el código del navegador). `pos_transferir_stock` sí usa
+`SECURITY DEFINER`, pero no until confirmar por qué (puede que solo sea por tocar
+`pos_secuencias` en un contexto distinto) — lo dejo señalado para no copiarlo a ciegas: si al
+programar de verdad la RPC falla por RLS bajo invoker, ahí se revisa, no se asume `DEFINER` de
+entrada solo porque el precedente lo usa.
+
+### 8) Las pruebas del diseño
+
+Mapeadas a lo de arriba:
+
+| Prueba | Cómo la cubre el diseño |
+|---|---|
+| Venta normal | RPC decrementa `pos_productos.stock` de forma relativa, deja 1 fila de kardex por producto |
+| Venta con IMEI | Cantidad a descontar = `count(pos_seriales.estado='vendido' and venta_id=X)`, no el pedido del carrito |
+| Venta multi-almacén | Mismo `UPDATE` relativo también sobre `pos_stock_almacen`, con `on conflict` como ya hace `pos_transferir_stock` |
+| 2 ventas concurrentes del mismo stock | Cada `UPDATE stock = stock - x` es atómico en Postgres — ninguna pisa a la otra, nunca se pierde un descuento |
+| Timeout/fallo DESPUÉS de crear la venta, ANTES de aplicar inventario | Try/catch PROPIO (no el externo) — la venta queda cobrada, se loguea `POS_VENTA_INVENTARIO_PENDIENTE`, el cajero ve "incidencia", nunca "no se pudo cobrar" |
+| Reintento del mismo `venta_id` sin doble descuento | `inventario_aplicado` en `WHERE`, atómico — un segundo intento no encuentra fila que actualizar, devuelve `ya_aplicado:true` sin tocar nada más |
+| Fallo de kardex | Está en la MISMA transacción que el decremento — si el `INSERT` a `pos_inv_movimientos` falla, Postgres revierte también el decremento (nunca queda el número bajado sin su kardex) |
+| Usuario ve "incidencia de inventario" en vez de "no se pudo cobrar" | El `catch` de la RPC vive DENTRO del bloque "la venta ya existe" (mismo patrón ya usado para IMEI/items), nunca sube al `catch` externo de 19039 |
+
+Los 3 consumidores restantes fuera de alcance (anulación, devolución, compra) quedan en la cola,
+priorizados por lo que medí como el descuadre real más probable (compra + seriales desacoplados).
+
+Queda en tu cancha para decidir si programamos esto ahora o seguimos con otra prioridad.
