@@ -1,7 +1,12 @@
 {
-  "version": "56.21",
+  "version": "56.22",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.22",
+      "fecha": "2026-08-10",
+      "texto": "ARREGLADO (importante): el descuento de inventario al COBRAR una venta ahora es atómico y del lado del servidor. Antes lo hacía el navegador leyendo el stock en memoria y escribiendo el valor final — bajo ventas simultáneas del mismo producto (ej. 2 cajeros vendiendo el último celular al mismo tiempo, o en 2 dispositivos distintos), un descuento podía perderse sin dejar rastro (el cobro se registraba bien, pero el stock solo bajaba una vez). Ahora una función del servidor decrementa siempre en relativo (nunca lee-y-escribe un valor absoluto) y todo-o-nada por venta completa: si algo no calza (falta stock, un IMEI sin confirmar), no se descuenta NADA — la venta YA COBRADA se queda tal cual, nunca se bloquea ni se revierte el cobro, solo queda marcada para revisión con el aviso 'Venta realizada — inventario pendiente de revisión'. Cambio invisible en el día a día; si alguna vez ves ese aviso, es esta pieza avisando que hay que revisar esa venta a mano."
+    },
     {
       "v": "56.21",
       "fecha": "2026-08-08",
