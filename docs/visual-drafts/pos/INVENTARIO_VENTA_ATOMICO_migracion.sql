@@ -4,44 +4,49 @@
 -- true dentro de la MISMA transacción que decrementa stock + kardex. Si esa función falla
 -- (RAISE), Postgres revierte también esta bandera — nunca queda "aplicado" a medias.
 --
--- CORTE DE MIGRACIÓN SEGURO (revisión de ChatGPT, punto 1, 2026-08-09 07:52) — 2 pasos, no 1:
+-- CORTE DE MIGRACIÓN SEGURO — 2da vuelta (revisión de ChatGPT, 2026-08-09 11:38): el diseño
+-- anterior (DEFAULT true → luego SET DEFAULT false, ver historial en git) tenía una carrera
+-- real que ChatGPT señaló con razón: después del 2do ALTER, cualquier PESTAÑA/DISPOSITIVO que
+-- siguiera corriendo el JS VIEJO (cacheado, sin recargar) crearía una venta con
+-- `inventario_aplicado=false` (porque ya rige el default nuevo) pero SIN llamar nunca a la RPC
+-- — esa venta ya había descontado su inventario por el camino viejo (`moverStock`), y quedaba
+-- indistinguible de una venta real pendiente de la RPC. Una llamada manual o de un reconciliador
+-- futuro sobre esa venta podría volver a descontarla — doble descuento real, no teórico.
 --
--- Paso 1: agrega la columna con DEFAULT true. Como el default es una CONSTANTE, Postgres
---   rellena TODAS las filas ya existentes con `true` en el mismo instante del ALTER — nunca
---   quedan en `false`. Cualquier venta histórica (ya contabilizada por el moverStock() viejo)
---   queda marcada "ya aplicada": si alguien llama la RPC sobre su id por error/manual, la
---   idempotencia la bloquea de inmediato — nunca vuelve a descontar su inventario.
--- Paso 2: cambia el DEFAULT de la columna a false, SIN tocar ninguna fila existente (cambiar
---   un DEFAULT nunca reescribe filas — solo rige los INSERT futuros que omitan la columna).
---   De aquí en adelante, CUALQUIER venta nueva que se inserte sin mencionar esta columna
---   (el INSERT de nxPosConfirmar en parches.js NO la menciona, a propósito — ver más abajo)
---   arranca en `false`, lista para que la RPC la procese.
---
--- Los 2 pasos van en LA MISMA transacción de migración (ACCESS EXCLUSIVE lock de ALTER TABLE
--- bloquea escrituras concurrentes durante toda la transacción) — no existe ninguna ventana
--- intermedia donde otra sesión pueda ver la tabla con el default en `true` y con el default
--- en `false` a la vez, ni insertar una fila entre los 2 pasos.
---
--- Por qué esto hace el ORDEN DE DESPLIEGUE (SQL vs JS) irrelevante para la seguridad de los
--- datos (aunque SQL-primero sigue siendo la práctica recomendada, para no generar incidencias
--- de "RPC no existe" mientras el JS viejo ya está en producción):
---   - El JS (nuevo o viejo) NUNCA escribe `inventario_aplicado` en el INSERT de `pos_ventas`
---     — deliberadamente, para no acoplar el código al orden de despliegue. El valor SIEMPRE
---     lo decide el DEFAULT de la columna en ese instante.
---   - Si el SQL se aplica ANTES que el JS nuevo: cualquier venta creada en el intervalo por el
---     JS VIEJO (que sigue llamando moverStock() fire-and-forget) recibe `inventario_aplicado
---     =false` (ya rige el default nuevo) — pero como nada en el sistema hace un barrido
---     automático que llame la RPC sobre ventas viejas, esa venta simplemente nunca es tocada
---     por la RPC; su inventario ya quedó correcto por el camino viejo (moverStock). Inerte,
---     no hay ningún riesgo de doble descuento.
---   - Si el JS nuevo se despliega ANTES que el SQL (la RPC todavía no existe): la venta se crea
---     igual (el INSERT de pos_ventas no depende de esta columna en absoluto), y la llamada a
---     `rpc/pos_aplicar_inventario_venta` falla con "función no existe" — el propio try/catch
---     del bloque nuevo en `nxPosConfirmar` la atrapa, registra `POS_VENTA_INVENTARIO_PENDIENTE`
---     y muestra el toast de incidencia — la venta se cobra igual, sin bloquear al cajero.
+-- ARREGLO DE RAÍZ: el DEFAULT se queda en `true` PARA SIEMPRE — un solo ALTER, sin 2do paso:
 
 alter table public.pos_ventas
   add column if not exists inventario_aplicado boolean not null default true;
 
-alter table public.pos_ventas
-  alter column inventario_aplicado set default false;
+-- Con esto:
+-- - Backfill instantáneo de las ventas históricas: como `true` es una constante, Postgres
+--   rellena TODAS las filas ya existentes en el mismo instante del ALTER — quedan "ya aplicadas"
+--   de una, sin ningún UPDATE aparte con su propia ventana.
+-- - CUALQUIER cliente/pestaña con JS VIEJO en caché (que no conoce esta columna) sigue creando
+--   ventas SIN mencionar `inventario_aplicado` en el INSERT — y por el default, esas ventas
+--   nacen en `true`. Como su inventario YA se descontó por `moverStock` (el camino viejo, que
+--   sigue intacto en ese código), quedar en `true` es exactamente correcto: el candado de
+--   idempotencia de la RPC (`UPDATE ... WHERE inventario_aplicado=false`) las bloquea de
+--   inmediato si alguien las toca por error — nunca las vuelve a tocar.
+-- - El JS NUEVO (`nxPosConfirmar` en `parches.js`) es la ÚNICA pieza del sistema que manda
+--   `inventario_aplicado: false` EXPLÍCITO en el `body` del INSERT — confirmado con
+--   `grep -n "post('pos_ventas'" parches.js`: es la única llamada POST real a esta tabla en todo
+--   el archivo. Esa venta, y solo esa, queda `false` — lista para que la RPC la procese después.
+--
+-- Esto elimina la carrera de raíz, no la esconde: ya NO depende de en qué orden llegan el SQL y
+-- el JS nuevo a producción, ni de que ningún cliente viejo termine de recargar. Un dispositivo
+-- puede seguir en el código de ayer indefinidamente y nunca produce una fila ambigua — porque el
+-- `false` explícito solo lo escribe el código que de verdad sabe llamar a la RPC después.
+--
+-- Orden de despliegue (sigue sin importar para la seguridad de los datos, con más margen que
+-- antes — ya no hay ninguna ventana de segundos que proteger):
+--   - SQL primero: el JS viejo sigue creando ventas en `true` (comportamiento de siempre, correcto
+--     indefinidamente). Cuando llega el JS nuevo, sus ventas nacen en `false` y la RPC ya existe
+--     para procesarlas — sin incidencia.
+--   - JS nuevo primero (la RPC todavía no existe): la venta se crea igual (el INSERT de
+--     `pos_ventas` no depende de la RPC para nada), pero queda con `false` sin que nada la
+--     procese todavía — la llamada a `rpc/pos_aplicar_inventario_venta` falla con "función no
+--     existe", el propio `try/catch` de `nxPosConfirmar` la atrapa como incidencia
+--     (`POS_VENTA_INVENTARIO_PENDIENTE`) y el cajero ve "Venta realizada — inventario pendiente
+--     de revisión" — el cobro nunca se bloquea. Esa venta queda pendiente hasta que llegue el SQL
+--     y alguien la reintente (o un reconciliador futuro, fuera de alcance de esta pieza).

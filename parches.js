@@ -18908,7 +18908,17 @@
       tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
       vendedor_id: vendId, vendedor_nombre: vendNom,
       almacen_id: (_almacenes.length && _almacenSel) ? _almacenSel : null,
-      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
+      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin(),
+      // Candado de cutover (revisión de ChatGPT, 2026-08-09 11:38 — 2da vuelta): el DEFAULT de
+      // la columna se queda en `true` PARA SIEMPRE (ver INVENTARIO_VENTA_ATOMICO_migracion.sql,
+      // ya no cambia a false). Es ESTE INSERT — el único camino real que crea una venta por el
+      // flujo NUEVO (confirmado por grep: es la única llamada POST a pos_ventas de todo el
+      // archivo) — el que la marca false EXPLÍCITO, para que la RPC la procese después. Cualquier
+      // otro cliente/pestaña con código viejo en caché (que no conoce este campo) sigue naciendo
+      // en `true` por el default — nunca puede quedar en un estado ambiguo entre "ya se descontó
+      // por moverStock" y "pendiente de la RPC", sin depender de en qué orden se desplegaron el
+      // SQL y el JS.
+      inventario_aplicado: false
     };
     if (_facFecha) body.fecha = _facFecha;
     // Candado atómico de IMEI: reservar ANTES de crear la venta. Si el carrito no tiene
