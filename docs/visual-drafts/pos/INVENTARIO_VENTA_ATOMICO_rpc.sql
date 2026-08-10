@@ -13,8 +13,13 @@
 -- 2) Idempotencia con UN candado: pos_ventas.inventario_aplicado, marcado en un UPDATE condicional
 --    ANTES de tocar nada más, dentro de la MISMA transacción — si algo más abajo falla (RAISE),
 --    Postgres revierte también esa bandera (semántica estándar de una función sin bloque EXCEPTION).
---    El corte de la migración deja las ventas HISTÓRICAS en `true` (nunca se re-procesan) y las
---    NUEVAS en `false` por el DEFAULT de la columna — ver INVENTARIO_VENTA_ATOMICO_migracion.sql.
+--    CORREGIDO (2da vuelta, revisión de ChatGPT 2026-08-09 11:38): el DEFAULT de la columna se
+--    queda en `true` PARA SIEMPRE (nunca hay un 2do ALTER que lo cambie a `false`) — así, tanto
+--    las ventas HISTÓRICAS como CUALQUIER cliente/pestaña con JS VIEJO en caché (que no sabe de
+--    esta columna) nacen en `true`, que es correcto porque su inventario ya se descontó por el
+--    camino viejo (`moverStock`). SOLO el JS NUEVO (`nxPosConfirmar` en `parches.js`) manda
+--    `inventario_aplicado: false` EXPLÍCITO en el `body` del INSERT — es la única venta que nace
+--    en `false`, lista para que esta RPC la procese. Ver INVENTARIO_VENTA_ATOMICO_migracion.sql.
 -- 3) Lee TODO del lado del servidor por venta_id — nunca recibe el carrito del cliente. Para
 --    productos con IMEI, la cantidad real es la cuenta de pos_seriales.estado='vendido' ligados a
 --    esa venta+producto (no lo pedido) — así una confirmación de IMEI incompleta nunca descuenta de
