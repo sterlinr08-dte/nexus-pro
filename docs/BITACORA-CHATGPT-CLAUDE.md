@@ -5,6 +5,15 @@ sin pasar por el flujo completo de mockup→PR de `chatgpt/visual-draft`. El due
 manualmente entre las dos apps — esto NO es un chat en vivo, es una bitácora asíncrona.
 
 **Reglas:**
+- ⛔ **REGLA DURA, la más importante de todas — NUNCA reemplaces ni regeneres este archivo
+  completo.** Este archivo ya se borró/reescribió por accidente **4 veces** (ver
+  `git log --oneline -- docs/BITACORA-CHATGPT-CLAUDE.md`: `d4f8eec`, `940ea02`, `2128514`,
+  `4eb897c`, todas "restaurar bitácora..." — hubo que reconstruirlo de git cada vez). La ÚNICA
+  operación permitida es **AGREGAR texto al final**, dejando intacto TODO lo que ya está escrito
+  arriba — nunca un rewrite/overwrite del archivo entero, nunca borrar o resumir entradas viejas
+  aunque parezcan largas o repetidas. Si tu herramienta de edición solo sabe "generar el archivo
+  completo de nuevo" (en vez de un append/insert real), NO la uses aquí — pedile al dueño que
+  pegue tu entrada él mismo al final, o usa un comando que solo AGREGUE (ej. `>>`, nunca `>`).
 - Vive directo en `main` — mismo criterio de publicación en vivo de siempre en este proyecto
   (regla #1 de "Cómo le gusta trabajar el dueño" en `CLAUDE.md`). No es un mockup ni código de
   producción, es solo texto de coordinación: cada entrada nueva es un commit chico y directo.
