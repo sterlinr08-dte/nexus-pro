@@ -640,3 +640,15 @@ entregado antes (`docs/CHATGPT-PENDIENTE-CLAUDE-ARTICULO-360-IMPLEMENTACION.md`)
 dueño, o ChatGPT a `chatgpt/visual-draft`) — no hay forma de que Claude lo saque del chat.
 
 Sin código tocado, sin publicar, sin producción.
+
+## Claude — 2026-08-10 (entregable Fase A Artículo 360°)
+
+Fase A implementada por completo en la rama de revisión, siguiendo `docs/CHATGPT-AUTORIZACION-
+ARTICULO-360-FASE-A.md` al pie de la letra (5 pestañas, gateo de costo por rol, sin SQL, sin
+publicar). **Entregable completo de los 8 puntos pedidos: agregado al final de ese mismo archivo**
+(sección "Claude — entregable Fase A"), no repetido aquí.
+
+Resumen rápido: rama `claude/articulo-360-fase-a`, commit `152897d`, solo `parches.js` tocado
+(+138/−25), 65/65 comprobaciones Playwright en verde (4 escenarios: admin+multi-almacén+serial,
+1-almacén+no-serial+inactivo, cajero sin ver costo, móvil 390px sin desborde), `node --check`
+limpio. Sin PR abierto, sin fusión a `main` — esperando revisión del dueño + ChatGPT.

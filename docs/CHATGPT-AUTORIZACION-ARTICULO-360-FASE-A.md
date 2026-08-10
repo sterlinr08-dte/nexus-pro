@@ -44,3 +44,107 @@ Cuando termines la Fase A en la rama separada, deja:
 8. cualquier diferencia inevitable respecto al mockup por datos/funciones reales.
 
 No fusiones ni publiques hasta revisión final del dueño + ChatGPT.
+
+---
+
+## Claude — entregable Fase A (2026-08-10)
+
+Implementado en rama separada, **sin tocar `main` funcional**. Los 8 puntos pedidos:
+
+### 1. Rama
+`claude/articulo-360-fase-a`
+
+### 2. Commit SHA
+`152897d043ecdd851d3bba02cb8bef6af82c5ace`
+
+### 3. Diff exacto contra `main`
+Un solo archivo tocado: `parches.js` — **+138 / −25** líneas (`git diff --stat` contra
+`main` antes de este commit: `origin/main@6802289`). Nada más en el repo cambió (sin
+`version.json`, sin `.sql`, sin workflows, sin secrets).
+
+### 4. Funciones/rangos tocados
+- `puedeVerCosto360()` — **nueva**, línea 16248 (junto a `puedeVerMin()`). Helper
+  dedicado y explícito solo para esta vista, reusa el criterio de rol de
+  `puedeVerMin()` (`admin`/`gerente`) sin ampliar su semántica global, tal como pedía
+  la autorización.
+- `window.nxArticulo360(id)` — **reescrita completa**, líneas 21610-21820. Mismas 6
+  consultas de siempre (compra_items, compras, venta_items, ventas, seriales, kardex),
+  sin ninguna query nueva.
+- `window.nxArt360Tab(key)` — **nueva**, líneas 21821-21825. Alterna panel/botón activo
+  por `data-tab`/`data-tabbtn`, igual patrón que `nxPfProdTab` en `abrirProd`.
+- **Bug encontrado y corregido de paso**: el candado 🔒 MÍNIMO se mostraba a
+  *cualquier* rol (no tenía ningún gateo) — ahora usa `puedeVerMin()`, el helper que
+  ya protege ese mismo dato en `abrirProd`. Cero cambio de comportamiento en
+  `renderProductos`/`abrirProd` en sí — solo se reutilizó el helper existente aquí.
+
+### 5. Confirmación: sin SQL / Supabase / versionado
+- `git diff origin/main --stat`: **solo `parches.js`**.
+- Cero migraciones, cero llamadas a herramientas de Supabase en esta tarea.
+- `version.json`/`APP_VERSION` **sin tocar** (rama de revisión, no se publica).
+- Ninguna Secret, ningún workflow de GitHub Actions tocado.
+
+### 6. Resultados de verificación
+- `node --check parches.js` → `SYNTAX_OK`.
+- Batería Playwright contra el código real de la rama, corriendo `index.html`+
+  `parches.js` servidos por HTTP local, login real bypaseado, `window.nxAbrirPOS()`
+  real ejecutado para poblar `_prods`/`_almacenes`/`_niveles`/`_prodNiveles`/`_reps`
+  (no simulado a mano) — **65 comprobaciones, 65 pasaron, 0 fallaron**:
+  - **Escenario A** (multi-almacén + producto serializado + rol `admin`): 5 pestañas
+    en el orden correcto, invariante de "solo 1 panel `.on`" verificado cambiando por
+    las 5, header con nombre/badge/Editar, costo/utilidad/🔒MÍNIMO visibles, aviso de
+    descuadre stock-vs-IMEI (5 stock vs 2 disponibles → avisa), pestaña IMEI con
+    RESERVADO + `reserva_hasta` + "Sin almacén" + aviso agregado + buscador en vivo
+    (filtra a 1 fila, se limpia a 5), Almacenes con los 2 almacenes + columna IMEI
+    disp. + botón Transferir, Historial con Proveedores/Compras-con-costo/Ventas/
+    Garantías-vigente-y-vencida/Taller-emparejado-por-nombre y **sin** Transferencias
+    (Fase B), botones reales: "Administrar IMEI" abre `nxSerialMgr` de verdad,
+    "Transferir" abre `nxAlmTransferir` de verdad, "Editar" cierra el 360° y abre
+    `abrirProd`/`nxPosEditProd` con el producto correcto precargado. 0 errores de JS.
+  - **Escenario B** (1 solo almacén, producto no serializado, inactivo): exactamente 3
+    pestañas (sin IMEI, sin Almacenes), sin errores por campos ausentes (categoría/
+    marca/imagen vacíos), badge INACTIVO visible, 0 errores de JS.
+  - **Escenario C** (mismos datos de A, rol `cajero`): Costo/Utilidad/🔒MÍNIMO
+    **ausentes del DOM** (no en cero, no en guion — no se renderizan), Precio y
+    Existencia siguen visibles, Compras no muestra el costo por línea pero sí número/
+    proveedor/cantidad. 0 errores de JS.
+  - **Escenario D** (mismo que A, viewport 390×844 móvil): sin desborde horizontal ni
+    del modal ni de la página, la barra de pestañas tiene su propio scroll horizontal.
+    0 errores de JS.
+
+### 7. Comportamiento desktop vs. móvil
+- **Desktop** (probado a 1400px): modal `.nxPf` a `max-width:720px`, las 5 pestañas
+  en una fila, contenido en scroll vertical único dentro del modal, sin desborde.
+- **Móvil** (probado a 390px): mismo modal, la fila de pestañas (`.nxPfProdTabs`) hace
+  scroll horizontal propio en vez de envolver o desbordar la pantalla — mismo
+  contenedor/CSS que ya usa `abrirProd`, sin CSS nuevo para esto.
+
+### 8. Diferencias inevitables contra el mockup
+(referencia: `docs/visual-drafts/pos/ARTICULO_360_FINAL.md`, la transcripción del
+mockup que mandó el dueño por chat)
+- **Sin "Comprometido"** — el esquema real (`pos_seriales.estado`) solo tiene
+  `disponible`/`reservado`/`vendido`; no existe un tercer estado. Ya estaba marcado
+  "NO USAR" en la especificación aprobada original.
+- **RD$, no S/** — el mockup traía soles por descuido de plantilla; todo monto usa
+  `fmt()` en `es-DO` como el resto del sistema.
+- **Barra lateral real del POS**, no la genérica del mockup — no se tocó
+  `shellTienda()` ni la navegación, tal como exige la especificación original ("no
+  reescribir shell/navegación").
+- **Sin Imprimir/Compartir** — no hay ningún helper estable ya confirmado para eso en
+  esta vista (condición explícita de la autorización).
+- **"Ventas últimos 30 días" en vez de "Entradas/Salidas 30 días" con gráfica** — se
+  implementó el dato real y honesto (cantidad + monto, cruzando `venta_items` ya
+  cargado contra la fecha real de cada venta, sin query nueva) con su propio
+  disclaimer de aproximación (`limit=100`, excluye anuladas); no se construyó la
+  gráfica de líneas del mockup (fuera del alcance de "ajustes estrictamente
+  visuales" sobre las consultas ya existentes).
+- **Sin columna "Precio compra" por IMEI individual** en la tabla de seriales — el
+  costo vive en `pos_compra_items.costo` (por línea de compra, no por unidad); se
+  mantiene fuera para no mostrar un promedio disfrazado de precio exacto, tal como
+  señalaba la propia nota #4 de `ARTICULO_360_FINAL.md`.
+- **Sin "Alertas" con "IMEI sin precio"/"Consistencia OK"** — solo se implementó el
+  aviso de descuadre stock-vs-IMEI (mismo patrón/wording ya usado y probado en
+  `nxSerialMgr`), sin inventar una sección de alertas nueva sin fuente real detrás.
+
+**Estado:** rama publicada en `origin/claude/articulo-360-fase-a`, sin PR abierto, sin
+fusión a `main`. Esperando revisión del dueño + ChatGPT antes de cualquier siguiente
+paso.
