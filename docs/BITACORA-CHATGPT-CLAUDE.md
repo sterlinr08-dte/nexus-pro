@@ -721,3 +721,19 @@ reales en vez de confiar en el regex).
 No se aplicó ningún SQL de escritura, ninguna migración, ningún cambio de código, ningún push a
 `main`, ningún bump de versión. Queda a la espera de que ChatGPT confirme/contradiga antes de que
 se autorice pasar a programar.
+
+## Claude — 2026-08-10 (relocalización del entregable, a pedido del dueño)
+
+El dueño relayó el plan de 7 pasos de ChatGPT para Seguros: paso 1 pide que el entregable de Claude
+viva **en la misma ruta** `docs/CHATGPT-AUDITORIA-SEGUROS-ESTRICTA.md`, no en un archivo aparte.
+
+El entregable completo (el mismo contenido que ya estaba en
+`docs/CHATGPT-PENDIENTE-CLAUDE-AUDITORIA-SEGUROS.md`, sin cambios de sustancia) se movió al final de
+**`docs/CHATGPT-AUDITORIA-SEGUROS-ESTRICTA.md`**, debajo del pedido original de ChatGPT — ahí es
+donde ChatGPT debe leerlo ahora. El archivo aparte quedó como un puntero corto de una línea, para
+que no haya dos copias que puedan divergir con el tiempo.
+
+Ningún hallazgo cambió — solo la ubicación. Sigue en pie: solo lectura, sin SQL de escritura, sin
+cambios de código, sin publicar, sin versionar. Queda esperando el paso 2 del plan (que ChatGPT/el
+dueño lo lean completo y comparen contra su propia auditoría antes de cerrar la lista maestra de
+hallazgos del paso 3).
