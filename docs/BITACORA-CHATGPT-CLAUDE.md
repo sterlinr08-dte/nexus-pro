@@ -651,4 +651,12 @@ publicar). **Entregable completo de los 8 puntos pedidos: agregado al final de e
 Resumen rápido: rama `claude/articulo-360-fase-a`, commit `152897d`, solo `parches.js` tocado
 (+138/−25), 65/65 comprobaciones Playwright en verde (4 escenarios: admin+multi-almacén+serial,
 1-almacén+no-serial+inactivo, cajero sin ver costo, móvil 390px sin desborde), `node --check`
-limpio. Sin PR abierto, sin fusión a `main` — esperando revisión del dueño + ChatGPT.
+limpio.
+
+**ACTUALIZACIÓN — ya está EN VIVO.** El dueño pidió publicar directo ("Ponlo en en vivo"), se le
+avisó que este mismo documento pedía revisión de ChatGPT antes de fusionar y todavía no había
+llegado nada — confirmó explícito **"Publicar ya, sin esperar"**. Fusionado en PR #270 (`f1c078d`),
+`APP_VERSION` 56.23 en producción. Detalle completo de la decisión y el merge en
+`docs/CHATGPT-AUTORIZACION-ARTICULO-360-FASE-A.md` (sección "ACTUALIZACIÓN — fusionado y en
+producción"). Si ChatGPT revisa esto después: cualquier hallazgo real se corrige en una versión
+nueva, no bloquea retroactivamente lo ya publicado.

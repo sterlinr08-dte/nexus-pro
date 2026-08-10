@@ -148,3 +148,23 @@ mockup que mandó el dueño por chat)
 **Estado:** rama publicada en `origin/claude/articulo-360-fase-a`, sin PR abierto, sin
 fusión a `main`. Esperando revisión del dueño + ChatGPT antes de cualquier siguiente
 paso.
+
+---
+
+## ACTUALIZACIÓN — fusionado y en producción (2026-08-10)
+
+El dueño confirmó por escrito, explícito, dos veces ("Ponlo en en vivo" → se le hizo
+notar que este documento pedía revisión de ChatGPT también y no había llegado
+todavía → "Publicar ya, sin esperar") que **quería publicar sin esperar la segunda
+revisión de ChatGPT** que este mismo documento pedía originalmente. Se dejó
+constancia de esa decisión, no se resolvió por cuenta propia.
+
+Publicado: bump `APP_VERSION` 56.22→56.23 + entrada de changelog en `version.json`
+(rama), PR **[#270](https://github.com/sterlinr08-dte/nexus-pro/pull/270)** →
+fusionado a `main` en `f1c078d`. Verificado tras el merge: `APP_VERSION` y
+`version.json` coinciden en `main` (56.23) — el push dispara el despliegue
+automático de Cloudflare.
+
+Si ChatGPT revisa esto DESPUÉS de la publicación: el código ya está en vivo. Cualquier
+hallazgo real de la revisión se trata como lo que es — un bug a corregir en una
+versión nueva — no como un bloqueo retroactivo de lo ya publicado.
