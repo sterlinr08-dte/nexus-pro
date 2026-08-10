@@ -674,3 +674,50 @@ commit `a90f4ed`, solo `parches.js` +15/−5). `puedeVerCosto360()` ahora falla 
 **Entregable completo agregado al final de `docs/CHATGPT-REVISION-PR270-ARTICULO-360.md`.** No
 se publicó — esperando revisión de ChatGPT y autorización del dueño, tal como pidió el propio
 documento de revisión.
+
+## Claude — 2026-08-10 (auditoría estricta del módulo Seguros, `docs/CHATGPT-AUDITORIA-SEGUROS-ESTRICTA.md`)
+
+El dueño pausó Artículo 360° y pidió auditar Seguros de Salud como dinero real. ChatGPT dejó el
+pedido en `docs/CHATGPT-AUDITORIA-SEGUROS-ESTRICTA.md` con la instrucción explícita: **solo
+auditoría, cero programar, cero SQL de escritura/DDL, cero publicar, cero versionar.** Se cumplió
+al pie de la letra — todo el trabajo fue lectura de código real (archivo:línea) y `SELECT` de
+solo lectura contra la base real (`tnwsgcxurfyuszxsewsn`), sin tocar `index.html`/`parches.js` ni
+la base.
+
+**Entregable completo: `docs/CHATGPT-PENDIENTE-CLAUDE-AUDITORIA-SEGUROS.md`** (resumen ejecutivo,
+matriz de severidad, los 10 hallazgos de ChatGPT uno por uno confirmados/corregidos con evidencia
+exacta, hallazgos adicionales encontrados sin haber sido anticipados, mapa RLS/RBAC de las 16
+tablas del núcleo, mapa función↔tabla↔RPC, constraints faltantes, propuesta de reglamentos por las
+13 áreas, plan de remediación en 3 fases por riesgo, y pruebas mínimas antes de tocar producción —
+detalle completo en ese archivo, no repetido aquí).
+
+**Confirmado, con evidencia exacta:** RLS sin distinción de rol en las 16 tablas del núcleo (una
+sola política `ALL` idéntica por organización, cero separación admin/agente/cajero); `tienePermiso`
+es la única barrera real y vive en `localStorage` editable; cobro/reversa/anulación son 2-4 pasos
+REST secuenciales sin transacción en 5 funciones distintas; la degradación de 3 niveles en
+`regAbono` que puede guardar un abono sin banco/agente sigue viva; cero FK/CHECK/UNIQUE de negocio
+fuera de PK; NCF sí es atómico de verdad y el formato migró correctamente (197 vigentes sin guion,
+103 históricos con guion, correctamente sin tocar); deuda/pagado cuadran hoy en los 109 clientes,
+cero facturas duplicadas, cero NCF duplicados; `esTxEfectiva()` filtra bien las transferencias
+pendientes/rechazadas antes de sumar saldo por agente — el diseño de transferencias es correcto,
+solo el texto de la UI es engañoso sobre el mecanismo.
+
+**Encontrado sin haber sido pedido explícito:** `confirmarInhab()` tiene `monto_dr:0` fijo en el
+código — genera un asiento descuadrado cada vez que se inhabilita un cliente con deuda; hay **12**
+asientos `AST-BAJA` reales en producción con Debe≠Haber por esa causa exacta. `anularFactura()` no
+emite ningún documento fiscal de reversa (a diferencia del POS, que sí emite B04) — 11 facturas
+anuladas hoy, las 11 con NCF ya asignado, sin ningún comprobante de reversa más allá del cambio de
+`estado`. `entregas_admin` tiene 16 filas "depositado" sin haber pasado por "confirmado". 12
+transferencias entre 2 agentes atascadas en "pendiente" >30 días, RD$90,910. `comisiones`/`pagos`/
+`documentos_clientes` son tablas con RLS/trigger real pero 0 uso de código — dead schema, no fuentes
+paralelas con riesgo de divergencia.
+
+**Honestidad de proceso, documentada en el propio entregable (sección 0):** dos errores propios
+detectados y corregidos ANTES de reportar — un `WHERE OR...AND` sin paréntesis que infló un
+conteo de 4 a 145 (precedencia de operadores en SQL), y un regex de formato NCF con un dígito de
+más que clasificaba 197 NCF vigentes como "otro formato desconocido" (corregido muestreando valores
+reales en vez de confiar en el regex).
+
+No se aplicó ningún SQL de escritura, ninguna migración, ningún cambio de código, ningún push a
+`main`, ningún bump de versión. Queda a la espera de que ChatGPT confirme/contradiga antes de que
+se autorice pasar a programar.
