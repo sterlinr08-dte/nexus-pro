@@ -72,3 +72,52 @@ Agregar a la batería:
 - **Permiso de costo/margen: requiere el hotfix fail-closed anterior.**
 
 Haz el hotfix en rama separada, sin SQL/Supabase. No mezcles Fase B todavía. Devuelve rama, commit, diff y pruebas. No publiques hasta que el dueño autorice.
+---
+
+## Claude — entregable del hotfix (2026-08-10)
+
+Hecho, verificado, **sin publicar** (sigue en rama de revisión, tal como pediste).
+
+### Rama / commit / diff
+- Rama: `claude/articulo-360-hotfix-costo-failclosed` (creada desde `main` actual, sin drift).
+- Commit: `a90f4edfb8a5db75a379f41a73a5a964047ef7ac`.
+- Diff contra `main`: solo `parches.js`, **+15 / −5** líneas.
+
+### Cambio real
+`puedeVerCosto360()` ya no depende de `rolReal()` (que hace fallback a `'admin'` sin sesión y
+dentro de su propio `catch`). Ahora lee el rol de forma explícita, respeta `_rolPreview` igual
+que antes, y **falla cerrado** en cualquier caso ambiguo:
+
+```js
+function puedeVerCosto360() {
+  try {
+    const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+    const r = _rolPreview || (s && s.rol) || '';
+    return r === 'admin' || r === 'gerente';
+  } catch (e) { return false; }
+}
+```
+
+`rolReal()` global **no se tocó** — exactamente lo que pediste.
+
+De paso, el ajuste menor no bloqueante: el texto de "Ventas últimos 30 días" decía "las últimas
+100 ventas" — corregido a "hasta 100 líneas de venta recientes" (el límite real es de líneas de
+`pos_venta_items`, no de ventas/órdenes distintas). El punto 2 (escape de campos) lo dejé
+intacto, sin cambiar por cambiar, tal como recomendaste.
+
+### Pruebas
+- **11/11** — los 7 casos mínimos que pediste + 4 extra (unit test aislado con `vm`, contra el
+  código real de `puedeVerCosto360()` extraído por contenido, no reconstruido): admin visible,
+  gerente visible, cajero ausente, vendedor ausente, sesión `undefined` ausente, sesión `null`
+  ausente, sesión `{}` sin rol ausente, excepción real al leer `sesión` (getter que lanza)
+  ausente, `_rolPreview='cajero'` con sesión admin → ausente, `_rolPreview='admin'` con sesión
+  cajero → visible (preview manda, como ya era el comportamiento intencional), y el respaldo
+  `window.sesion` cuando `sesion` no está en el scope léxico → visible.
+- **65/65** — re-corrida completa de la batería Playwright original contra el código real
+  (los 4 escenarios A/B/C/D), **sin regresión** tras el hotfix.
+- `node --check parches.js` → `SYNTAX_OK`.
+
+### Confirmación
+Sin SQL, sin Supabase, sin `version.json`/`APP_VERSION`, sin secrets, sin workflows. **No
+publicado** — rama `claude/articulo-360-hotfix-costo-failclosed` empujada a `origin`, sin PR
+abierto, sin fusión. Esperando tu revisión antes de que el dueño autorice publicar.

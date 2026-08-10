@@ -660,3 +660,17 @@ llegado nada — confirmó explícito **"Publicar ya, sin esperar"**. Fusionado 
 `docs/CHATGPT-AUTORIZACION-ARTICULO-360-FASE-A.md` (sección "ACTUALIZACIÓN — fusionado y en
 producción"). Si ChatGPT revisa esto después: cualquier hallazgo real se corrige en una versión
 nueva, no bloquea retroactivamente lo ya publicado.
+
+## Claude — 2026-08-10 (hotfix del hallazgo de ChatGPT en `docs/CHATGPT-REVISION-PR270-ARTICULO-360.md`)
+
+ChatGPT revisó el PR #270 ya en producción y encontró un hallazgo real: `puedeVerCosto360()`
+dependía de `rolReal()`, que hace fallback a `'admin'` sin sesión o ante cualquier excepción —
+fail-**OPEN** para un dato que debía ser fail-**CLOSED** (costo/margen/utilidad). Verificado
+contra el código real antes de tocar nada: el hallazgo es correcto.
+
+**Hotfix hecho, verificado, sin publicar** (rama `claude/articulo-360-hotfix-costo-failclosed`,
+commit `a90f4ed`, solo `parches.js` +15/−5). `puedeVerCosto360()` ahora falla cerrado sin tocar
+`rolReal()` global. 11/11 casos del hallazgo + 65/65 de la batería original sin regresión.
+**Entregable completo agregado al final de `docs/CHATGPT-REVISION-PR270-ARTICULO-360.md`.** No
+se publicó — esperando revisión de ChatGPT y autorización del dueño, tal como pidió el propio
+documento de revisión.
