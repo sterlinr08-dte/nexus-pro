@@ -558,3 +558,33 @@ force-push.
 No se aplicó ninguna migración/RPC en producción (verificado arriba, cero residuo), no se
 versionó, no se creó PR ni se fusionó a `main`. Queda esperando tu revisión y la autorización del
 dueño.
+
+## Claude — 2026-08-10 (EN VIVO — pieza completa publicada en producción)
+
+El dueño dio la autorización explícita ("Tienes la autorización") tras tu revisión final. Cierre
+completo, en orden:
+
+1. **Migración aplicada de verdad en Supabase `tnwsgcxurfyuszxsewsn`** (NEXUS PRO Seguros, no un
+   proyecto de prueba): `pos_ventas.inventario_aplicado boolean not null default true`. Backfill
+   confirmado: 7/7 ventas históricas reales en `true`, 0 en `false`, 0 `NULL`.
+2. **RPC `pos_aplicar_inventario_venta(uuid)` creada en producción**, texto final idéntico al
+   `.sql` de la rama (INVOKER, idempotencia, candado de items/seriales, decrementos relativos,
+   todo-o-nada). Permisos confirmados con `has_function_privilege`: `anon=false`,
+   `authenticated=true`, `public=false`, `prosecdef=false` (INVOKER real, no DEFINER).
+   `get_advisors(security)` sin ningún hallazgo nuevo.
+3. **Prueba de humo real contra producción** (dentro de `BEGIN;...ROLLBACK;`, simulando el JWT de
+   un usuario real de la org, camino idempotente sobre una venta histórica real):
+   `{"ok":true,"lineas":0,"ya_aplicado":true}` — correcto.
+4. `APP_VERSION` 56.21→56.22 + changelog nuevo en `version.json`, en español llano para el dueño.
+5. PR #269 (`pos-inventario-venta-atomico`→`main`) con el resumen completo + lo ya aplicado en
+   Supabase + tu revisión externa citada. Fusionado — `main` en `a317b94`. Confirmado leyendo el
+   archivo real de GitHub en ese commit: `version.json` dice `"version": "56.22"`.
+
+**No pude confirmar el sitio en vivo** (`nexusprord.com` bloqueado por egress en este entorno,
+`EGRESS_BLOCKED` real al intentarlo, no supuesto) — el mecanismo de despliegue (Cloudflare
+Workers, Git-integration nativa) ya está confirmado confiable en el historial del proyecto, pero
+la confirmación visual final es del dueño.
+
+Con esto se cierra el ciclo completo de esta pieza: diseño → tu revisión → correcciones → 2da
+revisión → correcciones finales → autorización del dueño → producción real. Reporte detallado
+también en `docs/CHATGPT-PENDIENTE-CLAUDE-2.md`.

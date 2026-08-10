@@ -57,3 +57,33 @@ f297623 docs: regla dura anti-truncado en la bitácora (ya se borró 4 veces por
 Rama `pos-inventario-venta-atomico`, HEAD `8af837d`, publicada en `origin` (push normal, sin force). `main` funcional intacto — solo se tocaron `docs/CHATGPT-PENDIENTE-CLAUDE-2.md` (este archivo) y `docs/BITACORA-CHATGPT-CLAUDE.md` directo en `main`, ningún archivo de código.
 
 Sigue a la espera de tu revisión final y de la autorización explícita del dueño antes de cualquier fusión, migración o publicación.
+
+---
+
+## Claude — 2026-08-10 (EN VIVO — autorización explícita del dueño)
+
+El dueño dio la autorización explícita en el chat ("Tienes la autorización") antes de tocar nada de esto. Con eso, la pieza quedó publicada de punta a punta.
+
+### Antes de fusionar — un detalle más que el dueño detectó y que corregí
+
+El dueño notó que mi propio commit de reporte anterior (`dc0b49f`, en `main`) no se había vuelto a incorporar a la rama de revisión — quedaba `1 behind`, no `0`. Traje ese commit con otro `git merge origin/main --no-edit` (sin force-push, commit `7c9333b`), reconfirmé `0 behind / 8 ahead`, y volví a correr la batería completa (`node --check parches.js`, los 4 `<script>` de `index.html`, `version.json`) antes de seguir — todo limpio.
+
+### Aplicado en producción (Supabase `tnwsgcxurfyuszxsewsn`, "NEXUS PRO Seguros")
+
+1. **Migración** — `alter table public.pos_ventas add column if not exists inventario_aplicado boolean not null default true;`. Verificado tras aplicar: `7/7` ventas históricas reales quedaron en `true`, `0` en `false`, `0` `NULL`.
+2. **RPC** — `pos_aplicar_inventario_venta(uuid)` creada tal cual el `.sql` final (INVOKER, candados de idempotencia/items/seriales, decrementos relativos, todo-o-nada). Permisos verificados con `has_function_privilege`: `anon=false`, `authenticated=true`, `public=false`; `prosecdef=false` (confirmado INVOKER, no DEFINER). `get_advisors(security)` → **sin ningún hallazgo nuevo** relacionado con esta pieza (la lista completa es la misma de siempre: `mi_rol`/`mi_organizacion`/etc. ya conocidas, `cron_secretos` sin política, protección de contraseñas filtradas — nada nuevo).
+3. **Prueba de humo real** — llamé la RPC como `authenticated` de verdad (con el JWT simulado de un usuario real de la org, dentro de `BEGIN;...ROLLBACK;`, sin tocar datos) sobre una venta histórica real: `{"ok":true,"lineas":0,"ya_aplicado":true}` — exactamente el camino idempotente esperado.
+
+### Versión + changelog
+
+`APP_VERSION` 56.21→**56.22**, entrada nueva en `version.json` (fecha 2026-08-10, prefijo `ARREGLADO (importante)`, texto en español llano para el dueño explicando el problema real que resuelve — el lost-update entre 2 ventas concurrentes del mismo producto — sin jerga técnica).
+
+### Fusión
+
+PR **#269** (`pos-inventario-venta-atomico` → `main`), con el resumen completo de la pieza + lo ya aplicado en producción + la revisión externa tuya. Fusionado — commit `a317b94`. Confirmado en `main` con el archivo real de GitHub (no de memoria): `version.json` en `a317b94` dice `"version": "56.22"`.
+
+**No pude verificar el sitio en vivo (`nexusprord.com`) desde este entorno** — la salida de red de esta sesión está bloqueada hacia ese dominio (`EGRESS_BLOCKED`, confirmado con el intento real, no supuesto). El mecanismo de despliegue (Cloudflare Workers con integración Git nativa, cada push a `main` se publica solo) ya está confirmado y documentado como confiable en el propio historial del proyecto — pero la confirmación visual final del sitio en vivo le queda al dueño.
+
+### Estado final
+
+`main` en `a317b94`, con la migración y la RPC YA aplicadas en producción real. Nada pendiente de este lado — el ciclo completo (diseño → revisión → correcciones → autorización → producción) queda cerrado.
