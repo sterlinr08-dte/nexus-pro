@@ -16242,10 +16242,20 @@
   function rolReal() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.rol) || 'admin'; } catch (e) { return 'admin'; } }
   function rolEfectivo() { return _rolPreview || rolReal(); }
   function puedeVerMin() { const r = rolEfectivo(); return r === 'admin' || r === 'gerente'; }
-  // Helper dedicado y explícito SOLO para Artículo 360° (autorización 2026-08-10): reusa el mismo
-  // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
-  // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
-  function puedeVerCosto360() { return puedeVerMin(); }
+  // Helper dedicado y explícito SOLO para Artículo 360° (autorización 2026-08-10): NO reusa
+  // puedeVerMin()/rolReal() directo — rolReal() hace fallback a 'admin' cuando no hay sesión o
+  // ante cualquier excepción (comportamiento fail-OPEN, aceptable para navegación general pero NO
+  // para decidir si se muestra costo/margen/utilidad). Este helper lee el rol de forma explícita
+  // y FALLA CERRADO: cualquier caso ambiguo (sin sesión, sesión sin rol, error leyendo sesión)
+  // NO muestra el dato sensible. Hallazgo de la revisión de ChatGPT post-PR#270, ver
+  // docs/CHATGPT-REVISION-PR270-ARTICULO-360.md.
+  function puedeVerCosto360() {
+    try {
+      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+      const r = _rolPreview || (s && s.rol) || '';
+      return r === 'admin' || r === 'gerente';
+    } catch (e) { return false; }
+  }
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (r === 'admin') return true;
@@ -21728,7 +21738,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const ventas30HTML = `<div class="kpirow">
         ${kpiPf('Unidades vendidas', fmtN(cant30), '#dc2626')}
         ${kpiPf('Monto vendido', fmt(monto30), '#16a34a')}
-      </div><div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">Aproximado: solo cuenta las últimas 100 ventas de este artículo (el límite de la consulta), excluye anuladas.</div>`;
+      </div><div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">Aproximado: cuenta hasta 100 líneas de venta recientes de este artículo (el límite de la consulta), excluye anuladas.</div>`;
 
     // 8) Garantías — de las unidades YA vendidas de este artículo (pos_venta_items.garantia_hasta)
     const hoyK = hoyISOPos();
