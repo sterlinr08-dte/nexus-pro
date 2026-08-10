@@ -16242,6 +16242,10 @@
   function rolReal() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.rol) || 'admin'; } catch (e) { return 'admin'; } }
   function rolEfectivo() { return _rolPreview || rolReal(); }
   function puedeVerMin() { const r = rolEfectivo(); return r === 'admin' || r === 'gerente'; }
+  // Helper dedicado y explícito SOLO para Artículo 360° (autorización 2026-08-10): reusa el mismo
+  // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
+  // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
+  function puedeVerCosto360() { return puedeVerMin(); }
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (r === 'admin') return true;
@@ -21598,19 +21602,50 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // Mismo criterio que Cliente 360° (Fase 3): reúne SIN inventar nada lo que ya vive repartido en el
   // sistema — compras/ventas por producto_id, niveles de precio en memoria, seriales/IMEI, y el
   // kardex real de la Fase 5 (pos_inv_movimientos). Solo lectura.
+  //
+  // FASE A (autorización 2026-08-10, docs/CHATGPT-AUTORIZACION-ARTICULO-360-FASE-A.md): reorganización
+  // visual en 5 pestañas (Resumen/IMEI-Seriales/Kardex/Almacenes/Historial) sobre los MISMOS 6 datos
+  // ya cargados de siempre — ninguna consulta nueva salvo "ventas últimos 30 días", calculada en el
+  // navegador cruzando ventaItems (ya traído) contra vmap[...].fecha (ya traído), sin query nueva.
   window.nxArticulo360 = async function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     nxPfEnsureCSS();
     cerrarModal('nxArt360');
+    const conAlm = _almacenes.length > 1;
+    const tabDefs = [{ key: 'resumen', label: 'Resumen', icon: 'ti-layout-dashboard' }];
+    if (p.serial === true) tabDefs.push({ key: 'imei', label: 'IMEI/Seriales', icon: 'ti-fingerprint' });
+    tabDefs.push({ key: 'kardex', label: 'Kardex', icon: 'ti-clock-hour-4' });
+    if (conAlm) tabDefs.push({ key: 'almacenes', label: 'Almacenes', icon: 'ti-building-warehouse' });
+    tabDefs.push({ key: 'historial', label: 'Historial', icon: 'ti-history' });
+
+    const catNom = catNombre(p.categoria_id);
+    const activo = p.activo !== false;
+    const metaChips = [
+      p.codigo ? 'SKU ' + esc(p.codigo) : '', catNom ? esc(catNom) : '', p.marca ? esc(p.marca) : '',
+      p.referencia ? esc(p.referencia) : '', p.tipo === 'servicio' ? 'Servicio' : 'Producto',
+      p.serial ? 'Serializado' : '', p.garantia_dias ? p.garantia_dias + ' días de garantía' : ''
+    ].filter(Boolean).map(t => `<span style="font-size:9.5px;color:var(--pf-txt3);background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:6px;padding:2px 7px;white-space:nowrap">${t}</span>`).join('');
+
     const ov = document.createElement('div'); ov.id = 'nxArt360'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPf" style="max-width:660px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
-      <div class="head"><button class="nxBack" type="button" onclick="document.getElementById('nxArt360').remove()" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button><h3><i class="ti ti-id-badge-2"></i> ${esc(p.nombre)} — Artículo 360°</h3></div>
-      <div id="nxArt360Body" style="padding:14px;overflow-y:auto;flex:1"><div class="emptyrow"><i class="ti ti-loader-2"></i> Cargando historial completo…</div></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:720px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head" style="align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxArt360').remove()" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button>
+        ${p.imagen ? `<img src="${esc(p.imagen)}" alt="" style="width:40px;height:40px;border-radius:9px;object-fit:cover;flex-shrink:0" onerror="this.remove()">` : `<span style="width:40px;height:40px;border-radius:9px;background:var(--pf-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--pf-txt3)"><i class="ti ${p.tipo === 'servicio' ? 'ti-tool' : 'ti-box'}"></i></span>`}
+        <div style="flex:1;min-width:160px">
+          <h3 style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0">${esc(p.nombre)} ${activo ? '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#f0fdf4;color:#16a34a">ACTIVO</span>' : '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#f1f5f9;color:#64748b">INACTIVO</span>'}</h3>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${metaChips}</div>
+        </div>
+        <button class="headbtn" type="button" onclick="document.getElementById('nxArt360').remove();window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i> Editar</button>
+      </div>
+      <div class="nxPfProdTabs" role="tablist">${tabDefs.map((t, i) => `<button type="button" data-tabbtn="${t.key}"${i === 0 ? ' class="on"' : ''} onclick="window.nxArt360Tab('${t.key}')"><i class="ti ${t.icon}"></i> ${t.label}</button>`).join('')}</div>
+      <div style="flex:1;overflow-y:auto;padding:14px">
+        ${tabDefs.map((t, i) => `<div class="nxPfProdPanel${i === 0 ? ' on' : ''}" data-tab="${t.key}"${t.key === 'resumen' ? ' id="nxArt360Body"' : ''}><div class="emptyrow"><i class="ti ti-loader-2"></i> Cargando…</div></div>`).join('')}
+      </div>
     </div>`;
     document.body.appendChild(ov);
 
-    // ── Recolectar todo (best-effort, cada tabla con su propio try/catch) ──
+    // ── Recolectar todo (best-effort, cada tabla con su propio try/catch) — SIN CAMBIOS en Fase A ──
     let compraItems = [], compras = [], ventaItems = [], ventas = [], seriales = [], kardex = [];
     try { compraItems = await getAPI().get('pos_compra_items', 'select=costo,cantidad,compra_id&producto_id=eq.' + id + '&order=id.desc&limit=100') || []; } catch (e) {}
     const compraIds = [...new Set(compraItems.map(it => it.compra_id))];
@@ -21621,7 +21656,8 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     try { seriales = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + id + '&order=created_at.desc&limit=200') || []; } catch (e) {}
     try { kardex = await getAPI().get('pos_inv_movimientos', 'select=*&producto_id=eq.' + id + '&order=fecha.desc&limit=200') || []; } catch (e) {}
 
-    const bodyEl = document.getElementById('nxArt360Body'); if (!bodyEl) return; // se cerró mientras cargaba
+    const modalEl = document.getElementById('nxArt360'); if (!modalEl) return; // se cerró mientras cargaba
+    const panel = key => modalEl.querySelector('.nxPfProdPanel[data-tab="' + key + '"]');
 
     const cmap = {}; compras.forEach(c => { cmap[c.id] = c; });
     const vmap = {}; ventas.forEach(v => { vmap[v.id] = v; });
@@ -21633,26 +21669,33 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       </div>`;
     const fila = html => `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:11.5px">${html}</div>`;
     const fFecha = f => String(f || '').slice(0, 10).split('-').reverse().join('/');
+    // Autorización 2026-08-10: costo/utilidad/margen SOLO para admin/gerente — el bloque completo se
+    // omite (nunca 0/guiones) si el rol no puede verlo. Helper dedicado, ver junto a puedeVerMin().
+    const puedeCosto = puedeVerCosto360();
 
     // 1) Existencia — total + por almacén si aplica multi-almacén
-    const existenciaHTML = (_almacenes.length > 1)
+    const existenciaHTML = conAlm
       ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:6px">${_almacenes.map(a => `<div style="text-align:center"><div style="font-size:10px;color:var(--pf-txt3)">${esc(a.nombre)}</div><b style="font-size:15px">${fmtN(stockEnAlm(p.id, a.id))}</b></div>`).join('')}</div><div style="text-align:center;padding-top:6px;border-top:1px solid #f1f5f9"><span style="font-size:10px;color:var(--pf-txt3)">TOTAL</span> <b style="font-size:16px">${fmtN(p.stock)}</b>${p.stock_min ? ` <span style="font-size:10px;color:var(--pf-txt3)">· mínimo ${fmtN(p.stock_min)}</span>` : ''}</div>`
       : `<div style="text-align:center"><b style="font-size:22px">${fmtN(p.stock)}</b> <span style="font-size:11px;color:var(--pf-txt3)">en existencia</span>${p.stock_min ? `<div style="font-size:10.5px;color:var(--pf-txt3)">Mínimo: ${fmtN(p.stock_min)}</div>` : ''}</div>`;
 
-    // 2) Costo — actual + últimas compras
-    const costoHTML = `<div style="text-align:center;margin-bottom:8px"><b style="font-size:20px">${fmt(p.costo)}</b> <span style="font-size:11px;color:var(--pf-txt3)">costo actual</span></div>` +
+    // 2) Costo — actual + últimas compras + valor total en existencia (solo si el rol puede verlo)
+    const costoTotal = Number(p.stock || 0) * Number(p.costo || 0);
+    const costoHTML = `<div style="text-align:center;margin-bottom:8px"><b style="font-size:20px">${fmt(p.costo)}</b> <span style="font-size:11px;color:var(--pf-txt3)">costo unitario actual</span></div>` +
+      `<div style="text-align:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f1f5f9"><span style="font-size:10px;color:var(--pf-txt3)">VALOR TOTAL EN EXISTENCIA</span> <b style="font-size:15px">${fmt(costoTotal)}</b></div>` +
       (compraItems.length ? compraItems.slice(0, 5).map(it => { const c = cmap[it.compra_id] || {}; return fila(`<div style="flex:1;min-width:0">${esc(c.numero || '')} <span style="color:var(--pf-txt3);font-size:10px">${fFecha(c.fecha)}</span></div><b>${fmt(it.costo)}</b>`); }).join('') : '<div class="emptyrow">Sin compras registradas.</div>');
 
-    // 3) Precio — lista/mayor/mínimo + niveles configurados (en memoria, mismo patrón que abrirProd)
+    // 3) Precio — lista/mayor/mínimo (🔒 mínimo gateado con puedeVerMin(), bug de la versión anterior
+    // corregido de paso — se mostraba a cualquier rol, sin permiso, a diferencia del resto del sistema)
+    // + niveles configurados (en memoria, mismo patrón que abrirProd)
     const nivelesProd = (_prodNiveles || []).filter(r => String(r.producto_id) === String(id));
     const precioHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:8px">
         <div style="text-align:center"><div style="font-size:10px;color:var(--pf-txt3)">LISTA</div><b>${fmt(p.precio)}</b></div>
         ${p.precio_mayor ? `<div style="text-align:center"><div style="font-size:10px;color:var(--pf-txt3)">MAYOR</div><b>${fmt(p.precio_mayor)}</b></div>` : ''}
-        ${p.precio_minimo ? `<div style="text-align:center"><div style="font-size:10px;color:var(--pf-txt3)">🔒 MÍNIMO</div><b>${fmt(p.precio_minimo)}</b></div>` : ''}
+        ${(p.precio_minimo && puedeVerMin()) ? `<div style="text-align:center"><div style="font-size:10px;color:var(--pf-txt3)">🔒 MÍNIMO</div><b>${fmt(p.precio_minimo)}</b></div>` : ''}
       </div>` +
       (nivelesProd.length ? nivelesProd.map(np => { const n = (_niveles || []).find(x => String(x.id) === String(np.nivel_id)); return fila(`<div style="flex:1;min-width:0">${esc(n ? n.nombre : 'Nivel')}</div><b>${fmt(np.precio_contado)}</b>`); }).join('') : '');
 
-    // 4) Utilidad — margen unitario real + estimado de ventas (aviso de que usa el costo actual)
+    // 4) Utilidad — margen unitario real + estimado de ventas (solo si el rol puede ver costo)
     const margenPct = Number(p.precio) ? ((Number(p.precio) - Number(p.costo || 0)) / Number(p.precio) * 100) : 0;
     const cantVendida = ventaItems.reduce((s, it) => s + Number(it.cantidad || 0), 0);
     const utilidadAprox = cantVendida * (Number(p.precio || 0) - Number(p.costo || 0));
@@ -21667,11 +21710,25 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const provIds = Object.keys(provMap);
     const proveedoresHTML = provIds.length ? provIds.map(pid => fila(`<div style="flex:1;min-width:0">${esc(provMap[pid])}</div>${String(p.proveedor_id) === String(pid) ? badge('PREFERIDO', '#2563eb', '#eff6ff') : ''}`)).join('') : '<div class="emptyrow">Sin proveedores registrados (aún no hay compras de este artículo).</div>';
 
-    // 6) Compras — historial completo (no solo la última, a diferencia de la pestaña Costos del formulario)
-    const comprasHTML = compraItems.length ? compraItems.map(it => { const c = cmap[it.compra_id] || {}; return fila(`<div style="flex:1;min-width:0"><b>${esc(c.numero || '')}</b> <span style="color:var(--pf-txt3);font-size:10px">${esc(c.proveedor_nombre || '')}</span><div style="color:var(--pf-txt3);font-size:10px">${fFecha(c.fecha)}</div></div><span style="color:var(--pf-txt3)">×${fmtN(it.cantidad)}</span><b style="min-width:70px;text-align:right">${fmt(it.costo)}</b>`); }).join('') : '<div class="emptyrow">Sin compras.</div>';
+    // 6) Compras — historial completo (no solo la última, a diferencia de la pestaña Costos del
+    // formulario). El costo por línea también se gatea — es tan sensible como el bloque Costo de arriba.
+    const comprasHTML = compraItems.length ? compraItems.map(it => { const c = cmap[it.compra_id] || {}; return fila(`<div style="flex:1;min-width:0"><b>${esc(c.numero || '')}</b> <span style="color:var(--pf-txt3);font-size:10px">${esc(c.proveedor_nombre || '')}</span><div style="color:var(--pf-txt3);font-size:10px">${fFecha(c.fecha)}</div></div><span style="color:var(--pf-txt3)">×${fmtN(it.cantidad)}</span>${puedeCosto ? `<b style="min-width:70px;text-align:right">${fmt(it.costo)}</b>` : ''}`); }).join('') : '<div class="emptyrow">Sin compras.</div>';
 
-    // 7) Ventas — historial completo
+    // 7) Ventas — historial completo (Historial) + últimos 30 días (Resumen). Ventas 30 días NO
+    // necesita query nueva (reclasificado de Fase B a Fase A en la propia auditoría): se cruza
+    // ventaItems (ya cargado) contra vmap[...].fecha (ya cargado), con la misma nota de "aproximado,
+    // acotado al limit=100 de la consulta" que ya usa el resto de esta vista.
     const ventasHTML = ventaItems.length ? ventaItems.map(it => { const v = vmap[it.venta_id] || {}; return fila(`<div style="flex:1;min-width:0"><b>${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</b> <span style="color:var(--pf-txt3);font-size:10px">${esc(v.cliente_nombre || 'Consumidor final')}</span><div style="color:var(--pf-txt3);font-size:10px">${fFecha(v.fecha || v.created_at)}${v.estado === 'anulada' ? ' · ' + badge('ANULADA', '#dc2626', '#fef2f2') : ''}</div></div><span style="color:var(--pf-txt3)">×${fmtN(it.cantidad)}</span><b style="min-width:70px;text-align:right">${fmt(it.importe != null ? it.importe : it.precio)}</b>`); }).join('') : '<div class="emptyrow">Sin ventas.</div>';
+    const hoyR = hoyISOPos();
+    const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+    const desde30 = d30.getFullYear() + '-' + String(d30.getMonth() + 1).padStart(2, '0') + '-' + String(d30.getDate()).padStart(2, '0');
+    const ventas30 = ventaItems.filter(it => { const v = vmap[it.venta_id]; if (!v || v.estado === 'anulada') return false; const f = String(v.fecha || v.created_at || '').slice(0, 10); return f && f >= desde30 && f <= hoyR; });
+    const cant30 = ventas30.reduce((s, it) => s + Number(it.cantidad || 0), 0);
+    const monto30 = ventas30.reduce((s, it) => s + Number(it.importe != null ? it.importe : it.precio || 0), 0);
+    const ventas30HTML = `<div class="kpirow">
+        ${kpiPf('Unidades vendidas', fmtN(cant30), '#dc2626')}
+        ${kpiPf('Monto vendido', fmt(monto30), '#16a34a')}
+      </div><div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">Aproximado: solo cuenta las últimas 100 ventas de este artículo (el límite de la consulta), excluye anuladas.</div>`;
 
     // 8) Garantías — de las unidades YA vendidas de este artículo (pos_venta_items.garantia_hasta)
     const hoyK = hoyISOPos();
@@ -21685,30 +21742,86 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const tallerHTML = (repsArt.length ? repsArt.map(r => { const est = repEst(r.estado); return fila(`<div style="flex:1;min-width:0"><b>${esc(r.numero || '')}</b> <span style="color:var(--pf-txt3);font-size:10px">${esc(r.cliente_nombre || '')}</span></div>${badge(est[1].toUpperCase(), '#fff', est[2])}`); }).join('') : '<div class="emptyrow">Sin recepciones de taller relacionadas.</div>') +
       '<div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">Aproximado por coincidencia del nombre del equipo — Reparaciones no liga cada recepción a un artículo específico del catálogo.</div>';
 
-    // 10) IMEI — seriales reales del producto (exacto, pos_seriales.producto_id sí es una FK real)
-    const imeiHTML = seriales.length ? seriales.map(s => { const v = s.venta_id ? vmap[s.venta_id] : null; return fila(`<div style="flex:1;min-width:0;font-family:monospace;display:flex;align-items:center;gap:6px">${colorDotHTML(s.color)}${esc(s.serial)}</div>${s.estado === 'vendido' ? badge('VENDIDO', '#475569', '#f1f5f9') : badge('DISPONIBLE', '#16a34a', '#f0fdf4')}${v ? `<span style="color:var(--pf-txt3);font-size:10px">${esc(v.cliente_nombre || '')}</span>` : ''}`); }).join('') : '<div class="emptyrow">Sin IMEI/serial registrados.</div>';
+    // 10) IMEI — seriales reales del producto (exacto, pos_seriales.producto_id sí es una FK real).
+    // Ampliado: estado "reservado" (con reserva_hasta si aplica), columna almacén, e incidencia visual
+    // "Sin almacén" cuando hay multi-almacén y el serial no tiene uno asignado — SIN corregirlo solo.
+    const dispSeriales = seriales.filter(s => s.estado === 'disponible').length;
+    const resSeriales = seriales.filter(s => s.estado === 'reservado').length;
+    const venSeriales = seriales.filter(s => s.estado === 'vendido').length;
+    const sinAlmCount = conAlm ? seriales.filter(s => !s.almacen_id).length : 0;
+    const avisoSinAlmHTML = sinAlmCount > 0 ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:7px 10px;font-size:11px;color:#991b1b;margin-bottom:8px">⚠️ ${sinAlmCount} serial(es) sin almacén asignado.</div>` : '';
+    const imeiRow = s => { const v = s.venta_id ? vmap[s.venta_id] : null;
+      const estBadge = s.estado === 'vendido' ? badge('VENDIDO', '#475569', '#f1f5f9') : s.estado === 'reservado' ? badge('RESERVADO', '#b45309', '#fffbeb') : badge('DISPONIBLE', '#16a34a', '#f0fdf4');
+      const resTxt = (s.estado === 'reservado' && s.reserva_hasta) ? `<span style="color:var(--pf-txt3);font-size:9.5px;white-space:nowrap">hasta ${String(s.reserva_hasta).slice(0, 16).replace('T', ' ')}</span>` : '';
+      const almTxt = s.almacen_id ? esc(almNombre(s.almacen_id)) : (conAlm ? '<span style="color:#dc2626">Sin almacén</span>' : '');
+      return `<div data-serrow="${esc(String(s.serial || '').toLowerCase())}" style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:11.5px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px;font-family:monospace;display:flex;align-items:center;gap:6px">${colorDotHTML(s.color)}${esc(s.serial)}</div>
+          ${estBadge}${resTxt}
+          ${almTxt ? `<span style="color:var(--pf-txt3);font-size:10px;min-width:70px;text-align:right">${almTxt}</span>` : ''}
+          ${v ? `<span style="color:var(--pf-txt3);font-size:10px">${esc(v.cliente_nombre || '')}</span>` : ''}
+        </div>`; };
+    const imeiHTML = seriales.length ? seriales.map(imeiRow).join('') : '<div class="emptyrow">Sin IMEI/serial registrados.</div>';
 
-    // 11) Kardex — historial real de movimientos (Fase 5, mismo dato que la pestaña Historial del formulario)
+    // 11) Kardex — historial real de movimientos (Fase 5, mismo dato que la pestaña Historial del
+    // formulario y que nxInvVerProd — 3 implementaciones duplicadas, no se unifican en esta Fase A
+    // (autorización explícita: "no refactorizar todavía Kardex duplicado fuera de esta vista").
     const MOV_NOMBRE = { compra: 'Compra', venta: 'Venta', ajuste: 'Ajuste', transferencia: 'Transferencia', garantia: 'Garantía', taller: 'Taller', produccion: 'Producción', devolucion: 'Devolución', anulacion: 'Anulación', apertura: 'Apertura' };
+    const movTxt = m => `<b style="font-size:11.5px">${esc(MOV_NOMBRE[m.tipo] || m.tipo)}</b> <span style="color:var(--pf-txt3);font-size:10px">${Number(m.cantidad) > 0 ? '+' : ''}${fmtN(m.cantidad)} · ${fmtN(m.stock_anterior)} → ${fmtN(m.stock_nuevo)}</span>${m.motivo ? `<div style="font-size:10px;color:var(--pf-txt3)">${esc(m.motivo)}</div>` : ''}`;
     const flechaK = '<div style="text-align:center;color:var(--pf-txt3);font-size:12px;margin:1px 0">↓</div>';
     const kardexAsc = kardex.slice().reverse();
     const kardexHTML = kardexAsc.length ? kardexAsc.map((m, i) => `<div class="oppcard" style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;min-width:0"><b style="font-size:11.5px">${esc(MOV_NOMBRE[m.tipo] || m.tipo)}</b> <span style="color:var(--pf-txt3);font-size:10px">${Number(m.cantidad) > 0 ? '+' : ''}${fmtN(m.cantidad)} · ${fmtN(m.stock_anterior)} → ${fmtN(m.stock_nuevo)}</span>${m.motivo ? `<div style="font-size:10px;color:var(--pf-txt3)">${esc(m.motivo)}</div>` : ''}</div>
+        <div style="flex:1;min-width:0">${movTxt(m)}</div>
         <span style="color:var(--pf-txt3);font-size:10px">${String(m.fecha || '').slice(0, 16).replace('T', ' ')}</span>
       </div>${i < kardexAsc.length - 1 ? flechaK : ''}`).join('') : '<div class="emptyrow">Sin movimientos en el kardex todavía.</div>';
+    const kardexMiniHTML = kardex.length ? kardex.slice(0, 5).map(m => fila(`<div style="flex:1;min-width:0">${movTxt(m)}</div><span style="color:var(--pf-txt3);font-size:10px;white-space:nowrap">${String(m.fecha || '').slice(0, 16).replace('T', ' ')}</span>`)).join('') : '<div class="emptyrow">Sin movimientos todavía.</div>';
 
-    bodyEl.innerHTML =
+    // ── Aviso de descuadre stock-vs-IMEI (solo p.serial===true) — MISMO gateo/wording/botón que ya
+    // usa nxSerialMgr (parches.js, "descuadre = Number(p.stock||0) !== disp"), no se inventa otro.
+    const descuadreSerial = p.serial === true && Number(p.stock || 0) !== dispSeriales;
+    const avisoCuadreHTML = descuadreSerial ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#92400e;margin-bottom:10px">⚠️ El stock dice <b>${Number(p.stock || 0)}</b> pero hay <b>${dispSeriales}</b> IMEI disponible(s). <button class="btn bsm bc1" type="button" style="margin-left:6px" onclick="window.nxSerialCuadrar('${p.id}')">Cuadrar a ${dispSeriales}</button></div>` : '';
+    const serialCountersHTML = `<div class="kpirow">
+        ${kpiPf('Disponibles', fmtN(dispSeriales), '#16a34a')}
+        ${kpiPf('Reservados', fmtN(resSeriales), '#b45309')}
+        ${kpiPf('Vendidos', fmtN(venSeriales), '#475569')}
+      </div>`;
+
+    // ── Repartir en las 5 pestañas (mismos bloques HTML de arriba, solo se cambia dónde se pintan) ──
+    const resumenHTML =
       seccion('ti-package', 'Existencia', 'var(--pf-blue)', existenciaHTML) +
-      seccion('ti-coin', 'Costo', '#d97706', costoHTML) +
+      (puedeCosto ? seccion('ti-coin', 'Costo', '#d97706', costoHTML) : '') +
       seccion('ti-tag', 'Precio', '#2563eb', precioHTML) +
-      seccion('ti-chart-line', 'Utilidad', '#16a34a', utilidadHTML) +
+      (puedeCosto ? seccion('ti-chart-line', 'Utilidad', '#16a34a', utilidadHTML) : '') +
+      (p.serial === true ? seccion('ti-fingerprint', 'Seriales', '#475569', avisoCuadreHTML + serialCountersHTML) : '') +
+      seccion('ti-trending-up', 'Ventas últimos 30 días', '#dc2626', ventas30HTML) +
+      seccion('ti-clock-hour-4', 'Últimos movimientos', 'var(--pf-blue)', kardexMiniHTML + '<div style="text-align:right;margin-top:6px"><button class="btn bsm bghost" type="button" onclick="window.nxArt360Tab(\'kardex\')">Ver kardex completo →</button></div>');
+    const imeiTabHTML = seccion('ti-fingerprint', 'IMEI / Seriales (' + seriales.length + ')', '#475569',
+      `<div class="nxFacAdd" style="margin-bottom:8px"><i class="ti ti-search"></i><input placeholder="Buscar por IMEI/serial..." oninput="var q=this.value.toLowerCase();this.closest('[data-tab=imei]').querySelectorAll('[data-serrow]').forEach(function(r){r.style.display=(!q||r.getAttribute('data-serrow').indexOf(q)>-1)?'':'none'})"></div>` +
+      avisoSinAlmHTML + imeiHTML +
+      `<div style="text-align:right;margin-top:8px"><button class="btn bsm bc1" type="button" onclick="window.nxSerialMgr('${p.id}')"><i class="ti ti-device-mobile"></i> Administrar IMEI</button></div>`);
+    const kardexTabHTML = seccion('ti-clock-hour-4', 'Kardex completo', 'var(--pf-blue)', kardexHTML);
+    const almacenesTabHTML = conAlm ? seccion('ti-building-warehouse', 'Almacenes', 'var(--pf-blue)',
+      `<div style="overflow-x:auto"><table style="width:100%;font-size:11.5px;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #e2e8f0;text-align:left"><th style="padding:6px 4px">Almacén</th><th style="padding:6px 4px;text-align:right">Stock</th>${p.serial === true ? '<th style="padding:6px 4px;text-align:right">IMEI disp.</th>' : ''}<th style="padding:6px 4px;text-align:center">Principal</th></tr></thead><tbody>${_almacenes.map(a => `<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:6px 4px">${esc(a.nombre)}</td><td style="padding:6px 4px;text-align:right;font-weight:700">${fmtN(stockEnAlm(p.id, a.id))}</td>${p.serial === true ? `<td style="padding:6px 4px;text-align:right;color:var(--pf-txt3)">${fmtN(seriales.filter(s => s.estado === 'disponible' && String(s.almacen_id) === String(a.id)).length)}</td>` : ''}<td style="padding:6px 4px;text-align:center">${a.es_principal ? '<i class="ti ti-check" style="color:#16a34a"></i>' : ''}</td></tr>`).join('')}</tbody></table></div>` +
+      (p.serial === true ? '<div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">"IMEI disp." es un conteo aparte del stock por almacén — pueden no coincidir si hay ajustes pendientes de cuadrar (ver pestaña IMEI/Seriales).</div>' : '') +
+      `<div style="text-align:right;margin-top:8px"><button class="btn bsm bc1" type="button" onclick="window.nxAlmTransferir()"><i class="ti ti-transfer"></i> Transferir</button></div>`) : '';
+    const historialHTML =
       seccion('ti-truck', 'Proveedores (' + provIds.length + ')', '#7c3aed', proveedoresHTML) +
       seccion('ti-shopping-cart', 'Compras (' + compraItems.length + ')', '#0891b2', comprasHTML) +
       seccion('ti-receipt', 'Ventas (' + ventaItems.length + ')', '#dc2626', ventasHTML) +
       seccion('ti-shield-check', 'Garantías (' + garantiasArt.length + ')', '#7c3aed', garantiasHTML) +
-      seccion('ti-tool', 'Taller (' + repsArt.length + ')', '#d97706', tallerHTML) +
-      seccion('ti-fingerprint', 'IMEI (' + seriales.length + ')', '#475569', imeiHTML) +
-      seccion('ti-clock-hour-4', 'Kardex', 'var(--pf-blue)', kardexHTML);
+      seccion('ti-tool', 'Taller (' + repsArt.length + ')', '#d97706', tallerHTML);
+
+    const pResumen = panel('resumen'); if (pResumen) pResumen.innerHTML = resumenHTML;
+    if (p.serial === true) { const pImei = panel('imei'); if (pImei) pImei.innerHTML = imeiTabHTML; }
+    const pKardex = panel('kardex'); if (pKardex) pKardex.innerHTML = kardexTabHTML;
+    if (conAlm) { const pAlm = panel('almacenes'); if (pAlm) pAlm.innerHTML = almacenesTabHTML; }
+    const pHist = panel('historial'); if (pHist) pHist.innerHTML = historialHTML;
+  };
+  // Alterna pestaña — las 5 ya tienen su HTML calculado de una sola vez arriba (sin lazy-load,
+  // a diferencia de abrirProd/nxPfProdTab), así que solo mueve la clase .on de botón y panel.
+  window.nxArt360Tab = function (key) {
+    const modal = document.getElementById('nxArt360'); if (!modal) return;
+    modal.querySelectorAll('.nxPfProdPanel').forEach(el => el.classList.toggle('on', el.getAttribute('data-tab') === key));
+    modal.querySelectorAll('.nxPfProdTabs button').forEach(b => b.classList.toggle('on', b.getAttribute('data-tabbtn') === key));
   };
   // ══════════════ BUSCADOR UNIVERSAL (Plan Maestro POS 3.0, Fase 6) ══════════════
   // "Una sola búsqueda para: Cliente, IMEI, Factura, Serie, Artículo, Recepción, Garantía,

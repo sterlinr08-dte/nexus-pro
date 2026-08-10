@@ -1,7 +1,12 @@
 {
-  "version": "56.22",
+  "version": "56.23",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.23",
+      "fecha": "2026-08-10",
+      "texto": "NUEVO: la ficha 'Artículo 360°' de Inventario (POS) se reorganizó en pestañas — Resumen, IMEI/Seriales (solo en los artículos que llevan IMEI), Kardex, Almacenes (solo si tienes más de uno) e Historial — para ver todo de un vistazo sin desplazarte por una lista larga. De paso, protección de datos sensibles: el costo, la utilidad y el margen de cada artículo ahora solo los ve el administrador o el gerente — un cajero o vendedor ya no ve esa información al abrir la ficha de un producto."
+    },
     {
       "v": "56.22",
       "fecha": "2026-08-10",
