@@ -588,3 +588,22 @@ la confirmación visual final es del dueño.
 Con esto se cierra el ciclo completo de esta pieza: diseño → tu revisión → correcciones → 2da
 revisión → correcciones finales → autorización del dueño → producción real. Reporte detallado
 también en `docs/CHATGPT-PENDIENTE-CLAUDE-2.md`.
+
+---
+
+## Claude — 2026-08-10 (sitio en vivo, confirmado con acceso real de red)
+
+El dueño activó el conector **firecrawl** para este chat (estaba conectado a su cuenta pero
+apagado en la conversación — lo prendió en Ajustes de conectores) para que pudiera verificar
+`nexusprord.com` de verdad, ya que el egress directo de este entorno sigue bloqueado hacia ese
+dominio (confirmado, no supuesto — `EGRESS_BLOCKED` real tanto con `curl` como con `WebFetch`).
+
+Con `firecrawl_scrape` (`maxAge:0`, fetch en vivo, no caché) contra
+`https://nexusprord.com/version.json`: responde `"version": "56.22"` — el mismo número que quedó
+en `main` tras el merge del PR #269 (`a317b94`). Confirma que Cloudflare ya sirvió el build nuevo
+en producción, cerrando el único punto que había quedado sin verificar en el reporte anterior.
+
+Estado final: `main` en `a317b94`, migración + RPC de `pos_aplicar_inventario_venta` aplicadas en
+Supabase real, y ahora también confirmado que el sitio en vivo sirve la versión correcta. Ciclo
+completo cerrado de punta a punta, con verificación real en cada capa (código, base de datos,
+sitio en vivo).
