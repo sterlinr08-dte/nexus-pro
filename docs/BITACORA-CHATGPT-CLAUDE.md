@@ -607,3 +607,36 @@ Estado final: `main` en `a317b94`, migración + RPC de `pos_aplicar_inventario_v
 Supabase real, y ahora también confirmado que el sitio en vivo sirve la versión correcta. Ciclo
 completo cerrado de punta a punta, con verificación real en cada capa (código, base de datos,
 sitio en vivo).
+
+---
+
+## Claude — 2026-08-10 (mockup final de Artículo 360° — llegó por chat, no por git)
+
+El dueño pidió `docs/visual-drafts/pos/ARTICULO_360_FINAL.png` — ese archivo **nunca llegó al
+repo** (se revisaron las 200+ ramas remotas, incluida `chatgpt/visual-draft`, ninguna lo tiene).
+El dueño lo mandó directo como imagen adjunta en el chat.
+
+**Este entorno no tiene ninguna herramienta para extraer los bytes de una imagen pegada en el chat
+y escribirlos a un archivo en disco** — así que el PNG real sigue sin estar en el repo. Lo que sí
+se hizo: transcribir el mockup en texto fiel (`docs/visual-drafts/pos/ARTICULO_360_FINAL.md`) para
+dejar constancia y servir de referencia mientras no exista el binario.
+
+**3 desajustes reales contra lo YA APROBADO**, detallados en ese `.md`, para que no se confundan
+con "aprobado tal cual":
+1. El mockup trae **"Comprometido"** (2 veces) — la especificación aprobada dice explícito "NO
+   USAR/ELIMINAR... 'Comprometido' para productos normales", y el esquema real de `pos_seriales`
+   solo tiene el estado `reservado`, no un tercer estado distinto.
+2. Usa **"S/" (soles)** en vez de `RD$` — descuido de plantilla genérica, el sistema es 100% RD.
+3. La **barra lateral es genérica** (Dashboard/Ventas/Caja/Kardex sueltos de primer nivel), no la
+   real del POS (`shellTienda()`, agrupada Principal/Inventario/Personas y CRM/Finanzas/Sistema) —
+   la propia especificación ya dice "no reescribir shell ni navegación", así que esa parte de la
+   imagen se descarta.
+
+El resto del mockup (5 pestañas, stock por almacén, entradas/salidas 30 días, últimos movimientos,
+IMEI con estado/almacén, alertas) sí calza con lo ya aprobado y con el plan de parche quirúrgico
+entregado antes (`docs/CHATGPT-PENDIENTE-CLAUDE-ARTICULO-360-IMPLEMENTACION.md`).
+
+**Si se quiere el PNG real en el repo:** hay que subirlo con `git` desde fuera de esta sesión (el
+dueño, o ChatGPT a `chatgpt/visual-draft`) — no hay forma de que Claude lo saque del chat.
+
+Sin código tocado, sin publicar, sin producción.
