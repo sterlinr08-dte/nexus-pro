@@ -11363,16 +11363,19 @@
       .nxPager{ display:flex; align-items:center; justify-content:space-between; gap:10px;
         flex-wrap:wrap; padding:9px 4px 2px; font-size:11px; color:#475569; }
       .nxPager-info{ font-weight:700; }
-      .nxPager-btns{ display:flex; gap:6px; }
+      .nxPager-btns{ display:flex; gap:8px; }
       .nxPager-btn{ border:1px solid #e2e8f0; background:#fff; color:#334155;
-        border-radius:9px; padding:7px 13px; font-size:11px; font-weight:800;
-        cursor:pointer; transition:background .12s ease; }
+        border-radius:999px; padding:8px 16px; font-size:11px; font-weight:800;
+        cursor:pointer; transition:all .15s ease; }
       .nxPager-btn:hover{ background:#f1f5f9; }
-      .nxPager-more{ color:#4f46e5; border-color:#c7d2fe; background:#eef2ff; }
-      .nxPager-more:hover{ background:#e0e7ff; }
+      .nxPager-more{ color:#fff; border-color:#4f46e5;
+        background:linear-gradient(135deg,#6366f1,#4f46e5);
+        box-shadow:0 3px 10px rgba(79,70,229,.28); }
+      .nxPager-more:hover{ background:linear-gradient(135deg,#7c7ff5,#5b52ea);
+        box-shadow:0 4px 14px rgba(79,70,229,.36); }
       @media (max-width:560px){
         .nxPager{ font-size:10px; }
-        .nxPager-btn{ padding:7px 11px; }
+        .nxPager-btn{ padding:8px 14px; }
       }
     `;
     (document.head || document.documentElement).appendChild(s);
@@ -25123,9 +25126,11 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tUlt{font-size:11px;color:#94a3b8;white-space:nowrap}' +
       '.nxFP-tMenuWrap{position:relative;display:inline-flex}' +
       '.nxFP-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}' +
-      '.nxFP-pgInfo{font-size:11px;color:#94a3b8;font-weight:600}.nxFP-pgBtns{display:flex;gap:4px;flex-wrap:wrap}' +
-      '.nxFP-pgBtns button{min-width:34px;height:34px;padding:0 8px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#475569;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +
-      '.nxFP-pgBtns button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxFP-pgBtns button:disabled{opacity:.4;cursor:default}' +
+      '.nxFP-pgInfo{font-size:11px;color:#94a3b8;font-weight:600}.nxFP-pgBtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}' +
+      '.nxFP-pgBtns button{width:34px;height:34px;min-width:34px;padding:0;border-radius:50%;border:1px solid #ece9f7;background:#fff;color:#6b7280;font-weight:700;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}' +
+      '.nxFP-pgBtns button:hover:not(:disabled):not(.on){background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}' +
+      '.nxFP-pgBtns button.on{background:linear-gradient(135deg,#7c3aed,#6d28d9);border-color:#6d28d9;color:#fff;box-shadow:0 4px 12px rgba(109,40,217,.35);transform:scale(1.08)}' +
+      '.nxFP-pgBtns button:disabled{opacity:.35;cursor:default;background:transparent;border-color:transparent;box-shadow:none;transform:none}' +
       '@media(max-width:900px){.nxFP-kpis{grid-template-columns:repeat(3,1fr)}}' +
       // ── Móvil: la fila de tabla se vuelve una TARJETA compacta ────────────────
       // Antes cada celda era una línea "ETIQUETA .......... valor" (9 líneas por
