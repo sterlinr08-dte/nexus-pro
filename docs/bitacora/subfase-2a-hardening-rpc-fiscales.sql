@@ -43,6 +43,39 @@
 -- clones desechables de las 3 funciones SIN esa cláusula de exención,
 -- ejercitados con la matriz completa de actores, y luego se borraron sin
 -- dejar rastro — ver la entrega para el detalle y los resultados.
+--
+-- NOTA 2 — CORRECCIÓN IMPORTANTE sobre el ACL real (léase junto con la nota
+-- de arriba): un primer intento de este archivo afirmó "el ACL real de
+-- producción tenía anon=X" para siguiente_ncf/next_recibo/next_recibo_anio/
+-- seguros_diagnostico_financiero, basado en lo que mostraba el branch de
+-- prueba (creado con status MIGRATIONS_FAILED). Verificado DESPUÉS
+-- directamente contra producción (pg_proc + has_function_privilege + un
+-- intento real de anon -> siguiente_ncf, todo de solo lectura): production
+-- YA tiene anon revocado para esas 4 funciones desde la migración tracked
+-- `20260726000046_seguridad_secuencias_revocar_de_public` (26-jul-2026,
+-- documentada en CLAUDE.md "AUDITORÍA DE SEGURIDAD — Ronda 1"). El branch de
+-- prueba mostraba un estado MÁS VIEJO/VULNERABLE que el real porque su
+-- replay de migraciones tracked falló a mitad de camino (de ahí el status
+-- MIGRATIONS_FAILED) — se detectó también porque le faltaba por completo
+-- `seguros_diagnostico_financiero` (creada recién el 2026-08-11), hubo que
+-- recrearla a mano para poder probar. Los REVOKE de anon que se dejan abajo
+-- para esas 4 funciones son, por tanto, NO-OP contra el estado real de
+-- producción hoy — se conservan solo como defensa en profundidad explícita
+-- (regla #4 de ChatGPT), no porque cierren un hueco de anon que siga
+-- abierto. **El hueco real y vigente en producción HOY, confirmado con una
+-- prueba directa (BEGIN...ROLLBACK, sin persistir nada) contra un admin
+-- real de OTRA organización (bayolsale) usando el guard interno AÚN NO
+-- aplicado, es el cross-org**: bayolsale_admin consumió
+-- `siguiente_ncf('B02')` (devolvió B0200000610), `next_recibo_anio(2026)`
+-- (devolvió 7) y leyó `seguros_diagnostico_financiero()` — los 3 sin ningún
+-- guard interno hoy, exactamente el bypass multiempresa que ChatGPT pidió
+-- cerrar en la regla #3. Eso SÍ lo cierra el guard interno de este archivo,
+-- y quedó demostrado matemáticamente correcto contra la lógica real de
+-- mi_rol()/mi_organizacion()/auth.role() (ver clones desechables, Nota 1) —
+-- solo falta aplicarlo. `crear_factura_auto_tx` sigue siendo el ÚNICO caso
+-- donde anon SÍ tiene EXECUTE abierto en producción hoy (confirmado con
+-- has_function_privilege directo) — su REVOKE (función 4, abajo) es el
+-- único de los 5 que cierra un hueco de anon genuinamente vigente hoy.
 -- ============================================================================
 
 
@@ -84,13 +117,14 @@ begin
   return p_tipo || lpad(v_num::text, 8, '0');
 end; $function$;
 
--- GRANT/REVOKE — CORRECCIÓN sobre el comentario original de este archivo:
--- se afirmaba "ya estaba correcto, sin anon" SIN haberlo verificado con
--- has_function_privilege/ACL real. Al probar en el branch de prueba se
--- confirmó que el ACL real de producción SÍ incluye anon=X (heredado de
--- cuando la función se creó, antes de este endurecimiento). Por la regla
--- #4 de ChatGPT ("retirar anon/PUBLIC donde no sean necesarios") se revoca
--- explícitamente, en defensa en profundidad además del guard interno.
+-- GRANT/REVOKE — verificado DIRECTO contra producción (no contra el branch,
+-- que resultó tener un replay de migraciones incompleto — ver Nota 2 al
+-- inicio del archivo): anon YA NO tiene EXECUTE aquí desde la migración
+-- tracked `seguridad_secuencias_revocar_de_public` (26-jul-2026); probado
+-- con un intento real (BEGIN...ROLLBACK) → "permission denied for function
+-- siguiente_ncf". El REVOKE de abajo es por tanto un NO-OP contra el estado
+-- real de hoy — se deja igual, explícito, por la regla #4 de ChatGPT y
+-- porque no tiene costo (REVOKE sobre un privilegio ya ausente no falla).
 REVOKE EXECUTE ON FUNCTION public.siguiente_ncf(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.siguiente_ncf(text) TO authenticated, service_role;
 
@@ -120,9 +154,10 @@ begin
   return nextval('public.recibo_seq')::int;
 end; $function$;
 
--- GRANT/REVOKE — misma corrección que siguiente_ncf: el ACL real de
--- producción tenía anon=X; se revoca explícitamente (defensa en profundidad,
--- aunque el guard interno ya la bloquea igual para cross-org/anon).
+-- GRANT/REVOKE — verificado vía ACL real (pg_proc) contra producción: anon
+-- ya no aparece en el ACL de esta función tampoco (mismo REVOKE tracked del
+-- 26-jul-2026, ver comentario de siguiente_ncf arriba). NO-OP hoy, se deja
+-- explícito por consistencia de familia y por la regla #4 de ChatGPT.
 REVOKE EXECUTE ON FUNCTION public.next_recibo() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.next_recibo() TO authenticated, service_role;
 
@@ -155,7 +190,8 @@ begin
   return v_ultimo;
 end; $function$;
 
--- GRANT/REVOKE — misma corrección: ACL real tenía anon=X, se revoca.
+-- GRANT/REVOKE — verificado igual: anon ya sin EXECUTE en producción hoy
+-- (mismo REVOKE tracked del 26-jul-2026). NO-OP, se deja explícito.
 REVOKE EXECUTE ON FUNCTION public.next_recibo_anio(integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.next_recibo_anio(integer) TO authenticated, service_role;
 
@@ -173,6 +209,18 @@ GRANT EXECUTE ON FUNCTION public.next_recibo_anio(integer) TO authenticated, ser
 -- por accidente/copy-paste, el hallazgo ALTO #6 de la auditoría Fase 2). Se
 -- deja el CUERPO de la función 100% intacto — cero riesgo sobre la lógica
 -- transaccional de facturación (anti-duplicado + NCF + asiento).
+--
+-- ESTA ES la única de las 5 donde el REVOKE cierra un hueco REAL y VIGENTE
+-- hoy en producción — verificado con has_function_privilege('anon', ...)
+-- directo contra producción: true (anon SÍ puede ejecutarla ahora mismo).
+-- Probado también en la práctica (BEGIN...ROLLBACK, sin persistir): un
+-- intento real de anon/bayolsale_admin no llegó a crear ninguna factura
+-- porque la RLS de `secuencias_ncf` (la función es SECURITY INVOKER, corre
+-- con los privilegios/RLS del que llama) ya le niega la fila y la función
+-- falla sola con "No existe secuencia NCF para tipo B02" — pero el EXECUTE
+-- en sí seguía abierto, una superficie de ataque innecesaria que este
+-- REVOKE cierra de raíz, sin depender de que la RLS de esa tabla nunca
+-- cambie.
 REVOKE EXECUTE ON FUNCTION public.crear_factura_auto_tx(
   uuid, text, text, uuid, text, integer, integer, numeric, numeric, numeric,
   numeric, text, date, numeric
@@ -274,10 +322,13 @@ begin
 end;
 $function$;
 
--- GRANT/REVOKE — misma corrección: ACL real tenía anon=X, se revoca. El
--- hardening real es el guard interno (exige mi_rol()='admin', no solo
--- "cualquier rol"), a diferencia de las funciones 1-3; el REVOKE de anon es
--- defensa en profundidad adicional.
+-- GRANT/REVOKE — verificado igual contra producción: anon ya sin EXECUTE
+-- (mismo REVOKE tracked del 26-jul-2026), NO-OP. El hardening real acá es
+-- el guard interno (exige mi_rol()='admin', no solo "cualquier rol", a
+-- diferencia de las funciones 1-3) — y ESE sí cierra un hueco confirmado
+-- vigente hoy: bayolsale_admin (admin real de otra organización) pudo leer
+-- seguros_diagnostico_financiero() completo en la prueba directa contra
+-- producción (BEGIN...ROLLBACK), sin ningún guard que se lo impidiera.
 REVOKE EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() TO authenticated, service_role;
 
@@ -286,6 +337,18 @@ GRANT EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() TO authenticat
 -- ROLLBACK — restaura los 5 cuerpos EXACTOS capturados en producción el
 -- 2026-08-11 antes de este hardening (pg_get_functiondef en vivo). Ejecutar
 -- estos 5 bloques completos para deshacer TODO lo de arriba en un solo paso.
+--
+-- IMPORTANTE (corrección tras verificar contra producción, no solo el
+-- branch de prueba — ver Nota 2 al inicio del archivo): el GRANT a
+-- PUBLIC/anon que este rollback restauraba para siguiente_ncf/next_recibo/
+-- next_recibo_anio NO es el baseline real de producción — esas 3 YA tenían
+-- anon revocado desde el 26-jul-2026 (`seguridad_secuencias_revocar_de_public`,
+-- tracked). Restaurarlo a PUBLIC/anon sería una REGRESIÓN respecto al
+-- estado real, no una vuelta al estado real. Se corrige aquí: el rollback
+-- de esas 3 solo restaura el CUERPO (quita el guard), sin tocar su ACL
+-- (que ya estaba, y se queda, en authenticated+service_role). El único
+-- GRANT a PUBLIC/anon que sí hace falta restaurar es el de
+-- crear_factura_auto_tx, que es la única con ese ACL abierto hoy de verdad.
 -- ============================================================================
 /*
 CREATE OR REPLACE FUNCTION public.siguiente_ncf(p_tipo text)
@@ -307,7 +370,6 @@ begin
   end if;
   return p_tipo || lpad(v_num::text, 8, '0');
 end; $function$;
-GRANT EXECUTE ON FUNCTION public.siguiente_ncf(text) TO PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.next_recibo()
  RETURNS integer
@@ -315,7 +377,6 @@ CREATE OR REPLACE FUNCTION public.next_recibo()
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$ select nextval('public.recibo_seq')::int $function$;
-GRANT EXECUTE ON FUNCTION public.next_recibo() TO PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.next_recibo_anio(p_anio integer)
  RETURNS integer
@@ -327,7 +388,6 @@ AS $function$
   on conflict (anio) do update set ultimo = public.recibo_contador.ultimo + 1
   returning ultimo;
 $function$;
-GRANT EXECUTE ON FUNCTION public.next_recibo_anio(integer) TO PUBLIC, anon, authenticated;
 
 GRANT EXECUTE ON FUNCTION public.crear_factura_auto_tx(
   uuid, text, text, uuid, text, integer, integer, numeric, numeric, numeric,
@@ -399,5 +459,7 @@ SELECT jsonb_build_object(
 )
 FROM metricas;
 $function$;
-GRANT EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() TO PUBLIC, anon, authenticated;
+-- NO se restaura ningún GRANT a PUBLIC/anon aquí a propósito: el baseline real
+-- de producción para esta función tampoco los incluye (confirmado, ver NOTA 2
+-- arriba) — restaurarlos sería una regresión, no una reversión genuina.
 */
