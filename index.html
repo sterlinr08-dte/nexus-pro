@@ -2854,6 +2854,28 @@ let CFG={t1:3500,t2:5800,t3:8200,d1:2100,d2:3480,d3:4920,com1:5,com2:7,com3:10,a
 let sesion=null;
 let editCliId=null,abonoCliId=null,inhabCliId=null,editEmpId=null,editAgtId=null;
 let tempDeps=[];
+// CUTOVER COBRO FINANCIERO (seguros_registrar_cobro/seguros_reversar_cobro):
+// _cobroIdemKey = llave de idempotencia del cobro EN CURSO (se genera al abrir
+// el modal de abono en abrirAbono(), se reusa si el mismo intento se reintenta
+// —doble clic, red lenta—, se regenera tras un cobro exitoso). NUNCA en
+// localStorage (regla del proyecto) — vive solo en memoria de esta pestaña.
+// _reversaIdemKeys = una llave por abono en curso de reversarse (indexada por
+// abonoId, no hay un "modal" análogo a abrirAbono para esta acción).
+let _cobroIdemKey=null;
+let _reversaIdemKeys={};
+function nxNuevaIdemKey(){
+  try{return crypto.randomUUID();}
+  catch(_){return 'idem-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
+}
+// Extrae el mensaje humano de un error RAISE EXCEPTION de PostgREST — llega como
+// JSON {"code":...,"message":"..."} dentro de e.message; sin esto, el usuario
+// vería el JSON crudo en vez del texto claro que la RPC preparó para él.
+function nxRpcErr(e){
+  try{
+    const j=JSON.parse((e&&e.message)||'');
+    return (j&&j.message)?j.message:((e&&e.message)||'Error desconocido');
+  }catch(_){return (e&&e.message)||'Error desconocido';}
+}
 let autoCfg={dia:1,hora:'08:00',wa:1,tpl:'Estimado/a *{{nombre}}*,\n\nSu factura *{{mes}}* ha sido generada.\n*Póliza:* {{poliza}}\n*Plan:* {{plan}}\n*Prima:* RD$ {{prima}}\n{{deuda}}\n*Total:* RD$ {{total}}\n*Vencimiento póliza:* {{vence}}\n\n_NEXUS PRO · {{empresa}}_'};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -8035,7 +8057,7 @@ try{Object.defineProperty(window,'renderBancos',{value:renderBancos,writable:fal
 try{Object.defineProperty(window,'llenarSelectBancosCobros',{value:llenarSelectBancosCobros,writable:false,configurable:false});}catch(e){}
 
 function abrirAbono(cid){
-  abonoCliId=cid;const c=ST.clientes.find(x=>x.id===cid);
+  abonoCliId=cid;_cobroIdemKey=nxNuevaIdemKey();const c=ST.clientes.find(x=>x.id===cid);
   // BLINDADO: cargar bancos en el select cuando se abre el modal
   if(typeof window.llenarSelectBancosCobros==='function')window.llenarSelectBancosCobros();
   document.getElementById('abonoI').innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(pend(c))}</span></div>`;
@@ -8214,10 +8236,14 @@ function aplicarFiltrosPagos(){
     return true;
   });
 
-  // Resumen
-  const total=list.reduce((s,p)=>s+(Number(p.monto)||0),0);
-  const prom=list.length?total/list.length:0;
-  const clientesPagaron=new Set(list.map(p=>p.cliente_id).filter(Boolean)).size;
+  // Resumen — excluye reversados (con el cutover a seguros_reversar_cobro, un
+  // cobro reversado ya NO se borra, se queda visible con estado='Reversado';
+  // contarlo aquí infla "Total cobrado" con dinero que en realidad se devolvió
+  // — mismo criterio que ya usa seguros_diagnostico_financiero server-side).
+  const listActivos=list.filter(p=>p.estado!=='Reversado');
+  const total=listActivos.reduce((s,p)=>s+(Number(p.monto)||0),0);
+  const prom=listActivos.length?total/listActivos.length:0;
+  const clientesPagaron=new Set(listActivos.map(p=>p.cliente_id).filter(Boolean)).size;
   const elM=document.getElementById('pgTotalMonto');if(elM)elM.textContent=fmt(total);
   const elC=document.getElementById('pgTotalCant');if(elC)elC.textContent=list.length;
   const elCli=document.getElementById('pgClientesPagaron');if(elCli)elCli.textContent=clientesPagaron;
@@ -8229,7 +8255,7 @@ function aplicarFiltrosPagos(){
     return;
   }
   const puedeEdit=tienePermiso('payments_edit');
-  const puedeDel=tienePermiso('payments_delete');
+  const puedeDel=sesion?.rol==='admin'; // reversar es admin-only (RPC seguros_reversar_cobro)
   const fHora=s=>{if(!s)return'—';try{return new Date(s).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return'—';}};
   tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('fecha')}">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('cliente')}">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('metodo')}">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('monto')}">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
     <td data-lb="Fecha">${(p.fecha||'').slice(0,10)}</td>
@@ -8237,13 +8263,13 @@ function aplicarFiltrosPagos(){
     <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(p.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${p.cliente_id}')}" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
     <td data-lb="Método">${p.metodo||'—'}</td>
     <td data-lb="Banco">${p.banco||'—'}</td>
-    <td data-lb="Monto" class="r" style="font-weight:800;color:var(--sf-ok-d)">${fmt(p.monto)}</td>
+    <td data-lb="Monto" class="r" style="font-weight:800;${p.estado==='Reversado'?'color:#94a3b8;text-decoration:line-through':'color:var(--sf-ok-d)'}">${fmt(p.monto)}</td>
     <td data-lb="Usuario">${p.created_by_name||p.agente_cobro||'—'}</td>
     <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
       ${p.cliente_id?`<button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${p.id}','${p.cliente_id}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt" aria-hidden="true"></i></button>`:''}
       ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche" aria-label="Ver bauche"><i class="ti ti-eye" aria-hidden="true"></i></button>`:''}
       ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar" aria-label="Editar pago"><i class="ti ti-edit" aria-hidden="true"></i></button>`:''}
-      ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar" aria-label="Eliminar pago"><i class="ti ti-minus" aria-hidden="true"></i></button>`:''}
+      ${p.estado==='Reversado'?`<span class="btn bsm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Ya reversado">Reversado</span>`:(puedeDel?`<button class="btn bsm bc4" onclick="reversarAbono('${p.id}','${p.cliente_id}',this)" title="Reversar cobro" aria-label="Reversar cobro"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></button>`:'')}
     </div></td>
   </tr>`).join('')+'</tbody></table>';
 }
@@ -8301,9 +8327,10 @@ async function abrirHistorialCobros(clienteId){
     if(info)info.innerHTML='<div style="color:#dc2626">Error al cargar cobros</div>';
     return;
   }
-  const totalCobrado=abonos.reduce((s,a)=>s+(Number(a.monto)||0),0);
+  // Excluye reversados del total cobrado (ver aplicarFiltrosPagos, mismo criterio)
+  const totalCobrado=abonos.filter(a=>a.estado!=='Reversado').reduce((s,a)=>s+(Number(a.monto)||0),0);
   const puedeEdit=tienePermiso('payments_edit');
-  const puedeDel=tienePermiso('payments_delete');
+  const puedeDel=sesion?.rol==='admin'; // reversar es admin-only (RPC seguros_reversar_cobro)
   if(info){
     info.innerHTML=`
       <div style="display:flex;justify-content:space-between">
@@ -8320,13 +8347,13 @@ async function abrirHistorialCobros(clienteId){
     <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
     <tbody>${abonos.map(a=>`<tr>
       <td style="font-size:10px">${(a.fecha||'').slice(0,10)}${reciboNoStr(a)?`<div style="font-size:8px;color:#1e3a6e;font-weight:700">🧾 ${reciboNoStr(a)}</div>`:''}${(Array.isArray(a.meses_cubiertos)&&a.meses_cubiertos.length)?`<div style="font-size:8px;color:#6d28d9;font-weight:600">📅 ${a.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
-      <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
+      <td style="font-weight:700;${a.estado==='Reversado'?'color:#94a3b8;text-decoration:line-through':'color:#059669'}">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
       <td style="white-space:nowrap">
         <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt"></i></button>
         ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>`:''}
-        ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus"></i></button>`:''}
+        ${a.estado==='Reversado'?`<span class="btn bsm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Ya reversado">Reversado</span>`:(puedeDel?`<button class="btn bsm bc4" onclick="reversarAbono('${a.id}','${clienteId}',this)" title="Reversar cobro" aria-label="Reversar cobro"><i class="ti ti-arrow-back-up"></i></button>`:'')}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -8383,11 +8410,21 @@ async function editarAbono(abonoId,clienteId){
   }
 }
 
-async function eliminarAbono(abonoId,clienteId){
-  // RBAC: verificar permiso de eliminación
-  if(!tienePermiso('payments_delete')){
-    toast('err','Acceso denegado','No tienes permisos para realizar esta acción.');
-    logAudit('ACCESO_DENEGADO','Intento de eliminar pago sin permiso','Cobros');
+// ── CUTOVER (docs/bitacora/2026-08-10-2321-chatgpt.md, punto 2) ─────────────
+// "Eliminar cobro" ya NO existe como hard-delete (el propio Supabase lo
+// bloquea desde Fase 1 con el trigger trg_seguros_bloquear_delete_abono — un
+// DELETE aquí siempre fallaba en producción antes de este cutover). La acción
+// visible es REVERSAR: seguros_reversar_cobro marca el abono estado='Reversado'
+// (nunca lo borra, queda trazabilidad completa) y postea el asiento inverso —
+// todo en una sola llamada atómica, admin-only (decisión de ChatGPT, punto 5:
+// se quitó 'gerente' del chequeo — no existe ese rol en Seguros).
+async function reversarAbono(abonoId,clienteId,btnEl){
+  // RBAC: admin-only — coincide exacto con lo que la RPC exige del lado del
+  // servidor (mi_rol()<>'admin' → RAISE EXCEPTION). Gatear aquí también evita
+  // mostrarle el botón a alguien que la RPC va a rechazar de todos modos.
+  if(sesion?.rol!=='admin'){
+    toast('err','Acceso denegado','Solo un administrador puede reversar un cobro.');
+    logAudit('ACCESO_DENEGADO','Intento de reversar cobro sin rol admin','Cobros');
     return;
   }
   const c=ST.clientes.find(x=>x.id===clienteId);
@@ -8396,28 +8433,30 @@ async function eliminarAbono(abonoId,clienteId){
   try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar abonos');return;}
   const abono=abonos.find(a=>a.id===abonoId);
   if(!abono){toast('err','Abono no encontrado');return;}
-  if(!confirm(`⚠️ ELIMINAR ABONO\n\nCliente: ${c.nom}\nMonto: RD$ ${abono.monto}\nFecha: ${abono.fecha}\n\nEsta acción no se puede deshacer.\n¿Continuar?`))return;
+  if(abono.estado==='Reversado'){toast('warn','Ya reversado','Este cobro ya fue reversado antes.');return;}
+  const motivo=(prompt(`⚠️ REVERSAR COBRO\n\nCliente: ${c.nom}\nMonto: RD$ ${abono.monto}\nFecha: ${abono.fecha}\n\nEsta acción no se puede deshacer — el registro original se conserva con trazabilidad completa (no se borra).\n\nEscribe el motivo de la reversa:`,'')||'').trim();
+  if(!motivo){toast('warn','Reversa cancelada','Hace falta un motivo para reversar el cobro.');return;}
+  // Llave de idempotencia por abono (no hay un "modal" análogo a abrirAbono()
+  // para esta acción) — se reusa si el mismo intento se reintenta, se borra
+  // tras un éxito real.
+  const idemKey=_reversaIdemKeys[abonoId]||(_reversaIdemKeys[abonoId]=nxNuevaIdemKey());
+  if(btnEl)btnEl.disabled=true;
   try{
-    const nuevoP=Math.max(0,(c.pagado||0)-abono.monto);
-    await API.del('abonos',`id=eq.${abonoId}`);
-    await API.patch('clientes',`id=eq.${clienteId}`,{pagado:nuevoP});
-    c.pagado=nuevoP;
-    // Asiento de reversa del cobro eliminado (DR Cuentas por cobrar / CR caja-banco)
-    try{
-      const cta=abono.metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:(abono.metodo==='Transferencia'||abono.metodo==='Depósito')?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
-      const m=Number(abono.monto)||0;
-      const asiRev={fecha:hoy(),referencia:'AST-COB-REV',descripcion:`Reversa cobro eliminado — ${c.nom} · RD$ ${abono.monto}`,cuenta_dr_cod:'1201',cuenta_dr_nom:'Cuentas por cobrar — Clientes',monto_dr:m,cuenta_cr_cod:cta.cod,cuenta_cr_nom:cta.nom,monto_cr:m};
-      const rr=await API.post('asientos',asiRev);if(rr&&rr[0])ST.asientos.unshift(rr[0]);
-      try{recalcularSaldosContables();}catch(_){}
-    }catch(_){}
-    logAudit('PAGO_ELIMINADO',`Cliente: ${c.nom} · Abono eliminado · Valor: RD$${abono.monto} · Fecha original: ${abono.fecha}`,'Cobros');
-    toast('ok','Abono eliminado',c.nom);
+    const r=await API.post('rpc/seguros_reversar_cobro',{p_abono_id:abonoId,p_motivo:motivo,p_idempotency_key:idemKey});
+    if(!r||!r.ok)throw new Error('La RPC no confirmó la reversa');
+    delete _reversaIdemKeys[abonoId];
+    c.pagado=r.nuevo_pagado;c.deuda_anterior=r.nueva_deuda_anterior;
+    try{const asi=await API.get('asientos',`id=eq.${r.asiento_reversa_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
+    logAudit('PAGO_REVERSADO',`Cliente: ${c.nom} · Abono reversado · Valor: RD$${abono.monto} · Fecha original: ${abono.fecha} · Motivo: ${motivo}`,'Cobros',c.id);
+    toast('ok','Cobro reversado',c.nom);
     rCob();rDash();
+    try{rCli();rFact();}catch(_e){} // reflejar la reversa AL INSTANTE también en Clientes y Facturas
     if(document.getElementById('csPanel')?.classList.contains('open'))verCliente(clienteId);
     if(document.getElementById('mHistCobros')?.classList.contains('on'))abrirHistorialCobros(clienteId);
   }catch(e){
-    mostrarError(e.message,'Al eliminar abono');
+    const msg=nxRpcErr(e);mostrarError(msg,'Al reversar abono');toast('err','Error al reversar',msg);
   }
+  if(btnEl)btnEl.disabled=false;
 }
 
 async function verHistorialAbonos(clienteId){
@@ -8426,17 +8465,17 @@ async function verHistorialAbonos(clienteId){
   let abonos=[];
   try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar historial');return;}
   const puedeEdit=tienePermiso('payments_edit');
-  const puedeDel=tienePermiso('payments_delete');
+  const puedeDel=sesion?.rol==='admin'; // reversar es admin-only (RPC seguros_reversar_cobro)
   const filas=abonos.length?abonos.map(a=>`
     <tr>
       <td style="font-size:10px">${(a.fecha||'').slice(0,10)}${reciboNoStr(a)?`<div style="font-size:8px;color:#1e3a6e;font-weight:700">🧾 ${reciboNoStr(a)}</div>`:''}${(Array.isArray(a.meses_cubiertos)&&a.meses_cubiertos.length)?`<div style="font-size:8px;color:#6d28d9;font-weight:600">📅 ${a.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
-      <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
+      <td style="font-weight:700;${a.estado==='Reversado'?'color:#94a3b8;text-decoration:line-through':'color:#059669'}">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
       <td style="white-space:nowrap;display:flex;gap:4px">
         <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt"></i></button>
         ${puedeEdit?`<button aria-label="Editar este pago" class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>`:''}
-        ${puedeDel?`<button aria-label="Eliminar este pago" class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-minus"></i></button>`:''}
+        ${a.estado==='Reversado'?`<span class="btn bsm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Ya reversado">Reversado</span>`:(puedeDel?`<button aria-label="Reversar este cobro" class="btn bsm bc4" onclick="reversarAbono('${a.id}','${clienteId}',this)"><i class="ti ti-arrow-back-up"></i></button>`:'')}
       </td>
     </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#475569">Sin abonos registrados</td></tr>';
   const cont=document.getElementById('csBody');
@@ -8463,10 +8502,21 @@ function mostrarCajaRecibo(c){
   if(avisoSinWA)avisoSinWA.style.display=tieneWA?'none':'';
   reciboDiv.style.display='block';
 }
+// ── CUTOVER (docs/bitacora/2026-08-10-2321-chatgpt.md) ──────────────────────
+// regAbono()/nxRegAbonoDeudaAnterior() ya NO hacen PATCH clientes + POST abonos
+// + POST asientos como 3 llamadas REST separadas (si la 2ª o 3ª fallaba a mitad
+// de camino, el dinero quedaba movido sin abono/asiento reales — el hallazgo #1
+// de la auditoría de las 23:02). Ahora es UNA sola llamada atómica a la RPC
+// seguros_registrar_cobro (FOR UPDATE + INSERT abono + INSERT asiento, todo o
+// nada, con idempotency_key server-side). Sin fallbacks que degradan campos si
+// algo falla — si la RPC rechaza, el usuario ve el motivo exacto (nxRpcErr) y
+// NO queda ningún cobro a medias.
 async function regAbono(){
   const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
   // VALIDACIONES nuevas: agente, referencia, banco (si transferencia/depósito)
+  // — se quedan aquí como feedback rápido; la RPC las vuelve a exigir del lado
+  // del servidor, así que esto es solo UX, nunca la única barrera real.
   const agenteCobro=document.getElementById('aAgente')?.value||null;
   if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente que cobró');return;}
   const refValor=(document.getElementById('aRef')?.value||'').trim();
@@ -8490,69 +8540,76 @@ async function regAbono(){
   const _destino=document.getElementById('aDestino')?.value||'facturas';
   if(_destino==='deuda_anterior'){await nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar);return;}
   const pendActual=pend(c);
-  if(monto>pendActual+0.01&&!confirm(`El monto ${fmt(monto)} excede lo pendiente (${fmt(pendActual)}).\n\n¿Es un pago por adelantado? Aceptar para continuar.`))return;
+  let permitirAdelanto=false;
+  if(monto>pendActual+0.01){
+    if(!confirm(`El monto ${fmt(monto)} excede lo pendiente (${fmt(pendActual)}).\n\n¿Es un pago por adelantado? Aceptar para continuar.`))return;
+    permitirAdelanto=true;
+  }
+  if(!_cobroIdemKey)_cobroIdemKey=nxNuevaIdemKey(); // respaldo si se llegó aquí sin pasar por abrirAbono()
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
-    const nuevoP=(c.pagado||0)+monto;
-    await API.patch('clientes',`id=eq.${c.id}`,{pagado:nuevoP});c.pagado=nuevoP;
-    let _abonoId=null;
-    try{
-      const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar});
-      if(rA&&rA[0])_abonoId=rA[0].id;
-    }catch(eCol){
-      // Si alguna columna no existe, guardar sin ella
-      try{
-        const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});
-        if(rA&&rA[0])_abonoId=rA[0].id;
-      }catch(eCol2){
-        const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy()});
-        if(rA&&rA[0])_abonoId=rA[0].id;
-      }
-    }
+    const r=await API.post('rpc/seguros_registrar_cobro',{
+      p_cliente_id:c.id,p_monto:monto,p_metodo:metodo,p_referencia:refValor,
+      p_agente_cobro:agenteCobro,p_banco:bancoGuardar,p_destino:'facturas',
+      p_permitir_adelanto:permitirAdelanto,p_idempotency_key:_cobroIdemKey
+    });
+    if(!r||!r.ok)throw new Error('La RPC no confirmó el cobro');
+    c.pagado=r.nuevo_pagado;
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
-    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
-    const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
-    const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
-    const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
-    recalcularSaldosContables();
+    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:'')+(r.adelanto>0.01?` · Adelanto: ${fmt(r.adelanto)}`:''),'Cobros',c.id);
+    // Refresco de solo-lectura del asiento que la RPC ya insertó de forma atómica
+    // (no es una segunda escritura financiera — el dinero ya se movió del todo
+    // dentro de la RPC; esto solo mantiene ST.asientos fresco en memoria para
+    // que Contabilidad no se vea desactualizada hasta el próximo reload).
+    try{const asi=await API.get('asientos',`id=eq.${r.asiento_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
     // Capturar los meses que estaban PENDIENTES/PARCIAL antes de marcarlos pagados (para el recibo)
     const _mesesPend=ST.facturas.filter(f=>f.cliente_id===c.id&&(f.estado==='Pendiente'||f.estado==='Parcial')&&f.mes&&f.anio).map(f=>({mes:Number(f.mes),anio:Number(f.anio)}));
     await resyncEstadoFacturas(c.id);
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
-    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:_mesesPend};
+    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:_mesesPend};
+    _cobroIdemKey=nxNuevaIdemKey(); // cobro ya comprometido: cualquier próximo intento es un cobro NUEVO
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
-  }catch(e){mostrarError(e.message,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',e.message);}
+  }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
 }
 
 // Pago dirigido a la DEUDA ANTES DEL SISTEMA (baja clientes.deuda_anterior, NO toca facturas).
+// Decisión de ChatGPT (2026-08-10 23:21, punto 4): NO se autoriza sobrepago —
+// se rechaza con mensaje claro, no se absorbe el excedente en silencio como
+// hacía el código viejo (bajaba la deuda anterior a 0 y el resto se perdía).
+// La RPC ya lo rechaza server-side sin ningún parámetro de "permitir"; aquí se
+// valida también del lado del cliente para no gastar un viaje de red en un
+// monto que se sabe de antemano que la RPC va a rechazar.
 async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar){
   const da=deudaAnt(c);
   if(da<=0){toast('err','Sin deuda anterior','Este cliente no tiene deuda antes del sistema');return;}
-  if(monto>da+0.01&&!confirm(`El monto ${fmt(monto)} excede la deuda anterior (${fmt(da)}).\n\nSe bajará la deuda anterior a 0. ¿Continuar?`))return;
+  if(monto>da+0.01){
+    toast('err','El monto excede la deuda anterior',`Deuda anterior: ${fmt(da)}. Cobra ${fmt(da)} a esta bolsa y registra el resto como un cobro normal a facturas.`);
+    return;
+  }
+  if(!_cobroIdemKey)_cobroIdemKey=nxNuevaIdemKey();
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
-    const nuevaDA=Math.max(0,da-monto);
-    await API.patch('clientes',`id=eq.${c.id}`,{deuda_anterior:nuevaDA});c.deuda_anterior=nuevaDA;
-    let _abonoId=null;const nota='Pago a DEUDA ANTES DEL SISTEMA';
-    try{const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar,nota,tipo:'deuda_anterior'});if(rA&&rA[0])_abonoId=rA[0].id;}
-    catch(e1){try{const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar,nota});if(rA&&rA[0])_abonoId=rA[0].id;}
-      catch(e2){const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});if(rA&&rA[0])_abonoId=rA[0].id;}}
-    // Asiento contable: Caja/Banco contra Cuentas por cobrar (igual que un cobro normal).
-    const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:(metodo==='Transferencia'||metodo==='Depósito')?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
-    const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro deuda anterior ${metodo} — ${c.nom} [${c.numero_poliza||'—'}]`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
-    try{const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);recalcularSaldosContables();}catch(e){}
+    const r=await API.post('rpc/seguros_registrar_cobro',{
+      p_cliente_id:c.id,p_monto:monto,p_metodo:metodo,p_referencia:refValor,
+      p_agente_cobro:agenteCobro,p_banco:bancoGuardar,p_destino:'deuda_anterior',
+      p_permitir_adelanto:false,p_idempotency_key:_cobroIdemKey
+    });
+    if(!r||!r.ok)throw new Error('La RPC no confirmó el pago a deuda anterior');
+    c.deuda_anterior=r.nueva_deuda_anterior;
+    try{const asi=await API.get('asientos',`id=eq.${r.asiento_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
     logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
-    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:[]};
+    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:[]};
+    _cobroIdemKey=nxNuevaIdemKey();
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
-  }catch(e){mostrarError(e.message,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',e.message);}
+  }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
 }
 
