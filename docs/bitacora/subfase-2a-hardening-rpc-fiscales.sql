@@ -28,6 +28,21 @@
 -- ANTERIOR (capturado en vivo el 2026-08-11, ver el bloque comentado antes
 -- de cada función). Para revertir: ejecutar los 5 bloques "ROLLBACK" al
 -- final de este archivo (o restaurar desde pg_dump si se prefiere).
+--
+-- NOTA de metodología de prueba (importante para leer la entrega en
+-- docs/bitacora/<fecha>-claude.md): la herramienta MCP execute_sql que se
+-- usó para probar esto en un branch de Supabase se conecta SIEMPRE como
+-- session_user='postgres' — el mismo tipo de conexión directa que la
+-- cláusula `session_user <> 'postgres'` del guard está diseñada a eximir
+-- (Management API/SQL Editor/migraciones). Por eso, probar el guard
+-- COMPLETO (con esa cláusula incluida) desde esa herramienta arroja
+-- siempre "permitido", sin importar el actor simulado — no es un bug del
+-- guard, es que la herramienta de prueba ES el tipo de acceso que esa
+-- cláusula exime a propósito. Para probar la parte del guard que sí importa
+-- para tráfico real (auth.role() + mi_rol() + mi_organizacion()), se usaron
+-- clones desechables de las 3 funciones SIN esa cláusula de exención,
+-- ejercitados con la matriz completa de actores, y luego se borraron sin
+-- dejar rastro — ver la entrega para el detalle y los resultados.
 -- ============================================================================
 
 
@@ -69,8 +84,15 @@ begin
   return p_tipo || lpad(v_num::text, 8, '0');
 end; $function$;
 
--- GRANT/REVOKE: sin cambio (ya estaba correcto — authenticated, postgres,
--- service_role; sin anon). El hardening real es el guard interno de arriba.
+-- GRANT/REVOKE — CORRECCIÓN sobre el comentario original de este archivo:
+-- se afirmaba "ya estaba correcto, sin anon" SIN haberlo verificado con
+-- has_function_privilege/ACL real. Al probar en el branch de prueba se
+-- confirmó que el ACL real de producción SÍ incluye anon=X (heredado de
+-- cuando la función se creó, antes de este endurecimiento). Por la regla
+-- #4 de ChatGPT ("retirar anon/PUBLIC donde no sean necesarios") se revoca
+-- explícitamente, en defensa en profundidad además del guard interno.
+REVOKE EXECUTE ON FUNCTION public.siguiente_ncf(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.siguiente_ncf(text) TO authenticated, service_role;
 
 
 -- ----------------------------------------------------------------------------
@@ -98,7 +120,11 @@ begin
   return nextval('public.recibo_seq')::int;
 end; $function$;
 
--- GRANT/REVOKE: sin cambio (authenticated, postgres, service_role).
+-- GRANT/REVOKE — misma corrección que siguiente_ncf: el ACL real de
+-- producción tenía anon=X; se revoca explícitamente (defensa en profundidad,
+-- aunque el guard interno ya la bloquea igual para cross-org/anon).
+REVOKE EXECUTE ON FUNCTION public.next_recibo() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.next_recibo() TO authenticated, service_role;
 
 
 -- ----------------------------------------------------------------------------
@@ -129,7 +155,9 @@ begin
   return v_ultimo;
 end; $function$;
 
--- GRANT/REVOKE: sin cambio (authenticated, postgres, service_role).
+-- GRANT/REVOKE — misma corrección: ACL real tenía anon=X, se revoca.
+REVOKE EXECUTE ON FUNCTION public.next_recibo_anio(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.next_recibo_anio(integer) TO authenticated, service_role;
 
 
 -- ----------------------------------------------------------------------------
@@ -246,9 +274,12 @@ begin
 end;
 $function$;
 
--- GRANT/REVOKE: sin cambio (authenticated, postgres, service_role). El
+-- GRANT/REVOKE — misma corrección: ACL real tenía anon=X, se revoca. El
 -- hardening real es el guard interno (exige mi_rol()='admin', no solo
--- "cualquier rol"), a diferencia de las funciones 1-3.
+-- "cualquier rol"), a diferencia de las funciones 1-3; el REVOKE de anon es
+-- defensa en profundidad adicional.
+REVOKE EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() TO authenticated, service_role;
 
 
 -- ============================================================================
@@ -276,6 +307,7 @@ begin
   end if;
   return p_tipo || lpad(v_num::text, 8, '0');
 end; $function$;
+GRANT EXECUTE ON FUNCTION public.siguiente_ncf(text) TO PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.next_recibo()
  RETURNS integer
@@ -283,6 +315,7 @@ CREATE OR REPLACE FUNCTION public.next_recibo()
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$ select nextval('public.recibo_seq')::int $function$;
+GRANT EXECUTE ON FUNCTION public.next_recibo() TO PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.next_recibo_anio(p_anio integer)
  RETURNS integer
@@ -294,6 +327,7 @@ AS $function$
   on conflict (anio) do update set ultimo = public.recibo_contador.ultimo + 1
   returning ultimo;
 $function$;
+GRANT EXECUTE ON FUNCTION public.next_recibo_anio(integer) TO PUBLIC, anon, authenticated;
 
 GRANT EXECUTE ON FUNCTION public.crear_factura_auto_tx(
   uuid, text, text, uuid, text, integer, integer, numeric, numeric, numeric,
@@ -365,4 +399,5 @@ SELECT jsonb_build_object(
 )
 FROM metricas;
 $function$;
+GRANT EXECUTE ON FUNCTION public.seguros_diagnostico_financiero() TO PUBLIC, anon, authenticated;
 */
