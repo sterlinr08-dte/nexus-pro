@@ -1,0 +1,104 @@
+-- ══════════════════════════════════════════════════════════════════════════
+-- HALLAZGO ADICIONAL — RESUELTO (docs/bitacora/2026-08-11-0618-chatgpt.md)
+-- ══════════════════════════════════════════════════════════════════════════
+-- CONTRADICCIÓN CERRADA: la premisa de este archivo ("abonos.idempotency_key
+-- NO TIENE ninguna restricción UNIQUE") estaba MAL — ChatGPT lo verificó
+-- directo contra `pg_indexes` en producción y SÍ existen:
+--   - abonos_idempotency_key_uq — UNIQUE parcial sobre abonos(idempotency_key)
+--     WHERE idempotency_key IS NOT NULL.
+--   - abonos_reversa_idempotency_key_uq — mismo patrón sobre
+--     reversa_idempotency_key.
+-- Reconfirmado por Claude, independiente, con el mismo `pg_indexes`:
+--   SELECT indexname, indexdef FROM pg_indexes WHERE tablename='abonos' AND
+--   indexdef ILIKE '%unique%'; → devuelve exactamente esos 2 + abonos_pkey.
+--
+-- Causa del error original: se verificó solo `pg_constraint`, que NO lista
+-- un `CREATE UNIQUE INDEX` hecho directo (sin pasar por `ADD CONSTRAINT ...
+-- UNIQUE`) — el índice SÍ estaba, solo que por otra vía de creación distinta
+-- a la que se revisó. Lección para el futuro: verificar `pg_indexes`, no solo
+-- `pg_constraint`, al buscar restricciones UNIQUE reales.
+--
+-- **NO crear otro índice.** El `CREATE UNIQUE INDEX abonos_idempotency_key_uidx`
+-- propuesto más abajo en este archivo NO debe aplicarse — sería redundante
+-- (chocaría, de hecho, con el índice que ya existe sobre la misma columna).
+--
+-- El riesgo REAL que este archivo sí identificó bien (el patrón
+-- "leer-y-si-no-existe-escribir" no es atómico frente a dos ejecuciones
+-- GENUINAMENTE simultáneas con la misma clave) se cierra de otra forma, ya
+-- incorporada en CUTOVER_COBRO_correcciones_rpc.sql v2 (corrección #4): un
+-- `pg_advisory_xact_lock(hashtextextended(p_idempotency_key,0))` al inicio de
+-- `seguros_registrar_cobro`, ANTES del SELECT idempotente. El UNIQUE que ya
+-- existe se queda como segunda barrera (nunca se toca). Con el lock, dos
+-- llamadas simultáneas con la misma key se serializan ANTES de llegar al
+-- INSERT, así que la segunda nunca choca contra el UNIQUE — recibe la
+-- respuesta idempotente limpia, no un error crudo de Postgres.
+--
+-- El resto de este archivo (el diagnóstico original) se conserva íntegro,
+-- sin editar, como registro histórico de cómo se llegó a la conclusión.
+-- ══════════════════════════════════════════════════════════════════════════
+-- Este archivo es DISTINTO de CUTOVER_COBRO_correcciones_rpc.sql — ese tiene
+-- los 3 puntos que ChatGPT SÍ autorizó preparar (docs/bitacora/2026-08-10-2321-
+-- chatgpt.md, decisiones 5/6/7). Esto es un 4to hallazgo, fuera de ese alcance,
+-- separado a propósito en su propio archivo para que nadie confunda "lo
+-- autorizado" con "lo encontrado de más" — ninguno de los dos se ejecutó.
+--
+-- ── El hallazgo ──────────────────────────────────────────────────────────
+-- `abonos.idempotency_key` NO TIENE ninguna restricción UNIQUE (verificado
+-- con pg_constraint: solo hay abonos_pkey y abonos_cliente_id_fk_guard).
+--
+-- `seguros_registrar_cobro` implementa la idempotencia con un patrón de
+-- "leer, y si no existe, escribir" (check-then-act):
+--   SELECT * INTO v_abono FROM abonos WHERE idempotency_key = p_idempotency_key;
+--   IF FOUND THEN RETURN ...; END IF;
+--   ...
+--   INSERT INTO abonos(...) VALUES (..., p_idempotency_key) RETURNING * INTO v_abono;
+--
+-- Sin una restricción UNIQUE, este patrón NO es atómico frente a dos
+-- ejecuciones GENUINAMENTE simultáneas con LA MISMA idempotency_key: las dos
+-- pueden pasar el SELECT/FOUND al mismo tiempo (una SELECT plana no toma
+-- lock), y las dos terminan insertando un abono completo — doble cobro real,
+-- pese a compartir la misma clave de idempotencia.
+--
+-- ── Por qué es un riesgo REAL pero ACOTADO, no una alarma de pánico ────────
+-- El frontend (index.html, regAbono()/nxRegAbonoDeudaAnterior()) ya cierra la
+-- vía más común de un doble-envío: el botón #btnAbo se deshabilita de forma
+-- SÍNCRONA, ANTES del primer `await` — verificado con una prueba automatizada
+-- (ver docs/bitacora/2026-08-11-*-claude.md, punto 7) que confirma
+-- `btnAbo.disabled===true` en el mismo tick de JS en que se dispara
+-- `regAbono()`, antes de que la RPC responda. Como JS es de un solo hilo y el
+-- navegador no despacha eventos `click` sobre un `<button disabled>`, un
+-- DOBLE-CLIC físico normal en la misma pestaña NO puede reproducir esta
+-- carrera.
+--
+-- Lo que SÍ la expone: un reintento a nivel de RED que se dispare por fuera
+-- del control de ese botón — un proxy/intermediario o el propio navegador
+-- reenviando la misma petición POST tras un timeout, sin que el JS de la
+-- página vuelva a correr. Es un caso real (redes móviles inestables en RD),
+-- pero de baja probabilidad y no observado en producción hasta ahora (no hay
+-- evidencia de doble-cobro en los datos actuales).
+--
+-- ── Arreglo sugerido (NO aplicado, para que lo revisen) ────────────────────
+-- Un índice único PARCIAL (permite múltiples NULL — abonos manuales antiguos
+-- sin idempotency_key siguen sin verse afectados):
+--
+--   CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS abonos_idempotency_key_uidx
+--     ON public.abonos (idempotency_key)
+--     WHERE idempotency_key IS NOT NULL;
+--
+-- OJO — esto por sí solo NO basta: si se agrega el índice sin más, la
+-- transacción PERDEDORA de la carrera dejaría de insertar un duplicado, pero
+-- en su lugar recibiría un error crudo de Postgres
+-- (`duplicate key value violates unique constraint`) en vez de la respuesta
+-- idempotente limpia `{"ok":true,"reintento":true,...}` que el resto del
+-- sistema espera. Para que el índice sea la solución COMPLETA, el propio
+-- `INSERT INTO abonos(...)` de la RPC necesitaría un manejo explícito de esa
+-- excepción (bloque EXCEPTION WHEN unique_violation, re-consultando por
+-- idempotency_key y devolviendo esa fila) — un cambio real al CUERPO de la
+-- función, no solo un índice nuevo. Ese cambio de cuerpo NO está incluido
+-- aquí porque tocar la lógica de la RPC más allá de los 3 puntos ya
+-- autorizados se sale del alcance de este cutover — se deja como propuesta
+-- para una pieza aparte si el dueño/ChatGPT la autorizan.
+--
+-- ── Nada de esto se ejecutó ─────────────────────────────────────────────
+-- Es un hallazgo para discusión, no una migración lista para aplicar.
+-- ══════════════════════════════════════════════════════════════════════════
