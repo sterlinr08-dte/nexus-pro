@@ -5,8 +5,12 @@
 -- repo para revisión de ChatGPT/el dueño antes de que alguien decida
 -- aplicarlo con `apply_migration` (o `execute_sql` real, sin ROLLBACK).
 --
--- Corrige exactamente 3 cosas, ninguna más, todas ya autorizadas por
--- ChatGPT en docs/bitacora/2026-08-10-2321-chatgpt.md (puntos 5, 6, 7):
+-- v2 (docs/bitacora/2026-08-11-0618-chatgpt.md): se agregó la corrección #4
+-- (lock de idempotencia) a lo que ya estaba aprobado desde
+-- docs/bitacora/2026-08-10-2321-chatgpt.md (puntos 5, 6, 7). Las 3 primeras
+-- NO cambiaron de contenido en esta v2 — solo se renumeraron.
+--
+-- Corrige exactamente 4 cosas, ninguna más:
 --   1. seguros_reversar_cobro: reversa pasa a ser ADMIN-ONLY (se quita 'gerente',
 --      que no existe en el vocabulario de roles de Seguros — ver CLAUDE.md,
 --      ROLES_PERMS = admin/supervisor/cajero/cobros/agente).
@@ -17,11 +21,19 @@
 --      '' como NULL, así que `right('',4)` devuelve '' y coalesce('','0000')
 --      devuelve '' otra vez, no '0000'). Se corrige con `nullif(...,'')`.
 --      Verificado con un SELECT de solo lectura, sin tocar la función real,
---      ver docs/bitacora/2026-08-11-*-claude.md para la evidencia exacta.
+--      ver docs/bitacora/2026-08-11-0012-claude.md para la evidencia exacta.
 --   3. Ambas funciones-trigger (seguros_bloquear_ast_baja,
 --      seguros_bloquear_delete_abono) ganan `SET search_path TO 'public',
 --      'pg_temp'` — cierra el WARN `function_search_path_mutable` de
 --      get_advisors, CERO cambio de comportamiento (mismo cuerpo exacto).
+--   4. NUEVO en v2 — seguros_registrar_cobro gana un
+--      `pg_advisory_xact_lock(hashtextextended(p_idempotency_key,0))` justo
+--      después de validar que la clave no sea NULL/vacía, ANTES del SELECT
+--      idempotente y de tocar clientes. Ver el detalle completo (por qué,
+--      qué garantiza, qué NO cambia) en el bloque #2 más abajo y en
+--      HALLAZGO_ADICIONAL_idempotency_key_sin_unique.sql (marcado RESUELTO).
+--      Verificado en vivo que `hashtextextended(text,int)` existe y devuelve
+--      bigint en este proyecto (PostgreSQL 17.6) — no hace falta ningún cast.
 --
 -- Deliberadamente NO se toca en este archivo (fuera de alcance, per las
 -- restricciones duras de ChatGPT en esa misma entrada):
@@ -29,14 +41,20 @@
 --     igual, no se validan.
 --   - El 1 abono huérfano ni las 3 facturas huérfanas — no se reparan.
 --   - RLS de clientes/facturas/abonos/asientos/agentes — no se toca.
---   - Ningún otro comportamiento de las 2 RPC (idempotencia, FOR UPDATE,
---     validaciones de monto/método/agente/banco/destino, todo eso ya estaba
---     bien y se deja intacto).
+--   - Los 2 índices UNIQUE parciales que YA EXISTEN en producción
+--     (abonos_idempotency_key_uq, abonos_reversa_idempotency_key_uq,
+--     verificados por ChatGPT vía pg_indexes y reconfirmados aquí — ver
+--     HALLAZGO_ADICIONAL_idempotency_key_sin_unique.sql) — se quedan tal
+--     cual, como segunda barrera. NO se crea ningún índice nuevo.
+--   - Ningún otro comportamiento de las 2 RPC (FOR UPDATE, validaciones de
+--     monto/método/agente/banco/destino, todo eso ya estaba bien y se deja
+--     intacto).
 --
--- Orden de aplicación cuando se autorice: los 3 CREATE OR REPLACE de abajo
--- son independientes entre sí, se pueden aplicar juntos o por separado, en
--- cualquier orden, sin migración de datos asociada (no hay columna nueva,
--- no hay backfill).
+-- Orden de aplicación cuando se autorice: los 4 CREATE OR REPLACE de abajo
+-- (reversar_cobro, registrar_cobro —con las correcciones A y B juntas, mismo
+-- cuerpo, un solo statement—, y los 2 triggers) son independientes entre sí,
+-- se pueden aplicar juntos o por separado, en cualquier orden, sin migración
+-- de datos asociada (no hay columna nueva, no hay backfill).
 -- ══════════════════════════════════════════════════════════════════════════
 
 
@@ -169,12 +187,40 @@ $function$;
 
 
 -- ────────────────────────────────────────────────────────────────────────
--- 2) seguros_registrar_cobro — referencia 'AST-COB-0000' cuando no hay póliza
+-- 2) seguros_registrar_cobro — referencia 'AST-COB-0000' + LOCK de idempotencia
 -- ────────────────────────────────────────────────────────────────────────
--- ANTES:
+-- Cambio A (referencia cuando no hay póliza) — ANTES:
 --   v_ref_asiento := 'AST-COB-' || coalesce(right(replace(coalesce(v_cli.numero_poliza,''),'POL-',''),4),'0000');
 -- DESPUÉS (único cambio: se agrega nullif(...,'') antes del coalesce):
 --   v_ref_asiento := 'AST-COB-' || coalesce(nullif(right(replace(coalesce(v_cli.numero_poliza,''),'POL-',''),4),''),'0000');
+--
+-- Cambio B (NUEVO en v2) — lock transaccional por idempotency_key, ANTES del
+-- SELECT idempotente y de tocar clientes:
+--   PERFORM pg_advisory_xact_lock(hashtextextended(p_idempotency_key, 0));
+--
+-- Por qué hace falta pese a que el UNIQUE parcial ya existe (verificado real,
+-- ver HALLAZGO_ADICIONAL_idempotency_key_sin_unique.sql): sin el lock, dos
+-- llamadas GENUINAMENTE simultáneas con la MISMA idempotency_key pueden pasar
+-- el `SELECT ... WHERE idempotency_key=...` / `IF FOUND` de abajo al mismo
+-- tiempo — un SELECT plano no toma ningún lock — y las dos siguen de largo a
+-- intentar el INSERT. El UNIQUE evita el doble dinero (una de las dos
+-- transacciones falla en el INSERT), pero la que pierde recibe un error
+-- crudo de Postgres (`duplicate key value violates unique constraint`) en vez
+-- de la respuesta idempotente limpia `{"ok":true,"reintento":true,...}` que
+-- el resto del sistema espera de una idempotency key repetida.
+--
+-- `pg_advisory_xact_lock` serializa por el hash de la clave: la segunda
+-- llamada con la MISMA key se queda esperando en esa línea hasta que la
+-- primera transacción termine (COMMIT o ROLLBACK) — recién ahí sigue, y
+-- entonces SÍ encuentra la fila ya insertada en el SELECT idempotente,
+-- devolviendo `reintento:true` sin tocar dinero de nuevo. Dos llamadas con
+-- claves DISTINTAS (aunque sean al mismo cliente) tienen hashes distintos,
+-- así que NUNCA se bloquean entre sí — el `FOR UPDATE` sobre `clientes` más
+-- abajo sigue siendo el que las serializa a ellas (ya existía, sin cambios).
+-- El lock es de ALCANCE DE TRANSACCIÓN (`_xact_`, no `_lock` a secas) — se
+-- libera solo, automáticamente, al terminar la función (éxito o error); no
+-- hace falta ni se debe liberar a mano. El UNIQUE se queda como segunda
+-- barrera (defensa en profundidad, cero costo).
 CREATE OR REPLACE FUNCTION public.seguros_registrar_cobro(p_cliente_id uuid, p_monto numeric, p_metodo text, p_referencia text, p_agente_cobro text, p_banco text DEFAULT NULL::text, p_destino text DEFAULT 'facturas'::text, p_permitir_adelanto boolean DEFAULT false, p_idempotency_key text DEFAULT NULL::text, p_fecha timestamp with time zone DEFAULT now())
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -199,6 +245,12 @@ BEGIN
   IF p_idempotency_key IS NULL OR btrim(p_idempotency_key) = '' THEN
     RAISE EXCEPTION 'idempotency_key es obligatorio';
   END IF;
+
+  -- Lock transaccional por clave — ver la explicación completa arriba del
+  -- CREATE OR REPLACE. Tiene que ir aquí: DESPUÉS de validar que la clave
+  -- existe (no tiene sentido tomar un lock sobre NULL/''), pero ANTES de
+  -- cualquier lectura/escritura real (el SELECT idempotente de abajo incluido).
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_idempotency_key, 0));
 
   -- Respuesta idempotente: un reintento nunca vuelve a mover dinero.
   SELECT * INTO v_abono
@@ -369,9 +421,38 @@ $function$;
 
 
 -- ══════════════════════════════════════════════════════════════════════════
--- FIN. Nada de esto se ejecutó contra Supabase — verificado con
--- get_advisors/pg_proc ANTES de escribir este archivo (ver bitácora), y el
--- único chequeo que sí se corrió en vivo fue un SELECT de solo lectura sobre
--- la EXPRESIÓN de la referencia (sin tocar la función real), documentado en
--- la entrada de bitácora de esta pieza.
+-- FIN. Nada de esto quedó APLICADO en producción — verificado antes Y
+-- después de la prueba (ver docs/bitacora/2026-08-11-*-claude.md para el
+-- detalle completo). Cómo se probó la v2 (corrección A del punto 2 ya se
+-- había probado en la ronda anterior con un SELECT de solo lectura sobre la
+-- expresión; lo nuevo aquí es la corrección B, el lock):
+--   1. Se intentó un BRANCH de Supabase (`cutover-cobro-lock-test`) para
+--      probar ahí sin ningún riesgo — FALLÓ con status `MIGRATIONS_FAILED`
+--      (muy probable drift de historial de migraciones en este proyecto,
+--      largo y muy personalizado — no algo que se arregle dentro del
+--      alcance de este cutover). El branch se BORRÓ de inmediato para
+--      cortar el cobro por hora en cuanto se confirmó el fallo.
+--   2. Se pivoteó a probar los 4 CREATE OR REPLACE de arriba (cuerpo
+--      EXACTO, verbatim) dentro de una sola transacción
+--      `BEGIN; ...; ROLLBACK;` contra el PROYECTO REAL — las 15 pruebas
+--      (T1-T15, 20 aserciones) corrieron con datos descartables en un
+--      namespace UUID nunca usado antes (`0000cb02...`). Al terminar el
+--      ROLLBACK: 0 filas de ese namespace sobrevivieron en ninguna tabla, y
+--      el hash md5(pg_get_functiondef(...)) de las 4 funciones quedó
+--      IDÉNTICO al que tenían antes de empezar — confirmado explícitamente
+--      con una consulta aparte después del ROLLBACK, no solo asumido.
+--   3. Concurrencia GENUINA (2 sesiones de Postgres reales, al mismo
+--      tiempo) NO se pudo probar desde este entorno — se confirmó con un
+--      experimento aparte (2 llamadas de `pg_advisory_xact_lock` con
+--      `pg_sleep`, cronometradas con `clock_timestamp()`) que incluso 2
+--      llamadas a la herramienta de SQL dentro del mismo mensaje se
+--      despachan EN SERIE, no en paralelo — la segunda no arranca hasta que
+--      la primera termina por completo. El comportamiento del lock bajo
+--      concurrencia real se respalda en la semántica ya documentada de
+--      Postgres para `pg_advisory_xact_lock` (bloquea hasta que la
+--      transacción tenedora hace COMMIT/ROLLBACK), no en una prueba
+--      empírica de 2 sesiones simultáneas desde aquí. El script manual de
+--      2 pestañas (CUTOVER_COBRO_concurrencia_manual.sql) sigue siendo el
+--      único camino real para esa prueba — necesita una persona, o un
+--      entorno con 2 conexiones de verdad.
 -- ══════════════════════════════════════════════════════════════════════════

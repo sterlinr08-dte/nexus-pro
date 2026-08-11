@@ -1,6 +1,40 @@
 -- ══════════════════════════════════════════════════════════════════════════
--- HALLAZGO ADICIONAL — encontrado auditando el cutover del cobro financiero,
--- NO autorizado, NO aplicado, se documenta aparte a propósito.
+-- HALLAZGO ADICIONAL — RESUELTO (docs/bitacora/2026-08-11-0618-chatgpt.md)
+-- ══════════════════════════════════════════════════════════════════════════
+-- CONTRADICCIÓN CERRADA: la premisa de este archivo ("abonos.idempotency_key
+-- NO TIENE ninguna restricción UNIQUE") estaba MAL — ChatGPT lo verificó
+-- directo contra `pg_indexes` en producción y SÍ existen:
+--   - abonos_idempotency_key_uq — UNIQUE parcial sobre abonos(idempotency_key)
+--     WHERE idempotency_key IS NOT NULL.
+--   - abonos_reversa_idempotency_key_uq — mismo patrón sobre
+--     reversa_idempotency_key.
+-- Reconfirmado por Claude, independiente, con el mismo `pg_indexes`:
+--   SELECT indexname, indexdef FROM pg_indexes WHERE tablename='abonos' AND
+--   indexdef ILIKE '%unique%'; → devuelve exactamente esos 2 + abonos_pkey.
+--
+-- Causa del error original: se verificó solo `pg_constraint`, que NO lista
+-- un `CREATE UNIQUE INDEX` hecho directo (sin pasar por `ADD CONSTRAINT ...
+-- UNIQUE`) — el índice SÍ estaba, solo que por otra vía de creación distinta
+-- a la que se revisó. Lección para el futuro: verificar `pg_indexes`, no solo
+-- `pg_constraint`, al buscar restricciones UNIQUE reales.
+--
+-- **NO crear otro índice.** El `CREATE UNIQUE INDEX abonos_idempotency_key_uidx`
+-- propuesto más abajo en este archivo NO debe aplicarse — sería redundante
+-- (chocaría, de hecho, con el índice que ya existe sobre la misma columna).
+--
+-- El riesgo REAL que este archivo sí identificó bien (el patrón
+-- "leer-y-si-no-existe-escribir" no es atómico frente a dos ejecuciones
+-- GENUINAMENTE simultáneas con la misma clave) se cierra de otra forma, ya
+-- incorporada en CUTOVER_COBRO_correcciones_rpc.sql v2 (corrección #4): un
+-- `pg_advisory_xact_lock(hashtextextended(p_idempotency_key,0))` al inicio de
+-- `seguros_registrar_cobro`, ANTES del SELECT idempotente. El UNIQUE que ya
+-- existe se queda como segunda barrera (nunca se toca). Con el lock, dos
+-- llamadas simultáneas con la misma key se serializan ANTES de llegar al
+-- INSERT, así que la segunda nunca choca contra el UNIQUE — recibe la
+-- respuesta idempotente limpia, no un error crudo de Postgres.
+--
+-- El resto de este archivo (el diagnóstico original) se conserva íntegro,
+-- sin editar, como registro histórico de cómo se llegó a la conclusión.
 -- ══════════════════════════════════════════════════════════════════════════
 -- Este archivo es DISTINTO de CUTOVER_COBRO_correcciones_rpc.sql — ese tiene
 -- los 3 puntos que ChatGPT SÍ autorizó preparar (docs/bitacora/2026-08-10-2321-
