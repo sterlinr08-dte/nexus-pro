@@ -1,7 +1,12 @@
 {
-  "version": "56.25",
+  "version": "56.26",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.26",
+      "fecha": "2026-08-12",
+      "texto": "ARREGLADO: en Financiamiento (Préstamos), al tocar una fila, un botón o una pestaña se veía un rectángulo gris encima de la tarjeta redondeada — era el resaltado nativo del navegador al tocar (el mismo que usa cualquier página web), que ignora las esquinas redondeadas del diseño en relieve. Se apagó en todo el módulo y se reemplazó por una animación real: al presionar, la superficie se 'hunde' suavemente (como un botón físico) y al soltar vuelve a su relieve normal; al pasar el cursor por encima también reacciona. Mismo arreglo aplicado a Cuotas del POS, que comparte los mismos botones y tenía el mismo problema."
+    },
     {
       "v": "56.25",
       "fecha": "2026-08-12",

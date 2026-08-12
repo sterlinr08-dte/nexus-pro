@@ -25439,6 +25439,38 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFPShell .nxFP-repPer{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
       '.nxFPShell .nxFP-perBtn.on{background:var(--nf-bg);color:var(--nf-ac1);box-shadow:var(--nf-convex-sm)}' +
       '.nxFPShell .nxFP-tbl .nxFP-tTotal td{background:transparent;box-shadow:inset 0 2px 0 var(--nf-shd)}' +
+      // ── Corrección real (captura del dueño): al TOCAR una fila/tarjeta se veía
+      // un rectángulo gris — el resaltado nativo de "tap" de Safari/Chrome móvil
+      // (-webkit-tap-highlight-color), que ignora el border-radius de la tarjeta
+      // y por eso se ve como una sombra cuadrada encima del relieve. Se apaga en
+      // TODO elemento clicable del módulo — aditivo, no reemplaza ninguna regla
+      // ya publicada — y se reemplaza por una animación de presión real + hover
+      // suave. Beneficia también a Cuotas del POS (.nxFP-pos), que comparte estas
+      // mismas clases y tenía el mismo bug. NUNCA transform:scale/translate en
+      // :active (regla ya establecida en el proyecto) — el "press" se siente con
+      // sombra/color, nunca con escala.
+      '.nxFP-tbl tbody tr,.nxFP-tAcc button,.nxFP-tPay,.nxFP-menuBtn,.nxFP-menuPop button,' +
+      '.nxFP-pgBtns button,.nxFP-navItem,.nxFP-tab,.nxFP-qbtn,.nxFP-sideNew,.nxFP-sideBack,' +
+      '.nxFP-burger,.nxFP-topActions button{-webkit-tap-highlight-color:transparent}' +
+      '.nxFP-tbl tbody tr{transition:background .15s ease,box-shadow .15s ease}.nxFP-tbl tbody tr:active{background:#efeaff}' +
+      '.nxFP-tAcc button{transition:background .15s ease,color .15s ease,box-shadow .15s ease}.nxFP-tAcc button:active{background:#ede9fe;color:#6d28d9}' +
+      '.nxFP-tPay{transition:background .15s ease,box-shadow .15s ease}.nxFP-tPay:active{background:#1e40af}' +
+      '.nxFP-menuBtn:active{background:#e2e8f0;color:#475569}' +
+      '.nxFP-menuPop button:active{background:#f1f5f9}' +
+      '.nxFP-pgBtns button:active:not(:disabled):not(.on){background:#ede9fe}' +
+      '.nxFP-tab:active{background:#f8fafc}' +
+      '.nxFP-burger{transition:background .15s ease,box-shadow .15s ease}.nxFP-burger:hover,.nxFP-burger:active{background:#f5f3ff}' +
+      // Financiamiento (relieve): el "press" hunde la superficie — mismo lenguaje
+      // ya usado en el hover neumórfico (v56.25), ahora también al soltar el dedo.
+      '.nxFPShell .nxFP-tbl tbody tr:active{background:var(--nf-bg);box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-tAcc button:active{box-shadow:var(--nf-concave);color:var(--nf-ac1)}' +
+      '.nxFPShell .nxFP-tPay:active{box-shadow:inset 3px 3px 7px rgba(37,99,235,.4),inset -2px -2px 5px rgba(255,255,255,.5)}' +
+      '.nxFPShell .nxFP-menuBtn:active{background:var(--nf-bg);box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-menuPop button:active{background:transparent;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-side .nxFP-navItem:active{box-shadow:var(--nf-concave)!important}' +
+      '.nxFPShell .nxFP-tab:active{box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-qbtn:active{box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-burger:hover,.nxFPShell .nxFP-burger:active{background:var(--nf-bg);box-shadow:var(--nf-concave)}' +
       '@media(prefers-reduced-motion:reduce){.nxFPShell *{transition:none!important}}';
     document.head.appendChild(st);
   };
