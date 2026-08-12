@@ -1,7 +1,12 @@
 {
-  "version": "56.26",
+  "version": "56.27",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.27",
+      "fecha": "2026-08-12",
+      "texto": "ARREGLADO (importante, seguridad y contabilidad): al corregir un asiento contable manual (Contabilidad → Diario), el sistema ya NO reescribe el asiento original — ahora crea automáticamente un asiento de reversa exacta más el asiento ya corregido, dejando el original intacto para siempre y con rastro completo (mismo criterio que ya usa la anulación de facturas). Al corregir, ahora se pide un motivo obligatorio. Un asiento que viene de otro flujo (facturas automáticas, cobros, anulaciones) ya no se puede 'corregir' desde aquí por accidente — el sistema avisa con claridad y dirige al flujo correcto de ese módulo. Registrar o corregir un asiento manual sigue siendo exclusivo del administrador. Cambio de fondo, casi nada visual: el formulario se ve igual, solo se agregó el campo 'Motivo' cuando se corrige y el botón pasó a decir 'Guardar corrección'."
+    },
     {
       "v": "56.26",
       "fecha": "2026-08-12",

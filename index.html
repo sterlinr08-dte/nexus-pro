@@ -2294,6 +2294,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Cuenta Crédito</label><select id="asiCtaCr" style="width:100%;font-size:10px;padding:7px;border:1px solid rgba(244,63,94,.15);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"></select></div>
       <div class="fr"><label>Monto Crédito (RD$)</label><input type="text" id="asiMntCr" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     </div>
+    <div class="fr" id="asiMotivoWrap" style="display:none"><label>Motivo de la corrección *</label><input type="text" id="asiMotivo" placeholder="Por qué se corrige este asiento"/></div>
     <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bc2" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
   </div>
 </div>
@@ -4202,7 +4203,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.26';
+const APP_VERSION='56.27';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9059,12 +9060,32 @@ function rMayor(){
   const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;
   document.getElementById('resumC').innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:10px"><div class="sf-kpi blue"><div class="ic"><i class="ti ti-building-bank"></i></div><div><div class="lb">Activos</div><div class="v">${fmt(CUENTAS.filter(c=>c.tipo==='Activo').reduce((s,c)=>s+c.saldo,0))}</div></div></div><div class="sf-kpi warn"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Pasivos</div><div class="v">${fmt(CUENTAS.filter(c=>c.tipo==='Pasivo').reduce((s,c)=>s+c.saldo,0))}</div></div></div><div class="sf-kpi ok"><div class="ic"><i class="ti ti-trending-up"></i></div><div><div class="lb">Ingresos</div><div class="v">${fmt(ing)}</div></div></div></div><div class="conr"><span>Ingresos</span><span class="cdr" style="font-family:var(--mono)">${fmt(ing)}</span></div><div class="conr"><span>Gastos</span><span class="ccr" style="font-family:var(--mono)">(${fmt(gast)})</span></div><div class="conr" style="border-top:1px solid rgba(0,229,199,.1);margin-top:5px;padding-top:5px"><span style="color:var(--c4)">UTILIDAD NETA</span><span class="ctot" style="font-family:var(--mono);font-size:13px">${fmt(util)}</span></div><div style="margin-top:10px"><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
 }
-function abrirAsiento(){editAsiId=null;const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');document.getElementById('asiCtaDr').innerHTML=opts;document.getElementById('asiCtaCr').innerHTML=opts;document.getElementById('asiFecha').value=hoy();['asiRef','asiDesc','asiMntDr','asiMntCr'].forEach(id=>document.getElementById(id).value='');const btn=document.getElementById('btnAsi');if(btn)btn.innerHTML='<i class="ti ti-check"></i> Registrar';openM('mAsiento');}
+function abrirAsiento(){
+  editAsiId=null;_asiIdemKey=nxNuevaIdemKey();
+  const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');
+  document.getElementById('asiCtaDr').innerHTML=opts;document.getElementById('asiCtaCr').innerHTML=opts;
+  document.getElementById('asiFecha').value=hoy();
+  ['asiRef','asiDesc','asiMntDr','asiMntCr','asiMotivo'].forEach(id=>document.getElementById(id).value='');
+  const wrap=document.getElementById('asiMotivoWrap');if(wrap)wrap.style.display='none';
+  const btn=document.getElementById('btnAsi');if(btn)btn.innerHTML='<i class="ti ti-check"></i> Registrar';
+  openM('mAsiento');
+}
 let editAsiId=null;
+let _asiIdemKey=null;
 function editarAsiento(id){
   const a=ST.asientos.find(x=>x.id===id);
   if(!a){toast('err','Asiento no encontrado');return;}
-  editAsiId=id;
+  // Mismo blindaje que ya aplica seguros_corregir_asiento_manual del lado del servidor —
+  // se repite aquí SOLO para dar feedback inmediato sin abrir un formulario condenado a
+  // ser rechazado; la autoridad real sigue siendo la RPC, no este chequeo.
+  const ref=a.referencia||'';
+  const esDeOtroFlujo=(a.tipo_origen&&a.tipo_origen!=='manual'&&a.tipo_origen!=='manual_reversa')
+    ||/^F-\d+$/.test(ref)||ref.startsWith('AST-ANUL-')||ref.startsWith('AST-COB')||ref.startsWith('AUTO-');
+  if(esDeOtroFlujo){
+    toast('warn','No se puede corregir aquí',`Este asiento pertenece a otro flujo (${a.tipo_origen||ref}); use el flujo propio de ese módulo.`);
+    return;
+  }
+  editAsiId=id;_asiIdemKey=nxNuevaIdemKey();
   const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');
   document.getElementById('asiCtaDr').innerHTML=opts;
   document.getElementById('asiCtaCr').innerHTML=opts;
@@ -9075,41 +9096,70 @@ function editarAsiento(id){
   document.getElementById('asiCtaCr').value=a.cuenta_cr_cod||'';
   document.getElementById('asiMntDr').value=a.monto_dr||0;
   document.getElementById('asiMntCr').value=a.monto_cr||0;
+  document.getElementById('asiMotivo').value='';
+  const wrap=document.getElementById('asiMotivoWrap');if(wrap)wrap.style.display='';
   const btn=document.getElementById('btnAsi');
-  if(btn)btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar cambios';
+  if(btn)btn.innerHTML='<i class="ti ti-arrow-back-up"></i> Guardar corrección';
   openM('mAsiento');
 }
+// Asiento manual: crear y corregir pasan SIEMPRE por RPC (seguros_registrar_asiento_manual /
+// seguros_corregir_asiento_manual) — nunca por API.post/patch directos a "asientos". Corregir
+// NUNCA reescribe el original: la RPC inserta una reversa exacta + el asiento nuevo, y deja el
+// original intacto (por eso aquí no se hace ningún merge en ST.asientos[idx], solo se agregan
+// las filas nuevas que la RPC de verdad creó).
 async function guardarAsientoFn(){
   const desc=document.getElementById('asiDesc').value.trim();if(!desc){toast('err','Campo requerido','Ingrese descripción');return;}
   const mntDr=(window.nxMoney?window.nxMoney.parse(document.getElementById('asiMntDr').value):parseFloat(document.getElementById('asiMntDr').value))||0;const mntCr=(window.nxMoney?window.nxMoney.parse(document.getElementById('asiMntCr').value):parseFloat(document.getElementById('asiMntCr').value))||0;
   if(Math.abs(mntDr-mntCr)>0.01){toast('warn','Asiento desbalanceado',`Débito ${fmt(mntDr)} ≠ Crédito ${fmt(mntCr)}`);return;}
-  const ctaDr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaDr').value);const ctaCr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaCr').value);
+  const ctaDrCod=document.getElementById('asiCtaDr').value,ctaCrCod=document.getElementById('asiCtaCr').value;
+  if(!ctaDrCod||!ctaCrCod){toast('err','Campo requerido','Seleccione cuenta débito y cuenta crédito');return;}
+  if(ctaDrCod===ctaCrCod){toast('err','Cuentas inválidas','La cuenta débito y la cuenta crédito no pueden ser la misma');return;}
+  const fecha=document.getElementById('asiFecha').value;if(!fecha){toast('err','Campo requerido','Ingrese la fecha');return;}
+  const ref=document.getElementById('asiRef').value.trim();
+  let motivo='';
+  if(editAsiId){
+    motivo=document.getElementById('asiMotivo').value.trim();
+    if(!motivo){toast('err','Campo requerido','El motivo de la corrección es obligatorio');return;}
+  }
+  if(!_asiIdemKey)_asiIdemKey=nxNuevaIdemKey();
   const btn=document.getElementById('btnAsi');btn.disabled=true;
-  const datos={fecha:document.getElementById('asiFecha').value,referencia:document.getElementById('asiRef').value||'AST-MAN',descripcion:desc,cuenta_dr_cod:ctaDr?.cod,cuenta_dr_nom:ctaDr?.nom,monto_dr:mntDr,cuenta_cr_cod:ctaCr?.cod,cuenta_cr_nom:ctaCr?.nom,monto_cr:mntCr};
   try{
     if(editAsiId){
-      // Editar asiento existente
-      await API.patch('asientos',`id=eq.${editAsiId}`,datos);
-      const idx=ST.asientos.findIndex(x=>x.id===editAsiId);
-      if(idx>=0)ST.asientos[idx]={...ST.asientos[idx],...datos};
-      try{logAudit('ASIENTO_EDITADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}
-      toast('ok','Asiento actualizado',desc);
+      const r=await API.post('rpc/seguros_corregir_asiento_manual',{
+        p_asiento_id:editAsiId,p_motivo:motivo,p_fecha:fecha,p_referencia:ref,p_descripcion:desc,
+        p_cuenta_dr_cod:ctaDrCod,p_cuenta_cr_cod:ctaCrCod,p_monto:mntDr,p_idempotency_key:_asiIdemKey
+      });
+      if(!r||!r.ok)throw new Error('La RPC no confirmó la corrección');
+      try{
+        const filas=await API.get('asientos',`id=in.(${r.asiento_reversa_id},${r.asiento_nuevo_id})&order=created_at.desc`);
+        if(filas&&filas.length)ST.asientos.unshift(...filas);
+        recalcularSaldosContables();
+      }catch(_e){}
+      toast('ok','Asiento corregido',desc);
       editAsiId=null;
     }else{
-      // Crear nuevo asiento
-      const r=await API.post('asientos',datos);
-      if(r&&r[0])ST.asientos.unshift(r[0]);
-      try{logAudit('ASIENTO_CREADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}
+      const r=await API.post('rpc/seguros_registrar_asiento_manual',{
+        p_fecha:fecha,p_referencia:ref,p_descripcion:desc,
+        p_cuenta_dr_cod:ctaDrCod,p_cuenta_cr_cod:ctaCrCod,p_monto:mntDr,p_idempotency_key:_asiIdemKey
+      });
+      if(!r||!r.ok)throw new Error('La RPC no confirmó el registro');
+      try{
+        const fila=await API.get('asientos',`id=eq.${r.asiento_id}`);
+        if(fila&&fila[0])ST.asientos.unshift(fila[0]);
+        recalcularSaldosContables();
+      }catch(_e){}
       toast('ok','Asiento registrado',desc);
     }
-    recalcularSaldosContables();
+    _asiIdemKey=nxNuevaIdemKey(); // el asiento ya quedó comprometido: cualquier próximo intento es uno NUEVO
     closeM('mAsiento');
     rAsientos();rMayor();
     if(typeof rBalance==='function')rBalance();
-  }catch(e){toast('err','Error',e.message);}
+  }catch(e){
+    const msg=nxRpcErr(e);toast('err','Error',msg);
+  }
   btn.disabled=false;
 }
-function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Editar asiento" style="padding:4px 8px" aria-label="Editar asiento"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
+function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Corregir asiento" style="padding:4px 8px" aria-label="Corregir asiento"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
 function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
 // Devuelve el rango de fechas [desde, hasta] del período contable: MES CALENDARIO.
 // El período "Mayo 2026" va del 1 al 31 de mayo 2026.
