@@ -1,7 +1,12 @@
 {
-  "version": "56.27",
+  "version": "56.28",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.28",
+      "fecha": "2026-08-12",
+      "texto": "ARREGLADO (importante, seguridad y contabilidad): Generar facturas y anular una factura ahora se procesan como una sola operación segura en el servidor (no en varios pasos separados desde el navegador) — así ya no puede quedar dinero movido sin su factura o su asiento contable si algo falla a mitad de camino (ej. la conexión se corta), y dos personas cobrando o generando al mismo tiempo ya no pueden crear la misma factura duplicada. Anular una factura ahora es exclusivo del administrador (antes bastaba un permiso configurable que un agente podía tener asignado). El asiento de reversa al anular ya no usa los últimos 4 dígitos del comprobante fiscal como referencia (podían repetirse entre facturas distintas) — ahora usa una referencia única de verdad. Cambio 100% de fondo: no se ve nada distinto en pantalla."
+    },
     {
       "v": "56.27",
       "fecha": "2026-08-12",

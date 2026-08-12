@@ -2864,6 +2864,9 @@ let tempDeps=[];
 // abonoId, no hay un "modal" análogo a abrirAbono para esta acción).
 let _cobroIdemKey=null;
 let _reversaIdemKeys={};
+// _anulaIdemKeys = una llave por factura en curso de anularse (indexada por facturaId,
+// mismo patrón que _reversaIdemKeys — anularFactura() no vive detrás de un modal propio).
+let _anulaIdemKeys={};
 function nxNuevaIdemKey(){
   try{return crypto.randomUUID();}
   catch(_){return 'idem-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
@@ -4203,7 +4206,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.27';
+const APP_VERSION='56.28';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7009,6 +7012,14 @@ async function genFacturas(silent){
   }
 }
 
+// ── CUTOVER (Bloque 3B, docs/bitacora/2026-08-12-1427-chatgpt.md) ──────────
+// Cada cliente se procesa con UNA llamada atómica a seguros_generar_factura_manual
+// (FOR UPDATE del cliente + EXISTS anti-duplicado real + NCF + INSERT factura +
+// UPDATE deuda_total + INSERT asiento balanceado + auditoría, todo o nada, con
+// idempotency_key server-side). El frontend YA NO hace API.post('facturas'),
+// API.post('asientos') ni API.patch('clientes') para este flujo — antes, si la 2ª
+// o 3ª escritura de un batch fallaba a mitad de camino, el dinero quedaba movido
+// sin factura/asiento real (el hallazgo que motivó todo el Bloque 3).
 async function _genFacturasInterno(){
   // Sin selector, el respaldo es el mes de CORTE (no el calendario): así el día 5 no se
   // genera el mes siguiente por accidente.
@@ -7020,37 +7031,56 @@ async function _genFacturasInterno(){
   const activos=ST.clientes.filter(c=>c.activo&&c.permitir_facturacion!==false);
   if(!activos.length){toast('warn','Sin clientes a facturar');return;}
   toast('info','Generando facturas con NCF...','Por favor espera');
-  // Anti-duplicado BLINDADO: consultar la BASE (no solo la memoria). La auto-facturación del
-  // SERVIDOR (cron) puede haber generado ya el período; una sesión abierta con datos viejos
-  // duplicaría las facturas de TODOS los clientes si solo se confía en ST.facturas.
+  // Pre-filtro (NO es el anti-duplicado real — ese vive en la RPC con FOR UPDATE + EXISTS
+  // dentro de la misma transacción). Esto solo evita llamadas de más a clientes que a
+  // todas luces ya tienen factura del período, y mantiene el conteo "duplicados evitados".
   const _exist=new Set();
   try{const fx=await API.get('facturas',`select=cliente_id,estado&periodo=eq.${key}`);(fx||[]).forEach(f=>{if(f.estado!=='Anulada')_exist.add(String(f.cliente_id));});}catch(e){}
-  let n=0,duplicados=0;const nuevasFact=[],nuevosAsi=[],cliAct=[];
+  let n=0,duplicados=0;const errores=[],asiIds=[];
   for(const c of activos){
-    // Anti-duplicado: ya existe factura de este cliente para este período (y no anulada)
+    // Pre-filtro: ya existe factura de este cliente para este período (y no anulada)
     if(_exist.has(String(c.id))||ST.facturas.find(f=>f.cliente_id===c.id&&f.periodo===key&&f.estado!=='Anulada')){duplicados++;continue;}
     // Respetar precio especial si el cliente lo tiene; si no, usar el precio del plan
     const ptCustom=Number(c.precio_titular);
     const pdCustom=Number(c.precio_dep);
     const primaT=(c.precio_titular!=null&&c.precio_titular!==''&&!isNaN(ptCustom)&&ptCustom>0)?ptCustom:getPT(c.plan);
     const primaD=(c.precio_dep!=null&&c.precio_dep!==''&&!isNaN(pdCustom)&&pdCustom>0)?pdCustom:getPD(c.plan);
-    const pb=primaT,pd=(c.deps||[]).length*primaD,da=pend(c);
-    const ncf=await generarNCF(c.tipo_ncf||'B02');
-    nuevasFact.push({cliente_id:c.id,cliente_nom:c.nom,plan:c.plan,empresa_id:c.empresa_id,periodo:key,mes,anio,prima_base:pb,prima_deps:pd,deuda_ant:da,total:pb+pd+da,estado:'Pendiente',wa_sent:false,ncf,tipo_ncf:c.tipo_ncf||'B02'});
-    nuevosAsi.push({fecha:hoy(),referencia:`F-${String(n+1).padStart(3,'0')}`,descripcion:`Factura ${MESES[mes-1]} ${anio} — ${c.nom} [${ncf}]`,cuenta_dr_cod:'1201',cuenta_dr_nom:'Cuentas por cobrar',monto_dr:pb+pd,cuenta_cr_cod:'4101',cuenta_cr_nom:'Ingresos por primas',monto_cr:pb+pd});
-    cliAct.push({id:c.id,deuda_total:(c.deuda_total||0)+pb+pd});n++;
+    const pb=primaT,pd=(c.deps||[]).length*primaD;
+    // Llave FRESCA por intento (no por cliente/período): la protección real contra doble
+    // factura del mismo cliente+período es el FOR UPDATE+EXISTS de la RPC, no esta llave —
+    // una llave fija por cliente+período rompería el caso legítimo "se anuló y se rehace".
+    try{
+      const r=await API.post('rpc/seguros_generar_factura_manual',{
+        p_cliente_id:c.id,p_periodo:key,p_mes:mes,p_anio:anio,
+        p_prima_base:pb,p_prima_deps:pd,p_tipo_ncf:c.tipo_ncf||'B02',
+        p_fecha_emision:hoy(),p_idempotency_key:nxNuevaIdemKey()
+      });
+      if(!r)throw new Error('La RPC no confirmó la factura');
+      if(r.ok===false){duplicados++;continue;} // razón real, ej. carrera con el cron/otra sesión
+      if(r.factura){ST.facturas.unshift(r.factura);if(r.asiento_id)asiIds.push(r.asiento_id);}
+      const cl=ST.clientes.find(x=>x.id===c.id);
+      if(cl&&r.cliente_deuda_total!=null)cl.deuda_total=r.cliente_deuda_total;
+      n++;
+    }catch(e){
+      errores.push(`${c.nom}: ${nxRpcErr(e)}`);
+    }
   }
   if(duplicados>0){try{logAudit('FACTURA_DUPLICADA_EVITADA',`${duplicados} cliente(s) ya tenían factura de ${key} — se omitieron`,'Facturas');}catch(e){}}
-  if(!n){toast('warn','Sin cambios',`Ya existen facturas para ${MESES[mes-1]} ${anio}`);return;}
-  try{
-    if(nuevasFact.length){const fd=await API.post('facturas',nuevasFact);if(fd)ST.facturas.unshift(...fd);}
-    if(nuevosAsi.length){const ad=await API.post('asientos',nuevosAsi);if(ad)ST.asientos.unshift(...ad);}
-    for(const cu of cliAct){await API.patch('clientes',`id=eq.${cu.id}`,{deuda_total:cu.deuda_total});const cl=ST.clientes.find(x=>x.id===cu.id);if(cl)cl.deuda_total=cu.deuda_total;}
-    recalcularSaldosContables();
-    logAudit('FACTURAS_GENERADAS',`${n} facturas · ${MESES[mes-1]} ${anio}`+(duplicados?` · ${duplicados} duplicadas evitadas`:''),'Facturas');
-    toast('ok',`${n} facturas generadas con NCF`,`${MESES[mes-1]} ${anio} · ${n} asientos contables`);
-    rFact();rDash();actualizarTicker();
-  }catch(e){mostrarError(e.message,'Al generar facturas del período: '+key);toast('err','Error generando facturas',e.message);}
+  if(!n){
+    if(errores.length){mostrarError(errores.join('\n'),'Al generar facturas del período: '+key);toast('err','No se pudo generar ninguna factura',errores.length+' error(es) — ver detalle');}
+    else toast('warn','Sin cambios',`Ya existen facturas para ${MESES[mes-1]} ${anio}`);
+    return;
+  }
+  // Refresco de solo-lectura (NO es una segunda escritura financiera: el dinero ya se
+  // movió del todo dentro de cada RPC; esto solo mantiene ST.asientos fresco en memoria).
+  if(asiIds.length){
+    try{const asi=await API.get('asientos',`id=in.(${asiIds.join(',')})`);if(asi)ST.asientos.unshift(...asi);}catch(_e){}
+  }
+  try{recalcularSaldosContables();}catch(_e){}
+  logAudit('FACTURAS_GENERADAS',`${n} facturas · ${MESES[mes-1]} ${anio}`+(duplicados?` · ${duplicados} duplicadas evitadas`:'')+(errores.length?` · ${errores.length} con error`:''),'Facturas');
+  if(errores.length)toast('ok',`${n} facturas generadas`,`${MESES[mes-1]} ${anio} · ${errores.length} cliente(s) con error (ver auditoría)`);
+  else toast('ok',`${n} facturas generadas con NCF`,`${MESES[mes-1]} ${anio} · ${n} asientos contables`);
+  rFact();rDash();actualizarTicker();
 }
 
 function autoGenerar(){nav('facturas',null);setTimeout(()=>{initMesSel();genFacturas(true);},100);}
@@ -7111,7 +7141,10 @@ function nxFactMenu(fid,btn){
   const anul=f.estado==='Anulada',pag=f.estado==='Pagado';
   const it=[['ti-file-invoice','Ver factura',`verFacturaPDF_id('${fid}')`,'']];
   if(!anul&&!pag&&tienePermiso('modificar_precio'))it.push(['ti-pencil','Corregir el precio',`nxEditarPrecioFactura('${fid}')`,'']);
-  if(!anul&&!pag&&tienePermiso('editar_facturas'))it.push(['ti-ban','Anular factura',`anularFactura('${fid}')`,'peligro']);
+  // Bloque 3B: anular es SOLO admin (coincide exacto con seguros_anular_factura del
+  // servidor) — ya no basta el permiso configurable 'editar_facturas', que un rol
+  // no-admin podía tener asignado sin poder anular de todos modos.
+  if(!anul&&!pag&&(sesion?.rol||'')==='admin')it.push(['ti-ban','Anular factura',`anularFactura('${fid}')`,'peligro']);
   const p=document.createElement('div');p.className='factMenu';
   p.innerHTML=it.map(a=>`<button type="button" class="${a[3]}" onclick="nxFactMenuCerrar();${a[2]}"><i class="ti ${a[0]}" aria-hidden="true"></i>${a[1]}</button>`).join('');
   document.body.appendChild(p);
@@ -7373,45 +7406,62 @@ function pintarFlechasFact(){
   });
 }
 
+// ── CUTOVER (Bloque 3B, docs/bitacora/2026-08-12-1427-chatgpt.md) ──────────
+// UNA sola llamada atómica a seguros_anular_factura — lee/bloquea la factura real
+// con FOR UPDATE (no confía en ST.facturas), TODO-O-NADA: transición de estado +
+// reversión de deuda + asiento de reversa (referencia por UUID, nunca por los
+// últimos 4 dígitos del NCF) + resync de facturas hermanas + auditoría, todo
+// dentro de la RPC. El frontend YA NO hace API.patch('facturas'),
+// API.patch('clientes') ni API.post('asientos') aquí — antes, si el paso de
+// revertir la deuda o el asiento fallaba a mitad de camino (o el catch lo
+// silenciaba), la factura quedaba Anulada con la deuda/el asiento sin revertir.
 async function anularFactura(facturaId){
   const f=ST.facturas.find(x=>x.id===facturaId);
   if(!f){toast('err','Factura no encontrada');return;}
   if(f.estado==='Anulada'){toast('warn','Esta factura ya está anulada');return;}
   if(f.estado==='Pagado'){toast('err','No se puede anular','Una factura pagada no se puede anular');return;}
-  // Permiso
-  if(typeof tienePermiso==='function'&&!tienePermiso('editar_facturas')&&(sesion?.rol||'')!=='admin'){
-    toast('err','Acceso denegado','No tienes permiso para anular facturas');
-    logAudit('ACCESO_DENEGADO','Intento de anular factura sin permiso','Facturas');
+  // Permiso: SOLO admin (decisión de ChatGPT 2026-08-12 14:27) — coincide exacto con lo
+  // que seguros_anular_factura exige del lado del servidor. Antes bastaba el permiso
+  // configurable 'editar_facturas' (que un rol no-admin podía tener asignado) — la RPC
+  // ya lo habría rechazado de todos modos; este chequeo solo evita mostrar el botón en vano.
+  if((sesion?.rol||'')!=='admin'){
+    toast('err','Acceso denegado','Solo un administrador puede anular una factura');
+    logAudit('ACCESO_DENEGADO','Intento de anular factura sin rol admin','Facturas');
     return;
   }
   const motivo=prompt('Motivo de la anulación (obligatorio):');
   if(motivo===null)return;
   if(!motivo.trim()){toast('err','Motivo requerido','Debes indicar por qué se anula');return;}
+  // Llave de idempotencia por factura (no hay un "modal" análogo a abrirAbono() para esta
+  // acción) — se reusa si el mismo intento se reintenta, se borra tras un éxito real.
+  const idemKey=_anulaIdemKeys[facturaId]||(_anulaIdemKeys[facturaId]=nxNuevaIdemKey());
   try{
-    await API.patch('facturas',`id=eq.${facturaId}`,{estado:'Anulada'});
+    const r=await API.post('rpc/seguros_anular_factura',{p_factura_id:facturaId,p_motivo:motivo.trim(),p_idempotency_key:idemKey});
+    if(!r||!r.ok)throw new Error('La RPC no confirmó la anulación');
+    delete _anulaIdemKeys[facturaId];
     f.estado='Anulada';
-    // Revertir contablemente: restar la prima de la deuda del cliente y crear asiento de reversa
-    try{
-      const cl=ST.clientes.find(x=>x.id===f.cliente_id);
-      const primaRev=(Number(f.prima_base)||0)+(Number(f.prima_deps)||0);
-      if(cl&&primaRev>0){
-        const nuevaDeuda=Math.max(0,(Number(cl.deuda_total)||0)-primaRev);
-        await API.patch('clientes',`id=eq.${cl.id}`,{deuda_total:nuevaDeuda});cl.deuda_total=nuevaDeuda;
-        const asiRev={fecha:hoy(),referencia:'AST-ANUL-'+(((f.ncf||'').replace(/\D/g,'').slice(-4))||'0000'),descripcion:`Anulación factura ${f.ncf||f.periodo||''} — ${f.cliente_nom} · ${motivo.trim()}`,cuenta_dr_cod:'4101',cuenta_dr_nom:'Ingresos por primas',monto_dr:primaRev,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:primaRev};
-        const rr=await API.post('asientos',asiRev);if(rr&&rr[0])ST.asientos.unshift(rr[0]);
-        try{recalcularSaldosContables();}catch(_){}
-      }
-    }catch(eRev){console.warn('No se pudo revertir contablemente la anulación:',eRev);}
+    const cl=ST.clientes.find(x=>x.id===(r.cliente_id||f.cliente_id));
+    if(cl&&r.cliente_deuda_total!=null)cl.deuda_total=r.cliente_deuda_total;
+    // Refresco de solo-lectura del asiento de reversa que la RPC ya insertó de forma
+    // atómica (no es una segunda escritura financiera — el dinero ya se revirtió del todo
+    // dentro de la RPC; esto solo mantiene ST.asientos fresco en memoria). Puede venir null
+    // si la factura no tenía prima que revertir (caso borde, la RPC igual anula el estado).
+    if(r.asiento_reversa_id){
+      try{const asi=await API.get('asientos',`id=eq.${r.asiento_reversa_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
+    }
     // Reglamento seguros §9: anular saca esta factura del reparto oldest-first del pago del
-    // cliente, así que el crédito que la cubría se re-reparte a las demás. Resincronizar el
-    // estado de TODAS sus facturas para que ninguna quede mostrando deuda que ya no existe.
-    try{await resyncEstadoFacturas(f.cliente_id);}catch(e){}
+    // cliente, así que el crédito que la cubría se re-reparte a las demás — la RPC YA hizo
+    // ese resync server-side (facturas_resync trae qué facturas hermanas cambiaron de
+    // estado); solo se refleja aquí en memoria, sin ninguna llamada REST adicional.
+    if(Array.isArray(r.facturas_resync)){
+      r.facturas_resync.forEach(rs=>{const fh=ST.facturas.find(x=>x.id===rs.id);if(fh)fh.estado=rs.estado;});
+    }
     logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas',f.cliente_id);
     rFact();
     if(typeof rDash==='function')rDash();
-    toast('ok','Factura anulada',f.cliente_nom);
+    toast(r.nota?'warn':'ok',r.nota||'Factura anulada',f.cliente_nom);
   }catch(e){
-    mostrarError(e.message,'Al anular la factura');
+    const msg=nxRpcErr(e);mostrarError(msg,'Al anular la factura');toast('err','Error al anular',msg);
   }
 }
 
