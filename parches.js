@@ -25353,7 +25353,93 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // esta misma cadena, así que una media query puesta antes NO gana (misma
       // especificidad, gana la última). Por eso este bloque cierra el CSS.
       '@media(max-width:900px){.nxFP-side{box-shadow:none}' +
-      '.nxFPShell.side-open .nxFP-side{box-shadow:0 14px 34px rgba(76,29,149,.26)}}';
+      '.nxFPShell.side-open .nxFP-side{box-shadow:0 14px 34px rgba(76,29,149,.26)}}' +
+      // ── FINANCIAMIENTO · NEUMORPHISM (aprobado por el dueño sobre la muestra
+      // "Préstamos en Relieve", Artifact) — superficies con relieve suave (sombras
+      // duales convexas/cóncavas) en vez de tarjetas planas con borde. Escopeado
+      // TODO bajo .nxFPShell (el contenedor que SOLO existe en Financiamiento —
+      // Cuotas del POS usa .nxFP.nxFP-pos, sin .nxFPShell) para no tocar Cuotas,
+      // que comparte este mismo namespace .nxFP/.nxFP-* a propósito. El acento
+      // morado se conserva (regla "un color por app"); NPGS §12 pide sombras/
+      // tipografía únicas en todo el ERP — esta es una excepción deliberada,
+      // igual que Plus Jakarta Sans ya lo era, documentada aquí y en CLAUDE.md.
+      '.nxFPShell{--nf-bg:#e7eaf4;--nf-shd:rgba(160,166,199,.55);--nf-shl:rgba(255,255,255,.9);--nf-ink:#2b2a45;--nf-ink2:#6e6c8c;--nf-ink3:#9997b3;--nf-ac1:#4f46e5;--nf-ac2:#6d28d9;--nf-convex:8px 8px 16px var(--nf-shd),-7px -7px 14px var(--nf-shl);--nf-convex-sm:5px 5px 10px var(--nf-shd),-4px -4px 8px var(--nf-shl);--nf-concave:inset 5px 5px 10px var(--nf-shd),inset -4px -4px 8px var(--nf-shl);background:var(--nf-bg);border-radius:24px;padding:16px}' +
+      // Sidebar: de gradiente sólido a superficie neumórfica; el morado queda de
+      // acento (logo, botón Nuevo préstamo, ítem activo). Mismos selectores del
+      // blindaje de arriba, mismo mecanismo (!important, misma especificidad,
+      // gana por ir después) — solo cambian los valores que fuerza.
+      '.nxFPShell .nxFP-side{background:var(--nf-bg);color:var(--nf-ink);box-shadow:var(--nf-convex)}' +
+      'html body .nxFPShell .nxFP-side{background:var(--nf-bg)!important;color:var(--nf-ink)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;opacity:1!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBrand b{color:var(--nf-ink)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBrand span{color:var(--nf-ink2)!important;opacity:1}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideLogo{background:linear-gradient(155deg,var(--nf-ac1),var(--nf-ac2))!important;color:#fff!important;box-shadow:var(--nf-convex-sm)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem{color:var(--nf-ink2)!important;background:transparent!important;box-shadow:none!important;transition:box-shadow .15s ease,color .15s ease}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem:hover{background:var(--nf-bg)!important;color:var(--nf-ink)!important;box-shadow:var(--nf-convex-sm)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem.on{background:var(--nf-bg)!important;color:var(--nf-ac1)!important;box-shadow:var(--nf-concave)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem.on i{color:var(--nf-ac1)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideNew{background:linear-gradient(155deg,var(--nf-ac1),var(--nf-ac2))!important;color:#fff!important;box-shadow:var(--nf-convex-sm)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBack{color:var(--nf-ink2)!important;background:transparent!important;border:0!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBack:hover{color:var(--nf-ink)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideDiv{background:var(--nf-shd)!important;opacity:.35}' +
+      // Repite el candado del cajón móvil (ver el comentario de arriba) para el
+      // nuevo valor de sombra, en el mismo orden: apagada mientras está cerrado,
+      // encendida con .side-open.
+      '@media(max-width:900px){.nxFPShell .nxFP-side{box-shadow:none}' +
+      '.nxFPShell.side-open .nxFP-side{box-shadow:var(--nf-convex)}}' +
+      // Topbar
+      '.nxFPShell .nxFP-burger{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
+      '.nxFPShell .nxFP-topActions button{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2);transition:box-shadow .12s ease}' +
+      '.nxFPShell .nxFP-topActions button:hover,.nxFPShell .nxFP-topActions button:active{box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-topActions button.prim{background:linear-gradient(135deg,var(--nf-ac1),var(--nf-ac2));color:#fff;box-shadow:6px 6px 14px rgba(79,70,229,.35),-4px -4px 10px var(--nf-shl)}' +
+      '.nxFPShell .nxFP-topActions button.prim:hover,.nxFPShell .nxFP-topActions button.prim:active{box-shadow:4px 4px 10px rgba(79,70,229,.4),-2px -2px 6px var(--nf-shl)}' +
+      // Hero "Por cobrar": se queda morado (el acento fuerte del dashboard) — en
+      // vez de aplanarlo a neutral, gana sombra doble de color y sus mini-stats
+      // internos quedan hundidos (relieve sobre la propia superficie morada).
+      '.nxFPShell .nxFP-hA{box-shadow:10px 10px 24px rgba(76,29,149,.35),-8px -8px 18px rgba(167,139,250,.18);border-radius:26px}' +
+      '.nxFPShell .nxFP-hAsi{box-shadow:inset 2px 2px 5px rgba(0,0,0,.16),inset -2px -2px 5px rgba(255,255,255,.14)}' +
+      // Mini-stats bajo el hero (Prestado/Cobrado/Vencido/Clientes activos)
+      '.nxFPShell .nxFP-dcard{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-dico{box-shadow:var(--nf-convex-sm)}' +
+      // KPIs (Reportes/Cobranza/Clientes)
+      '.nxFPShell .nxFP-kpi{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-kpiIco{box-shadow:var(--nf-convex-sm)}' +
+      // Accesos rápidos
+      '.nxFPShell .nxFP-qbtn{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm)}' +
+      '.nxFPShell .nxFP-qbtn:hover{box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-qico{box-shadow:var(--nf-convex-sm)}' +
+      '.nxFPShell .nxFP-qico.primary{box-shadow:4px 4px 10px rgba(76,29,149,.35),-3px -3px 8px var(--nf-shl)}' +
+      // Pestañas de filtro: el estado activo pasa de píldora rellena a hundido
+      '.nxFPShell .nxFP-tab{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
+      '.nxFPShell .nxFP-tab.on{background:var(--nf-bg);box-shadow:var(--nf-concave);color:var(--nf-ac1);border:0}' +
+      '.nxFPShell .nxFP-tab.on .nxFP-tabN{background:rgba(79,70,229,.14);color:var(--nf-ac1)}' +
+      // Tarjeta de préstamo, estados vacíos, menú flotante de acciones
+      '.nxFPShell .nxFP-card{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-empty{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-emptyIco{box-shadow:var(--nf-convex-sm)}' +
+      '.nxFPShell .nxFP-menuPop{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-menuPop button:hover{background:transparent;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-menuBtn:hover{background:var(--nf-bg);box-shadow:var(--nf-convex-sm)}' +
+      // Tabla de préstamos/cobranza: panel envolvente + fila hundida en móvil
+      '.nxFPShell .nxFP-tblWrap{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-tbl thead th{background:transparent}' +
+      '.nxFPShell .nxFP-tbl tbody tr:hover{background:rgba(79,70,229,.05)}' +
+      '.nxFPShell .nxFP-tAcc button{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
+      '.nxFPShell .nxFP-tAcc button:hover{box-shadow:var(--nf-concave);color:var(--nf-ac1)}' +
+      '.nxFPShell .nxFP-tPay{border:0;box-shadow:4px 4px 10px rgba(37,99,235,.3),-3px -3px 8px var(--nf-shl)}' +
+      '.nxFPShell .nxFP-pgBtns button{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
+      '.nxFPShell .nxFP-pgBtns button:hover:not(:disabled):not(.on){box-shadow:var(--nf-concave);color:var(--nf-ac1)}' +
+      '.nxFPShell .nxFP-pgBtns button.on{box-shadow:4px 4px 10px rgba(109,40,217,.35),-3px -3px 8px var(--nf-shl);transform:none}' +
+      '@media(max-width:760px){.nxFPShell .nxFP-tbl tbody tr{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm)}}' +
+      // Cobranza: panel lateral de resumen
+      '.nxFPShell .nxFP-cobSide{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-cobSideDiv{background:var(--nf-shd);opacity:.4}' +
+      '.nxFPShell .nxFP-cobEvent{border-left-color:var(--nf-shd)}' +
+      // Reportes
+      '.nxFPShell .nxFP-repCard{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
+      '.nxFPShell .nxFP-repPer{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
+      '.nxFPShell .nxFP-perBtn.on{background:var(--nf-bg);color:var(--nf-ac1);box-shadow:var(--nf-convex-sm)}' +
+      '.nxFPShell .nxFP-tbl .nxFP-tTotal td{background:transparent;box-shadow:inset 0 2px 0 var(--nf-shd)}' +
+      '@media(prefers-reduced-motion:reduce){.nxFPShell *{transition:none!important}}';
     document.head.appendChild(st);
   };
   window.nxFinFiltro = function (key) {

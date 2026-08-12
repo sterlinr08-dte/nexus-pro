@@ -1,7 +1,12 @@
 {
-  "version": "56.24",
+  "version": "56.25",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.25",
+      "fecha": "2026-08-12",
+      "texto": "NUEVO: Financiamiento (Préstamos) estrena un look 'en relieve' (Neumorphism — sombras suaves duales, tarjetas que parecen hundidas o elevadas sobre el mismo fondo). Aplicado al menú lateral, el encabezado 'Total por cobrar', las tarjetas de resumen, las pestañas de filtro, la lista de préstamos y el panel de Cobranza. El acento morado del módulo se conserva (el 'Total por cobrar' y el botón 'Nuevo' siguen destacando en morado); lo que cambia es el resto de las superficies, que pasan de tarjetas planas con borde a un relieve suave. Cuotas del POS (que comparte parte del mismo diseño interno pero es azul) no se tocó — sigue exactamente igual."
+    },
     {
       "v": "56.24",
       "fecha": "2026-08-11",
