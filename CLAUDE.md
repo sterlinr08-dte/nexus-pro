@@ -12202,3 +12202,19 @@ incluso después de cerrar sesión y volver a entrar). Investigado a fondo, no a
   paso es preguntarle algo puntual (¿el círculo azul detrás del escudo late lento en la pantalla de
   login, antes de tocar nada? ¿la tarjeta se encoge/desvanece un instante justo antes de que aparezca el
   Dashboard?) para distinguir "no se dispara" de "se dispara pero es muy sutil/rápido para notarlo".
+
+### Skills nuevas `*-with-strix` (12-ago-2026)
+El dueño mandó una captura mostrando "Strix" y "Playwright CLI" (de un reel sobre herramientas) y
+preguntó cómo ayudarían. Playwright ya es el método de verificación de todo este proyecto (sin
+instalar nada nuevo). Strix (`usestrix/strix`, pentesting autónomo con IA — corre exploits reales
+contra el objetivo, no solo lee código) se instaló con `npx skills add usestrix/strix`: 4 skills
+(`penetration-testing-with-strix`, `managed-pentesting-with-strix`,
+`fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`), instalador limpio
+(sin tocar `git`/`CLAUDE.md`, a diferencia de `gstack` — detalle en `.agents/skills/STRIX-README.md`).
+**Quedan instaladas pero NO ejecutables todavía:** necesitan Docker con el daemon corriendo + clave
+de LLM (CLI local), o una cuenta+clave de `app.strix.ai` (nube gestionada) — ninguna de las dos está
+configurada. Preparadas para cuando el dueño decida darle la clave/cuenta, no fingir que ya
+funcionan sin eso. **Antes de apuntarlas a NEXUS PRO** (producción real, datos de clientes): mismo
+criterio de `docs/METODOLOGIA-PRUEBAS-DESTRUCTIVAS.md` — preferir un objetivo que no sea producción
+cuando la prueba no lo exija, y confirmar con el dueño antes de lanzar un pentest real contra la app
+en vivo.
