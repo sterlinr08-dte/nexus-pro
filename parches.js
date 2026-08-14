@@ -9139,12 +9139,6 @@
     try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
     catch (e) { try { return window.sesion?.rol === 'admin'; } catch (_) { return false; } }
   }
-  function usuarioActual() {
-    try {
-      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
-      return s?.usuario || s?.nom || s?.login || 'admin';
-    } catch (e) { return 'admin'; }
-  }
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
@@ -9193,21 +9187,10 @@
     if (tipo === 'SALARIO') return { cod: '5201', nom: 'Nómina agentes' };
     return { cod: '5101', nom: 'Gastos operativos' }; // ARS y GASTO general
   }
-  function asientoDeEgreso(e) {
-    const cta = cuentaGasto(e.tipo);
-    return {
-      fecha: e.fecha || new Date().toISOString().slice(0, 10),
-      referencia: 'EGR-' + e.id,
-      descripcion: 'Egreso ' + tipoInfo(e.tipo).label + ': ' + (e.concepto || '') + (e.beneficiario ? ' — ' + e.beneficiario : ''),
-      cuenta_dr_cod: cta.cod,
-      cuenta_dr_nom: cta.nom,
-      monto_dr: Number(e.monto || 0),
-      cuenta_cr_cod: '1101',
-      cuenta_cr_nom: 'Efectivo y equivalentes',
-      monto_cr: Number(e.monto || 0)
-    };
-  }
   // Recarga los asientos en memoria para que los reportes formales se actualicen al instante
+  // (Bloque 4B: sigue siendo un refresco de SOLO LECTURA — el egreso y su asiento ya se
+  // escribieron de forma atómica dentro de la RPC correspondiente; esto solo mantiene
+  // ST.asientos fresco para que el Estado de Resultados/Balance se vean actualizados.)
   async function sincronizarContabilidad() {
     try {
       const stRef = getST();
@@ -9217,54 +9200,48 @@
       recalcContab();
     } catch (e) { console.warn('No se pudo sincronizar contabilidad:', e); }
   }
-  // Crea el asiento de un egreso recién guardado (no rompe el guardado si falla)
-  async function crearAsientoEgreso(e) {
-    const api = getAPI();
-    if (!api?.post || !e?.id) return;
-    try { await api.post('asientos', asientoDeEgreso(e)); }
-    catch (err) { console.warn('No se pudo crear el asiento del egreso:', err); }
-  }
-  // Actualiza (o crea si no existe) el asiento enlazado a un egreso editado
-  async function actualizarAsientoEgreso(e) {
-    const api = getAPI();
-    if (!api?.patch || !e?.id) return;
-    const cta = cuentaGasto(e.tipo);
-    const cambios = {
-      fecha: e.fecha,
-      descripcion: 'Egreso ' + tipoInfo(e.tipo).label + ': ' + (e.concepto || '') + (e.beneficiario ? ' — ' + e.beneficiario : ''),
-      cuenta_dr_cod: cta.cod, cuenta_dr_nom: cta.nom, monto_dr: Number(e.monto || 0),
-      cuenta_cr_cod: '1101', cuenta_cr_nom: 'Efectivo y equivalentes', monto_cr: Number(e.monto || 0)
-    };
-    try {
-      const upd = await api.patch('asientos', `referencia=eq.EGR-${e.id}`, cambios);
-      if (!upd || !upd.length) await crearAsientoEgreso(e); // egreso viejo sin asiento: lo crea
-    } catch (err) { console.warn('No se pudo actualizar el asiento del egreso:', err); }
-  }
-  // Borra el asiento enlazado a un egreso eliminado
-  async function borrarAsientoEgreso(id) {
-    const api = getAPI();
-    if (!api?.del || !id) return;
-    try { await api.del('asientos', `referencia=eq.EGR-${id}`); }
-    catch (err) { console.warn('No se pudo borrar el asiento del egreso:', err); }
-  }
-  // Crea los asientos que falten para egresos anteriores (auto-conexión, no duplica)
-  async function asegurarAsientos() {
-    const api = getAPI();
-    if (!api?.get || !api?.post || !_egresos.length) return;
-    let existentes = [];
-    try { existentes = await api.get('asientos', 'select=referencia&referencia=like.EGR-*') || []; }
-    catch (e) { return; }
-    const set = new Set(existentes.map(a => a.referencia));
-    const faltan = _egresos.filter(e => e.id && !set.has('EGR-' + e.id));
-    if (!faltan.length) return;
-    for (const e of faltan) await crearAsientoEgreso(e);
-    await sincronizarContabilidad();
-  }
+  // Bloque 4B (docs/bitacora/2026-08-14-0100-*): las funciones que aquí escribían
+  // directo en "asientos" (asientoDeEgreso/crearAsientoEgreso/actualizarAsientoEgreso/
+  // borrarAsientoEgreso/asegurarAsientos) se ELIMINARON — registrar, corregir y anular
+  // un egreso ahora pasan SIEMPRE por las RPC seguros_registrar_egreso/
+  // seguros_corregir_egreso/seguros_anular_egreso (ver nxGuardarEgreso/nxEliminarEgreso
+  // abajo), que crean/reversan el asiento de forma atómica y con RLS+SECURITY DEFINER
+  // del lado del servidor. Dejar estas funciones vivas —aunque nadie las llamara— sería
+  // conservar un camino de escritura directa a "asientos" que la ACL de Bloque 3C ya
+  // cerró para "authenticated" (solo SELECT); no tiene sentido mantenerlas.
 
   // ── Estado local ──
   let _egresos = [];
   let _abonos = [];
   let _periodo = 'todos'; // 'todos' o 'YYYY-MM'
+
+  // ── Idempotencia (Bloque 4B) — mismo patrón que _cobroIdemKey/_anulaIdemKeys
+  // en index.html (regAbono()/anularFactura()): una llave por intento EN CURSO,
+  // se reusa si el mismo intento se reintenta (doble clic, red lenta), se
+  // regenera/borra tras un éxito real. NUNCA en localStorage.
+  // _egCreaIdemKey = la llave del egreso NUEVO en curso (una sola — se resetea
+  //   cada vez que se abre el formulario sin id, ver nxAbrirFormEgreso).
+  // _egCorrIdemKeys/_egAnulaIdemKeys = una llave por egreso en curso de
+  //   corregirse/anularse, indexada por su id (no hay un "abrir" análogo para
+  //   esas 2 acciones, así que se generan al primer intento y se borran tras
+  //   el éxito — mismo patrón que _anulaIdemKeys en index.html).
+  let _egCreaIdemKey = null;
+  let _egCorrIdemKeys = {};
+  let _egAnulaIdemKeys = {};
+  function idemKey() {
+    if (typeof window.nxNuevaIdemKey === 'function') return window.nxNuevaIdemKey();
+    try { return crypto.randomUUID(); } catch (e) { return 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+  }
+  // Extrae el mensaje humano de un error RAISE EXCEPTION de PostgREST (llega
+  // como JSON dentro de e.message) — mismo helper que nxRpcErr() de index.html,
+  // con respaldo propio por si ese global no está disponible.
+  function rpcErr(e) {
+    if (typeof window.nxRpcErr === 'function') return window.nxRpcErr(e);
+    try {
+      const j = JSON.parse((e && e.message) || '');
+      return (j && j.message) ? j.message : ((e && e.message) || 'Error desconocido');
+    } catch (_) { return (e && e.message) || 'Error desconocido'; }
+  }
 
   // ═══ CARGA DE DATOS ═══
   async function cargarEgresos() {
@@ -9319,8 +9296,13 @@
   function totalEntro() {
     return abonosActivos().filter(a => a.fecha && enPeriodo(a.fecha)).reduce((s, a) => s + Number(a.monto || 0), 0);
   }
-  function egresosFiltrados() { return _egresos.filter(e => enPeriodo(e.fecha)); }
-  function totalSalio() { return egresosFiltrados().reduce((s, e) => s + Number(e.monto || 0), 0); }
+  function egresosFiltrados() { return _egresos.filter(e => enPeriodo(e.fecha)); } // TODOS (activo+anulado+corregido) — para la lista
+  // Bloque 4B: "Salió"/"Queda" y el desglose por tipo solo cuentan egresos
+  // ACTIVOS — uno anulado o corregido (reemplazado por uno nuevo) ya no debe
+  // seguir descontando del balance, aunque su fila se siga viendo en la lista
+  // de abajo (nunca se borra físicamente, ver el trigger anti-DELETE).
+  function egresosActivos(lista) { return (lista || egresosFiltrados()).filter(e => (e.estado || 'activo') === 'activo'); }
+  function totalSalio() { return egresosActivos().reduce((s, e) => s + Number(e.monto || 0), 0); }
   function periodosDisponibles() {
     const set = new Set();
     abonosActivos().forEach(a => { if (a.fecha) set.add(cicloDeFecha(a.fecha)); });
@@ -9377,7 +9359,6 @@
     modal.classList.add('open');
 
     await Promise.all([cargarEgresos(), cargarAbonos()]);
-    asegurarAsientos(); // conecta egresos anteriores con la contabilidad formal (en segundo plano)
     renderModal(modal);
   }
   window.nxAbrirContabilidad = abrirModal;
@@ -9393,32 +9374,45 @@
     const optPeriodo = `<option value="todos" ${_periodo === 'todos' ? 'selected' : ''}>📅 Todo el tiempo</option>`
       + periodos.map(p => `<option value="${p}" ${p === _periodo ? 'selected' : ''}>${esc(nombreCiclo(p))}</option>`).join('');
 
-    // Desglose de egresos por tipo
+    // Desglose de egresos por tipo — SOLO activos (debe sumar exacto a "SALIÓ")
     const porTipo = {};
-    egs.forEach(e => { const t = e.tipo || 'GASTO'; porTipo[t] = (porTipo[t] || 0) + Number(e.monto || 0); });
+    egresosActivos(egs).forEach(e => { const t = e.tipo || 'GASTO'; porTipo[t] = (porTipo[t] || 0) + Number(e.monto || 0); });
     const chips = Object.keys(porTipo).map(t => {
       const ti = tipoInfo(t);
       return `<span style="display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px;font-size:10.5px;font-weight:700;color:#475569"><i class="ti ${ti.icon}" style="color:${ti.color}"></i>${esc(ti.label)}: ${fmt(porTipo[t])}</span>`;
     }).join('');
 
+    // Bloque 4B: la lista muestra TODOS los egresos del período (activo +
+    // anulado + corregido — nunca desaparecen, no hay DELETE físico), pero
+    // cada fila refleja su estado con claridad: badge, monto atenuado/tachado
+    // y sin botones de Corregir/Anular en las que ya no están activas.
     const lista = egs.length === 0
       ? '<div style="text-align:center;padding:36px 20px;color:#475569;font-size:13px">No hay egresos en este periodo.<br>Registra uno abajo. 👇</div>'
       : egs.map(e => {
           const ti = tipoInfo(e.tipo);
+          const estado = e.estado || 'activo';
+          const inactivo = estado !== 'activo';
+          const badge = estado === 'anulado'
+            ? `<span title="${esc(e.motivo_anulacion || '')}" style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:9.5px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle">ANULADO</span>`
+            : estado === 'corregido'
+              ? `<span title="${esc(e.motivo_correccion || '')}" style="display:inline-block;background:#fef3c7;color:#92400e;font-size:9.5px;font-weight:800;letter-spacing:.3px;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle">CORREGIDO</span>`
+              : '';
+          const acciones = inactivo ? '' : `
+                <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px">
+                  <button class="btn bsm bghost" onclick="window.nxEditarEgreso('${esc(e.id)}')" title="Corregir" aria-label="Corregir"><i class="ti ti-pencil"></i></button>
+                  <button class="btn bsm bghost" onclick="window.nxEliminarEgreso('${esc(e.id)}')" title="Anular egreso" style="color:#dc2626" aria-label="Anular egreso"><i class="ti ti-minus"></i></button>
+                </div>`;
           return `
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 3px rgba(0,0,0,.04);${inactivo ? 'opacity:.55' : ''}">
               <div style="width:40px;height:40px;border-radius:10px;background:${ti.color}18;color:${ti.color};display:grid;place-items:center;flex-shrink:0"><i class="ti ${ti.icon}" style="font-size:20px"></i></div>
               <div style="flex:1;min-width:0">
-                <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.concepto || ti.label)}</div>
+                <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.concepto || ti.label)}${badge}</div>
                 <div style="font-size:11px;color:#475569;margin-top:1px">${esc(ti.label)}${e.beneficiario ? ' · ' + esc(e.beneficiario) : ''}</div>
                 <div style="font-size:10.5px;color:#475569;margin-top:1px">${fmtFecha(e.fecha)}${e.metodo ? ' · ' + esc(e.metodo) : ''}${e.banco ? ' · ' + esc(e.banco) : ''}${e.referencia ? ' · Ref: ' + esc(e.referencia) : ''}</div>
               </div>
               <div style="text-align:right;flex-shrink:0">
-                <div style="font-weight:900;color:#dc2626;font-size:14px;white-space:nowrap">- ${fmt(e.monto)}</div>
-                <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px">
-                  <button class="btn bsm bghost" onclick="window.nxEditarEgreso('${esc(e.id)}')" title="Editar" aria-label="Editar"><i class="ti ti-pencil"></i></button>
-                  <button class="btn bsm bghost" onclick="window.nxEliminarEgreso('${esc(e.id)}')" title="Eliminar" style="color:#dc2626" aria-label="Eliminar"><i class="ti ti-minus"></i></button>
-                </div>
+                <div style="font-weight:900;color:${inactivo ? '#94a3b8' : '#dc2626'};font-size:14px;white-space:nowrap${inactivo ? ';text-decoration:line-through' : ''}">- ${fmt(e.monto)}</div>
+                ${acciones}
               </div>
             </div>`;
         }).join('');
@@ -9474,6 +9468,10 @@
   // ═══ FORMULARIO EGRESO (nuevo / editar) ═══
   window.nxAbrirFormEgreso = function (id) {
     if (!esAdmin()) return;
+    // Formulario de egreso NUEVO: llave de idempotencia fresca para esta sesión
+    // del formulario (mismo patrón que abrirAbono() con _cobroIdemKey en
+    // index.html — se resetea cada vez que se abre, no solo tras un éxito).
+    if (!id) _egCreaIdemKey = idemKey();
     const e = id
       ? _egresos.find(x => String(x.id) === String(id))
       : { tipo: 'ARS', concepto: '', beneficiario: '', monto: '', metodo: 'Transferencia', banco: '', referencia: '', nota: '', fecha: new Date().toISOString().slice(0, 10) };
@@ -9545,69 +9543,111 @@
     if (lbl) lbl.textContent = tipoInfo(t).benef;
   };
 
+  // Bloque 4B (docs/bitacora/2026-08-14-0100-*): registrar y corregir un egreso
+  // YA NO son API.post/API.patch directos a "egresos" — pasan SIEMPRE por las RPC
+  // seguros_registrar_egreso / seguros_corregir_egreso, que crean/reversan el
+  // asiento de forma atómica del lado del servidor. Corregir NO reescribe la fila
+  // original (queda estado='corregido', trazable) — crea una fila NUEVA con los
+  // datos correctos, exactamente igual que seguros_anular_factura + re-facturar
+  // en Seguros (mismo criterio de "nunca reescribir un movimiento ya asentado").
   window.nxGuardarEgreso = async function (id) {
     if (!esAdmin()) return;
     const val = elId => document.getElementById(elId)?.value?.trim() || '';
-    const egreso = {
-      tipo: document.getElementById('nxEgTipo')?.value || 'GASTO',
-      concepto: val('nxEgConcepto'),
-      beneficiario: val('nxEgBenef'),
-      monto: window.nxMoney ? window.nxMoney.parse(document.getElementById('nxEgMonto')?.value) : Number(document.getElementById('nxEgMonto')?.value || 0),
-      metodo: document.getElementById('nxEgMetodo')?.value || '',
-      banco: val('nxEgBanco'),
-      referencia: val('nxEgRef'),
-      nota: val('nxEgNota'),
-      fecha: val('nxEgFecha') || new Date().toISOString().slice(0, 10)
-    };
+    const tipo = document.getElementById('nxEgTipo')?.value || 'GASTO';
+    const monto = window.nxMoney ? window.nxMoney.parse(document.getElementById('nxEgMonto')?.value) : Number(document.getElementById('nxEgMonto')?.value || 0);
+    const concepto = val('nxEgConcepto');
+    const beneficiario = val('nxEgBenef');
+    const metodo = document.getElementById('nxEgMetodo')?.value || '';
+    const banco = val('nxEgBanco');
+    const referencia = val('nxEgRef');
+    const nota = val('nxEgNota');
+    const fecha = val('nxEgFecha') || new Date().toISOString().slice(0, 10);
 
-    if (!egreso.concepto) { notify('err', 'Falta el concepto', 'Describe el egreso'); return; }
-    if (!(egreso.monto > 0)) { notify('err', 'Monto inválido', 'El monto debe ser mayor que 0'); return; }
+    if (!concepto) { notify('err', 'Falta el concepto', 'Describe el egreso'); return; }
+    if (!(monto > 0)) { notify('err', 'Monto inválido', 'El monto debe ser mayor que 0'); return; }
 
     const api = getAPI();
-    if (!api) { notify('err', 'API no disponible', ''); return; }
+    if (!api?.post) { notify('err', 'API no disponible', ''); return; }
 
-    try {
-      if (id) {
-        await api.patch('egresos', `id=eq.${id}`, egreso);
-        await actualizarAsientoEgreso({ ...egreso, id });   // actualiza su apunte contable
-      } else {
-        egreso.created_by = usuarioActual();
-        const res = await api.post('egresos', egreso);
-        const nuevo = Array.isArray(res) ? res[0] : res;
-        await crearAsientoEgreso({ ...egreso, id: nuevo?.id }); // crea su apunte contable
+    // Misma derivación de siempre (cuentaGasto): ARS/GASTO general → 5101,
+    // SALARIO → 5201; crédito SIEMPRE 1101 Efectivo. No hay selector de cuenta
+    // en la UI — la RPC valida este par contra su whitelist cerrada de 14 cuentas.
+    const ctaDr = cuentaGasto(tipo);
+    const params = {
+      p_tipo: tipo, p_concepto: concepto, p_beneficiario: beneficiario || null,
+      p_monto: monto, p_fecha: fecha,
+      p_cuenta_dr_cod: ctaDr.cod, p_cuenta_cr_cod: '1101',
+      p_metodo: metodo || null, p_banco: banco || null, p_nota: nota || null, p_referencia: referencia || null
+    };
+
+    if (id) {
+      // ── CORREGIR: motivo obligatorio (no existía este paso antes) — mismo
+      // patrón de prompt() que anularFactura() en index.html.
+      const motivo = prompt('Motivo de la corrección (obligatorio):');
+      if (motivo === null) return;
+      if (!motivo.trim()) { notify('err', 'Motivo requerido', 'Debes indicar por qué se corrige'); return; }
+      const key = _egCorrIdemKeys[id] || (_egCorrIdemKeys[id] = idemKey());
+      try {
+        const r = await api.post('rpc/seguros_corregir_egreso', Object.assign({ p_egreso_id: id, p_motivo: motivo.trim(), p_idempotency_key: key }, params));
+        if (!r || !r.ok) throw new Error('La RPC no confirmó la corrección');
+        delete _egCorrIdemKeys[id];
+        document.getElementById('nxFormEgreso')?.classList.remove('open');
+        await Promise.all([cargarEgresos(), sincronizarContabilidad()]);
+        const mp = document.getElementById('nxModalContab');
+        if (mp) renderModal(mp);
+        notify('ok', 'Egreso corregido', 'Se creó un egreso nuevo con los datos correctos');
+      } catch (err) {
+        const msg = rpcErr(err);
+        console.error('Error corrigiendo egreso:', err);
+        notify('err', 'No se pudo corregir', msg);
       }
-      await sincronizarContabilidad();                         // refresca el Estado de Resultados
-      document.getElementById('nxFormEgreso')?.classList.remove('open');
-      await cargarEgresos();
-      const mp = document.getElementById('nxModalContab');
-      if (mp) renderModal(mp);
-      notify('ok', 'Egreso guardado', 'También se registró en tu contabilidad');
-    } catch (err) {
-      console.error('Error guardando egreso:', err);
-      notify('err', 'No se pudo guardar', err.message || '');
+    } else {
+      const key = _egCreaIdemKey || (_egCreaIdemKey = idemKey());
+      try {
+        const r = await api.post('rpc/seguros_registrar_egreso', Object.assign({ p_idempotency_key: key }, params));
+        if (!r || !r.ok) throw new Error('La RPC no confirmó el registro');
+        _egCreaIdemKey = idemKey(); // egreso ya comprometido: el próximo intento es un egreso NUEVO
+        document.getElementById('nxFormEgreso')?.classList.remove('open');
+        await Promise.all([cargarEgresos(), sincronizarContabilidad()]);
+        const mp = document.getElementById('nxModalContab');
+        if (mp) renderModal(mp);
+        notify('ok', 'Egreso guardado', 'También se registró en tu contabilidad');
+      } catch (err) {
+        const msg = rpcErr(err);
+        console.error('Error guardando egreso:', err);
+        notify('err', 'No se pudo guardar', msg);
+      }
     }
   };
 
   window.nxEditarEgreso = function (id) { window.nxAbrirFormEgreso(id); };
 
+  // Bloque 4B: "eliminar" un egreso YA NO es un DELETE físico (el trigger
+  // seguros_bloquear_delete_egreso lo rechazaría de todos modos) — anula el
+  // egreso (reversa contable + estado='anulado') vía seguros_anular_egreso.
+  // El motivo obligatorio cumple a la vez el rol de confirmación (cancelar o
+  // dejarlo en blanco = abortar) — mismo patrón que anularFactura() en
+  // index.html, sin necesitar un diálogo de confirmación aparte.
   window.nxEliminarEgreso = async function (id) {
     if (!esAdmin()) return;
-    const ok = (typeof window.nxConfirm === 'function')
-      ? await window.nxConfirm('¿Eliminar este egreso?', 'Esta acción no se puede deshacer.', { ok: 'Sí, eliminar', tipo: 'danger' })
-      : window.confirm('¿Eliminar este egreso?');
-    if (!ok) return;
+    const motivo = prompt('Motivo de la anulación (obligatorio):');
+    if (motivo === null) return;
+    if (!motivo.trim()) { notify('err', 'Motivo requerido', 'Debes indicar por qué se anula'); return; }
     const api = getAPI();
-    if (!api?.del) return;
+    if (!api?.post) { notify('err', 'API no disponible', ''); return; }
+    const key = _egAnulaIdemKeys[id] || (_egAnulaIdemKeys[id] = idemKey());
     try {
-      await api.del('egresos', `id=eq.${id}`);
-      await borrarAsientoEgreso(id);      // borra también su apunte contable
-      await sincronizarContabilidad();    // refresca el Estado de Resultados
-      await cargarEgresos();
+      const r = await api.post('rpc/seguros_anular_egreso', { p_egreso_id: id, p_motivo: motivo.trim(), p_idempotency_key: key });
+      if (!r || !r.ok) throw new Error('La RPC no confirmó la anulación');
+      delete _egAnulaIdemKeys[id];
+      await Promise.all([cargarEgresos(), sincronizarContabilidad()]);
       const mp = document.getElementById('nxModalContab');
       if (mp) renderModal(mp);
-      notify('ok', 'Egreso eliminado', '');
+      notify('ok', 'Egreso anulado', r.sin_asiento_vinculado ? 'No tenía un apunte contable que revertir' : '');
     } catch (err) {
-      notify('err', 'No se pudo eliminar', err.message || '');
+      const msg = rpcErr(err);
+      console.error('Error anulando egreso:', err);
+      notify('err', 'No se pudo anular', msg);
     }
   };
 

@@ -1,7 +1,12 @@
 {
-  "version": "56.28",
+  "version": "56.29",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.29",
+      "fecha": "2026-08-14",
+      "texto": "ARREGLADO (importante, seguridad y contabilidad): registrar, corregir y anular un egreso (Contabilidad → Egresos) ahora se procesan como una sola operación segura en el servidor — así ya no puede quedar un egreso guardado sin su asiento contable (o viceversa) si algo falla a mitad de camino, y tocar 'Guardar' dos veces por error ya no crea el mismo egreso duplicado. Corregir un egreso ya no reescribe el original: ahora deja el egreso viejo marcado como 'corregido' (con el motivo) y crea uno nuevo con los datos correctos — mismo criterio que ya usan los asientos manuales y las facturas. Anular un egreso ahora pide el motivo obligatorio y se ve en la lista con una etiqueta clara (en vez de desaparecer sin dejar rastro). Ambas acciones — corregir y anular — quedan exclusivas del administrador. Cambio 100% de fondo: solo se agregaron las etiquetas de estado en la lista, no se ve nada más distinto en pantalla."
+    },
     {
       "v": "56.28",
       "fecha": "2026-08-12",
