@@ -1,7 +1,12 @@
 {
-  "version": "56.32",
+  "version": "56.33",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.33",
+      "fecha": "2026-08-15",
+      "texto": "ARREGLADO (importante): el historial de cuadres de TSS (Contabilidad → Reportes → Tabla Comparativa) protegió el 'reemplazar' que se arregló en la versión anterior, pero seguía borrando el cuadre viejo al reemplazarlo por uno nuevo — el reemplazo ahora se maneja igual que la corrección de facturas y egresos: el registro anterior se queda guardado, marcado como reemplazado (con quién y cuándo lo hizo), y el nuevo nace como la versión vigente. La pantalla se sigue viendo exactamente igual (solo muestra el cuadre vigente de cada empresa+período) — el historial completo de versiones queda protegido por debajo, listo para el día que se quiera mostrar. No se perdió ningún dato: nadie había reemplazado un cuadre todavía."
+    },
     {
       "v": "56.32",
       "fecha": "2026-08-15",

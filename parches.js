@@ -10633,7 +10633,7 @@
   window.nxTssVerHistorial = async function () {
     setArea('nxTssResultado', '<div style="text-align:center;padding:20px;color:#475569"><div class="spin"></div><div style="margin-top:6px">Cargando historial...</div></div>');
     let data = [];
-    try { const _api = (typeof API !== 'undefined') ? API : window.API; data = await _api.get('cuadre_tss_historial', 'select=*&order=created_at.desc&limit=300'); } catch (e) { setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">No se pudo cargar el historial.</div>'); return; }
+    try { const _api = (typeof API !== 'undefined') ? API : window.API; data = await _api.get('cuadre_tss_historial', 'select=*&activo=eq.true&order=created_at.desc&limit=300'); } catch (e) { setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">No se pudo cargar el historial.</div>'); return; }
     if (!Array.isArray(data) || !data.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">📜 Aún no hay cuadres guardados.<br><span style="font-size:11px">Haz un cuadre y toca "Guardar cuadre".</span></div>'); return; }
     _histData = data;
     const items = data.map((r, i) => {
