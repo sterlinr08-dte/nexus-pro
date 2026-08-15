@@ -1,7 +1,17 @@
 {
-  "version": "56.29",
+  "version": "56.31",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.31",
+      "fecha": "2026-08-15",
+      "texto": "ARREGLADO (importante, seguridad): en la pantalla de Solicitudes (donde el administrador registra, confirma y deposita las entregas de dinero de los agentes), las 4 acciones — Registrar entrega, Confirmar, Marcar depositado y Anular — ahora pasan por el mismo servidor seguro de siempre (antes se escribían directo desde el navegador, algo que ya no está permitido con el candado nuevo de esta versión). Además, 'Anular' una entrega YA NO la borra — la deja marcada como anulada, con el motivo que escribas, para que quede el rastro completo de qué pasó y quién lo hizo (el cobro del cliente nunca se toca, solo se corrige quién tiene el dinero en la mano). Una entrega anulada ya no se queda pegada en 'por confirmar' ni sigue sumando en 'Dinero en Mano' del agente ni en los totales de Caja Central — desaparece de esas cuentas apenas se anula, tal como debe ser."
+    },
+    {
+      "v": "56.30",
+      "fecha": "2026-08-15",
+      "texto": "ARREGLADO (importante, seguridad): al cobrar con Transferencia o Depósito y elegir '¿A qué cuenta se depositó?' (la cuenta del administrador que recibe el dinero), ese depósito ahora se crea junto con el propio cobro, como una sola operación segura en el servidor — antes se guardaba con una escritura aparte hecha desde el navegador, que en teoría se podía manipular para registrar un depósito con un monto, una cuenta o un estado 'ya confirmado' que no correspondía a ningún cobro real. Ahora el servidor SIEMPRE verifica que hubo un cobro de verdad antes de crear el depósito, y usa el mismo criterio de siempre para confirmarlo solo si es tu propia cuenta. El comprobante de pago (bauche) que se sube al registrar el cobro se enlaza al depósito de forma directa y confiable (antes se buscaba 'la entrega más reciente de los últimos 90 segundos', algo que un cobro simultáneo de otro cajero podía hacer fallar o, en un caso raro, enlazar al depósito equivocado). Cambio 100% de fondo — la ventana de Cobrar se ve y se usa exactamente igual que antes."
+    },
     {
       "v": "56.29",
       "fecha": "2026-08-14",

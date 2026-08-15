@@ -4206,7 +4206,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.29';
+const APP_VERSION='56.31';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8520,7 +8520,7 @@ function mostrarCajaRecibo(c){
 async function regAbono(){
   const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
-  // VALIDACIONES nuevas: agente, referencia, banco (si transferencia/depósito)
+  // VALIDACIONES nuevas: agente, referencia, banco/cuenta (si transferencia/depósito)
   // — se quedan aquí como feedback rápido; la RPC las vuelve a exigir del lado
   // del servidor, así que esto es solo UX, nunca la única barrera real.
   const agenteCobro=document.getElementById('aAgente')?.value||null;
@@ -8529,6 +8529,7 @@ async function regAbono(){
   if(!refValor){toast('err','Referencia requerida','Escribe una referencia');return;}
   const metodo=document.getElementById('aMet').value;
   let bancoGuardar=null;
+  let cuentaDestinoId=null;
   if(metodo==='Transferencia'||metodo==='Depósito'){
     const bSel=document.getElementById('aBanco')?.value||'';
     if(!bSel){toast('err','Banco requerido','Selecciona el banco');return;}
@@ -8539,12 +8540,21 @@ async function regAbono(){
     }else{
       bancoGuardar=bSel;
     }
+    // "¿A qué cuenta se depositó?" (v38.3) sigue OBLIGATORIA para Transferencia/
+    // Depósito — antes la exigía y la creaba el wrapper de parches.js con un
+    // POST REST directo a entregas_admin (el hueco cerrado en Bloque 4D-1,
+    // docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md); ahora solo
+    // se valida aquí como UX, y quien de verdad CREA la entrega es la RPC
+    // atómica del servidor — nunca el navegador.
+    cuentaDestinoId=document.getElementById('aDirectoCuenta')?.value||'';
+    if(!cuentaDestinoId){toast('err','Falta la cuenta','Elige a qué cuenta se depositó el pago');return;}
   }
+  const comprobanteUrl=window._nxBaucheURL||null;
   const c=ST.clientes.find(x=>x.id===abonoCliId);
   if(!c){toast('err','Cliente no encontrado');return;}
   // Destino del pago: facturas (default) o la bolsa "deuda antes del sistema".
   const _destino=document.getElementById('aDestino')?.value||'facturas';
-  if(_destino==='deuda_anterior'){await nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar);return;}
+  if(_destino==='deuda_anterior'){await nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar,cuentaDestinoId,comprobanteUrl);return;}
   const pendActual=pend(c);
   let permitirAdelanto=false;
   if(monto>pendActual+0.01){
@@ -8554,10 +8564,11 @@ async function regAbono(){
   if(!_cobroIdemKey)_cobroIdemKey=nxNuevaIdemKey(); // respaldo si se llegó aquí sin pasar por abrirAbono()
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
-    const r=await API.post('rpc/seguros_registrar_cobro',{
+    const r=await API.post('rpc/seguros_registrar_cobro_con_entrega',{
       p_cliente_id:c.id,p_monto:monto,p_metodo:metodo,p_referencia:refValor,
       p_agente_cobro:agenteCobro,p_banco:bancoGuardar,p_destino:'facturas',
-      p_permitir_adelanto:permitirAdelanto,p_idempotency_key:_cobroIdemKey
+      p_permitir_adelanto:permitirAdelanto,p_idempotency_key:_cobroIdemKey,
+      p_cuenta_destino_id:cuentaDestinoId||null,p_comprobante_url:comprobanteUrl
     });
     if(!r||!r.ok)throw new Error('La RPC no confirmó el cobro');
     c.pagado=r.nuevo_pagado;
@@ -8572,7 +8583,7 @@ async function regAbono(){
     const _mesesPend=ST.facturas.filter(f=>f.cliente_id===c.id&&(f.estado==='Pendiente'||f.estado==='Parcial')&&f.mes&&f.anio).map(f=>({mes:Number(f.mes),anio:Number(f.anio)}));
     await resyncEstadoFacturas(c.id);
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
-    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:_mesesPend};
+    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:_mesesPend,entregaId:r.entrega_id||null};
     _cobroIdemKey=nxNuevaIdemKey(); // cobro ya comprometido: cualquier próximo intento es un cobro NUEVO
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
@@ -8589,7 +8600,7 @@ async function regAbono(){
 // La RPC ya lo rechaza server-side sin ningún parámetro de "permitir"; aquí se
 // valida también del lado del cliente para no gastar un viaje de red en un
 // monto que se sabe de antemano que la RPC va a rechazar.
-async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar){
+async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar,cuentaDestinoId,comprobanteUrl){
   const da=deudaAnt(c);
   if(da<=0){toast('err','Sin deuda anterior','Este cliente no tiene deuda antes del sistema');return;}
   if(monto>da+0.01){
@@ -8599,17 +8610,18 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
   if(!_cobroIdemKey)_cobroIdemKey=nxNuevaIdemKey();
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
-    const r=await API.post('rpc/seguros_registrar_cobro',{
+    const r=await API.post('rpc/seguros_registrar_cobro_con_entrega',{
       p_cliente_id:c.id,p_monto:monto,p_metodo:metodo,p_referencia:refValor,
       p_agente_cobro:agenteCobro,p_banco:bancoGuardar,p_destino:'deuda_anterior',
-      p_permitir_adelanto:false,p_idempotency_key:_cobroIdemKey
+      p_permitir_adelanto:false,p_idempotency_key:_cobroIdemKey,
+      p_cuenta_destino_id:cuentaDestinoId||null,p_comprobante_url:comprobanteUrl||null
     });
     if(!r||!r.ok)throw new Error('La RPC no confirmó el pago a deuda anterior');
     c.deuda_anterior=r.nueva_deuda_anterior;
     try{const asi=await API.get('asientos',`id=eq.${r.asiento_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
     logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
-    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:[]};
+    _ultimoAbono={cliente:c.id,monto,abonoId:r.abono_id,mesesPend:[],entregaId:r.entrega_id||null};
     _cobroIdemKey=nxNuevaIdemKey();
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
