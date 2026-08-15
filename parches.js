@@ -1314,6 +1314,27 @@
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   }
 
+  // Bloque 4D-1 (docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md): el panel
+  // "Solicitudes" de aquí abajo (crearModalEntregaAdmin/nxGuardarEntregaAdmin/
+  // nxConfirmarEntregaAdmin/nxDepositarEntregaAdmin/nxAnularEntregaAdmin) escribía
+  // directo por REST (api.post/api.patch/api.del) a entregas_admin — el ACL nuevo ya
+  // revocó INSERT/UPDATE/DELETE de esa tabla para 'authenticated', así que ese camino
+  // quedó bloqueado. Ahora pasan por las 4 RPC ya desplegadas (mismo patrón
+  // idemKey()/rpcErr() que ya usa el módulo de Egresos, Bloque 4B-2).
+  let _eaCreaIdemKey = null;
+  let _eaAnulaIdemKeys = {};
+  function idemKey() {
+    if (typeof window.nxNuevaIdemKey === 'function') return window.nxNuevaIdemKey();
+    try { return crypto.randomUUID(); } catch (e) { return 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+  }
+  function rpcErr(e) {
+    if (typeof window.nxRpcErr === 'function') return window.nxRpcErr(e);
+    try {
+      const j = JSON.parse((e && e.message) || '');
+      return (j && j.message) ? j.message : ((e && e.message) || 'Error desconocido');
+    } catch (_) { return (e && e.message) || 'Error desconocido'; }
+  }
+
   // ═══════════════════════════════════════════════════════════
   // CICLOS 20-20
   // ═══════════════════════════════════════════════════════════
@@ -1553,8 +1574,11 @@
     });
     const abonosAcum = antesDelFin(abonosAll);
     const transferenciasAcum = antesDelFin(transferenciasAll);
-    const entregasAcum = antesDelFin(entregasAll || []);
-    const entregasPeriodo = (entregasAll || []).filter(e =>
+    // Bloque 4D-1: "anular" ya NO borra la fila (queda anulado=true, trazable) — hay que
+    // excluirla aquí o volvería a contar como "el agente entregó" en enMano/enManoAcumulado.
+    const entregasNoAnuladas = (entregasAll || []).filter(e => !e.anulado);
+    const entregasAcum = antesDelFin(entregasNoAnuladas);
+    const entregasPeriodo = entregasNoAnuladas.filter(e =>
       enRango(e.fecha, periodoFin ? new Date(new Date(periodoFin).getTime() - 31*24*60*60*1000) : new Date(0), new Date(periodoFin))
     );
 
@@ -2168,6 +2192,10 @@
         String(t.desde_agente) === miId || String(t.hacia_agente) === miId);
       entregas = entregas.filter(e => String(e.agente_id) === miId);
     }
+    // Bloque 4D-1: "anular" ya NO borra la fila (queda anulado=true, trazable) — se excluye
+    // aquí, ANTES de que alimente entregasPeriodo/renderCajaCentral/calcularPorAgente, para
+    // que una entrega anulada no siga sumando en ningún KPI (Caja Central, dinero en mano...).
+    entregas = entregas.filter(e => !e.anulado);
 
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
@@ -2485,31 +2513,34 @@
     const btn = document.getElementById('nxEA_Btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
 
-    const payload = {
-      agente_id, monto, metodo,
-      banco: banco || null,
-      referencia: ref,
-      nota: nota || null,
-      fecha,
-      confirmado: confirmarAhora,
-      confirmado_at: confirmarAhora ? new Date().toISOString() : null,
-      confirmado_por: confirmarAhora ? (window.sesion?.usuario || 'admin') : null,
-      created_by: window.sesion?.usuario || 'admin'
-    };
-
+    // Bloque 4D-1: el ACL nuevo ya no deja escribir entregas_admin por REST — se pasa
+    // por la RPC atómica (valida rol/org, arma id/idempotencia y deja su propio
+    // rastro en auditoria). La RPC SIEMPRE crea confirmado=false/depositado=false —
+    // si el admin marcó "confirmar ahora", se encadena seguros_confirmar_entrega_admin.
+    const key = _eaCreaIdemKey || (_eaCreaIdemKey = idemKey());
     try {
-      await api.post('entregas_admin', payload);
-      const nombreAg = (st().agentes || []).find(a => String(a.id) === String(agente_id))?.nom || agente_id;
-      if (typeof window.logAudit === 'function') {
-        window.logAudit('ENTREGA_ADMIN', `Recibido de ${nombreAg}: RD$ ${monto.toLocaleString()} · ${metodo}${banco ? ' · ' + banco : ''}${confirmarAhora ? ' · CONFIRMADO' : ''}`, 'Cobros');
+      const r = await api.post('rpc/seguros_registrar_entrega_admin_manual', {
+        p_agente_id: agente_id, p_monto: monto, p_metodo: metodo,
+        p_banco: banco || null, p_referencia: ref, p_nota: nota || null,
+        p_fecha: fecha, p_idempotency_key: key
+      });
+      if (!r || !r.ok) throw new Error('La RPC no confirmó el registro');
+      _eaCreaIdemKey = idemKey(); // esta entrega ya quedó comprometida: el próximo intento es OTRA
+      if (confirmarAhora && r.id) {
+        try { await api.post('rpc/seguros_confirmar_entrega_admin', { p_id: r.id }); }
+        catch (eConf) {
+          console.warn('Entrega registrada pero no se pudo auto-confirmar:', eConf);
+          toastSafe('err', 'Entrega registrada, sin confirmar', 'Se guardó, pero no se pudo confirmar automáticamente — hazlo a mano desde Solicitudes.');
+        }
       }
+      const nombreAg = (st().agentes || []).find(a => String(a.id) === String(agente_id))?.nom || agente_id;
       toastSafe('ok', 'Entrega registrada', `${nombreAg} entregó RD$ ${monto.toLocaleString()}`);
       window.nxCerrarEntregaAdmin();
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none' && typeof renderDetallesCobro === 'function') await renderDetallesCobro();
     } catch (e) {
       console.error('Error guardando entrega_admin:', e);
-      toastSafe('err', 'No se pudo guardar', 'Verifica que exista la tabla entregas_admin en Supabase');
+      toastSafe('err', 'No se pudo guardar', rpcErr(e));
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar entrega'; }
     }
@@ -2519,22 +2550,19 @@
     if (!esAdmin()) return;
     if (!(await window.nxConfirm('¿Confirmar entrega?', 'Esto verifica que recibiste físicamente el dinero.', { ok: 'Sí, confirmar', tipo: 'info' }))) return;
     const api = getAPI();
-    if (!api?.patch) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
+    if (!api?.post) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.post');
       return;
     }
     try {
-      await api.patch('entregas_admin', `id=eq.${id}`, {
-        confirmado: true,
-        confirmado_at: new Date().toISOString(),
-        confirmado_por: window.sesion?.usuario || 'admin'
-      });
+      const r = await api.post('rpc/seguros_confirmar_entrega_admin', { p_id: id });
+      if (!r || !r.ok) throw new Error('La RPC no confirmó la confirmación');
       if (typeof window.toast === 'function') window.toast('ok', 'Confirmado', 'Entrega marcada como verificada');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none') await renderDetallesCobro();
     } catch (e) {
       console.error('Error confirmando entrega:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo confirmar');
+      if (typeof window.toast === 'function') window.toast('err', 'Error', rpcErr(e));
     }
   };
 
@@ -2543,45 +2571,53 @@
     const banco = prompt('¿En qué banco depositaste este dinero?\n(Ej: BHD, Banreservas, Popular)');
     if (!banco || !banco.trim()) return;
     const api = getAPI();
-    if (!api?.patch) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
+    if (!api?.post) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.post');
       return;
     }
     try {
-      await api.patch('entregas_admin', `id=eq.${id}`, {
-        depositado: true,
-        depositado_at: new Date().toISOString(),
-        depositado_banco: banco.trim()
-      });
+      const r = await api.post('rpc/seguros_depositar_entrega_admin', { p_id: id, p_banco: banco.trim() });
+      if (!r || !r.ok) throw new Error('La RPC no confirmó el depósito');
       if (typeof window.toast === 'function') window.toast('ok', 'Depositado', `Marcado como depositado en ${banco.trim()}`);
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none') await renderDetallesCobro();
     } catch (e) {
       console.error('Error depositando entrega:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo marcar como depositado');
+      if (typeof window.toast === 'function') window.toast('err', 'Error', rpcErr(e));
     }
   };
 
-  // Anular: elimina la entrega_admin. Útil cuando el depósito directo no llegó al banco.
-  // El cobro original NO se elimina (el cliente igual quedó marcado como pagado).
-  // El "Dinero en Mano" del agente vuelve a subir automáticamente.
+  // Bloque 4D-1: "anular" ya NO borra la fila — la RPC deja la entrega marcada
+  // anulado=true/anulado_motivo/anulado_por (trazable para siempre, con su propio
+  // rastro en auditoria), nunca un DELETE físico. El cobro original NO se toca
+  // (el cliente sigue marcado como pagado). El "Dinero en Mano" del agente vuelve
+  // a subir automáticamente (calcularPorAgente ya excluye anulado=true, v56.30).
+  // El motivo (obligatorio) cumple a la vez el rol de confirmación — mismo patrón
+  // que window.nxEliminarEgreso() en este archivo (Bloque 4B-2).
   window.nxAnularEntregaAdmin = async function(id) {
     if (!esAdmin()) return;
-    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
-    const api = getAPI();
-    if (!api?.del) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.del');
+    const motivo = prompt('Motivo de la anulación (obligatorio):\n\nEl cobro del cliente NO se afecta (la factura sigue pagada). El "Dinero en Mano" del agente subirá por ese monto.');
+    if (motivo === null) return;
+    if (!motivo.trim()) {
+      if (typeof window.toast === 'function') window.toast('err', 'Motivo requerido', 'Debes indicar por qué se anula');
       return;
     }
+    const api = getAPI();
+    if (!api?.post) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.post');
+      return;
+    }
+    const key = _eaAnulaIdemKeys[id] || (_eaAnulaIdemKeys[id] = idemKey());
     try {
-      await api.del('entregas_admin', `id=eq.${id}`);
-      if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
-      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
+      const r = await api.post('rpc/seguros_anular_entrega_admin', { p_id: id, p_motivo: motivo.trim(), p_idempotency_key: key });
+      if (!r || !r.ok) throw new Error('La RPC no confirmó la anulación');
+      delete _eaAnulaIdemKeys[id];
+      if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega quedó marcada como anulada. Investiga con el agente.');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none') await renderDetallesCobro();
     } catch (e) {
       console.error('Error anulando entrega:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo anular');
+      if (typeof window.toast === 'function') window.toast('err', 'Error', rpcErr(e));
     }
   };
 
@@ -4687,7 +4723,11 @@
     if (!api || !api.get) return [];
     try {
       const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
-      return Array.isArray(data) ? data : [];
+      // Bloque 4D-1: "anular" ya NO borra la fila (queda anulado=true, trazable) — se excluye
+      // aquí, en la ÚNICA fuente de este módulo (badges + panel Solicitudes), para que una
+      // entrega anulada no se quede pegada en "por confirmar" ni en el historial visible.
+      // El rastro sigue existiendo en Auditoría (ENTREGA_ANULADA), esto solo saca el ruido.
+      return (Array.isArray(data) ? data : []).filter(e => !e.anulado);
     } catch(e) { return []; }
   }
   async function cargarTransferencias() {
@@ -5585,11 +5625,17 @@
 
 /* ════════════════════════════════════════════════════════════════
    NEXUS PRO - COBRO DIRECTO A CUENTA DEL ADMIN
-   Inyecta un checkbox en el modal #mAbono "Depositado directo a mi
-   cuenta" (solo si método = Transferencia/Depósito). Al guardar,
-   adicionalmente crea una entrega_admin con es_directo=true,
-   depositado=true, confirmado=false → aparece en Solicitudes para
-   que el admin verifique en su estado de cuenta y confirme o anule.
+   Inyecta el selector "¿A qué cuenta se depositó?" en el modal
+   #mAbono (solo si método = Transferencia/Depósito). LA VALIDACIÓN
+   Y LA CREACIÓN de la entrega YA NO VIVEN AQUÍ (Bloque 4D-1,
+   docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md):
+   regAbono()/nxRegAbonoDeudaAnterior() (index.html) leen este mismo
+   <select id="aDirectoCuenta"> y mandan p_cuenta_destino_id a la RPC
+   atómica seguros_registrar_cobro_con_entrega, que valida la cuenta
+   y crea la entrega del lado del servidor — ya NO hay ningún POST
+   REST directo del navegador a entregas_admin (era el hueco que
+   permitía fabricar una entrega con cualquier cuenta/monto/
+   confirmado=true sin haber cobrado nada de verdad).
    ════════════════════════════════════════════════════════════════ */
 
 (function() {
@@ -5598,10 +5644,6 @@
   if (window.__NEXUS_COBRO_DIRECTO_ADMIN__) return;
   window.__NEXUS_COBRO_DIRECTO_ADMIN__ = true;
 
-  function getAPI() {
-    try { return (typeof API !== 'undefined') ? API : window.API; }
-    catch(e) { return window.API; }
-  }
   function st() {
     try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
     catch(e) { return window.ST || {}; }
@@ -5659,153 +5701,12 @@
     return true;
   }
 
-  function esAdminCobro() {
-    try { const s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return !!(s && s.rol === 'admin'); } catch (e) { return false; }
-  }
-  // "Mi cuenta": el agente vinculado al usuario logueado (por nombre); si es admin
-  // y no calza por nombre, usa el agente con cargo ADMIN (ej. ESTERLIN).
-  function miCuentaId() {
-    try {
-      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion; if (!s) return null;
-      const ags = Array.isArray(st().agentes) ? st().agentes : [];
-      const norm = x => String(x || '').trim().toLowerCase();
-      if (s.agente_id) { const byId = ags.find(a => String(a.id) === String(s.agente_id)); if (byId) return byId.id; }
-      const n = norm(s.nom);
-      const byNom = n ? ags.find(a => norm(a.nom) === n) : null;
-      if (byNom) return byNom.id;
-      if (esAdminCobro()) { const adm = ags.find(a => norm(a.cargo) === 'admin'); if (adm) return adm.id; }
-      return null;
-    } catch (e) { return null; }
-  }
-
-  function envolverRegAbono() {
-    if (typeof window.regAbono !== 'function') return false;
-    if (window.__regAbonoEnvuelto) return true;
-    window.__regAbonoEnvuelto = true;
-
-    const original = window.regAbono;
-
-    window.regAbono = async function() {
-      const sel = document.getElementById('aDirectoCuenta');
-      const cuentaSel = sel?.value || '';
-      const metodoNow = document.getElementById('aMet')?.value || '';
-      const esDepMethod = (metodoNow === 'Transferencia' || metodoNow === 'Depósito');
-
-      // En depósito/transferencia es obligatorio elegir la cuenta.
-      if (esDepMethod && !cuentaSel) {
-        if (typeof window.toast === 'function') window.toast('err', 'Falta la cuenta', 'Elige a qué cuenta se depositó el pago');
-        try { sel?.focus(); } catch (e) {}
-        return;
-      }
-      const esDirecto = esDepMethod && !!cuentaSel;
-
-      // Capturar datos ANTES (el original puede modificar el DOM al final)
-      let snapshot = null;
-      if (esDirecto) {
-        const monto = window.nxMoney ? window.nxMoney.parse(document.getElementById('aMnt')?.value) : parseFloat(document.getElementById('aMnt')?.value || 0);
-        const metodo = metodoNow;
-        const ref = (document.getElementById('aRef')?.value || '').trim();
-        let banco = null;
-        const bSel = document.getElementById('aBanco')?.value || '';
-        if (bSel === 'Otros') {
-          banco = (document.getElementById('aBancoOtros')?.value || '').trim();
-        } else if (bSel) {
-          banco = bSel;
-        }
-        const clienteId = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || null;
-        const agenteCobro = document.getElementById('aAgente')?.value || null; // QUIÉN cobró (para acreditar el dinero al agente correcto)
-        snapshot = { monto, metodo, ref, cuenta: cuentaSel, banco, clienteId, agenteCobro };
-      }
-
-      const reciboDiv = document.getElementById('reciboWAbtn');
-      const wasReciboVisible = reciboDiv?.style.display === 'flex';
-      const btnAbo = document.getElementById('btnAbo');
-      const wasBtnVisible = btnAbo?.style.display !== 'none';
-
-      // Ejecutar el regAbono original
-      const result = await original.apply(this, arguments);
-
-      // Detectar éxito: reciboWA visible o btnAbo oculto
-      const ahoraReciboVisible = reciboDiv?.style.display === 'flex';
-      const ahoraBtnOculto = btnAbo?.style.display === 'none';
-      const exitoso = (!wasReciboVisible && ahoraReciboVisible) ||
-                      (wasBtnVisible && ahoraBtnOculto);
-
-      // Si fue exitoso Y es depósito a una cuenta → crear la entrega para ESA cuenta.
-      if (exitoso && esDirecto && snapshot && snapshot.cuenta && snapshot.monto > 0) {
-        try {
-          const cliente = (st().clientes || []).find(c => c.id === snapshot.clienteId);
-          const nomCli = cliente?.nom || snapshot.clienteId;
-          const usr = (typeof sesion !== 'undefined' ? sesion : window.sesion)?.usuario || 'admin';
-          const api = getAPI();
-          const miCta = miCuentaId();
-          const autoConf = !!miCta && String(snapshot.cuenta) === String(miCta); // mi propia cuenta → se confirma sola
-          const cuentaNom = ((st().agentes || []).find(a => String(a.id) === String(snapshot.cuenta)) || {}).nom || 'la cuenta';
-
-          const payload = {
-            agente_id: snapshot.cuenta,
-            monto: snapshot.monto,
-            metodo: snapshot.metodo,
-            banco: snapshot.banco,
-            referencia: snapshot.ref,
-            nota: `Depósito de cliente ${nomCli} a cuenta ${cuentaNom}`,
-            fecha: (typeof hoy === 'function' ? hoy() : new Date().toISOString().slice(0,10)),
-            confirmado: autoConf,
-            confirmado_at: autoConf ? new Date().toISOString() : null,
-            confirmado_por: autoConf ? usr : null,
-            depositado: true,
-            depositado_at: new Date().toISOString(),
-            depositado_banco: snapshot.banco,
-            es_directo: true,
-            cobro_id: snapshot.clienteId,
-            cobrado_por: snapshot.agenteCobro, // el agente que COBRÓ (puede ser distinto al dueño de la cuenta)
-            created_by: usr
-          };
-
-          try {
-            await api.post('entregas_admin', payload);
-          } catch (ePayload) {
-            // Si la columna cobrado_por no existe aún, guardar sin ella (additivo)
-            const p2 = { ...payload }; delete p2.cobrado_por;
-            await api.post('entregas_admin', p2);
-          }
-
-          if (typeof window.toast === 'function') {
-            if (autoConf) window.toast('ok', 'Registrado a tu cuenta', `Depósito a ${cuentaNom} confirmado automáticamente`);
-            else window.toast('ok', 'Pendiente de confirmar', `Depósito a ${cuentaNom}: queda pendiente de verificar en Solicitudes`);
-          }
-          if (typeof window.logAudit === 'function') {
-            window.logAudit(autoConf ? 'COBRO_DEPOSITO_PROPIO' : 'COBRO_DEPOSITO_CUENTA',
-              `${nomCli} depositó RD$ ${snapshot.monto.toLocaleString()} a cuenta ${cuentaNom}${autoConf ? ' (auto-confirmado)' : ' (pendiente)'} · ${snapshot.banco || ''} · ${snapshot.ref}`,
-              'Cobros');
-          }
-          if (typeof window.nxRefrescarSolicitudes === 'function') {
-            await window.nxRefrescarSolicitudes();
-          }
-        } catch(e) {
-          console.error('Error creando entrega para depósito:', e);
-          if (typeof window.toast === 'function') {
-            window.toast('err', 'Aviso', 'Cobro guardado, pero no se creó la entrega de la cuenta. Avisa al administrador.');
-          }
-        }
-      }
-
-      // Reset selector
-      if (sel) sel.value = '';
-
-      return result;
-    };
-
-    return true;
-  }
-
   function init() {
     let intentos = 0;
     const tryInit = function() {
       intentos++;
       const ok1 = inyectarCheckbox();
-      const ok2 = envolverRegAbono();
-      if (ok1 && ok2) return;
+      if (ok1) return;
       if (intentos < 30) setTimeout(tryInit, 500);
     };
     tryInit();
@@ -10288,11 +10189,18 @@
           if (ab && ab[0]) await api.patch('abonos', `id=eq.${ab[0].id}`, { comprobante_url: url });
         } catch (e) { console.warn('No se pudo enlazar bauche al abono:', e); }
         try {
-          const ent = await api.get('entregas_admin', `cobro_id=eq.${cid}&order=created_at.desc&limit=1`);
-          if (ent && ent[0] && !ent[0].comprobante_url) {
-            const edad = Date.now() - new Date(ent[0].created_at).getTime();
-            if (edad < 90000) await api.patch('entregas_admin', `id=eq.${ent[0].id}`, { comprobante_url: url });
-          }
+          // Bloque 4D-1 (docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md):
+          // ya NO se busca "la entrega más reciente de este cliente en los últimos
+          // 90 segundos" (heurística que un cobro simultáneo de otro cajero podía
+          // hacer fallar en silencio, o peor, adjuntar al comprobante equivocado).
+          // La RPC de cobro devuelve el entrega_id REAL en su respuesta
+          // (_ultimoAbono.entregaId); con eso se llama a la RPC dedicada, que
+          // valida dueño/organización/anulación y nunca pisa un comprobante ya
+          // adjuntado (first-write-wins) — así que llamarla también cuando el
+          // comprobante ya se mandó en el propio cobro (p_comprobante_url) es
+          // inofensivo, solo respalda el caso raro de que esa escritura fallara.
+          const entregaId = after && after.entregaId;
+          if (entregaId) await api.post('rpc/seguros_adjuntar_comprobante_entrega', { p_id: entregaId, p_url: url });
         } catch (e) {}
         window._nxBaucheURL = null;
       }
@@ -10307,7 +10215,14 @@
       n++;
       const a = inyectarCargador();
       const b = envolverAbrirAbono();
-      const c = (window.__regAbonoEnvuelto || n > 12) ? envolverRegAbono() : false;
+      // Antes esperaba a que OTRA IIFE ("COBRO DIRECTO A CUENTA DEL ADMIN")
+      // envolviera regAbono() primero (window.__regAbonoEnvuelto) para que el
+      // orden de wraps quedara determinado. Bloque 4D-1 retiró ese otro wrap
+      // por completo (la creación de la entrega ya no vive en el navegador) —
+      // este es ahora el ÚNICO wrap de window.regAbono, así que se intenta de
+      // una vez en cada intento (envolverRegAbono() ya es idempotente por su
+      // propio guard window.__nxRegAbonoBauche).
+      const c = envolverRegAbono();
       if (a && b && c) return;
       if (n < 120) setTimeout(t, 250);
     };
