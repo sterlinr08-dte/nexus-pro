@@ -1,7 +1,12 @@
 {
-  "version": "56.31",
+  "version": "56.32",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.32",
+      "fecha": "2026-08-15",
+      "texto": "ARREGLADO (importante, seguridad): guardar un cuadre de TSS en el historial (Contabilidad → Reportes → Tabla Comparativa) ahora pasa por el mismo servidor seguro de siempre — antes se escribía directo desde el navegador con la clave pública del sistema, así que cualquiera que la tuviera (o un usuario de otro negocio conectado a NEXUS PRO) podía borrar o manipular ese historial sin dejar ningún rastro de quién lo hizo. Ahora el que queda registrado como 'usuario' es siempre el que de verdad tiene la sesión abierta (antes se podía mandar cualquier nombre desde el navegador), y guardar dos veces la misma empresa en el mismo período sigue preguntando si quieres reemplazar el cuadre anterior — igual que siempre, solo que ahora esa decisión también la protege el servidor. Cambio 100% de fondo: no se ve nada distinto en pantalla."
+    },
     {
       "v": "56.31",
       "fecha": "2026-08-15",
