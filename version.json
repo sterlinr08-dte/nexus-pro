@@ -1,7 +1,12 @@
 {
-  "version": "56.33",
+  "version": "56.34",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.34",
+      "fecha": "2026-08-16",
+      "texto": "ARREGLADO (importante): la pantalla de Cobros y el detalle de \"cuánto tiene cada agente\" (Detalles de cobro) seguían contando un cobro DESPUÉS de haberlo reversado — un abono marcado 'Reversado' (dinero ya devuelto al cliente) seguía sumando en el total cobrado y en el acumulado del agente, como si el dinero siguiera en su poder. Esto podía mostrarle a un agente de más dinero del que en realidad tiene disponible. Ahora esas dos pantallas excluyen los abonos reversados, igual que ya lo hacía el resto del sistema (facturas, historial de pagos). No se tocó ningún dato — solo se corrigió el cálculo de lo que se muestra en pantalla."
+    },
     {
       "v": "56.33",
       "fecha": "2026-08-15",
