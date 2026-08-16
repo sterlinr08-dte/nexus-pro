@@ -1509,7 +1509,11 @@
   // CÁLCULOS
   // ═══════════════════════════════════════════════════════════
   function calcularKPIs(abonos, periodo) {
-    const enPeriodo = abonos.filter(a => enRango(a.fecha, periodo.inicio, periodo.fin));
+    // Un abono Reversado ya no es dinero real (mismo criterio que index.html:
+    // totalCobrado=abonos.filter(a=>a.estado!=='Reversado')...) — sin esto, "Cobrado" y los
+    // KPIs de esta pantalla siguen contando dinero que ya se le devolvió al cliente.
+    const abonosValidos = abonos.filter(a => a.estado !== 'Reversado');
+    const enPeriodo = abonosValidos.filter(a => enRango(a.fecha, periodo.inicio, periodo.fin));
     const total = enPeriodo.reduce((s, a) => s + Number(a.monto || 0), 0);
     const stats = {
       total, cantidad: enPeriodo.length,
@@ -1564,6 +1568,11 @@
 
   function calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonosAll, transferenciasAll, periodoFin, entregasAll) {
     const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+    // Mismo criterio que calcularKPIs(): un abono Reversado no es dinero real en manos de nadie.
+    // Sin este filtro, "cobrado"/"enMano"/los acumulados de esta función siguen sumando cobros
+    // que ya se revirtieron — bug real detectado el 16-ago-2026 (Robinson mostraba RD$6,500 de más).
+    abonosPeriodo = (abonosPeriodo || []).filter(a => a.estado !== 'Reversado');
+    abonosAll = (abonosAll || []).filter(a => a.estado !== 'Reversado');
 
     // ACUMULADO: todo lo que pasó ANTES del fin del ciclo seleccionado
     // (igual a las funciones del periodo pero sin el filtro de inicio)
