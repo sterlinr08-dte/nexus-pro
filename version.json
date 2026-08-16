@@ -1,7 +1,12 @@
 {
-  "version": "56.34",
+  "version": "56.35",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.35",
+      "fecha": "2026-08-16",
+      "texto": "NUEVO: cuando un agente reversa un cobro DESPUÉS de haber entregado o transferido ese dinero, su \"Dinero en Mano\" (Detalles de cobro) ya no puede quedar en números negativos — el sistema conserva un mínimo de RD$0 y en su lugar muestra un aviso rojo \"DEBE RD$ X\" junto a su nombre (y también en el total general), para dejar claro que el agente tiene una deuda pendiente con el negocio, no que el dinero desapareció de la nada. De paso, transferir dinero entre agentes y aceptar o rechazar una transferencia ahora pasan por el mismo candado de seguridad del servidor que ya protegía los cobros: si al agente de origen no le alcanza el saldo, o la transferencia ya se había procesado antes, el sistema avisa con el motivo real en vez de dejarlo pasar en silencio. Además, al rechazar una transferencia ahora se puede escribir el motivo (opcional), y ese motivo queda guardado para consultarlo después."
+    },
     {
       "v": "56.34",
       "fecha": "2026-08-16",

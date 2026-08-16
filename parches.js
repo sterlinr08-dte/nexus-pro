@@ -752,6 +752,7 @@
 
   let isRendering = false;
   let lastRenderAt = 0;
+  let _txCreaIdemKey = null;
 
   const q = (s, r = document) => r.querySelector(s);
   const qa = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -777,6 +778,22 @@
   function today() {
     if (typeof window.hoy === "function") return window.hoy();
     return new Date().toISOString().slice(0, 10);
+  }
+
+  // Bloque 4C (docs/bitacora/2026-08-16-0950-claude-bloque4c-cierre-correcciones.md):
+  // transferencias_agentes ya no acepta INSERT/UPDATE directo (RLS/ACL nuevo) — todo
+  // pasa por las RPC transferencias_crear/aceptar/rechazar. Mismo patrón idemKey()/
+  // rpcErr() que ya usa el módulo de Egresos (Bloque 4B-2) y Solicitudes (4D-1).
+  function idemKey() {
+    if (typeof window.nxNuevaIdemKey === 'function') return window.nxNuevaIdemKey();
+    try { return crypto.randomUUID(); } catch (e) { return 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+  }
+  function rpcErr(e) {
+    if (typeof window.nxRpcErr === 'function') return window.nxRpcErr(e);
+    try {
+      const j = JSON.parse((e && e.message) || '');
+      return (j && j.message) ? j.message : ((e && e.message) || 'Error desconocido');
+    } catch (_) { return (e && e.message) || 'Error desconocido'; }
   }
 
   function toastSafe(type, title, msg) {
@@ -1193,11 +1210,27 @@
     const btn = q("#nxTA2Btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
 
-    // Entra como "pendiente": el dinero se mueve solo cuando el receptor acepta
-    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today(), estado: 'pendiente' };
+    // Bloque 4C: la tabla ya no acepta INSERT directo — pasa por transferencias_crear
+    // (candado por agente, saldo real, idempotencia). p_desde_agente solo lo usa la
+    // función si quien llama es admin; para un agente normal se ignora en el servidor
+    // y se fuerza a mi_agente_efectivo(), así que es seguro mandarlo siempre.
+    if (!_txCreaIdemKey) _txCreaIdemKey = idemKey();
+    const payload = {
+      p_hacia_agente: hacia,
+      p_monto: monto,
+      p_metodo: metodo,
+      p_banco: banco || null,
+      p_referencia: ref,
+      p_nota: nota || null,
+      p_idempotency_key: _txCreaIdemKey,
+      p_desde_agente: desde
+    };
 
     try {
-      await api.post(TRANSFER_TABLE, payload);
+      const r = await api.post('rpc/transferencias_crear', payload);
+      if (!r || r.ok !== true) throw new Error(JSON.stringify(r || {}));
+      // Éxito: rota la clave — la que se usó ya quedó comprometida en el servidor
+      _txCreaIdemKey = idemKey();
       if (typeof window.logAudit === "function") {
         window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : "") + " · pendiente", "Cobros");
       }
@@ -1215,7 +1248,7 @@
       }
     } catch (e) {
       console.error("Error guardando transferencia:", e);
-      toastSafe("err", "No se pudo guardar", "Verifica que exista la tabla transferencias_agentes en Supabase");
+      toastSafe("err", "No se pudo guardar", rpcErr(e));
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar transferencia'; }
     }
@@ -1646,7 +1679,20 @@
         cobrado, desglose,
         recibidas, entregadas, entregadasAdmin, enMano,
         cobradoAcum, recibidasAcum, entregadasAcum, entregadasAdminAcum,
-        entregasAdminPendientes, enManoAcumulado
+        entregasAdminPendientes, enManoAcumulado,
+        // 4C-DEUDA (deuda derivada, Option B): con el saldo negativo ahora posible de verdad
+        // (p.ej. un cobro se reversa DESPUÉS de que el agente ya entregó/transfirió ese
+        // dinero), "Dinero en Mano" nunca debe mostrarse en negativo — un agente no puede
+        // tener "menos que cero" en la mano, lo que tiene es una DEUDA. `enMano`/
+        // `enManoAcumulado` (arriba) se dejan intactos con su signo real porque deciden si
+        // el agente aparece en la tabla (línea del filtro más abajo) — nunca ocultar a quien
+        // debe. Estos 4 campos son solo para MOSTRAR/SUMAR: el saldo recortado a 0 y la
+        // deuda misma (mismo cálculo que `transferencias_saldo_disponible_agente()` en el
+        // backend: dinero_en_mano=max(0,saldo); deuda=max(0,-saldo)).
+        enManoDisplay: Math.max(0, enMano),
+        enManoAcumuladoDisplay: Math.max(0, enManoAcumulado),
+        deuda: Math.max(0, -enMano),
+        deudaAcumulada: Math.max(0, -enManoAcumulado)
       };
     }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0 ||
                    a.entregadasAdmin > 0 || a.enManoAcumulado !== 0)
@@ -1956,16 +2002,31 @@
       `;
     }
 
+    // 4C-DEUDA: se suman los campos YA RECORTADOS a 0 (enManoDisplay/enManoAcumuladoDisplay),
+    // nunca los signados crudos — si se sumara el crudo, la deuda de un agente compensaría en
+    // silencio el efectivo real de otro y el total dejaría de representar dinero físico real.
+    // La deuda SÍ se suma aparte (deudaAcumulada) para mostrarla como lo que es, no restarla.
     const totales = porAgente.reduce((acc, a) => {
       acc.cobrado += a.cobrado;
       acc.efectivo += a.desglose.efectivo;
       acc.banco += a.desglose.banco;
       acc.cheque += a.desglose.cheque;
       acc.otros += a.desglose.otros;
-      acc.enMano += a.enMano;
-      acc.enManoAcumulado += (a.enManoAcumulado || 0);
+      acc.enMano += (a.enManoDisplay != null ? a.enManoDisplay : Math.max(0, a.enMano));
+      acc.enManoAcumulado += (a.enManoAcumuladoDisplay != null ? a.enManoAcumuladoDisplay : Math.max(0, a.enManoAcumulado || 0));
+      acc.deudaAcumulada += (a.deudaAcumulada || 0);
       return acc;
-    }, {cobrado:0, efectivo:0, banco:0, cheque:0, otros:0, enMano:0, enManoAcumulado:0});
+    }, {cobrado:0, efectivo:0, banco:0, cheque:0, otros:0, enMano:0, enManoAcumulado:0, deudaAcumulada:0});
+
+    // 4C-DEUDA: chip "DEBE" — solo aparece si de verdad hay deuda derivada (p.ej. se
+    // reversó un cobro que el agente ya había entregado/transferido). Ningún agente al día
+    // muestra nada nuevo; no hace falta ningún filtro extra por rol aquí porque `porAgente`
+    // ya llega recortado a lo que le corresponde ver a quien esté mirando (admin ve a todos,
+    // un agente ya solo se ve a sí mismo — filtro aplicado por el llamador antes de esta
+    // función, igual que con el resto de la tabla).
+    const deudaChip = (monto) => monto > 0
+      ? `<div class="nxDC-deuda-pill" title="Saldo negativo: el agente debe este monto (p.ej. se reversó un cobro que ya había entregado o transferido)">DEBE ${F(monto)}</div>`
+      : '';
 
     const filas = porAgente.map(a => `
       <tr>
@@ -1979,8 +2040,9 @@
         <td class="nxDC-num">${F(a.desglose.cheque)}</td>
         <td class="nxDC-num">${F(a.desglose.otros)}</td>
         <td class="nxDC-num nxDC-num-stack">
-          <div class="nxDC-stack-big nxDC-num-blue">${F(a.enManoAcumulado || 0)}</div>
-          <div class="nxDC-stack-small">+ ${F(a.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
+          <div class="nxDC-stack-big nxDC-num-blue">${F(a.enManoAcumuladoDisplay != null ? a.enManoAcumuladoDisplay : Math.max(0, a.enManoAcumulado || 0))}</div>
+          <div class="nxDC-stack-small">+ ${F(a.enManoDisplay != null ? a.enManoDisplay : Math.max(0, a.enMano))} <span class="nxDC-muted-xs">ciclo</span></div>
+          ${deudaChip(a.deudaAcumulada || 0)}
         </td>
       </tr>
     `).join('');
@@ -2015,6 +2077,7 @@
                 <td class="nxDC-num nxDC-num-stack">
                   <div class="nxDC-stack-big nxDC-num-blue"><strong>${F(totales.enManoAcumulado)}</strong></div>
                   <div class="nxDC-stack-small">+ ${F(totales.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
+                  ${deudaChip(totales.deudaAcumulada)}
                 </td>
               </tr>
             </tfoot>
@@ -2221,8 +2284,11 @@
     const hayTransferencias = transferenciasPeriodo.length > 0;
     const pendiente = calcularPendienteTotal(verTodo ? null : miId);
     const totalTransferido = txEfectivasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
-    const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
-    const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
+    // 4C-DEUDA: la suma del KPI también usa los campos ya recortados (nunca el crudo con
+    // signo), mismo motivo que en renderTablaAgentes — evita que la deuda de un agente
+    // "compense" en silencio el efectivo real de otro dentro del total mostrado.
+    const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enManoDisplay != null ? a.enManoDisplay : Math.max(0, a.enMano || 0)), 0);
+    const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumuladoDisplay != null ? a.enManoAcumuladoDisplay : Math.max(0, a.enManoAcumulado || 0)), 0);
 
     cont.innerHTML = `
       <div class="nxDC-wrap">
@@ -2906,6 +2972,7 @@
       .nxDC-table th.nxDC-num { text-align:right; }
       .nxDC-num-green { color:#059669; font-weight:700; }
       .nxDC-num-blue { color:#6d28d9; font-weight:700; }
+      .nxDC-deuda-pill { display:inline-block; margin-top:5px; padding:2px 8px; border-radius:999px; background:#fee2e2; color:#dc2626; font-size:9.5px; font-weight:800; letter-spacing:.3px; font-family:var(--mono,monospace); white-space:nowrap; }
       .nxDC-num-stack { text-align:right; vertical-align:middle; }
       .nxDC-stack-big { font-weight:700; font-size:13px; line-height:1.15; font-family:var(--mono,monospace); }
       .nxDC-stack-small { font-size:10px; color:#475569; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
@@ -4617,6 +4684,17 @@
     try { return new Date(iso).toLocaleDateString('es-DO', {day:'2-digit', month:'2-digit', year:'numeric'}); }
     catch(e) { return iso; }
   }
+  // Bloque 4C: transferencias_agentes ya no acepta UPDATE directo — aceptar/rechazar
+  // pasan por transferencias_aceptar/transferencias_rechazar. Mismo patrón idemKey()/
+  // rpcErr() que ya usan los otros módulos migrados (Egresos, Entregas, esta misma
+  // pantalla de Solicitudes).
+  function rpcErr(e) {
+    if (typeof window.nxRpcErr === 'function') return window.nxRpcErr(e);
+    try {
+      const j = JSON.parse((e && e.message) || '');
+      return (j && j.message) ? j.message : ((e && e.message) || 'Error desconocido');
+    } catch (_) { return (e && e.message) || 'Error desconocido'; }
+  }
 
   // ── Estado local ──
   let _entregasCache = [];
@@ -5538,17 +5616,19 @@
   }
 
   // Aceptar transferencia entrante (admin o agente que recibe)
+  // Bloque 4C: pasa por transferencias_aceptar — valida autoridad, candado por agente
+  // y saldo disponible del origen server-side (antes solo escribía estado='aceptada'
+  // a ciegas, sin verificar si el que entrega de verdad tenía el dinero).
   window.nxAceptarTransferencia = async function(id) {
     const api = getAPI();
-    if (!api?.patch) {
+    if (!api?.post) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
       return;
     }
     if (!(await window.nxConfirm('¿Aceptar transferencia?', 'Se efectuará el movimiento de dinero.', { ok: 'Sí, aceptar', tipo: 'info' }))) return;
     try {
-      await api.patch('transferencias_agentes', `id=eq.${id}`, {
-        estado: 'aceptada'
-      });
+      const r = await api.post('rpc/transferencias_aceptar', { p_id: id });
+      if (!r || r.ok !== true) throw new Error(JSON.stringify(r || {}));
       if (typeof window.logAudit === 'function') {
         window.logAudit('TRANSFERENCIA_ACEPTADA', 'ID: ' + id, 'Cobros');
       }
@@ -5557,31 +5637,66 @@
       refrescarDetallesCobroSiVisible();
     } catch(e) {
       console.error('Error al aceptar:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'No se pudo aceptar', e.message || '');
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo aceptar', rpcErr(e));
     }
   };
-  
-  // Rechazar transferencia entrante
-  window.nxRechazarTransferencia = async function(id) {
+
+  // Rechazar transferencia entrante — ahora con motivo (queda guardado y visible,
+  // igual que rifa_boletos.motivo_rechazo). Antes no se pedía ningún motivo.
+  window.nxRechazarTransferencia = function(id) {
+    const t = (_transferenciasCache || []).find(x => String(x.id) === String(id));
+    document.getElementById('nxTransRech')?.remove();
+    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+    const nomDesde = t ? ((agentes.find(a => String(a.id) === String(t.desde_agente)) || {}).nom || 'el agente') : 'el agente';
+    const F = getFmt();
+    const ov = document.createElement('div');
+    ov.id = 'nxTransRech';
+    ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal" style="max-width:400px">
+        <div class="mt"><span><i class="ti ti-x"></i> Rechazar transferencia</span>
+          <button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById('nxTransRech').remove()"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="font-size:12.5px;color:#475569;padding:2px 2px 10px">
+          De <b>${esc(nomDesde)}</b>${t ? ' · ' + esc(F(t.monto)) : ''}. El dinero <b>NO</b> se moverá.
+        </div>
+        <div class="fr"><label>Motivo del rechazo (opcional, queda guardado)</label>
+          <textarea id="nxTransRechMotivo" class="no-upper" rows="3" placeholder="Ej: el monto no coincide con lo acordado"></textarea>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxTransRech').remove()">Cancelar</button>
+          <button class="btn bsm" type="button" style="background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRechazarTransferenciaGuardar('${esc(id)}')"><i class="ti ti-x"></i> Rechazar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    document.getElementById('nxTransRechMotivo')?.focus();
+  };
+  // Bloque 4C: pasa por transferencias_rechazar — valida autoridad (solo el que
+  // recibe o admin) y estado (no se puede rechazar una ya aceptada).
+  window.nxRechazarTransferenciaGuardar = async function(id) {
     const api = getAPI();
-    if (!api?.patch) {
+    if (!api?.post) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
       return;
     }
-    if (!(await window.nxConfirm('¿Rechazar transferencia?', 'El dinero NO se moverá.', { ok: 'Sí, rechazar', tipo: 'danger' }))) return;
+    const motivo = (document.getElementById('nxTransRechMotivo')?.value || '').trim();
+    const btn = document.querySelector('#nxTransRech .fe .bsm[style*="dc2626"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Rechazando…'; }
     try {
-      await api.patch('transferencias_agentes', `id=eq.${id}`, {
-        estado: 'rechazada'
-      });
+      const r = await api.post('rpc/transferencias_rechazar', { p_id: id, p_motivo: motivo || null });
+      if (!r || r.ok !== true) throw new Error(JSON.stringify(r || {}));
       if (typeof window.logAudit === 'function') {
-        window.logAudit('TRANSFERENCIA_RECHAZADA', 'ID: ' + id, 'Cobros');
+        window.logAudit('TRANSFERENCIA_RECHAZADA', 'ID: ' + id + (motivo ? ' · ' + motivo.slice(0, 120) : ''), 'Cobros');
       }
       if (typeof window.toast === 'function') window.toast('ok', 'Rechazada', 'La transferencia se rechazó');
+      document.getElementById('nxTransRech')?.remove();
       await renderSolicitudes();
       refrescarDetallesCobroSiVisible();
     } catch(e) {
       console.error('Error al rechazar:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'No se pudo rechazar', e.message || '');
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo rechazar', rpcErr(e));
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-x"></i> Rechazar'; }
     }
   };
   window.nxRefrescarSolicitudes = async function() {
