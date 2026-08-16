@@ -1525,7 +1525,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
               <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
               <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
-              <select id="fFactEstado" onchange="rFact()" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;flex:1;min-width:130px">
+              <!-- Filtro flotante animado: el <select> real sigue siendo la única fuente de
+                   verdad que lee rFact() — solo se oculta visualmente; pintarFiltroEstadoFact()
+                   dibuja el pill+panel encima y escribe en este mismo select al elegir. -->
+              <select id="fFactEstado" onchange="rFact()" style="display:none">
                 <option value="activas">Pendientes</option>
                 <option value="atrasadas">Pendientes meses anteriores</option>
                 <option value="todas">Todas</option>
@@ -1534,6 +1537,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <option value="Parcial">Parciales</option>
                 <option value="Anulada">Anuladas</option>
               </select>
+              <span id="fFactEstadoChip"></span>
             </div>
             <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
               <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
@@ -3457,6 +3461,143 @@ window.nxBuscaFiltroLimpiar=nxBuscaFiltroLimpiar;window.nxBuscaFiltroUsar=nxBusc
 window.nxBuscaFiltroFav=nxBuscaFiltroFav;window.nxBuscaFiltroChip=nxBuscaFiltroChip;
 window.nxBuscaFiltroCerrar=nxBuscaFiltroCerrar;
 
+// ═══ Filtro flotante animado (pill compacto → panel flotante con checklist) ═══
+// Mismo criterio que nxBuscaFiltroHTML: el control REAL de la pantalla (un <select>,
+// una var de módulo…) sigue siendo la ÚNICA fuente de verdad — este componente solo
+// dibuja encima y llama a onelegir(valor); nunca guarda su propio filtro paralelo.
+// Reusa el vocabulario de animación global (nxPopIn/nxFadeUp, arriba) y los tokens
+// --sf-* de .nxSf (colores ya existentes, con soporte de tema oscuro automático).
+window.__nfcReg=window.__nfcReg||{};
+function nxFiltroChipHTML(o){
+  o=o||{};
+  const id=o.id||('nfc'+Math.random().toString(36).slice(2));
+  const opciones=Array.isArray(o.opciones)?o.opciones:[];
+  const valor=o.value!=null?o.value:(opciones[0]?opciones[0].v:'');
+  window.__nfcReg[id]={opciones,valor,onelegir:typeof o.onelegir==='function'?o.onelegir:null,titulo:o.titulo||'Filtro'};
+  nxFiltroChipCSS();
+  const actual=opciones.find(x=>String(x.v)===String(valor))||opciones[0]||{t:'—'};
+  return '<div class="nfcWrap" id="nfcW_'+id+'">'
+    +'<button type="button" class="nfcBtn" id="nfcBtn_'+id+'" aria-haspopup="listbox" aria-expanded="false" aria-controls="nfcPanel_'+id+'" onclick="nxFiltroChipAbrir(\''+id+'\')">'
+    +'<i class="ti ti-filter" aria-hidden="true"></i><span class="nfcDiv"></span>'
+    +(actual.ico?'<i class="ti '+actual.ico+'" style="font-size:14px;color:'+(actual.color||'inherit')+'" aria-hidden="true"></i>':'')
+    +'<span class="nfcLbl">'+escHtml(actual.t)+'</span>'
+    +'<i class="ti ti-chevron-down nfcChev" aria-hidden="true"></i>'
+    +'</button></div>';
+}
+function nxFiltroChipCSS(){
+  if(document.getElementById('nfcCSS'))return;
+  const st=document.createElement('style');st.id='nfcCSS';
+  st.textContent='.nfcWrap{display:inline-flex;position:relative}'
+    +'.nfcBtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:box-shadow .15s,border-color .15s}'
+    +'body.tema-premium .nfcBtn{background:#121826;border-color:#232B3D;color:#F1F5F9}'
+    +'.nfcBtn:hover{border-color:#cbd5e1}'
+    +'.nfcBtn[aria-expanded="true"]{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.16)}'
+    +'.nfcBtn>i{font-size:14px;color:#64748b;flex-shrink:0}'
+    +'.nfcBtn .nfcChev{font-size:11px;margin-left:1px;transition:transform .18s}'
+    +'.nfcBtn[aria-expanded="true"] .nfcChev{transform:rotate(180deg)}'
+    +'.nfcDiv{width:1px;align-self:stretch;background:#e2e8f0;margin:0 1px}'
+    +'body.tema-premium .nfcDiv{background:#232B3D}'
+    +'.nfcLbl{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.nfcPanel{position:fixed;z-index:10600;background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e2e8f0);border-radius:12px;box-shadow:0 16px 40px rgba(15,23,42,.22);padding:6px;min-width:220px;max-width:min(300px,92vw);opacity:0;transform:translateY(-6px);pointer-events:none}'
+    +'.nfcPanel.open{opacity:1;transform:none;pointer-events:auto}'
+    +'@media(prefers-reduced-motion:no-preference){.nfcPanel{transition:opacity .26s cubic-bezier(.34,1.56,.64,1),transform .26s cubic-bezier(.34,1.56,.64,1)}'
+    +'.nfcPanel.open .nfcOpt{animation:nxFadeUp .3s ease both}}'
+    +'.nfcOpt{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--sf-tx,#334155);cursor:pointer;text-align:left;font-family:inherit}'
+    +'.nfcOpt:hover{background:var(--sf-bg,#f8fafc)}'
+    +'.nfcOpt .nfcIco{font-size:15px;flex-shrink:0}'
+    +'.nfcOpt .nfcTxt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.nfcOpt .nfcSub{font-size:10.5px;color:var(--sf-tx3,#94a0b4);font-weight:600;margin-left:6px;flex-shrink:0}'
+    +'.nfcOpt .nfcChk{width:16px;height:16px;border-radius:50%;border:1.5px solid #cbd5e1;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:background .15s,border-color .15s,color .15s}'
+    +'.nfcOpt.on{background:var(--sf-primary-l,rgba(37,99,235,.07))}'
+    +'.nfcOpt.on .nfcChk{border-color:var(--sf-primary,#2563eb);background:var(--sf-primary,#2563eb);color:#fff}'
+    +'.nfcOpt.on .nfcTxt{color:var(--sf-primary-d,#1d4ed8)}'
+    +'.nfcOpt:focus-visible{outline:2px solid var(--sf-primary,#2563eb);outline-offset:-2px}'
+    +'@media(max-width:640px){.nfcPanel{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto;max-width:none;transform:translateY(16px);border-radius:16px;padding:10px 6px calc(10px + env(safe-area-inset-bottom))}'
+    +'.nfcPanel.open{transform:none}'
+    +'.nfcPanel::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--sf-line,#e2e8f0);margin:2px auto 8px}}';
+  document.head.appendChild(st);
+}
+function nxFiltroChipAbrir(id){
+  const c=window.__nfcReg[id];if(!c)return;
+  const existente=document.getElementById('nfcPanel_'+id);
+  // Si YA está abierto (tiene .open) es un toggle: cerrar. Si quedó un panel viejo
+  // todavía terminando su animación de cierre (sin .open, esperando su setTimeout de
+  // remoción), se retira al instante — si no, este re-abrir solo lo vuelve a "cerrar"
+  // sobre un nodo obsoleto y nunca aparece el panel nuevo.
+  if(existente&&existente.classList.contains('open')){nxFiltroChipCerrar(id);return;}
+  if(existente&&existente.parentNode)existente.parentNode.removeChild(existente);
+  document.querySelectorAll('.nfcPanel').forEach(p=>nxFiltroChipCerrar(p.id.replace('nfcPanel_','')));
+  nxFiltroChipCSS();
+  const btn=document.getElementById('nfcBtn_'+id);if(!btn)return;
+  const panel=document.createElement('div');
+  panel.className='nfcPanel nxSf';panel.id='nfcPanel_'+id;
+  panel.setAttribute('role','listbox');panel.setAttribute('aria-label',c.titulo);
+  panel.innerHTML=c.opciones.map((o,ix)=>{
+    const on=String(o.v)===String(c.valor);
+    return '<button type="button" class="nfcOpt'+(on?' on':'')+'" role="option" aria-selected="'+(on?'true':'false')+'" data-v="'+escHtml(String(o.v))+'" style="animation-delay:'+(ix*25)+'ms" onclick="nxFiltroChipElegir(\''+id+'\',this)">'
+      +(o.ico?'<i class="ti '+o.ico+' nfcIco" style="color:'+(o.color||'var(--sf-tx3,#94a0b4)')+'" aria-hidden="true"></i>':'')
+      +'<span class="nfcTxt">'+escHtml(o.t)+'</span>'
+      +(o.n!=null?'<span class="nfcSub">'+escHtml(String(o.n))+'</span>':'')
+      +'<span class="nfcChk">✓</span></button>';
+  }).join('');
+  document.body.appendChild(panel);
+  nxFiltroChipPosicionar(panel,btn);
+  btn.setAttribute('aria-expanded','true');
+  requestAnimationFrame(function(){panel.classList.add('open');});
+  document.addEventListener('mousedown',nxFiltroChipFuera,true);
+  document.addEventListener('keydown',nxFiltroChipTecla,true);
+  window.addEventListener('resize',nxFiltroChipReflow,true);
+}
+function nxFiltroChipPosicionar(panel,btn){
+  if(window.matchMedia('(max-width:640px)').matches)return; // el CSS ya lo fija como bottom-sheet
+  const r=btn.getBoundingClientRect();
+  const w=panel.offsetWidth||240,h=panel.offsetHeight||200;
+  const left=Math.max(8,Math.min(r.left,window.innerWidth-w-8));
+  let top=r.bottom+6;
+  if(top+h>window.innerHeight-8)top=Math.max(8,r.top-h-6); // sin espacio abajo → abre hacia arriba
+  panel.style.left=left+'px';panel.style.top=top+'px';
+}
+function nxFiltroChipReflow(){
+  const p=document.querySelector('.nfcPanel.open');if(!p)return;
+  const btn=document.getElementById('nfcBtn_'+p.id.replace('nfcPanel_',''));
+  if(btn)nxFiltroChipPosicionar(p,btn);
+}
+function nxFiltroChipFuera(e){
+  const p=document.querySelector('.nfcPanel');if(!p)return;
+  if(p.contains(e.target))return;
+  const id=p.id.replace('nfcPanel_','');
+  const btn=document.getElementById('nfcBtn_'+id);
+  if(btn&&btn.contains(e.target))return;
+  nxFiltroChipCerrar(id);
+}
+function nxFiltroChipTecla(e){
+  if(e.key!=='Escape')return;
+  const p=document.querySelector('.nfcPanel');if(!p)return;
+  nxFiltroChipCerrar(p.id.replace('nfcPanel_',''));
+}
+function nxFiltroChipCerrar(id){
+  const p=document.getElementById('nfcPanel_'+id);
+  const btn=document.getElementById('nfcBtn_'+id);
+  if(btn)btn.setAttribute('aria-expanded','false');
+  document.removeEventListener('mousedown',nxFiltroChipFuera,true);
+  document.removeEventListener('keydown',nxFiltroChipTecla,true);
+  window.removeEventListener('resize',nxFiltroChipReflow,true);
+  if(!p)return;
+  p.classList.remove('open');
+  setTimeout(function(){if(p&&p.parentNode)p.parentNode.removeChild(p);},280);
+}
+function nxFiltroChipElegir(id,btnEl){
+  const c=window.__nfcReg[id];if(!c)return;
+  const v=btnEl.getAttribute('data-v');
+  c.valor=v;
+  const p=btnEl.closest('.nfcPanel');
+  if(p)p.querySelectorAll('.nfcOpt').forEach(function(b){const on=(b===btnEl);b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  if(typeof c.onelegir==='function'){try{c.onelegir(v);}catch(e){}}
+  setTimeout(function(){nxFiltroChipCerrar(id);},150);
+}
+window.nxFiltroChipHTML=nxFiltroChipHTML;window.nxFiltroChipAbrir=nxFiltroChipAbrir;
+window.nxFiltroChipElegir=nxFiltroChipElegir;window.nxFiltroChipCerrar=nxFiltroChipCerrar;
+
 // Recalcula los saldos contables desde los asientos REALES guardados.
 // Los saldos NO son números fijos: se construyen sumando cada asiento.
 function recalcularSaldosContables(){
@@ -4206,7 +4347,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.35';
+const APP_VERSION='56.36';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7186,6 +7327,27 @@ function pintarLupaFact(){
     onterm:function(v){const i=document.getElementById('factQ');if(i)i.value=v;rFact();}
   });
 }
+// Filtro de estado de Facturas — mismas 7 opciones REALES del <select id="fFactEstado">
+// de siempre (nada inventado); el pill solo escribe en ese select y llama rFact().
+function pintarFiltroEstadoFact(){
+  const box=document.getElementById('fFactEstadoChip');
+  if(!box||typeof nxFiltroChipHTML!=='function')return;
+  const sel=document.getElementById('fFactEstado');
+  box.innerHTML=nxFiltroChipHTML({
+    id:'fFactEstadoChip', titulo:'Filtrar facturas',
+    value:sel?sel.value:'activas',
+    opciones:[
+      {v:'activas',t:'Pendientes',ico:'ti-clock',color:'var(--sf-warn,#f59e0b)'},
+      {v:'atrasadas',t:'Meses anteriores',ico:'ti-alert-triangle',color:'var(--sf-err,#ef4444)'},
+      {v:'todas',t:'Todas',ico:'ti-list',color:'var(--sf-primary,#2563eb)'},
+      {v:'Pagado',t:'Pagadas',ico:'ti-circle-check',color:'var(--sf-ok,#22c55e)'},
+      {v:'Pendiente',t:'Solo pendientes',ico:'ti-hourglass',color:'var(--sf-warn,#f59e0b)'},
+      {v:'Parcial',t:'Parciales',ico:'ti-percentage',color:'var(--sf-warn,#f59e0b)'},
+      {v:'Anulada',t:'Anuladas',ico:'ti-ban',color:'var(--sf-tx3,#94a0b4)'}
+    ],
+    onelegir:function(v){const s=document.getElementById('fFactEstado');if(s){s.value=v;rFact();}}
+  });
+}
 // ══ VISTA TARJETAS (modo experimental de Facturas/Cobros, solo admin + celular) ══
 // Estilo "billetera" tipo Apple: las tarjetas son una lista con position:sticky (se apilan
 // solas por CSS). Lo único que hace el JS es revelar cada tarjeta con un fade-up suave cuando
@@ -7216,6 +7378,7 @@ function rFact(){
   nxRuedaScrollOff(); // limpiar el scroll de la rueda antes de repintar (evita listeners duplicados)
   llenarFiltroAgentes('fAgenteFact');
   pintarLupaFact();
+  pintarFiltroEstadoFact();
   const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
   const anio=parseInt(document.getElementById('fAnio')?.value||mesCorte().anio);
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
