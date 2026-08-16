@@ -1,7 +1,12 @@
 {
-  "version": "56.35",
+  "version": "56.36",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.36",
+      "fecha": "2026-08-16",
+      "texto": "NUEVO: en Facturas, el filtro de estado (Pendientes / Meses anteriores / Todas / Pagadas / Solo pendientes / Parciales / Anuladas) pasó de un selector desplegable a un botón compacto con ícono de filtro — al tocarlo se abre un panel flotante con las 7 opciones (cada una con su ícono de color), aparecen una por una con una animación suave, y basta con tocar una para aplicar el filtro y que el panel se cierre solo. En el celular ese mismo panel se convierte en una bandeja que sube desde abajo, para que nunca se salga de la pantalla. Es solo el 'empaque' visual — el filtro de siempre sigue siendo el mismo por debajo (sin datos nuevos ni comportamiento distinto), y recuerda la última opción elegida al volver a abrirlo."
+    },
     {
       "v": "56.35",
       "fecha": "2026-08-16",
