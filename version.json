@@ -1,7 +1,12 @@
 {
-  "version": "56.37",
+  "version": "56.38",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.38",
+      "fecha": "2026-08-17",
+      "texto": "NUEVO: en la pantalla de Clientes de Seguros, un carrusel nuevo \"Atención prioritaria\" arriba de la lista — hasta 5 tarjetas en abanico (estilo baraja de cartas) con los clientes que más urgen: los que tienen balance pendiente (ordenados de mayor a menor deuda) y los que están por vencer en los próximos 30 días. Toca una tarjeta para ir directo a su ficha. Se acomoda solo con 1 a 5 tarjetas y se esconde por completo si nadie califica esa semana. Es puramente aditivo — la tabla de clientes, sus filtros, sus KPIs y el resto de la pantalla no cambiaron en nada."
+    },
     {
       "v": "56.37",
       "fecha": "2026-08-17",
