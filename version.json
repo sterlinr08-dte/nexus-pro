@@ -1,7 +1,12 @@
 {
-  "version": "56.36",
+  "version": "56.37",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.37",
+      "fecha": "2026-08-17",
+      "texto": "NUEVO: primer paso del rediseño 'blanco espacial' aprobado en la muestra visual (Neumorphism + Glassmorphism) — aplicado por ahora solo al Dashboard de Financiamiento. La base pasó de un fondo lavanda a un blanco casi puro con relieve suave (el mismo estilo de sombras dobles ya aprobado en agosto), y la barra lateral se convirtió en un panel de VIDRIO de verdad — translúcido, con desenfoque y un par de manchas de luz morada muy tenues detrás — en vez de la superficie sólida de antes. El acento morado, el ícono/botón 'Nuevo préstamo' y el resto de la app no cambiaron. El recuadro grande de 'Por cobrar' se dejó A PROPÓSITO sólido (no vidrio) por ahora, para no arriesgar la legibilidad del número más importante de la pantalla — se revisará en una ronda aparte, ya con capturas reales, antes de tocarlo. El resto de las ~15 pantallas del módulo (Clientes, Cobranza, préstamos, reportes...) sigue con su apariencia de siempre — se irán pasando por tandas."
+    },
     {
       "v": "56.36",
       "fecha": "2026-08-16",

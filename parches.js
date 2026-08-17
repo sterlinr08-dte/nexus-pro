@@ -25439,13 +25439,29 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // morado se conserva (regla "un color por app"); NPGS §12 pide sombras/
       // tipografía únicas en todo el ERP — esta es una excepción deliberada,
       // igual que Plus Jakarta Sans ya lo era, documentada aquí y en CLAUDE.md.
-      '.nxFPShell{--nf-bg:#e7eaf4;--nf-shd:rgba(160,166,199,.55);--nf-shl:rgba(255,255,255,.9);--nf-ink:#2b2a45;--nf-ink2:#6e6c8c;--nf-ink3:#9997b3;--nf-ac1:#4f46e5;--nf-ac2:#6d28d9;--nf-convex:8px 8px 16px var(--nf-shd),-7px -7px 14px var(--nf-shl);--nf-convex-sm:5px 5px 10px var(--nf-shd),-4px -4px 8px var(--nf-shl);--nf-concave:inset 5px 5px 10px var(--nf-shd),inset -4px -4px 8px var(--nf-shl);background:var(--nf-bg);border-radius:24px;padding:16px}' +
+      // "Blanco espacial" (aprobado por el dueño sobre la 2da muestra, Artifact
+      // "Financiamiento Soft-Glass") — el mismo relieve neumórfico de arriba,
+      // pero sobre una base casi blanca (antes lavanda #e7eaf4) con sombras
+      // más suaves, + 4 tokens nuevos de cristal (--nf-glass-*) para el
+      // sidebar (única superficie que pasa a vidrio esta ronda — ver más
+      // abajo por qué el hero morado NO se tocó).
+      '.nxFPShell{--nf-bg:#f5f6fb;--nf-shd:rgba(174,180,209,.4);--nf-shl:rgba(255,255,255,.95);--nf-ink:#20243b;--nf-ink2:#666d8c;--nf-ink3:#9aa0ba;--nf-ac1:#4f46e5;--nf-ac2:#6d28d9;--nf-glass-bg:rgba(255,255,255,.62);--nf-glass-hi:rgba(255,255,255,.85);--nf-glass-shadow:0 24px 56px rgba(30,35,60,.10);--nf-glass-blur:blur(22px) saturate(150%);--nf-convex:8px 8px 16px var(--nf-shd),-7px -7px 14px var(--nf-shl);--nf-convex-sm:5px 5px 10px var(--nf-shd),-4px -4px 8px var(--nf-shl);--nf-concave:inset 5px 5px 10px var(--nf-shd),inset -4px -4px 8px var(--nf-shl);background:var(--nf-bg);border-radius:24px;padding:16px}' +
       // Sidebar: de gradiente sólido a superficie neumórfica; el morado queda de
       // acento (logo, botón Nuevo préstamo, ítem activo). Mismos selectores del
       // blindaje de arriba, mismo mecanismo (!important, misma especificidad,
       // gana por ir después) — solo cambian los valores que fuerza.
-      '.nxFPShell .nxFP-side{background:var(--nf-bg);color:var(--nf-ink);box-shadow:var(--nf-convex)}' +
-      'html body .nxFPShell .nxFP-side{background:var(--nf-bg)!important;color:var(--nf-ink)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;opacity:1!important}' +
+      // Sidebar → CRISTAL de verdad (única superficie que lo lleva esta ronda):
+      // 2 manchas de luz ambiental (radial-gradient, capas del propio
+      // `background`, sin pseudo-elemento — así no hace falta overflow:hidden
+      // en el sidebar, que rompería el scroll del cajón móvil, ni z-index,
+      // que podría enredarse con el popup nxFP-menuPop de las tarjetas) +
+      // velo blanco translúcido + backdrop-filter. El hero (nxFP-hA) se
+      // queda SÓLIDO morado a propósito — es el número de dinero más grande
+      // de la pantalla, en blanco sobre el fondo; volverlo vidrio arriesgaba
+      // contraste variable según qué haya detrás. Se puede revisar en una
+      // tanda aparte una vez medido con capturas reales.
+      '.nxFPShell .nxFP-side{background:radial-gradient(circle at 12% -8%,rgba(124,58,237,.20),transparent 55%),radial-gradient(circle at 92% 104%,rgba(79,70,229,.16),transparent 55%),var(--nf-glass-bg);color:var(--nf-ink);box-shadow:var(--nf-glass-shadow),var(--nf-convex-sm);-webkit-backdrop-filter:var(--nf-glass-blur);backdrop-filter:var(--nf-glass-blur);border-right:1px solid var(--nf-glass-hi)}' +
+      'html body .nxFPShell .nxFP-side{background:radial-gradient(circle at 12% -8%,rgba(124,58,237,.20),transparent 55%),radial-gradient(circle at 92% 104%,rgba(79,70,229,.16),transparent 55%),var(--nf-glass-bg)!important;color:var(--nf-ink)!important;-webkit-backdrop-filter:var(--nf-glass-blur)!important;backdrop-filter:var(--nf-glass-blur)!important;border:0!important;border-right:1px solid var(--nf-glass-hi)!important;opacity:1!important}' +
       'html body .nxFPShell .nxFP-side .nxFP-sideBrand b{color:var(--nf-ink)!important}' +
       'html body .nxFPShell .nxFP-side .nxFP-sideBrand span{color:var(--nf-ink2)!important;opacity:1}' +
       'html body .nxFPShell .nxFP-side .nxFP-sideLogo{background:linear-gradient(155deg,var(--nf-ac1),var(--nf-ac2))!important;color:#fff!important;box-shadow:var(--nf-convex-sm)!important}' +
@@ -25461,7 +25477,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // nuevo valor de sombra, en el mismo orden: apagada mientras está cerrado,
       // encendida con .side-open.
       '@media(max-width:900px){.nxFPShell .nxFP-side{box-shadow:none}' +
-      '.nxFPShell.side-open .nxFP-side{box-shadow:var(--nf-convex)}}' +
+      '.nxFPShell.side-open .nxFP-side{box-shadow:var(--nf-glass-shadow)}}' +
       // Topbar
       '.nxFPShell .nxFP-burger{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
       '.nxFPShell .nxFP-topActions button{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2);transition:box-shadow .12s ease}' +
