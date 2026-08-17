@@ -824,6 +824,27 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 }
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
 @media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
+/* Atención prioritaria (Clientes): carrusel en abanico de hasta 5 tarjetas, aditivo
+   — rCli() lo llena calculando con pendTot()/fecha_fin (mismos helpers de siempre,
+   cero consultas nuevas) y esconde el bloque entero si nadie califica. La rotación/
+   elevación de cada tarjeta se calcula en JS (no nth-child) para verse bien con
+   1 a 5 tarjetas por igual, vía las variables --rot/--ty/--sc puestas inline. */
+.nxSf .sf-fanwrap{margin:4px 0 18px}
+.nxSf .sf-fantitle{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
+.nxSf .sf-fantitle h2{margin:0;font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--sf-tx)}
+.nxSf .sf-fantitle h2 i{color:var(--sf-err);font-size:15px}
+.nxSf .sf-fancnt{font-size:11px;font-weight:700;color:var(--sf-tx3)}
+.nxSf .sf-fansub{margin:0 0 4px;font-size:10.5px;color:var(--sf-tx3)}
+.nxSf .sf-fanrow{display:flex;justify-content:center;align-items:flex-end;padding:26px 8px 34px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nxSf .sf-fanrow-scroll{justify-content:flex-start}
+.nxSf .sf-fancard{width:132px;min-width:132px;background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px 11px 12px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08);cursor:pointer;margin:0 -13px;transform:rotate(var(--rot,0deg)) translateY(var(--ty,0px)) scale(var(--sc,1));transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s}
+.nxSf .sf-fancard:hover,.nxSf .sf-fancard:focus-visible{transform:rotate(var(--rot,0deg)) translateY(calc(var(--ty,0px) - 10px)) scale(calc(var(--sc,1) + .04));box-shadow:0 20px 40px rgba(15,23,42,.16);z-index:9!important}
+.nxSf .sf-fancard:focus-visible{outline:2px solid var(--sf-primary);outline-offset:3px}
+.nxSf .sf-fancard .av{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;background:linear-gradient(135deg,var(--sf-primary),var(--sf-primary-d))}
+.nxSf .sf-fancard .nm{font-weight:700;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--sf-tx)}
+.nxSf .sf-fancard .ars{font-size:9px;color:var(--sf-tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxSf .sf-fancard .amt{display:inline-flex;margin-top:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
+@media(max-width:480px){.nxSf .sf-fanrow{padding:22px 6px 30px}.nxSf .sf-fancard{width:116px;min-width:116px}}
 /* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
    4 líneas y cada cliente ocupaba ~150px de alto) */
 .nxSf .cli-row{display:flex;align-items:center;gap:7px;min-width:0}
@@ -1434,6 +1455,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Al día</div><div class="v" id="cliKpiAlDia">0</div><div class="sub">Sin balance pendiente</div></div></div>
             <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Con balance</div><div class="v" id="cliKpiPendCount">0</div><div class="sub" id="cliKpiPendRD">RD$ 0 en total</div></div></div>
             <div class="sf-kpi purple"><div class="ic"><i class="ti ti-calendar-event"></i></div><div><div class="lb">Renuevan este mes</div><div class="v" id="cliKpiRenuevan">0</div><div class="sub">Próximos 30 días</div></div></div>
+          </div>
+          <div class="sf-fanwrap" id="cliFanWrap" style="display:none">
+            <div class="sf-fantitle"><h2><i class="ti ti-alert-triangle"></i> Atención prioritaria</h2><span id="cliFanCnt" class="sf-fancnt"></span></div>
+            <p class="sf-fansub">Con balance pendiente o por vencer en 30 días — toca una tarjeta para ver la ficha.</p>
+            <div class="sf-fanrow" id="cliFanRow"></div>
           </div>
           <div class="nc">
             <div class="ch">
@@ -4347,7 +4373,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.37';
+const APP_VERSION='56.38';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6936,6 +6962,42 @@ function rCli(){
     document.getElementById('cliKpiPendCount').textContent=conPend.length;
     document.getElementById('cliKpiPendRD').textContent=fmt(totalPendRD)+' en total';
     document.getElementById('cliKpiRenuevan').textContent=renuevan;
+    // Atención prioritaria: fan de hasta 5 clientes con balance pendiente o por
+    // vencer en 30 días (mismos helpers que ya usa esta pantalla — pendTot/
+    // fecha_fin — cero consultas nuevas). Se oculta entero si nadie califica.
+    const fanRow=document.getElementById('cliFanRow');
+    if(fanRow){
+      const candAll=activosArr.map(c=>{
+        const pv=pendTot(c);let dv=null;
+        if(c.fecha_fin){const f=new Date(c.fecha_fin+'T12:00:00').getTime();if(f>=hoy3.getTime()&&f<=en30.getTime())dv=Math.floor((f-hoy3.getTime())/86400000);}
+        return{c,pv,dv};
+      }).filter(x=>x.pv>0||x.dv!==null);
+      const cand=candAll.slice().sort((a,b)=>{
+        if((a.pv>0)!==(b.pv>0))return a.pv>0?-1:1;
+        return a.pv>0?b.pv-a.pv:a.dv-b.dv;
+      }).slice(0,5);
+      const fanWrap=document.getElementById('cliFanWrap');
+      if(cand.length){
+        const n=cand.length,mid=(n-1)/2;
+        fanRow.innerHTML=cand.map((x,i)=>{
+          const off=i-mid,rot=(off*8).toFixed(1),ty=(-10+Math.abs(off)*14).toFixed(0),sc=off===0?'1.08':'1',z=10-Math.round(Math.abs(off));
+          const badge=x.pv>0?`<span class="amt" style="background:var(--sf-err-l);color:var(--sf-err)">${fmt(x.pv)}</span>`:`<span class="amt" style="background:var(--sf-warn-l);color:var(--sf-warn)">${x.dv===0?'Vence hoy':'Vence en '+x.dv+'d'}</span>`;
+          const nm=escHtml(x.c.nom),ars=x.c.ars?escHtml(x.c.ars):'';
+          return`<div class="sf-fancard" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" style="--rot:${rot}deg;--ty:${ty}px;--sc:${sc};z-index:${z}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="av">${inits(x.c.nom)}</div><div class="nm">${nm}</div>${ars?`<div class="ars">${ars}</div>`:''}${badge}</div>`;
+        }).join('');
+        const cnt=document.getElementById('cliFanCnt');if(cnt)cnt.textContent=`${cand.length} de ${candAll.length}`;
+        if(fanWrap)fanWrap.style.display='';
+        // justify-content:center en una fila que se desborda deja el lado IZQUIERDO
+        // (el cliente de MAYOR prioridad, que cae ahí por diseño) recortado y
+        // sin forma de alcanzarlo con scroll (comportamiento real de Chromium: con
+        // overflow, el centrado solo deja scroll hacia la derecha). Si el ancho real
+        // ya no alcanza, se cambia a alineado-al-inicio (scroll normal desde la
+        // primera tarjeta) — con pocas tarjetas que sí caben, sigue centrado.
+        fanRow.classList.toggle('sf-fanrow-scroll', fanRow.scrollWidth>fanRow.clientWidth);
+      }else{
+        if(fanWrap)fanWrap.style.display='none';
+      }
+    }
   }
   let list=ST.clientes.filter(c=>{
     // Filtro principal: activos, inhabilitados, VIP o en proceso
