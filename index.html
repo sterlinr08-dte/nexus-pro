@@ -835,16 +835,16 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fantitle h2 i{color:var(--sf-err);font-size:15px}
 .nxSf .sf-fancnt{font-size:11px;font-weight:700;color:var(--sf-tx3)}
 .nxSf .sf-fansub{margin:0 0 4px;font-size:10.5px;color:var(--sf-tx3)}
-.nxSf .sf-fanrow{display:flex;justify-content:center;align-items:flex-end;padding:26px 8px 34px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nxSf .sf-fanrow{display:flex;justify-content:center;align-items:flex-end;padding:26px 30px 34px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .nxSf .sf-fanrow-scroll{justify-content:flex-start}
-.nxSf .sf-fancard{width:132px;min-width:132px;background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px 11px 12px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08);cursor:pointer;margin:0 -13px;transform:rotate(var(--rot,0deg)) translateY(var(--ty,0px)) scale(var(--sc,1));transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s}
+.nxSf .sf-fancard{width:132px;min-width:132px;background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px 11px 12px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08);cursor:pointer;margin:0 -6px;transform:rotate(var(--rot,0deg)) translateY(var(--ty,0px)) scale(var(--sc,1));transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s}
 .nxSf .sf-fancard:hover,.nxSf .sf-fancard:focus-visible{transform:rotate(var(--rot,0deg)) translateY(calc(var(--ty,0px) - 10px)) scale(calc(var(--sc,1) + .04));box-shadow:0 20px 40px rgba(15,23,42,.16);z-index:9!important}
 .nxSf .sf-fancard:focus-visible{outline:2px solid var(--sf-primary);outline-offset:3px}
 .nxSf .sf-fancard .av{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;background:linear-gradient(135deg,var(--sf-primary),var(--sf-primary-d))}
 .nxSf .sf-fancard .nm{font-weight:700;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--sf-tx)}
 .nxSf .sf-fancard .ars{font-size:9px;color:var(--sf-tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxSf .sf-fancard .amt{display:inline-flex;margin-top:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
-@media(max-width:480px){.nxSf .sf-fanrow{padding:22px 6px 30px}.nxSf .sf-fancard{width:116px;min-width:116px}}
+@media(max-width:480px){.nxSf .sf-fanrow{padding:22px 26px 30px}.nxSf .sf-fancard{width:112px;min-width:112px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -4424,7 +4424,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.39';
+const APP_VERSION='56.40';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7084,20 +7084,28 @@ function rCli(){
       const fanWrap=document.getElementById('cliFanWrap');
       if(cand.length){
         const n=cand.length,mid=(n-1)/2;
+        // El candidato de MAYOR prioridad (cand[0]) siempre va al slot CENTRAL
+        // (offset 0: sin rotar, escalado, visible sin depender de scroll). Los de
+        // menor prioridad se reparten hacia los extremos alternando lado — ahí es
+        // donde, en pantallas angostas, la rotación puede acercar el borde de la
+        // tarjeta al límite del contenedor.
+        const naturalOffs=[];
+        for(let k=0;k<n;k++)naturalOffs.push(k-mid);
+        naturalOffs.sort((a,b)=>Math.abs(a)-Math.abs(b)||a-b);
         fanRow.innerHTML=cand.map((x,i)=>{
-          const off=i-mid,rot=(off*8).toFixed(1),ty=(-10+Math.abs(off)*14).toFixed(0),sc=off===0?'1.08':'1',z=10-Math.round(Math.abs(off));
+          const off=naturalOffs[i],rot=(off*5).toFixed(1),ty=(-10+Math.abs(off)*14).toFixed(0),sc=off===0?'1.08':'1',z=10-Math.round(Math.abs(off));
           const badge=x.pv>0?`<span class="amt" style="background:var(--sf-err-l);color:var(--sf-err)">${fmt(x.pv)}</span>`:`<span class="amt" style="background:var(--sf-warn-l);color:var(--sf-warn)">${x.dv===0?'Vence hoy':'Vence en '+x.dv+'d'}</span>`;
           const nm=escHtml(x.c.nom),ars=x.c.ars?escHtml(x.c.ars):'';
-          return`<div class="sf-fancard" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" style="--rot:${rot}deg;--ty:${ty}px;--sc:${sc};z-index:${z}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="av">${inits(x.c.nom)}</div><div class="nm">${nm}</div>${ars?`<div class="ars">${ars}</div>`:''}${badge}</div>`;
+          return`<div class="sf-fancard" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" style="--rot:${rot}deg;--ty:${ty}px;--sc:${sc};order:${off};z-index:${z}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="av">${inits(x.c.nom)}</div><div class="nm">${nm}</div>${ars?`<div class="ars">${ars}</div>`:''}${badge}</div>`;
         }).join('');
         const cnt=document.getElementById('cliFanCnt');if(cnt)cnt.textContent=`${cand.length} de ${candAll.length}`;
         if(fanWrap)fanWrap.style.display='';
-        // justify-content:center en una fila que se desborda deja el lado IZQUIERDO
-        // (el cliente de MAYOR prioridad, que cae ahí por diseño) recortado y
-        // sin forma de alcanzarlo con scroll (comportamiento real de Chromium: con
-        // overflow, el centrado solo deja scroll hacia la derecha). Si el ancho real
-        // ya no alcanza, se cambia a alineado-al-inicio (scroll normal desde la
-        // primera tarjeta) — con pocas tarjetas que sí caben, sigue centrado.
+        // justify-content:center en una fila que se desborda deja contenido sin
+        // forma de alcanzarlo con scroll (comportamiento real de Chromium: con
+        // overflow, el centrado solo deja scroll hacia la derecha, nunca hacia la
+        // izquierda). Si el ancho real ya no alcanza, se cambia a alineado-al-inicio
+        // (scroll normal desde la primera tarjeta, por `order`) — con pocas
+        // tarjetas que sí caben, sigue centrado.
         fanRow.classList.toggle('sf-fanrow-scroll', fanRow.scrollWidth>fanRow.clientWidth);
       }else{
         if(fanWrap)fanWrap.style.display='none';
