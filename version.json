@@ -1,7 +1,12 @@
 {
-  "version": "56.39",
+  "version": "56.40",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.40",
+      "fecha": "2026-08-17",
+      "texto": "ARREGLADO (importante): el carrusel \"Atención prioritaria\" de Clientes (Seguros) se veía mal en el celular — las tarjetas de los extremos se cortaban feo contra el borde de la pantalla, con el texto partido a la mitad y encimadas unas sobre otras. Causa: las tarjetas giradas (para el efecto abanico) apenas tenían aire a los lados (6-8px) y se pisaban demasiado entre sí (-13px de encimado), así que en un iPhone la de más a la izquierda y la de más a la derecha quedaban recortadas. Se le dio más espacio a los lados, se giran un poco menos y se encima menos entre ellas — y de paso, el cliente que más urge (el que antes quedaba más torcido, en un extremo) ahora sale siempre en el centro, derecho y bien visible, sin tener que deslizar para verlo. El resto (a quién muestra, el orden por deuda/vencimiento, tocar para ir a su ficha) no cambió en nada."
+    },
     {
       "v": "56.39",
       "fecha": "2026-08-17",
