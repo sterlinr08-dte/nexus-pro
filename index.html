@@ -845,6 +845,57 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard .ars{font-size:9px;color:var(--sf-tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxSf .sf-fancard .amt{display:inline-flex;margin-top:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
 @media(max-width:480px){.nxSf .sf-fanrow{padding:22px 6px 30px}.nxSf .sf-fancard{width:116px;min-width:116px}}
+/* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
+   NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
+   Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
+   del sistema. */
+.nxSf .sf-hero{position:relative;border-radius:20px;padding:22px;margin:0 0 16px;color:#fff;overflow:hidden;background:linear-gradient(120deg,var(--sf-primary) 0%,var(--sf-primary-d) 65%,#1e3a8a 100%);box-shadow:0 20px 40px rgba(15,23,42,.18)}
+.nxSf .sf-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 88% -10%,rgba(255,255,255,.22),transparent 55%),radial-gradient(circle at 6% 118%,rgba(255,255,255,.12),transparent 50%);pointer-events:none}
+.nxSf .sf-hero-top{position:relative;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.nxSf .sf-hero-av{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;flex:0 0 auto;color:#fff}
+.nxSf .sf-hero-id{min-width:0;flex:1 1 180px}
+.nxSf .sf-hero-id h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.2px;overflow-wrap:break-word}
+.nxSf .sf-hero-meta{font-size:12px;opacity:.9;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nxSf .sf-hero-acts{position:relative;display:flex;gap:8px;flex:0 0 auto;align-items:center}
+.nxSf .sf-hero-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:9px;font-size:11.5px;font-weight:700;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;cursor:pointer;text-decoration:none;white-space:nowrap}
+.nxSf .sf-hero-btn:hover{background:rgba(255,255,255,.25)}
+.nxSf .sf-hero-btn.primary{background:#fff;color:var(--sf-primary-d);border-color:#fff}
+.nxSf .sf-hero-star{font-size:19px;cursor:pointer;color:rgba(255,255,255,.5);line-height:1}
+.nxSf .sf-hero-star.active{color:#fbbf24}
+.nxSf .sf-hero-pills{position:relative;display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.nxSf .sf-hpill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.nxSf .sf-hpill.ok{background:var(--sf-ok);color:#fff;border-color:transparent}
+.nxSf .sf-hpill.warn{background:var(--sf-warn);color:#fff;border-color:transparent}
+.nxSf .sf-hpill.err{background:var(--sf-err);color:#fff;border-color:transparent}
+.nxSf .sf-hero-stats{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.nxSf .sf-hstat{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:13px;padding:10px 12px;min-width:0}
+.nxSf .sf-hstat .lb{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;opacity:.85}
+.nxSf .sf-hstat .v{font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.nxSf .sf-hstat .sub{font-size:9px;opacity:.75;margin-top:2px}
+@media(max-width:520px){.nxSf .sf-hero-stats{grid-template-columns:1fr 1fr}}
+.nxSf .sf-toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.nxSf .sf-tbtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:9px;font-size:12px;font-weight:700;border:1px solid var(--sf-line);background:var(--sf-card);color:var(--sf-tx2);cursor:pointer}
+.nxSf .sf-tbtn:hover{border-color:var(--sf-primary);color:var(--sf-primary-d)}
+.nxSf .sf-tbtn:focus-visible{outline:2px solid var(--sf-primary);outline-offset:2px}
+.nxSf .sf-tbtn i{font-size:14px}
+.nxSf .sf-tabs{display:flex;gap:2px;border-bottom:1px solid var(--sf-line);margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nxSf .sf-tab{border:0;background:none;font:inherit;font-weight:700;font-size:12.5px;color:var(--sf-tx3);padding:10px 6px;margin-right:16px;border-bottom:2.5px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nxSf .sf-tab.on{color:var(--sf-primary-d);border-color:var(--sf-primary)}
+.nxSf .sf-tab:focus-visible{outline:2px solid var(--sf-primary);outline-offset:2px}
+.nxSf .sf-tab .cnt{font-size:10px;color:var(--sf-tx3);background:var(--sf-bg);border-radius:20px;padding:1px 6px;font-weight:800}
+.nxSf .sf-tab.on .cnt{background:var(--sf-primary-l);color:var(--sf-primary-d)}
+.nxSf .sf-tabpanel{display:none}
+.nxSf .sf-tabpanel.show{display:block}
+.nxSf .sf-sub{color:var(--sf-tx3);font-size:11.5px;margin:0 0 10px}
+.nxSf .sf-grid2{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;align-items:start}
+.nxSf .sf-grid2>*{min-width:0}
+@media(max-width:760px){.nxSf .sf-grid2{grid-template-columns:1fr}}
+.nxSf .sf-prow{display:flex;align-items:center;gap:12px;background:var(--sf-card);border:1px solid var(--sf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px}
+.nxSf .sf-prow .fico{width:34px;height:34px;border-radius:10px;background:var(--sf-ok-l);color:var(--sf-ok-d);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.nxSf .sf-prow .fwho{flex:1;min-width:0}
+.nxSf .sf-prow .fwho .t{font-weight:700;font-size:12.5px}
+.nxSf .sf-prow .fwho .s{font-size:10.5px;color:var(--sf-tx3)}
+.nxSf .sf-prow .famt{text-align:right;font-weight:800;font-size:13px;color:var(--sf-ok-d);font-variant-numeric:tabular-nums;flex:0 0 auto;white-space:nowrap}
 /* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
    4 líneas y cada cliente ocupaba ~150px de alto) */
 .nxSf .cli-row{display:flex;align-items:center;gap:7px;min-width:0}
@@ -4373,7 +4424,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.38';
+const APP_VERSION='56.39';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4912,10 +4963,16 @@ async function cargarTimelineCliente(id){
       <div class="sf-tl-b"><b>${e.tit}</b><div class="when">${fCorta(e.ts)}</div><div class="desc">${escHtml(e.desc)}</div></div>
     </div>`).join('');
 }
-function verCliente(id){
+function verCliente(id,tab){
   const c=ST.clientes.find(x=>x.id===id);
   if(!c)return;
   document.getElementById('csNom').textContent='Ficha del cliente';
+  const body=document.getElementById('csBody');
+  // Reabrir el MISMO cliente (p.ej. tras marcar VIP o agregar una nota) mantiene la
+  // pestaña activa en vez de saltar siempre a Resumen; abrir uno DISTINTO sí resetea
+  // — se detecta comparando el id ya pintado contra el que se está por pintar.
+  const mismoClienteAbierto=body?.dataset.cliId===id;
+  const activeTab=tab||(mismoClienteAbierto?document.querySelector('#csBody .sf-tab.on')?.dataset.tab:null)||'resumen';
   const fav=esFavorito(id);
   const notas=getNotas(id);
   const emp=gEmp(c.empresa_id)?.nom||'Particular';
@@ -4923,62 +4980,57 @@ function verCliente(id){
   const fCorta=(s)=>{if(!s)return '—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   const estado=getEst(c);
   const estBadgeCls=estado==='Al día'?'ok':estado==='Inhabilitado'?'err':'warn';
-  const urgHead=estado==='Al día'?'u-ok':estado==='Parcial'?'u-warn':'u-err';
   const estPol=getEstPol(c);
   const facturasCli=ST.facturas.filter(f=>String(f.cliente_id)===String(id)).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
   const facPend=facturasCli.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   const facPagadas=facturasCli.filter(f=>f.estado==='Pagado').length;
-  document.getElementById('csBody').innerHTML=`
+  const tabOn=(k)=>k===activeTab?' on':'';
+  const panelOn=(k)=>k===activeTab?' show':'';
+  body.innerHTML=`
     <div class="nxSf">
-      <div class="sf-head ${urgHead}">
-        <div class="sf-ava">${inits(c.nom)}</div>
-        <div class="sf-id">
-          <h2>${c.nom}${c.referencia?` (${c.referencia})`:''}</h2>
-          <span class="sf-badge ${estBadgeCls}">● ${estado}</span>
-          ${fav?'<span class="sf-badge warn" style="margin-left:4px">★ VIP</span>':''}
-          ${c.permitir_facturacion===false?'<span class="sf-badge" style="background:var(--sf-primary-l);color:var(--sf-primary-d);margin-left:4px">🚫 Cortesía</span>':''}
-        </div>
-        <div class="sf-facts">
-          <div class="sf-fact"><span class="lb">Cliente desde</span><b>${fCorta(c.created_at)}</b></div>
-          <div class="sf-fact"><span class="lb">Plan</span><b>${planB(c.plan)}</b></div>
-          <div class="sf-fact"><span class="lb">Agente</span><b>${agt}</b></div>
-          <div class="sf-fact err"><span class="lb">Balance pendiente</span><b>${fmt(pendTot(c))}</b></div>
-        </div>
-        <div class="sf-actions">
-          ${nxWa(c.wa)?`<a class="sf-btn ok" href="https://wa.me/${nxWa(c.wa)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
-          <button class="sf-btn primary" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
-          <span class="fav-star ${fav?'active':''}" onclick="toggleFav('${id}')" style="font-size:19px;cursor:pointer;align-self:center" title="Marcar VIP" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">★</span>
-        </div>
-      </div>
-
-      <div class="sf-kpis">
-        <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas totales</div><div class="v">${facturasCli.length}</div><div class="sub">${facPagadas} pagadas</div></div></div>
-        <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Pendiente</div><div class="v">${fmt(pend(c))}</div><div class="sub">${facPend} factura(s)</div></div></div>
-        <div class="sf-kpi ok"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Prima / mes</div><div class="v">${fmt(getTot(c))}</div><div class="sub">Cobrado: ${fmt(c.pagado||0)}</div></div></div>
-        <div class="sf-kpi purple"><div class="ic"><i class="ti ti-calendar-event"></i></div><div><div class="lb">Vigencia póliza</div><div class="v" style="font-size:12.5px">${estPol.lbl}</div><div class="sub">${c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin fecha'}</div></div></div>
-      </div>
-
-      <div class="sf-grid">
-        <div class="sf-panel">
-          <h3>Línea de tiempo</h3>
-          <div id="sfTimeline"><div class="sf-empty"><i class="ti ti-loader-2"></i> Cargando…</div></div>
-        </div>
-
-        <div class="sf-panel">
-          <h3>Historial de facturas</h3>
-          ${facturasCli.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">${facturasCli.slice(0,12).map(sfFacturaCard).join('')}</div>`:'<div class="sf-empty">Sin facturas generadas todavía</div>'}
-        </div>
-
-        <div>
-          <div class="sf-panel" style="margin-bottom:10px">
-            <h3>Acciones rápidas</h3>
-            <div class="sf-qa">
-              <div class="sf-qa-tile" onclick="abrirDocs('${id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="ic" style="background:var(--sf-primary-l);color:var(--sf-primary-d)"><i class="ti ti-folder"></i></div><span>Documentos</span></div>
-              <div class="sf-qa-tile" onclick="verHistorialAbonos('${id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="ic" style="background:var(--sf-ok-l);color:var(--sf-ok-d)"><i class="ti ti-history"></i></div><span>Abonos</span></div>
-              <div class="sf-qa-tile" onclick="verFacturaPDF('${id}');cerrarClientSummary()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="ic" style="background:#F1EBFF;color:#7C3AED"><i class="ti ti-file-certificate"></i></div><span>PDF</span></div>
-            </div>
+      <div class="sf-hero">
+        <div class="sf-hero-top">
+          <div class="sf-hero-av">${inits(c.nom)}</div>
+          <div class="sf-hero-id">
+            <h2>${c.nom}${c.referencia?` (${c.referencia})`:''}</h2>
+            <div class="sf-hero-meta">${c.cedula?`<span>Céd. ${c.cedula}</span><span>·</span>`:''}<span>${c.ars||'Sin ARS'}</span><span>·</span><span>Agente: ${agt}</span></div>
           </div>
-          <div class="sf-panel" style="margin-bottom:10px">
+          <div class="sf-hero-acts">
+            ${nxWa(c.wa)?`<a class="sf-hero-btn" href="https://wa.me/${nxWa(c.wa)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
+            <button class="sf-hero-btn primary" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
+            <span class="sf-hero-star ${fav?'active':''}" onclick="toggleFav('${id}')" title="Marcar VIP" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">★</span>
+          </div>
+        </div>
+        <div class="sf-hero-pills">
+          <span class="sf-hpill ${estBadgeCls}">● ${estado}</span>
+          <span class="sf-hpill">${planB(c.plan)}</span>
+          <span class="sf-hpill">Cliente desde ${fCorta(c.created_at)}</span>
+          ${fav?'<span class="sf-hpill">★ VIP</span>':''}
+          ${c.permitir_facturacion===false?'<span class="sf-hpill">🚫 Cortesía</span>':''}
+        </div>
+        <div class="sf-hero-stats">
+          <div class="sf-hstat"><div class="lb">Prima mensual</div><div class="v">${fmt(getTot(c))}</div></div>
+          <div class="sf-hstat"><div class="lb">Pendiente</div><div class="v">${fmt(pendTot(c))}</div></div>
+          <div class="sf-hstat"><div class="lb">Vigencia</div><div class="v" style="font-size:12.5px">${estPol.lbl}</div><div class="sub">${c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin fecha'}</div></div>
+        </div>
+      </div>
+
+      <div class="sf-toolbar">
+        <button class="sf-tbtn" onclick="abrirDocs('${id}')"><i class="ti ti-folder"></i> Documentos</button>
+        <button class="sf-tbtn" onclick="verHistorialAbonos('${id}')"><i class="ti ti-history"></i> Abonos</button>
+        <button class="sf-tbtn" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> Certificado PDF</button>
+      </div>
+
+      <div class="sf-tabs" role="tablist">
+        <button class="sf-tab${tabOn('resumen')}" data-tab="resumen" role="tab" aria-selected="${activeTab==='resumen'}" onclick="nxSfTab('resumen','${id}')">Resumen</button>
+        <button class="sf-tab${tabOn('facturas')}" data-tab="facturas" role="tab" aria-selected="${activeTab==='facturas'}" onclick="nxSfTab('facturas','${id}')">Facturas <span class="cnt">${facturasCli.length}</span></button>
+        <button class="sf-tab${tabOn('pagos')}" data-tab="pagos" role="tab" aria-selected="${activeTab==='pagos'}" onclick="nxSfTab('pagos','${id}')">Pagos</button>
+        <button class="sf-tab${tabOn('notas')}" data-tab="notas" role="tab" aria-selected="${activeTab==='notas'}" onclick="nxSfTab('notas','${id}')">Notas${notas.length?` <span class="cnt">${notas.length}</span>`:''}</button>
+      </div>
+
+      <div class="sf-tabpanel${panelOn('resumen')}" id="sfTab-resumen">
+        <div class="sf-grid2">
+          <div class="sf-panel">
             <h3>Información</h3>
             <div style="font-size:11.5px;line-height:1.9;color:var(--sf-tx2)">
               <div><b style="color:var(--sf-tx)">Cédula:</b> ${c.cedula||'—'}</div>
@@ -4990,25 +5042,78 @@ function verCliente(id){
               <div><b style="color:var(--sf-tx)">ARS:</b> ${arsLogoHTML(c.ars,18)}</div>
               <div><b style="color:var(--sf-tx)">Empresa:</b> ${emp}</div>
               <div><b style="color:var(--sf-tx)">Dependientes:</b> ${(c.deps||[]).length}</div>
+              <div><b style="color:var(--sf-tx)">Total cobrado:</b> ${fmt(c.pagado||0)}</div>
               ${deudaAnt(c)>0?`<div style="color:var(--sf-err);font-weight:700;margin-top:4px">🔴 Deuda antes del sistema: ${fmt(c.deuda_anterior)}</div>`:''}
             </div>
           </div>
           <div class="sf-panel">
-            <h3>Notas internas</h3>
-            <div id="csNotas">
-              ${notas.map(n=>`<div class="note-item"><div class="note-ts">${n.ts.slice(0,16).replace('T',' ')}</div>${n.txt}</div>`).join('')||'<div style="color:var(--sf-tx3);font-size:11px">Sin notas</div>'}
-            </div>
-            <div style="display:flex;gap:6px;margin-top:8px">
-              <input type="text" id="csNuevaNota" placeholder="Agregar nota..." style="flex:1;padding:7px 10px;border:1.5px solid var(--sf-line);border-radius:8px;font-size:11px"/>
-              <button aria-label="Agregar una nota" class="btn bc1" onclick="agregarNota('${id}')"><i class="ti ti-plus"></i></button>
-            </div>
+            <h3>Línea de tiempo</h3>
+            <div id="sfTimeline"><div class="sf-empty"><i class="ti ti-loader-2"></i> Cargando…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sf-tabpanel${panelOn('facturas')}" id="sfTab-facturas">
+        <p class="sf-sub">${facturasCli.length} factura(s) · ${facPagadas} pagadas · ${facPend} pendiente(s)</p>
+        ${facturasCli.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">${facturasCli.slice(0,12).map(sfFacturaCard).join('')}</div>`:'<div class="sf-empty">Sin facturas generadas todavía</div>'}
+      </div>
+
+      <div class="sf-tabpanel${panelOn('pagos')}" id="sfTab-pagos">
+        <div id="sfPagos"><div class="sf-empty"><i class="ti ti-loader-2"></i> Cargando…</div></div>
+      </div>
+
+      <div class="sf-tabpanel${panelOn('notas')}" id="sfTab-notas">
+        <div class="sf-panel">
+          <h3>Notas internas</h3>
+          <div id="csNotas">
+            ${notas.map(n=>`<div class="note-item"><div class="note-ts">${n.ts.slice(0,16).replace('T',' ')}</div>${n.txt}</div>`).join('')||'<div style="color:var(--sf-tx3);font-size:11px">Sin notas</div>'}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <input type="text" id="csNuevaNota" placeholder="Agregar nota..." style="flex:1;padding:7px 10px;border:1.5px solid var(--sf-line);border-radius:8px;font-size:11px"/>
+            <button aria-label="Agregar una nota" class="btn bc1" onclick="agregarNota('${id}')"><i class="ti ti-plus"></i></button>
           </div>
         </div>
       </div>
     </div>`;
+  body.dataset.cliId=id;
   cargarTimelineCliente(id);
+  if(activeTab==='pagos')cargarPagosCliente(id);
   document.getElementById('csPanel').classList.add('open');
   document.getElementById('csOverlay').classList.add('show');
+}
+
+function nxSfTab(name,id){
+  document.querySelectorAll('#csBody .sf-tab').forEach(b=>{
+    const on=b.dataset.tab===name;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-selected',on?'true':'false');
+  });
+  document.querySelectorAll('#csBody .sf-tabpanel').forEach(p=>{
+    p.classList.toggle('show',p.id==='sfTab-'+name);
+  });
+  if(name==='pagos')cargarPagosCliente(id);
+}
+
+// Pestaña "Pagos" de la ficha (carga perezosa, solo al abrirla): reusa la MISMA tabla
+// y el MISMO filtro que ya trae cargarTimelineCliente() para su línea de tiempo — no es
+// una fuente de verdad nueva, solo una lista dedicada de esos mismos pagos.
+async function cargarPagosCliente(id){
+  const box=document.getElementById('sfPagos');if(!box)return;
+  if(box.dataset.loaded==='1')return;// ya cargado, evita refetch al reabrir la pestaña
+  const fCorta=s=>{try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s||'').slice(0,10);}};
+  try{
+    const abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=30`)||[];
+    if(!document.getElementById('sfPagos'))return;// el modal pudo cerrarse mientras cargaba
+    box.dataset.loaded='1';
+    if(!abonos.length){box.innerHTML='<div class="sf-empty">Sin pagos registrados todavía</div>';return;}
+    box.innerHTML=abonos.map(a=>`<div class="sf-prow">
+        <div class="fico"><i class="ti ti-wallet"></i></div>
+        <div class="fwho"><div class="t">Pago recibido</div><div class="s">${fCorta(a.created_at||a.fecha)} · ${a.metodo||'—'}${a.created_by_name?' · '+escHtml(a.created_by_name):''}</div></div>
+        <div class="famt">${fmt(a.monto)}</div>
+      </div>`).join('');
+  }catch(e){
+    if(document.getElementById('sfPagos'))box.innerHTML='<div class="sf-empty">No se pudo cargar el historial de pagos</div>';
+  }
 }
 
 function cerrarClientSummary(){

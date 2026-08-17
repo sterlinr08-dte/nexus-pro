@@ -1,7 +1,12 @@
 {
-  "version": "56.38",
+  "version": "56.39",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.39",
+      "fecha": "2026-08-17",
+      "texto": "NUEVO: segunda tanda del rediseño en abanico — ahora la FICHA del cliente (Seguros) también quedó con el look nuevo. Al tocar un cliente se abre una tarjeta grande azul (el mismo degradado del carrusel) con su avatar, nombre, apodo, agente, ARS, WhatsApp/Editar/favorito y 3 recuadros con Prima mensual, Pendiente y Vigencia de la póliza — y debajo, 4 pestañas: Resumen (los datos de contacto + la línea de tiempo de eventos reales del cliente, igual que antes), Facturas (las tarjetas de factura de siempre, con sus botones de Cobrar/WhatsApp/Corregir precio/Anular intactos), Pagos (el historial de abonos, cargado solo la primera vez que se abre esa pestaña) y Notas (las notas internas de siempre). Si vuelves a abrir el MISMO cliente, la app te deja en la pestaña donde te habías quedado (por ejemplo, si estabas viendo Facturas y cierras/abres de nuevo, sigue en Facturas); al abrir un cliente DISTINTO, siempre arranca en Resumen. Es 100% visual — ningún cálculo de deuda, ningún botón de cobro/anulación/factura, ninguna consulta a la base cambió de comportamiento; verificado con 64 pruebas automatizadas contra el código real en celular y computadora, sin desbordes ni errores."
+    },
     {
       "v": "56.38",
       "fecha": "2026-08-17",
