@@ -1,7 +1,12 @@
 {
-  "version": "56.42",
+  "version": "56.43",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.43",
+      "fecha": "2026-08-18",
+      "texto": "ARREGLADO: el carrusel \"Atención prioritaria\" (arriba de la lista de Clientes) seguía viéndose mal en el celular — las tarjetas se inclinaban demasiado y se montaban una encima de otra, tapando el nombre y el avatar del cliente vecino. Se suavizó la inclinación, se quitó el encimado entre tarjetas, y el nombre del cliente ya no se corta a la mitad — ahora pasa a una segunda línea si hace falta."
+    },
     {
       "v": "56.42",
       "fecha": "2026-08-18",
