@@ -4424,7 +4424,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.40';
+const APP_VERSION='56.41';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7675,6 +7675,12 @@ function rFact(){
 // con su propio monto si hace falta. Al terminar, pregunta si ese precio corregido también debe
 // quedar como la plantilla para las PRÓXIMAS facturas (precio_titular/precio_dep del cliente) o
 // si fue solo para arreglar este mes puntual.
+// ── BLOQUE 2C-3 (docs/bitacora/2026-08-17-2132-claude-bloque2c3-diseno-probado.md) ─────
+// UNA sola llamada atómica a seguros_corregir_precio_factura — recalcula base/deps/total
+// bajo FOR UPDATE, mueve la deuda del cliente, resincroniza el estado cacheado de TODAS
+// sus facturas hermanas y deja la auditoría, todo server-side. El PATCH directo de
+// facturas.prima_base/prima_deps/total ya no es posible (columnas bloqueadas por ACL) —
+// esta RPC es el único camino, con mi_rol()='admin' verificado del lado del servidor.
 async function nxEditarPrecioFactura(fid){
   if(!tienePermiso('modificar_precio')){
     toast('err','Acceso denegado','Solo el Administrador puede modificar el precio');
@@ -7691,23 +7697,25 @@ async function nxEditarPrecioFactura(fid){
   const nuevo=Math.round((window.nxMoney&&window.nxMoney.parse)?window.nxMoney.parse(resp):(parseFloat(String(resp).replace(/[^0-9.]/g,''))||0));
   if(!(nuevo>=0)){toast('err','Precio inválido','Escribe un monto válido');return;}
   if(nuevo===Math.round(primaAct)){toast('info','Sin cambios','El precio ya es ese');return;}
-  const baseN=Math.max(0,nuevo-depsN);
-  const totalN=baseN+depsN+Number(f.deuda_ant||0);
-  const diff=nuevo-primaAct;
   const cli=ST.clientes.find(c=>String(c.id)===String(f.cliente_id));
   try{
-    await API.patch('facturas',`id=eq.${f.id}`,{prima_base:baseN,prima_deps:depsN,total:totalN});
-    f.prima_base=baseN;f.prima_deps=depsN;f.total=totalN;
-    if(cli){const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});cli.deuda_total=deudaN;}
-    // Reglamento seguros §9: el estado de factura es una CACHÉ. Cambiarle el precio a una
-    // factura mueve el reparto oldest-first del pago del cliente, así que hay que resincronizar
-    // el estado de TODAS sus facturas (no solo esta) — si no, otra factura queda con un label viejo.
-    try{await resyncEstadoFacturas(f.cliente_id);}catch(e){}
-    logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas',f.cliente_id);
+    const r=await API.post('rpc/seguros_corregir_precio_factura',{p_factura_id:f.id,p_nuevo_monto_mes:nuevo});
+    if(!r||!r.ok)throw new Error('La RPC no confirmó la corrección');
+    f.prima_base=r.prima_base;f.prima_deps=r.prima_deps;f.total=r.total;f.estado=r.estado;
+    if(cli&&r.cliente_deuda_total!=null)cli.deuda_total=r.cliente_deuda_total;
+    // Reglamento seguros §9: el estado de factura es una CACHÉ. La RPC ya resincronizó
+    // server-side todas las facturas hermanas del cliente — solo se refleja aquí en
+    // memoria (facturas_resync trae qué facturas cambiaron), sin ninguna llamada REST más.
+    if(Array.isArray(r.facturas_resync)){
+      r.facturas_resync.forEach(rs=>{const fh=ST.facturas.find(x=>x.id===rs.id);if(fh)fh.estado=rs.estado;});
+    }
     toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
     try{rFact();rCob();}catch(e){}
     // ¿Este precio corregido también se queda como la plantilla para las PRÓXIMAS facturas?
+    // (fuera de alcance de la RPC 2C-3 a propósito — es una decisión de negocio distinta,
+    // sigue siendo el mismo PATCH directo de siempre sobre clientes.precio_titular)
     if(cli){
+      const baseN=r.prima_base;
       const permanente=confirm(`El precio de esta factura quedó en ${fmt(nuevo)}.\n\n¿También será el precio de ${cli.nom} de ahora en adelante? El sistema usaría ${fmt(baseN)} en las PRÓXIMAS facturas (titular).\n\nAceptar = Sí, permanente de ahora en adelante.\nCancelar = No, fue solo para corregir ESTE mes — el precio de los próximos meses sigue igual.`);
       if(permanente){
         await API.patch('clientes',`id=eq.${cli.id}`,{precio_titular:baseN});
