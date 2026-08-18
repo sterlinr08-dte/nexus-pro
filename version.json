@@ -1,7 +1,12 @@
 {
-  "version": "56.40",
+  "version": "56.41",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.41",
+      "fecha": "2026-08-17",
+      "texto": "ARREGLADO (importante, seguridad): corregir el precio de una factura (botón \"Precio\" / \"Corregir el precio\") ahora pasa por un candado del lado del servidor, no solo del navegador. Antes, el botón solo estaba oculto por un permiso de pantalla — cualquiera con sesión iniciada y algo de conocimiento técnico podía saltarse ese candado y cambiar el precio de una factura directo, sin pasar por la app. Ahora la base de datos exige de verdad ser Administrador para hacer ese cambio, sin importar por dónde se intente. Para el uso normal no cambia nada: el botón, la ventana de \"escribe el precio correcto\", y la pregunta de si el precio nuevo se queda para los próximos meses, funcionan exactamente igual que siempre — probado a fondo (17 casos) antes de aplicarlo, incluyendo contra facturas reales."
+    },
     {
       "v": "56.40",
       "fecha": "2026-08-17",
