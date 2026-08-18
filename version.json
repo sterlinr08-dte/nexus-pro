@@ -1,11 +1,11 @@
 {
-  "version": "56.43",
+  "version": "56.44",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "v": "56.43",
+      "v": "56.44",
       "fecha": "2026-08-18",
-      "texto": "ARREGLADO: el carrusel \"Atención prioritaria\" (arriba de la lista de Clientes) seguía viéndose mal en el celular — las tarjetas se inclinaban demasiado y se montaban una encima de otra, tapando el nombre y el avatar del cliente vecino. Se suavizó la inclinación, se quitó el encimado entre tarjetas, y el nombre del cliente ya no se corta a la mitad — ahora pasa a una segunda línea si hace falta."
+      "texto": "NUEVO: indicador animado del menú lateral de Seguros (mockup aprobado por el dueño) — al cambiar de pantalla, la barra que marca dónde estás ya no salta de golpe: se estira y se acomoda con un efecto de resorte suave, con un brillo que se enciende más fuerte mientras se mueve y se calma al llegar. Funciona igual al navegar directo, dentro de los menús desplegables (Contabilidad, Configuración), al colapsar el menú a solo íconos, y al abrir/cerrar el menú en el celular — y respeta la preferencia \"reducir movimiento\" del teléfono (ahí se posiciona al instante, sin animación). El resaltado morado de siempre se queda como respaldo: si algo fallara al cargar, el menú se ve y funciona exactamente igual que antes."
     },
     {
       "v": "56.42",

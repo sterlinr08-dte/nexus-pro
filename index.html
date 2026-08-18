@@ -215,7 +215,7 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 .sb-mk{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#60a5fa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0;box-shadow:0 4px 10px rgba(15,23,42,.4)}
 .sb-nm{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;letter-spacing:.3px}.sb-sm{font-size:8px;color:rgba(255,255,255,.4);font-family:var(--mono);white-space:nowrap}
 .sb.col .sb-nm,.sb.col .sb-sm{display:none}
-.sb-nav{flex:1;padding:10px 10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.sb-nav{position:relative;flex:1;padding:10px 10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sb-nav::-webkit-scrollbar{display:none}
 .ss{font-size:8px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;padding:12px 4px 5px;white-space:nowrap;text-transform:uppercase;font-family:var(--mono)}
 .sb.col .ss{opacity:0}
@@ -228,6 +228,26 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 .ni.on .ni-l,.ni:hover .ni-l{color:#fff !important}
 .ni-b{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;flex-shrink:0}
 .sb.col .ni-l,.sb.col .ni-b{display:none}
+/* ── INDICADOR DE RESORTE (menú lateral) ──────────────────────────────────
+   Pill que se estira/encoge con física de resorte entre el .ni activo
+   anterior y el nuevo (mockup aprobado por el dueño, 12-ago-2026). Aditivo
+   y con respaldo seguro: .ni.on (arriba) sigue siendo el resaltado de
+   siempre — este bloque solo lo apaga cuando el JS de nxSidebarSpringSync()
+   confirma que sí inicializó (clase body.spring-nav). Si el script fallara
+   por cualquier razón, el sidebar se ve y funciona EXACTAMENTE como antes. */
+.spring-ind{position:absolute;left:10px;right:10px;top:0;height:0;border-radius:9px;
+  background:rgba(139,92,246,.24);
+  box-shadow:inset 2px 0 0 #8b5cf6,0 0 0 1px rgba(139,92,246,.08);
+  z-index:0;pointer-events:none;opacity:0;transition:opacity .15s;will-change:top,height}
+body.spring-nav .spring-ind{opacity:1}
+.spring-ind .spring-glow{position:absolute;inset:-16px -12px;border-radius:22px;pointer-events:none;
+  background:radial-gradient(58% 100% at 10% 50%,rgba(167,139,250,.7),rgba(96,165,250,.32) 52%,transparent 76%);
+  filter:blur(15px);mix-blend-mode:screen;opacity:.55}
+/* .ni/.ss quedan posicionados para pintarse ENCIMA del pill (z-index:0) */
+.ni,.ss{position:relative;z-index:1}
+/* Con spring-nav activo, el resaltado estático de siempre se apaga — el
+   pill es el único indicador visual, evita el "doble resaltado". */
+body.spring-nav .ni.on{background:transparent;box-shadow:none}
 .sb-ft{padding:8px 6px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0}
 .sb-u{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;overflow:hidden}
 .sb-u:hover{background:var(--sidebar-hover)}
@@ -1386,7 +1406,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="sb-mk"><i class="ti ti-shield-check"></i></div>
         <div><div class="sb-nm">NEXUS PRO</div><div class="sb-sm">v6 · seguros_rd</div></div>
       </div>
-      <div class="sb-nav">
+      <div class="sb-nav" id="sbNav">
+        <div class="spring-ind" id="springInd" aria-hidden="true"><div class="spring-glow" data-glow></div></div>
         <div class="ss">Principal</div>
         <div class="ni on" onclick="nav('dashboard',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
         <div class="ni" onclick="nav('facturas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
@@ -1445,6 +1466,72 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
       </div>
     </nav>
+    <script>
+    (function(){
+      // Indicador de resorte del sidebar — física, no CSS transitions (mockup
+      // aprobado 12-ago-2026). window.nxSidebarSpringSync(instant) es la única
+      // API pública; la llaman nav()/toggleContab()/toggleConfig()/navConfig().
+      // Todo el IIFE es best-effort: si container/indicator no existen, se sale
+      // sin tocar nada — .ni.on se queda con su resaltado estático de siempre.
+      var container = document.getElementById('sbNav');
+      var indicator = document.getElementById('springInd');
+      if (!container || !indicator) return;
+      var glow = indicator.querySelector('[data-glow]');
+      var STIFF = 210, DAMP = 22;
+      var GLOW_REST = .55, GLOW_PEAK = 1, GLOW_SPAN = 60;
+      var curA = 0, curB = 0, velA = 0, velB = 0, targetA = 0, targetB = 0, running = false;
+
+      function reduced(){
+        return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }
+      function measure(el){
+        var cr = container.getBoundingClientRect(), r = el.getBoundingClientRect();
+        return { a: r.top - cr.top, b: r.bottom - cr.top };
+      }
+      function apply(){
+        indicator.style.top = curA + 'px';
+        indicator.style.height = Math.max(0, curB - curA) + 'px';
+        if (glow){
+          var speed = (Math.abs(velA) + Math.abs(velB)) / 2;
+          var energy = Math.min(1, speed / GLOW_SPAN);
+          glow.style.opacity = (GLOW_REST + (GLOW_PEAK - GLOW_REST) * energy).toFixed(2);
+        }
+      }
+      function tick(){
+        var dt = 1/60;
+        var fA = -STIFF*(curA-targetA) - DAMP*velA;
+        var fB = -STIFF*(curB-targetB) - DAMP*velB;
+        velA += fA*dt; velB += fB*dt;
+        curA += velA*dt; curB += velB*dt;
+        apply();
+        var settled = Math.abs(curA-targetA)<0.15 && Math.abs(curB-targetB)<0.15 && Math.abs(velA)<0.2 && Math.abs(velB)<0.2;
+        if (settled){ curA=targetA; curB=targetB; velA=0; velB=0; apply(); running=false; return; }
+        requestAnimationFrame(tick);
+      }
+      function goTo(el, instant){
+        var m = measure(el);
+        targetA = m.a; targetB = m.b;
+        if (instant || reduced()){ curA=targetA; curB=targetB; velA=0; velB=0; apply(); return; }
+        if (!running){ running = true; requestAnimationFrame(tick); }
+      }
+
+      window.nxSidebarSpringSync = function(instant){
+        try{
+          var activo = container.querySelector('.ni.on');
+          if (!activo || activo.offsetParent === null){ indicator.style.opacity = '0'; return; }
+          indicator.style.opacity = '';
+          goTo(activo, !!instant);
+        }catch(e){}
+      };
+
+      // Arranque: coloca el pill donde ya está el .ni.on de siempre (sin
+      // animar) y SOLO ENTONCES enciende body.spring-nav — si algo de esto
+      // falla antes, .ni.on nunca pierde su resaltado estático de respaldo.
+      window.nxSidebarSpringSync(true);
+      document.body.classList.add('spring-nav');
+      window.addEventListener('resize', function(){ window.nxSidebarSpringSync(true); });
+    })();
+    </script>
     <div class="main">
       <header class="tnav">
         <button aria-label="Abrir el menú" class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
@@ -4313,6 +4400,8 @@ function toggleConfig(){
   const icn=document.getElementById('icnConfig');
   if(sb)sb.style.maxHeight=_configAbierto?'600px':'0';
   if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
+  // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
 }
 
 let _cfgTabSolicitado=null;
@@ -4325,6 +4414,10 @@ function navConfig(tabNum,el){
   // Marcar activo en sidebar
   document.querySelectorAll('#sbConfig .ni').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
+  // nav('config',null) de arriba ya intentó sincronizar el resorte, pero sin
+  // ningún .ni.on activo todavía (se limpian en la línea de arriba) — recién
+  // AHORA hay un .on real que seguir.
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
   // En móvil cerrar el drawer primero, luego cargar el tab
   if(window.innerWidth<=900)closeMobSB();
   // Cargar el tab solicitado de forma garantizada
@@ -4338,6 +4431,8 @@ function toggleContab(){
   const icn=document.getElementById('icnContab');
   if(sb)sb.style.maxHeight=_contabAbierto?'400px':'0';
   if(icn)icn.style.transform=_contabAbierto?'rotate(180deg)':'';
+  // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
 }
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
@@ -4424,7 +4519,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.43';
+const APP_VERSION='56.44';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6356,6 +6451,9 @@ function toggleSB(){
   }else{
     sb.classList.toggle('col');
   }
+  // Colapsar/expandir puede mover o cambiar el alto del .ni activo — el
+  // resorte lo sigue solo (best-effort, ver script junto a <nav class="sb">).
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
 }
 function closeMobSB(){
   document.getElementById('sbEl').classList.remove('mob-open');
@@ -6571,6 +6669,8 @@ function nav(view,el){
   nxGuardarLugar('seguros', view);
   // Log de navegación
   logError('info', 'Navegación: '+(TITLES[view]||view), '', view);
+  // Indicador de resorte del sidebar (best-effort, ver script junto a <nav class="sb">)
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
 }
 
 // ── TICKER ───────────────────────────────────────────────────────────────────
