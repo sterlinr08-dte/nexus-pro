@@ -1,7 +1,12 @@
 {
-  "version": "56.41",
+  "version": "56.42",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.42",
+      "fecha": "2026-08-18",
+      "texto": "ARREGLADO: el carrusel \"Atención prioritaria\" (arriba de la lista de Clientes) se veía mal en el celular — la tarjeta que quedaba a la orilla se cortaba de golpe, con un filo duro, en vez de desvanecerse. Ahora el borde del carrusel se desvanece suave hacia blanco, así se ve como \"hay más para deslizar\" en vez de una tarjeta rota a la mitad."
+    },
     {
       "v": "56.41",
       "fecha": "2026-08-17",
