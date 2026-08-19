@@ -1,7 +1,12 @@
 {
-  "version": "56.44",
+  "version": "56.45",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.45",
+      "fecha": "2026-08-19",
+      "texto": "NUEVO: Financiamiento tiene su propio botón flotante de navegación en el celular. Antes había que abrir el menú lateral (☰) para moverse entre Dashboard, Cobranza, Clientes, Solicitudes, etc. — ahora un botón circular en la esquina abre una hoja con todas las opciones agrupadas (Cartera / Personas / Sistema), igual al menú flotante que ya usa el resto del sistema. Al escritorio no le cambia nada — sigue con su barra lateral fija de siempre. El botón flotante global (el de Seguros/POS) se esconde mientras estás en Financiamiento para que no queden dos círculos superpuestos en la misma esquina."
+    },
     {
       "v": "56.44",
       "fecha": "2026-08-18",

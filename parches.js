@@ -226,6 +226,19 @@
           display: none !important;
         }
 
+        /* Financiamiento (Multiempresa) tiene su PROPIO FAB + hoja agrupada
+           (.nxFP-fab/.nxFP-fabSheet, ver window.nxFPEnsureCSS) — mismo lugar
+           en pantalla que este FAB global. Mientras esa vista está activa se
+           esconde el global, para que no queden 2 círculos superpuestos en
+           la misma esquina (mismo criterio que "hay ventana abierta"/"sin
+           sesión" de arriba). */
+        body:has(#v-prestamos.on) .mobile-bottom-nav-clean,
+        body:has(#v-prestamos.on) .nx-fab,
+        body:has(#v-prestamos.on) .nx-menu-backdrop,
+        body:has(#v-prestamos.on) .mobile-more-sheet-clean {
+          display: none !important;
+        }
+
         /* ═══ FIX MENÚ DE ACCIONES (⋮) ═══ */
         /* El menú de 3 puntos del cliente DEBE estar por encima de TODO,
            incluido el modal de editar/cliente. */
@@ -251,6 +264,17 @@
           z-index: 2147483647 !important;
           pointer-events: auto !important;
         }
+      }
+
+      /* Fuera del media query a propósito: si el FAB global quedó creado desde
+         antes de que la pantalla pasara los 768px (p.ej. rotar una tableta ya
+         con la app abierta), sigue existiendo en el DOM aunque el resto de su
+         CSS ya no aplique — este candado lo esconde en CUALQUIER ancho
+         mientras Financiamiento está activo, sin depender del media query. */
+      body:has(#v-prestamos.on) .nx-fab,
+      body:has(#v-prestamos.on) .nx-menu-backdrop,
+      body:has(#v-prestamos.on) .mobile-more-sheet-clean {
+        display: none !important;
       }
     `;
     document.head.appendChild(style);
@@ -12474,6 +12498,15 @@
       return d >= 0 && d <= 7;
     }).length;
     const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    // FAB de Financiamiento (celular ≤900px): mismos ítems/estados que la barra
+    // lateral de arriba, agrupados para la hoja del FAB. fabItem/fabView cierran
+    // la hoja SOLO cuando la acción no re-renderiza #nxFPShell por sí sola (ver
+    // window.nxFPToggleFab más arriba) — los que sí re-renderizan (todos los de
+    // abajo) la cierran gratis, sin nada extra, porque el nuevo HTML nunca trae
+    // la clase fab-open.
+    const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
+    const fabItem = (key, lbl, ico) => `<button type="button" class="nxFP-fabItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    const fabView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-fabItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
     view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
       <div class="nxFP-sideOverlay" onclick="window.nxFPToggleSide()"></div>
       <aside class="nxFP-side">
@@ -12495,6 +12528,28 @@
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
+      <button type="button" class="nxFP-fab" onclick="window.nxFPToggleFab()" aria-label="Abrir menú de Financiamiento"><i class="ti ti-menu-2"></i></button>
+      <div class="nxFP-fabBackdrop" onclick="window.nxFPToggleFab()"></div>
+      <div class="nxFP-fabSheet">
+        <div class="nxFP-fabHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
+        <button type="button" class="nxFP-fabNew" onclick="document.getElementById('nxFPShell').classList.remove('fab-open');window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+        <div class="nxFP-fabGrp">Cartera</div>
+        ${fabItem('todos', 'Dashboard', 'ti-layout-dashboard')}
+        ${fabItem('activos', 'Activos', 'ti-circle-check')}
+        ${fabItem('vencidos', 'Cobranza', 'ti-user-dollar')}
+        ${fabItem('cuotas', 'Cuotas', 'ti-calendar-dollar')}
+        ${fabItem('pagados', 'Pagados', 'ti-checks')}
+        ${fabItem('credito', 'Líneas de crédito', 'ti-credit-card')}
+        <div class="nxFP-fabGrp">Personas</div>
+        ${fabView('clientes', 'Clientes', 'ti-users-group')}
+        ${fabView('evaluacion', 'Evaluación', 'ti-clipboard-check')}
+        ${fabView('solicitudes', 'Solicitudes', 'ti-file-check', nSol)}
+        <div class="nxFP-fabGrp">Sistema</div>
+        ${fabView('reportes', 'Reportes', 'ti-report-money')}
+        <button type="button" class="nxFP-fabItem" onclick="document.getElementById('nxFPShell').classList.remove('fab-open');window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
+        <div class="nxFP-fabDiv"></div>
+        <button type="button" class="nxFP-fabBack" onclick="document.getElementById('nxFPShell').classList.remove('fab-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
+      </div>
       <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
@@ -12903,6 +12958,16 @@
     });
   }
   window.nxFPToggleSide = function () { const s = document.getElementById('nxFPShell'); if (s) s.classList.toggle('side-open'); };
+  // FAB de Financiamiento (Opción A, muestra aprobada — módulo completo, 19-ago-2026):
+  // reemplaza el cajón lateral off-canvas del celular por un botón circular
+  // flotante + hoja agrupada, mismo mecanismo visual que el FAB global de
+  // Seguros (.nx-fab/.mobile-more-sheet-clean) pero autocontenido aquí — no
+  // toca el FAB global (es de toda la app, sin noción de los ítems de este
+  // módulo). Se cierra sola en la mayoría de los ítems porque cada uno ya
+  // dispara renderLista() (rehace #nxFPShell entero, sin la clase fab-open);
+  // los 3 que NO re-renderizan (Nuevo préstamo/Configuración/Volver) la
+  // cierran a mano en su propio onclick, ver renderLista().
+  window.nxFPToggleFab = function () { const s = document.getElementById('nxFPShell'); if (s) s.classList.toggle('fab-open'); };
 
   function ensureView() {
     let v = document.getElementById('v-prestamos');
@@ -25365,7 +25430,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-topActions button{border:1px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 13px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;white-space:nowrap}' +
       '.nxFP-topActions button.prim{background:#4f46e5;border-color:#4f46e5;color:#fff}' +
       '.nxFP-sideOverlay{display:none}' +
-      '@media(max-width:900px){.nxFP-side{position:fixed;top:0;left:0;bottom:0;width:250px;border-radius:0;z-index:2600;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto}.nxFPShell.side-open .nxFP-side{transform:translateX(0)}.nxFP-sideOverlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:2500}.nxFPShell.side-open .nxFP-sideOverlay{display:block}.nxFP-burger{display:inline-flex}.nxFP-topActions button span{display:none}.nxFP-topActions button{padding:9px 11px}}' +
+      // El cajón lateral off-canvas (burger + .nxFP-side + .nxFP-sideOverlay) se
+      // reemplazó por el FAB (.nxFP-fab/.nxFP-fabSheet, más abajo) en el celular —
+      // se esconden del todo en vez de dejarlos alcanzables-pero-sin-disparador.
+      '@media(max-width:900px){.nxFP-side{display:none}.nxFP-sideOverlay{display:none!important}.nxFP-burger{display:none}.nxFP-topActions button span{display:none}.nxFP-topActions button{padding:9px 11px}}' +
       '.nxFP-dcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:13px 14px}' +
       '.nxFP-dico{width:34px;height:34px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}.nxFP-dico.green{background:#dcfce7;color:#16a34a}.nxFP-dico.red{background:#fee2e2;color:#dc2626}.nxFP-dico.blue{background:#e0e7ff;color:#4338ca}' +
       '.nxFP-dlbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px}.nxFP-dval{font-size:14px;font-weight:800;color:#0f172a;line-height:1.3;font-variant-numeric:tabular-nums}.nxFP-dsub{font-size:10px;color:#94a3b8;font-weight:600}' +
@@ -25563,6 +25631,35 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFPShell .nxFP-tab:active{box-shadow:var(--nf-concave)}' +
       '.nxFPShell .nxFP-qbtn:active{box-shadow:var(--nf-concave)}' +
       '.nxFPShell .nxFP-burger:hover,.nxFPShell .nxFP-burger:active{background:var(--nf-bg);box-shadow:var(--nf-concave)}' +
+      // ── FAB de Financiamiento (Opción A, muestra aprobada — módulo completo,
+      // 19-ago-2026): reemplaza el cajón lateral off-canvas del celular. Mismo
+      // mecanismo visual que el FAB global de Seguros (.nx-fab/.mobile-more-
+      // sheet-clean — botón circular + hoja agrupada con blur de fondo), pero
+      // autocontenido en .nxFPShell y con el morado propio del módulo. El FAB
+      // global se esconde mientras esta vista está activa (ver injectCSS(),
+      // body:has(#v-prestamos.on) .nx-fab) para que no queden 2 círculos
+      // superpuestos en la misma esquina.
+      '.nxFP-fab{display:none;position:fixed;right:18px;bottom:18px;z-index:2650;width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;font-size:23px;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(76,29,149,.45);cursor:pointer;touch-action:manipulation;transition:transform .2s ease}' +
+      '.nxFP-fab:active{transform:scale(.92)}.nxFPShell.fab-open .nxFP-fab{transform:rotate(90deg)}.nxFP-fab i{pointer-events:none}' +
+      '.nxFP-fabBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +
+      '.nxFPShell.fab-open .nxFP-fabBackdrop{display:block}' +
+      '.nxFP-fabSheet{display:none;position:fixed;left:12px;right:12px;bottom:88px;z-index:2651;background:#fff;border-radius:24px;box-shadow:0 20px 50px rgba(15,23,42,.22);padding:10px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch}' +
+      '.nxFPShell.fab-open .nxFP-fabSheet{display:block;animation:nxFPSheetUp .2s ease}' +
+      '@keyframes nxFPSheetUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}' +
+      '.nxFP-fabHead{display:flex;align-items:center;gap:10px;padding:6px 8px 12px}' +
+      '.nxFP-fabHead .nxFP-sideLogo{width:32px;height:32px;font-size:16px;background:#ede9fe;color:#6d28d9}' +
+      '.nxFP-fabHead b{display:block;font-size:13px;font-weight:800;color:#0f172a}.nxFP-fabHead span{font-size:10px;color:#94a3b8;font-weight:600}' +
+      '.nxFP-fabNew{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;background:#4f46e5;color:#fff;border:0;border-radius:12px;padding:11px;font-weight:800;font-size:12.5px;cursor:pointer;margin-bottom:10px;font-family:inherit}' +
+      '.nxFP-fabGrp{margin:4px 6px 4px;font-size:10.5px;color:#94a3b8;font-weight:800;letter-spacing:.4px;text-transform:uppercase}' +
+      '.nxFP-fabItem{width:100%;border:0;background:transparent;border-radius:11px;padding:9px 8px;font-size:13px;font-weight:700;color:#334155;text-align:left;cursor:pointer;display:flex;align-items:center;gap:11px;font-family:inherit}' +
+      '.nxFP-fabItem:active{background:#f5f3ff}.nxFP-fabItem.on{background:#ede9fe;color:#4f46e5}' +
+      '.nxFP-fabItem i{width:28px;height:28px;border-radius:9px;background:#f4f3fb;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}' +
+      '.nxFP-fabItem.on i{background:#fff;color:#4f46e5}' +
+      '.nxFP-fabDiv{height:1px;background:#f1f0fb;margin:8px 4px}' +
+      '.nxFP-fabBack{width:100%;display:flex;align-items:center;gap:8px;padding:10px 8px;border-radius:11px;border:0;background:transparent;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}' +
+      '.nxFP-fabBack:active{background:#f5f3ff}' +
+      '@media(max-width:900px){.nxFP-fab{display:flex}}' +
+      'body:has(.overlay.open) .nxFP-fab,body:has(.overlay.open) .nxFP-fabBackdrop,body:has(.overlay.open) .nxFP-fabSheet{display:none!important}' +
       '@media(prefers-reduced-motion:reduce){.nxFPShell *{transition:none!important}}';
     document.head.appendChild(st);
   };
