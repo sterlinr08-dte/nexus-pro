@@ -1,0 +1,170 @@
+diff --git a/parches.js b/parches.js
+--- a/parches.js
++++ b/parches.js
+@@
+   function prCobranzaCalcularModelo() {
+@@
+     return _prCobModelo;
+   }
++
++  // Única fuente para el KPI "Cobros de hoy". Es exactamente el cálculo que
++  // ya usaba prCobranzaMainHTML(); se extrae para reutilizarlo en el dashboard
++  // Glass sin duplicar reglas ni tocar datos persistidos.
++  function prPagosHoy() {
++    return Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr
++      .filter(pg => String(pg.fecha || '').slice(0, 10) === hoy())
++      .reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
++  }
+@@
+   function prCobranzaMainHTML() {
+@@
+-    const pagosHoy = Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr.filter(pg => String(pg.fecha || '').slice(0, 10) === hoy()).reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
++    const pagosHoy = prPagosHoy();
+@@
+   function renderLista(view) {
+@@
+     const nActivos = _prestamos.filter(p => estadoDe(p) !== 'pagado').length;
+     const nVencidos = _prestamos.filter(esVencido).length;
+@@
+     }).length;
++    // Dashboard Glass móvil: SOLO presentación. Todos los valores salen de los
++    // helpers/colecciones reales que ya usa el módulo.
++    const esGlassHome = _prView === 'prestamos' && _prFiltro === 'todos';
++    const pagosHoy = prPagosHoy();
++    const moraTotal = _prestamos.reduce((s, p) => s + prMoraDe(p), 0);
++    const proxPagosGlass = _prestamos
++      .filter(p => estadoDe(p) !== 'pagado' && !!prProximoPago(p))
++      .map(p => ({ p: p, fecha: prProximoPago(p), saldo: saldoDe(p), est: prEstadoTabla(p), av: prIniciales(p.nombre) }))
++      .sort((a, b) => (a.fecha || '9999-12-31').localeCompare(b.fecha || '9999-12-31'))
++      .slice(0, 4);
++    const proxGlassHTML = proxPagosGlass.length ? proxPagosGlass.map(x => `
++      <button type="button" class="nxFG-payRow" onclick="window.nxPrestamoVer('${x.p.id}')">
++        <span class="nxFG-payAvatar" style="background:${x.av.color}">${x.av.ini}</span>
++        <span class="nxFG-payMain"><b>${esc(x.p.nombre || 'Sin nombre')}</b><small>${esc(prRef(x.p))} · ${esc(x.fecha)}</small></span>
++        <span class="nxFG-payRight"><b>${fmt(x.saldo)}</b><small class="${x.est.key}">${esc(x.est.label)}</small></span>
++      </button>`).join('') : '<div class="nxFG-empty">No hay próximos pagos pendientes.</div>';
++    const glassHomeHTML = `<section class="nxFP-glassDash" aria-label="Resumen de Financiamiento">
++      <header class="nxFG-head">
++        <div><div class="nxFG-eyebrow">NEXUS PRO</div><h1>Financiamiento</h1><p>${clientesActivos} ${clientesActivos === 1 ? 'cliente activo' : 'clientes activos'}</p></div>
++        <button type="button" class="nxFG-headAction" onclick="window.nxPrView('reportes')" aria-label="Abrir reportes"><i class="ti ti-chart-bar"></i></button>
++      </header>
++      <div class="nxFG-search"><span id="nxPrBuscarLupaGlass"></span></div>
++      <div class="nxFG-kpis">
++        <div class="nxFG-kpi"><span class="nxFG-kico purple"><i class="ti ti-wallet"></i></span><small>Cartera activa</small><b>${fmt(totalSaldo)}</b></div>
++        <div class="nxFG-kpi"><span class="nxFG-kico green"><i class="ti ti-cash"></i></span><small>Cobros de hoy</small><b>${fmt(pagosHoy)}</b></div>
++        <div class="nxFG-kpi"><span class="nxFG-kico amber"><i class="ti ti-calendar-exclamation"></i></span><small>Cuotas vencidas</small><b>${nVencidos}</b></div>
++        <div class="nxFG-kpi"><span class="nxFG-kico red"><i class="ti ti-alert-triangle"></i></span><small>Mora</small><b>${fmt(moraTotal)}</b></div>
++      </div>
++      <button type="button" class="nxFG-primary" onclick="window.nxPrestamoNuevo()"><span><i class="ti ti-plus"></i></span><b>Nuevo financiamiento</b><i class="ti ti-chevron-right"></i></button>
++      <div class="nxFG-secTitle">Accesos rápidos</div>
++      <div class="nxFG-quick">
++        <button type="button" onclick="window.nxPrestamoFiltroTipo('vencidos')"><span class="green"><i class="ti ti-cash"></i></span><b>Cobrar cuota</b></button>
++        <div class="soon" aria-disabled="true"><span class="purple"><i class="ti ti-file-description"></i></span><b>Contratos</b><small>Próximamente</small></div>
++        <div class="soon" aria-disabled="true"><span class="blue"><i class="ti ti-device-mobile-lock"></i></span><b>MDM</b><small>Próximamente</small></div>
++        <button type="button" onclick="window.nxPrView('reportes')"><span class="amber"><i class="ti ti-report-money"></i></span><b>Reportes</b></button>
++      </div>
++      <div class="nxFG-sectionHead"><div><b>Próximos pagos</b><small>Ordenados por la próxima fecha real</small></div><button type="button" onclick="window.nxPrestamoFiltroTipo('vencidos')">Ver todos</button></div>
++      <div class="nxFG-payList">${proxGlassHTML}</div>
++    </section>`;
+     const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+-    view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
++    view.innerHTML = `<div class="nxFP nxFPShell${esGlassHome ? ' nxFP-glassHome' : ''}" id="nxFPShell">
+@@
+-      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
++      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
++        ${esGlassHome ? glassHomeHTML : ''}
+         <div class="nxFP-topbar">
+@@
+   function pintarLupaPr() {
+-    const box = document.getElementById('nxPrBuscarLupa');
+-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+-    box.innerHTML = nxBuscaFiltroHTML({
+-      id: 'nxPrBuscar', label: 'Buscar', titulo: 'Buscar préstamo',
+-      placeholder: 'Nombre o cédula…', value: _prQuery,
+-      onterm: function (v) { window.nxPrestamoFiltrar(v); }
+-    });
++    if (typeof nxBuscaFiltroHTML !== 'function') return;
++    [['nxPrBuscarLupa', 'nxPrBuscar'], ['nxPrBuscarLupaGlass', 'nxPrBuscarGlass']].forEach(function (par) {
++      const box = document.getElementById(par[0]); if (!box) return;
++      box.innerHTML = nxBuscaFiltroHTML({
++        id: par[1], label: 'Buscar', titulo: 'Buscar préstamo',
++        placeholder: 'Nombre o cédula…', value: _prQuery,
++        onterm: function (v) { window.nxPrestamoFiltrar(v); }
++      });
++    });
+   }
+@@
+   function renderFPDock() {
+@@
+-    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
++    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'cuotas', 'pagados', 'credito'].includes(_prFiltro));
+@@
+       <div class="nxFP-dockSheet">
+         <div class="nxFP-popHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
+-        <button type="button" class="nxFP-popNew" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+         <div class="nxFP-popGrp">Cartera</div>
+         ${moreItem('activos', 'Activos', 'ti-circle-check')}
++        ${moreItem('cuotas', 'Cuotas', 'ti-calendar-dollar')}
+         ${moreItem('pagados', 'Pagados', 'ti-checks')}
+         ${moreItem('credito', 'Líneas de crédito', 'ti-credit-card')}
+@@
+       </div>
+       <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
+-        ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
+-        ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
+-        ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
++        ${dockBtn('todos', 'Inicio', 'ti-home')}
+         ${dockView('clientes', 'Clientes', 'ti-users-group')}
++        <button type="button" class="nxFP-dockBtn nxFP-dockCenter" onclick="window.nxPrestamoNuevo()" aria-label="Nuevo financiamiento"><span class="nxFP-dockCenterI"><i class="ti ti-plus"></i></span><span>Financiar</span></button>
++        ${dockBtn('vencidos', 'Cobros', 'ti-cash')}
+         <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
+       </nav>`;
+@@
+   function hcRender() {
+@@
+-    const clihead = `<div class="hc-cli">
++    const clihead = `<div class="hc-cli">
+       <div class="hc-clav">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+-      <div style="flex:1;min-width:0"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span>
++      <div class="hc-clmain"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span>
+         <div class="hc-cgrid">${dato('ti-id', 'Cédula', c.cedula)}${dato('ti-phone', 'Teléfono', c.telefono)}${dato('ti-mail', 'Correo', c.email)}${dato('ti-calendar', 'Cliente desde', c.created_at ? String(c.created_at).slice(0, 10) : '—')}${dato('ti-clock', 'Última actividad', prUltActividad(loans))}</div>
+-      </div></div>`;
++      </div>
++      <div class="hc-headScore">
++        <span class="hc-scoreChip" style="color:${sc.col};background:${sc.col}14">${sc.s == null ? 'Sin historial' : sc.mil + '/1000 · ' + esc(sc.clas)}</span>
++        <div class="ev-gauge hc-headGauge" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">/1000</div></div></div>
++      </div></div>`;
++    const hcHero = `<div class="hc-heroCards">
++      <div class="hc-heroCard"><div class="hc-heroIco purple"><i class="ti ti-cash-banknote"></i></div><div><small>Monto financiado</small><b>${fmt(financiado)}</b><span>Pagado ${fmt(pagado)}</span></div></div>
++      <div class="hc-heroCard"><div class="hc-heroIco green"><i class="ti ti-thumb-up"></i></div><div class="hc-heroGrow"><small>Puntualidad de pago</small><b>${puntualidad}%</b><div class="hc-progress"><i style="width:${Math.max(0, Math.min(100, puntualidad))}%"></i></div><span>Promedio atraso: ${promAtraso} ${promAtraso === 1 ? 'día' : 'días'}</span></div></div>
++      <div class="hc-heroCard"><div class="hc-heroIco amber"><i class="ti ti-wallet"></i></div><div><small>Balance pendiente</small><b>${fmt(balance)}</b><span>Mora ${fmt(moraAcum)}</span></div></div>
++    </div>`;
+@@
+-    body.innerHTML = clihead + kpis + `<div class="hc-2col"><div class="hc-main">${tabs}${mainTab}</div><aside class="hc-side">${rec}${indicadores}${alertPanel}</aside></div>`;
++    body.innerHTML = clihead + hcHero + kpis + `<div class="hc-2col"><div class="hc-main">${tabs}${mainTab}</div><aside class="hc-side">${rec}${indicadores}${alertPanel}</aside></div>`;
+   }
+@@
+       'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
++      // ── Financiamiento Glass V1 — handoff aprobado (20-ago-2026) ───────────
++      // Scope estricto: dashboard móvil + Historial Crediticio + dock móvil.
++      // Cuotas del POS (.nxFP-pos) queda fuera.
++      '.nxFP-glassDash{display:none}' +
++      '.hcModal{--ng-bg:#f3f4fa;--ng-ink:#171a2b;--ng-ink2:#565b78;--ng-ink3:#9498b3;--ng-ac:#6d28d9;--ng-ac2:#4f46e5;--ng-glass:rgba(255,255,255,.62);--ng-glass2:rgba(255,255,255,.82);--ng-border:rgba(255,255,255,.75);--ng-shadow:0 10px 34px -14px rgba(30,27,75,.20),0 1px 1px rgba(30,27,75,.03);background:radial-gradient(circle at 8% 0,rgba(109,40,217,.10),transparent 34%),radial-gradient(circle at 92% 2%,rgba(79,70,229,.08),transparent 30%),var(--ng-bg)!important}' +
++      '.hcModal #hcBody{background:transparent}' +
++      '.hcModal .hc-cli,.hcModal .hc-k,.hcModal .hc-card,.hcModal .hc-pcard,.hcModal .hc-tabs,.hcModal .hc-heroCard{background:var(--ng-glass);border:1px solid var(--ng-border);box-shadow:var(--ng-shadow);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}' +
++      '.hcModal .hc-cli{border-radius:22px;padding:16px 18px}.hc-clmain{flex:1;min-width:220px}.hc-headScore{display:flex;align-items:center;gap:12px;margin-left:auto}.hc-scoreChip{font-size:11px;font-weight:800;border-radius:999px;padding:6px 10px;white-space:nowrap}.hc-headGauge{width:70px;height:70px}.hc-headGauge .ev-gaugein{width:53px;height:53px;background:rgba(255,255,255,.9)}' +
++      '.hc-heroCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.hc-heroCard{display:flex;align-items:center;gap:12px;border-radius:18px;padding:14px;min-width:0}.hc-heroIco{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;font-size:18px}.hc-heroIco.purple{background:rgba(109,40,217,.10);color:#6d28d9}.hc-heroIco.green{background:rgba(15,157,88,.12);color:#0f9d58}.hc-heroIco.amber{background:rgba(194,118,10,.14);color:#c2760a}.hc-heroCard small{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;color:var(--ng-ink3);letter-spacing:.25px}.hc-heroCard b{display:block;font-size:18px;color:var(--ng-ink);margin:2px 0}.hc-heroCard span{display:block;font-size:10.5px;color:var(--ng-ink2)}.hc-heroGrow{flex:1;min-width:0}.hc-progress{height:6px;border-radius:99px;background:rgba(148,152,179,.16);overflow:hidden;margin:5px 0}.hc-progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4f46e5,#6d28d9)}' +
++      '.hcModal .hc-kpis{gap:10px}.hcModal .hc-k{border-radius:16px}.hcModal .hc-tabs{border-radius:16px;padding:4px;border-bottom:1px solid var(--ng-border)}.hcModal .hc-tab{border-radius:11px;border-bottom:0}.hcModal .hc-tab.on{background:rgba(109,40,217,.10);color:#6d28d9;border-bottom:0}.hcModal .hc-card,.hcModal .hc-pcard{border-radius:18px}' +
++      '@media(max-width:760px){' +
++      '.nxFPShell.nxFP-glassHome{--ng-bg:#f3f4fa;--ng-ink:#171a2b;--ng-ink2:#565b78;--ng-ink3:#9498b3;--ng-ac:#6d28d9;--ng-ac2:#4f46e5;--ng-glass:rgba(255,255,255,.62);--ng-glass2:rgba(255,255,255,.82);--ng-border:rgba(255,255,255,.75);--ng-shadow:0 10px 34px -14px rgba(30,27,75,.20),0 1px 1px rgba(30,27,75,.03);background:radial-gradient(circle at 8% 0,rgba(109,40,217,.10),transparent 32%),radial-gradient(circle at 92% 0,rgba(79,70,229,.08),transparent 28%),var(--ng-bg);margin:-2px;padding:14px 12px 18px;border-radius:24px}' +
++      '.nxFP-glassHome .nxFP-glassDash{display:block}.nxFP-glassHome .nxFP-main>.nxFP-topbar,.nxFP-glassHome .nxFP-main>.nxFP-hA,.nxFP-glassHome .nxFP-main>.nxFP-searchRow,.nxFP-glassHome .nxFP-main>.nxFP-listHead,.nxFP-glassHome .nxFP-main>#nxPrLista,.nxFP-glassHome .nxFP-main>.nxFP-dash{display:none!important}' +
++      '.nxFG-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:3px 2px 16px}.nxFG-eyebrow{font-size:9px;font-weight:800;color:var(--ng-ac);letter-spacing:1.2px}.nxFG-head h1{font-size:25px;line-height:1.05;margin:3px 0;color:var(--ng-ink);letter-spacing:-.6px}.nxFG-head p{font-size:11.5px;color:var(--ng-ink2);font-weight:600}.nxFG-headAction{width:42px;height:42px;border:1px solid var(--ng-border);border-radius:14px;background:var(--ng-glass2);box-shadow:var(--ng-shadow);backdrop-filter:blur(18px);color:var(--ng-ac);font-size:18px}' +
++      '.nxFG-search{margin-bottom:12px}.nxFG-search>span{display:block}.nxFG-kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}.nxFG-kpi{display:grid;grid-template-columns:32px 1fr;grid-template-rows:auto auto;gap:1px 8px;align-items:center;background:var(--ng-glass);border:1px solid var(--ng-border);border-radius:17px;padding:11px;box-shadow:var(--ng-shadow);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}.nxFG-kico{grid-row:1/3;width:32px;height:32px;border-radius:10px;display:grid;place-items:center}.nxFG-kico.purple,.nxFG-quick span.purple{background:rgba(109,40,217,.10);color:#6d28d9}.nxFG-kico.green,.nxFG-quick span.green{background:rgba(15,157,88,.12);color:#0f9d58}.nxFG-kico.amber,.nxFG-quick span.amber{background:rgba(194,118,10,.14);color:#c2760a}.nxFG-kico.red{background:rgba(211,55,76,.12);color:#d3374c}.nxFG-quick span.blue{background:rgba(8,145,178,.12);color:#0891b2}.nxFG-kpi small{font-size:9px;color:var(--ng-ink3);font-weight:700}.nxFG-kpi b{font-size:14px;color:var(--ng-ink);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
++      '.nxFG-primary{width:100%;height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,var(--ng-ac2),var(--ng-ac));color:#fff;display:flex;align-items:center;gap:10px;padding:0 14px;box-shadow:0 12px 24px -12px rgba(109,40,217,.7);font-family:inherit}.nxFG-primary>span{width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.18);display:grid;place-items:center}.nxFG-primary>b{font-size:13px;flex:1;text-align:left}.nxFG-secTitle{font-size:10px;font-weight:800;color:var(--ng-ink3);text-transform:uppercase;letter-spacing:.55px;margin:17px 2px 8px}.nxFG-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.nxFG-quick button,.nxFG-quick .soon{min-width:0;border:1px solid var(--ng-border);border-radius:16px;background:var(--ng-glass);box-shadow:var(--ng-shadow);padding:10px 5px;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:inherit;color:var(--ng-ink);backdrop-filter:blur(18px)}.nxFG-quick button{cursor:pointer}.nxFG-quick .soon{opacity:.62}.nxFG-quick span{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;font-size:15px}.nxFG-quick b{font-size:9.5px;text-align:center;line-height:1.15}.nxFG-quick small{font-size:7.5px;color:var(--ng-ink3)}' +
++      '.nxFG-sectionHead{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:18px 2px 8px}.nxFG-sectionHead>div>b{display:block;font-size:14px;color:var(--ng-ink)}.nxFG-sectionHead>div>small{font-size:9.5px;color:var(--ng-ink3)}.nxFG-sectionHead>button{border:0;background:transparent;color:var(--ng-ac);font-size:10.5px;font-weight:800;font-family:inherit}.nxFG-payList{display:flex;flex-direction:column;gap:8px}.nxFG-payRow{width:100%;border:1px solid var(--ng-border);border-radius:16px;background:var(--ng-glass);box-shadow:var(--ng-shadow);padding:10px;display:flex;align-items:center;gap:9px;text-align:left;font-family:inherit;color:var(--ng-ink);backdrop-filter:blur(18px)}.nxFG-payAvatar{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:800;flex:none}.nxFG-payMain{flex:1;min-width:0}.nxFG-payMain b,.nxFG-payRight b{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFG-payMain small,.nxFG-payRight small{display:block;font-size:8.5px;color:var(--ng-ink3);margin-top:2px}.nxFG-payRight{text-align:right;max-width:38%}.nxFG-payRight small.vencido{color:#d3374c}.nxFG-payRight small.porvencer{color:#c2760a}.nxFG-payRight small.activo{color:#0f9d58}.nxFG-empty{font-size:11px;color:var(--ng-ink3);text-align:center;padding:16px}' +
++      '#nxFPDockHost .nxFP-dock{height:62px;border-radius:31px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.78);box-shadow:0 16px 34px -14px rgba(30,27,75,.34),inset 0 1px 0 rgba(255,255,255,.72);padding:0 6px}' +
++      '#nxFPDockHost .nxFP-dockBtn{height:50px;border-radius:14px;color:#7b7f99}#nxFPDockHost .nxFP-dockBtn.on{color:#6d28d9;background:rgba(109,40,217,.08)}#nxFPDockHost .nxFP-dockBtn.on i{transform:none}#nxFPDockHost .nxFP-dockBtn.on span{opacity:1;transform:none}#nxFPDockHost .nxFP-dockBtn.on::before{display:none}' +
++      '#nxFPDockHost .nxFP-dockCenter{transform:translateY(-11px);overflow:visible;background:transparent!important;color:#6d28d9!important;gap:1px}#nxFPDockHost .nxFP-dockCenterI{width:48px;height:48px;border-radius:50%;display:grid!important;place-items:center;background:linear-gradient(145deg,#4f46e5,#6d28d9);color:#fff;box-shadow:0 10px 20px -7px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.78);opacity:1!important;transform:none!important}#nxFPDockHost .nxFP-dockCenterI i{font-size:20px;transform:none!important;color:#fff}#nxFPDockHost .nxFP-dockCenter>span:last-child{font-size:8.5px;color:#6d28d9;opacity:1!important;transform:none!important;font-weight:800}' +
++      '.hcModal .hc-headScore{width:100%;justify-content:space-between;margin-left:0}.hcModal .hc-heroCards{grid-template-columns:1fr}.hcModal .hc-kpis{grid-template-columns:1fr 1fr}.hcModal .hc-cli{align-items:flex-start}.hcModal .hc-clmain{min-width:0;width:calc(100% - 76px)}.hcModal .hc-cgrid{grid-template-columns:1fr 1fr}.hcModal .hc-scoreChip{max-width:calc(100% - 82px);overflow:hidden;text-overflow:ellipsis}' +
++      '}' +
+       '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
