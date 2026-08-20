@@ -1,7 +1,12 @@
 {
-  "version": "56.50",
+  "version": "56.51",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.51",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en el Historial Crediticio, el dato \"Puntualidad de pago\" podía decir 100% aunque la línea de tiempo de abajo mostrara meses con pagos tardíos (puntos rojo/amarillo) — daba una impresión de riesgo equivocada. Ahora ese porcentaje se calcula con el mismo dato real que pinta la línea de tiempo (cuánto de lo ya vencido se pagó a tiempo), así que ambos siempre coinciden."
+    },
     {
       "v": "56.50",
       "fecha": "2026-08-20",

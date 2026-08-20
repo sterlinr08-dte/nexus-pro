@@ -13799,6 +13799,19 @@
       return { c: dl <= 5 ? 'y' : dl <= 15 ? 'o' : 'r', f: r.fecha };
     });
   }
+  // % de cuotas YA vencidas que se pagaron a tiempo (mismo dato que pinta la línea de
+  // tiempo). Antes se calculaba con "préstamos vencidos HOY / total préstamos", lo que
+  // podía dar 100% aunque el historial mostrara meses en mora — quedaba
+  // contradictorio con los puntos rojo/amarillo de abajo. Si el cliente no tiene
+  // préstamos en modo cuotas (línea de crédito / abonos libres), se usa el criterio
+  // anterior como respaldo.
+  function prPuntualidad(loans) {
+    let ok = 0, cont = 0;
+    loans.forEach(p => { const dots = prCuotaDots(p); if (!dots) return; dots.forEach(d => { if (d.c === 'g') return; cont++; if (d.c === 'ok') ok++; }); });
+    if (cont) return Math.round((ok / cont) * 100);
+    const total = loans.length;
+    return total ? Math.round(((total - loans.filter(p => esVencido(p)).length) / total) * 100) : 100;
+  }
   // Línea de tiempo MENSUAL: peor estado de las cuotas que caen en cada mes (últimos 12 con actividad).
   function prTimelineMeses(loans) {
     const byM = {}, rank = { ok: 0, g: 1, y: 2, o: 3, r: 4 };
@@ -13847,7 +13860,7 @@
     const intereses = loans.reduce((s, p) => s + interesCobradoDe(p), 0);
     const moraAcum = loans.reduce((s, p) => s + prMoraDe(p), 0);
     const promAtraso = vencidos.length ? Math.round(vencidos.reduce((s, p) => s + prDiasVencido(p), 0) / vencidos.length) : 0;
-    const puntualidad = total ? Math.round(((total - vencidos.length) / total) * 100) : 100;
+    const puntualidad = prPuntualidad(loans);
     // ── Header cliente ──
     const dato = (ico, lbl, v) => `<div class="hc-cd"><div class="hc-cdl"><i class="ti ${ico}"></i> ${lbl}</div><div class="hc-cdv">${esc(v || '—')}</div></div>`;
     const clihead = `<div class="hc-cli">
