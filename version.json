@@ -1,7 +1,12 @@
 {
-  "version": "56.52",
+  "version": "56.53",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.53",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: la ficha del cliente (Historial Crediticio) se ve más clara y ordenada, en celular y en computadora. El encabezado con el nombre y los datos del cliente ahora tiene más aire y un anillo circular que muestra la puntualidad de pago de un vistazo. Los 9 recuadros de números (préstamos, montos, mora, etc.) pasaron de un iconito plano a una insignia circular de color, igual que ya se ve en Financiamiento. Ningún dato cambió — solo se ve más fácil de leer."
+    },
     {
       "v": "56.52",
       "fecha": "2026-08-20",
