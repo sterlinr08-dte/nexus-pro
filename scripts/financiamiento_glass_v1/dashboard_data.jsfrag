@@ -1,0 +1,46 @@
+    // GLASS V1 · ChatGPT · 2026-08-19 — SOLO composición visual del dashboard.
+    // Datos derivados de fuentes YA cargadas; no se persiste ni se cambia ninguna regla.
+    const esDashboardGlass = _prView === 'prestamos' && _prFiltro === 'todos';
+    const moraTotalGlass = _prestamos.reduce((s, p) => s + prMoraDe(p), 0);
+    // La guía mencionaba prCobranzaCalcularModelo().pagosHoy, pero la función real
+    // devuelve el arreglo de modelo. Reusamos exactamente la misma fuente real que
+    // prCobranzaMainHTML(): _pagosByPrestamo filtrado por la fecha de hoy.
+    const pagosHoyGlass = Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr
+      .filter(pg => String(pg.fecha || '').slice(0, 10) === hoy())
+      .reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
+    const proximosGlass = _prestamos
+      .filter(p => estadoDe(p) !== 'pagado' && saldoDe(p) > 0 && !!prProximoPago(p))
+      .slice()
+      .sort((a, b) => String(prProximoPago(a)).localeCompare(String(prProximoPago(b))))
+      .slice(0, 5);
+    const proximosGlassHTML = proximosGlass.length ? proximosGlass.map(p => {
+      const av = prIniciales(p.nombre), info = prEstadoInfo(p), prox = prProximoPago(p);
+      return `<button type="button" class="nxFP-glPayRow" onclick="window.nxPrestamoVer('${p.id}')">
+        <span class="nxFP-glPayAv" style="background:${av.color}">${esc(av.ini)}</span>
+        <span class="nxFP-glPayMid"><span class="nxFP-glPayTop"><b>${esc(p.nombre || 'Sin nombre')}</b><em>${esc(prRef(p))}</em></span><span class="nxFP-glPaySub"><i class="nxFP-glState ${info.key}">${esc(info.label)}</i> · ${esc(prox || '—')}</span></span>
+        <span class="nxFP-glPayAmt"><b>${fmt(saldoDe(p))}</b><small>saldo</small></span>
+        <i class="ti ti-chevron-right nxFP-glPayArrow"></i>
+      </button>`;
+    }).join('') : '<div class="nxFP-glEmpty">No hay pagos próximos pendientes.</div>';
+    const glassIntro = `<section class="nxFP-glIntro" aria-label="Resumen de financiamiento">
+      <div class="nxFP-glTitleRow"><div><div class="nxFP-glEyebrow">NEXUS PRO · FINANCIAMIENTO</div><h1>Financiamiento</h1><p>${clientesActivos} cliente${clientesActivos === 1 ? '' : 's'} activo${clientesActivos === 1 ? '' : 's'}</p></div><div class="nxFP-glBrand"><i class="ti ti-wallet"></i></div></div>
+    </section>`;
+    const glassBody = `<section class="nxFP-glBody">
+      <div class="nxFP-glSec">RESUMEN GENERAL</div>
+      <div class="nxFP-glKpis">
+        <div class="nxFP-glKpi"><span class="ico ac"><i class="ti ti-wallet"></i></span><small>Cartera activa</small><b>${fmt(totalSaldo)}</b><em>${nActivos} préstamo${nActivos === 1 ? '' : 's'} activo${nActivos === 1 ? '' : 's'}</em></div>
+        <div class="nxFP-glKpi"><span class="ico ok"><i class="ti ti-cash"></i></span><small>Cobros de hoy</small><b>${fmt(pagosHoyGlass)}</b><em>Pagos registrados hoy</em></div>
+        <div class="nxFP-glKpi"><span class="ico warn"><i class="ti ti-clock-exclamation"></i></span><small>Cuotas vencidas</small><b>${nVencidos}</b><em>Préstamos con atraso</em></div>
+        <div class="nxFP-glKpi"><span class="ico danger"><i class="ti ti-alert-triangle"></i></span><small>Mora</small><b>${fmt(moraTotalGlass)}</b><em>Recargo pendiente</em></div>
+      </div>
+      <button type="button" class="nxFP-glCTA" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i><span>Nuevo financiamiento</span></button>
+      <div class="nxFP-glSec">ACCESOS RÁPIDOS</div>
+      <div class="nxFP-glQuick">
+        <button type="button" class="nxFP-glQuickItem" onclick="window.nxPrestamoFiltroTipo('vencidos')"><span><i class="ti ti-cash"></i></span><b>Cobrar cuota</b></button>
+        <div class="nxFP-glQuickItem soon" aria-disabled="true"><span><i class="ti ti-file-certificate"></i></span><b>Contratos</b><em>Próximamente</em></div>
+        <div class="nxFP-glQuickItem soon" aria-disabled="true"><span><i class="ti ti-device-mobile"></i></span><b>MDM</b><em>Próximamente</em></div>
+        <button type="button" class="nxFP-glQuickItem" onclick="window.nxPrView('reportes')"><span><i class="ti ti-chart-bar"></i></span><b>Reportes</b></button>
+      </div>
+      <div class="nxFP-glListHead"><div class="nxFP-glSec">PRÓXIMOS PAGOS</div><button type="button" onclick="window.nxPrestamoFiltroTipo('vencidos')">Ver todos</button></div>
+      <div class="nxFP-glPayList">${proximosGlassHTML}</div>
+    </section>;
