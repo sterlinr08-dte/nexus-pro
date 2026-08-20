@@ -20393,6 +20393,15 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
         </div>
       </div>`;
     document.body.appendChild(ov);
+    // El "pop-in" (.overlay.open .modal, nxPopIn) termina en transform:none, pero el
+    // fill-mode "both" lo deja resuelto como matrix(1,0,0,1,0,0) — sigue sin ser
+    // "none" para el navegador, así que el modal queda actuando como contenedor de
+    // los menús position:fixed (⋮ y el de Guardar), que terminan saliendo pegados al
+    // formulario en vez de a su botón. Al terminar la animación se apaga del todo
+    // (style.animation='none'), no solo su transform, porque el "fill" pesa más que
+    // un transform inline y no alcanza con sobreescribirlo.
+    const modalEl = ov.querySelector('.modal');
+    if (modalEl) modalEl.addEventListener('animationend', () => { modalEl.style.animation = 'none'; }, { once: true });
     setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
     ['ppNom', 'ppNivEsp'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });

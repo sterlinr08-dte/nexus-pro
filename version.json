@@ -1,7 +1,12 @@
 {
-  "version": "56.56",
+  "version": "56.57",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.57",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Punto de Venta, al editar un artículo, el menú \"⋮\" (arriba a la derecha) y el menú de la flechita junto a \"Guardar artículo\" se abrían corridos de lugar, superpuestos con el panel de Resumen, en vez de justo debajo del botón. La causa era técnica: la animación de apertura del formulario dejaba un resto invisible que desubicaba esos menús. Ya se limpia solo al terminar de abrirse, así que ahora aparecen siempre pegados a su botón."
+    },
     {
       "v": "56.56",
       "fecha": "2026-08-20",
