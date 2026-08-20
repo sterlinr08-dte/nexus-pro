@@ -25656,12 +25656,20 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // global de Seguros se esconde mientras esta vista está activa (ver
       // injectCSS(), body:has(#v-prestamos.on) .nx-fab) para que no compita
       // por el mismo espacio de abajo.
-      '.nxFP-dock{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:22px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
+      // v56.47 — el dueño mandó la referencia real PROZAVLLY ("Glass Capsule Dock"): el ítem
+      // activo no es una píldora plana empotrada en la barra, es un círculo SÓLIDO de más
+      // tamaño que el propio botón, que se asoma por ENCIMA del borde del vidrio (como si el
+      // icono "flotara"). El contenedor pasó a forma de píldora completa (radio = mitad del
+      // alto) para calzar con el nombre "cápsula". El texto del ítem activo se esconde (el
+      // círculo ya lo distingue) y reaparece al pasar a otro ítem.
+      '.nxFP-dock{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
       '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;color:#8b85a8;cursor:pointer;position:relative;font-family:inherit;transition:color .15s ease}' +
-      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;transition:transform .2s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none}' +
+      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.4,.64,1),color .15s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;transition:opacity .18s ease,transform .18s ease}' +
       '.nxFP-dockBtn.on{color:#fff}' +
-      '.nxFP-dockBtn.on::before{content:"";position:absolute;inset:3px 5px;border-radius:13px;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 6px 14px -4px rgba(76,29,149,.55)}' +
-      '.nxFP-dockBadge{position:absolute;top:3px;right:20%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82)}' +
+      '.nxFP-dockBtn.on i{transform:translateY(-22px)}' +
+      '.nxFP-dockBtn.on span{opacity:0;transform:translateY(3px)}' +
+      '.nxFP-dockBtn.on::before{content:"";position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 10px 22px -5px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.72)}' +
+      '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
       '.nxFPShell.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
       '.nxFP-dockBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +
       '.nxFPShell.dock-open .nxFP-dockBackdrop{display:block}' +

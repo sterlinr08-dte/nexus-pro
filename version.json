@@ -1,7 +1,12 @@
 {
-  "version": "56.46",
+  "version": "56.47",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.47",
+      "fecha": "2026-08-19",
+      "texto": "ARREGLADO: el ítem activo del dock de Financiamiento (el de abajo, en el celular) ahora se ve como la referencia que mandaste — un círculo sólido de color que se asoma por ENCIMA de la barra de vidrio, no una pastilla plana metida adentro. El icono sube y \"flota\" dentro del círculo; el nombre de ese ítem se esconde mientras está activo (el círculo ya lo distingue) y vuelve a verse al pasar a otro. La barra también pasó a forma de píldora completa (antes tenía las esquinas menos redondeadas). Los otros 4 iconos y la hoja de \"Más\" no cambiaron."
+    },
     {
       "v": "56.46",
       "fecha": "2026-08-19",
