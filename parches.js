@@ -12498,20 +12498,6 @@
       return d >= 0 && d <= 7;
     }).length;
     const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
-    // Dock de Financiamiento (celular ≤900px, "Dock de 5 iconos" aprobado por el
-    // dueño): los 4 destinos más usados del día (Dashboard/Cobranza/Cuotas/
-    // Clientes) quedan fijos y a 1 toque; el 5to abre "Más" con el resto de la
-    // barra lateral, agrupado igual que antes. moreItem/moreView cierran la hoja
-    // SOLO cuando la acción no re-renderiza #nxFPShell por sí sola (ver
-    // window.nxFPToggleMore más abajo) — los que sí re-renderizan (todos los de
-    // abajo) la cierran gratis, sin nada extra, porque el nuevo HTML nunca trae
-    // la clase dock-open.
-    const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
-    const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
-    const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
-    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
-    const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
-    const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
     view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
       <div class="nxFP-sideOverlay" onclick="window.nxFPToggleSide()"></div>
       <aside class="nxFP-side">
@@ -12533,30 +12519,6 @@
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-dockBackdrop" onclick="window.nxFPToggleMore()"></div>
-      <div class="nxFP-dockSheet">
-        <div class="nxFP-popHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
-        <button type="button" class="nxFP-popNew" onclick="document.getElementById('nxFPShell').classList.remove('dock-open');window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
-        <div class="nxFP-popGrp">Cartera</div>
-        ${moreItem('activos', 'Activos', 'ti-circle-check')}
-        ${moreItem('pagados', 'Pagados', 'ti-checks')}
-        ${moreItem('credito', 'Líneas de crédito', 'ti-credit-card')}
-        <div class="nxFP-popGrp">Personas</div>
-        ${moreView('evaluacion', 'Evaluación', 'ti-clipboard-check')}
-        ${moreView('solicitudes', 'Solicitudes', 'ti-file-check', nSol)}
-        <div class="nxFP-popGrp">Sistema</div>
-        ${moreView('reportes', 'Reportes', 'ti-report-money')}
-        <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPShell').classList.remove('dock-open');window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
-        <div class="nxFP-popDiv"></div>
-        <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPShell').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
-      </div>
-      <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
-        ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
-        ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
-        ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
-        ${dockView('clientes', 'Clientes', 'ti-users-group')}
-        <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
-      </nav>
       <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
@@ -12588,6 +12550,7 @@
         </div>`}
       </div>
     </div>`;
+    renderFPDock();
     if (_prView === 'evaluacion') { try { evInit(); } catch (e) {} }
     // NPGS §5: pintar la lupa DESPUÉS de view.innerHTML — el <span> recién existe aquí.
     // Espeja el ternario de arriba: clientes → su lupa; Cobranza → la suya; el ELSE (lista
@@ -12974,10 +12937,62 @@
   // su .mobile-more-sheet-clean) pero autocontenido aquí — no toca el FAB
   // global (es de toda la app, sin noción de los ítems de este módulo). La
   // hoja de "Más" se cierra sola en la mayoría de sus ítems porque cada uno
-  // ya dispara renderLista() (rehace #nxFPShell entero, sin la clase
-  // dock-open); los 3 que NO re-renderizan (Nuevo préstamo/Configuración/
-  // Volver) la cierran a mano en su propio onclick, ver renderLista().
-  window.nxFPToggleMore = function () { const s = document.getElementById('nxFPShell'); if (s) s.classList.toggle('dock-open'); };
+  // ya dispara renderLista() → renderFPDock() (rehace el host entero, sin la
+  // clase dock-open); los 3 que NO re-renderizan (Nuevo préstamo/
+  // Configuración/Volver) la cierran a mano en su propio onclick, ver abajo.
+  //
+  // BUG REAL reportado por el dueño ("no se queda fija en la parte inferior",
+  // 20-ago-2026): el dock vivía DENTRO de #nxFPShell, que a su vez cuelga de
+  // .content{overflow-y:auto} — un position:fixed anidado en un contenedor
+  // CON SCROLL PROPIO (no <body>) es un quirk conocido de iOS Safari donde el
+  // elemento fijo se desplaza CON el contenedor en vez de quedar anclado al
+  // viewport real. Mismo problema de fondo (aunque otra trampa puntual —
+  // container-type) que ya se resolvió una vez en este archivo para el POS
+  // (ver nxStickyBarSet, `.nxFacBar` — cuelga de document.body a propósito,
+  // fuera de cualquier contenedor con scroll). Se replica la misma técnica
+  // aquí: el dock/backdrop/hoja YA NO se arman dentro de view.innerHTML —
+  // renderFPDock() los cuelga de un host propio, HIJO DIRECTO DE <body>,
+  // fuera del árbol con scroll. Que solo se vea con Financiamiento activo lo
+  // garantiza el CSS con :has() (ver nxFPEnsureCSS,
+  // `body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none}`) — no hace
+  // falta cazar en JS cada camino posible de "salir de Financiamiento" para
+  // desmontar el host a mano.
+  function renderFPDock() {
+    let host = document.getElementById('nxFPDockHost');
+    if (!host) { host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host); }
+    const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
+    const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
+    const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
+    host.innerHTML = `<div class="nxFP-dockBackdrop" onclick="window.nxFPToggleMore()"></div>
+      <div class="nxFP-dockSheet">
+        <div class="nxFP-popHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
+        <button type="button" class="nxFP-popNew" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+        <div class="nxFP-popGrp">Cartera</div>
+        ${moreItem('activos', 'Activos', 'ti-circle-check')}
+        ${moreItem('pagados', 'Pagados', 'ti-checks')}
+        ${moreItem('credito', 'Líneas de crédito', 'ti-credit-card')}
+        <div class="nxFP-popGrp">Personas</div>
+        ${moreView('evaluacion', 'Evaluación', 'ti-clipboard-check')}
+        ${moreView('solicitudes', 'Solicitudes', 'ti-file-check', nSol)}
+        <div class="nxFP-popGrp">Sistema</div>
+        ${moreView('reportes', 'Reportes', 'ti-report-money')}
+        <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
+        <div class="nxFP-popDiv"></div>
+        <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
+      </div>
+      <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
+        ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
+        ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
+        ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
+        ${dockView('clientes', 'Clientes', 'ti-users-group')}
+        <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
+      </nav>`;
+    host.classList.remove('dock-open');
+  }
+  window.nxFPToggleMore = function () { const s = document.getElementById('nxFPDockHost'); if (s) s.classList.toggle('dock-open'); };
 
   function ensureView() {
     let v = document.getElementById('v-prestamos');
@@ -25662,6 +25677,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // icono "flotara"). El contenedor pasó a forma de píldora completa (radio = mitad del
       // alto) para calzar con el nombre "cápsula". El texto del ítem activo se esconde (el
       // círculo ya lo distingue) y reaparece al pasar a otro ítem.
+      // v56.48 — "no se queda fija en la parte inferior": el dock/backdrop/hoja ya NO viven
+      // dentro de #nxFPShell (nieto de .content{overflow-y:auto}) — renderFPDock() los cuelga
+      // de #nxFPDockHost, hijo directo de <body>, mismo patrón que nxStickyBarSet del POS. Las
+      // 3 clases .dock-open (antes en .nxFPShell) ahora van en #nxFPDockHost.
       '.nxFP-dock{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
       '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;color:#8b85a8;cursor:pointer;position:relative;font-family:inherit;transition:color .15s ease}' +
       '.nxFP-dockBtn i{font-size:18px;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.4,.64,1),color .15s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;transition:opacity .18s ease,transform .18s ease}' +
@@ -25670,11 +25689,11 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-dockBtn.on span{opacity:0;transform:translateY(3px)}' +
       '.nxFP-dockBtn.on::before{content:"";position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 10px 22px -5px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.72)}' +
       '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
-      '.nxFPShell.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
+      '#nxFPDockHost.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
       '.nxFP-dockBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +
-      '.nxFPShell.dock-open .nxFP-dockBackdrop{display:block}' +
+      '#nxFPDockHost.dock-open .nxFP-dockBackdrop{display:block}' +
       '.nxFP-dockSheet{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:2651;background:rgba(255,255,255,.94);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.6);border-radius:24px;padding:10px;box-shadow:0 24px 40px -12px rgba(30,27,51,.3);max-height:0;opacity:0;overflow:hidden;pointer-events:none;transition:max-height .28s cubic-bezier(.34,1.3,.64,1),opacity .2s ease}' +
-      '.nxFPShell.dock-open .nxFP-dockSheet{max-height:72vh;opacity:1;pointer-events:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}' +
+      '#nxFPDockHost.dock-open .nxFP-dockSheet{max-height:72vh;opacity:1;pointer-events:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}' +
       '.nxFP-popHead{display:flex;align-items:center;gap:10px;padding:6px 8px 12px}' +
       '.nxFP-popHead .nxFP-sideLogo{width:32px;height:32px;font-size:16px;background:#ede9fe;color:#6d28d9}' +
       '.nxFP-popHead b{display:block;font-size:13px;font-weight:800;color:#0f172a}.nxFP-popHead span{font-size:10px;color:#94a3b8;font-weight:600}' +
@@ -25689,7 +25708,13 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-popBack:active{background:#f5f3ff}' +
       '@media(max-width:900px){.nxFP-dock{display:grid}}' +
       'body:has(.overlay.open) .nxFP-dock,body:has(.overlay.open) .nxFP-dockBackdrop,body:has(.overlay.open) .nxFP-dockSheet{display:none!important}' +
-      '@media(prefers-reduced-motion:reduce){.nxFPShell *{transition:none!important}}';
+      // #nxFPDockHost cuelga de <body> y sobrevive a cualquier re-render de #nxFPShell — sin
+      // esta regla se vería flotando encima de CUALQUIER otra pantalla en cuanto el usuario
+      // saliera de Financiamiento (Dashboard, POS, Rifas...). Mismo criterio de :has() ya usado
+      // para esconder el FAB global mientras Financiamiento SÍ está activo (ver injectCSS()),
+      // solo que a la inversa: aquí se esconde el dock salvo que #v-prestamos.on exista.
+      'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
+      '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
     document.head.appendChild(st);
   };
   window.nxFinFiltro = function (key) {

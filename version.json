@@ -1,7 +1,12 @@
 {
-  "version": "56.47",
+  "version": "56.48",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.48",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Financiamiento, la barra de 5 iconos de abajo (el dock, en el celular) ya no se movía junto con la pantalla al hacer scroll — se quedaba \"pegada\" al contenido en vez de fija en la parte de abajo, como debía. La causa: vivía metida dentro del panel que hace scroll, y en el iPhone eso hace que un elemento \"fijo\" deje de comportarse como fijo. Se sacó de ahí y ahora cuelga directo de la pantalla completa, igual que ya se había resuelto antes para la barra de Cobrar del POS — así se queda anclada abajo de verdad, sin importar cuánto se desplace la pantalla."
+    },
     {
       "v": "56.47",
       "fecha": "2026-08-19",
