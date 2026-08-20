@@ -1,0 +1,36 @@
+  function renderFPDock() {
+    let host = document.getElementById('nxFPDockHost');
+    if (!host) { host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host); }
+    const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
+    const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'cuotas', 'pagados', 'credito'].includes(_prFiltro));
+    const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
+    host.innerHTML = `<div class="nxFP-dockBackdrop" onclick="window.nxFPToggleMore()"></div>
+      <div class="nxFP-dockSheet">
+        <div class="nxFP-popHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
+        <div class="nxFP-popGrp">Cartera</div>
+        ${moreItem('activos', 'Activos', 'ti-circle-check')}
+        ${moreItem('cuotas', 'Cuotas', 'ti-calendar-dollar')}
+        ${moreItem('pagados', 'Pagados', 'ti-checks')}
+        ${moreItem('credito', 'Líneas de crédito', 'ti-credit-card')}
+        <div class="nxFP-popGrp">Personas</div>
+        ${moreView('evaluacion', 'Evaluación', 'ti-clipboard-check')}
+        ${moreView('solicitudes', 'Solicitudes', 'ti-file-check', nSol)}
+        <div class="nxFP-popGrp">Sistema</div>
+        ${moreView('reportes', 'Reportes', 'ti-report-money')}
+        <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+        <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
+        <div class="nxFP-popDiv"></div>
+        <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
+      </div>
+      <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
+        ${dockBtn('todos', 'Inicio', 'ti-home')}
+        ${dockView('clientes', 'Clientes', 'ti-users-group')}
+        <button type="button" class="nxFP-dockBtn nxFP-dockCenter" onclick="window.nxPrestamoNuevo()" aria-label="Nuevo financiamiento"><i class="ti ti-plus"></i><span>Financiar</span></button>
+        ${dockBtn('vencidos', 'Cobros', 'ti-cash')}
+        <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
+      </nav>`;
+    host.classList.remove('dock-open');
+  }
