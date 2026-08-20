@@ -109,12 +109,13 @@ def main() -> None:
 
     # 4) CSS al final de nxFPEnsureCSS para ganar por cascada sin reescribir el
     # motor compartido con Cuotas POS. El CSS nuevo está escopeado a .nxFPShell,
-    # .hcModal y #nxFPDockHost; no toca .nxFP-pos.
+    # .hcModal y #nxFPDockHost; no toca .nxFP-pos. El guard desktop preserva la
+    # composición existente porque el prototipo de Dashboard aprobado es móvil.
     css_fn = text.index("  window.nxFPEnsureCSS = function () {")
     css_append = text.index("    document.head.appendChild(st);", css_fn)
-    css = read_asset("glass_v1.css")
+    css = read_asset("glass_v1.css") + "\n" + read_asset("glass_v1_desktop_guard.css")
     if "`" in css:
-        die("glass_v1.css contiene backticks y no puede incrustarse de forma segura")
+        die("los assets CSS contienen backticks y no pueden incrustarse de forma segura")
     css_js = (
         "    // GLASS V1 · ChatGPT · 2026-08-19 — apéndice visual aprobado.\n"
         "    st.textContent += `\n" + css + "\n    `;\n"
