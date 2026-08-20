@@ -13465,14 +13465,14 @@
         </div>
       </div>
       <div class="ev-tabs">
-        <button type="button" class="ev-tab on" onclick="window.evTab(this,'evSecGeneral')"><span class="ev-tn">1</span> Información general</button>
-        <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecAnalisis')"><i class="ti ti-chart-bar"></i> Análisis financiero</button>
-        <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecSimul')"><i class="ti ti-calculator"></i> Simulador</button>
+        <button type="button" class="ev-tab on" onclick="window.evTab(this,'evColGeneral')"><span class="ev-tn">1</span> Información general</button>
+        <button type="button" class="ev-tab" onclick="window.evTab(this,'evColAnalisis')"><i class="ti ti-chart-bar"></i> Análisis financiero</button>
+        <button type="button" class="ev-tab" onclick="window.evTab(this,'evColSimulador')"><i class="ti ti-calculator"></i> Simulador</button>
         <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecRecom')"><i class="ti ti-clipboard-check"></i> Recomendación</button>
       </div>
       <div class="ev-grid nxPrForm">
         <div class="ev-cols">
-          <div class="ev-col">
+          <div class="ev-col on" id="evColGeneral">
             <div class="ev-card" id="evSecGeneral">
               <div class="ev-sechd">Información económica</div>
               <div class="fr-row">
@@ -13504,7 +13504,7 @@
               <div style="text-align:right;font-size:10px;color:#94a3b8;margin-top:2px"><span id="evNotasCnt">0</span> / 500</div>
             </div>
           </div>
-          <div class="ev-col">
+          <div class="ev-col" id="evColAnalisis">
             <div class="ev-card" id="evSecAnalisis">
               <div class="ev-sechd">Análisis financiero</div>
               <div id="evAnalisis"></div>
@@ -13514,7 +13514,7 @@
               <div id="evScoreBox"></div>
             </div>
           </div>
-          <div class="ev-col">
+          <div class="ev-col" id="evColSimulador">
             <div class="ev-card" id="evSecSimul">
               <div class="ev-sechd">Simulador de préstamo</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -13567,7 +13567,12 @@
   }
   window.evTab = function (btn, id) {
     try { document.querySelectorAll('.ev-tab').forEach(b => b.classList.remove('on')); if (btn) btn.classList.add('on'); } catch (e) {}
-    const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById(id); if (!el) return;
+    if (el.classList && el.classList.contains('ev-col')) {
+      try { document.querySelectorAll('.ev-cols > .ev-col').forEach(c => c.classList.remove('on')); } catch (e) {}
+      el.classList.add('on');
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   window.evVerPerfil = function () { if (_evCli) abrirClienteForm(_evCli, null); };
   function evInit() {
@@ -25400,7 +25405,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.ev-tab{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12.5px;font-weight:700;padding:9px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}' +
       '.ev-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}.ev-tab i{font-size:15px}.ev-tn{width:18px;height:18px;border-radius:6px;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}' +
       '.ev-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}' +
-      '.ev-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;min-width:0}.ev-col{display:flex;flex-direction:column;gap:14px;min-width:0}' +
+      '.ev-cols{display:block;min-width:0}.ev-col{display:none;flex-direction:column;gap:14px;min-width:0}.ev-col.on{display:flex}' +
       '.ev-aside{min-width:0}.ev-card{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05)}' +
       '.ev-sticky{position:sticky;top:12px}' +
       '.ev-sechd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}' +
@@ -25428,7 +25433,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.ev-asesor{border-top:1px solid #f1f5f9;padding-top:10px;margin-top:4px}.ev-aslbl{font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase}.ev-asnom{font-size:12.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;margin:3px 0}.ev-asnom i{color:#4f46e5}.ev-asfch{font-size:10.5px;color:#94a3b8}' +
       '.ev-aprobar{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}.ev-aprobar:disabled{opacity:.45;cursor:not-allowed}' +
       '.ev-cancel{width:100%;margin-top:8px;background:transparent;border:0;color:#dc2626;font-size:12px;font-weight:700;padding:8px;cursor:pointer;font-family:inherit}' +
-      '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}.ev-cols{grid-template-columns:1fr}}' +
+      '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}}' +
       // ── Historial crediticio (mockup rico, 2 columnas) ──
       '.hcModal .hc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 12px;border-bottom:1px solid #eef}.hc-title{font-size:20px;font-weight:800;color:#0f172a}.hc-sub{font-size:12px;color:#94a3b8;margin-top:2px}' +
       '.hc-cli{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.05);flex-wrap:wrap}' +
