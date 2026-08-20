@@ -1,7 +1,12 @@
 {
-  "version": "56.54",
+  "version": "56.55",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.55",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: el botón \"Guardar\" de los formularios de Cliente y de Préstamo (Financiamiento) ya no se estira ocupando casi todo el ancho de la pantalla — ahora es un botón normal, del mismo tamaño que \"Cancelar\", alineado a la derecha."
+    },
     {
       "v": "56.54",
       "fecha": "2026-08-20",

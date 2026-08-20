@@ -12861,7 +12861,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:0 0 auto;margin-left:auto;min-width:120px" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
@@ -13304,7 +13304,7 @@
           </div>
          </div>
         </div>
-        <div class="nxPrFormFoot"><div class="nxPrFormInner" style="display:flex;gap:8px"><button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrModal').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
+        <div class="nxPrFormFoot"><div class="nxPrFormInner" style="display:flex;gap:8px"><button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrModal').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:0 0 auto;margin-left:auto;min-width:120px" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
       </div>`;
     document.body.appendChild(ov);
     pintarModo();
