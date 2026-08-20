@@ -25240,7 +25240,17 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-hAsi{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFP-hAsi.warn{background:rgba(252,165,165,.28);color:#fecaca}' +
       '.nxFP-hAsl{font-size:10px;font-weight:700;opacity:.82;text-transform:uppercase;letter-spacing:.3px}' +
       '.nxFP-hAsv{font-size:16.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}' +
-      '@media(max-width:640px){.nxFP-hA{padding:22px 20px}.nxFP-hAbig{font-size:36px}.nxFP-hAR{grid-template-columns:1fr 1fr;width:100%}}' +
+      // Móvil: las 4 estadísticas (Prestado/Cobrado/Vencido/Clientes) pasan de
+      // filas translúcidas metidas en el morado a tarjetas blancas sueltas con
+      // ícono circular de color — mismo dato y mismo lugar, solo el vestido
+      // (pedido del dueño sobre una referencia visual, financiamiento en celular).
+      '@media(max-width:640px){.nxFP-hA{padding:22px 20px}.nxFP-hAbig{font-size:36px}.nxFP-hAR{grid-template-columns:1fr 1fr;gap:10px;width:100%}' +
+      '.nxFP-hAst{background:rgba(255,255,255,.97);border-radius:16px;padding:10px 11px;box-shadow:0 10px 22px -10px rgba(20,20,50,.4)}' +
+      '.nxFP-hAsi{border-radius:50%;background:linear-gradient(140deg,#60a5fa,#2563eb);color:#fff}' +
+      '.nxFP-hAR .nxFP-hAst:nth-child(2) .nxFP-hAsi{background:linear-gradient(140deg,#2dd4bf,#0d9488)}' +
+      '.nxFP-hAsi.warn{background:linear-gradient(140deg,#fb923c,#ea580c)!important;color:#fff}' +
+      '.nxFP-hAR .nxFP-hAst:nth-child(4) .nxFP-hAsi{background:linear-gradient(140deg,#a78bfa,#7c3aed)}' +
+      '.nxFP-hAst .nxFP-hAsl{color:#94a3b8;opacity:1}.nxFP-hAst .nxFP-hAsv{color:#1e1b4b}}' +
       '.nxFP-tblWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #eef0f5;border-radius:16px;background:#fff}' +
       '.nxFP-tbl{width:100%;border-collapse:collapse;font-size:12px}' +
       '.nxFP-tbl thead th{text-align:left;font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;border-bottom:1px solid #eef0f5;white-space:nowrap;background:#faf9ff}' +

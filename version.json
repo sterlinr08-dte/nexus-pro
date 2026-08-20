@@ -1,7 +1,12 @@
 {
-  "version": "56.51",
+  "version": "56.52",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.52",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Financiamiento, visto desde el celular, las 4 estadísticas del encabezado (Prestado / Cobrado / Vencido / Clientes) ya no son filas translúcidas metidas dentro del morado — ahora son tarjetas blancas sueltas con un ícono circular de color distinto cada una (azul, verde, naranja, morado), más fácil de leer de un vistazo. Mismo dato, mismo lugar, solo el vestido."
+    },
     {
       "v": "56.51",
       "fecha": "2026-08-20",
