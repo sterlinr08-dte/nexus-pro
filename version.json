@@ -1,7 +1,12 @@
 {
-  "version": "56.57",
+  "version": "56.58",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.58",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Punto de Venta, al crear un artículo nuevo, el campo \"Código / código de barras\" mostraba un texto de ejemplo que decía \"Mismo código con el que se creó\" — no tenía sentido para algo que todavía no existe. Ahora muestra un ejemplo claro y aclara que es opcional."
+    },
     {
       "v": "56.57",
       "fecha": "2026-08-20",
