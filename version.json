@@ -1,7 +1,12 @@
 {
-  "version": "56.48",
+  "version": "56.49",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.49",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Financiamiento, algunos botones de navegación se quedaban \"pegados\" sin hacer nada. Ejemplo real: si entrabas a Clientes y de ahí tocabas Inicio (o Cobros, o cualquier filtro de la barra de abajo/lateral/\"Más\"), la pantalla no cambiaba — parecía que el botón no respondía. Pasaba porque esos botones solo cambiaban el filtro interno, pero no le avisaban al sistema que había que volver a la lista de préstamos. Encontrado navegando la app en vivo con la nueva herramienta de investigación visual; ahora sí vuelve a la pantalla correcta siempre."
+    },
     {
       "v": "56.48",
       "fecha": "2026-08-20",
