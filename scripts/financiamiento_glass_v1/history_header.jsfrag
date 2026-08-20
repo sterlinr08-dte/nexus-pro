@@ -1,0 +1,14 @@
+    // ── Header cliente · Glass V1 ──
+    const dato = (ico, lbl, v) => `<div class="hc-cd"><div class="hc-cdl"><i class="ti ${ico}"></i> ${lbl}</div><div class="hc-cdv">${esc(v || '—')}</div></div>`;
+    const clihead = `<div class="hc-cli hc-glProfile">
+      <div class="hc-clav">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+      <div class="hc-glProfileMid"><div class="hc-glNameRow"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span><span class="hc-glScoreChip"><i class="ti ti-star"></i>${sc.s == null ? '—' : sc.mil + '/1000'} · ${esc(sc.clas)}</span></div>
+        <div class="hc-cgrid">${dato('ti-id', 'Cédula', c.cedula)}${dato('ti-phone', 'Teléfono', c.telefono)}${dato('ti-mail', 'Correo', c.email)}${dato('ti-calendar', 'Cliente desde', c.created_at ? String(c.created_at).slice(0, 10) : '—')}${dato('ti-clock', 'Última actividad', prUltActividad(loans))}</div>
+      </div>
+      <div class="hc-glGaugeWrap"><div class="ev-gauge hc-glGauge" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">/1000</div></div></div><span>${esc(sc.clas)}</span></div>
+    </div>`;
+    const hcHero = `<div class="hc-glHero">
+      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Monto financiado</span><i class="ti ti-cash-banknote"></i></div><b>${fmt(financiado)}</b><em>Pagado: ${fmt(pagado)}</em></div>
+      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Puntualidad de pago</span><i class="ti ti-thumb-up"></i></div><b>${puntualidad}%</b><div class="hc-glProgress"><i style="width:${Math.max(0, Math.min(100, puntualidad))}%"></i></div><em>Promedio atraso: ${promAtraso} ${promAtraso === 1 ? 'día' : 'días'}</em></div>
+      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Balance pendiente</span><i class="ti ti-wallet"></i></div><b>${fmt(balance)}</b><em>Mora acumulada: ${fmt(moraAcum)}</em></div>
+    </div>`;
