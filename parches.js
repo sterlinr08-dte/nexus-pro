@@ -12861,7 +12861,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
@@ -13891,7 +13891,13 @@
         <td data-l="Balance" style="text-align:right;color:${saldoDe(p) > 0 ? '#d97706' : '#059669'}">${fmt(saldoDe(p))}</td>
         <td data-l="Estado"><span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span></td>
         <td data-l="Días atraso" style="text-align:center">${dias > 0 ? '<span class="hc-diasb">' + dias + '</span>' : '0'}</td>
-        <td data-l="Acciones" style="text-align:center"><button type="button" class="hc-eye" title="Ver" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" aria-label="Ver"><i class="ti ti-eye"></i></button></td></tr>`;
+        <td data-l="Acciones" style="text-align:center"><div class="nxFP-tAcc" style="justify-content:center">
+          <button type="button" title="Ver / cobrar" aria-label="Ver / cobrar" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button>
+          <button type="button" title="Contrato" aria-label="Contrato" onclick="window.nxPrestamoContrato('${p.id}')"><i class="ti ti-file-certificate"></i></button>
+          <button type="button" title="Documentos${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}" aria-label="Documentos" onclick="window.nxPrestamoDocs('${p.id}')"><i class="ti ti-folder"></i></button>
+          ${_prSolicitudes.some(s => String(s.prestamo_id) === String(p.id)) ? `<button type="button" title="Expediente firmado" aria-label="Expediente firmado" onclick="window.nxPrestamoExpediente('${p.id}')"><i class="ti ti-file-check"></i></button>` : ''}
+          <button type="button" title="Borrar préstamo" aria-label="Borrar préstamo" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoBorrar('${p.id}')"><i class="ti ti-minus" style="color:#dc2626"></i></button>
+        </div></td></tr>`;
     }).join('');
     const loanTable = (lista) => `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th># Préstamo</th><th>Fecha</th><th style="text-align:right">Monto</th><th style="text-align:right">Tasa</th><th>Plazo</th><th style="text-align:right">Cuota</th><th style="text-align:right">Total pagado</th><th style="text-align:right">Balance</th><th>Estado</th><th style="text-align:center">Días</th><th></th></tr></thead><tbody>${lista.length ? loanRows(lista) : '<tr><td colspan="11" class="hc-empty">Sin préstamos.</td></tr>'}</tbody></table></div>`;
     // ── Contenido por pestaña ──
@@ -14027,6 +14033,10 @@
   };
 
   // ── Detalle + pagos ──
+  // Pantalla de cobro: solo lo que hace falta para cobrar (WhatsApp, Estado de
+  // cuenta, Imprimir, Editar). Contrato/Documentos/Expediente/Borrar viven en la
+  // ficha del cliente (hcRender → loanRows, pestaña Préstamos) — pedido del dueño
+  // para no mezclar tareas de cobranza diaria con gestión del expediente.
   window.nxPrestamoVer = function (id) {
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     cerrarModal('nxPrModal');
@@ -14118,7 +14128,8 @@
     const cliCard = `<div class="prCard">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <div style="width:44px;height:44px;border-radius:12px;background:${prIniciales(p.nombre).color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex:0 0 auto">${esc(prIniciales(p.nombre).ini)}</div>
-        <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e1b4b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || '')}</div><div style="font-size:10.5px;font-weight:800;color:${est === 'pagado' ? '#16a34a' : (est === 'vencido' ? '#dc2626' : '#16a34a')}">${est === 'pagado' ? '● Saldado' : (esVencido(p) ? '● En mora' : '● Al día')}</div></div>
+        <div style="min-width:0;flex:1"><div style="font-size:14px;font-weight:800;color:#1e1b4b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || '')}</div><div style="font-size:10.5px;font-weight:800;color:${est === 'pagado' ? '#16a34a' : (est === 'vencido' ? '#dc2626' : '#16a34a')}">${est === 'pagado' ? '● Saldado' : (esVencido(p) ? '● En mora' : '● Al día')}</div></div>
+        ${p.cliente_id ? `<button class="btn bsm bghost" type="button" style="flex:none" onclick="document.getElementById('nxPrModal').remove();window.nxPrHistCredito('${p.cliente_id}')" title="Ver ficha del cliente (contrato, documentos, historial)"><i class="ti ti-id-badge-2" style="color:#6d28d9"></i> Ficha</button>` : ''}
       </div>
       <div style="font-size:11.5px;color:#475569;display:flex;flex-direction:column;gap:4px">
         ${p.telefono ? `<div><i class="ti ti-phone" style="color:#94a3b8;width:16px;display:inline-block"></i> ${esc(p.telefono)}</div>` : ''}
@@ -14172,13 +14183,9 @@
           <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
           <div class="nxPrActs">
             ${waNumero(p.telefono) ? `<button class="nxPrAcc wa" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
-            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoAmortizacion('${id}')"><i class="ti ti-printer"></i> Imprimir</button>
-            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
-            ${_prSolicitudes.some(s => String(s.prestamo_id) === String(id)) ? `<button class="nxPrAcc" type="button" onclick="window.nxPrestamoExpediente('${id}')"><i class="ti ti-file-check"></i> Expediente firmado</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-minus"></i> Borrar</button>
           </div>
         </div>
       </div>`;

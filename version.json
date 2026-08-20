@@ -1,7 +1,12 @@
 {
-  "version": "56.53",
+  "version": "56.54",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.54",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en la pantalla donde se cobra una cuota, ya no aparecen mezclados los botones de Contrato, Documentos/foto y Borrar préstamo — esos quedan ahora en la ficha del cliente (pestaña Préstamos del Historial Crediticio), como acciones al lado de cada préstamo. La pantalla de cobro queda enfocada solo en cobrar (WhatsApp, Estado de cuenta, Imprimir, Editar), y desde ahí se agregó un botón \"Ficha\" para ir directo al cliente si hace falta lo demás. De paso, el botón \"Guardar y usar cliente\" del formulario de cliente ahora dice simplemente \"Guardar\" (era un texto muy largo para el botón)."
+    },
     {
       "v": "56.53",
       "fecha": "2026-08-20",
