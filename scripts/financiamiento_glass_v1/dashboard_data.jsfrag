@@ -43,4 +43,4 @@
       </div>
       <div class="nxFP-glListHead"><div class="nxFP-glSec">PRÓXIMOS PAGOS</div><button type="button" onclick="window.nxPrestamoFiltroTipo('vencidos')">Ver todos</button></div>
       <div class="nxFP-glPayList">${proximosGlassHTML}</div>
-    </section>;
+    </section>`;
