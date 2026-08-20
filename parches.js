@@ -20262,7 +20262,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
 
               <div class="card" style="margin-bottom:12px">
                 <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
-                <div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <!-- El lápiz de cada fila (tabla de abajo) ya elige el nivel a editar — este
+                     <select> se deja oculto solo como estado interno (varios sitios del código
+                     leen/escriben su .value e .innerHTML), para no duplicar la selección. -->
+                <div class="fld" style="display:none"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                 <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + prodId + "',{q:this.value})" })}</div>
                 <div style="overflow-x:auto"><table class="tbl">
                   <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>🔒 Mínimo</th><th>Margen</th><th></th></tr></thead>

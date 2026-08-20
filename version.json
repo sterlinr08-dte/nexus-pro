@@ -1,7 +1,12 @@
 {
-  "version": "56.55",
+  "version": "56.56",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.56",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Punto de Venta, al editar un artículo, la pestaña \"Precios y Niveles\" tenía dos formas de elegir el mismo nivel de precio (un menú desplegable arriba y un lápiz por fila en la tabla) que hacían exactamente lo mismo — confuso, no se sabía cuál usar. Se quitó el menú desplegable; ahora solo se elige con el lápiz de la tabla, que además ya muestra los precios de cada nivel de un vistazo."
+    },
     {
       "v": "56.55",
       "fecha": "2026-08-20",
