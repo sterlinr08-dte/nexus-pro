@@ -14897,7 +14897,14 @@
   };
 
   // ── Filtro por estado/tipo ──
-  window.nxPrestamoFiltroTipo = function (k) { _prFiltro = k; _prPage = 1; _prQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
+  // BUG REAL (encontrado en vivo con agent-browser, barriendo el dock de derecha a
+  // izquierda): esta función solo tocaba _prFiltro, nunca _prView — así que desde
+  // Clientes/Evaluación/Solicitudes/Reportes, tocar Inicio/Cobros/Activos/Cuotas/
+  // Pagados/Crédito (dock, sidebar o la hoja "Más") no hacía NADA en silencio, porque
+  // renderLista() decide qué pintar por _prView antes que por _prFiltro. Se fuerza
+  // _prView='prestamos' aquí — es el único caso de uso real de esta función en las 7
+  // llamadas que existen (dock/sidebar/"Más"/accesos rápidos del dashboard).
+  window.nxPrestamoFiltroTipo = function (k) { _prView = 'prestamos'; _prFiltro = k; _prPage = 1; _prQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
 
   // ── Menú "..." de la tarjeta premium ──
   window.nxPrMenu = function (ev, id) {
