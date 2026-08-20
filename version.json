@@ -1,7 +1,12 @@
 {
-  "version": "56.49",
+  "version": "56.50",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.50",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: la pantalla de Nueva Evaluación Financiera (Financiamiento) ya no muestra Información, Análisis y Simulador apretados en 3 columnas angostas con texto cortado. Ahora las pestañas de arriba (Información general / Análisis financiero / Simulador / Recomendación) funcionan de verdad: cada una muestra su panel a todo el ancho, una a la vez, más fácil de leer y de llenar."
+    },
     {
       "v": "56.49",
       "fecha": "2026-08-20",
