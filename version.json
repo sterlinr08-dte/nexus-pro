@@ -1,7 +1,12 @@
 {
-  "version": "56.45",
+  "version": "56.46",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.46",
+      "fecha": "2026-08-19",
+      "texto": "ARREGLADO: al ver en vivo el botón flotante de Financiamiento en el celular (v56.45), quedó reemplazado por lo que pediste — un dock fijo de 5 accesos abajo, siempre visible, sin tener que abrir nada primero. Los 4 destinos que más se usan en el día (Dashboard, Cobranza, Cuotas, Clientes) están a un solo toque; el 5to (“Más”) abre una hoja de vidrio con el resto (Activos, Pagados, Líneas de crédito, Evaluación, Solicitudes, Reportes, Configuración), con el mismo efecto de vidrio esmerilado y apertura suave de la referencia. El escritorio sigue igual, con su barra lateral fija de siempre."
+    },
     {
       "v": "56.45",
       "fecha": "2026-08-19",
