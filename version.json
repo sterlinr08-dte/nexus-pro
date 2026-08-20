@@ -1,7 +1,12 @@
 {
-  "version": "56.58",
+  "version": "56.59",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.59",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO (de raíz, en todo el sistema): la causa técnica del bug de los menús corridos de lugar que se arregló hoy mismo en Punto de Venta (v56.57) en realidad afectaba a TODAS las ventanas emergentes del sistema, no solo esa — se corrigió una sola vez para todas, así que no debería volver a pasar en ninguna pantalla nueva más adelante. Confirmado en Prefactura, que ya tenía el mismo problema latente sin causar fallas visibles todavía."
+    },
     {
       "v": "56.58",
       "fecha": "2026-08-20",

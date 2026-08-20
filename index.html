@@ -2986,6 +2986,16 @@ let _idleT;
 function resetIdle(){clearTimeout(_idleT);_idleT=setTimeout(()=>{if(sesion){try{logAudit('SESION_EXPIRADA','Sesión cerrada por 30 min de inactividad','Seguridad');}catch(e){}toast('warn','Sesión expirada','Inactividad de 30 minutos');setTimeout(()=>logout(true),3000);}},30*60*1000);}
 document.addEventListener('click',resetIdle);document.addEventListener('keydown',resetIdle);
 
+// ── Limpieza global del "pop-in" de modales (.overlay.open .modal, nxPopIn) ──
+// La animación termina en transform:none, pero con fill-mode "both" el navegador
+// la deja resuelta como matrix(1,0,0,1,0,0) — NO es "none" a efectos de CSS, así
+// que el modal queda actuando como contenedor de cualquier popup position:fixed
+// que viva adentro (aparecen corridos de lugar en vez de pegados a su botón).
+// Encontrado y arreglado primero solo en el formulario de artículo (v56.57); esto
+// lo apaga para CUALQUIER modal del sistema apenas termina de abrirse, para que
+// no vuelva a pasar en otra pantalla más adelante.
+document.addEventListener('animationend',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('modal'))e.target.style.animation='none';});
+
 // ── API REST directa ─────────────────────────────────────────────────────────
 const API = {
   url:'', key:'',
@@ -4519,7 +4529,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.58';
+const APP_VERSION='56.59';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
