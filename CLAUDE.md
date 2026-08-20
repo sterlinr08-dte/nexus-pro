@@ -12218,3 +12218,73 @@ funcionan sin eso. **Antes de apuntarlas a NEXUS PRO** (producción real, datos 
 criterio de `docs/METODOLOGIA-PRUEBAS-DESTRUCTIVAS.md` — preferir un objetivo que no sea producción
 cuando la prueba no lo exija, y confirmar con el dueño antes de lanzar un pentest real contra la app
 en vivo.
+
+### `agent-browser` — herramienta ESTÁNDAR para investigar/auditar visualmente (decretado por el
+### dueño, 20-ago-2026) — usarla SIEMPRE que haga falta entrar a mirar el sistema, no solo cuando se pida
+El dueño pidió explícito: *"Siempre utilizas para el agent-browser para que investigues todo lo que
+necesitamos."* Es una instrucción permanente, no puntual — de ahora en adelante, cualquier sesión que
+necesite ver/probar visualmente el sistema (bugs, mejoras de interfaz, verificar un cambio, "entrar y
+mirar") usa **`agent-browser`** como primera herramienta, no solo el método a mano de Playwright que ya
+se usaba (extraer código real + harness Node) — los dos conviven, `agent-browser` es mejor para
+explorar/navegar de verdad como lo haría una persona (snapshot de accesibilidad con refs `@eN`, clicks,
+forms, consola, red), el harness Node sigue siendo mejor para probar una función aislada con datos
+sintéticos exactos.
+- **Distinto de "Agent Browser" (la SKILL), que sí se descartó antes (v48.50, arriba) por origen no
+  confirmado y por redundancia con `webapp-testing`.** `agent-browser` (este) es un paquete **npm real y
+  verificable** (licencia Apache-2.0, en el registro público de npm — confirmado con
+  `npm view agent-browser`), CLI de automatización de navegador vía CDP (no depende de Playwright/
+  Puppeteer), snapshots de árbol de accesibilidad compactos (`@eN`) en vez de HTML crudo — mucho más
+  liviano en tokens que leer el DOM entero. Nada que ver con la skill rechazada.
+- **Instalación en ESTE entorno remoto (efímera, por sesión) — receta exacta, para no repetir la
+  investigación cada vez:**
+  ```
+  npm install agent-browser   # (ojo: si se corre en un subdirectorio sin package.json propio, npm
+                                #  sube al ancestro más cercano que sí tenga uno — confirmar dónde
+                                #  quedó con: find . -name agent-browser -path "*/.bin/*")
+  ```
+  El binario queda en `<esa carpeta>/node_modules/.bin/agent-browser`. **`agent-browser install`
+  (el paso que baja Chrome/Chromium) NO funciona en este sandbox** — el CDN de Google
+  (`googlechromelabs.github.io/chrome-for-testing`) está bloqueado por la misma política de red del
+  entorno (confirmado con `agent-browser doctor`: "Chrome for Testing CDN unreachable"). **Arreglo: usar
+  el Chromium que YA viene instalado para Playwright** (`/opt/pw-browsers/chromium`, ver "Pre-installed
+  browser" del entorno) en vez de descargar uno nuevo:
+  ```
+  export AGENT_BROWSER_EXECUTABLE_PATH=/opt/pw-browsers/chromium
+  ```
+  (o `--executable-path /opt/pw-browsers/chromium` en cada comando). Con eso `agent-browser open`/
+  `snapshot`/`screenshot`/`eval`/`click`/`fill`/`console` funcionan normal.
+- **CONFIRMADO CON EVIDENCIA (no supuesto) — este sandbox remoto tiene bloqueados por política de
+  egress tanto `nexusprord.com` como el backend real de Supabase
+  (`tnwsgcxurfyuszxsewsn.supabase.co`)** — el proxy de la sesión lo registra como
+  `403: gateway answered to CONNECT (policy denial)` para los dos hosts (`curl -sS
+  "$HTTPS_PROXY/__agentproxy/status"` lo muestra en `recentRelayFailures`). El propio README del proxy
+  (`/root/.ccr/README.md`) es explícito: "no reintentar ni rodear un 403 — reportarlo". **Por eso, desde
+  ESTE tipo de entorno remoto, `agent-browser` NO puede entrar a `nexusprord.com` en vivo** — mismo
+  límite ya documentado varias veces en este archivo con otras herramientas (WebFetch, curl directo).
+  Si una sesión corre en un entorno SIN esta política (la propia máquina del dueño, u otro entorno de
+  Claude Code sin este bloqueo), `agent-browser` sí podría auditar la producción real en vivo — probarlo
+  ahí antes de asumir que sigue bloqueado.
+- **Lo que SÍ funciona siempre, en cualquier entorno (incluido este sandbox):** servir el `index.html`+
+  `parches.js` REALES del repo por HTTP local (`python3 -m http.server <puerto> --bind 127.0.0.1`,
+  localhost nunca pasa por el proxy) y navegar ahí con `agent-browser` — sirve para auditar visualmente
+  cualquier pantalla que no dependa de datos reales de Supabase (la más obvia: el Login completo, ya
+  probado — ver más abajo) o, con más trabajo, cualquier pantalla alimentando `_ST`/`sesion`/etc. a mano
+  vía `agent-browser eval` con datos sintéticos (mismo espíritu que los harness de Node ya usados en
+  todo este archivo, pero corriendo en un navegador real, con CSS real aplicado, capturas reales).
+  **Trampa real encontrada al hacerlo la primera vez:** `agent-browser open <url>` por defecto espera a
+  que la página cargue del todo (`load`/networkidle) — como `index.html` intenta alcanzar Supabase y
+  Google Fonts al arrancar, y esos hosts cuelgan/fallan bajo la política de este sandbox, la navegación
+  se quedaba esperando y terminaba en timeout. **Arreglo:** bloquear lo externo ANTES de navegar —
+  `agent-browser network route "https://*" --abort` (y cualquier otro patrón externo, ej.
+  `http://fonts*`) — así la carga del archivo LOCAL no espera por nada bloqueado.
+- **Primera auditoría real hecha con este método (20-ago-2026):** pantalla de Login completa a 390px —
+  sin desborde horizontal, toggle de mostrar/ocultar contraseña, checkbox Recordarme, "¿Olvidaste tu
+  contraseña?" (toast honesto, sin flujo falso — como está documentado más arriba), envío con campos
+  vacíos (aviso de validación correcto), envío real contra el backend inalcanzable (degrada con
+  gracia: "No se puede conectar. Verifica tu internet.", cero excepciones sin capturar) — **0 bugs
+  nuevos encontrados**. De paso se confirmó EN VIVO (no solo por el changelog) que 2 arreglos de esta
+  sesión (v56.8/v56.9) sí están en el archivo real: el ícono del escudo con `position:relative;
+  z-index:1` y la animación `lxBreathe` corriendo a 4.6s.
+- **Recordatorio para cualquier sesión futura:** como la instalación vive en el scratchpad (efímera),
+  cada sesión nueva probablemente tiene que volver a instalar `agent-browser` y volver a apuntarlo al
+  Chromium de Playwright — seguir la receta de arriba en vez de re-descubrirla desde cero.
