@@ -1,11 +1,16 @@
 {
-  "version": "56.49",
+  "version": "56.50",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "v": "56.49",
+      "v": "56.50",
       "fecha": "2026-08-20",
       "texto": "NUEVO: Financiamiento — rediseño de vidrio esmerilado en el Dashboard del celular (auditado desde una propuesta de ChatGPT contra el código real, antes de aplicarlo). Solo en pantallas angostas: el Dashboard ahora abre con 4 tarjetas de vidrio (Balance por cobrar, Mora acumulada, Cobrado hoy, Préstamos activos), un botón grande 'Financiar' arriba, 4 accesos rápidos (Cobranza, Cuotas, Clientes, Reportes) y una lista de 'Próximos pagos' con los 5 préstamos de vencimiento más cercano — calculados con la misma lógica real de saldo, vencimiento y mora que ya usa toda la cartera, nada inventado. En escritorio no cambia nada: se queda con el tablero morado y la barra lateral de siempre, para no perder 'Exportar'/'Nuevo préstamo' ni duplicar encabezados. Se le dio el mismo tratamiento al encabezado del Historial Crediticio de cada cliente: 3 tarjetas de vidrio nuevas (Monto financiado + Pagado, Puntualidad de pago con barra de progreso, Balance pendiente + Mora acumulada) — mismos datos que ya calculaba el sistema, con mejor jerarquía visual. Verificado con capturas reales en 390px y escritorio antes de publicar: cero errores de consola, cero desborde horizontal, montos cruzados a mano contra los datos reales de cada préstamo."
+    },
+    {
+      "v": "56.49",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Financiamiento, algunos botones de navegación se quedaban \"pegados\" sin hacer nada. Ejemplo real: si entrabas a Clientes y de ahí tocabas Inicio (o Cobros, o cualquier filtro de la barra de abajo/lateral/\"Más\"), la pantalla no cambiaba — parecía que el botón no respondía. Pasaba porque esos botones solo cambiaban el filtro interno, pero no le avisaban al sistema que había que volver a la lista de préstamos. Encontrado navegando la app en vivo con la nueva herramienta de investigación visual; ahora sí vuelve a la pantalla correcta siempre."
     },
     {
       "v": "56.48",
