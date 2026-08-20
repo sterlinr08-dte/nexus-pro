@@ -1,0 +1,11 @@
+/* El prototipo aprobado de Dashboard es móvil. En desktop se conserva la composición
+   actual para no perder Exportar/Nuevo préstamo ni duplicar encabezados. */
+@media(min-width:901px){
+  .nxFP-glIntro,.nxFP-glBody{display:none!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-topbar{display:flex!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-hA{display:flex!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-listHead{display:flex!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>#nxPrLista{display:block!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-dash{display:grid!important}
+  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-searchRow{height:auto;display:block;padding:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;box-shadow:none;margin-bottom:16px}
+}
