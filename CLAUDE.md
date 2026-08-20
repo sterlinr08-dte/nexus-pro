@@ -1,5 +1,39 @@
 # CLAUDE.md — NEXUS PRO
 
+> # ⛔ LEE PRIMERO: `NPGS.md`
+>
+> **`NPGS.md` (NEXUS PRO GLOBAL STANDARDS) es la MÁXIMA AUTORIDAD del proyecto**, decretada por
+> el dueño el 25-jul-2026. Antes de analizar, diseñar o escribir una línea de código hay que
+> leerlo y cumplirlo. Fija el estándar de diseño, UX y calidad: botones, buscadores, ventanas,
+> tablas, colores, consistencia, rendimiento, auditoría y el checklist obligatorio de cierre.
+>
+> **Cómo conviven los dos archivos:**
+> - **`NPGS.md` manda en el CÓMO** — cómo se diseña y se construye. Donde fije un estándar,
+>   NPGS gana sobre cualquier criterio propio.
+> - **`CLAUDE.md` (este archivo) guarda el QUÉ** — qué es NEXUS PRO: el negocio, el esquema real
+>   de la base, los bugs ya resueltos, las decisiones que el dueño ya tomó, el flujo de
+>   publicación. Eso son HECHOS del sistema, no opiniones de diseño: no se inventan de nuevo ni
+>   se sustituyen.
+> - **`DESIGN_SYSTEM.md`** — inventario medido de los componentes que existen HOY y en qué
+>   se aparta el sistema de NPGS, con el plan de convergencia. Es el puente entre los dos.
+>
+> Si algo de este archivo contradice a NPGS en materia de diseño: **detenerse, explicárselo al
+> dueño y proponer la solución** — nunca resolverlo por cuenta propia.
+>
+> ### ⚖️ Enmienda del dueño (25-jul-2026): **"No es quien manda por encima, sino lo que más conviene"**
+>
+> NPGS **no es una autoridad ciega**. En cada decisión de diseño se pesan las tres cosas —
+> lo que dice NPGS, lo que dicen las buenas prácticas del oficio, y **lo que de verdad le
+> conviene al negocio y a quien usa el sistema todos los días** — y gana lo que más conviene,
+> no lo que esté escrito más arriba. Cuando cumplir NPGS al pie de la letra empeoraría el
+> sistema: se para, se le explica al dueño con el caso concreto y el costo REAL medido, y se
+> propone lo que sí conviene; la decisión final es suya, pero llega con la recomendación puesta.
+> Toda desviación se escribe con su razón en `DESIGN_SYSTEM.md` — una excepción sin razón sigue
+> siendo desorden; lo que cambia es que una excepción **bien razonada ya es legítima**.
+> **No se relaja:** la consistencia visual entre pantallas, no fingir funciones que no existen,
+> no duplicar, y verificar de verdad antes de publicar. Texto completo en `NPGS.md`
+> (PRIORIDAD MÁXIMA). **Reabre** la decisión de buscadores (`DESIGN_SYSTEM.md` §6, C2).
+
 Contexto del proyecto para cualquier sesión de Claude Code. Léelo al inicio para
 no perder el hilo entre chats (la conversación se llena, pero **el contexto vive
 aquí, en el repo**).
@@ -1587,6 +1621,39 @@ Cero cambios visuales ni de lógica de negocio — solo accesibilidad. Verificad
 (`renderEntidades`/`abrirEntidad`) extraído y cargado en un navegador: la fila responde a Tab+Enter,
 el aro de foco se ve (`outline:solid rgb(37,99,235)`), los campos tienen el tipo/inputmode correcto.
 
+#### gstack — subconjunto curado de skills de metodología (25-jul-2026)
+El dueño mandó una foto del README de [gstack](https://github.com/garrytan/gstack) (Garry Tan / Y
+Combinator, v1.60.1.0) y pidió instalarlo. Se instaló **un subconjunto curado en el repo**, NO el
+paquete completo — **12 skills de ~464 KB** en `.agents/skills/gstack-*` (+ enlaces en
+`.claude/skills/`, mismo patrón que `frontend-design`/`webapp-testing`), contra los 70 MB y 53
+skills del original. **El detalle completo de qué entró, qué se le quitó a cada archivo y qué
+quedó fuera con su razón está en `.agents/skills/GSTACK-README.md`** — no se repite aquí.
+- **Las 12:** `/gstack-investigate` (causa raíz) · `/gstack-review` (revisar un diff antes de
+  publicar) · `/gstack-spec` (idea vaga → especificación) · `/gstack-plan-ceo-review` ·
+  `/gstack-plan-eng-review` · `/gstack-cso` (seguridad) · `/gstack-retro` · `/gstack-health` ·
+  `/gstack-careful` · `/gstack-freeze`/`/gstack-unfreeze` · `/gstack-guard`.
+- **Se le quitó a cada `SKILL.md` la maquinaria del instalador** (~770 líneas por archivo, 15
+  secciones: preámbulo, telemetría, prompts de primera vez, enrutamiento...). **Importante y no
+  obvio:** dos de esas secciones **reescribían el `CLAUDE.md` de este proyecto** (le agregaban
+  reglas de enrutamiento de gstack y hacían `commit` solas) y otra proponía `git rm -r
+  .claude/skills/`. Por eso NO se corrió el instalador oficial (`./setup`) contra este repo —
+  además de que el clasificador del entorno lo bloqueó, dejarlo tocar la memoria del proyecto
+  habría sido un error. Los `hooks:` de careful/freeze/guard se portaron de rutas absolutas
+  (`$HOME/.claude/skills/gstack/...`) a `${CLAUDE_SKILL_DIR}/../gstack-<x>/bin/...` con salida
+  limpia si el archivo falta.
+- **Lo grande que quedó fuera:** las 17 skills que dependen del navegador propio de gstack
+  (incluida `/qa`, la primera que el dueño intentó usar) — ese binario necesita `bun install`, que
+  el entorno bloquea, y **ya no hace falta**: el proyecto usa Playwright + Chromium + la skill
+  `webapp-testing` para exactamente eso. También fuera: las 6 de iOS, las de gbrain/codex, y
+  `ship`/`land-and-deploy` (contradicen el flujo de publicación ya establecido: subir
+  `APP_VERSION` + `version.json`, rama propia → PR → fusionar con las herramientas MCP de GitHub).
+- **No hay actualización automática a propósito** (`/gstack-upgrade` no se instaló, para que nada
+  reescriba estos archivos solo). Para traer una versión nueva hay que repetir la curación —
+  receta en el README.
+- **De paso** se arregló `.agents/skills/ui-ux-pro-max/scripts/design_system.py` (línea ~437):
+  un f-string con contrabarra que solo compila en Python 3.12+, y este entorno tiene 3.11 — el
+  script no corría. Se factorizó el separador a una variable.
+
 ### NEXUS PRO 2.5 — rediseño del formulario de Artículos/Servicios, FASE 1 (19-jul-2026, v48.51)
 El dueño pidió un rediseño grande y completo del formulario de artículo (`abrirProd`, pestaña
 Inventario del POS): 10 pestañas (Información General, Precios, Costos, Inventario, Impuestos,
@@ -1962,6 +2029,1557 @@ CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versione
   `_factCli` ya puesto precarga el botón correctamente, y volver a elegir "Consumidor final" limpia el
   campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
   los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Crear cliente (Entidad) — pestañas + resumen en vivo + duplicados (spec ChatGPT "Crear Cliente V1", 23-jul-2026, v49.13)
+ChatGPT dejó `docs/visual-drafts/clientes/CREAR_CLIENTE_V1_APROBADO.md` — un spec grande y cuidadoso
+(pide auditar primero, no inventar campos/tablas, no publicar a main sin revisión) para un "formulario
+central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento/Cobranza/Seguros.
+**Auditoría real hecha (Fase 1 del spec):**
+- El formulario real de crear cliente del POS es **`abrirEntidad(c, defs)`** (guarda en `pos_clientes`
+  vía `nxEntGuardar`), ya en `.nxPf` desde v48.43. Es un form de **Entidad** (cliente/proveedor/
+  empleado/banco), no solo cliente. Lo invocan `nxEntNueva`/`nxPosNuevoCli` (Clientes/Entidades) y
+  como proveedor/vendedor. **NO** se invoca desde Factura/Cobro (esos usan `nxFacCliToggle`/
+  `nxPosCobroCliToggle`, buscadores).
+- **Columnas reales de `pos_clientes`** (verificado por SQL): nombre, cedula, telefono, direccion,
+  email, tipo_persona, contacto, representante, limite_credito, notas, activo, codigo, nivel_precio/
+  nivel_id, es_cliente/es_proveedor/es_empleado/es_banco, acepta_whatsapp. **La mayoría del spec NO
+  existe** (fecha nacimiento, sexo, provincia/municipio/sector, tel secundario, ingresos, lugar de
+  trabajo, referencias, nivel de riesgo, documentos, estado civil, ocupación, idioma, días de crédito,
+  descuento, condición de pago…).
+- **El "formulario central" cruza tablas distintas:** POS/Factura/Prefactura/Cobro comparten
+  `pos_clientes` (aquí SÍ se puede reusar), pero Taller (`pos_reparaciones`, texto libre sin
+  cliente_id), Financiamiento (`prestamos`, tabla propia sin `organizacion_id`) y Seguros (`clientes`)
+  son tablas SEPARADAS con RLS propio — unificarlas violaría el reglamento de aislamiento. Se le
+  explicó al dueño: "central" solo es seguro dentro de la familia POS.
+- **Aplicado (real, `abrirEntidad`/`nxEntGuardar`, cero campo inventado, todos los ids intactos):**
+  (1) el form pasó de pila de tarjetas a **2 pestañas** (`entTabs`/`nxEntTab`): **Información**
+  (afines + datos + WhatsApp) y **Comercial** (nivel de precio + límite de crédito; si la entidad no
+  es cliente muestra un aviso "aplica solo a clientes"). (2) **Tarjeta de resumen en vivo**
+  (`entResumen`/`nxEntResumen`, avatar de inicial + nombre + tipo + código + afines + nivel + crédito)
+  que se actualiza con `oninput`/`onchange` de los campos clave. (3) **Detección de duplicados** en
+  `nxEntGuardar` (solo al CREAR): normaliza teléfono y cédula (solo dígitos), busca en `_clientes`; si
+  hay match, `confirm()` — Aceptar crea de todos modos, Cancelar abre la entidad existente
+  (`abrirEntidad(dup)`). Respeta el spec ("no bloquear silenciosamente, permitir abrir el encontrado").
+- **Deliberadamente NO construido (fingiría o cruza tablas):** campos que no existen en la BD; la
+  pestaña Documentos (no hay Storage); "Guardar y usar cliente" enganchado a Factura/Cobro (toca
+  pantallas de dinero — su propia ronda); unificar Taller/Financiamiento/Seguros (tablas distintas,
+  proyecto aparte con migraciones). Se le comunicó al dueño como fases siguientes.
+- **Verificado con Playwright, código real extraído** (`abrirEntidad`/`nxEntAfinTog`/`nxEntTab`/
+  `nxEntResumen`/`nxEntTipoTog`/`nxEntGuardar`, con un backend simulado): modal `.nxPf` con 2
+  pestañas, los 13 ids de campo presentes, panel Info visible / Comercial oculto al abrir, cambio de
+  pestaña, la caja Cliente se oculta y sale el aviso al desmarcar "Cliente", el resumen se actualiza
+  al escribir, y el duplicado (mismo teléfono) muestra el aviso con el nombre existente, NO postea al
+  cancelar (abre el existente) y SÍ postea al confirmar. Sin desbordes en 420px ni 1280px, 0 errores.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### Financiamiento — devolver una solicitud al cliente para que la corrija (25-jul-2026, v49.50)
+El dueño pidió que una solicitud se pueda **reenviar para corregir** si algo quedó mal, en vez de
+solo rechazarla.
+- **Idea clave (por qué funciona sin tocar el link):** la función Edge solo acepta envíos de
+  solicitudes en estado `pendiente`. Así que devolver una al cliente es simplemente **volverla a
+  `pendiente`** — el MISMO enlace revive, sin generar uno nuevo ni perder el hilo de la solicitud.
+- **Migración `prestamo_solicitudes_correccion`** (aditiva): `correccion_motivo` (text),
+  `correccion_at` (timestamptz). `get_advisors` sin hallazgos nuevos.
+- **`nxPrSolicitudPedirCorreccion(id)`** abre un modal con textarea (no un `prompt()`: el texto lo
+  lee el cliente y va a WhatsApp, conviene poder redactarlo); **`nxPrSolicitudReenviar(id)`** hace
+  el `PATCH` (`estado:'pendiente'`, `correccion_motivo`, `correccion_at`, limpia `motivo_rechazo`),
+  `logAudit('PRESTAMO_SOLICITUD_CORRECCION')`, y abre `nxPrLinkFirmaMostrar` con un mensaje de
+  WhatsApp que ya explica qué corregir y lleva el enlace pegado al final.
+- **Lo anterior NO se borra** — se sobrescribe cuando el cliente reenvía. Si nunca vuelve, la
+  evidencia previa (cédula, firma, video) sigue ahí. Decisión deliberada: borrar habría dejado la
+  solicitud vacía sin ganar nada, porque el formulario del cliente exige subir todo de nuevo igual.
+- **Badge nuevo "POR CORREGIR" (ámbar)**: una `pendiente` CON `correccion_motivo` no es lo mismo
+  que una que nunca se ha abierto — antes las dos habrían dicho "SIN ENVIAR". El detalle de la
+  solicitud muestra qué se le pidió y dice "Esperando a que el cliente lo envíe corregido".
+- **Botón disponible en 2 estados:** `enviada` (junto a Aprobar/Rechazar) y `rechazada` (darle otra
+  oportunidad sin crear un link nuevo). En `aprobada` NO aparece — ya es un préstamo real.
+- **Lado cliente (`firma-prestamo.html`):** aviso ámbar `.corrig` **arriba del todo** (medido con
+  `getBoundingClientRect` que va antes de la primera tarjeta) con el texto exacto. La función Edge
+  (**v6**) devuelve `correccion_motivo` en el GET y **lo limpia al reenviar** (`correccion_motivo:
+  null` en el patch de publicación) — el pedido queda atendido solo.
+- Verificado con Playwright, **las dos mitades a la vez**: el panel con el código real extraído por
+  contenido, y la página del cliente **real** servida por HTTP local. **23 comprobaciones** — badge
+  correcto vs "SIN ENVIAR", el botón aparece en enviada y en rechazada, sin motivo no reenvía,
+  el `PATCH` vuelve a `pendiente` con el motivo y limpia el rechazo, queda en auditoría, el WhatsApp
+  explica y lleva el link, el cliente ve el aviso arriba del todo y el formulario sigue completo, y
+  sin corrección pendiente no sale ningún aviso. Sin desborde en 390px, 0 errores de JS. Las suites
+  de la página (55) y del panel (53) repasadas sin regresión.
+
+### Financiamiento — el CONTRATO imprimible sale con la firma y la cédula anexada (25-jul-2026, v49.49)
+Segunda mitad de lo que se había ofrecido al cerrar la v49.48 (el dueño: *"Hazlo"*). El contrato
+(`nxPrestamoContrato`) llevaba una raya en blanco para que el cliente firmara a mano, aunque ya
+hubiera firmado por link.
+- **De dónde salen las imágenes:** de `_prSolicitudes` (los **dataURL** ya en memoria), NO de las
+  URLs de Storage que quedaron en `p.documentos`. A propósito: el contrato se abre en una ventana
+  `window.open`+`document.write` que se imprime o se guarda en PDF — con dataURL el documento queda
+  **autocontenido** y no depende de la red ni de que esa ventana tenga sesión. Además la solicitud
+  es el registro original: si el dueño borra una imagen de Docs, el contrato sigue siendo fiel.
+- **3 piezas, todas gateadas a que exista firma real** (`firmaDeudor`): (1) la firma manuscrita
+  **encima de la línea** de EL DEUDOR (`.firmaImg`, `position:absolute;bottom:100%` dentro de
+  `.firma`, que pasó a `position:relative` — no descoloca la celda de EL ACREEDOR ni las de los
+  testigos) + "Firmado electrónicamente" bajo el nombre; (2) **cláusula SEXTA** de firma
+  electrónica con la fecha real (`revisado_at`) que enumera SOLO lo que de verdad llegó
+  (`solF.selfie` / `solF.video_path` condicionan el texto); (3) **ANEXO** en página nueva
+  (`page-break-before:always`) con las 2 caras de la cédula y la foto.
+- **Redacción cuidada, sin prometer de más:** se cita la **Ley 126-02** (Comercio Electrónico,
+  Documentos y Firmas Digitales, RD — real) y se describe lo que el sistema SÍ tiene (firma
+  manuscrita capturada + cédula + foto + video). **NO** se dice "firma digital certificada": este
+  sistema no emite certificados de una entidad de certificación autorizada, y afirmarlo sería
+  falso en un documento legal.
+- **El video no se finge en papel:** su bloque del anexo explica que la grabación está archivada y
+  se consulta desde el sistema, e incluye **el texto exacto que el cliente declaró** (`video_guion`)
+  — eso sí es imprimible y es lo que da valor probatorio en el papel.
+- **Sin expediente, el contrato queda EXACTAMENTE como antes** (raya en blanco, sin cláusula SEXTA,
+  sin anexo) — verificado explícitamente, no asumido.
+- **Cuidado con `nxVehiculoContrato`:** varias cadenas del contrato (`firmaTestigo`, el CSS de
+  `.firmas`, el botón de imprimir) **existen 2 veces en el archivo** — la segunda es la de
+  Vehículos. Los 4 reemplazos se hicieron sobre la PRIMERA ocurrencia con un script que imprime la
+  línea tocada, y se confirmó que las 4 cayeron dentro de `nxPrestamoContrato`. Al tocar estos
+  documentos, verificar SIEMPRE cuál de los dos se está editando.
+- Verificado con Playwright generando el **documento real** (se intercepta `window.open` para
+  capturar lo que escribe `document.write`, y luego se carga ese HTML como página para medirlo):
+  **19 comprobaciones** — la firma va dentro y queda **encima** de la línea (medido con
+  `getBoundingClientRect`: 959.4 vs 960.4, no encimada), cláusula SEXTA con la Ley 126-02, anexo
+  con 4 bloques, el texto declarado del video, salto de página, sin desborde a 760px, y los 5 casos
+  del contrato SIN expediente. 0 errores de JS. Las suites de Docs (22), expediente (12) y admin
+  (53) repasadas sin regresión.
+  - **De paso:** las imágenes del anexo pasaron de `width:100%` a `max-height:420px;width:auto` —
+    con `width:100%` una foto vertical se estiraba hasta ocupar una página entera al imprimir.
+
+### Financiamiento — el expediente firmado se guarda en los DOCUMENTOS del préstamo (25-jul-2026, v49.48)
+El dueño mandó una captura del detalle del préstamo (con los botones Contrato/Estado/Docs) y pidió
+*"que todo eso se guarde en ese documento y se visualice y se pueda actualizar"*.
+- **Se preguntó antes de construir** (`AskUserQuestion`): "ese documento" podía ser **DOCS** (la
+  carpeta de archivos del préstamo) o el **CONTRATO** imprimible — dos trabajos muy distintos. El
+  dueño eligió **DOCS**. (Un contrato no se "actualiza", se vuelve a imprimir; DOCS sí.)
+- **`copiarExpedienteADocs(prestamoId, s)`** (junto a `subirDocPrestamo`, mismo IIFE): las 4
+  imágenes viven como **dataURL** en `prestamo_solicitudes` → se convierten a Blob
+  (`dataUrlABlob`, con `atob`+`Uint8Array`, no `fetch('data:')`) y se suben a Storage con el
+  **mismo `subirDocPrestamo` de siempre** (bucket `comprobantes`, ruta `prestamos/{id}/…`), así se
+  ven y se manejan igual que cualquier documento subido a mano. **El VIDEO no se copia**: ya está
+  en el bucket privado `documentos` y pesa varios MB — duplicarlo sería tirar espacio; se guarda
+  una referencia `{privado:true, bucket, path}` y se firma una URL temporal al abrirlo
+  (`nxPrDocVerPrivado`). Un solo `PATCH` al final con todo el arreglo, no uno por archivo.
+- **Enganchado en `nxPrSolicitudAprobar`**, DESPUÉS de `cargarPrestamos()` (necesita el préstamo en
+  memoria) y en su propio `try` — si falla, el préstamo ya está creado y el aviso manda al botón de
+  respaldo. **No bloquea la aprobación.**
+- **Retroactivo a pedido:** `window.nxPrestamoTraerExpediente(id)` + aviso morado con botón
+  **"Traer expediente firmado"** dentro de `nxPrestamoDocs`, visible solo si el préstamo tiene
+  solicitud ligada y ningún documento con `origen:'firma'`. Cubre los aprobados antes de esta
+  versión y el caso de que una pieza fallara. **Idempotente** (`yaEsta(campo)`): tocarlo dos veces
+  no duplica.
+- **`DOC_TIPOS` ganó 3 tipos con bandera `soloLectura`** (`selfie`/`firma`/`video`): dan etiqueta e
+  ícono en la lista pero **no** pintan tile de subida (la subida a mano sigue aceptando solo
+  imagen/PDF, no se tocó su validación). Los del expediente salen marcados "Firmado por link" en
+  morado para distinguirlos de los subidos a mano.
+- Verificado con Playwright y el código real extraído **por contenido, no por número de línea**
+  (`nxPrSolicitudAprobar` + todo el bloque de Docs): **22 comprobaciones** — aprobar crea el
+  préstamo y sube las 4 imágenes con el **JWT del admin** (no la anon key) a la carpeta del
+  préstamo, quedan 5 documentos, el video queda como referencia sin URL pública, la carpeta los
+  muestra con su nombre real y la marca, abrir el video pide URL firmada y abrir una imagen usa la
+  pública, borrar uno actualiza la lista, el botón de respaldo trae los 5 y tocarlo otra vez no
+  duplica. Sin desborde en 390px, 0 errores de JS.
+  - **Nota de método (repetida a propósito):** este harness localiza el código con `grep` sobre el
+    contenido en vez de un rango de líneas fijo — la lección de la v49.47, donde una suite falló
+    solo porque el rango se había corrido.
+
+### Financiamiento — el expediente firmado y el préstamo, conectados en los 2 sentidos (25-jul-2026, v49.47)
+El dueño preguntó: *"¿Y después que esté aprobado dónde veo esos expedientes?"*
+- **Lo que YA existía (se verificó en el código antes de tocar nada, no se dio por hecho):** la
+  pestaña **Solicitudes** lista TODAS, incluidas las `aprobada` (badge verde + KPI "APROBADAS"), y
+  `nxPrSolicitudVer` sigue mostrando los 4 documentos + el video después de aprobar — el bloque de
+  documentos solo se oculta cuando el estado es `pendiente` (el cliente todavía no abrió el link).
+  O sea, el expediente NO se pierde al aprobar; lo que faltaba era el camino para llegar.
+- **El hueco real:** desde el **préstamo** no había forma de llegar a su expediente. La única pista
+  era la nota de texto que deja `nxPrSolicitudAprobar` (`[Firmado por link — … en la solicitud
+  09705b0c]`) — el número está, pero había que ir a buscarlo a mano en la lista.
+- **Construido (chico, sin esquema nuevo, sin consultas nuevas):** `window.nxPrestamoExpediente(id)`
+  busca en `_prSolicitudes` (ya cargado por `cargarPrestamos`) la solicitud con
+  `prestamo_id === id` y abre `nxPrSolicitudVer`. El botón **"Expediente firmado"** se agregó a
+  `nxPrActs` de `nxPrestamoVer` **solo si esa solicitud existe** — un préstamo tecleado a mano no
+  muestra un botón que no lleva a ningún lado. Camino de vuelta: en el detalle de una solicitud
+  `aprobada` con `prestamo_id`, aviso verde ("ya es un préstamo real, estos documentos quedan
+  guardados como respaldo") + botón **"Ver el préstamo"**.
+- Verificado con Playwright y el código real extraído (`nxPrestamoExpediente` + `nxPrSolicitudVer`
+  tal cual): 12 comprobaciones — el botón abre el expediente del cliente correcto, se siguen viendo
+  las 4 imágenes y se pide el video del bucket privado, NO salen Aprobar/Rechazar en una ya
+  aprobada, "Ver el préstamo" salta al id correcto y cierra el expediente, y un préstamo sin link
+  avisa con un toast en vez de abrir un modal vacío. Sin desborde en 390px, 0 errores de JS.
+  Las 53 pruebas del lado admin repasadas sin regresión.
+  - **Nota de método:** al agregar líneas en `parches.js` se corrió el rango del extractor del
+    harness y una suite falló por eso (no por el código). Recordatorio: **los extractores por número
+    de línea hay que recalcularlos con `grep` después de cada edición**, no reusar el rango viejo.
+
+### `swalConfirm` decía "ELIMINAR" en rojo al APROBAR un préstamo — arreglado de raíz (25-jul-2026, v49.46)
+El dueño mandó una captura: el aviso preguntaba *"¿Aprobar y crear el préstamo?"* y el botón de
+confirmar decía **ELIMINAR**, en rojo. Da miedo tocarlo, y con razón.
+- **Causa raíz:** `swalConfirm(icon,title,msg)` (`index.html`, ~línea 8926) nació SOLO para borrar y
+  traía el botón `Eliminar` + `background:#ef4444` **escrito a fuego en el HTML**. Después se reusó
+  para otras acciones (aprobar solicitud) y el botón se quedó igual. No era un descuido de esa
+  pantalla — era una trampa del helper compartido: **cualquier uso futuro que no fuera borrar iba a
+  repetir el mismo error**.
+- **Arreglo — se cambió el DEFAULT, no solo el caso reportado:** la función ganó un 4to parámetro
+  `opts` (`{ok, color}`). Clave: el default pasó a ser **neutro** (`'Confirmar'`, azul `#2563eb`), no
+  "Eliminar" rojo — así, si algún día alguien agrega un aviso nuevo y olvida el texto, sale algo
+  inofensivo en vez de un botón de borrado. Para borrar hay que **pedirlo explícitamente**.
+- **Los 6 usos del sistema, revisados uno por uno** (son solo 6, se auditaron todos, no solo el
+  reportado): 5 son de borrado y pasan `{ok:'Eliminar',color:'#ef4444'}` — quedan idénticos a como se
+  veían (constante `SWAL_BORRAR` en `index.html` para los 2 del núcleo; literal en los 3 de
+  `parches.js`, siguiendo el patrón de IIFE autocontenido del archivo). El 6to, aprobar la solicitud
+  de préstamo (`nxPrSolicitudAprobar`), pasa `{ok:'Aprobar',color:'#16a34a'}` — **verde**, coherente
+  con su ✅ y con lo que de verdad hace.
+- El texto del botón se pasa por `escHtml()` (antes era literal fijo; ahora es configurable).
+- Verificado con Playwright cargando el **código real de `swalConfirm` extraído de `index.html`** (no
+  reconstruido): 10 comprobaciones — aprobar muestra "Aprobar" verde (`rgb(22,163,74)`) y NO dice
+  "Eliminar", borrar sigue en "Eliminar" rojo (`rgb(239,68,68)`), sin opciones sale "Confirmar" azul,
+  y confirmar/cancelar devuelven `true`/`false` correctamente. `node --check parches.js` limpio; los
+  3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan `new Function()`.
+- **Confirmado de paso, con datos reales:** la solicitud de firma por link **funcionó de punta a
+  punta**. En `prestamo_solicitudes` hay una fila en estado `enviada` con cédula frente/dorso, selfie
+  y firma, y en Storage está el video (`documentos/prestamo-solicitudes/<id>/compromiso.mp4`, 3.83 MB,
+  `video/mp4; codecs=avc1…` = grabado desde iPhone) subido a las **15:23 RD, después del arreglo de la
+  v49.44**. O sea: la grabadora en página, la subida firmada y el flujo completo quedaron verificados
+  en producción, no solo en pruebas.
+
+### Financiamiento — el teléfono del cliente se quedaba con la página VIEJA del link (25-jul-2026, v49.45)
+El dueño mandó 2 capturas del mismo error del video ("No se pudo subir el video…"). **Detalle que
+delató lo que pasaba:** el aviso salía SIN el motivo real debajo — justo la línea que se había
+agregado en la v49.44. O sea, su teléfono estaba corriendo la página ANTERIOR.
+- **Confirmado con los logs, por hora exacta** (no por suposición): `14:54:36` intento 1 → 400 ·
+  `15:06:27` intento 2 → 400 · `15:08:35` v5 desplegada (el arreglo) · `15:09:26` prueba real → 200.
+  El reloj de su captura marca **3:06**, que calza al segundo con el intento de las `15:06:27` —
+  **2 minutos ANTES del arreglo**. Sus capturas eran del problema anterior, no de uno nuevo.
+- **Pero destapó un problema real y propio de este flujo:** `firma-prestamo.html` es una página
+  estática que el cliente abre UNA vez desde un link de WhatsApp, y **su URL nunca cambia** — así que
+  el teléfono (o Cloudflare) puede servir una copia guardada y **un arreglo publicado después nunca
+  le llega**. A diferencia de la app (`index.html`), esta página no tiene botón "Actualizar" ni
+  `APP_VERSION` que rompa la caché. El cliente se queda con el fallo pegado, sin manera de saberlo.
+- **Arreglo, en dos capas:** (1) `<meta http-equiv="Cache-Control" no-cache, no-store,
+  must-revalidate">` + `Pragma`/`Expires` en la página; (2) **el link que genera el panel ahora lleva
+  `&v=<APP_VERSION>`** (`nxPrLinkFirmaMostrar`) — cada versión publicada produce una dirección
+  distinta, así que después de cada actualización es imposible que abra una copia vieja. La página
+  ignora ese parámetro (solo lee `id`), así que los links ya enviados siguen funcionando igual.
+- **Lección para cualquier página pública futura** (`rifa.html`, `boleto.html`, `vendedor.html`, esta):
+  no tienen mecanismo de actualización propio. Si se publica un arreglo, hay que asumir que el
+  usuario puede seguir viendo la versión vieja — el `&v=` en el link generado es el patrón a repetir.
+- 128 pruebas en verde (20 grabadora + 55 página pública + 53 lado admin, incluida la URL del link).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que el dueño genere un link **NUEVO** (no reutilice el de antes) y confirme la
+  grabación real desde su iPhone — sigue sin haber ningún intento posterior al arreglo en los logs.
+
+### Financiamiento — el video no se guardaba: bug real de UNA LÍNEA en la función Edge (25-jul-2026, v49.44)
+El dueño: *"Cuando termino el video dice que no se pudo guardar, que intente de nuevo."*
+- **Cómo se encontró (no a ojo — con evidencia del servidor):** `get_logs(service:'storage')` mostró la
+  línea exacta: `POST | 400 | /object/upload/sign/documentos/prestamo-solicitudes/<id>/compromiso.mp4`.
+  O sea, **no fallaba la subida del video** — fallaba el paso ANTERIOR, cuando la función Edge le pide
+  a Storage la URL firmada. Se descartó "el archivo ya existe" con SQL directo (`storage.objects` del
+  bucket `documentos` estaba **vacío**, 0 filas).
+- **Causa raíz — mía, de una línea:** la petición a `/object/upload/sign/...` mandaba
+  `Content-Type: application/json` **sin body**. El servidor de Storage (Fastify) rechaza con **400**
+  una petición que declara JSON y viene con el cuerpo vacío. Nunca salió en las pruebas porque en el
+  harness de Playwright esa llamada a Storage estaba simulada — **la simulación no reproduce el
+  contrato real del servidor.** Lección: cuando el fallo puede vivir en la frontera con un servicio
+  externo, la simulación no basta como verificación.
+- **Arreglo (función Edge v5):** `body: JSON.stringify({ upsert: true })` — resuelve el 400 y de paso
+  permite **regrabar** (antes, un segundo intento habría fallado por archivo duplicado). En el
+  navegador, el `PUT` a la URL firmada ganó `x-upsert: true` por el mismo motivo. Confirmado con la
+  documentación (`search_docs`) que `upsert` es una opción válida de `createSignedUploadUrl`.
+- **VERIFICADO DE VERDAD contra el servidor real, no simulado:** este entorno no tiene salida a
+  internet (ni `curl`), pero **`pg_net` sí corre dentro de Supabase** — se creó una solicitud de
+  prueba, se llamó a la función desplegada con `net.http_post` y se leyó la respuesta en
+  `net._http_response`: **200 con `signedUrl` real** (antes: 400). Datos de prueba borrados después.
+  Este es el camino a usar de aquí en adelante para probar funciones Edge desde esta sesión.
+- **De paso, para que un fallo futuro no vuelva a dejar a ciegas:** la función Edge ahora devuelve el
+  **detalle real de Storage** (código + texto) en vez de un "No se pudo preparar la subida" genérico, y
+  la página del cliente **muestra ese motivo** debajo del aviso en vez de solo "intenta de nuevo". Un
+  mensaje fijo fue justo lo que hizo falta diagnosticar esto desde los logs en vez de desde la pantalla.
+- **No verificable desde aquí (queda al dueño):** el `PUT` binario a la URL firmada — `pg_net` solo
+  admite `Content-Type: application/json`, así que la subida en sí no se pudo ejercitar. Es el mismo
+  código de siempre + `x-upsert`; el paso que de verdad estaba roto sí está confirmado arreglado.
+- 75 pruebas Playwright en verde (20 de la grabadora + 55 de la página, 1 nueva: el aviso de error
+  muestra el motivo real). `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de
+  `firma-prestamo.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — el cliente no podía LEER el guion mientras grababa el video (25-jul-2026, v49.43)
+El dueño: *"Al grabar el video, no se puede leer el texto de lo que el cliente va a decir en la
+grabación del video."*
+- **Causa raíz (obvia una vez vista, y es del diseño original de v49.40):** el botón "Grabar el
+  video" era un `<input type="file" accept="video/*" capture="user">` — eso abre la **app de cámara
+  nativa del teléfono, a pantalla completa**. El guion (`.guion`) se queda en la página, DETRÁS de
+  la cámara: el cliente lo lee antes, toca grabar, y ya no lo ve. Con un guion de 2-3 líneas con
+  montos exactos, es imposible repetirlo de memoria — la función servía a medias.
+- **Arreglo — grabar DENTRO de la misma página, con el guion encima (teleprónter):**
+  `window.__grabarVideo()` abre una capa a pantalla completa (`.rec`) con `getUserMedia`
+  (`facingMode:'user'` + audio) en un `<video autoplay muted playsinline>` de fondo, el **guion fijo
+  en la mitad de abajo** (`.recTxt`, 17px, fondo oscuro semitransparente, con scroll propio si es
+  largo), botón de grabar/detener estilo cámara (`.recBtn`, rojo → cuadro blanco) y reloj en vivo.
+  Graba con **`MediaRecorder`**, tope automático de **3 minutos**, y al detener manda el `Blob`
+  directo al mismo camino de subida de siempre.
+- **Refactor mínimo:** la subida se extrajo de `__videoFile(input)` a **`subirVideo(f, ext, mime)`**
+  (acepta un `File` o un `Blob` indistintamente) — la URL firmada, el `PUT` a Storage y el manejo de
+  error no cambiaron ni una línea de lógica. `__videoFile` quedó solo como el camino de respaldo.
+- **Respaldo real, no decorativo (nunca se queda sin poder grabar):** `puedeGrabar()` comprueba
+  `mediaDevices.getUserMedia` + `MediaRecorder` + que haya un `mimeType` soportado
+  (`mimeGrabacion()` prueba `video/mp4` primero — el único que acepta iOS Safari — y cae a `webm`).
+  Si algo falta, el botón abre la cámara nativa igual que antes. Si el cliente NIEGA el permiso de
+  cámara, la capa muestra un aviso claro + el botón **"Usar la cámara del teléfono"** (que también
+  está siempre visible abajo, por si prefiere ese camino). El subtítulo del botón cambia según el
+  caso — no promete el teleprónter en un teléfono que no lo soporta.
+- **La extensión y el tipo salen de la grabación REAL** (`extDeMime(mr.mimeType)`), no de un valor
+  fijo — la función Edge ya saneaba `ext`, así que no hizo falta tocarla. Cero cambios de esquema,
+  cero cambios en el Edge Function, cero cambios del lado admin.
+- **Verificado con Playwright contra el archivo REAL** `firma-prestamo.html` servido por HTTP local,
+  en un Chromium con cámara y micrófono falsos (`--use-fake-device-for-media-stream`): **20 pruebas
+  nuevas** — se abre la grabadora en vez de la cámara nativa, el guion está visible y DENTRO de la
+  pantalla (medido con `getBoundingClientRect`, no a ojo) tanto antes como **mientras graba**, la
+  cámara conecta y habilita el botón, grabar cambia el botón y arranca el reloj, al detener se sube
+  un video con **bytes reales** (102 KB en la prueba) por `PUT` con su tipo real, el botón queda en
+  "Video listo" con vista previa, y cerrar sin grabar no sube nada ni deja la cámara encendida — más
+  las **54 anteriores sin regresión** (el camino de la cámara nativa sigue igual). Capturas a 390px.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido.
+- **Nota honesta:** el entorno no tiene salida a internet, así que se probó con cámara simulada y
+  backend simulado — falta que el dueño lo confirme grabando desde su iPhone real (Safari soporta
+  `MediaRecorder` desde iOS 14.3; en versiones anteriores cae solo al camino de siempre).
+
+### Financiamiento — la declaración TAMBIÉN se corrige, y fuera "Total a devolver" (25-jul-2026, v49.42)
+El dueño mandó una captura de la página del cliente en su iPhone: *"Las correcciones que hago antes de
+generar el link no se reflejan cuando lo envío y debajo de cuota vamos a quitar donde dice total a
+devolver"*.
+- **Se verificó primero, antes de tocar nada** (SQL directo sobre `prestamo_solicitudes`): su
+  corrección **SÍ se había guardado bien** — el valor en `video_guion` de su solicitud era
+  exactamente el texto que él escribió ("…20 cuotas quincenales de RD$ 2,000 QUE SERÁ DESCONTADO
+  DESDE LA NÓMINA"). O sea, el guardado de v49.41 funcionaba.
+- **Causa raíz — un hueco de diseño MÍO, no un bug de guardado:** la pantalla de revisión (v49.41)
+  solo dejaba corregir el **guion del video**. Pero lo que se ve en la captura del dueño, y lo
+  primero que el cliente lee, es el **recuadro morado de arriba** (la declaración de compromiso,
+  tarjeta 1 "Tu préstamo") — ese se armaba solo con `terminosTexto()` y **no había forma de
+  tocarlo**. Él corrigió el guion, miró la pantalla, vio el recuadro morado con el texto automático
+  de siempre, y concluyó (con razón, desde su lado) que su corrección no se aplicaba.
+- **Arreglo — mismo patrón de 3 capas que ya tenía el guion, ahora también para la declaración:**
+  columna nueva `prestamo_solicitudes.declaracion` (migración `prestamo_solicitudes_declaracion`,
+  aditiva); `prDeclaracionTexto(d)` en `parches.js` (pareja de `prGuionTexto`, duplica a propósito
+  `terminosTexto()` de `firma-prestamo.html` — dos archivos independientes, si cambia hay que tocar
+  los dos); tarjeta nueva **"Declaración que verá en pantalla"** (`#prLkDecl`) en `nxPrLinkRevisar`,
+  prellenada y editable; `nxPrLinkCrear` la valida (no puede quedar vacía) y la guarda. En la página
+  pública, `declaracionTexto()` usa `S.declaracion` si viene y solo genera la suya como respaldo
+  (links viejos). La función Edge (**v4**) `traerPendiente()` ahora devuelve la fila y **solo
+  escribe `declaracion`/`video_guion` si la solicitud no traía ninguno** — el navegador del cliente
+  nunca pisa lo que el dueño aprobó.
+- **Fuera "Total a devolver"** (lo pedido): se quitó la fila `termrow` de la tarjeta 1 de
+  `firma-prestamo.html`, y **también** la cifra del total del guion (`prGuionTexto`/`guionTexto`) y
+  de la declaración — si no, el número que él quitó de la pantalla seguía saliendo en el texto que
+  el cliente lee en voz alta y en el recuadro morado. Ahora los tres dicen lo mismo.
+- **Verificado:** **54 pruebas** contra el archivo REAL `firma-prestamo.html` servido por HTTP local
+  (las 48 anteriores sin regresión + 6 nuevas: ya no aparece la fila "Total a devolver", la
+  declaración se arma con los datos reales y sin el total, con `declaracion` se muestra la corregida
+  y NO la automática, y al publicar se devuelve esa misma) y **53** contra el código real extraído
+  de `parches.js` del lado admin (las 50 anteriores + 3 nuevas: la declaración es un textarea
+  prellenado con los datos reales y lo corregido es lo que se guarda). `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan `new Function()`;
+  `version.json` válido.
+
+### Financiamiento — pantalla de revisión antes de mandar el link de firma (25-jul-2026, v49.41)
+El dueño pidió **ver y poder corregir el texto antes de enviarle el link al cliente**. Antes,
+`nxPrGenerarLinkFirma()` creaba la solicitud de una y el guion se generaba solo en la página
+pública, sin que él lo viera nunca.
+- **El botón ya no crea nada: abre una pantalla de revisión.** `nxPrGenerarLinkFirma()` ahora solo
+  calcula los términos y los deja en `_prLinkDraft` (variable de módulo), y llama a
+  `nxPrLinkRevisar()`. La creación real pasó a **`nxPrLinkCrear()`**, que corre al tocar "Crear el
+  link". Si cancela, no se guarda nada (nunca se llegó a postear).
+- **Qué se puede corregir:** el **guion del video** (`#prLkGuion`) y el **mensaje de WhatsApp**
+  (`#prLkMsg`), ambos prellenados con lo que se generaba automáticamente. Los **términos** se
+  muestran de solo lectura con una nota de que se cambian en el simulador — no se editan aquí a
+  propósito: son los números reales del préstamo, y dejarlos editar abriría la puerta a que el
+  texto no coincida con lo que se guarda en `prestamos`.
+- **`prGuionTexto(d)` (parches.js)** duplica a propósito la lógica de `guionTexto()` de
+  `firma-prestamo.html` — son dos archivos independientes sin nada compartido (la página pública es
+  standalone, sin acceso a `parches.js`). Si un día cambia el texto base hay que tocar **los dos**.
+- **El guion aprobado gana, en las 3 capas** (para que lo que el dueño corrigió no se pise nunca):
+  (1) `nxPrLinkCrear` lo guarda en `video_guion` al crear; (2) la página pública usa `S.video_guion`
+  si viene y solo genera el suyo como respaldo (links viejos, creados antes de esta versión); (3) la
+  función Edge **ya no sobrescribe** `video_guion` al publicar — solo lo escribe si la solicitud no
+  traía ninguno. Sin ese tercer candado, el navegador del cliente habría pisado el texto aprobado.
+- **`nxPrLinkFirmaMostrar` ganó un 4to parámetro `mensaje`** (el de WhatsApp ya corregido), con
+  respaldo al texto de siempre si no llega. El link se pega al final del mensaje, no se edita.
+- **Verificado:** **50 pruebas** del lado admin (las 40 anteriores sin regresión + 10 nuevas: el
+  botón no crea nada, la revisión muestra términos/guion/mensaje prellenados y editables, cancelar
+  no crea, confirmar guarda el **texto corregido** y no el automático, y el WhatsApp usa el mensaje
+  corregido con el link pegado) y **48 en la página pública** (las 44 anteriores + 4 nuevas: con
+  `video_guion` se muestra el corregido y NO el automático, y al publicar se devuelve ese mismo).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido. Sin migración de esquema (`video_guion` ya existía
+  de v49.40 — solo cambió QUIÉN y CUÁNDO la llena: antes el cliente al publicar, ahora el dueño al
+  crear el link).
+
+### SUPABASE STORAGE — SÍ EXISTE (el CLAUDE.md decía que no) + hueco de seguridad real cerrado (25-jul-2026, v49.40)
+**Hallazgo importante que corrige varias notas viejas de este mismo archivo.** Al buscar dónde
+guardar el video de compromiso se descubrió que **Supabase Storage SÍ está configurado y EN USO**
+desde jun-2026 — contradice las notas de v49.19/v49.23/v48.53 que decían "sin Storage" y por eso
+descartaron funciones (Documentos del Historial Crediticio, del Comprobante, etc.). **Cualquier
+trabajo futuro que las cite debe verificar primero, no darlas por buenas.**
+- **3 buckets reales:** `comprobantes` (público, tope 5 MB, solo imágenes — 45 archivos, 8 MB:
+  bauches de entregas + documentos de préstamos y vehículos), `documentos` (privado, sin tope ni
+  restricción de tipo — 0 archivos, el flujo de `documentos_clientes` de `index.html` nunca se usó),
+  `respaldos` (privado — 4 archivos, 17 MB, respaldos completos de la base que escribe la función
+  `respaldo-diario`).
+- **HUECO DE SEGURIDAD REAL, ya cerrado (migración `storage_policies_solo_autenticados`):** las 4
+  políticas de `storage.objects` eran para el rol **`public`** (que incluye `anon`) **sin ninguna
+  condición** — y la anon key es pública, va en el código fuente de `index.html`. O sea: cualquiera
+  en internet podía **descargar y BORRAR** los 3 buckets, incluidos los **respaldos completos de la
+  base de datos** (todos los clientes, facturas, cobros). Ahora: `SELECT/INSERT/UPDATE/DELETE` solo
+  para `authenticated` y solo en `comprobantes`/`documentos`; **`respaldos` quedó fuera de toda
+  política** (solo lo tocan las funciones Edge con service-role, que no pasa por RLS).
+- **La otra mitad del arreglo, que iba OBLIGATORIAMENTE junta:** las 8 llamadas a Storage del
+  frontend armaban sus headers a mano con **`api.key` (la anon key) como Bearer** en vez del JWT del
+  usuario — o sea, subían como `anon`. Restringir las políticas sin esto habría **roto en producción**
+  los bauches y los documentos de préstamos/vehículos. Los 8 sitios (3 en `index.html`: `subirDoc`
+  ×2 + `subirDocExtra`; 5 en `parches.js`: bauches, docs de préstamo subir/borrar, docs de vehículo
+  subir/borrar) pasaron a `'Bearer ' + (api.token || api.key)` — el MISMO patrón que ya usaba
+  `API.hdr()` desde siempre y otros 2 sitios de `parches.js`. Verificado con grep que no queda
+  ninguno con la anon key sola.
+- **Por qué la lectura pública de `comprobantes` NO se rompió:** ese bucket tiene `public=true` y
+  se sirve por `/storage/v1/object/public/...`, endpoint que **no evalúa RLS** — las URLs públicas
+  ya guardadas en la base (45 comprobantes) siguen funcionando igual. Las políticas solo alcanzan al
+  endpoint autenticado.
+- **Pendiente / no tocado a propósito:** `documentos_clientes` (índex.html) construye URLs
+  `/object/public/documentos/...` para un bucket que es **privado** — esas URLs nunca habrían
+  funcionado. Es un bug preexistente, pero la tabla tiene **0 filas** (el flujo jamás se usó), así
+  que no se tocó en esta ronda para no ampliar el alcance.
+
+### Financiamiento — Fase 2 del link de firma: video de compromiso + foto con la cédula (25-jul-2026, v49.40)
+Continuación de la Fase 1 (v49.39). El dueño eligió por `AskUserQuestion` sumar **video de
+compromiso** y **selfie con la cédula en mano** (descartó comprobante de ingresos y de dirección).
+- **Columnas nuevas en `prestamo_solicitudes`** (migración `prestamo_solicitudes_selfie_y_video`,
+  aditiva): `selfie` (dataURL, igual que `cedula_frente`/`cedula_dorso` — es una foto, pesa poco),
+  `video_path` (la RUTA en Storage, **no** el video: un video de 30s pesa varios MB y en base64
+  crecería ~33% más — no cabe en una columna de texto como las fotos) y `video_guion` (deja
+  constancia del texto exacto que se le pidió leer).
+- **Cómo sube el video un cliente SIN sesión** (el punto delicado: tras cerrar el hueco de
+  seguridad, `anon` ya no puede escribir en Storage — y así debe ser). Patrón de **URL firmada**:
+  el navegador pide `POST {id, accion:'firmar-video', ext}` a la función Edge; la función valida
+  que la solicitud siga `pendiente`, **decide ella la ruta** (`prestamo-solicitudes/{id}/compromiso.{ext}`,
+  el cliente nunca la elige) y devuelve una URL de subida firmada; el teléfono hace `PUT` directo
+  a esa URL. Así el archivo pesado **no pasa por la función** (evita su límite de payload) y nadie
+  puede escribir fuera de su carpeta. Al publicar, la función **solo acepta el `video_path` si
+  empieza por el prefijo de ESA solicitud** — no se puede apuntar a un archivo ajeno.
+- **Bucket `documentos` (privado), no `comprobantes`:** el video es un documento legal con la cara
+  y la voz del cliente — no puede quedar en un bucket público. Además `comprobantes` tiene tope de
+  5 MB y solo acepta imágenes, así que técnicamente tampoco servía.
+- **El guion NO es texto libre** (criterio ya acordado en la Fase 1): `guionTexto()` lo arma con los
+  términos REALES de esa solicitud — nombre, monto, número y frecuencia de cuotas, monto de cuota y
+  total. Para línea de crédito cambia solo (habla de tasa mensual y plazo del capital, no de cuotas).
+  Así lo que el cliente dice en el video coincide exactamente con lo que firma.
+- **Lado admin (`nxPrSolicitudVer`):** se muestran la selfie y el video. Como el bucket es privado,
+  `nxPrSolVideoCargar(path)` pide una **URL firmada de lectura** (`POST /storage/v1/object/sign/...`,
+  1 hora) con el JWT del admin y monta el `<video>`; si falla, avisa en vez de dejar un reproductor
+  roto. Se muestra también el `video_guion` guardado, para comparar con lo que se oye.
+- **La nota que queda en el préstamo al aprobar lista SOLO lo que de verdad llegó** (`['cédula',
+  'firma']` + foto/video si existen) — una solicitud creada antes de esta versión no dice que tiene
+  video. Mismo criterio de "no dar por hecho" del resto del sistema.
+- **El video es obligatorio para publicar** (junto con las 2 fotos de cédula, la selfie y la firma):
+  es la garantía que el dueño quería. Si la subida falla, se avisa con un mensaje claro y el botón
+  Publicar sigue deshabilitado — no se puede enviar una solicitud a medias.
+- **Verificado:** **44 pruebas Playwright** contra el archivo REAL `firma-prestamo.html` (no un
+  extracto) — incluyendo que el guion trae los datos reales en los 2 modos (cuotas y crédito), que
+  se pide el permiso de subida, que el video sube por `PUT` a la URL firmada con su tipo real, que
+  se manda la RUTA y no el video entero, y que **si la subida falla no se puede publicar** — y **40
+  pruebas** contra el código real extraído de `parches.js` del lado admin (las 26 anteriores sin
+  regresión + 14 nuevas: se ven las 4 imágenes, se pide la URL firmada con la ruta correcta y **con
+  el JWT del admin, no con la anon key**, si la firma falla se avisa, una solicitud vieja sin
+  selfie/video no muestra secciones vacías, y la nota lista solo lo recibido). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan
+  `new Function()`; `version.json` válido. Sin desbordes en 390-420px, 0 errores de JS.
+  **Nota honesta:** este entorno no tiene salida a internet, así que la subida real por HTTPS a
+  Storage no se pudo ejercitar desde aquí — se verificó toda la lógica con el backend simulado y a
+  nivel SQL. Falta la confirmación del dueño grabando un video real desde su teléfono.
+
+### Financiamiento — link público para que el cliente firme (cédula + firma) antes de crear el préstamo (25-jul-2026, v49.39)
+El dueño pidió algo nuevo: al armar un préstamo, poder mandarle al cliente un **link por WhatsApp**
+(sin login) donde suba la foto de su cédula (frente/dorso) y firme con el dedo, ANTES de que el
+préstamo se cree de verdad — el dueño lo revisa y aprueba después. Se le preguntó y confirmó por
+`AskUserQuestion`: (1) el link se genera **ANTES** de que el préstamo exista — el cliente firma primero
+y eso crea la solicitud, no al revés; (2) el video de compromiso hablado (parte del pedido original) se
+**difirió a una fase futura** (necesitaría Supabase Storage para archivos de video, más pesado que una
+foto — se construyó primero la Fase 1 sin video: cédula + firma).
+- **Bloqueo real durante la construcción:** el conector MCP de Supabase de esta sesión se desconectó a
+  mitad de camino y no volvió a responder por el resto de esa sesión — sin él no se podía crear la tabla
+  ni desplegar la función Edge. Se codificó y probó TODO el lado del frontend contra un backend simulado
+  (Playwright), pero **no se publicó a `main`** — se dejó en una rama aparte
+  (`claude/financiamiento-link-firma`) hasta poder cerrar la pieza de Supabase, exactamente para no dejar
+  un botón "Generar link" que fallara en producción. En la sesión siguiente el conector volvió a
+  funcionar y se completó: tabla + función Edge + verificación de punta a punta, y AHORA sí se publicó.
+- **Tabla nueva `prestamo_solicitudes`** (aditiva, mismo patrón que `prestamos`/`prestamo_clientes`: RLS
+  `mi_rol()='admin'`, sin `organizacion_id` — módulo de un solo dueño). Guarda los términos del préstamo
+  propuesto (nombre, cédula, teléfono, modo/capital/tasa/cuotas/etc., igual que `prestamos`) + `estado`
+  (`pendiente`→`enviada`→`aprobada`|`rechazada`, con CHECK constraint) + `cedula_frente`/`cedula_dorso`/
+  `firma` (dataURL, mismo patrón de compresión ya usado en Rifas — canvas, máx 1000px, JPEG 0.75) +
+  `prestamo_id`/`motivo_rechazo`/`revisado_at`/`revisado_por` para cuando el dueño decide.
+- **Función Edge nueva `prestamo-solicitud`** (`verify_jwt:false` — el link es público, sin sesión,
+  mismo patrón que `rifa`/`boleto`/`vendedor`): GET `?id=` devuelve solo los campos que la página pública
+  necesita mostrar (términos del préstamo, nunca cédula/teléfono/notas); POST `{id,cedula_frente,
+  cedula_dorso,firma}` valida que las 3 imágenes sean dataURLs reales, **exige que el estado sea
+  `pendiente`** antes de aceptar (blindaje server-side: si alguien reintenta publicar el mismo link ya
+  usado, o lo intenta con `curl` saltándose la UI, se rechaza igual) y hace el `PATCH` con
+  `estado:'enviada'`. Usa la service-role key (bypassa RLS, igual que las demás funciones públicas del
+  sistema) — el navegador del cliente nunca toca `prestamo_solicitudes` directo.
+- **`window.nxPrGenerarLinkFirma()`** (`parches.js`, IIFE de Financiamiento): botón "Link de firma"
+  junto a "Compartir" en la vista previa de cuotas de `abrirForm` (nuevo préstamo) — lee el simulador
+  TAL CUAL está en pantalla (mismo patrón que `nxPrPropuesta`, sin tocar `nxPrestamoGuardar`), valida que
+  el simulador esté completo (capital+tasa para crédito, capital+n cuotas para cuotas fijas; **abonos
+  libres no genera link** — no tiene cuotas fijas que mostrarle al cliente, avisa en vez de fingir),
+  postea a `prestamo_solicitudes`, y muestra el link + botón de WhatsApp (`nxPrLinkFirmaMostrar`).
+- **Pestaña "Solicitudes"** nueva en la barra lateral (con contador de "por revisar" en vivo,
+  `_prSolicitudes.filter(s=>s.estado==='enviada').length`): 3 KPIs (por revisar/sin enviar/aprobadas),
+  tabla con badge de estado, y `nxPrSolicitudVer` (modal de detalle) — si el cliente no ha abierto el
+  link, avisa honesto ("todavía no ha abierto el link") en vez de mostrar campos vacíos; si ya envió,
+  muestra las 3 imágenes + los términos + botones **Aprobar y crear préstamo** (hace el `POST` real a
+  `prestamos` con esos términos + una nota `[Firmado por link — cédula y firma en la solicitud ...]` +
+  el `PATCH` que marca la solicitud `aprobada` con el `prestamo_id`) y **Rechazar** (pide motivo,
+  `PATCH` a `rechazada`).
+- **Página pública `firma-prestamo.html`** (nueva, raíz del repo, mismo patrón que `rifa.html`/
+  `boleto.html`/`vendedor.html` — HTML+JS vanilla standalone, sin build): 3 tarjetas (Tu préstamo —
+  términos + declaración de compromiso con el nombre real del cliente; Tu cédula — 2 fotos con
+  compresión client-side; Tu firma — canvas táctil) + checkbox de aceptación + botón "Publicar"
+  (deshabilitado hasta que las 2 fotos + la firma + el checkbox estén completos). Maneja 4 estados
+  honestos: cargando, formulario, "ya enviaste tus datos" (si vuelve a abrir el mismo link después de
+  publicar), y enlace inválido/no encontrado.
+- **Verificado de punta a punta:** el backend se probó con SQL directo simulando exactamente las mismas
+  consultas que hace la función Edge (INSERT como lo haría el admin → SELECT con las mismas columnas que
+  expone el GET público → UPDATE con la misma guardia de estado que usa el POST → confirmado que un
+  segundo intento de envío ya no encuentra ninguna fila `pendiente`, 0 resultados), sin dejar datos de
+  prueba en la base real. `get_advisors(security)` sin hallazgos nuevos. El frontend se verificó con
+  **21 pruebas Playwright** contra el archivo REAL `firma-prestamo.html` (no un extracto) — cédula+firma
+  +checkbox+validaciones+casos de link ya usado/inválido — y **26 pruebas** contra el código real
+  extraído de `parches.js` del lado admin (generar link, pantalla de Solicitudes, aprobar crea el
+  préstamo real, rechazar) — las 47 en verde, 0 errores de JS, sin desbordes en 390-420px. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  **Nota honesta sobre el alcance de la prueba:** este entorno de sesión no tiene salida a internet (ni
+  siquiera `curl` funciona), así que la función Edge desplegada no se pudo invocar por HTTPS real desde
+  aquí — se verificó su lógica exacta a nivel SQL (mismas consultas, mismos filtros) y por el mismo
+  patrón ya probado en producción con `rifa`/`boleto`/`vendedor`; falta la confirmación visual del dueño
+  probando el link real en su teléfono.
+- **Pendiente (Fase 2, si el dueño la pide):** el video de compromiso hablado — necesitaría Supabase
+  Storage (subir un archivo de video en vez de un dataURL de texto, cambio de mayor alcance) y un guion
+  armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
+  guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
+
+### POS · Barra de acciones fija "Cobrar" — PROBADA en v52.9 y REVERTIDA en v53.0 (30-jul-2026)
+Del spec de ChatGPT `docs/visual-drafts/ui/GLOBAL_STICKY_ACTION_BAR_V1.md` (barra inferior fija
+reutilizable). Se piloteó en Factura/Prefactura del POS (v52.9, PR #219): una barra `#nxFacBar`
+colgada del `<body>` (para evitar la trampa de `container-type:inline-size` que atrapa un
+`position:fixed`), solo móvil (≤760px), con Cancelar/Borrador/Vista previa/Cobrar.
+- **Por qué se revirtió (v53.0, PR #220):** el CSS `body:has(#nxFacBar) .nx-fab{display:none}`
+  escondía el **botón flotante de menú** (`.nx-fab`, la navegación del celular) **cada vez que la
+  barra existía en el DOM** — no solo cuando de verdad se veía. La regla que MUESTRA la barra
+  (`body:has(#v-pos.on) #nxFacBar{display:flex}`) sí estaba gateada a `#v-pos.on`, pero la que
+  ESCONDE el FAB no — así que si la barra quedaba colgada al salir de Factura (el ciclo de vida
+  dependía de `renderPOS`/`nav()` removiéndola, y no todos los caminos de salida del POS pasan por
+  ahí), el FAB desaparecía dejando la parte de abajo vacía. El dueño lo reportó: *"No está abajo la
+  barra de iconos"*. El costo (esconder su navegación diaria) supera el beneficio marginal de la
+  barra, así que se revirtió por completo (revert del commit `0d0d66e`), dejando la Factura exacta a
+  como estaba: FAB siempre presente + botón Cobrar inline de siempre. v52.8 (cuota exacta) intacto.
+- **Si se retoma:** NO esconder el FAB — es la navegación. Dos caminos posibles: (a) que la barra y
+  el FAB coexistan (el FAB es draggable con `fab_pos` left/top, así que "levantarlo sobre la barra"
+  es frágil si el usuario lo movió — hay que pensarlo), o (b) que la barra viva por encima del FAB.
+  Y gatear TODA regla `:has()` a `body:has(#v-pos.on)` para que nada leak a Seguros, + asegurar que
+  la barra se remueva en TODOS los caminos de salida del POS (no solo `renderPOS`/`nav()`).
+- **RECONSTRUIDA CON EL FAB CORREGIDO (v53.1, PR #222) — el dueño mandó de nuevo la muestra y
+  confirmó "la barra en la parte inferior para los botones" (sí la quería, el problema real era
+  solo el FAB).** Se aplicó la opción (a): el FAB **NUNCA se esconde** — se **LEVANTA** con
+  `transform:translateY(-78px)!important` vía una clase JS (`.nxFabLift`, `!important` combinado
+  con `:active`/`.open` para no pisar esos otros estados) en vez de forzar `bottom`/`right`. La
+  ventaja del `transform`: **funciona sin importar la posición base** del FAB (compone con
+  cualquier `left/top` que haya dejado el arrastre), a diferencia de forzar `bottom` que solo
+  aplicaría si nunca se movió — verificado con Playwright arrastrando el FAB a otro punto de la
+  pantalla y confirmando que igual sube. `nxFabLift` se agrega/quita en el MISMO punto donde se
+  crea/destruye la barra (nunca por separado, cero riesgo de desincronía).
+- **EXTENDIDA A "Nueva compra" (v53.2, mismo PR de ideas) — el dueño pidió "la barra de acción en
+  demás" (los otros módulos).** Antes de construir se investigaron los candidatos reales del
+  mockup (Facturación/Cobranza/Recepción Taller/Inventario/Reportes) contra el código: **"Recibir
+  equipo" (`nxRepNueva`, Recepción Taller) NO lo necesita** — ya es un modal `flex-direction:column`
+  con su propio pie fijo DENTRO del modal (scroll interno, el botón nunca queda enterrado), mismo
+  patrón que ya resuelve el problema sin la barra global. **"Nueva compra" (`renderCompraForm`) SÍ
+  tenía el problema real**: es una página normal (no modal) con el pie Cancelar/Guardar al final
+  del flujo — con muchos artículos, hay que hacer scroll largo para llegar a Guardar. Motor
+  **refactorizado a compartido** (`nxStickyBarSet(id, html)`, junto a `facBarraSync`): monta/
+  desmonta el nodo del body + sube/baja el FAB — cada pantalla solo decide CUÁNDO mostrarse y QUÉ
+  botones lleva (`facBarraSync`/`compBarraSync`), sin duplicar la mecánica del FAB. Ambas barras
+  comparten la clase `.nxFacBar` (id propio `#nxFacBar`/`#nxCompBar`) así que el CSS de mostrar/
+  ocultar (`body:has(#v-pos.on) .nxFacBar`, el de overlay abierto, el `padding-bottom` de
+  `.nxTMain`) sirve a las dos sin duplicar nada. La limpieza en `renderPOS()`/`nav()` pasó de
+  `getElementById('nxFacBar')` a `querySelectorAll('.nxFacBar')` — quita CUALQUIER barra al cambiar
+  de pestaña o salir del POS, sin tener que acordarse de sumar cada id nuevo a mano. `compBarraSync`
+  refleja los 3 botones EXACTOS del pie en línea (`nxPosCompraCancelar`/`nxPosGuardarCompra(1)`/
+  `nxPosGuardarCompra()`), sin inventar un estado deshabilitado que el pie real tampoco tiene (la
+  validación real vive dentro de `nxPosGuardarCompra`, que avisa por toast si faltan datos).
+  Verificado con Playwright (11 comprobaciones): Factura sin regresión tras el refactor, Compras con
+  sus 3 botones reales y el FAB levantado sin solape, "Compras · lista" (no "nueva") sin barra, el
+  cleanup general quita cualquier barra al cambiar de pestaña, el overlay de buscar proveedor/
+  empleado/artículo la oculta igual que en Factura, escritorio sin barra. **Pendiente si el dueño
+  sigue pidiendo "los demás módulos":** revisar Cotizaciones/CRM/Entidades (son modales, probablemente
+  ya resueltos como Recepción Taller — hay que confirmar uno por uno, no asumir) y Financiamiento
+  (su "Nuevo préstamo" YA tiene pie fijo nativo desde v52.7, no necesita esto).
+
+### Financiamiento — la cuota queda EXACTA y la última se ajusta (27-jul-2026, v52.8)
+El dueño: *"Por si pongo en pago de cuota 5mil Quincenal"* → *"Exacto y que al Final se ajuste"*. En
+"Calcular por → Monto de la cuota" (formulario de préstamo), antes el sistema calculaba cuántas cuotas
+y luego repartía el total PAREJO (80,000 al 5% quincenal, cuota 5,000 → 27 cuotas de **4,963**). El
+dueño quiere que la cuota quede EXACTA en 5,000 y la ÚLTIMA absorba el resto (**26 × 5,000 + 1 × 4,000**).
+- **El total y el interés NO cambian** — solo cómo se reparten las cuotas (misma matemática de fondo:
+  total = capital + capital·i·n = 134,000, interés 54,000). Lo único nuevo es el reparto de las filas.
+- **Columna nueva `prestamos.cuota_fija` (numeric nullable)** + la misma en `prestamo_solicitudes` (aditiva,
+  `get_advisors` sin hallazgos nuevos). `NULL` = cuotas parejas (comportamiento clásico, intacto).
+- **`amortizar` ganó un 7º parámetro opcional `cuotaFija`** — cuando >0 y n>1: las primeras n-1 cuotas
+  son EXACTAS a `cuotaFija` y la última = total − (n-1)·cuotaFija (siempre positiva y ≤ cuotaFija, porque
+  `cuotasParaMonto` garantiza que n·cuotaObj ≥ total). Cubre plano, saldo insoluto (pago fijo, la última
+  salda el saldo) y sin interés (i=0). **Retrocompatible al 100%:** las 13 llamadas viejas pasan 6 args →
+  `cuotaFija=undefined→0` → comportamiento de siempre (verificado: 6 args === 7 args con 0). Guarda de
+  seguridad: si `cuotaFija` no cabe (> total o última ≤ 0) cae a cuota pareja, nunca produce una cuota
+  negativa.
+- **Flujo completo cableado, cero lógica de negocio duplicada:** `calcPrestamo` computa `cuotaFija` desde
+  `_prCuotaMode==='monto'` + `prCuotaObjetivo` y lo retorna; los 3 sitios de vista-previa del formulario
+  pasan `c.cuotaFija`; los 6 sitios de préstamo-guardado (detalle, cronograma, contrato, tabla, `prCuotaFmt`)
+  pasan `Number(p.cuota_fija)||0`; `nxPrestamoGuardar` persiste `cuota_fija` (solo en modo cuotas); la
+  propuesta imprimible (`nxPrPropuesta`) y el link de firma (`nxPrGenerarLinkFirma`) lo llevan en su draft, y
+  `nxPrSolicitudAprobar` lo copia al préstamo real al aprobar. La página pública `firma-prestamo.html` ya
+  mostraba `cuota_calculada` (que ahora = la cuota exacta 5,000) — sin cambios, queda consistente.
+- **Al EDITAR** un préstamo guardado en modo exacto, `abrirForm` lo reabre en "Monto de la cuota" con el
+  monto precargado (para conservar la cuota fija y su última cuota ajustada).
+- Verificado con el **código real extraído por contenido** (brace-matching, no reconstrucción): 25
+  comprobaciones sobre `amortizar`/`cuotasParaMonto` (caso real del dueño 26×5,000+1×4,000, suma=total,
+  saldo final 0, retrocompat 6-vs-7-args, saldo insoluto, i=0, guardas de seguridad) + 6 sobre
+  `calcPrestamo` (modo monto retorna cuotaFija=5000/cuota=5000; modo num retorna 0/cuota pareja 4963). Más
+  la prueba de humo de la app real (`index.html`+`parches.js` en navegador): 0 errores de JS,
+  `nxAbrirPrestamos` registrado. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### Financiamiento — ventana de Nuevo/Editar préstamo a pantalla completa (nativa) (27-jul-2026, v52.7)
+El dueño mandó una captura del formulario "Editar préstamo" (modal flotante) y pidió que **esa ventana
+sea nativa, no flotante**. Es `abrirForm(pr)` (Financiamiento, `parches.js`), que antes armaba un
+`overlay` con un `.modal.nxPrForm` de 460px centrado (tarjeta flotante sobre fondo oscuro).
+- **Cambio SOLO de contenedor/presentación, cero lógica:** todos los ids de campo (`prCap`/`prNumCuotas`/
+  `prCuotaObjetivo`/`prMetodo`/`prTot`/`prNom`/...), `pintarModo()`, `nxPrRecalc()`, `nxPrestamoGuardar()`
+  y el resto quedaron idénticos. El overlay pasó a `overlay open nxPrOvFull` y el modal a
+  `modal nxPrForm nxPrFormFull`, con CSS nuevo en `inyectarCSS()` (`nxPrestamosCSS`) que lo hace
+  **pantalla completa**: `.nxPrFormFull` = `width:100%;height:100dvh;border-radius:0` (cubre el fondo,
+  sin tarjeta flotante ni backdrop). Estructura: barra superior fija `.nxPrFormTop` (título + "Volver"),
+  área con scroll `.nxPrFormScroll` cuyo contenido va centrado a `max-width:640px` (`.nxPrFormInner`,
+  para que en escritorio no se estiren los campos), y pie fijo `.nxPrFormFoot` con el botón Guardar.
+- **Se quitó el click-fuera-para-cerrar** (ya no hay backdrop; se cierra con "Volver") — evita cerrar
+  el formulario por accidente y perder lo escrito. Solo aplica a ESTE formulario: los demás modales de
+  Financiamiento (cliente, config, etc.) siguen usando `.nxPrForm` SIN `.nxPrFormFull`, así que no
+  cambian (el CSS nuevo está scopeado a `.nxPrFormFull`).
+- **Nota sobre "cuota que pagará 5,000 → resumen 4,963" (v49.29):** NO es un bug. En modo "Calcular por
+  monto de la cuota", el sistema redondea hacia ARRIBA el número de cuotas (para no cobrar de menos), y
+  con 27 cuotas quincenales de RD$80,000 al 5% plano el total da RD$134,000 → cuota real 134,000/27 =
+  RD$4,963 (≤ 5,000). No siempre se puede pegar exacto a 5,000 con un número entero de cuotas. Se le
+  explicó al dueño; si quiere la opción de que la cuota quede EXACTA en 5,000 y la última se ajuste,
+  es un cambio aparte (confirmar antes de tocar la matemática).
+- Verificado con Playwright cargando el CSS real de `inyectarCSS` (¡ojo: hay VARIAS funciones
+  `inyectarCSS()` en el archivo — hay que anclar en `nxPrestamosCSS`, la primera coincidencia agarra
+  otra!): en 390px y 1280px la ventana llena la pantalla (`modal == viewport`), barra superior blanca,
+  contenido centrado a 640px en escritorio, sin scroll horizontal. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — marcar las cuotas a pagar en el detalle del préstamo (27-jul-2026, v52.6)
+El dueño mandó una captura del detalle de un préstamo (la tabla de amortización) y pidió poder
+**seleccionar/chequear las cuotas que va a pagar** para que el "Monto a pagar" se calcule solo, en
+vez de teclearlo. Es el módulo **Financiamiento** (`nxPrestamoVer`, tablas `prestamos`/`prestamo_pagos`),
+NO Cuotas del POS.
+- **Decisión de diseño clave (por el modelo de datos):** el pago es un abono libre (`prestamo_pagos`)
+  que se aplica **de la cuota más vieja a la más nueva** (`pag >= acum` oldest-first). Por eso la
+  selección es **consecutiva desde arriba**: marcar la #3 marca también #1 y #2. Así el monto
+  calculado calza EXACTO con cómo el dinero se aplica de verdad — si dejara marcar #1 y #3 salteando
+  #2, el monto engañaría (el pago igual iría a #1 y #2). Desmarcar una cuota desmarca las de abajo.
+- **Sin esquema nuevo, cero cambios en el guardado:** `nxPrestamoPagar` sigue leyendo `#prPagoMonto`
+  igual que siempre — marcar las cuotas solo LLENA ese campo (con `nxMoney.format`), no cambia cómo se
+  registra el pago. El monto a mano sigue funcionando (marcar es opcional).
+- **Dónde aplica:** los 2 modos de "cuotas" (con interés = tabla de amortización real `amortizar`; sin
+  interés = calendario de cuota fija). En crédito/libre NO hay cuotas fijas, así que ahí no salen
+  checkboxes (queda el monto libre). El checkbox reemplaza el "·"/"PENDIENTE" solo en las cuotas
+  **pendientes** (las pagadas siguen con ✓/PAGADA).
+- **Mora:** si el préstamo tiene mora configurada (`prMoraDe(p) > 0`), se **suma automáticamente** al
+  monto al marcar cuotas, y el aviso lo muestra ("N cuotas · RD$X + RD$Y mora"). En los préstamos sin
+  mora configurada (`mora_pct=0`, el caso normal hoy) es RD$0, no afecta.
+- **Piezas:** vars de módulo `_prCuotasPend`/`_prMoraOpen` (junto a `_tipoPago`), checkbox
+  `.prCuotaChk` con `data-n`/`data-monto` en cada fila pendiente, handler `window.nxPrCuotaCheck(n)`
+  (selección consecutiva + suma + mora + llena `#prPagoMonto`), y un aviso `#prPagoCuotasInfo` arriba
+  del campo de monto (solo si hay cuotas pendientes).
+- **Verificado con Playwright, handler real extraído del archivo** (no reconstruido): marcar #3 →
+  selecciona 1,2,3 y monto 14,889 (3×4,963); marcar #5 → 24,815; desmarcar #3 → queda 1,2 = 9,926;
+  desmarcar #1 → vacío; y con mora 500, 2 cuotas = 9,926 + 500 = 10,426 con el aviso correcto. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+
+### Financiamiento — detalle del préstamo rediseñado con un mockup del dueño (25-jul-2026, v49.38)
+El dueño mandó una imagen ("Detalle de préstamo") de un mockup de un ERP de préstamos completo — topbar
+con buscador/notificaciones/perfil "Casa Matriz", barra lateral con Desembolsos/Moras/Refinanciaciones/
+Fiadores/Usuarios/Sucursales, un widget "NEXUS AI" de riesgo, y una pantalla de detalle con 5 KPIs, form
+de "Registrar pago", panel de cliente, panel de detalles, barra de progreso, accesos rápidos, tabla de
+cuotas con columna Mora, y línea de tiempo de actividad — y pidió: **"Tal como se ve en la imagen, para
+sistema de financiamiento multiempresa"**.
+- **Auditado contra el código y el esquema reales ANTES de tocar nada** (mismo criterio de todo el
+  módulo): la mayor parte del "shell" del mockup (topbar con buscador/notificaciones, sucursal "Casa
+  Matriz", NEXUS AI de riesgo, Desembolsos/Moras/Refinanciaciones/Fiadores/Usuarios/Sucursales como
+  PANTALLAS aparte) **no tiene ningún dato real detrás** — este módulo es de un solo dueño (sin
+  `organizacion_id`, sin usuarios/sucursales, sin flujo de aprobación/desembolso: el préstamo se crea
+  directo). Construir eso habría significado fingir un ERP que no existe, o rediseñar el modelo de datos
+  completo sin que el dueño lo haya pedido explícitamente para eso. Se hizo la pieza que SÍ es 100% real
+  y no depende de Supabase (que en el momento de auditar el mockup estaba con la conexión caída):
+  **rediseñar `nxPrestamoVer` (el modal de detalle del préstamo)** con más información, en el mismo
+  espíritu del mockup, pero solo con datos verdaderos.
+- **`window.nxPrestamoVer(id)` reescrito por completo** (`parches.js`, mismo IIFE de Financiamiento):
+  - **5 tarjetas de resumen** (`kpiCard`, reusa `.nxFP-kpi` ya existente en el módulo): Monto prestado,
+    Balance pendiente, Capital pagado (en crédito: "Pagado a capital", del propio `creditoCalc`), Próxima
+    cuota (fecha + monto, **con la mora sumada si aplica** — `+ RD$X mora`) o, si no hay cuota próxima,
+    Fecha límite de capital (crédito) / Modalidad (abonos libres), y Total del préstamo con el interés.
+    `capPagado`/`proximaFecha`/`proximaMonto`/`moraActual` se derivan de datos reales — cada modo (crédito/
+    cuotas con interés/cuotas sin interés/libre) tiene su propia forma real de calcularlo, nunca un valor
+    inventado.
+  - **Columna nueva "Mora" en la tabla de amortización** (solo en cuotas con interés): usa `prMoraDe(p)`
+    (ya existente, recargo único a nivel de PRÉSTAMO, no por cuota — real desde v49.19) y la muestra
+    únicamente en la fila de la próxima cuota vencida — nunca en todas las filas, porque la mora del
+    sistema no es per-cuota.
+  - **Barra de progreso** (`.nxPrBar`, degradado morado) mostrando el % de capital ya pagado + "Capital
+    pagado" / "Faltante" en números reales.
+  - **Línea de tiempo real** (`tlEventos`/`.nxPrTl`): "Préstamo creado" + un evento "Pago registrado" por
+    cada pago real (ordenados), + "Préstamo saldado" si ya se pagó todo. **Deliberadamente NO se
+    inventaron** los pasos "Aprobado"/"Contrato firmado"/"Desembolso" del mockup — este módulo no tiene
+    ese flujo, crea el préstamo directo.
+  - **Modal más ancho** (`.nxPrDetWide{max-width:640px}`, antes 460px) para que quepan las 5 tarjetas +
+    tarjeta de cliente (avatar+nombre+badge Al día/En mora/Saldado+teléfono+cédula) + tarjeta de detalles
+    + tarjeta de progreso, todas con la clase `.prCard` ya existente. Botón nuevo **"Imprimir"** en la
+    barra de acciones (reusa `nxPrestamoAmortizacion(id)`, ya existía — solo le faltaba un acceso directo
+    desde el detalle).
+  - **Desviación deliberada del mockup:** color morado de Financiamiento (no el azul del mockup — regla
+    "cada app su color", ya decretada) y campo de nota renombrado a "Referencia / nota (opcional)" (mismo
+    input de siempre, sin columna nueva).
+- **BUG REAL encontrado y corregido durante la verificación (antes de publicar):** el resumen de 5
+  tarjetas usaba `.nxFP-kpis{grid-template-columns:repeat(5,1fr)}` (la clase compartida que ya usan
+  Contabilidad/Reportes/RRHH en pantallas de ancho completo) — dentro de este modal, fijo a 640px de
+  ancho, el `1fr` de esa regla se comporta como `minmax(auto,1fr)`: como el valor de "RD$ 20,000" no se
+  puede partir en dos líneas, el navegador ensancha las columnas más allá del contenedor, dejando la 5ta
+  tarjeta ("Total del préstamo") oculta por scroll horizontal invisible dentro del panel — mismo patrón
+  de bug ya documentado varias veces en este archivo (grid con `min-width:auto`), pero esta vez en un
+  contenedor de ANCHO FIJO en vez de dependiente del viewport, así que las media queries por viewport que
+  ya tiene `.nxFP-kpis` (900px/560px) no alcanzaban a corregirlo. Arreglado con un estilo en línea
+  específico de este modal: `grid-template-columns:repeat(auto-fit,minmax(140px,1fr))` — responde al
+  ancho REAL del contenedor (no al viewport), así que en 640px cae solo a 3+2 y en 390px a 2+2+1, sin
+  desbordes en ningún caso. La clase compartida `.nxFP-kpi`/`.nxFP-kpis` no se tocó (sigue sirviendo bien
+  a las pantallas de ancho completo que ya la usan).
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción — `nxPrestamoVer`
+  + los helpers reales `creditoCalc`/`pagadoDe`/`saldoDe`/`estadoDe`/`esVencido`/`amortizar`/`prMoraDe`/
+  `prIniciales`/`prRef` extraídos tal cual, con balance de llaves real): **47 pruebas** en 4 escenarios —
+  cuotas con interés plano y pagos parciales (los 5 KPIs correctos, la mora solo en la fila correcta
+  cuando está activada y el préstamo ya venció el plazo completo — se confirmó que la mora del sistema es
+  a nivel de PRÉSTAMO, no por cuota individual atrasada), cuotas sin interés, línea de crédito (con los
+  botones "A capital"/"A interés"), y abonos libres ya saldado (sin botón de pago, con "Préstamo
+  saldado" en la línea de tiempo) — más las comprobaciones de que NO aparece ningún campo inventado
+  (Asesor/Sucursal/Producto) ni eventos de flujo falso (Aprobado/Contrato firmado/Desembolso). Sin
+  desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente si el dueño quiere seguir con el mockup completo:** el resto (topbar/buscador global,
+  Desembolsos/Moras/Refinanciaciones/Fiadores/Usuarios/Sucursales como pantallas reales, NEXUS AI de
+  riesgo) requeriría decisiones de arquitectura nuevas (¿de verdad hace falta multi-sucursal/multi-usuario
+  aquí? ¿un asistente de riesgo con qué datos/modelo?) que no se tomaron solas — se le preguntarían al
+  dueño antes de construir, mismo criterio que el resto de esta sesión.
+
+### Financiamiento (Préstamos, Multiempresa) — HISTORIAL CREDITICIO (spec ChatGPT "Historial Crediticio V1", 24-jul-2026, v49.18)
+El dueño pidió aplicar `docs/visual-drafts/financiamiento/HISTORIAL_CREDITICIO_V1_APROBADO.md` (ChatGPT lo subió a
+`main`, commit `c72bd56`). Vista de solo lectura del comportamiento crediticio de un cliente antes de aprobarle
+préstamos. **Todo sobre datos REALES, cero tabla nueva** — el módulo ya tenía casi todos los helpers necesarios
+(`estadoDe`/`esVencido`/`saldoDe`/`pagadoDe`/`interesCobradoDe`/`prDiasVencido`/`prEstadoInfo`/`prRef`/`amortizar`/
+`_pagosByPrestamo`).
+- **`window.nxPrHistCredito(cid)`** — modal (`.nxFP`, morado del módulo) con header + score circular + 3 pestañas
+  (Resumen/Préstamos/Pagos). Entradas: botón de historial (`ti-history`) en la fila de la lista de Clientes de
+  Financiamiento (`prClientesTablaHTML`) y botón "Historial crediticio" en la tarjeta del cliente de la Evaluación
+  (`evClienteBoxHTML`).
+- **Score de HISTORIAL** (`prHistScore`, distinto al de la Evaluación que es sobre un préstamo propuesto): base 60,
+  +20×(pagados/total), +hasta 15 por (pagado/total debe), −15 por cada vencido (tope −45), +5 si 0 vencidos y ≥1
+  pagado. Clamp 0-100, se muestra ×10 (/1000) con clasificación (Excelente/Muy bueno/Bueno/Regular/Bajo) + riesgo +
+  resultado (Aprobable/Revisión/No recomendable). Fórmula transparente y ajustable.
+- **Resumen:** 8 KPIs de cartera (total/activos/pagados préstamos, monto financiado, total pagado, balance pendiente,
+  intereses pagados [`interesCobradoDe`], puntualidad %) + recomendación (monto/tasa/plazo **derivados del historial
+  real** del cliente — máx capital manejado, tasa promedio, plazo máx) + **comportamiento de pago** por cuota
+  (`prCuotaDots`, puntos verde/amarillo/naranja/rojo/gris) + alerta real de préstamos vencidos.
+- **Préstamos:** tabla real (Ref/Fecha/Monto/Tasa/Cuota/Pagado/Balance/Estado/Días atraso), clic abre `nxPrestamoVer`.
+  Días de atraso solo en vencidos (`esVencido(p)?prDiasVencido(p):0` — un préstamo PAGADO muestra "—", no días).
+- **Pagos:** todos los `prestamo_pagos` del cliente (fecha/préstamo/monto/método/registró) + total.
+- **Omitido A PROPÓSITO (no se finge, se documenta):** MORA (el módulo no calcula mora — se avisa en una nota),
+  documentos (sin Storage), gestiones de cobro, promesas de pago, pagos reversados, estados reestructurado/proceso
+  legal (solo Activo/Pagado/Vencido), foto del cliente (avatar de inicial). El comportamiento de pago por cuota es
+  un **estimado** (los pagos del ledger libre se aplican en orden a las cuotas — se etiqueta "(estimado)").
+- **Desviación del spec (documentada):** el spec pedía `#2563eb`/`.nxPf`; se usó el **morado del módulo** (`.nxFP`,
+  regla "cada app su color"), con verde/amarillo/naranja/rojo semánticos para los puntos y el score.
+- **Bug corregido en pruebas:** un préstamo PAGADO mostraba días de atraso (prDiasVencido cuenta desde la última
+  cuota sin mirar si ya está saldado) → se gateó a `esVencido(p)`.
+- Verificado con **38 pruebas Playwright** sobre el código real (modal, header con score /1000, 8 KPIs, recomendación,
+  comportamiento con puntos, tabla de 3 préstamos con estados PAGADO/VENCIDO/ACTIVO, tabla de pagos, alerta de
+  vencido, saltos de pestaña). 0 errores de JS, sin desbordes en 390px ni 1280px. `node --check` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **REDISEÑO COMPLETO (v49.19) — el dueño mandó un mockup detallado ("que se vea exactamente así"):** se reescribió
+  todo `nxPrHistCredito`/`hcRender` + CSS al layout del mockup (2 columnas). **Mora ahora es REAL** — migración
+  `prestamos_config_mora` (`mora_pct`/`mora_dias_gracia`, default 0 = apagada, patrón Cuotas del POS); helper
+  `prMoraDe(p)` (recargo único en vivo sobre el saldo si vencido más allá de la gracia, solo si `mora_pct>0`);
+  `_prCfg` ya se cargaba en `cargarPrestamos`. Con la mora apagada, "Mora acumulada" = RD$0 real (no un número
+  inventado). Layout: tarjeta de cliente (avatar, cédula/tel/correo/cliente-desde/última-actividad) + **10 KPI
+  tiles con ícono** (total/activos/pagados préstamos, financiado, pagado, balance, intereses, mora acumulada,
+  promedio atraso [avg `prDiasVencido` de vencidos], puntualidad) + **6 pestañas** (Resumen/Préstamos/Pagos/
+  Evaluaciones/Gestiones/Documentos) + panel derecho de 3 tarjetas (Recomendación / Indicadores del cliente con
+  score circular /1000 / Alertas). **Comportamiento de pago = línea de tiempo MENSUAL** (`prTimelineMeses`,
+  agrega el peor estado de las cuotas de cada mes, `prCuotaDots` estimado) con puntos redondos sobre una línea +
+  leyenda — como el mockup (antes eran cuadritos por préstamo). **Omitido a propósito, con estado vacío honesto en
+  su pestaña (no se finge):** Documentos (sin Storage), Gestiones de cobro (sin tabla de llamadas/promesas);
+  "Promesas incumplidas" = 0 (no se registran); Alertas solo las reales (atraso/mora/balance) — NO evaluación/
+  documento/garantía pendientes del mockup (no existen). Evaluaciones lee las notas "Evaluación: score" que deja la
+  pantalla de Evaluación en el préstamo. Foto del cliente = avatar de inicial (sin columna de foto). Verificado con
+  **50 pruebas Playwright** del código real (10 KPIs, timeline mensual, 3 paneles, 6 pestañas, tabla, alertas
+  reales, estados vacíos honestos de Documentos/Gestiones). 0 errores de JS, sin desbordes en 390px ni 1280px.
+  `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido;
+  `get_advisors` sin hallazgos nuevos por la columna de mora.
+
+### Financiamiento (Préstamos, Multiempresa) — COMPROBANTE DE PAGO (mockup ChatGPT "Comprobante V1", 24-jul-2026, v49.23)
+El dueño mandó el mockup `docs/visual-drafts/financiamiento/comprobante_pago_v1_mockup.png` (el .md no
+llegó al repo — igual que Reportes, se trabajó de la imagen directo). Recibo imprimible de **UN pago**
+de préstamo. **`window.nxPrestamoComprobante(pagoId, prestamoId)`** — documento `window.open`+
+`document.write` (mismo patrón que `nxPrestamoEstadoCuenta`/`nxPrestamoContrato`). Entrada: botón 🧾
+(`ti-receipt`) en cada fila de pago del detalle del préstamo (`nxPrestamoVer`, `pagosHTML`).
+- **Auditoría de esquema (SQL directo):** `prestamo_pagos` guarda solo `monto`/`fecha`/`metodo`/`nota`/
+  `tipo`/`created_by_name`/`created_at`. NO guarda desglose capital/intereses/mora por pago, ni datos
+  de transferencia (banco/referencia), ni voucher, ni sucursal/caja.
+- **Construido (100% real, cero tabla/columna nueva):** encabezado (REC-XXXXXX derivado del id del pago
+  —no es folio real, como `prRef`—, badge REGISTRADO, fecha+hora de `created_at`, recibido por) · cliente
+  (avatar iniciales + nombre/cédula/teléfono/dirección de `prestamo_clientes` vía `cliente_id`) ·
+  info del préstamo (Contrato `prRef`, monto aprobado, **Balance anterior = saldo actual + este pago**,
+  **Balance actual = `saldoDe`**, próxima cuota, estado) · monto recibido + **en letras** (`numLetras`) ·
+  "Aplicado a" (crédito: capital/interés real de `tipo`; cuotas/libre: "Abono al préstamo") · método
+  resaltado · observaciones (`nota`) · firmas · botones Imprimir/PDF, WhatsApp (texto), Correo (mailto).
+- **Omitido a propósito (no existe — no se finge):** sucursal/caja (no hay); desglose por pago capital/
+  intereses/mora/otros/descuento (`prestamo_pagos` no lo guarda — solo monto+tipo); datos estructurados
+  de transferencia (van en la nota); voucher/archivo (sin Storage); QR de verificación (sin endpoint
+  público); badge "VALIDADO/oficial" → se usa "REGISTRADO"; contador de reimpresiones/envíos (no se
+  registra); "Copiar enlace"/"Reimprimir" (sin enlace público; reimprimir = imprimir).
+- **BUG real encontrado y corregido ANTES de publicar (no llegó a producción):** el primer intento metía
+  los strings del mensaje de WhatsApp/correo con `JSON.stringify` DENTRO de atributos `onclick="..."`
+  entre comillas dobles — las comillas dobles del JSON rompían el atributo y corrompían el parseo del
+  resto del documento (los `.rec`/`.montoval` etc. no se renderizaban). Detectado en las pruebas
+  Playwright (el doc cargado no tenía los elementos). Arreglado moviendo los handlers a un `<script>`
+  dentro del documento generado (ahí `JSON.stringify` con comillas dobles SÍ es válido) + `addEventListener`.
+- **Verificado con 18 pruebas Playwright del código real** (IIFE completo extraído + doc generado cargado
+  como página real, no innerHTML): REC derivado del id, monto 5,000, letras "Cinco mil pesos
+  dominicanos", badge REGISTRADO, cliente correcto, solo el método usado resaltado, observaciones,
+  contrato PR-, balance anterior = actual + pago (120,000 vs 115,000), firmas, y que NO aparecen
+  sucursal/caja/voucher/QR/reimpresiones. Sin desbordes en 390px ni 760px, 0 errores de consola. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Desviación deliberada del mockup (documentada):** el mockup usa azul; se usó el **morado del módulo**
+  (`.nxFP`, regla "cada app su color"), con el monto en verde.
+
+### Financiamiento (Préstamos, Multiempresa) — REPORTES (spec/mockup ChatGPT "Reportes V1", 24-jul-2026, v49.22)
+El dueño mandó el mockup `docs/visual-drafts/financiamiento/reportes_financiamiento_mockup.png` (el .md
+`REPORTES_FINANCIAMIENTO_V1_APROBADO.md` nunca llegó al repo — ChatGPT dijo haberlo subido pero no estaba
+en `main`/`chatgpt/visual-draft` ni en ninguna rama, confirmado con la API de GitHub en vivo; el dueño
+terminó mandando la imagen directo y se trabajó de esa como spec, igual que Historial v49.19 / Evaluación
+v49.16). Pantalla **Reportes** dentro de `nxAbrirPrestamos` — antes el ítem "Reportes" del sidebar solo
+abría `nxPrestamoReporte` (cartera vencida imprimible); ahora navega a un dashboard en pantalla
+(`_prView='reportes'` → `prReportesMainHTML()`), y el imprimible queda como una "Acción rápida".
+- **Auditoría de esquema ANTES de construir (SQL directo):** `prestamos` NO tiene columna de agente/
+  vendedor, ni sucursal, ni producto (módulo de un solo dueño, sin `organizacion_id`). `prestamo_pagos`
+  SÍ tiene `metodo` → el donut de "Cobros por método" es real. Mora real/configurable (`prestamos_config.
+  mora_pct`/`mora_dias_gracia`, `prMoraDe`).
+- **Construido (100% datos reales, cero tabla/columna/RLS nueva):** 6 KPIs (Capital colocado, Capital
+  recuperado, Balance pendiente, Intereses cobrados, Mora pendiente, Índice de mora = cartera vencida/
+  total; deltas reales "vs mes ant." en colocado/recuperado) · gráfica de barras SVG Colocaciones vs
+  Cobros 12 meses (`prBarsSVG`) · donut SVG (`prDonutSVG`, stroke-dasharray) de Estado de cartera por
+  antigüedad (Al día/1-30/31-60/61-90/+90) con índice + en mora · tabla Antigüedad de cartera · donut
+  Cobros por método (`prestamo_pagos.metodo`) · Alertas SOLO reales (+30 días, vencidos, próximos 7
+  días) · Acciones rápidas que reusan funciones existentes (`nxPrestamoReporte`/`nxPrestamoCobranza`/
+  `nxPrestamoExportar`/`nxPrestamoFiltroTipo('pagados')`/`nxPrestamoConfig`) · selector de período
+  (`_prRepPeriodo` Este mes/Este año/Todo, `nxPrRepPeriodo`) que alcanza SOLO el flujo (colocado/
+  recuperado/cobros por método); la cartera/mora siempre es al día de hoy (etiquetado).
+- **Omitido a propósito (no existe — no se finge, documentado):** pestañas Agentes y Sucursales +
+  "Rendimiento por agente" + filtros Agente/Sucursal/Producto (sin columnas); alertas de documentos por
+  vencer / promesas incumplidas / garantías pendientes (sin tablas/flujos); "Enviar por correo" y el
+  conmutador de empresa actual (no aplican a este módulo).
+- **Helpers nuevos** (todos en el IIFE de Financiamiento, puros): `prRepRango`/`prRepPeriodoTxt`/
+  `prRepAging`/`prRepMeses`/`prRepMetodos`/`prRepColocadoMes`/`prRepCobradoMes`/`prDonutSVG`/`prBarsSVG`/
+  `prReportesMainHTML`. CSS nuevo en `nxFPEnsureCSS` (`.nxFP-kpis6`/`.nxFP-repBar`/`.nxFP-perBtn`/
+  `.nxFP-repGrid`/`.nxFP-repCard`/`.nxFP-donut*`/`.nxFP-bars`/`.nxFP-legend`/`.nxFP-alertRow`/etc.),
+  responsive (6→3→2 KPIs, grid 2→1 col).
+- **Verificado con 31 pruebas Playwright sobre el código real extraído** (IIFE completo 12825-15022 +
+  CSS real de `nxFPEnsureCSS`, backend simulado con 7 préstamos en los 5 tramos de antigüedad + 1 pagado
+  + 1 libre, y pagos con 4 métodos en varios meses): título/sidebar activo correctos, los 6 KPIs con los
+  montos EXACTOS (colocado 280,000; recuperado 53,000), 2 donas, 24 barras (12 meses × 2), tabla de 5
+  tramos + total, donut centro = 6 activos (excluye el pagado), alertas reales, 5 acciones rápidas, el
+  período cambia, 0 errores de consola, sin desbordes en 390px ni 1280px. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente si el dueño lo pide** (no construido, sería mayor alcance): filtro de rango de fechas
+  personalizado (hoy son 3 presets), "Flujo de caja proyectado" (derivable de las tablas de amortización
+  futuras), y — solo si algún día el módulo suma agentes/sucursales de verdad — esas pestañas.
+
+### NPGS §5 (buscadores) — Fase 1: Recientes + Favoritos en `ModalBusquedaBase` (25-jul-2026, v49.36)
+El dueño pidió atacar el conflicto C2 de `DESIGN_SYSTEM.md` (el más grande de los que quedaban).
+Se investigó primero con un agente de exploración: el conteo real, línea por línea, dio **34
+buscadores en línea** y **1 solo en ventana** — no los 47/7 que decía la primera versión del
+documento (esa cifra contaba coincidencias de texto, no llamadas reales; corregido). De los 34,
+~9 de verdad "eligen un registro" (estructuralmente iguales al único caso real que ya usa
+`ModalBusquedaBase`, elegir cliente en AguaPro) y ~24 solo "filtran la lista que ya se está
+viendo" (Clientes, Facturas, Cobros, Vender — las pantallas de más uso diario). Se le planteó la
+tensión real (NPGS §5 exige ventana siempre; convertir un filtro-en-vivo a ventana le agrega un
+clic extra a lo más usado del sistema) y el dueño eligió **cumplimiento literal**: los 34 pasan a
+ventana, sin excepción.
+- **Plan en 3 fases** (mismo criterio de siempre — nunca 34 sitios de un golpe): (1) Recientes +
+  Favoritos en el motor compartido — **HECHA esta versión**. (2) Migrar los ~9 "elegir registro"
+  (mismo riesgo bajo que AguaPro). (3) Migrar los ~24 "filtrar lo que ya veo" — el trabajo de
+  mayor riesgo, al final a propósito.
+- **Fase 1 — `ModalBusquedaBase` (`index.html`), aditivo puro, cero pantallas tocadas:**
+  Recientes/Favoritos se guardan en `localStorage` por `o.id` del buscador (preferencia del
+  navegador, no dato del negocio — no necesitó tabla ni columna nueva). Se guarda una **foto
+  chica** del registro (`mbbSnapshot`: id + título + subcampos ya visibles), nunca el objeto
+  completo — así sigue viéndose bien aunque el dato cambie después. Al elegir desde Recientes/
+  Favoritos en modo `datos` se busca el registro **vivo** en el array por su id (`mbbElegirGuardado`)
+  — si ya no existe, cae honesto a la foto guardada en vez de fallar. El único consumidor real de
+  hoy (`nxAguaAbrirBuscadorCliente`, AguaPro) heredó las 2 secciones nuevas **sin cambiar una sola
+  línea de su propia llamada** — es el mismo motor.
+  - **Bug real encontrado y corregido ANTES de publicar (no llegó a producción):** la navegación
+    por teclado (`mbbFlecha`/`mbbEnter`) asumía que la lista visible era solo resultados
+    (`st.filas`) — con Favoritos/Recientes antepuestos, el índice de las flechas apuntaba a la
+    fila equivocada y Enter podía elegir un registro distinto al resaltado visualmente. Se
+    corrigió con `st.navOrder` (el orden REAL de las filas en pantalla, calculado en el mismo
+    orden en que `mbbCargar` arma el HTML: favoritos→recientes→resultados) en vez de indexar
+    directo sobre `st.filas`.
+  - Verificado con **19 pruebas Playwright** contra el motor real extraído del archivo, servido
+    por un HTTP local (no `about:blank` — `localStorage` necesita un origen real para funcionar en
+    el navegador de prueba). Reproduce el caso real de AguaPro: marcar/quitar favorito sin elegir
+    el registro, reabrir y ver las 2 secciones nuevas con la estrella marcada, elegir desde
+    Recientes con el registro vivo completo (no la foto), escribir texto oculta ambas secciones
+    (solo importa filtrar), y la prueba específica del bug de navegación (bajar con flechas hasta
+    la última fila visible → Enter elige exactamente esa, cruzando las 3 secciones). Sin desborde
+    en 420px, 0 errores de JS.
+- **Aún NO hecho, para que quede claro y no se confunda con "buscadores resueltos":** ninguno de
+  los 34 buscadores en línea cambió de comportamiento — siguen siendo barra fija en producción.
+  Esta fase solo construyó la capacidad que usarán al migrarse (fases 2 y 3, pendientes).
+
+### NPGS §5 (buscadores) — Fase 2, primera pieza: unificar "elegir cliente" en Facturar/Cobrar del
+### POS + Recientes/Favoritos (25-jul-2026, v49.37)
+Continuación del plan de 3 fases (arriba). Al auditar los ~9 sitios "elegir un registro" se
+encontró que la mayoría (Facturar/Cobrar del POS, elegir cliente en Financiamiento, elegir
+artículo en Vender/Factura) **YA cumplían el requisito literal de NPGS §5** — ya son ventana con
+lupa, construidos en versiones anteriores (v48.97/v49.02) — solo les faltaba Recientes/Favoritos.
+Migrarlos a `ModalBusquedaBase` (el motor genérico de index.html) habría sido replatformar sin
+necesidad y, peor, **habría violado el propio reglamento del sistema** ("REGLAMENTO TÉCNICO —
+`ModalBusquedaBase`", más arriba): compartir el motor NO significa un buscador único — cada tabla
+(`pos_clientes` del POS, `prestamo_clientes` de Financiamiento) tiene su propio buscador, nunca
+uno "universal" que arriesgue traer la tabla equivocada.
+- **Lo que SÍ se encontró real y se corrigió: duplicación genuina dentro del MISMO módulo.**
+  `nxFacCliToggle` (elegir cliente al Facturar) y `nxPosCobroCliToggle` (elegir cliente al Cobrar)
+  eran ~95% el mismo código copiado dos veces — ambas leen `_clientes` del mismo cierre del IIFE
+  del POS (confirmado que no hay límite de IIFE entre ellas). Eso sí era una violación real de
+  NPGS §6 ("no duplicar funciones"), previa a esta sesión.
+  - **`nxPosClienteAbrir(modalId, onPick)` (nueva, parches.js, junto a `nxFacCliToggle`):** motor
+    compartido SOLO entre estas 2 pantallas del POS (mismo módulo, misma tabla `pos_clientes` —
+    no cruza a Financiamiento). Arma la ventana (`.modal.nxPf`, lupa+buscador+lista), agrega
+    Recientes/Favoritos con el MISMO mecanismo de `localStorage` de la Fase 1 (reusa
+    `mbbLSGet`/`mbbLSSet`/`MBB_REC_MAX`/`MBB_FAV_MAX` de `index.html`, formato-agnóstico) pero con
+    su propio snapshot `{__id,__t,__sub}` — más simple que el de `ModalBusquedaBase`, pensado para
+    reproducir EXACTO el texto que ya se mostraba ("código · por mayor"), sin arriesgar una
+    regresión visual en una pantalla de dinero. **La clave de `localStorage` es el `modalId`**
+    (`nxFacCliM` para Facturar, `nxPosCobroCliM` para Cobrar) — Favoritos/Recientes de Facturar y
+    de Cobrar quedan DELIBERADAMENTE separados (son dos flujos distintos, no tiene sentido que
+    marcar un favorito al cobrar lo muestre también al facturar sin que el usuario lo haya
+    marcado ahí).
+  - `nxFacCliToggle`/`nxPosCobroCliToggle` quedaron como envoltorios de una línea, cada uno con su
+    propio `onPick` (Facturar actualiza `_factCli`+`#facCliTxt` vía `nxFacSetCli`; Cobrar llena el
+    `<input type="hidden" id="posCliId">`+`#posCliDisp` y llama a `nxPosCobroCalc()`) — mismo
+    comportamiento externo de siempre, cero cambios en `nxFacSetCli`/`nxPosCobroCalc`/
+    `nxPosConfirmar` (que solo leen `val('posCliId')`, nunca supieron ni les importó cómo se
+    llenó). El precio "por mayor" (`precioCli()`) no se tocó — se verificó que sigue funcionando
+    igual con los 3 escenarios de siempre.
+  - CSS nuevo en `nxPfEnsureCSS()`: `.pf2cliFav` (botón de estrella circular, ámbar cuando está
+    marcado — mismo color `#f59e0b`/`var(--pf-orange-l)` que ya usa `.vfav` del catálogo de Vender,
+    consistente con el resto del sistema), `.pf2cliSec` (etiqueta de sección), `.pf2clirow.sel`
+    (resaltado de teclado). Se le agregó `position:relative;padding-right:34px` a `.pf2clirow` (la
+    fila) para dejarle espacio a la estrella sin tapar el nombre/código.
+  - Verificado con **24 pruebas Playwright** contra el código real extraído de ambas funciones (no
+    reconstruido): abrir cada ventana, marcar/desmarcar favorito sin elegir el registro, reabrir y
+    ver Favoritos→Recientes→Resultados en ese orden, elegir desde cada sección (el registro vivo,
+    no la foto guardada), escribir oculta las 2 secciones y filtra, "— Consumidor final —" limpia
+    el campo, navegación de teclado mixta (flechas cruzando las 3 secciones + Enter elige la fila
+    correcta — la misma clase de bug ya encontrada y corregida en la Fase 1), y que Facturar/Cobrar
+    tienen sus favoritos en `localStorage` bajo claves DISTINTAS (no se mezclan). Sin desborde en
+    390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+    `index.html` (1,423 / 433,200 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Pendiente dentro de la Fase 2** (ya son ventana, les falta Recientes/Favoritos — cada uno su
+  propio buscador, NO se unifican entre sí por el reglamento de arriba): `nxPrElegirCliente`
+  (Financiamiento, elegir cliente al crear un préstamo — tabla `prestamo_clientes`, otro módulo) y
+  `nxProdPicker`/`ppkQ` (POS, elegir artículo en Vender/Factura — más complejo, muestra stock/IMEI/
+  precio por nivel además del nombre). Después de esos dos cierra la Fase 2 completa; sigue la
+  Fase 3 (los ~24 buscadores "filtrar lo que ya veo" — Clientes/Facturas/Cobros/Vender — el trabajo
+  de mayor riesgo, al final a propósito).
+
+### Financiamiento — lista de préstamos en el celular: 2 bugs reales (25-jul-2026, v49.35)
+El dueño mandó una captura de iPhone de la lista de préstamos. Se usó el método de causa raíz
+(`gstack-investigate`, primer uso del enrutamiento automático de skills): **reproducido con el CSS
+real de `nxFPEnsureCSS` + el markup verbatim de `prTablaHTML` en un navegador a 390px**, antes de
+tocar nada. Dos hallazgos, y **una hipótesis mía que resultó FALSA** — se documenta igual:
+- **Hipótesis descartada:** "hay desborde horizontal y por eso el texto sale cortado a la
+  izquierda". **Falso** — medido `scrollWidth - clientWidth = 0`, cero elementos más anchos que el
+  viewport. El arreglo de v49.20 (`min-width:0` en `.nxFP-tbl`) sigue funcionando.
+- **BUG 1 (la franja morada) — CAUSA RAÍZ:** `.nxFP-side` conserva su
+  `box-shadow:0 14px 34px rgba(76,29,149,.26)` cuando en móvil pasa a cajón fijo **cerrado**
+  (`translateX(-100%)`, x de -250 a 0). El desenfoque de 34px **se derrama dentro del viewport** y,
+  con `z-index:2600`, se pinta ENCIMA del contenido — de ahí la franja morada tapando el borde
+  izquierdo y el texto que parecía "cortado". No era scroll ni recorte: era una sombra encima.
+  Arreglado: `box-shadow:none` en `@media(max-width:900px)`, restaurada solo con `.side-open`.
+  - **Trampa real encontrada al arreglarlo (y por qué este bloque va AL FINAL del CSS):** la regla
+    base `.nxFP-side{...box-shadow...}` está declarada **más abajo** en la cadena de concatenación
+    (posición ~13316) que la media query donde la puse primero (~13073). Misma especificidad → gana
+    la última, así que el arreglo no hacía nada. Se detectó porque el harness seguía reportando
+    `boxShadow` con valor. **Al agregar reglas a `nxFPEnsureCSS`, verificar la POSICIÓN en la
+    cadena, no solo la especificidad** — el CSS base del shell se declara después de las media
+    queries de la tabla.
+- **BUG 2 (tarjeta gigante) — NPGS §7/§13/§14:** en `@media(max-width:760px)` cada `<td>` se
+  pintaba como una línea `ETIQUETA .......... valor` (`td::before{content:attr(data-l)}`) → **9
+  renglones y 263px de alto por préstamo**. Se rediseñó la fila como **rejilla de 2 columnas**
+  (`display:grid`), sin etiquetas repetidas y con la jerarquía que pide NPGS §14: nombre + estado
+  arriba, REF + cédula debajo, **total a devolver en grande** + próximo pago, y las acciones al
+  pie. **263px → 120px** (más del doble de préstamos por pantalla). Se agregaron clases a las
+  celdas en `prTablaHTML` (`nxFP-tCed`/`nxFP-tCap`/`nxFP-tTot`/`nxFP-tProx`/`nxFP-tEst`/
+  `nxFP-tAccC`, y `cero` en Días venc. cuando es 0) — **solo HTML, cero lógica**.
+  - Ocultos en móvil a propósito: **Capital** (secundario, está completo en el detalle) y
+    **Días venc. cuando es 0** (no aporta). En escritorio se siguen viendo.
+  - **Defecto propio corregido antes de publicar:** la primera versión dejaba a "Días venc." en un
+    renglón propio (`grid-row:4`) y las acciones en el 5 — al ocultarse "Días", el grid **reservaba
+    igual el renglón vacío** y quedaba un hueco visible. Se vio en la captura, no en las
+    aserciones. Ahora comparten el renglón 4.
+- **Verificado que el ESCRITORIO no cambió:** `tr` sigue en `table-row`, encabezados visibles, las
+  9 celdas presentes (Capital y Días venc. incluidos), sidebar `sticky` con su sombra, sin
+  desborde. `node --check` limpio; `version.json` válido.
+
+### Financiamiento — bug real: la barra lateral se veía descolorida/gris en el celular (24-jul-2026, v49.21)
+El dueño mandó una captura de iPhone mostrando el menú lateral morado de Financiamiento (`.nxFP-side`,
+drawer móvil `@media(max-width:900px)`) renderizado **aguado/gris claro translúcido** (medido en la
+propia captura con Pillow: fondo del panel ~`rgb(200,203,209)`, no el morado `#4f46e5→#6d28d9`), con el
+texto casi invisible. **Diagnóstico:** el CSS base de `.nxFP-side` es un gradiente morado sólido sin
+`!important` ni variables; en un harness aislado (Playwright, CSS real de `nxFPEnsureCSS` + markup real)
+renderiza morado correcto, así que NO es un bug del CSS base — es que en el dispositivo real algo (un
+tema activo, o alguna regla global) lo repinta a un panel frosted-white translúcido. **Mismo síntoma y
+misma solución que el sidebar del POS (`.nxTSide`), ya documentado: un "BLINDAJE".** `.nxFP-side` no
+tenía ninguno. Se agregó en `nxFPEnsureCSS()` un bloque de blindaje de **alta especificidad**
+(`html body .nxFPShell .nxFP-side ...`, especificidad 0,2,3 — gana a cualquier `body.tema-* .nxFP-side`
+que es 0,2,1) con `!important` que fuerza: fondo gradiente morado, `backdrop-filter:none`, `opacity:1`,
+texto blanco, y el look de los ítems de nav / botón "Nuevo préstamo" / "Volver" / logo / divisor.
+**Verificado** cargando el CSS real en un navegador CON una regla hostil que simula el aguado
+(`body.tema-glass .nxFP-side{background:rgba(255,255,255,.5)!important;backdrop-filter:blur(20px)!important;
+color:#1e293b!important}`): el blindaje gana — `getComputedStyle` confirma el gradiente morado, backdrop
+`none`, texto blanco, pastilla activa blanca; captura visual del drawer abierto muestra el morado firme.
+`node --check parches.js` limpio; `version.json` válido. Cambio 100% CSS, cero lógica tocada. **Nota
+para el futuro:** cualquier cambio de color a `.nxFP-side` tiene que tocar TAMBIÉN este blindaje (igual
+que el sidebar del POS tiene su base + su blindaje), si no el blindaje pisa el color nuevo.
+
+### Financiamiento — bug real: la tabla de préstamos se desbordaba en el celular (24-jul-2026, v49.20)
+El dueño mandó una captura de iPhone mostrando la lista de préstamos de Financiamiento (`.nxFP-tbl`,
+`prTablaHTML`/`renderLista`, v49.11) con las columnas saliéndose por la derecha en vez de colapsar a
+tarjetas. **Causa raíz — el MISMO bug de especificidad ya documentado y arreglado antes para `.sf-tbl`
+(Seguros, v48.54):** la regla de colapso móvil de `.nxFP-tbl` (`nxFPEnsureCSS`, `@media(max-width:760px)`)
+ponía `display:block;width:100%` pero **NO** `min-width:0`, así que la regla global de `index.html`
+`@media(max-width:480px){table{min-width:500px}}` (y la de `@media(max-width:768px){table{min-width:600px}}`)
+le ganaba y forzaba 500-600px de ancho en una pantalla de ~390px. Arreglado de raíz agregando
+`min-width:0` a la declaración `.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl tr,.nxFP-tbl td{display:block;width:100%}`
+(+ `.nxFP-tblWrap{min-width:0}`) dentro de esa misma media query — como `.nxFP-tbl` (clase) tiene más
+especificidad que `table` (elemento), ahora gana la pelea de CSS sin importar el orden de las hojas.
+Verificado con Playwright usando el CSS real de `nxFPEnsureCSS` + las 2 reglas globales reales de
+`index.html` + el markup real de `prTablaHTML`: en 360px/375px/390px `scrollWidth===clientWidth` exacto
+(cero desborde horizontal), la tabla colapsa a tarjetas (`thead:none`) y su ancho cabe dentro del
+viewport. `node --check parches.js` limpio; `version.json` válido. Cambio 100% CSS, cero lógica tocada.
+
+### Financiamiento (Préstamos, Multiempresa) — EVALUACIÓN FINANCIERA (spec ChatGPT "Evaluación Financiera V1", 24-jul-2026, v49.15)
+El dueño pidió aplicar el spec `docs/visual-drafts/financiamiento/EVALUACION_FINANCIERA_V1_APROBADA.md` (ChatGPT
+lo subió a `main` directo, commit `26acc80`). Flujo: Cliente → Evaluación → Aprobación → Préstamo → Cobranza.
+Componentes pedidos: info del cliente, info económica, análisis financiero, simulador en tiempo real, score
+interno, recomendación automática, resumen lateral fijo, botón "Aprobar y crear préstamo".
+- **Todo sobre datos REALES, cero tabla nueva** — se pudo porque las 3 piezas ya existían: el simulador
+  (`amortizar`/`calcPrestamo`/`nxPrRecalc`), la creación de préstamo (`nxPrestamoGuardar`), y los datos
+  económicos del cliente (`prestamo_clientes.ingreso_mensual`/`tipo_ingreso`/`ocupacion`/`tiene_fiador`, del
+  módulo de Clientes v49.14). La Evaluación los junta en una pantalla nueva.
+- **Nueva pantalla** (`_prView='evaluacion'`, ítem "Evaluación" en la barra lateral, se pinta en `.nxFP-main`,
+  `renderLista` llama `evInit()` tras montar). Layout 2 columnas (main + `aside` sticky) que colapsa en móvil:
+  (1) Cliente — reusa el picker (`nxPrElegirCliente('eval')`, ruteado por `_prCliPickTarget`) o `abrirClienteForm`;
+  al elegir, `evClientePuesto` precarga ingreso + muestra ocupación/lugar de trabajo. (2) Info económica —
+  ingreso (precargado, editable), otros ingresos, deudas actuales (los 2 últimos en vivo, NO se guardan en el
+  cliente). (3) Simulador — **mismos ids que el form de préstamo** (`prCap`/`prTasa`/`prNumCuotas`/`prFrec`/
+  `prMetodo`/`prPlazo`/`prTot`/`prFecha`/`prCliId`/`prNom`/`prCed`/`prTel`/`prNotas`) + modos (reusa
+  `nxPrModo`/`pintarModo`), así que "Aprobar y crear préstamo" reusa **100%** `nxPrestamoGuardar` (lee esos ids
+  del DOM). (4) Análisis — ingreso total, compromiso mensual del préstamo, capacidad de pago, ratio de
+  endeudamiento con barra. Resumen lateral: score + recomendación + cuota + ratio.
+- **Compromiso mensual** (`evCompromisoMensual`): cuotas → cuota × pagos-por-mes (semanal 4.33 / quincenal 2 /
+  mensual 1); crédito → interés del 1er mes; libre → 0 (sin cuota fija, se avisa).
+- **Score 0-100 determinístico** (`evCalcularScore`, fórmula transparente, ajustable a futuro como la mora — NO
+  IA, NO llamada externa): base según ratio (cuota+deudas)/ingreso (≤30%→90, ≤40%→72, ≤50%→55, ≤65%→38, resto
+  18) + bonus (fiador +5, tipo_ingreso Empleado +5 / Pensión +3, ocupación+trabajo +2), clamp 0-100.
+  Recomendación: ≥70 APROBAR (verde), 50-69 REVISAR (naranja), <50 RECHAZAR (rojo). Si la recomendación no es
+  aprobar, `evAprobar` pide confirmación — **la decisión final es del dueño**, nunca bloquea.
+- **Sin tabla nueva:** al aprobar, la evaluación se guarda como una **línea de NOTA real** en el préstamo
+  (`prestamos.notas`: "Evaluación: score X/100 · REC · ratio Y%"). Si algún día se quiere un historial de
+  evaluaciones persistido, sería una tabla aparte (pendiente, no pedido).
+- **Desviación deliberada del spec (documentada):** el spec decía "namespace .nxPf y color #2563eb" (azul, copiado
+  del boilerplate de specs del POS), pero este módulo es Financiamiento = **morado `#4f46e5`/`#6d28d9`** (regla
+  "cada app su color"). Se usó el morado del módulo para no romper su identidad visual; el score usa colores
+  semánticos (verde/naranja/rojo) universales. Plus Jakarta Sans ya es la fuente del módulo.
+- **Bug de UX encontrado y corregido en pruebas (antes de publicar):** `pintarModo`→`nxPrRecalc` mostraba
+  "Total a devolver" en modo cuotas (ese campo es solo de modo libre) — `evRecalc` ahora fuerza `#prTotRow`
+  visible solo en libre. Además `evInit` repinta la tarjeta del cliente al resetear (tras aprobar) para que no
+  quede el cliente anterior mientras el resumen ya dice "Sin cliente".
+- **Verificado con Playwright, código real extraído** (todo el IIFE de Financiamiento cargado en un navegador con
+  backend simulado, no reconstrucción): 39 pruebas — nav, pantalla, 4 secciones, picker rutea a eval, precarga de
+  ingreso, el ejemplo del dueño (20,000 al 10% / 8 quincenal, ingreso 30,000 → cuota 3,500 → ratio 23.3% → score
+  95 → APROBAR), deudas altas → RECHAZAR, "Aprobar" hace el POST correcto a `prestamos` con `cliente_id` + la nota
+  de evaluación + modo/método correctos — las 39 pasan, 0 errores de JS, sin desbordes en 390px ni 1280px. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **REDISEÑO RICO (v49.16) — el dueño mandó un mockup detallado ("Quiero que quede así"):** la pantalla se rehízo
+  para calzar con el mockup, siempre sobre datos reales. Se reemplazó todo `prEvalMainHTML`/`evRecalc` + CSS.
+  - **Tarjeta de cliente ampliada:** avatar, "Cliente activo", cédula, teléfono, **Edad** (`evEdad` de
+    `fecha_nacimiento`), **Tiempo como cliente** (`evTiempoCliente` de `created_at`) + botón "Ver perfil"
+    (`evVerPerfil`→`abrirClienteForm`). Al elegir cliente, `evClientePuesto` precarga ingreso + ocupación +
+    estado civil + dirección + 2 referencias (de las columnas reales).
+  - **Barra de pestañas** (`ev-tab`/`window.evTab`): Información general / Análisis financiero / Simulador /
+    Recomendación — hacen scroll a su sección (en escritorio todo se ve; en móvil son saltos rápidos).
+  - **Análisis financiero de 5 indicadores** (`evAnRow`+`evRating`, barra + badge Excelente/Bueno/Aceptable/Bajo):
+    Capacidad de pago, Relación ingresos/gastos, Nivel de endeudamiento (invertido, menor es mejor), Liquidez
+    estimada, Estabilidad laboral. Todo calculado en vivo de ingreso/gastos/cuota/antigüedad.
+  - **Score interno = medidor circular /1000** (`conic-gradient`, `--pct`) + estrellas + badge de Riesgo
+    (Bajo/Medio/Alto). El score sigue siendo 0-100 por dentro (`evCalcularScore`, ahora incluye gastos en el
+    ratio + bonus por antigüedad), se muestra ×10.
+  - **Simulador con deslizadores** (`<input type=range>` para capital/tasa/#cuotas/plazo, valor en vivo) + tarjeta
+    "Cuota estimada" (cuota, interés total, total a devolver, fecha 1er/última pago) + **"Ver amortización
+    detallada"** (`evVerAmort`, modal con la tabla completa reusando `amortizar`/`creditoCalc`).
+  - **Resumen:** Monto solicitado, **Monto recomendado** (si el endeudamiento >35% del ingreso, sugiere un capital
+    más bajo que lo baje a ~35% — cálculo real de capacidad), Cuota estimada, Tipo, Ratio, Nivel de riesgo,
+    Resultado. Próximos pasos (checklist informativo). Asesor responsable (`nomAdmin`) + fecha.
+  - **Notas del asesor** (textarea 0/500) → al aprobar se guardan en `prestamos.notas` junto con la línea de score.
+  - **Campos nuevos que la tabla NO tiene** (gastos mensuales, antigüedad laboral, dependientes): entradas EN VIVO
+    usadas solo para el análisis del momento — **NO se guardan** en el cliente (no se finge una columna que no
+    existe). **Dejadas FUERA a propósito** (no se finge): subir Documentos (no hay Storage), "Guardar borrador" y
+    "Enviar a revisión" (no hay ese flujo/estado), foto del cliente (no hay columna), campana/perfil del header
+    (chrome de app que el módulo no tiene). Se documenta en el changelog.
+  - **2 bugs encontrados en pruebas (antes de publicar):** (1) `toLocaleDateString('es-DO')` puede tirar
+    RangeError en el Chromium headless (ICU mínimo) y abortaba `evInit` → la fecha se arma a mano (`d/m/Y`); (2)
+    `evInit` no reseteaba `_evCli`, así que al volver a la pantalla quedaba el cliente viejo con los campos vacíos
+    — ahora `evInit` lo pone en `null` (pantalla siempre arranca limpia).
+  - Verificado con **62 pruebas Playwright** sobre el código real (IIFE completo en navegador con backend
+    simulado): tarjeta con edad/tiempo, precarga de estado civil/dirección/referencias, los 5 indicadores, el
+    medidor /1000, la tabla de amortización (8 filas), los saltos de pestaña, y "Aprobar" con el POST correcto
+    (`cliente_id` + nota de score + nota del asesor). 0 errores de JS, sin desbordes en 390px ni 1280px. `node
+    --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Seguimiento (v49.17) — simulador "de ambas formas" (pedido del dueño):** cada control del simulador
+    (Capital/Tasa/#cuotas/Plazo) pasó de ser SOLO un deslizador a tener **número editable + deslizador
+    sincronizados**. El **número es la fuente de verdad** (mismos ids `prCap`/`prTasa`/`prNumCuotas`/`prPlazo`
+    que lee `calcPrestamo`/`nxPrestamoGuardar`, sin tope); el deslizador es un `*Sl` aparte
+    (`prCapSl`/`prTasaSl`/...) que solo mueve el número. Helpers `window.evSyncSl` (número→thumb del slider,
+    acotado a su min/max) y `window.evSyncNum` (slider→número, con formato de miles para capital). **Clave:**
+    si se escribe un monto exacto (47,350) o mayor que el tope del slider (500,000), el cálculo usa ESE número
+    — el slider solo llega a su tope visual, no limita el valor real. `parseMoney` para capital, decimal para
+    la tasa. Se quitaron los `<b id="evCapV">`/etc (el número editable los reemplaza) y sus `setT(...)` en
+    `evRecalc` (código muerto). CSS nuevo `.ev-slnum` (cajita del número en el encabezado del slider).
+    Verificado con 12 pruebas Playwright del código real (slider→número, número→slider con clamp del thumb,
+    cálculo con el valor exacto aún por encima del tope del slider, tasa decimal) + las 62 anteriores sin
+    regresión. `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+    válido.
+
+### Financiamiento (Préstamos, Multiempresa) — MÓDULO DE CLIENTES (spec ChatGPT "Crear Cliente V1", 24-jul-2026, v49.14)
+El dueño pidió aplicar la carga de "Crear Cliente V1" de ChatGPT. Primero se aplicó por error al formulario
+de Entidades del POS (`abrirEntidad`, v49.13) — el dueño aclaró **"Es de financiamiento que estamos"** y
+confirmó **"Si"** construir un módulo de Clientes REAL dentro de Financiamiento (`nxAbrirPrestamos`,
+IIFE propio de `parches.js`, tablas `prestamos`/`prestamo_pagos`/`prestamos_config`, RLS solo-dueño
+`mi_rol()='admin'` sin `organizacion_id`). Antes NO había pantalla de clientes: el prestatario se tecleaba
+inline en cada préstamo (solo nombre/cédula/teléfono guardados en la propia fila de `prestamos`).
+- **Hallazgo clave — la tabla YA EXISTÍA:** al ir a crear `prestamo_clientes` la migración falló (la política
+  `prestamo_clientes_admin` ya estaba) — **un chat paralelo ya la había creado** con un esquema MUCHO más
+  rico que el que se iba a proponer. Se pivoteó a construir SOLO el frontend contra esa tabla real, adoptando
+  sus columnas reales (32 columnas: datos personales, contacto, financiera, 2 referencias, fiador, notas,
+  auditoría) — cero migración nueva, cero columnas inventadas. `prestamos.cliente_id` (uuid) también ya
+  existía para enlazar. Confirmado por SQL directo antes de escribir el form.
+- **Construido (frontend, todo en el IIFE de Financiamiento):**
+  - **`_prClientes`** cargado en `cargarPrestamos` (`select=*&order=nombre.asc`, best-effort try/catch → `[]`).
+    `_prView` ('prestamos'|'clientes') + `_prCliQuery` controlan qué muestra `renderLista` (mismo shell, el
+    `.nxFP-main` cambia según `_prView`). Ítem **"Clientes"** nuevo en la barra lateral (`nxPrView('clientes')`,
+    ícono `ti-users-group`) — se resalta solo cuando `_prView==='clientes'` (los filtros de préstamos solo se
+    resaltan si `_prView==='prestamos'`, para no marcar dos a la vez).
+  - **Lista de clientes** (`prClientesMainHTML`): 3 KPIs (total / con préstamo / en mora, calculados contra
+    `_prestamos` por `cliente_id`), buscador (`prBuscador`, reglamento), y **tabla** (`prClientesTablaHTML`,
+    `.nxFP-tbl` que colapsa a tarjetas en móvil) con Cliente/Cédula/Teléfono/Ubicación/**Préstamos** (cuántos +
+    activos, vía `prCliStats` que suma `saldoDe` por `cliente_id`)/**Saldo**/Acciones (editar/WhatsApp/nuevo
+    préstamo). Fila clicable abre editar.
+  - **Formulario completo** (`abrirClienteForm`, patrón `.nxPrForm`/`prSec`): 5 secciones — Datos personales
+    (nombre*, cédula, fecha nac., estado civil, nacionalidad), Contacto y dirección (teléfono*, alterno, correo,
+    dirección, sector, ciudad, provincia), Información financiera (ocupación, lugar de trabajo, tipo de ingreso,
+    ingreso mensual con `data-nx-money`), Referencias (2, con relación), fiador/garante opcional (checkbox
+    `nxPrCliFiador` muestra/oculta el bloque) y Notas. `nxPrClienteGuardar` mapea las 32 columnas reales +
+    `updated_at`, con **detección de duplicado** al crear (mismo teléfono o cédula normalizados → avisa quién es
+    y ofrece abrir el existente). Todos los ids `prc*`.
+  - **Enlace con el préstamo:** `abrirForm` (nuevo/editar préstamo) ganó un `<input type="hidden" id="prCliId">`
+    + botones **"Elegir cliente"** (`nxPrElegirCliente` → modal picker con buscador, filas `.prCliPickRow`) y
+    **"Nuevo cliente"** (`nxPrClienteNuevoDesdeForm` → abre el form de cliente con callback "Guardar y usar
+    cliente" que vuelve al préstamo ya lleno). `prFormPonerCliente(c)` llena prCliId/prNom/prCed/prTel.
+    `nxPrestamoGuardar` ahora guarda `cliente_id: val('prCliId') || null` en `prestamos`. Botón "Nuevo préstamo"
+    de la fila de cliente (`nxPrestamoNuevoDeCliente`) precarga el cliente vía `_prPrefillCli`.
+  - Filtros de la lista de clientes (`nxPrClienteFiltrar`) y del picker (`nxPrCliPickFiltrar`) usan el mismo
+    `.toLowerCase().indexOf()` sin normalizar acentos — **consistente con el filtro de préstamos ya existente**
+    (`prListaFiltrada`), no una regresión; se dejó igual a propósito.
+- **Verificado con Playwright, código real extraído** (todo el IIFE de Financiamiento 12825-14270 cargado en
+  un navegador con backend simulado, no reconstrucción): 34 pruebas — lista con KPIs y tabla, buscador filtra,
+  form abre con las 5 secciones, fiador toggle, guardar hace el POST correcto a `prestamo_clientes` con
+  `created_by_name`, duplicado por teléfono NO crea (dismiss), picker abre/filtra/elige y precarga el préstamo,
+  `nxPrestamoGuardar` incluye `cliente_id` en el POST, "nuevo préstamo desde cliente" precarga bien — las 34
+  pasan, 0 errores de JS, sin desbordes en 390px ni 1280px. `node --check parches.js` limpio; los 3 `<script>`
+  de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento (Préstamos, Multiempresa) — BARRA LATERAL (mockup de ChatGPT, 23-jul-2026, v49.12)
+El dueño pidió construir la barra lateral del mockup ("vamos a hacer la barra lateral"). Se armó de
+verdad, pero con ítems que cada uno hace algo REAL (filtros/acciones que ya existían), NO sub-módulos
+falsos con su propia base. `renderLista` se reestructuró a **dos columnas** (`.nxFPShell`): `aside
+.nxFP-side` (barra lateral morada) + `.nxFP-main` (contenido).
+- **Barra lateral (real):** marca "NEXUS PRO Financiamiento", botón "Nuevo préstamo", nav que setea el
+  filtro vía `nxPrestamoFiltroTipo` (Dashboard=todos / Activos / **Cobranza**=vencidos / Cuotas /
+  Pagados / Líneas de crédito=credito), la opción activa se resalta (`_prFiltro`), + Reportes
+  (`nxPrestamoReporte`) y Configuración (`nxPrestamoConfig`) abajo, + "Volver a Multiempresa". Los
+  **filtros que estaban en las pestañas horizontales (`.nxFP-tabs`) se movieron a esta barra** — se
+  quitó la fila de pestañas y la de "ACCIONES RÁPIDAS" (Nuevo/Excel quedaron como botones en la topbar
+  del contenido; Cobranza/Reporte/Config quedaron en la barra).
+- **Del mockup NO se construyó (fake/duplicado, se le explicó al dueño y va en el changelog):**
+  "Clientes" (no existe pantalla de clientes en este módulo) y el selector "Taller Principal" (NO es
+  multi-sucursal, sin `organizacion_id`) — se omitieron; "Cobros" y "Vencidos" se **unieron en
+  "Cobranza"** (son el mismo filtro, no dos datos distintos). La campanita/usuario tampoco (decorativos).
+- **Móvil:** la barra es un **cajón deslizable** (`@media(max-width:900px)`: `position:fixed` +
+  `transform:translateX(-100%)`, `.side-open` la muestra) con overlay que la cierra al tocar fuera;
+  botón ☰ (`.nxFP-burger`) en la topbar. `window.nxFPToggleSide()` (junto a `nxPrestamoFiltrar`)
+  alterna la clase `.side-open` en `#nxFPShell`. Como tocar un filtro re-renderiza toda la vista
+  (`nxPrestamoFiltroTipo`→`renderLista`), el cajón se cierra solo al navegar (el DOM nuevo no trae
+  `.side-open`).
+- **Verificado con Playwright, código real extraído** (`renderLista`/`nxFPToggleSide`/`prTablaHTML`/toda
+  la cadena real, 15 préstamos de prueba): escritorio → barra visible, 8 ítems de nav, "Dashboard"
+  activo, burger oculto, 12 filas, sin desbordes; tocar "Cobranza" cambia el activo. Móvil → burger
+  visible, barra fuera de pantalla por defecto, abrir con `nxFPToggleSide` la muestra + overlay,
+  cerrar la esconde de vuelta, sin desbordes, 0 errores en ambos. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido. (Quedaron sin usar el
+  helper `tab`/`quickBtns` de la fila de pestañas y las clases CSS `.nxFP-tabs`/`.nxFP-tab`/
+  `.nxFP-secTitle` — se dejaron sin borrar en esta ronda; `.nxFP-quick`/`.nxFP-qbtn`/`.nxFP-qico` SÍ se
+  siguen usando en el estado vacío de la tabla.)
+
+### Financiamiento (Préstamos, Multiempresa) — lista en TABLA + KPIs (mockup de ChatGPT, 23-jul-2026, v49.11)
+ChatGPT dejó un mockup (imagen, escritorio + móvil) de un rediseño completo del módulo Financiamiento
+(`nxAbrirPrestamos`) — un dashboard ERP con barra lateral. Auditado contra el código real y el dueño
+eligió **"las partes reales lo más semejante"**. Se aplicó SOLO lo real, sin fingir lo estructural.
+- **NO se construyó (fake/duplicado en este módulo, se le explicó al dueño):** la **barra lateral** con
+  Cobros/Clientes/Cuotas/Vencidos como pantallas aparte (no existen — son filtros de la misma lista);
+  el selector **"Taller Principal"** (este módulo NO es multi-sucursal, no tiene `organizacion_id`);
+  la **campanita** de notificaciones y la **cabecera de usuario**; **"Guardar borrador"** (no hay
+  concepto de borrador); el **ID "OT-000124"** como folio consecutivo real (`prestamos` no tiene columna
+  número — se deriva del id solo para pantalla, `prRef()` = `PR-`+6 hex del uuid, honesto).
+- **SÍ se aplicó (real, `renderLista` reescrito, cero cambios de lógica de negocio):** (1) los 5 KPI de
+  arriba pasaron del hero morado a **5 tarjetas** (`.nxFP-kpis`) como el mockup (Total por cobrar/
+  Prestado/Cobrado/Vencido/Clientes activos, mismos datos reales ya calculados). (2) La **lista pasó de
+  tarjetas (`cardHTML`) a TABLA** (`prTablaHTML`, `.nxFP-tbl`) con columnas Ref/Prestatario/Cédula/
+  Capital/Total a devolver/**Próximo pago**/Estado/**Días venc.**/Acciones. "Próximo pago" real
+  (`prProximoPago`: la primera cuota aún no cubierta; para crédito la fecha límite; para libre '—').
+  **Estado en 4 vistas derivadas** (`prEstadoTabla`): Al día / **Por vencer** (próximo pago ≤7 días) /
+  Vencido / Pagado — todas de fechas reales, NO inventan mora/gracia (el módulo sigue con 3 estados de
+  fondo, "Por vencer" es solo una vista del próximo pago cercano). Acciones por fila: ver
+  (`nxPrestamoVer`), editar (`nxPrestamoEditar`), estado de cuenta (`nxPrestamoEstadoCuenta`), WhatsApp
+  (si hay teléfono) — sin el menú "..." emergente (se recorta dentro de una tabla con scroll). (3)
+  **Paginación** real (`PR_PAGE_SIZE=12`, `_prPage`, `window.nxPrTablaPagina`). (4) El buscador
+  (`nxPrestamoFiltrar`) pasó de ocultar filas con `display:none` a **re-renderizar** el cuerpo
+  (`_prQuery`+`repintarPrLista`) — necesario para que la paginación y la búsqueda no choquen; el input
+  vive fuera de `#nxPrLista`, así que no pierde el foco. (5) KPI nuevo abajo **"Próximos a vencer"**
+  (activos con próximo pago en 7 días) — el dash pasó de 4 a 5 tarjetas.
+- **Responsive:** la tabla `.nxFP-tbl` colapsa a tarjetas en ≤760px (mismo patrón `data-l` que
+  `.sf-tbl` de Seguros) — una sola fuente, sin dos renders que se desincronicen.
+- **Verificado con Playwright, código real extraído** (`renderLista`/`prTablaHTML`/`prEstadoTabla`/
+  `prProximoPago`/`prListaFiltrada`/`prRef` + toda la cadena real `amortizar`/`creditoCalc`/`estadoDe`/
+  `esVencido`/`saldoDe`/`pagadoDe`, con 15 préstamos de prueba): 5 KPIs, 12 filas en página 1 / 3 en
+  página 2, paginación e info correctas, buscador filtra bien, 5 tarjetas abajo, sin desbordes en 390px
+  ni 1280px, 0 errores de JS. Más 6 aserciones en Node de `prEstadoTabla` (los 4 estados: Pagado/
+  Vencido/Por vencer/Al día) y `prRef` estable. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido. `cardHTML` (el render de tarjeta viejo)
+  quedó sin usar — se dejó por si se quiere revertir, no se borró en esta ronda.
+
+### Financiamiento (Préstamos, Multiempresa) — método de interés PLANO vs SALDO INSOLUTO (23-jul-2026, v49.10)
+El dueño reportó lo que creía un bug: prestando 20,000 al 10% mensual en **8 cuotas quincenales**, él
+calculaba RD$3,500/cuota pero el sistema le daba **menos** (3,094). **No era un bug** — se auditó el motor
+real (`amortizar`/`calcPrestamo`/`tasaPorCuota`/`nxPrRecalc`) y estaba correcto: el sistema usaba
+**amortización de saldo insoluto** (interés solo sobre el saldo pendiente, baja cada cuota → cuota 3,094,
+interés total 4,756). El 3,500 del dueño es el **método plano / interés simple** (interés fijo sobre el
+monto completo: 20,000 × 5%/quincena × 8 = 8,000 → total 28,000 → 3,500/cuota). Son dos métodos legítimos;
+el plano es **más rentable** para el prestamista (8,000 vs 4,756 de ganancia en este caso) y es como se
+presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opción, por defecto el plano.
+- **Columna nueva `prestamos.metodo_interes`** (text, default `'saldo'`, migración `prestamos_metodo_interes`,
+  aditiva). Los préstamos ya creados quedan en `'saldo'` (el backfill del default) → **no cambian**. La
+  tabla estaba vacía al momento del cambio (el dueño solo estaba probando cálculos). `get_advisors` sin
+  hallazgos nuevos (solo agregué columna, sin tocar RLS).
+- **`amortizar(capital, tasaPct, n, base, frec, metodo)`** ganó un 6to parámetro. Rama nueva `'plano'`
+  (solo si hay interés): `interesTotal = round(capital × i × n)` con `i = tasaPorCuota%` (proporcional a la
+  frecuencia — quincenal = 5% cuando la mensual es 10%), cuotas todas iguales `round(total/n)`, la última
+  cuadra el redondeo. Si el método NO es 'plano' (incluye llamadas viejas SIN el parámetro), cae a la
+  amortización francesa de siempre — **retrocompatible, verificado**.
+- **Wiring** (todos pasan/leen el método, cero lógica de negocio nueva): `calcPrestamo` lee
+  `val('prMetodo')` (default 'plano'); `nxPrRecalc` (vista previa) pasa `c.metodo` y muestra una nota de
+  qué método es; `nxPrestamoGuardar` guarda `metodo_interes` (para cuotas; 'saldo' para libre/crédito);
+  `nxPrestamoVer` (detalle, recalcula la tabla en vivo) usa `p.metodo_interes||'saldo'` y lo muestra en el
+  encabezado de la tabla de amortización; el **contrato imprimible** (`nxPrestamoContrato`, cláusula de
+  pago) también usa el método real del préstamo. Selector nuevo `<select id="prMetodo">` en la caja de
+  cuotas del formulario (`abrirForm`), plano como primera opción (default para préstamos nuevos), y al
+  editar se preselecciona `p.metodo_interes`.
+- **Verificado con el código real extraído** (no reconstrucción): 18 aserciones en Node sobre `amortizar` —
+  plano da exactamente 3,500 (20,000/10%/8 quincenal, total 28,000, interés 8,000, suma de cuotas == total,
+  suma de capital == capital, saldo final 0), plano 4 mensual = 7,000, saldo insoluto sin cambio (3,094 /
+  6,309) tanto con método explícito como SIN parámetro (retrocompat), tasa 0 cae a capital/n, y un caso de
+  redondeo impar (7,000/3) cuadra al centavo. Más una prueba de DOM en Playwright con `calcPrestamo`/
+  `nxPrRecalc` reales: la vista previa muestra 3,500 en plano y 3,094 en saldo insoluto, con la nota
+  correcta. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Nota:** es el módulo Préstamos/Financiamiento de Multiempresa (`nxAbrirPrestamos`, tablas
+  `prestamos`/`prestamo_pagos`), NO el Cuotas del POS (`pos_financiamientos`) — ese sigue con su cálculo
+  propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
+  ahí con el mismo patrón.
+
+### Financiamiento — ELIMINAR clientes (préstamos ya se podía) (25-jul-2026, v49.33)
+El dueño pidió "que se pueda eliminar los clientes y también un préstamo". **Auditoría primero:**
+`nxPrestamoBorrar(id)` **ya existía** (botón "Borrar" en el detalle del préstamo) — no hacía falta nada
+ahí. Lo que NO existía era borrar un cliente de `prestamo_clientes`.
+- **Hallazgo de esquema (SQL directo, decidió el diseño):** `prestamo_pagos.prestamo_id` → `prestamos` es
+  **CASCADE** (por eso borrar un préstamo ya arrastra sus pagos, y el confirm de siempre lo dice bien);
+  pero `prestamos.cliente_id` → `prestamo_clientes` es **NO ACTION**: si se intentara borrar un cliente con
+  préstamos, Postgres **rechaza** el DELETE con un error técnico feo (`violates foreign key constraint`).
+- **`window.nxPrClienteBorrar(id)`** (nueva, junto a `nxPrClienteEditar`): comprueba **antes** con
+  `prCliStats(c)` (helper que YA existía, cuenta préstamos/activos/saldo desde `_prestamos` en memoria —
+  cero consultas nuevas). Si el cliente tiene ≥1 préstamo **no borra** y avisa con el conteo real
+  ("tiene 2 préstamos registrados (2 sin saldar). Borra primero sus préstamos, o déjalo como está para
+  conservar el historial"). Si no tiene ninguno: `swalConfirm` → `DELETE prestamo_clientes?id=eq.<id>` →
+  `logAudit('PRESTAMO_CLIENTE_ELIMINADO', nombre · cédula, 'Financiamiento')` → recarga y repinta.
+- **Decisión deliberada:** el bloqueo aplica **también a préstamos ya PAGADOS**, no solo activos —
+  borrar un cliente con historial destruiría el registro de esos préstamos (el historial crediticio del
+  módulo depende de `cliente_id`). Mismo criterio de proteger el dato real que el resto del sistema.
+- **Entradas:** botón de basura en cada fila de la lista de Clientes (`prClientesTablaHTML`, en gris
+  apagado + `title` explicativo cuando el cliente tiene préstamos, rojo cuando sí se puede) y dentro del
+  formulario al EDITAR (`abrirClienteForm`, solo si `cli` existe — al crear no hay nada que borrar).
+- **Verificado con Playwright, código real extraído** (`prCliStats`/`prClientesTablaHTML`/
+  `nxPrClienteBorrar` + `saldoDe`/`estadoDe`/`creditoCalc` tal cual): **15 comprobaciones** — botón en las
+  3 filas con el color/title correcto según tenga o no préstamos; cliente con 2 préstamos → **cero DELETE**
+  a la base + aviso con el conteo correcto (plural/singular y "sin saldar"); cliente con préstamo ya
+  pagado → tampoco se borra; cliente sin préstamos → DELETE correcto (`prestamo_clientes?id=eq.c1`) +
+  toast + registro de auditoría con nombre y cédula; cancelar el confirm → no borra nada. 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### Financiamiento — compartir la PROPUESTA de un préstamo que aún no existe (25-jul-2026, v49.32)
+El dueño planteó el caso real: "estoy llegando a un acuerdo con un cliente nuevo pero quiero compartir la
+tabla en el módulo de consulta". **Hallazgo de la auditoría:** el botón de v49.31 NO servía para eso —
+`nxPrestamoAmortizacion(id)` busca el préstamo en `_prestamos`, y en una negociación no hay préstamo
+guardado. Además "módulo de consulta" no existe con ese nombre: lo que encaja es **Evaluación**
+(`_prView='evaluacion'`), cuyo modal "Ver amortización detallada" (`evVerAmort`) mostraba la tabla **solo en
+pantalla**, sin imprimir/compartir. El otro lugar donde se negocia es el formulario de **Nuevo préstamo**,
+cuya vista previa solo enseña 3 filas. El dueño eligió (AskUserQuestion) ponerlo **en los dos**.
+- **Refactor mínimo y retrocompatible:** `nxPrestamoAmortizacion` ahora acepta **un id (préstamo guardado,
+  comportamiento idéntico al de antes) o un objeto "borrador"** marcado `_propuesta:true`. En modo propuesta:
+  `pag=0` (nadie ha pagado), se **quita la columna Estado** (siempre la última de las 3 ramas, con
+  `cols.pop()`+`filas.forEach(f=>f.pop())` — nada de duplicar el render), no se llama `prEstadoInfo`/`prRef`
+  (darían un estado y un "PR-__PROP" falsos) y cambian título/badge/nota/asunto.
+- **Decisión importante (criterio "no fingir"):** una simulación NO puede verse igual que un préstamo real —
+  si saliera con "PR-XXXXXX" y badge ACTIVO, el cliente podría creer que ya tiene un préstamo aprobado. El
+  documento sale como **"PROPUESTA DE FINANCIAMIENTO"**, badge `PROPUESTA`, **sin número de contrato**, y con
+  nota al pie: *"Es una simulación de las condiciones conversadas: no es un préstamo aprobado ni un
+  compromiso de desembolso... no tiene número de contrato porque el préstamo todavía no existe en el
+  sistema."* El mensaje de WhatsApp cierra con el mismo aviso.
+- **`window.nxPrPropuesta()`** (nueva): arma el borrador leyendo el simulador **del DOM**. Clave: Evaluación
+  y el formulario de Nuevo préstamo **comparten los mismos ids** (`prCap`/`prTasa`/`prNumCuotas`/`prFrec`/
+  `prMetodo`/`prPlazo`/`prFecha`/`prNom`/`prCed`/`prTel` — ver v49.15), así que **una sola función cubre las
+  dos pantallas**, sin duplicar nada. Cliente: `prNom` (en el form es un campo que se teclea → sirve para un
+  cliente que todavía NO está registrado) o `_evCli` como respaldo. Modos: `cuotas` (con o sin interés —
+  sin interés usa `total_devolver=capital`, no depende de `calcPrestamo` que devuelve `computa:false` ahí) y
+  `credito`. **`libre` avisa y no genera** (no tiene cuotas fijas). Simulador incompleto → toast, sin abrir
+  documento vacío.
+- **Botones:** en el modal `evVerAmort` (junto a "Volver") y en el formulario de Nuevo préstamo (junto a
+  "Vista previa de cuotas"), ambos con `aria-label`.
+- **Verificado con Playwright, código real extraído** (`nxPrestamoAmortizacion`/`nxPrPropuesta`/`amortizar`/
+  `creditoCalc`/`mesesCompletos`/`fechaCuota`/`prEstadoInfo`/`prRef`/`prIniciales` tal cual), **22
+  comprobaciones**: (a) **retrocompatibilidad** — el préstamo guardado sale idéntico (título TABLA DE
+  AMORTIZACIÓN, número de contrato, badge ACTIVO, columna Estado con Pagada/Pendiente, nota de siempre, y NO
+  dice propuesta); (b) **propuesta** — título/badge PROPUESTA, nombre del cliente nuevo tecleado, SIN `PR-`,
+  aviso legal presente, sin cuotas "Pagada", 8 filas correctas, columnas sin Estado, montos exactos
+  (28,000 / cuota 3,500), botón WhatsApp; (c) **límites** — simulador vacío avisa, abonos libres avisan,
+  línea de crédito sí genera. Sin desbordes, 0 errores de consola. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — botón para COMPARTIR la tabla de amortización (25-jul-2026, v49.31)
+El dueño pidió "botón para compartir tabla de amortización". La tabla ya existía dentro del detalle del
+préstamo (`nxPrestamoVer`, variable `scheduleHTML`) pero solo se podía mirar en pantalla — no había forma de
+imprimirla ni mandársela al cliente (Contrato y Estado de cuenta sí tenían su documento; el cronograma no).
+- **`window.nxPrestamoAmortizacion(id)`** (nueva, junto a `nxPrestamoComprobante`): documento
+  `window.open`+`document.write` con el MISMO patrón del comprobante de pago (v49.23) — encabezado con marca
+  + título + `prRef` + badge de estado, tarjeta de cliente (avatar `prIniciales`, cédula, teléfono), tarjeta
+  de condiciones, y el cronograma completo en tabla. Acciones: **Cerrar · Imprimir/PDF · WhatsApp · Correo**
+  (los handlers van dentro de un `<script>` del documento con `addEventListener`, NO en `onclick` — evita a
+  propósito el bug de comillas de `JSON.stringify` dentro de un atributo, ya documentado en v49.23).
+- **Recalcula, no guarda:** usa las mismas `amortizar()`/`creditoCalc()`/`fechaCuota()` que pinta el modal, y
+  el estado Pagada/Pendiente de cada cuota con el mismo criterio acumulado (`acum += cuota; pag >= acum-0.5`).
+  Cero tablas/columnas nuevas, cero escrituras.
+- **Los 3 modos reales, sin fingir ninguno:** `cuotas` con interés → tabla de amortización (#/Fecha/Cuota/
+  Interés/Capital/Saldo/Estado); `cuotas` sin interés → calendario de cuotas (#/Fecha/Cuota/Estado);
+  `credito` → interés por mes (Mes/Desde/Capital base/Interés/Estado). **`libre` (abonos libres) NO genera
+  documento** — no tiene cuotas fijas que compartir, así que avisa con un toast en vez de abrir una hoja
+  vacía (mismo criterio de "no fingir" del resto del sistema).
+- **Entrada:** botón de compartir (`ti-share`, morado, con `aria-label`) al lado del título del cronograma
+  dentro de `nxPrestamoVer`. Se factorizó un helper `schedTit(txt)` para que los 3 modos usen el mismo título
+  + botón sin duplicar HTML.
+- **WhatsApp:** el mensaje lleva resumen (condiciones) + el cronograma línea por línea, **acotado a 40 líneas**
+  con "… y N más (ver documento completo)" — evita armar un enlace `wa.me` absurdamente largo en préstamos de
+  muchas cuotas.
+- **Verificado con Playwright + código real extraído** (`nxPrestamoAmortizacion`/`amortizar`/`creditoCalc`/
+  `fechaCuota`/`pagadoDe`/`prEstadoInfo`/`prRef`/`prIniciales`/`waNumero`/`empresaNom` tal cual del archivo),
+  **24 comprobaciones**: el documento se genera y, cargado como página REAL en el navegador, tiene las 8 filas
+  correctas, las columnas correctas, 2 pagadas / 6 pendientes con RD$7,000 abonado, fechas en DD/MM/AAAA
+  (confirmado que la 1ra cuota quincenal cae 15 días después del préstamo, no el mismo día), los montos exactos
+  del caso real (cuota 3,500 · interés total 8,000 · total 28,000 · saldo final 0), los 4 botones de acción, y
+  que un préstamo de abonos libres NO genera documento sino aviso. Más 6 del botón del modal (existe, llama a
+  la función con el id correcto, `aria-label` presente, no desborda). Sin desbordes en 390px ni 820px, 0
+  errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### Financiamiento — repase de diseño con skills (ui-ux-pro-max + frontend-design), pieza 1: hero del dashboard (25-jul-2026, v49.30)
+El dueño mandó un catálogo de skills de diseño (frontend-design, web-artifacts, canvas-design, algorithmic-art,
+ui-ux-pro-max, slack-gif) y pidió "aplicar estos skills para mejorar los diseños de las apps". **Aclaración
+honesta dada al dueño:** de las 6, solo `ui-ux-pro-max` y `frontend-design` aplican de verdad — son
+*inteligencia de diseño* (guía) que sirve a cualquier stack; las de React/Tailwind/shadcn/p5.js/GIF no
+encajan con NEXUS PRO (un solo HTML sin framework/build/npm). Ya se usa `web-design-guidelines` para auditar.
+El dueño eligió empezar por **Financiamiento**.
+- **Bug de la skill corregido:** `ui-ux-pro-max/scripts/design_system.py` línea 437 tenía un f-string con
+  backslash (solo válido en Python 3.12+; el entorno tiene 3.11) — se factorizó a una variable para que el
+  tool corra. El tool dio recomendaciones genéricas que NO aplican (sugirió "App Store landing", Liquid Glass,
+  ámbar, Fira Code — nada que ver con un dashboard de préstamos ni con la identidad morada ya establecida); lo
+  útil es su checklist de UX, que ya se sigue. Se mantuvo el morado por la regla "cada app su color".
+- **Proceso (muestras aprobadas antes de tocar producción, como siempre):** se hizo primero un antes/después
+  sutil (pulido de profundidad en las tarjetas KPI); el dueño pidió "algo más marcado". Se armaron **3
+  direcciones** en un standalone (A Hero morado · B Panel oscuro tipo instrumento · C Bento con métrica
+  destacada), renderizadas en 390px y 1080px y mostradas al dueño → **eligió A (Hero morado)**.
+- **HECHO — Hero del dashboard (`renderLista`, vista principal):** la tira de 5 tarjetas KPI planas
+  (`.nxFP-kpis` + helper local `kpi()`) se reemplazó por un **banner de marca** morado (`.nxFP-hA`): degradado
+  `#4f46e5→#7c3aed→#6d28d9`, textura de puntos sutil (`radial-gradient` en `::before`), glow (`::after`), el
+  "Total por cobrar" gigante (42px, blanco, tabular-nums) con el delta "+X% vs mes ant." en verde menta, y a la
+  derecha un 2x2 de mini-stats (Prestado/Cobrado/Vencido/Clientes) con íconos Tabler reales en tiles
+  translúcidos (Vencido en tinte rojo `.warn`). **Solo cambió la parte de arriba** — el topbar, buscador, la
+  tabla de préstamos (`prTablaHTML`) y las tarjetas de abajo (`.nxFP-dash`) quedaron intactas. Cero cambios de
+  datos/lógica: usa las MISMAS variables ya calculadas en `renderLista` (`totalSaldo`/`cobradoMes`/`tendencia`/
+  `totalCap`/`totalPag`/`totalVencido`/`clientesActivos`). El helper local `kpi()` quedó sin uso y se borró
+  (dead code). **`.nxFP-kpis`/`.nxFP-kpi` NO se tocaron** — los siguen usando las vistas Clientes y Reportes del
+  mismo módulo (8 usos), así que su CSS se mantiene.
+- **Verificado con Playwright, CSS real extraído del archivo** (las reglas `.nxFP-hA*` tal cual de
+  `nxFPEnsureCSS`): el hero renderiza igual que la muestra A aprobada (número gigante, delta verde, 2x2 de
+  stats, tile de vencido en rojo), sin desbordes en 390px ni 1080px, 0 errores de consola (los íconos salen
+  como placeholder en el harness porque el entorno bloquea el webfont Tabler — en `nexusprord.com` sí cargan).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Pendiente (repase de diseño de Financiamiento, si el dueño quiere seguir):** mismo nivel de craft a la
+  tabla de préstamos, las tarjetas de abajo (`.nxFP-dash`), y los formularios — pieza por pieza, cada una
+  mostrada/aprobada antes de publicar. **Nota:** el `.agents/skills/.../design_system.py` quedó parchado
+  (fix del f-string) — es un archivo de skill, no de la app; si molesta en el diff se puede revertir, pero es
+  un fix legítimo y sin efecto en producción.
+
+### Financiamiento — calcular el préstamo por el MONTO de la cuota + "Interés plano" (25-jul-2026, v49.29)
+El dueño pidió (nota de voz) dos cosas sobre el formulario de préstamo (`abrirForm`, modo Cuotas fijas):
+(1) quitar "— más ganancia" del método y dejarlo "Interés plano"; (2) poder poner **la cuota que el
+cliente quiere pagar** (por semana/quincena/mes) y que el sistema calcule cuántas cuotas y el total, en vez
+de solo poner el número de cuotas.
+- **(1) Texto:** la opción del método pasó de "Interés simple (plano) — más ganancia" a **"Interés
+  plano"** (loan form + Evaluación + nota del resumen + encabezado de la tabla de amortización de
+  `nxPrestamoVer` + el texto de ayuda). Solo texto de UI — el cálculo no cambió.
+- **(2) Calcular por MONTO de la cuota (nuevo):** segmentado nuevo "Calcular por" en la caja de Cuotas fijas
+  con 2 botones: **Número de cuotas** (default, comportamiento de siempre) y **Monto de la cuota**. En el
+  modo nuevo, el campo "# de cuotas" se cambia por "Cuota que pagará"; al escribir la cuota,
+  `sincronizarCuotasPorMonto()` calcula el # de cuotas con `cuotasParaMonto(capital,tasa,frec,metodo,cuota)`
+  y lo escribe en el MISMO campo `prNumCuotas` de siempre — así todo lo de abajo (`calcPrestamo`,
+  `nxPrestamoGuardar`, `amortizar`, el resumen) funciona sin tocar nada: **`prNumCuotas` sigue siendo la
+  única fuente de verdad, el modo nuevo solo es una forma de llenarlo**. Variable `_prCuotaMode`
+  ('num'|'monto', se resetea a 'num' al abrir el form). `window.nxPrCuotaMode(mode)` alterna los campos.
+  El enganche está en `nxPrRecalc` (llama `sincronizarCuotasPorMonto()` antes de `calcPrestamo()`), así que
+  cambiar capital/tasa/frecuencia/método/cuota recalcula el # de cuotas en vivo. Aviso morado "Serán N
+  cuotas quincenales (la última puede variar un poco)"; si la cuota es muy baja (no cubre ni el interés, o
+  daría >360 cuotas) avisa en rojo y no calcula.
+- **Matemática de `cuotasParaMonto` (por método):** plano → `n = ceil(capital/(cuota − capital×i))`; saldo
+  insoluto (francés) → `n = ceil(−ln(1 − capital×i/cuota)/ln(1+i))`; sin interés → `ceil(capital/cuota)`;
+  con `i = tasaPorCuota(tasa,frec)` (quincenal = 5% cuando la mensual es 10%). Se redondea hacia ARRIBA, así
+  que la cuota real que sale de `amortizar(n)` es ≤ la deseada (round-trip: para el caso exacto del dueño
+  —20,000/10%/quincenal/plano/3,500— da 8 cuotas y `amortizar(8)` devuelve cuota 3,500 EXACTA). Tope de 360
+  cuotas para no generar cronogramas absurdos.
+- **Cero cambios de esquema/lógica de guardado** — `nxPrestamoGuardar` sigue leyendo `prNumCuotas`; lo que
+  se guarda es siempre # de cuotas + los términos resultantes. El modo 'monto' es puramente de entrada.
+- **Verificado con Node (cálculo) + Playwright (flujo del DOM), código real extraído** (`tasaPorCuota`/
+  `amortizar`/`cuotasParaMonto`/`sincronizarCuotasPorMonto`/`nxPrCuotaMode`/`calcPrestamo`/`nxPrRecalc` tal
+  cual del archivo): 8 aserciones numéricas (caso del dueño → 8 cuotas + round-trip exacto, cuota baja →
+  más cuotas con cuota resultante ≤ deseada, cuota que no cubre el interés → null, sin interés → división
+  simple, saldo insoluto, capital/cuota 0 → null) + 7 del DOM (toggle muestra/oculta campos, escribir cuota
+  calcula 8 y muestra el aviso, el resumen da 3,500/28,000/8,000, cuota 900 → aviso "muy baja", volver a
+  "# de cuotas" restaura). `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### Financiamiento — formulario de cliente al look premium del módulo (25-jul-2026, v49.28)
+El dueño notó que el formulario de "Nuevo cliente" de Financiamiento se veía "muy diferente" al resto del
+módulo. Investigado: **hay un solo formulario de cliente** (`abrirClienteForm`, `parches.js` IIFE de
+Financiamiento) — todos los accesos (sidebar Clientes → `nxPrClienteNuevo`, botón del préstamo →
+`nxPrClienteNuevoDesdeForm`, Evaluación → `evNuevoCliente`) abren la MISMA función, así que la diferencia
+que veía el dueño no era entre dos formularios sino entre el formulario (estilo viejo `.nxPrForm`) y el
+CHROME del módulo (ya premium `.nxFP` morado + Plus Jakarta Sans desde v49.11+). La causa concreta: los
+modales de Financiamiento usan la clase compartida `.nxPrForm` (CSS en la línea ~15135 del IIFE), que traía
+la fuente del sistema, foco violeta plano `#8b5cf6` e inputs sin acabado — nada que ver con el morado
+premium del módulo.
+- **Arreglo, cero cambios de campos/lógica** (`nxPrClienteGuardar` y todos los ids intactos): (1) se subió
+  el CSS compartido `.nxPrForm` al look premium — `font-family:"Plus Jakarta Sans"` (la fuente del módulo,
+  cargada por `nxFPEnsureCSS`), foco morado `#6d28d9` con aro `box-shadow`, inputs con fondo `#f8fafc` +
+  radios/bordes premium. Como `.nxPrForm` lo comparten TODOS los modales de Financiamiento (préstamo,
+  config, contrato, picker...), este único cambio los calza a todos de una vez, sin tocar el HTML de cada
+  uno. (2) el formulario de cliente (`abrirClienteForm`) además envuelve sus 5 secciones (Datos personales /
+  Contacto / Financiera / Referencias / Notas) en tarjetas premium `.prCard` (blanco, borde morado tenue,
+  sombra suave) — mismo lenguaje visual que las tarjetas del módulo. (3) `abrirClienteForm` llama a
+  `window.nxFPEnsureCSS()` al abrir para garantizar la fuente. Se respetó "cada app su color" — se usó el
+  MORADO de Financiamiento (`#6d28d9`/`#4f46e5`), NO el azul del formulario de cliente del POS
+  (`abrirEntidad`, `.nxPf`), que es un módulo/tabla distinto (`pos_clientes` vs `prestamo_clientes`).
+- **Nota de alcance:** solo se envolvieron en `.prCard` las secciones del formulario de CLIENTE (el que el
+  dueño nombró). Los demás modales de Financiamiento heredan la fuente + inputs + foco premium por el CSS
+  compartido, pero no el card-wrap (no hacía falta para calzar, y evita tocar su HTML). Si el dueño quiere
+  el card-wrap en el formulario de préstamo también, es un paso aparte.
+- **Verificado con Playwright, código real extraído** (`abrirClienteForm`/`prSec` + el CSS real de
+  `.nxPrForm` tal cual del archivo): 5 tarjetas premium, inputs con fondo `#f8fafc`, campos precargados al
+  editar, caja de fiador visible con el checkbox marcado, sin desbordes en 390px ni 1000px. La fuente Plus
+  Jakarta y el aro de foco morado se confirmaron en la captura del render real (el entorno bloquea el CDN de
+  Google Fonts, así que el `getComputedStyle` del test headless no reflejó la fuente/`:focus` — limitación
+  del entorno ya documentada, no del código; en `nexusprord.com` sí cargan). `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — bug real: al EDITAR un préstamo el resumen mostraba matemática equivocada (25-jul-2026, v49.27)
+El dueño mandó una captura de "EDITAR PRÉSTAMO" (quincenal, 10% mensual, 8 cuotas, método plano) donde el
+selector de Frecuencia mostraba **QUINCENAL** pero el resumen decía "10% mensual = 2.33% **por semana**",
+cuota RD$ 2,967 / total 23,733 / interés 3,733 — la matemática **SEMANAL**, no la quincenal (que da cuota
+3,500 / total 28,000 / interés 8,000). **Causa raíz en `abrirForm(pr)` (`parches.js`, IIFE de
+Financiamiento):** el orden de operaciones estaba mal — `pintarModo()` (que al final llama a
+`window.nxPrRecalc()`) corría PRIMERO, calculando el resumen con los valores por DEFECTO de los `<select>`
+(el 1er option de Frecuencia es `semanal`, y método `plano`); recién DESPUÉS se restauraban los valores
+reales del préstamo (`s.value = p.frecuencia` / `sm.value = p.metodo_interes`), pero **sin volver a
+recalcular**. Así el `<select>` mostraba "Quincenal" (valor bien puesto) mientras el preview quedaba
+pegado con los números de "semanal". No corrompía datos — `nxPrestamoGuardar` lee `val('prFrec')` al
+guardar, que ya trae el valor correcto; era solo el preview que engañaba (y podía hacer creer que las
+condiciones del préstamo eran otras). Afectaba a CUALQUIER préstamo cuya frecuencia no fuera la 1ra opción
+(`semanal`) o cuyo método no fuera el default (`plano`) — al abrirlos a editar, mostraban el cálculo de
+semanal/plano hasta tocar algo. **Arreglo:** tras restaurar los dos `<select>` se agregó un
+`window.nxPrRecalc()` (guardado con try/catch, solo si de verdad se restauró algún valor) — así el resumen
+sale correcto desde que se abre el préstamo. Cambio de una sola llamada, cero lógica de cálculo tocada
+(`tasaPorCuota`/`amortizar`/`calcPrestamo` intactos — ya estaban bien: quincenal = 5% = 10%×15/30). No es
+retroactivo a datos (nunca hubo datos malos, solo display). **Verificado con Playwright + código real
+extraído** (`tasaPorCuota`/`amortizar`/`calcPrestamo`/`pintarModo`/`nxPrRecalc` tal cual del archivo,
+simulando el flujo de edición): SIN el fix reproduce exacto la captura (2,967 / 23,733 / 3,733, nota "por
+semana"); CON el fix da la matemática quincenal correcta (3,500 / 28,000 / 8,000, nota "10% mensual = 5%
+por quincena"), 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+pasan `new Function()`; `version.json` válido.
 
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
@@ -3446,6 +5064,2051 @@ Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
   acuerde de no darle ese permiso. No hay herramienta en este entorno para configurarlo por API; es un
   ajuste que el dueño hace una vez desde la web de GitHub.
 
+### La ruta para publicar en vivo — para ChatGPT, SOLO cuando el dueño lo autorice explícito (8-ago-2026)
+El dueño pidió dejarle a ChatGPT escrita la ruta correcta para cargar archivos en vivo (producción),
+**para el día que se autorice** — hoy **NO está autorizado**. Este apartado documenta el mecanismo; no
+es un permiso. **Son DOS rutas distintas, no una con excepciones:**
+- **Sin autorización explícita (default, siempre que no se diga lo contrario):** `chatgpt/visual-draft`
+  → Claude audita y reimplementa → rama propia → PR → fusión. Nunca push directo a `main`.
+- **Con autorización explícita del dueño, caso por caso:** ChatGPT sube DIRECTO a `main` con los 5 pasos
+  de abajo — **sin pasar por revisión de Claude, ni antes ni como condición para que llegue a
+  producción.** El dueño lo confirmó así: la autorización reemplaza la revisión de Claude en esa carga
+  puntual, no la complementa. Claude puede seguir auditando DESPUÉS (mismo criterio reactivo que ya usa
+  para diagnosticar cualquier cosa que se rompa en producción), pero eso nunca bloquea ni retrasa el
+  despliegue ya autorizado.
+- **Por qué se escribe esto ahora — evidencia real, no preventiva:** el episodio de **Cliente 360**
+  (7/8-ago-2026) rompió la disciplina de arriba en 3 formas a la vez, sin que nadie lo autorizara: (1)
+  ChatGPT creó su PROPIA rama (`chatgpt/cliente-360-ui`) en vez de usar la bandeja `chatgpt/visual-draft`
+  ya establecida; (2) esa rama y `main` recibieron push DIRECTO (commits `e006dbb`/`7e44225`), saltándose
+  el PR; (3) se agregó infraestructura de despliegue nueva directo a `main` (2 commits,
+  `.github/workflows/deploy-cloudflare.yml`) sin revisión. Resultado real: 4 archivos sueltos con datos
+  simulados y sin conectar a Supabase, el módulo colocado en el menú equivocado (Seguros — el dueño
+  aclaró después que era para Financiamiento), un diseño que no calzaba con el sistema de diseño real, y
+  un botón de "pagar" que no hacía nada. Todo se auditó, se corrigió y se movió a su lugar real — pero es
+  el ejemplo concreto de por qué la ruta tiene que ser explícita y con un solo camino, no improvisada.
+- **Descubrimiento de esta misma auditoría — el mecanismo de despliegue real, hoy:** el despliegue real
+  SIEMPRE ha sido el Cloudflare Git-integration ya documentado arriba ("Hosting", cada push a `main` se
+  despliega solo). Existió también, un tiempo, `.github/workflows/deploy-cloudflare.yml` (llegado por el
+  mismo episodio de Cliente 360 de arriba, sin revisión) — pero **NUNCA desplegó nada, ni una vez**:
+  le faltaba el secreto `CLOUDFLARE_API_TOKEN` en el repo (`wrangler deploy` fallaba en el primer paso,
+  siempre, confirmado revisando los logs de las últimas corridas — 100% de fallo desde que existía).
+  **Eliminado (8-ago-2026)**, autorizado explícito del dueño tras verle el error real: era ruido puro
+  (mandaba correo de fallo en cada push) sin ningún efecto en producción — `nexusprord.com` se seguía
+  actualizando bien todo este tiempo solo por el Git-integration nativo. Un push a `main` sigue
+  disparando producción exactamente igual, sin este workflow.
+- **La ruta, literal, para cuando SÍ esté autorizada (seguir en este orden, sin saltar pasos):**
+  1. Subir `APP_VERSION` en `index.html` **y** agregar la entrada correspondiente al inicio del arreglo
+     `cambios[]` de `version.json`, con el MISMO número de versión en los dos archivos — sincronizados.
+     Texto en español llano para el usuario final (no técnico), con el prefijo `NUEVO`/`ARREGLADO` como
+     ya se usa en todo el changelog.
+  2. Verificar antes de publicar: `node --check parches.js` limpio; cada bloque `<script>` de
+     `index.html` compila con `new Function()`; `version.json` es JSON válido. Si algo no verifica, NO
+     se publica — se corrige primero.
+  3. Commit corto en español, con el prefijo del módulo que toca (`POS:`, `Financiamiento:`,
+     `Multiempresa:`...).
+  4. Push directo a `main`, **fast-forward únicamente** — traer `origin/main` primero si se movió; nunca
+     force-push.
+  5. Con eso ya está — el push por sí solo dispara el despliegue (Cloudflare sirve el `index.html`/
+     `parches.js` nuevos en el mismo dominio en vivo). No hace falta ningún paso extra.
+- **La condición de autorización, sin ambigüedad:** esta ruta solo se sigue cuando el dueño lo dice
+  EXPLÍCITO, en esa misma conversación, con palabras del tipo "autorizado, súbelo en vivo" / "publícalo
+  directo". Un "se ve bien" o el silencio **no** son autorización — con cualquier otra cosa, la ruta
+  sigue siendo la de siempre: `chatgpt/visual-draft` (la bandeja real, nunca una rama nueva inventada) y
+  esperar a que Claude lo revise.
+- **Fuera de esta ruta, siempre, autorizado o no:** cambios de INFRAESTRUCTURA de despliegue (workflows
+  de GitHub Actions nuevos, secrets, `wrangler.jsonc`, cualquier cosa que cambie CÓMO el código llega a
+  producción, no QUÉ código es) — esos los hace el dueño directamente, nunca ChatGPT por su cuenta, ni
+  siquiera con autorización de subir código en vivo (autorizar código no es autorizar tocar el mecanismo
+  de despliegue en sí).
+- **Pendiente, mismo punto de arriba, se repite porque resuelve esto de raíz:** protección de rama en
+  `main` (GitHub → Settings → Branches → exigir PR, sin push directo) haría esta pregunta innecesaria —
+  nadie podría publicar directo a `main` sin pasar por revisión, autorizado o no. Sigue siendo un ajuste
+  que solo el dueño puede hacer desde la web de GitHub.
+
+### Cómo programar bien en NEXUS PRO — el mismo estándar para ChatGPT (8-ago-2026)
+El dueño pidió qué más decirle a ChatGPT para que programe con la misma disciplina que se usa en esta
+sesión. No es una lista de estilo — cada punto sale de un bug real que YA pasó en este proyecto (el
+propio historial de este archivo, no una teoría). Aplica siempre que ChatGPT toque código de verdad, no
+solo cuando manda un mockup.
+
+1. **Leer el código real ANTES de escribir, nunca asumir.** Antes de tocar una función, abrirla y leerla
+   completa — nombre exacto de los `id`, qué tabla usa, qué formato de dato espera. La causa raíz de los
+   4 intentos fallidos de ChatGPT en Vender/Prefactura (ver "Limpieza de 4 intentos de ChatGPT" arriba)
+   fue exactamente esto al revés: un detector genérico que **adivinaba** el DOM en vez de leer
+   `renderVender`/`gridHTML` (que ya existían) — nunca encontró su objetivo porque nunca miró el código
+   real.
+2. **Reusar lo que ya existe, nunca duplicar.** Antes de escribir un buscador, un modal, un color, un
+   patrón de tarjeta — buscar si YA hay uno (`nxBuscaHTML`, `ModalBusquedaBase`, `moverStock`, `.nxPf`,
+   `.nxFP`...). Este proyecto tiene un reglamento entero sobre esto (`ModalBusquedaBase` §"no duplicar
+   funciones") precisamente porque ya pasó.
+3. **No fingir una función que no existe.** Si el dato no está en la base (sin tabla, sin columna), no
+   se inventa un botón que no hace nada — se dice "Próximamente" o se pregunta antes de construir. El
+   botón de "pagar" falso del prototipo de Cliente 360 es el ejemplo más reciente y concreto.
+4. **Cambios quirúrgicos al hacer un reskin visual.** Si el pedido es "que se vea mejor", se tocan
+   SOLO clases/CSS/HTML — los mismos `id`, los mismos `onclick`, las mismas funciones de guardado
+   quedan intactos. Mezclar "se ve mejor" con "cambié cómo funciona" es como se rompen cosas que ya
+   andaban bien.
+5. **Un color por app, nunca mezclado.** Cada módulo (POS azul, Financiamiento morado, Rifas índigo...)
+   tiene su propio acento — nunca el de otro módulo, y nunca dos colores compitiendo dentro del mismo
+   módulo. Ver NPGS §12.
+6. **Verificar de verdad antes de decir "listo" — no basta con que compile.** Cargar el archivo real en
+   un navegador (no una reconstrucción a mano), probar a 390px de ancho (celular) sin que nada se
+   desborde, 0 errores de consola, y confirmar que el dato que se muestra es el dato real, no uno de
+   prueba inventado. "Se ve bien en mi cabeza" no cuenta como verificado.
+7. **Dinero, inventario y contabilidad tienen reglamento escrito — seguirlo, no improvisar.** Antes de
+   tocar cobro, crédito, cuotas, existencia o asientos contables, leer `REGLAMENTOS.md` (§1 a §9) — ya
+   están las reglas exactas de qué se permite y qué no, con la razón de cada una.
+8. **Incrementos chicos y verificables, no todo de un tirón.** Una pieza, probada, publicada — después
+   la siguiente. Construir 5 funciones nuevas de un golpe sin probar ninguna es como se acumulan bugs
+   invisibles.
+9. **Ser honesto sobre lo que no se pudo probar.** Si algo no se puede verificar desde donde se está
+   trabajando (ej. sin salida a internet, sin poder abrir un iPhone real), decirlo explícito — no
+   afirmar que "funciona" cuando en realidad no se comprobó.
+10. **Sin build, sin npm, sin bundler — este proyecto es HTML/JS plano.** No instalar paquetes que no se
+    puedan usar de verdad sin un sistema de build (ya pasó con `@tabler/icons-react`/`lucide-react` —
+    quedaron 100% inertes porque `index.html` no tiene ningún `import`).
+
+Mismo criterio de siempre: esto se le puede pasar a ChatGPT como mensaje directo, y queda escrito aquí
+para que cualquier sesión de Claude lo use también como vara para juzgar lo que llega de
+`chatgpt/visual-draft`.
+
+**Caso real que confirma las 10 reglas — el candado atómico de IMEI (8-ago-2026, rama
+`chatgpt/imei-atomic-draft`).** ChatGPT auditó la fuga de doble venta de IMEI y dejó un borrador (SQL +
+JS + reglamento) en su propia rama, sin tocar `main`. Claude lo revisó dos veces (crítica primero,
+implementación después) y esto es lo que separó el borrador bueno del malo, con evidencia real:
+- **El primer borrador de ChatGPT (`IMEI_CANDADO_ATOMICO_V1.js`, versión inicial) tenía un fallo real:**
+  su pseudocódigo de integración hacía `throw e` dentro del bloque de confirmación de IMEI **después**
+  de que `pos_ventas` YA se había insertado — y como todo el flujo vive envuelto en un solo `try/catch`
+  exterior, ese `throw` habría caído en el mismo `catch` que hoy solo maneja "no se pudo crear la
+  venta". El cliente se habría ido con su factura ya cobrada mientras la pantalla decía "No se pudo
+  cobrar" — la venta sí existe, el mensaje miente. Nueve commits de auto-corrección después
+  (`ba21254`→`a381ee4`), la versión final se corrigió sola: agregó `p_esperados` a la RPC de
+  confirmación (todo-o-nada), `REVOKE`/`GRANT` explícito en las 3 funciones nuevas (sin esto quedan
+  ejecutables por cualquiera con la anon key, el mismo hueco que ya se había cerrado una vez para
+  `pos_siguiente_ncf`), y separó con cuidado el caso "la venta no existe todavía" (si algo falla, se
+  libera la reserva) del caso "la venta ya existe" (nunca se revierte, nunca se libera a ciegas — se
+  fija la reserva a `venta_id` y se deja un rastro en Auditoría para revisión administrativa).
+- **La instrucción del dueño para Claude fue más precisa que la propia recomendación de Claude**:
+  Claude había sugerido "nunca lances, solo registra en Auditoría y sigue" — el dueño agregó el matiz
+  que cerró el hueco de verdad: *"si la venta YA existe y falla la confirmación del IMEI, NO reviertas
+  la venta y NO liberes el IMEI a ciegas"* — liberar la reserva a ciegas habría dejado el mismo
+  candado abierto para un SEGUNDO cajero mientras el primer IMEI seguía técnicamente "vendido" en
+  `pos_seriales` pero sin reserva que lo proteja. La solución real: la reserva se queda ligada a la
+  venta (nunca vuelve a estar disponible por el TTL), y el problema se resuelve a mano, no en silencio.
+- **La implementación de Claude fue quirúrgica de verdad, medible en el diff:** +129/−3 líneas en un
+  archivo de +29,000 — se insertaron los 6 helpers nuevos completos tal cual venían del borrador ya
+  corregido, se agregaron 4 líneas de una sola instrucción (`await
+  liberarReservasImeisVencidas();`) a las 4 pantallas que listan IMEI, y dentro de `nxPosConfirmar` se
+  tocaron solo los 3 puntos exactos que el propio documento de integración de ChatGPT señalaba con
+  número de línea — nada de la validación de caja/crédito/NCF/cuotas/documentos que ya existía se
+  movió ni se reescribió. Se verificó con `grep` que el mecanismo viejo (`PATCH` best-effort sin exigir
+  `estado=disponible`) no quedó coexistiendo en ningún otro lugar del archivo, y que las funciones de
+  anulación/devolución (que liberan el IMEI por `venta_id`) seguían siendo compatibles sin tocarlas —
+  porque el candado nuevo deja el IMEI exactamente en la misma forma (`estado='vendido',
+  venta_id=<id>`) que dejaba el mecanismo viejo cuando funcionaba bien.
+- **La lección para ChatGPT, en una frase:** un borrador de lógica de negocio (no solo visual) se
+  audita simulando el peor camino de falla ANTES de escribirlo — "¿qué pasa si esto truena justo
+  DESPUÉS de que el dinero ya se cobró?" — y esa pregunta se responde leyendo el `catch` real que ya
+  existe en el archivo, no inventando uno nuevo.
+- **SEGUIMIENTO real, al publicar en producción (8-ago-2026):** aunque el SQL de ChatGPT ya traía
+  `revoke execute ... from public` + `grant execute ... to authenticated` en las 3 funciones nuevas
+  (el propio arreglo que había faltado en su primer borrador), al VERIFICAR después de aplicar la
+  migración en Supabase (`has_function_privilege('anon', ...)`) dio **`true`** — `anon` SÍ podía
+  ejecutar las 3 RPC, pese al `REVOKE FROM public`. Causa real, confirmada mirando `pg_proc.proacl`:
+  **Supabase le concede `EXECUTE` a `anon` (y a `authenticated`/`service_role`) por defecto en TODA
+  función nueva del schema `public`, vía `ALTER DEFAULT PRIVILEGES` a nivel de proyecto — un grant
+  EXPLÍCITO a `anon`, independiente de `PUBLIC`.** Revocar de `PUBLIC` no lo toca. Se cerró con una
+  segunda migración, `revoke execute on function ... from anon;` explícito en cada una de las 3 —
+  reverificado con `has_function_privilege`: `anon=false`, `authenticated=true`, `public=false`.
+  **La lección concreta para cualquier función Postgres nueva en ESTE proyecto (Supabase, no un
+  Postgres genérico):** el `REVOKE FROM public` que ya pedía la regla 4 del mensaje a ChatGPT
+  NO BASTA por sí solo — hay que revocar TAMBIÉN de `anon` explícitamente (la clave anónima es la que
+  va embebida en `index.html`, así que es la que de verdad importa cerrar) y verificar con
+  `has_function_privilege('anon', '<función>'::regproc, 'execute')` DESPUÉS de aplicar, no confiar en
+  que el `REVOKE`/`GRANT` del propio SQL sea suficiente sin comprobarlo contra la base real.
+
+### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
+ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
+documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
+código directo a `main`, notas de "no inventar funciones"). Se auditó contra el código real antes de
+tocar nada y se le mostró al dueño un desglose de qué es rediseño vs. qué sería construir. El dueño
+eligió la **Fase 1 visual completa**. **Regla clave de esta pieza: NO se tocó ni un cálculo de dinero** —
+solo el "vestido" + un Resumen nuevo armado 100% con datos reales.
+- **Qué es real y ya existía (solo reskin):** el módulo `renderContabilidad()` (POS, `parches.js`) ya
+  tenía las 7 sub-pestañas (Resumen, Plan de cuentas, Libro Diario, Libro Mayor, Comprobación, Estado de
+  Resultados, Balance General) con toda la lógica de partida doble correcta (`saldosCta`/`sumaPorTipo`/
+  `saldoNat`/`asientosRango`/`asLineas`, tablas `pos_cuentas`/`pos_asientos`/`pos_asiento_lineas`). Esas
+  funciones de cálculo NO se tocaron.
+- **Qué se recortó/aplazó (confirmado con el dueño, no se fingió):** Bancos y conciliación (0 en el
+  código), Centro de costo (0), reportes 606/608/609 (solo existe 607 parcial — va con el tema fiscal/
+  e-CF crítico, aparte), CxC/CxP como pantalla contable con aging, y toda la "Fase 4" (proyecciones/
+  flujo futuro/rentabilidad por empresa-sucursal). La barra inferior del móvil del mockup se descartó —
+  el POS usa la barra lateral grafito, no una barra por módulo.
+- **Cambios reales, quirúrgicos (aditivo, aislado):** (1) `renderContabilidad()` envuelve su salida en
+  `<div class="nxPf nxCtaWrap">` + llama `nxPfEnsureCSS()` — el prefijo `.nxCtaWrap` aísla TODO el CSS
+  nuevo para que no toque ninguna otra pantalla. (2) `ctaResumen()` reconstruido como tablero premium:
+  4 KPIs (`kpiPf`/`.kpirow` ya existentes) — **Ingresos del período, Gastos y costos, Utilidad/Pérdida
+  neta, Efectivo (Caja+Banco)** — este último helper nuevo `ctaEfectivo(s)` suma solo las cuentas activo
+  de caja/banco (código 1101/1102 o nombre), no todos los activos. (3) **Flujo de efectivo** — gráfica
+  SVG de líneas (`ctaFlujoMeses(6)` + `ctaFlujoSVG`), últimos 6 meses de Ingresos/Gastos/Utilidad,
+  calculada de TODOS los `_asientos` (tendencia real, independiente del filtro de rango). (4)
+  **Distribución de gastos** — barras reales por cuenta de gasto/costo (`ctaGastosBars`), NO las 5
+  categorías inventadas del mockup (administrativos/financieros no existen en el plan). (5) **Últimos
+  movimientos** — `ctaUltMov()`, los 6 asientos más recientes. Las otras 6 pestañas solo heredan el look
+  (fuentes + encabezado de tabla + tarjetas con vars `.nxPf`, dark-mode aware) vía CSS scopeado a
+  `.nxCtaWrap` — su HTML/lógica no cambió.
+- **Verificado con Playwright, código real extraído del archivo** (no reconstrucción — `renderContabilidad`/
+  `ctaResumen`/`ctaEfectivo`/`ctaFlujoMeses`/`ctaFlujoSVG`/`ctaGastosBars`/`ctaUltMov`/`saldosCta`/
+  `saldoNat`/`sumaPorTipo` + las 6 funciones de pestaña, tal cual, con balance de llaves real): con datos
+  simulados (venta + 2 gastos del período + una venta del mes anterior para el flujo), los 4 KPIs dan el
+  número EXACTO (Ingresos 10,000 · Gastos 16,500 · Pérdida neta −6,500 · Efectivo 1,300 — verificado por
+  volcado directo de `.kpitile`), la gráfica tiene 18 puntos (6 meses × 3 líneas), 3 barras de gastos, 4
+  últimos movimientos, la balanza cuadra, el Estado de Resultados calcula bien, y las 7 pestañas se ven
+  sin desbordes en 390px y 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente (Fases 2-4 de la propuesta, cada una es construcción real, no visual):** Gastos con centro
+  de costo · CxC/CxP contables con aging · Bancos y conciliación · fiscal (606/608/retenciones, atado al
+  e-CF) · inteligencia financiera (proyecciones/rentabilidad por empresa-sucursal). Se agendan por
+  separado cuando el dueño lo pida.
+
+### POS · Reportes — rediseño visual (Tanda 2, 23-jul-2026, v49.04)
+Continuación de la migración del POS al look premium `.nxPf` (el dueño eligió seguir con "lo visual", opción
+3). `renderReportes()` (POS, `parches.js`) es de SOLO LECTURA (analítica sobre `pos_ventas`/`pos_venta_items`,
+no muta nada) — reskin de bajo riesgo, mismo patrón que Contabilidad Fase 1: wrapper aislado `.nxRepWrap`,
+KPIs premium (`kpiPf`/`.kpirow`), CSS scopeado (dark-mode aware), **cero cálculos tocados**.
+- Los 6 KPIs (Ventas total, Ganancia estimada, Costo de lo vendido, ITBIS cobrado, No. de ventas, Ticket
+  promedio) pasaron de `.nxCtaKpi` a `kpiPf`/`.kpirow`. Las tarjetas de gráficas (Ventas por día, Por método
+  de pago, Productos más vendidos, clases `.nxRepCard`/`.nxRepBars`/`.nxRepMet*`/`.tw table`) solo heredan el
+  look vía CSS scopeado a `.nxRepWrap` — su HTML/lógica no cambió. `nxRepComisiones`/`nxRepImei`/`nxRep607`
+  (botones de acción) intactos.
+- Verificado con Playwright, código real extraído del archivo (no reconstrucción — `renderReportes`/
+  `ventasRepRango`/`repFecha`/`repItems`/`prodCosto`/`kpiPf` tal cual): con 3 ventas simuladas los 6 KPIs dan
+  el número EXACTO (Ventas 48,970 · Ganancia 8,900 · Costo 32,600 · ITBIS 7,470 · Ticket 16,323 — verificado
+  por volcado directo de `.kpitile`), 2 barras de días, 3 métodos de pago, tabla de top productos correcta,
+  sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente de la Tanda 2:** Reparaciones, Kardex, Historial de ventas, Recursos Humanos — mismo criterio,
+  uno a la vez, probado antes de publicar.
+
+### POS · Historial de ventas — rediseño visual (Tanda 2, 23-jul-2026, v49.05)
+`renderVentas()` (pestaña "Historial de ventas" del POS, lista de `pos_ventas`) era la pantalla que el
+propio código dejó marcada como "aún sin rediseñar" (comentario junto a `kpi()` vs `kpiPf()`). Mismo patrón:
+wrapper aislado `.nxVenWrap`, KPIs premium, CSS scopeado, **cero cálculos tocados**.
+- Los 3 KPIs (Facturas, Total filtrado, Hoy) pasaron de `kpi()` (helper plano) a `kpiPf()`/`.kpirow`. La
+  tabla pasó del `.tw` viejo a `.card`+`table.tw-hist` con encabezado premium (reusa `thSort`/`.nxThSort`
+  para el orden, mi regla scopeada gana en especificidad y le pone el fondo azul claro, la flecha de orden
+  conserva su acento). **De paso, theme-aware:** los colores de fila que estaban hardcodeados (`#1e293b`
+  para el número, `#475569` para la fecha) pasaron a `var(--pf-txt)`/`var(--pf-txt3)` + regla scopeada
+  `.nxVenWrap .tw-hist tbody td{color:var(--pf-txt2)}` — antes en modo oscuro esos textos oscuros quedaban
+  invisibles sobre panel oscuro; ahora se ven bien en claro y oscuro. Los badges CONTADO/CRÉDITO/ANULADA y
+  el total verde se dejaron con su color (legibles en ambos temas). `filasHistorial`/`kpisHistorial`/
+  `ventasFiltradas`/`pintarHistorial` (que repinta `#histBody`/`#histKpis` al buscar) no cambiaron su
+  lógica — el `id="histKpis"` se conservó, solo cambió su clase contenedora a `.kpirow`.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderVentas`/`kpisHistorial`/
+  `filasHistorial`/`ventasFiltradas`/`thSort`/`sortRows`/`histSortVal`/`kpiPf` tal cual): con 3 ventas
+  simuladas (una anulada) los 3 KPIs dan el número exacto (Facturas 3 · Total filtrado 48,380 EXCLUYENDO la
+  anulada · Hoy 2), la fila anulada sale atenuada con su badge, sin desbordes en 390px ni 1280px, 0 errores
+  de JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido. **Quedan de la Tanda 2:** Kardex, Reparaciones (kanban), Recursos Humanos.
+
+### POS · Kardex/Inventario — rediseño visual (Tanda 2, 23-jul-2026, v49.06)
+`renderInventario()` (pestaña "Kardex" del POS — valoración, movimientos, multi-almacén) reskineado con el
+mismo patrón: wrapper aislado `.nxInvWrap`, KPIs premium, CSS scopeado, **cero cálculos tocados**.
+- Los 5 KPIs (Productos, Valor a costo, Valor a precio, Bajo stock, Sin stock) pasaron del `kpi()` local
+  (estilo `.nxCtaKpi`) a `kpiPf()`/`.kpirow`. Las secciones (`.nxRepCard`/`.nxRepTit`, tablas de kardex/
+  bajo stock/movimientos, chips y tarjetas de almacén) heredan el look premium vía CSS scopeado a
+  `.nxInvWrap` (reusa las reglas de `.nxRepCard` ya creadas para Reportes, ampliando el selector; + reglas
+  nuevas theme-aware para `.tw table`/`.nxAlmCard`/`.nxAlmChip`). `movFila`/`invProductosStock`/
+  `stockEnAlm`/`almTotalUnidades` y toda la lógica de valoración/kardex/ajuste/transferencia intactas.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderInventario`/`invProductosStock`/
+  `movFila`/`stockEnAlm`/`almTotalUnidades`/`kpiPf` tal cual): con 3 productos + 1 servicio y 2 movimientos,
+  los 5 KPIs dan el número exacto (Productos 3 excluyendo el servicio · Valor a costo 160,200 · Valor a
+  precio 235,590 · Bajo stock 2 · Sin stock 1), la sección de bajo stock y movimientos recientes aparecen
+  con sus badges, sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Quedan de la Tanda 2:**
+  Reparaciones (kanban), Recursos Humanos.
+
+### POS · Reparaciones (kanban) — rediseño visual (Tanda 2, 23-jul-2026, v49.07)
+`renderReparaciones()` (tablero kanban del Servicio Técnico) reskineado: wrapper aislado `.nxRepWrapK` +
+CSS scopeado theme-aware, **cero cambios en el flujo de estados ni en el cobro/entrega**.
+- Las columnas (`.nxRepCol`/`.nxRepColH`), tarjetas de equipo (`.nxRepCard`/`.nxRepNum`/`.nxRepEq`/
+  `.nxRepCli`/`.nxRepFalla`/`.nxRepPre`), píldoras En taller/Entregadas (`.nxInvPill`) y la lista de
+  entregadas (`.nxMdRow`/`.nxMdNom`/`.nxMdSub`, prestadas de Consultorio) pasaron de colores hardcodeados
+  (`#fff`/`#f8fafc`/`#0f172a`…) a `var(--pf-*)` vía CSS scopeado a `.nxRepWrapK` — antes en modo oscuro esas
+  tarjetas quedaban en blanco sobre fondo oscuro; ahora se ven bien en claro y oscuro. El color por estado
+  del encabezado de columna (`--rc`, gris/naranja/azul/magenta/verde) se conserva. `renderReparaciones`
+  solo cambió el wrapper; `repEst`/`repDias`/`garantiaInfo`/`nxRepNueva`/`nxRepVer`/`nxRepEstado` y todo el
+  flujo del taller intactos.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderReparaciones`/`repEst`/
+  `repDias`/`garantiaInfo`/`claveParse`/`claveDisplayHTML`/`posBuscador` tal cual): con 4 reparaciones (3
+  activas + 1 entregada con garantía vigente), el tablero arma las 5 columnas (excluye 'entregado'/
+  'cancelado') con sus 3 tarjetas, la píldora "En taller 3" activa, la vista Entregadas muestra la fila con
+  la garantía, sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Queda de la Tanda 2:**
+  Recursos Humanos / Nómina.
+
+### POS · Reparaciones — formulario "Recibir equipo" rediseñado (23-jul-2026, v49.08)
+`window.nxRepNueva` (el formulario de recepción del taller) pasó del viejo modal `.nxPrForm` al look
+premium `.nxPf` — mismo criterio quirúrgico de siempre: **todos los ids de campo y `nxRepGuardar`
+(la lógica de guardado) intactos, cero cambios de negocio**, solo el "vestido" + una pieza nueva de
+resumen en vivo que NO existía.
+- **3 tarjetas** (`.card`, patrón `.fld`/`.inw`/`.g2`): Cliente (Nombre*/Teléfono con `inputmode="tel"`),
+  Equipo (Equipo*/IMEI marcado "(opcional)"/Falla*/Estado físico/Accesorios + el widget de clave/patrón
+  `claveCapturaHTML('repNueva','')` ya existente) y Presupuesto (Presupuesto/Avance/Técnico).
+- **Barra de pasos `.nxRepFlow`** arriba del formulario: los 6 estados reales de `REP_ESTADOS`
+  (Recibido → Diagnóstico → Reparando → Esperando pieza → Listo → Entregado, con el paso 1 "on") — NO
+  se inventaron pasos (el mockup V2/V3 de ChatGPT proponía 8 pasos con Presupuesto/Aprobación/Control
+  de calidad, que no existen en el esquema; se usan los 6 reales, ver la verificación de la V2 abajo).
+  Es informativa (muestra el ciclo por el que pasa una reparación), no interactiva en este formulario.
+- **Resumen en vivo `window.nxRepEstim`** (nuevo, junto a los demás helpers del IIFE de Reparaciones):
+  al escribir Presupuesto y Avance (ambos con `oninput="window.nxRepEstim()"`), recalcula
+  Presupuesto − Avance = **Falta por cobrar** (naranja si >0, verde si 0) en `#nxRepEstimBox` — 100% en
+  el navegador, no toca la base. Usa el `moneyVal` local del IIFE.
+- **Deliberadamente NO construido** (mismo criterio de "no fingir funciones que no existen"): los paneles
+  de "Piezas a reemplazar" (con inventario/costos) y "Mano de obra" del mockup de ChatGPT — el taller
+  HOY no consume piezas de `pos_productos` (decisión ya documentada en Fase 5 del Kardex Inteligente,
+  solo tiene un costo manual), así que construirlos sería un módulo nuevo, no un reskin; queda pendiente
+  de que el dueño confirme si el taller debe descontar piezas del inventario.
+- **CSS nuevo scopeado a `.nxPf`** en `nxPfEnsureCSS()`: `.nxRepFlow`/`.nxRepFlowStep`/`.dot`/`.lb`
+  (barra de pasos con scroll horizontal propio, conector entre pasos vía `::after`) y `.nxRepEstim`/
+  `.nxRepEstR`/`.nxRepEstT` (el cuadro de resumen) — theme-aware (se ve bien en claro y oscuro).
+- Verificado con Playwright, código real extraído del archivo (no reconstrucción — `nxRepNueva`/
+  `nxRepEstim`/`claveCapturaHTML`/`nxClaveBodyHTML` tal cual, con el CSS real de `nxPfEnsureCSS`): el
+  modal abre con las 6 pasos (paso 1 activo), los 10 campos presentes, el widget de clave presente, y el
+  resumen calcula Presupuesto 3,500 − Avance 1,000 = Falta 2,500 correcto; capturas en claro y oscuro
+  a 390px y 1280px sin desbordes, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Compras — rediseño visual (Tanda 3, pieza 1, 25-jul-2026, v49.25)
+`renderCompras()` (pestaña Compras del POS — lista de compras + CxP) reskineado al look premium `.nxPf`
+— mismo patrón que RRHH/Historial/Kardex: salida envuelta en `.nxPf .nxCompWrap` + `nxPfEnsureCSS()`,
+los 3 KPIs (`kpi()` viejo → `kpiPf()`/`.kpirow`: Proveedores/Por pagar CxP/Compras), tabla con CSS
+scopeado `.nxCompWrap` (encabezado azul, filas theme-aware — se extendió el bloque `.nxRhWrap` para
+cubrir también `.nxCompWrap`). Los colores inline de la fila (fecha, "Crédito") pasaron a `var(--pf-*)`
+para verse bien en claro/oscuro. **Cero cambios de lógica** — registro de compras (`nxPosGuardarCompra`),
+CxP (`saldoProv`), inventario y contabilidad intactos; solo el "vestido" de la vista de lista (los
+modales de Nueva compra / detalle / Proveedores no se tocaron en esta pieza). Verificado con 14 pruebas
+Playwright del código real (`renderCompras`/`kpiPf` extraídos + CSS real de `nxPfEnsureCSS`, con
+proveedores/compras simulados): wrapper correcto, 3 KPIs premium, 0 KPIs viejos, tabla con 3 compras,
+CxP 17,300 exacto, sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js`
+limpio; `version.json` válido. **Pendiente Tanda 3:** Caja (arqueo), Ajustes.
+
+### POS · Caja (arqueo) — rediseño visual (Tanda 3, pieza 2, 25-jul-2026, v49.26)
+`renderCaja()` (pestaña Caja / arqueo del POS) reskineado al look premium `.nxPf` — mismo patrón que
+Compras/RRHH/Historial/Kardex: ambos estados (caja abierta / caja cerrada) envueltos en
+`.nxPf .nxCajaWrap` + `nxPfEnsureCSS()`. Los 5 indicadores de caja abierta (efectivo, tarjeta,
+transferencia, crédito, abonos en efectivo) pasaron de las cajitas planas a `kpiPf()`/`.kpirow`. El
+recuadro "Efectivo esperado en caja" ganó clase propia `.cajaEsp` (fondo verde tenue `--pf-green-l`,
+theme-aware), la tarjeta contenedora `.cajaCard` (panel/borde/sombra `.nxPf`) y la tabla de cierres
+recientes hereda el encabezado azul via CSS scopeado (se extendió el bloque `.nxRhWrap,.nxCompWrap` para
+cubrir también `.nxCajaWrap`). Colores inline de movimientos/descuadre pasaron a `var(--pf-*)` para verse
+bien en claro/oscuro. **Cero cambios de lógica** — apertura/cierre (`nxPosAbrirCaja`/`nxPosCerrarCaja`),
+movimientos de efectivo (`nxPosMovimiento`/`nxPosAddMov`/`nxPosDelMov`), arqueo y sus asientos contables
+intactos; solo el "vestido". Verificado con 20 pruebas Playwright del código real (`renderCaja`/`kpiPf`
+extraídos + CSS real de `nxPfEnsureCSS`, con caja abierta simulada + cierres): ambos estados con wrapper
+correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro verde, 2 filas de cierres,
+sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
+`<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Cuadrar el inventario: era todo dato de prueba (26-jul-2026, v49.87)
+Tras el reglamento, el dueño pidió cuadrar los artículos descuadrados. **Al investigar resultó que no
+había nada que cuadrar: era un banco de pruebas.**
+- **ERROR PROPIO, corregido ante el dueño:** le había dicho que tenía "CELULAR IPHONE 11 NORMAL
+  duplicado en el catálogo". **Falso** — son dos artículos de **empresas distintas** (uno de
+  `nexus-pro`, otro de `bayolsale`); mi consulta anterior no filtraba por `organizacion_id` y los
+  mezcló. Su catálogo tiene 7 artículos, sin duplicados. **Al medir sobre tablas `pos_*` SIEMPRE
+  filtrar por organización — si no, se comparan negocios distintos.**
+- **La señal que lo destapó:** los 7 IMEI eran `00000001`, `000000002`, `1234567890000`,
+  `9876543210`… — **ninguno tenía los 15 dígitos de un IMEI real**. Sumado a una factura en RD$ 0 y
+  a que `nexus-pro` es la empresa de SEGUROS (no una tienda), quedó claro que todo el POS de esa
+  organización era su sandbox. Se le preguntó antes de borrar; confirmó "son pruebas, limpia todo".
+- **Borrado (SQL, solo `nexus-pro`):** 12 ventas (RD$ 59,000), 7 seriales, 1 devolución, 1 compra,
+  10 asientos, 19 movimientos de inventario, 6 prefacturas, 6 documentos, 1 reparación. **Artículos,
+  clientes, niveles de precio y ajustes NO se tocaron**; existencias a 0. **Verificado después que
+  `bayolsale` quedó intacta** (su venta, sus 2 IMEI y sus 2 artículos) — no se asumió.
+- **HUECO REAL en el botón "Borrar datos de prueba"** (`nxLimpiarPruebas`, Ajustes): borraba 23
+  tablas pero **NO `pos_seriales`** — o sea los IMEI **sobrevivían a la limpieza**, que es
+  justamente lo que hay que borrar en una tienda de celulares. Tampoco borraba `pos_prefacturas`,
+  `pos_fin_pagos` ni las 2 del motor de documentos. Y dejaba la existencia en el número viejo, sin
+  ningún kardex que lo respaldara. Arreglado: 28 tablas, **hijos antes que padres** (si no, la llave
+  foránea rechaza el borrado), existencias a 0, y el texto del aviso dice lo que de verdad borra.
+- Verificado con 10 comprobaciones sobre la función real extraída por contenido (borra las 5 que
+  faltaban, conserva las 23 de antes, el orden respeta las llaves foráneas, y solo toca los
+  artículos que tenían existencia).
+
+### ⚖️ LOS REGLAMENTOS VIVEN EN `REGLAMENTOS.md` (26-jul-2026)
+El dueño pidió un reglamento por módulo. Como este archivo ya pasa de 8,000 líneas y es HISTORIA,
+las **reglas** se mudaron a **`REGLAMENTOS.md`** (archivo propio, en la raíz): ahí está la LEY que el
+código tiene que cumplir, con su índice, su estado por módulo y el método (cada reglamento es una
+tanda: redactar → auditar el código real → arreglar lo que no cumple → publicar).
+Los 4 reglamentos de DISEÑO que ya estaban decretados aquí (botones/menú lateral, buscadores,
+`ModalBusquedaBase`, un color por app) **se quedan en este archivo por ahora** y se migran cuando le
+toque su tanda a cada módulo — mudarlos de golpe sería un diff enorme sin ganancia.
+La copia del REGLAMENTO DE VENTA que sigue abajo se conserva por si alguien llega aquí primero, pero
+**la versión que manda es la de `REGLAMENTOS.md`**.
+
+### REGLAMENTO DE VENTA (decretado por el dueño, 26-jul-2026) — OBLIGATORIO
+Aplica a TODO artículo del POS. La parte B es el caso especial de los que llevan IMEI/serial.
+
+**Parte A — todos los artículos**
+1. La cantidad es **entera y positiva**; poner 0 borra la línea. No hay decimales (no se vende por peso).
+2. **No se cobra un artículo en RD$ 0.** Si no tiene precio, no se vende.
+3. La **existencia estricta aplica igual en TODAS las pantallas**: no se puede ni teclear más de lo
+   que hay. (Prefactura queda exenta — es una proforma. Los servicios no tienen existencia.)
+4. Un artículo marcado **"no permite descuento" RECHAZA el descuento**, no lo acepta en silencio.
+5. El **piso de precio lo manda el nivel del cliente**; si ese nivel no tiene piso propio, el global
+   del artículo. Solo admin y gerente pueden bajar de ahí.
+6. Si el nivel del cliente exige una **cantidad mínima**, se respeta al cobrar.
+7. Si la factura es **a crédito** se cobra el **precio de crédito** del nivel; si ese nivel no lo
+   tiene configurado, el de contado.
+
+**Parte B — artículos con IMEI**
+8. Un IMEI es **un teléfono físico = una unidad**. **Nunca se repite** (candado en la base:
+   índice único `pos_seriales(organizacion_id, serial)`).
+9. La **cantidad de la línea es siempre el número de IMEI elegidos** — al vender y al devolver.
+   No se teclea.
+10. No se cobra sin elegir los IMEI. **No existe "vender sin IMEI".**
+11. Vender amarra el IMEI a su factura. **Anular lo libera. Devolver también lo libera** — y hay que
+    decir **CUÁL** equipo volvió, no solo cuántos.
+
+**Pendientes de este reglamento (NO construidos, ver tandas más abajo):** la existencia de un
+artículo con IMEI todavía es un número aparte y no la cuenta de IMEI disponibles (regla implícita de
+la parte B que falta cerrar) · el IMEI no sabe en qué almacén está.
+
+### REGLAMENTO DE VENTA — auditoría y tanda 1 (26-jul-2026, v49.86)
+El dueño pidió el reglamento de IMEI y cantidad, y luego "investigar si hay más reglamentos en
+artículos sin IMEI". Se auditó el sistema completo contra ambos.
+
+**CUATRO campos fantasma** — se configuran, se guardan y **no se consultaban al vender**. No era
+coincidencia: los cuatro son *reglas de venta* que se guardaron sin engancharse al cobro.
+`precio_credito` por nivel · `precio_minimo` por nivel (el candado leía el **global del producto**) ·
+`cantidad_minima` por nivel · `no_descuento` del artículo. **Los cuatro enganchados en esta tanda.**
+- **Impacto medido antes de tocar nada:** `no_descuento` 0 de 9 artículos · `precio_credito` distinto
+  0 de 16 niveles · `cantidad_minima`>1 0 de 16 → **cero efecto hoy**, la regla queda lista para
+  cuando la use. Solo `precio_minimo` por nivel tiene datos (7 de 16), y el único que cambia es
+  PANTALLA: sus 3 niveles tienen piso = el propio precio, o sea queda sin margen de rebaja — que es
+  justo lo que él configuró.
+
+**BUG GRAVE — devolver NO liberaba el IMEI.** `nxDevGuardar` devolvía el stock pero no tocaba
+`pos_seriales`: el equipo volvía al inventario y su IMEI **quedaba "vendido" para siempre**. Ese
+teléfono no se podía volver a vender nunca. **Había 1 IMEI real enterrado** (`00000000888`, IDPRO)
+— liberado por SQL.
+- **No bastaba con liberar N seriales:** el cliente devuelve **un equipo concreto**. Liberar "los
+  primeros N" habría dejado libre un teléfono que sigue en manos del cliente y enterrado el que
+  volvió. Por eso la devolución ahora **pregunta cuál IMEI volvió** (`devSerialesDe`/`nxDevSerTog`,
+  chips `.nxSerPick` — el mismo control que ya se usa al vender) y la **cantidad la manda esa
+  elección**, igual que al vender. Solo ofrece los IMEI de ESA venta que sigan `vendido`.
+  Los artículos sin IMEI conservan su casilla de cantidad de siempre.
+
+**Otros huecos cerrados:**
+- **La existencia estricta se aplicaba a medias:** en Vender los botones +/− ya la respetaban, pero
+  en Factura se podía **teclear 999 con 3 en existencia** y solo enterarse al cobrar, con el carrito
+  armado. `nxFacCant` ahora acota al stock real (descontando lo que ya está en otras líneas del
+  mismo artículo) y avisa. Prefactura exenta.
+- **Se podía cobrar un artículo en RD$ 0** (los que salen "SIN PRECIO"). Ahora se bloquea al cobrar.
+- **`nxFacSerSin` ("vender sin IMEI") seguía vivo** aunque el CLAUDE.md decía que se había
+  eliminado: ningún botón lo llamaba, pero la función estaba ahí, contradiciendo la política.
+  Borrado junto con la bandera `_sinSerial` que ya no lee nadie.
+- **`nxFacSetCredito` no repreciaba el carrito.** Con la regla 7 el precio ahora depende de si la
+  factura es a crédito, así que cambiar de Contado a A crédito **tenía** que re-preciar — si no, lo
+  que ya estaba en el carrito se quedaba con el precio de contado y la regla quedaba a medias.
+
+**Helpers nuevos** (junto a `precioCli`): `filaNivel(p)` (la fila de nivel que le toca al cliente,
+una sola vez y reusada), `minimoDe(p)`, `cantMinimaDe(p)`.
+
+- Verificado con **36 comprobaciones** — 17 de las reglas nuevas y 8 de la devolución con IMEI,
+  ambas con el código real extraído por contenido; más las 11 de niveles sin regresión. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido; `get_advisors` sin hallazgos nuevos por el índice único.
+- **Nota de método:** dos harness viejos fallaron al re-correrlos porque `precioCli` ganó una
+  dependencia (`filaNivel`) que su lista de anclas no extraía. El código estaba bien; los harness
+  estaban desactualizados. **Al agregar un helper del que dependa una función ya probada, hay que
+  sumarlo a los extractores de los harness que la usan.**
+
+### NIVELES DE PRECIO — la regla del dueño, y por qué el sistema no la cumplía (26-jul-2026, v49.85)
+El dueño decretó la regla: **el precio se elige según el nivel del cliente; un cliente normal va al
+nivel por defecto; al facturar, el sistema le pone solo el precio de su nivel.** Pidió ayuda para
+mejorarla "a nivel general del POS". Se auditó el sistema completo contra esa regla.
+
+**HALLAZGO PRINCIPAL — los niveles estaban desconectados:** los 3 clientes de `nexus-pro` tenían
+`nivel_id` **null**. Detalle/Mayorista/EXTREMO existían con precios cargados en 7 artículos y **no
+se le aplicaban a nadie**: 2 clientes funcionaban por el camino viejo (`nivel_precio='mayor'` →
+`precio_mayor`) y el tercero pagaba el precio de lista. La función existía y los datos existían;
+faltaba el enlace.
+
+**Tres campos que se configuran, se guardan y NO hacen nada al vender** (verificado por grep de uso
+real, no de escritura):
+- **`precio_credito` por nivel** — `precioCli()` solo lee `precio_contado`. Una factura a crédito
+  cobra el precio de contado aunque hayas configurado otro.
+- **`precio_minimo` por nivel** — el candado que impide bajar el precio (`nxFacPrecio`) lee
+  `p.precio_minimo`, el **global del producto**. El mínimo por nivel es decorativo.
+- **`cantidad_minima` por nivel** — solo se lee/escribe en el formulario. Nadie la valida: un nivel
+  Mayorista con mínimo 10 no impide venderle 1 unidad a precio de mayorista.
+
+**Plan de 4 tandas acordado** (por riesgo): **1** asignar niveles + formulario respeta el default +
+aviso de desfase · **2** consumidor final usa el nivel por defecto + cadena de respaldo explícita +
+retirar el sistema viejo (**toca lo que se cobra**) · **3** precio de crédito real + mínimo por
+nivel + cantidad mínima · **4** grabar el `nivel_id` en `pos_venta_items` + reporte por nivel.
+
+**TANDA 1 — HECHA:**
+- **Migración de datos (SQL, no código):** `nivel_id` asignado a los 3 clientes — `nivel_precio='mayor'`
+  → el nivel cuyo nombre contiene "mayor"; el resto → el marcado `es_default`. La consulta resuelve
+  los niveles por `es_default`/nombre, no por ids escritos a mano.
+- **`nivelPorDefectoId()`** (nuevo, junto a `precioCli`): el nivel `es_default`, con respaldo al
+  primero por orden. El selector de nivel del formulario de cliente lo usa para preseleccionar y
+  marca cuál es "(por defecto)". **Antes agarraba el primero de la lista** — coincidía de casualidad,
+  y si se cambia el orden se rompe en silencio.
+- **`desfaseNivel(p)`** (nuevo, junto a `renderProductos`): si el precio del nivel por defecto no
+  coincide con `p.precio`, la fila de Inventario muestra un aviso naranja con el precio que de
+  verdad se va a cobrar. Ese desfase antes no se veía por ningún lado.
+- **CAMBIO REAL DE PRECIO, confirmado con el dueño por `AskUserQuestion` ANTES de aplicarlo:** se
+  midieron los 7 artículos con niveles; **solo PANTALLA IPHONE 11 estaba descuadrada** (lista 2,000
+  vs nivel Detalle 2,500; sin `precio_mayor` vs Mayorista 1,200). Al asignar niveles pasa a cobrar
+  2,500 al normal y 1,200 al de por mayor. El dueño eligió **"vale lo del nivel"**. Los otros 6
+  calzan exacto — ahí no cambió nada.
+  - **Corrección propia:** yo había dicho que la tanda 1 "no cambia ni un peso". Al medirlo sí
+    cambiaba, en un artículo. Se le dijo con los números antes de tocar la base, no después.
+- Verificado con **30 comprobaciones** (11 de la lógica con el código real extraído por contenido +
+  15 del buscador de artículos sin regresión + 4 del selector del formulario), usando los precios
+  REALES de su base. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### "Buscar artículo" solo mostraba 2 precios aunque la org tenga más niveles (26-jul-2026, v49.84)
+El dueño mandó el detalle de un artículo en su iPhone: solo salían **CLIENTE FINAL** y **POR MAYOR**,
+sus dos precios de siempre. Pidió ver **los tres niveles**.
+- **Se verificó contra la base antes de tocar nada** (no se dio por hecho cuántos niveles hay):
+  `pos_niveles_precio` de `nexus-pro` tiene **3** — `Detalle` (default), `Mayorista` y `EXTREMO`.
+  EXTREMO solo tiene precio en 2 artículos.
+- **Causa:** `ppkDetailHTML` tenía los 2 recuadros **escritos a mano** (`p.precio` / `p.precio_mayor`,
+  los campos heredados) desde antes de que existieran los niveles ilimitados (v48.27). Los datos
+  estaban bien; la pantalla nunca se actualizó.
+- **Arreglo:** un recuadro por cada nivel real de `_niveles` (ya cargado en `cargarPOS`, cero
+  consultas nuevas), en su `orden`, con el precio de `_prodNiveles`. El nivel del cliente elegido
+  sale resaltado. **Un nivel sin precio para ese artículo muestra `—`, no `RD$ 0`** — mismo criterio
+  de no fingir un dato. Si la org no tiene ningún nivel, cae al recuadro Cliente final / Por mayor
+  de siempre (verificado explícitamente, no asumido).
+- **De paso:** la línea de arriba decía "PRECIO POR MAYOR"/"precio final" a secas — con un nivel
+  propio eso **mentía** (decía "precio final" a un cliente EXTREMO). Helper nuevo
+  `nivelDelCliente(c)` dice el nombre real del nivel.
+- **CSS:** `.nxPpkHmulti` es un grid `auto-fit minmax(84px,1fr)` con `gap:1px` sobre fondo gris —
+  las divisiones salen solas sin importar cuántos niveles haya ni si envuelven (misma técnica que
+  la franja de KPI de la v49.77). **El precio ENVUELVE, no se trunca** (regla de la v48.56): medido
+  a 360/390/430px, a 360px "RD$ 10,000" pasa a 2 líneas en vez de perder dígitos.
+- **HALLAZGO DE DATOS que se le reportó al dueño, sin tocar:** `precioCli()` solo usa un nivel si el
+  CLIENTE tiene `nivel_id`; sin cliente cobra `pos_productos.precio`. Y en PANTALLA IPHONE 11 ese
+  precio de lista es **2,000** mientras su nivel Detalle dice **2,500** — o sea a un consumidor final
+  se le cobra 500 menos de lo configurado. No se cambió cuál precio gana: eso es lógica de cobro y
+  no fue lo pedido.
+- Verificado con **15 comprobaciones** Playwright, con los precios REALES sacados de su base (3
+  niveles, uno sin precio en un artículo). Sin desborde en 360/390/430/1280px, 0 errores de JS.
+
+### Los últimos 7 botones de solo ícono sin nombre (26-jul-2026, v49.83)
+El dueño pidió cerrar "los 144 botones de ícono". **Al medir resultó que ya estaban hechos**: la
+v49.55 cerró los 144 (y las 112 filas clicables). La línea de pendientes de la retrospectiva quedó
+desactualizada porque se escribió ANTES de esa versión — corregida ahora en su lista.
+- **Método:** un escáner propio que localiza `<button>`/`<a>`/`<i onclick>`/`<span onclick>`
+  **respetando comillas** al buscar el `>` de cierre. Esto importa: un regex `[^>]*` se corta en el
+  primer `>`, y varios `onclick` llevan una función flecha `=>` — **es exactamente el bug que rompió
+  el Dashboard en la v49.58**. No repetir ese atajo.
+- **De 14 candidatos, 7 eran falsos positivos** (el escáner descarta `${...}` al medir el texto
+  visible, y esos botones sí tienen rótulo dinámico real: "Inhabilitar cliente", "Guardar y usar
+  cliente", el nombre del cliente en Facturar/Cobrar, etc.). **No se tocaron** — ponerles un
+  `aria-label` habría duplicado el nombre accesible.
+- **Los 7 reales:** campana de alertas · campana de notificaciones (su badge es un número, no un
+  nombre) · lupa de búsqueda global (solo llevaba el chip ⌘K) · enlace de descarga de un documento
+  del cliente · "Página siguiente" de Rifas (el de "anterior" ya lo tenía) · enlace de WhatsApp de
+  recordatorio · la **✕ para quitar un IMEI** al registrar una compra — esta era un `<i>` clicable,
+  así que además de nombre se le dio teclado (`role`/`tabindex`/`onkeydown` con `keyCode`, sin
+  comillas, por vivir dentro de una plantilla de JS).
+- **Error propio, detectado al instante:** en el botón de búsqueda global metí un `>` de más en el
+  reemplazo y partí la etiqueta (`aria-label="…"> style="…">`). Se vio al imprimir la línea
+  resultante y se corrigió antes de seguir. **Por eso la verificación mide que `style` siga siendo
+  un ATRIBUTO** (`getAttribute('style')` contiene `display:flex`) y que el chip ⌘K siga dentro del
+  botón — no solo que el `aria-label` exista.
+- Verificado con Playwright cargando el **`index.html` real** servido por HTTP: 7 comprobaciones —
+  los 3 botones del encabezado con su nombre correcto, la etiqueta sin partir, el chip y el
+  contador de notificaciones dentro de su botón, y ningún código filtrado como texto visible. Una
+  aserción inicial falló por estar mal escrita (buscaba `" style=` en el HTML del padre, que los
+  botones vecinos tienen legítimamente) — se reescribió para medir texto visible, no marcado.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`.
+
+### El botón flotante tapaba TODAS las ventanas del sistema (26-jul-2026, v49.82)
+El dueño mandó la ventana "Buscar artículo" en su iPhone y pidió mejorarla. Se midió con el código
+real (`nxProdPicker`/`pintarProdPick`/`ppkDetailHTML` + el CSS real, a 390×664 y con 40 artículos)
+antes de tocar nada. Tres hallazgos, dos de ellos ajenos a esa pantalla:
+- **El FAB (`.nx-fab`) está en `z-index:9000` y `.overlay` en `100`** — o sea el botón morado flota
+  encima de **cualquier** ventana del sistema, no solo esta. Medido: **2 filas tapadas** con lista
+  larga. Y no es solo estético: un toque en lo que se ve como un precio o un botón "Elegir" abre el
+  menú del FAB. Peor combinación de la que ya advierte este archivo: el FAB usa `transform:scale`
+  en `:active` **sobre** un `.overlay` que tiene `backdrop-filter` — justo el par que infla botones
+  en iPhone. Arreglado con una sola regla junto al CSS del FAB (dentro de su `@media(max-width:768px)`):
+  `body:has(.overlay.open) .nx-fab,.nx-menu{display:none!important}`. **Si el navegador no soporta
+  `:has()` la regla entera se ignora** y queda el comportamiento de antes — degradación limpia, sin
+  JS. Verificado en los 3 estados: visible sin ventana, escondido con la ventana y con el detalle
+  abierto, y vuelve al cerrar.
+- **El placeholder del buscador se cortaba** (`"BUSCAR POR NOMBRE O CÓDIGO... (VACÍO = TO"` en su
+  captura). No era el teléfono: medido con el `font` computado, **432px de texto en un campo de
+  286px**. La causa de fondo es que `input::placeholder` entra en el bloque de MAYÚSCULAS GLOBALES
+  de `index.html`, así que cualquier placeholder largo crece ~15% sobre lo que se escribió. Quedó
+  `'Buscar artículo…'` (166px). **Al escribir un placeholder nuevo en este sistema, contar con las
+  mayúsculas.**
+- **`aplica`** — etiqueta de 8.5px que salía en TODAS las filas, incluso sin cliente elegido, donde
+  el precio es el de lista y la palabra no significa nada. Se quitó. En su lugar, **solo cuando al
+  cliente le toca un precio distinto** se muestra el de lista **tachado** encima del que se va a
+  cobrar. Se prefirió eso a una etiqueta tipo "POR MAYOR" porque `precioCli()` puede venir de un
+  **nivel de precio** con nombre propio (Distribuidor, VIP…), y esa etiqueta habría mentido.
+- **Un cambio propio revertido por no aportar:** subí el nombre del artículo de 12.5 a 13.5px. Al
+  medir, los nombres cortados eran **38 de 80 con los tres tamaños** — el tamaño no era la causa.
+  Revertido. Lo que sí sirvió fue dejar que el nombre use **2 líneas**
+  (`-webkit-line-clamp:2`) en vez de cortarse: **38 cortados → 0**, y solo crecen las filas que lo
+  necesitan (49→64px).
+- Verificado con **18 comprobaciones** Playwright y el código real extraído por contenido, más
+  capturas en 390px y 1280px. Sin desborde horizontal en ningún caso, 0 errores de JS.
+  **Límite honesto del entorno:** el sandbox no tiene Segoe UI ni la fuente de iOS, así que el texto
+  mide más ancho que en su teléfono — el conteo absoluto de nombres cortados no es representativo,
+  pero la comparación entre tamaños (misma cifra en los tres) y el antes/después del `clamp` sí lo
+  son, porque se midieron en el mismo entorno.
+- **Pendiente que se le dijo al dueño, sin construir:** un artículo con precio 0 sale como "SIN
+  PRECIO" pero se puede elegir igual y el botón dice "Elegir — RD$ 0". Eso permite meter al carrito
+  un artículo que se cobraría en cero. No se tocó porque toca el flujo de cobro y no fue lo pedido.
+
+### RETROSPECTIVA — cierre de "aplicar todas las skills" (Ronda 5, `gstack-retro`, 26-jul-2026)
+
+Las 21 skills instaladas quedaron aplicadas o clasificadas. **5 rondas de auditoría hechas**
+(seguridad · animaciones · accesibilidad · salud del código · esta retrospectiva); las 9 restantes
+no son auditorías sino **método de trabajo** (`webapp-testing`, `gstack-investigate`,
+`gstack-spec`, `gstack-plan-*`, `gstack-review`, `careful`/`freeze`/`unfreeze`/`guard`) y ya se
+usan cuando el caso lo pide — ver "ENRUTAMIENTO AUTOMÁTICO DE SKILLS".
+
+#### Lo que las 4 auditorías encontraron, en una tabla
+
+| Ronda | Hallazgo principal | Estado |
+|---|---|---|
+| 1 Seguridad | `organizaciones` aceptaba **escritura de cualquiera en internet** (podían desviar el dominio de una empresa) | cerrado |
+| 1 Seguridad | Las secuencias de NCF/recibos se podían **quemar sin cuenta** | cerrado |
+| 1 Seguridad | 16 tablas de dinero abiertas a usuarios de **otras empresas** | cerrado |
+| 1 Seguridad | Clave de Gmail en texto plano en una función pública | rotada por el dueño + sacada del código |
+| 2 Animaciones | **47 de 56** animaciones ignoraban "reducir movimiento" | cerrado con 1 regla |
+| 3 Accesibilidad | 18 encabezados ordenables sin teclado · 22 imágenes sin descripción | cerrado |
+| 3 Accesibilidad | 213 botones de ícono sin nombre → 144 siguen | parcial (69 automáticos) |
+| 4 Salud | 26 funciones muertas | cerrado |
+| 4 Salud | Duplicación, comentarios, arquitectura | **ya estaba sano** — no se tocó |
+
+#### Los 5 patrones que se repiten en TODA la sesión (esto es lo que hay que recordar)
+
+1. **Verificar el arreglo, no darlo por bueno.** Pasó 3 veces que el primer intento no hizo nada y
+   solo se descubrió al medir DESPUÉS: el `revoke` de las secuencias (el permiso venía de PUBLIC,
+   no de `anon`), el blindaje del sidebar de Financiamiento (la regla base se declaraba más abajo
+   en la cadena y ganaba), y el `!important` de la flecha de los `<select>`. **Un cambio aplicado
+   no es un cambio que funciona.**
+2. **La simulación no sustituye a la frontera real.** El bug del video (400 de Storage) no salió en
+   ninguna prueba porque en el harness esa llamada estaba simulada. Cuando el fallo puede vivir en
+   el borde con un servicio externo, hay que tocar el servicio: en esta base, `pg_net` es el camino.
+3. **Medir con el código real, extraído por contenido.** Los extractores por número de línea se
+   corren con cada edición y hacen fallar suites que estaban bien (pasó en la v49.47). Buscar con
+   `grep` sobre el contenido, siempre.
+4. **Los errores propios se corrigen y se escriben.** En esta sesión: la medición de comentarios que
+   dio 32% (era 7%), y las 2 entradas de changelog que salieron sin el prefijo `NUEVO`. Se
+   arreglaron y quedaron documentadas, no borradas.
+5. **Lo que ya está bien, no se toca.** Cero animaciones mueven layout, la duplicación es mínima, el
+   archivo único de 28k líneas es una decisión del dueño. Auditar sirve tanto para confirmar lo sano
+   como para encontrar lo roto.
+
+#### Lo que queda abierto, por orden de urgencia real
+
+1. **Poner el Secret `GMAIL_PASS`** — el reporte diario no sale hasta entonces (paso del dueño).
+2. **`auditoria` abierta entre empresas** (2.372 filas con nombres de clientes). Necesita
+   `organizacion_id` + relleno + trigger + política: hay una decisión de datos de por medio.
+3. ~~**144 botones de ícono sin nombre** + **112 filas clicables sin teclado**~~ — **HECHO** en la
+   v49.55 (los 144 + las 112 filas) y cerrado del todo en la **v49.83** (7 rezagados). Esta línea
+   quedó desactualizada al escribir la retrospectiva antes que la v49.55; se corrige aquí.
+4. **Borrar las 4 tablas de permisos muertas** (101 filas, cero uso).
+5. **Activar la protección de contraseñas filtradas** en Supabase Auth (un clic del dueño).
+6. **`verify_jwt:true` en `enviar-reporte-email`** — hay que arreglar el cron en la misma operación.
+7. **La decisión de buscadores (C2)** sigue esperando: ¿los 24 de "filtrar lo que ya veo" se quedan
+   como barra en línea (recomendado bajo el criterio nuevo) o van a ventana?
+
+### AUDITORÍA DE SEGURIDAD — Ronda 1 de "aplicar todas las skills" (26-jul-2026)
+El dueño pidió aplicar las 21 skills instaladas. Se agruparon en 5 rondas de auditoría; esta es la
+primera (`gstack-cso`), la de mayor riesgo real. **3 agujeros reales cerrados en vivo, 5 hallazgos
+documentados sin tocar** (necesitan decisión del dueño o son de mayor alcance).
+
+#### CERRADO — 1. `organizaciones` aceptaba ESCRITURA de cualquiera en internet (CRÍTICO)
+La política `all_org` era `FOR ALL TO public USING(true) WITH CHECK(true)`. El rol `public`
+incluye `anon`, y **la clave anónima está a la vista en el código de `index.html`** (tiene que
+estarlo: el login la usa para saber a qué empresa entrar antes de que haya sesión). O sea:
+cualquiera con esa clave podía **cambiar el `dominio` de una empresa** (desviar sus logins a otro
+sitio — phishing real), **apagarla** (`activo=false`), o **borrar la tabla completa**.
+- Arreglo (migración `seguridad_organizaciones_y_secuencias`): la **lectura sigue pública** (el
+  login la necesita), pero INSERT/UPDATE/DELETE quedan en `mi_rol()='admin'`.
+- Verificado: como `anon` la lectura sigue devolviendo las 7 organizaciones (el login no se rompe).
+
+#### CERRADO — 2. Las secuencias fiscales se podían quemar desde fuera (ALTO)
+`siguiente_ncf(text)` (consume un comprobante **autorizado por la DGII**), `next_recibo()`,
+`next_recibo_anio(int)` y `rifa_expirar_apartados()` eran ejecutables por `anon`. Cualquiera con
+la clave pública podía llamarlas en bucle y **quemar los NCF autorizados** — un recurso limitado
+que da el gobierno.
+- **Detalle que casi se me escapa:** el primer intento (`revoke ... from anon`) **no hizo nada** —
+  el permiso no venía de `anon` sino del rol **PUBLIC** (Postgres le da EXECUTE a PUBLIC por
+  defecto al crear una función). Se detectó porque la verificación posterior seguía dando `true`.
+  Arreglado de verdad en la migración `seguridad_secuencias_revocar_de_public`:
+  `revoke ... from public` + `grant ... to authenticated, service_role`.
+  **Lección: revocar de `anon` no sirve si el permiso está en PUBLIC — hay que verificar con
+  `has_function_privilege` después, no dar el revoke por bueno.**
+- Verificado con `has_function_privilege`: `anon`=false en las 4, `authenticated`=true en las 3 de
+  la app, `service_role`=true en la del cron. Confirmado antes con grep que **ninguna página
+  pública** (`rifa.html`/`boleto.html`/`vendedor.html`/`firma-prestamo.html`) las llama.
+
+#### CERRADO — 3. Dieciséis tablas de Seguros abiertas a usuarios de OTRAS empresas (ALTO)
+Es la misma clase de agujero que ya se había cerrado para las 10 tablas del núcleo — pero estas
+quedaron fuera de aquella pasada y seguían con `USING(true)` para cualquier `authenticated`. O sea
+Francis (tienda), el doctor (consultorio) o BayolCell, con solo estar logueados, podían leer y
+escribir: `mis_cuentas_bancarias` (las cuentas del dueño), `entregas_admin` y
+`transferencias_agentes` (dinero de agentes), `egresos`, `pagos`, `cuadre_tss_historial`,
+`reporte_destinatarios`, `documentos_clientes`, `email_settings`, `system_settings`,
+`automation_settings`, `smart_historial`, `bancos`, `ars_catalog`, `auto_jobs_log`,
+`auto_notificaciones_log`.
+- Arreglo (migración `rls_tablas_seguros_restantes_por_org`): se les puso **exactamente la misma
+  política ya probada en `clientes`/`facturas`/`abonos`** — deja pasar a cualquier rol de
+  `nexus-pro` (admin y agente, así Robinson no pierde nada) y bloquea al resto.
+- **Riesgo verificado antes de aplicar:** la función `enviar-reporte-email` lee
+  `reporte_destinatarios`/`auto_notificaciones_log` — se comprobó en su código que usa
+  `SUPABASE_SERVICE_ROLE_KEY`, que **salta RLS**, así que el reporte diario no se ve afectado.
+
+#### NO tocado — lo que queda, por orden de urgencia
+1. **La clave de Gmail ya NO vive en el código** ✅ (26-jul-2026). El dueño **rotó la clave** en su
+   cuenta de Google, y la función `enviar-reporte-email` se redesplegó (**v5**) leyéndola de
+   `Deno.env.get('GMAIL_PASS')` con `.trim()` — la vieja se borró del fuente por completo.
+   - **Ojo, esto rompe el reporte hasta que el dueño ponga el Secret:** rotar la clave dejó la
+     versión anterior inservible de todos modos, así que la función env-var es estrictamente mejor.
+     Mientras falte, la función **avisa claro** (`"Falta el secreto GMAIL_PASS…"`) y lo registra en
+     `auto_notificaciones_log`, en vez de morir con un error de SMTP críptico.
+   - **Falta que el dueño lo pegue:** Supabase Dashboard → Edge Functions → Secrets → nombre
+     **exacto** `GMAIL_PASS`. El nombre importa: ya pasó una vez (NEXUS AI CONTENT) que un secreto
+     se guardó con OTRO nombre y el error era imposible de diagnosticar. No hace falta redesplegar
+     — los Secrets se leen en cada ejecución.
+   - **Verificado de punta a punta** con `net.http_post` desde la propia base (mismo camino que se
+     usó para la función de préstamos): la función responde **500 con el aviso exacto**, lo que
+     confirma a la vez que el guardia funciona y que el Secret aún no está.
+   - **Sigue pendiente:** cerrar la función con `verify_jwt:true`. No se puede solo — el cron
+     `reporte-email-minuto` **no manda ninguna credencial**, habría que arreglar el cron en la
+     misma operación o el reporte deja de salir. (La clave NO se copia a este archivo a propósito.)
+2. **`auditoria` sigue abierta** a cualquier usuario logueado de cualquier empresa (2,372 filas,
+   con nombres de clientes en el detalle). No se cerró porque **el POS, Rifas y Consultorio también
+   escriben ahí** — acotarla a `nexus-pro` los rompería. El arreglo correcto es darle
+   `organizacion_id` (que hoy **no tiene**) + rellenar las 2,372 filas + ajustar el trigger y la
+   política. Es trabajo con una decisión de datos de por medio (¿de qué empresa es cada fila
+   vieja?), no se hace en silencio.
+3. **Tablas de permisos muertas** (`roles`, `permissions`, `role_permissions`, `user_permissions`
+   — 101 filas): el propio CLAUDE.md ya las tenía marcadas como código muerto (cero referencias en
+   el frontend) y siguen abiertas. Conviene **borrarlas**, no cerrarlas.
+4. **Protección de contraseñas filtradas desactivada** en Supabase Auth (comprueba contra
+   HaveIBeenPwned). Es un interruptor en el panel — no hay herramienta para activarlo desde aquí.
+5. **`nexus-smart` con la clave de Anthropic en texto plano** y `verify_jwt:false` — ya estaba
+   documentado en este archivo desde antes, sigue igual.
+
+**Rondas siguientes (pendientes):** 2 animaciones (`review-animations`+`apple-design`+
+`emil-design-eng`) · 3 accesibilidad (`web-design-guidelines`+`ui-ux-pro-max`) · 4 arquitectura y
+salud (`senior-architect`+`gstack-health`) · 5 retrospectiva (`gstack-retro`). Las demás skills
+(`webapp-testing`, `gstack-investigate`, `gstack-spec`, `gstack-plan-*`, `careful`/`freeze`/
+`guard`) no son auditorías: son método de trabajo y ya se usan cuando toca.
+
+### AUDITORÍA — Ronda 4: salud del código (`senior-architect` + `gstack-health`) (26-jul-2026, v49.54)
+
+**Radiografía medida** (no de memoria):
+
+| | Valor |
+|---|---|
+| `index.html` | 9.283 líneas · 625 KB (**157 KB comprimido**) |
+| `parches.js` | 28.193 líneas · 2.121 KB (**489 KB comprimido**) |
+| Composición de `parches.js` | 87% código · 7% comentarios · 5% líneas en blanco |
+| Funciones | 354 en `index.html` + 1.073 en `parches.js` (651 expuestas en `window`) |
+| Bloques de 8+ líneas repetidos | **15** en 28.000 líneas (`parches.js`) · **2** en `index.html` |
+
+**Veredicto: el código está sano.** Poca duplicación, proporción normal de comentarios, y solo un
+1,5% de funciones muertas. El archivo único de 28k líneas NO es un hallazgo — es la arquitectura
+que el dueño eligió a propósito (sin build, sin npm, se edita y se sube); "arreglarla" sería
+deshacer una decisión suya, no una mejora.
+
+**Error propio, corregido a mitad de la medición:** el primer cálculo de comentarios dio **32%**
+porque la expresión regular se comía trozos de código entre el `/*` de un string y el siguiente
+`*/`. Recontado por líneas: **7%**. Se documenta porque la cifra mala llegó a imprimirse.
+
+#### Lo único que se arregló: 26 funciones muertas
+Se verificó una por una contra **todo el repo** (incluidas las páginas públicas y `worker.js`) que
+no se mencionaran en ningún lado — ni siquiera dentro de un string o un `onclick`. Se quitaron con
+un cortador por llaves que salta strings y comentarios (no por número de línea).
+- **Se hizo en cascada, y eso importa:** al quitar las 14 primeras quedaron 12 más que solo esas
+  llamaban (3 pasadas hasta que no quedó ninguna). Contarlas de una sola pasada habría dejado la
+  mitad.
+- **Hallazgo de paso, con valor:** `almSelectorHTML` estaba muerta aunque el CLAUDE.md dice que el
+  selector de almacén se conectó en la v48.96. Se verificó: **la función SÍ está en la Factura**
+  (`almField`, escrita directo en `renderFactura`) — lo que quedó huérfano fue el ayudante viejo.
+  El documento no mentía; el helper simplemente se quedó atrás. **Lección: antes de borrar algo que
+  la documentación dice que se usa, comprobar si la función se reimplementó en otro sitio.**
+- **Quedan 2 sin quitar** (`getAbonos`, `getTransferencias`): están declaradas con una forma que el
+  cortador no reconoce. Son 2 de 26 — se dejan anotadas en vez de forzar el corte a mano.
+- Verificado tras la limpieza: `node --check parches.js` limpio, los 3 `<script>` de `index.html`
+  pasan `new Function()`, y las 3 suites Playwright de esta sesión (Ajustes 39, botones 24,
+  movimiento 17 = **80 comprobaciones**) siguen en verde.
+
+**Peso real que viaja al celular: 646 KB comprimidos** (157 + 489). No es un problema urgente —
+Cloudflare comprime y el navegador cachea entre versiones — pero es el número a vigilar si el
+sistema sigue creciendo.
+
+### AUDITORÍA — Rondas 2 (animaciones) y 3 (accesibilidad) (26-jul-2026, v49.53)
+
+#### Ronda 2 — Animaciones (`review-animations` + `apple-design` + `emil-design-eng`)
+Inventario medido, no de memoria: **40 keyframes y 56 declaraciones de animación** en los 2 archivos.
+- **Lo que YA estaba bien (no se tocó):** **cero** animaciones mueven propiedades de layout
+  (`width`/`height`/`top`/`left`/`margin`/`padding`) — todas usan `transform`/`opacity`/`filter`,
+  que es lo correcto para que no haya recálculo de página en cada cuadro. Ese resultado se midió
+  con un analizador de los keyframes reales, no se asumió.
+- **HALLAZGO REAL, arreglado:** de las 56 declaraciones, **solo 9 estaban dentro de un guardia
+  `prefers-reduced-motion`** — las otras **47 seguían moviéndose** aunque el usuario active
+  "reducir movimiento" en su teléfono (ajuste de accesibilidad de quien se marea, tiene migraña o
+  vértigo). Arreglado con **una sola regla global** al final del `<style>` de `index.html`
+  (`*,*::before,*::after` con `!important`, que gana también sobre el CSS que inyecta
+  `parches.js` después). No apaga nada: lo que aparecía con animación sigue apareciendo, al
+  instante; los giradores de carga se quedan quietos, que es justo lo que pide ese ajuste.
+- **2 duraciones ajustadas** (las que el propio `DESIGN_SYSTEM.md` ya tenía marcadas fuera del
+  §22 de NPGS): el aviso emergente `tIn` 350→**300 ms** y las tarjetas KPI `nxFadeUp` 340→**300 ms**.
+- **Deliberadamente NO tocado:** las animaciones decorativas siempre encendidas (el brillo de los
+  iconos del Dashboard `nxOrbGlint`, el latido del globo de notificaciones, el flotar del logo de
+  bienvenida). Son las que al dueño le gustan (regla #4 de "cómo le gusta trabajar": la estética
+  es prioridad real) y ahora **sí respetan "reducir movimiento"**, que era el problema de fondo.
+- Verificado con **17 comprobaciones Playwright** cargando el CSS real de los 2 archivos y
+  comparando el mismo elemento en modo normal vs `reducedMotion:'reduce'`: 7 familias de animación
+  (ventana emergente, KPI de Seguros, acceso rápido, aviso, esqueleto de carga, globo de
+  notificación, KPI del POS) siguen animando en modo normal y se detienen con el ajuste activo, y
+  las infinitas dejan de repetirse.
+
+#### Ronda 3 — Accesibilidad (`web-design-guidelines` + `ui-ux-pro-max`)
+Auditoría medida sobre TODO el sistema (no una pantalla suelta). Estado de partida y resultado:
+
+| Hallazgo | Antes | Ahora |
+|---|---|---|
+| Encabezados de tabla ordenables sin teclado | 18 | **0** |
+| Imágenes sin texto alternativo | 22 | **0** |
+| Botones de solo ícono sin nombre para lector de pantalla | 213 | **144** → **0** en la v49.55 |
+| Filas/divs clicables sin teclado ni rol | 112 | 112 → **0** en la v49.55 |
+| Selectores sin etiqueta | 14 | 14 (sin tocar) |
+
+- **Encabezados ordenables (18):** era un hueco que este mismo archivo ya tenía anotado como
+  pendiente desde la v48.55 ("quedó fuera de esa pasada… se deja para una pasada aparte"). Ahora
+  cada `<th onclick>` lleva `tabindex="0" role="button"` + `onkeydown` que dispara la MISMA función
+  del clic con Enter o Espacio.
+- **Botones de ícono (69 de 213):** se resolvieron los que **ya traían un `title`** — se les derivó
+  el `aria-label` de ahí, transformación mecánica y sin riesgo (el texto ya estaba escrito y
+  revisado). Los **144 restantes no tienen ningún texto de dónde sacarlo**: habría que redactar
+  cada etiqueta a mano, mirando qué hace cada botón. **No se inventaron a ciegas** — es trabajo
+  de varias pasadas cortas, mejor hecho módulo por módulo.
+- **Imágenes (22):** texto alternativo real según lo que muestra cada una (foto del artículo,
+  cédula lado frontal/dorso, foto del cliente con su cédula, firma, comprobante, logo, banner).
+- **NO tocado, con su razón:** las **112 filas/divs clicables** sin teclado — aquí no vale una
+  transformación mecánica: hay que decidir caso por caso si la fila entera debe ser el objetivo
+  o si basta con un botón dentro, y varias ya tienen un botón real al lado que hace lo mismo
+  (convertirlas todas duplicaría el recorrido con Tab, que es peor que dejarlas). Los **14
+  selectores sin etiqueta** necesitan mirar el contexto de cada uno.
+- Cambio 100% aditivo: solo se agregaron atributos (`aria-label`, `alt`, `tabindex`, `role`,
+  `onkeydown`) y una regla CSS. Ningún id, función, color ni posición se tocó. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### `auditoria` cerrada por empresa — se acabó el cruce entre negocios (26-jul-2026)
+Era el punto #2 de la lista de pendientes que dejó la auditoría de seguridad (Ronda 1). La política
+era `all_auditoria` = `USING(true)` para **cualquier usuario logueado**: Francis (tienda), el doctor
+y BayolCell podían **leer y borrar** los 2,373 registros de auditoría del seguro, con nombres de
+clientes en el detalle. No se había cerrado en la Ronda 1 porque `auditoria` **no tenía**
+`organizacion_id` y acotarla a `nexus-pro` habría roto al POS, Rifas y Consultorio, que también
+escriben ahí.
+- **Migración `auditoria_organizacion_id_y_rls_por_org`** (aditiva): columna `organizacion_id` (uuid,
+  FK a `organizaciones`) + índice; el trigger que ya llenaba IP/dispositivo ahora también llena la
+  organización con `mi_organizacion()` cuando viene vacía; la política pasó a
+  `mi_rol() is not null AND organizacion_id = mi_organizacion()`.
+- **Backfill de las 2,373 filas históricas.** `user_id` estaba vacío en las 2,373 (nunca se llenó),
+  así que la única pista real era el nombre de usuario grabado. Se midió antes de decidir: los 8
+  nombres distintos se repartieron por el módulo donde operaron — `Administrador` (1528, opera todo
+  el sistema), `ROBINSON` (771), `sterlin08`, `prueba` y `Sistema` → **nexus-pro**;
+  `BayolCell Rifas` (29, solo eventos de login) → **bayolcell-rifa**; `Francis (Bayolsale)` (9, solo
+  login) → **bayolsale**; `Consultorio Geriátrico` (3, solo login) → **geriatra**. Resultado:
+  2332 + 29 + 9 + 3 = 2373, **cero filas sin organización**.
+- **Verificado simulando cada sesión real** (`set local role authenticated` + el `sub` real de cada
+  usuario), no asumido: Francis pasó de ver 2,373 a ver **9**; sterlin08 ve **2,332**; `anon` ve
+  **0**. Y las escrituras siguen funcionando: se probó un INSERT como Francis y como **Robinson
+  (rol `agente`, no admin)** dentro de una transacción con `rollback` — el trigger les puso la
+  organización correcta y la política los dejó pasar. `get_advisors` ya no marca `auditoria`.
+- **Cero cambios de código** — `logAudit()` nunca manda `organizacion_id`, lo pone el trigger; la
+  pantalla de Auditoría no cambió porque RLS filtra sola.
+- **Hueco pre-existente encontrado de paso, NO causado por este cambio y NO arreglado:** los
+  `LOGIN_FALLIDO` / `LOGIN_BLOQUEADO` se registran **sin sesión** (el usuario todavía no entró), así
+  que salen con la anon key y la política ya era `to authenticated` — vienen fallando en silencio
+  desde antes (el último que llegó a guardarse es del 14-jun-2026). Abrirle un hueco a `anon` para
+  arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
+  Edge con service-role. Se deja documentado, no se improvisa.
+
+### La referencia del cliente, visible en 4 pantallas más (26-jul-2026, v49.60)
+El dueño: *"La referencia también que se vean"*. `clientes.referencia` es el apodo con que él
+identifica a cada cliente (el buscador de Clientes ya dice "Nombre, apodo, cédula, póliza"). Se
+auditó dónde se pinta un nombre de cliente y dónde faltaba: ya salía en **Clientes**, **Historial
+de pagos** y la **ficha** (`verCliente`); **faltaba** en Facturas, Centro de Avisos, Reporte por
+agente y Documentos del cliente. Agregada en esas 4, con el MISMO patrón que ya usaba Historial de
+pagos (morado `#7c3aed`, entre paréntesis, junto al nombre) — no un estilo nuevo.
+- **Deliberadamente NO se puso en la Factura ni en el Certificado imprimibles** (`generarHTMLFactura`
+  / `generarHTMLCertificado`): son documentos formales que van a la ARS y al cliente; ahí
+  corresponde el nombre completo, no el apodo interno del negocio.
+- Cliente sin referencia no muestra nada — no queda un paréntesis vacío (verificado).
+- Verificado con Playwright y el código real de `rFact`: la referencia sale junto al nombre, el
+  color medido es `rgb(124,58,237)` (el mismo de Historial de pagos, no uno parecido), un cliente
+  sin referencia no muestra `()`, la tarjeta sigue compacta (124px) y sin desborde en 390px.
+
+### Dashboard — los números arriba de los iconos, y que sirvan (26-jul-2026, v49.61)
+El dueño mandó la pantalla de Inicio y preguntó cómo mejorarla. Auditado contra el código real: son
+**14 iconos**, 6 escritos en `index.html` y **8 que `parches.js` inyecta solo** (NEXUS Smart, Cierre
+de Mes, Multiempresa, Contabilidad, Solicitudes, Consultar Cobertura, Mis Cuentas, Tabla
+Comparativa). Cuatro cosas, todas aplicadas:
+1. **Los números estaban DEBAJO de los 14 iconos.** En el celular `parches.js` fuerza la rejilla a 3
+   columnas con `!important` → 5 filas ≈ 550px antes del primer número; por eso en su captura los KPI
+   salían cortados abajo. Contra NPGS §15 ("todo módulo importante debe iniciar mostrando
+   indicadores"). El `<div class="kg" id="kpiG">` se movió ARRIBA del `.qa-g`. Medido con el markup
+   real: KPI en y=30 vs iconos en y=289 (390px).
+2. **Los KPI no eran los que decide el día.** Antes: Clientes activos · Prima mensual · Cobrado
+   (histórico) · Pendiente · En proceso. Ahora, en orden de acción: **POR COBRAR** (`pendTot`, con
+   cuántos clientes tienen saldo) · **FACTURAS ATRASADAS** (mismo cálculo que el filtro `atrasadas`
+   de `rFact`, respetando el corte 20-al-20 vía `mesCorte()`) · **COBRADO ESTE MES** ·
+   **PRIMA MENSUAL** (absorbió el % de efectividad que traía el KPI "Cobrado") · **CLIENTES
+   ACTIVOS** · **EN PROCESO**. La utilidad bruta de admin no se tocó, sigue al final.
+   - **"Cobrado este mes" sin consulta nueva:** `rChartCobros()` ya trae TODOS los abonos para la
+     gráfica de 6 meses, y el último mes de esa serie **ES** el mes en curso — así que llena
+     `#kpiCobMes` desde ahí. El KPI sale con "…" hasta que la gráfica resuelve (es async), honesto en
+     vez de mostrar un 0 falso.
+3. **Solo 1 de 5 KPI era tocable.** Ahora 5 de 6: POR COBRAR → Cobros, ATRASADAS → Facturas ya
+   filtrada, COBRADO ESTE MES → Historial de pagos, CLIENTES ACTIVOS → Clientes, EN PROCESO (ya lo
+   era). PRIMA MENSUAL se dejó sin clic a propósito — es contexto, no lleva a ninguna lista concreta.
+4. **Los 8 iconos inyectados no respondían al teclado.** En la v49.55 se les puso teclado a los 6
+   estáticos, pero estos se crean con `btn.className='qa'` + `btn.onclick=...` y quedaron fuera. Se
+   les agregó `tabindex`/`role`/`onkeydown` (con `keyCode`, sin comillas, por vivir dentro de cadenas
+   de JS) en los 8 sitios de una pasada. Ya la mitad del Dashboard no se comporta distinto a la otra.
+- **CORRECCIÓN (v49.62) — al dueño NO le gustó, y con razón.** Los 6 KPI eran 340px de cajas
+  blancas encima de sus **iconos 3D de cristal**, que son la cara del sistema (regla #4 de "cómo le
+  gusta trabajar": la estética es prioridad real). Los números quedaron correctos pero feos, y
+  taparon lo bonito. Se le armó una **muestra standalone con 3 direcciones** (scratchpad, nunca
+  publicada — mismo patrón que `muestra-pos.html`/`design-system.html`), renderizada a 390px con el
+  CSS REAL de los orbes extraído de `parches.js`, con la altura de cada una medida:
+  **A franja** 83px · **B número grande** 164px · **C ticker** 48px (vs. los 340px publicados).
+  **Eligió la B.** Resultado: `.dhero` — tarjeta con el degradado navy→azul→cian del Login, trama
+  de puntos enmascarada, **"POR COBRAR" en 34px**, y debajo una fila de 3 (Atrasadas / Cobrado del
+  mes / Activos), cada uno con su sub-línea. **4 zonas clicables** (el bloque grande + los 3 mini),
+  todas con teclado y `aria-label` propio; el aro de foco es **blanco con `!important`** porque el
+  azul global (`html body [tabindex][role=button]:focus-visible`, especificidad 0,3,2) le gana a
+  cualquier `.dhero-top:focus-visible` y no se vería sobre el degradado. **Prima mensual** y
+  **En proceso** bajaron a un `#kpiG` de 2 tarjetas DEBAJO de los iconos (cartera = contexto).
+  Medido: hero 174px, cero desborde en 390px y 1280px.
+  **Lección:** subir un dato correcto no basta si desplaza lo que le da identidad a la pantalla —
+  en este sistema, mostrar la muestra ANTES de publicar un cambio de la pantalla de inicio.
+- Verificado con Playwright y el código real extraído por contenido (`rDash`, `rChartCobros`,
+  `mesCorte` + el CSS y el markup reales del `#v-dashboard`): el orden de los hijos es
+  `alertasBanner → dashHero → qa-g → kpiG`, los KPI quedan por encima de los iconos en 390px y 1280px, los 6
+  valores dan el número EXACTO con datos simulados (por cobrar 14,000 con 2 clientes; atrasadas 4
+  excluyendo la del mes de corte, la pagada y la anulada; cobrado del mes 4,500 excluyendo un abono
+  de enero), un clic real en ATRASADAS navega a Facturas y dispara `rFact`, **Enter** en POR COBRAR
+  navega a Cobros, sin desborde horizontal en ninguno de los 2 anchos y 0 errores de consola.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### El "cobrado" iba por mes de calendario, no por el ciclo 20-al-20 (26-jul-2026, v49.63)
+El dueño: *"¿Por qué dice cobrado 329,400 de julio?"* — el número era **real** (67 abonos con fecha
+en julio) pero contado por **mes de calendario**, cuando su negocio factura el día 20. Partido por
+ciclo, en hora de RD: **1 al 19 de julio = RD$ 287,900** (cierre del ciclo de JUNIO) y **20 en
+adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobro de junio.
+- **Descuido mío al reusar los datos de la gráfica:** `mesCorte()` existe desde la v39.5 y Facturas
+  ya lo respeta; este KPI se alimentó de `rChartCobros`, que agrupaba por mes de calendario.
+- **Antes de recomendar se midieron los ciclos reales** (SQL directo), y eso cambió la propuesta:
+  MAYO 401,800 total con 68,000 (17%) en los primeros 7 días · JUNIO 366,600 con 58,700 (16%).
+  El patrón es muy parejo, así que **un "cobrado del ciclo" a secas no dice nada** — recién abierto
+  siempre se ve chiquito. Lo que sí informa es **contra el mismo día del ciclo anterior**: hoy va
+  36,500 donde el ciclo pasado iba 58,700 → **▼38%**, una señal real que ninguna de las 2 opciones
+  que se habían ofrecido capturaba. El dueño aprobó las 3 piezas.
+- **Helpers nuevos** (junto a `mesCorte`): `fechaRD(f)` (a fecha calendario de RD), `cicloDe(iso)`
+  (a qué ciclo pertenece un día — misma regla que `mesCorte` pero para cualquier fecha),
+  `cicloInicio(anio,mes)`, `diasEntre(a,b)`, `hoyRD()`.
+  - **Hora de RD con desfase fijo de −4h, NO `toLocaleDateString`**: RD no cambia de hora, y no todo
+    navegador trae la base de zonas horarias completa (ya hubo un `RangeError` de ICU con
+    `'es-DO'` en la v49.16) — ahí fallaría en silencio. `fechaRD` devuelve tal cual las fechas que
+    ya vienen sin hora (10 caracteres): restarles 4h las correría un día hacia atrás.
+- **`rChartCobros` agrupa por ciclo** (6 ciclos, etiquetas = mes del ciclo), calcula
+  `antMismoDia` (lo cobrado en el ciclo anterior **hasta el mismo día**) en la misma pasada, y llena
+  `#kpiCobMes` + `#kpiCobSub`. Cero consultas nuevas. Subtítulo de la gráfica → "últimos 6 ciclos
+  (del 20 al 20)" y su pie → "Ciclo en curso (va por el día N)".
+- **2 defectos visuales propios, encontrados MIDIENDO y corregidos antes de publicar:** (1) el
+  subtítulo largo ("día 6 · ▼ 38% vs ciclo anterior") envolvía y dejaba ese mini más alto que los
+  otros dos — se acortó a `día N · ▼38%` y el detalle completo pasó al `title` y al `aria-label`
+  ("...a estas mismas alturas llevabas RD$ 58,700"); (2) con un monto de 6 cifras — que es lo normal
+  a mitad de ciclo, 366,600 en junio — `RD$ 366,600` se partía en dos líneas: el prefijo `RD$` pasó a
+  9px inline (`fmtMini`), y ahí sí entra en una sola línea. Medido: los 3 minis quedan en 52px
+  iguales y el número en 16px (una línea) tanto con 36,500 como con 366,600.
+- Verificado con Playwright y el código real extraído por contenido, con abonos que **reproducen el
+  caso real del dueño en formato UTC** (incluido un pago de las 8pm RD del 19 de julio, que en UTC
+  cae el día 20): el ciclo de julio da **RD$ 36,500** exacto (ese pago frontera queda en JUNIO, como
+  debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
+  etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
+
+### POS · botón IMPRIMIR en la ventana de Cobrar (26-jul-2026, v49.72)
+Siguiendo la auditoría de abajo, el dueño precisó: *"Falta el botón de imprimir"*.
+- **`window.nxPagoImprimir()`** (nueva, junto a `nxPagoOpts`): reusa el MISMO `docFacturaHTML()` de
+  la Factura de página completa (v49.68) — cero plantilla nueva — pero armado con el estado REAL del
+  cobro, no con el del carrito pelado: el cliente de **`#posCliId`** (que puede ser distinto del
+  `_factCli` de la Factura) y los totales de **`leerCobro()`**, que ya incluyen el descuento %
+  aplicado en esa ventana. El `descuento` que se imprime suma el de línea (`totales()`) más el
+  global del cobro (`c.descMonto`).
+- **Honesto:** como todavía no se ha cobrado, el documento conserva el badge **"VISTA PREVIA · SIN
+  GUARDAR"** y no muestra bloque de forma de pago. El ticket térmico al confirmar no cambió.
+- Botón de solo ícono (`.nxPgPr`, mismo estilo que "Opciones") en el pie, entre Opciones y Confirmar
+  venta, con `aria-label` y `title` explicando que es una vista previa.
+- Verificado con las **58** comprobaciones de la ventana de cobro (52 anteriores + 6 nuevas: el botón
+  existe, abre el documento, lleva el cliente elegido EN COBRAR, respeta el 10% de descuento
+  —47,500 → 42,750—, refleja el descuento y sale marcado como vista previa). Sin desborde en
+  360/390/430/1280px, 0 errores de consola.
+
+### Auditoría pedida por el dueño: "en la ventana de cobro falta más botones, confirmas" (26-jul-2026, v49.71)
+El dueño puso a prueba si de verdad se verifica o solo se le da la razón. Se comparó
+`nxPosCobrar` **antes (v49.65) contra ahora**, extrayendo los dos cuerpos de función de git y
+listando ids, funciones llamadas y botones con su `onclick`.
+- **Resultado honesto: NO falta ninguno de los que había.** "Volver" pasó a la ✕ del encabezado, las
+  5 fichas de método a 6 pestañas (las mismas 5 + Mixto), "Efectivo exacto" al botón "Exacto" dentro
+  de la pestaña Efectivo, y Cliente/Confirmar venta siguen igual. Además hay uno nuevo, "Opciones"
+  (nombre del ticket / vendedor / descuento). Los 5 campos de pago (`payEfe`…`payNc`) siguen todos en
+  el DOM — al principio parecieron "desaparecidos" porque ahora se generan con el helper `campo()` y
+  el `id` va en una variable, no literal: **al auditar por `grep` de ids literales, ojo con el HTML
+  generado por helpers.**
+- **Pero sí apareció un defecto real, y de contexto dominicano:** los atajos de efectivo eran
+  `+500 / +1,000 / +2,000 / +5,000`. **En RD no existe el billete de RD$5,000** (los reales son 50,
+  100, 200, 500, 1000 y 2000) y faltaban los dos que más se reciben en el mostrador, **100 y 200**.
+  Cambiados a `Exacto · +100 · +200 · +500 · +1,000 · +2,000`. Siguen siendo aditivos, así que 5,000
+  se arma con +2,000 +2,000 +1,000 — como se cuentan los billetes en la mano.
+- Verificado con las 52 comprobaciones de la ventana de cobro (49 anteriores + 3 nuevas: son 6
+  atajos, ninguno dice 5,000, y el que ahora está en la 6ta posición sigue sumando bien). Sin
+  desborde en 360/390/430/1280px.
+
+### BUG DE FONDO: `.nxPf` recortaba a 92vh TODA pantalla completa del POS (26-jul-2026, v49.70)
+El dueño: *"No puedo hacer scroll"*, con captura de Factura en su iPhone. Se le preguntó qué pasaba
+exactamente (3 opciones) y respondió **"Llego hasta ahí y se acaba — debajo no hay nada"**. Esa
+respuesta descartó "recortado pero presente" y apuntó al contenedor.
+- **CAUSA RAÍZ (anterior a esta sesión, la destapó el rediseño):**
+  `.nxPf{…;display:flex;flex-direction:column;max-height:92vh}`. `.nxPf` nació como envoltorio de
+  **MODAL** (formulario de artículo) — de ahí el `max-height:92vh`. Pero desde la Fase 4 se empezó a
+  usar como **raíz de pantallas completas**: hoy hay **13** (`nxDoc`, `nxCajaWrap`, `nxInvWrap`,
+  `nxCompWrap`, `nxRhWrap`, `nxRepWrap`, `nxRepWrapK`, `nxVenWrap`, `nxCtaWrap`, `nxAjWrap`,
+  `nxPosGridWrap`…). En todas, ese tope recortaba en silencio: el hijo (`.nxDocCard`, con
+  `overflow:hidden`) se comprimía al alto disponible y **todo lo que sobraba desaparecía** — y como
+  el contenedor "medía" menos, el área de scroll tampoco crecía → no había nada que bajar.
+  **Prueba de que ya había mordido antes:** `.nxAjWrap` llevaba un `max-height:none` puesto a mano,
+  justo para anular este mismo tope en Ajustes.
+- **Arreglo de raíz:** `max-height:92vh` sale de `.nxPf` y pasa a **`.modal.nxPf`**, que es donde de
+  verdad hace falta (17 modales usan `class="modal nxPf"`; 5 de ellos NO traían el tope inline, así
+  que quitarlo de la clase base sin esta regla sí los habría roto — se verificó). `display:flex;
+  flex-direction:column` **se queda** en `.nxPf`: varias pantallas dependen de su `gap` (Ajustes usa
+  `gap:14px`), quitarlo habría pegado sus tarjetas. Se borró el `max-height:none` de `.nxAjWrap`,
+  ya innecesario.
+- **Por qué ninguna de las 151 pruebas lo vio, y la lección:** cada harness cargaba el CSS de SU
+  pantalla (`fac.mjs` solo `nxPosCSS`, `picker.mjs` solo el trozo del picker). **Nunca se había
+  cargado el stack COMPLETO junto** (`index.html` + `nxPfCSS` + `nxPosCSS` + tienda) dentro del
+  armazón real de la app (`#app{height:100dvh}` → `.abody` → `.main` → `.content{overflow-y:auto}`).
+  El bug vivía exactamente en el cruce entre hojas. **Al probar una pantalla del POS, montarla en el
+  armazón real con TODO el CSS, no solo con el de su módulo** — y medir `scrollHeight` del
+  contenedor, no solo que los elementos existan.
+- Verificado con Playwright montando la pantalla real en el armazón real: `.nxDocCard` pasó de
+  **h=699 recortada a h=1232 completa**, y el scroll de `.content` de **771 a 1304** sobre 736 de
+  alto visible (antes no había nada que bajar). Más 6 comprobaciones de no-regresión: un
+  `.modal.nxPf` SIN tope inline sigue acotado a 92vh, uno CON tope también, una pantalla completa ya
+  no se recorta (2400px enteros), y Ajustes conserva su `gap:14px` y su dirección de columna. Las 4
+  suites anteriores repasadas sin regresión (49 cobro + 65 factura + 37 documento + 7 picker = 158).
+
+### BUG MÍO: el CSS de las 2 pantallas nuevas del POS se inyectaba desde el módulo equivocado (26-jul-2026, v49.69)
+El dueño: *"la ventana de factura tiene un bug y lo que acordamos en cobrar aún no me sale"*, con una
+captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las dos reales.
+- **CAUSA RAÍZ (mía, v49.66 y v49.67):** los dos bloques de CSS nuevos (`.nxPago*` de la ventana de
+  cobro con pestañas y `.nxDoc*` de la Factura-documento) se insertaron con
+  `s.index("    document.head.appendChild(st);")` — que agarra la **PRIMERA** ocurrencia del archivo
+  (línea 592), o sea **`injectMenuEditorCSS()`, el CSS del editor del menú móvil**, no el del POS
+  (`nxPosCSS`, línea ~25689). **Es exactamente la trampa que este mismo archivo ya advertía**
+  ("HAY VARIAS FUNCIONES `inyectarCSS()` EN EL ARCHIVO, una por módulo/IIFE" — v48.29). Doble
+  problema: (a) ese injector solo corre desde `crearMenuMas()`, que arranca con `if (!isMobile())
+  return` — en escritorio el CSS **nunca** se cargaba; (b) aun en móvil, se inyecta al ARRANQUE, o
+  sea **antes** que `nxPosCSS`, así que a igual especificidad las reglas viejas del POS le ganaban
+  por orden de cascada. Resultado: las dos pantallas nuevas se seguían viendo como las viejas.
+  Movidos al final de `nxPosCSS`, donde van.
+  - **Por qué las 49 + 65 + 37 pruebas no lo atraparon:** los harness inyectan el CSS a mano en la
+    página de prueba, así que verifican que las REGLAS funcionan — nunca que el CSS sea
+    **alcanzable** desde el injector correcto en producción. **Lección: al agregar CSS a
+    `parches.js`, comprobar con `grep`/asserción que la cadena quedó DENTRO del injector que le
+    toca** (`st.id === 'nxPosCSS'`, `'nxPfCSS'`, `'nxFPCSS'`…), no solo que el archivo compila.
+    Nunca anclar por `document.head.appendChild(st)` a secas.
+- **BUG 2, real y desde v49.37 (independiente del anterior):** en la ventana "Elegir cliente"
+  (`nxPosCliFilaHTML`) el nombre y el código salían **pegados en una sola línea**
+  ("ESTERLINCL-0003 · POR MAYOR"). `.nxPf .pf2clirow` es `flex-direction:column`, pero al agregar el
+  botón de favorito (v49.37) el `<b>` y el `<span>` quedaron dentro de un `<div>` intermedio **sin
+  estilo** → como son elementos en línea, se pintaban uno detrás del otro. Arreglado con
+  `.nxPf .pf2clirow>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}`.
+  Afectaba a las 2 ventanas que usan ese motor compartido (Facturar y Cobrar).
+- Verificado con Playwright y el CSS + markup REALES extraídos del archivo: el nombre y el código
+  quedan en líneas distintas y alineados a la izquierda (medido con `getBoundingClientRect`, no a
+  ojo), la estrella no empuja el texto y sale ámbar cuando está marcada, sin desborde en 390px —
+  más las 3 suites anteriores repasadas sin regresión (49 cobro + 65 factura + 37 documento = 151) y
+  una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
+  `nx-menu-editor-css`.
+
+### FUERA DE localStorage — Fase 2: tema, favoritos, notas y borradores (26-jul-2026, v49.81)
+Segunda tanda. **7 claves migradas** a `usuario_preferencias` con el motor de la Fase 1: `nx_tema`,
+`nx_dark`, `nx_favs`, `nx_notif_leidas`, `nx_notas_<id>`, `nx_draft_<key>` (index.html) y
+`nx_fab_pos` (parches.js, vía `window.nxPref`/`nxPrefSet`). **27 → 20 claves.**
+- **Cambio de forma en 2 casos, no solo de destino:** `nx_notas_<id>` y `nx_draft_<key>` eran una
+  clave POR cliente / POR formulario (crecían sin límite en el navegador). Ahora son **un solo
+  objeto** `prefs.notas = {clienteId: [...]}` y `prefs.drafts = {clave: {...}}` — una sola fila por
+  usuario, y de paso desaparece la basura de claves sueltas que nadie limpiaba.
+- **CONSECUENCIA REAL que se le avisó al dueño (y va en el changelog):** el tema y el modo oscuro se
+  aplicaban en `DOMContentLoaded`, o sea ANTES del login. Al vivir en la base no se pueden leer sin
+  sesión, así que **la pantalla de login siempre se ve con el tema Clásico**; el tema del usuario se
+  aplica al entrar, dentro de `iniciarApp` (junto a `aplicarDarkGuardado()` y la carga de
+  `_notifLeidas`). No hay forma de evitarlo sin volver a guardar algo en el navegador — es el costo
+  de la decisión, no un descuido.
+- `_notifLeidas` dejó de inicializarse en tiempo de parseo (leía localStorage al cargar el archivo);
+  ahora se llena tras `nxPrefsCargar()`.
+- Verificado con Playwright y el código real extraído por contenido (el motor de preferencias +
+  `cargarTemaGuardado`/`toggleDarkMode`/`aplicarDarkGuardado`/`getFavoritos`/`toggleFav`/`esFavorito`/
+  `getNotas`/`agregarNota`/`autoSave`/`restoreAutoSave` tal cual), contra un Supabase simulado: **18
+  comprobaciones** — cada preferencia se guarda en la base y NO en el navegador, se vuelve a aplicar
+  al entrar, sin preferencia se usa el valor por defecto, quitar un favorito funciona, la nota queda
+  bajo SU cliente y otro cliente no la ve, el borrador se restaura en el formulario, una clave
+  inexistente no revienta, y **localStorage queda en CERO en todo el flujo**. Más la prueba de humo
+  de la app real (0 errores de JS — importaba porque el tema ya no se aplica al cargar la página) y
+  las 18 de la Fase 1 sin regresión.
+- **QUEDAN 20 claves, todas ya clasificadas** (ver Fase 1): 9 son cachés de datos que ya viven en la
+  base · `nx_url`/`nx_key` son redundantes (22 usos) · 4 son la sesión, que **se queda por decisión
+  del dueño** · el resto es basura técnica (`nx_err_log`, `nx_parches_registrados`,
+  `nx_cuentas_migradas_v2`) · `nx_last_view`/`nx_last_place` solo aparecen ya en el código de rescate
+  por única vez, a propósito.
+
+### FUERA DE localStorage — Fase 1: las preferencias viven en la BASE (26-jul-2026, v49.80)
+Decisión del dueño: *"Recuerda que nada en localStorage"* → *"Completo"*. Es un proyecto de varias
+fases; esta es la primera y deja construida la infraestructura.
+- **Inventario medido primero (27 claves reales):** `nx_url`(13) `nx_auto`(10) `nx_key`(9)
+  `nx_roles_perms`/`nx_ars_list`(6) `nx_email_cfg`(5) `nx_sesion_persist`/`nx_user_persist`/
+  `nx_metas`(4) `nx_auth_session`/`nx_auth_mode`/`nx_tema`/`nx_notif_leidas`/`nx_cuentas_migradas_v2`/
+  `nx_changelog_auto`/`nx_auto_historial`/`nx_last_view`(3) `nx_dark`/`nx_tenants`/
+  `nx_parches_registrados`/`nx_notas_`/`nx_last_place`/`nx_favs`/`nx_fab_pos`/`nx_email_hist`/
+  `nx_draft_`(2) `nx_err_log`(1). **"Completo" no es alcanzable al 100%** y se le dijo: la sesión y
+  el token de Auth NO pueden ir a la base, porque son justo lo que da acceso a la base.
+- **2 decisiones confirmadas con el dueño (AskUserQuestion), no asumidas:** (1) **la sesión se
+  queda** en localStorage — la alternativa era teclear la clave en cada apertura; (2) las
+  preferencias **se guardan en la base**, no se eliminan.
+- **Tabla nueva `usuario_preferencias`** (migración `usuario_preferencias_por_usuario`):
+  `usuario_id` (PK, FK a `usuarios_sistema`), `datos` jsonb, `updated_at`. Helper nuevo
+  **`mi_usuario_id()`** (`security definer`, mismo patrón que `mi_organizacion()`). RLS
+  `usuario_id = mi_usuario_id()` — **cada quien la suya, sin excepción de admin a propósito**: son
+  preferencias personales.
+  - **Por qué tabla propia y NO una columna de `usuarios_sistema`** (que ya tiene `tema_preferido`):
+    esa tabla es **solo-admin** (`mi_rol()='admin'`), así que guardar ahí dejaría a Robinson (rol
+    `agente`) sin poder salvar nada — y con un PATCH fallando en cada navegación. Se descubrió
+    leyendo `pg_policies` ANTES de escribir el frontend.
+  - Verificado con SQL simulando las sesiones reales (`set_config('request.jwt.claims')`, todo con
+    `rollback`): Robinson **sí** guarda las suyas, escribir la fila de otro queda **bloqueado**, y el
+    admin solo ve la propia. `get_advisors` sin hallazgos nuevos más allá de `mi_usuario_id()` en la
+    misma categoría ya aceptada de `mi_rol()`/`mi_organizacion()`.
+  - **Falso fallo instructivo:** el primer intento de prueba dio "violates row-level security". No
+    era el diseño — era **la prueba**: la subconsulta que buscaba a Robinson corría ya como
+    `authenticated`, y RLS se la bloqueaba, dejando el `sub` del claim en NULL. Con el uuid literal
+    pasó. **Al simular una sesión con RLS, resolver los ids ANTES de cambiar de rol.**
+- **Motor en `index.html`:** `_prefs` (caché en memoria) + `nxPrefsCargar()` (un GET al arrancar) +
+  `nxPref(clave,def)` + `nxPrefSet(clave,valor)`. El guardado va con **retraso de 900ms** a
+  propósito: navegar dispara `nxPrefSet` en cada pantalla y sin eso sería un escrito por toque
+  (medido: 4 navegaciones seguidas = **1** solo UPSERT). El guardado es un **UPSERT atómico**
+  (`on_conflict=usuario_id` + `Prefer: resolution=merge-duplicates`), no un "intenta PATCH y si no
+  POST" — mismo criterio que se aplicó a `prestamos_config` tras el bug del guardado silencioso de
+  la v48.19.
+- **Migrado en esta fase:** el "dónde me quedé" (`nx_last_place` + `nx_last_view`, v49.78) pasa a
+  `prefs.lugar`. **Con rescate por única vez:** si el usuario viene de la versión anterior, se lee su
+  lugar del navegador, se pasa a la base y **se borra del navegador** — de ahí en adelante no se
+  toca más. Cubre los dos formatos viejos (`nx_last_place` y el más antiguo `nx_last_view`).
+- **`await nxPrefsCargar()` va ANTES de restaurar** en `iniciarApp` — si no, se decidiría la pantalla
+  con las preferencias todavía vacías.
+- Verificado con Playwright y el código real extraído, contra un Supabase simulado: **18
+  comprobaciones** — navegar no escribe en localStorage y localStorage queda en **CERO** en todo el
+  flujo, el cambio se ve en memoria al instante pero se guarda una sola vez tras el retraso, al
+  arrancar lee de la base y restaura, el POS restaura módulo + pestaña, el rescate de las 2 versiones
+  viejas funciona **y limpia el navegador**, cada usuario escribe en SU fila, y sin sesión no escribe
+  ni revienta. Más la prueba de humo de la app real (0 errores de JS).
+- **PENDIENTE (fases siguientes):** (2) mover el resto de preferencias — `nx_tema`, `nx_dark`,
+  `nx_favs`, `nx_fab_pos`, `nx_notif_leidas`, `nx_notas_*`, `nx_draft_*`. **Ojo con el tema:** se
+  aplica en `DOMContentLoaded`, ANTES del login; al vivir en la base no se podrá leer hasta después
+  de entrar, así que la pantalla de login quedará siempre con el tema base. (3) Borrar las cachés de
+  datos que **ya viven en la base** (`nx_roles_perms`, `nx_ars_list`, `nx_auto`, `nx_email_cfg`,
+  `nx_metas`, `nx_changelog_auto`, `nx_auto_historial`, `nx_email_hist`, `nx_tenants`) — leer siempre
+  del origen. (4) **`nx_url`/`nx_key` son redundantes**: `const url = fixedUrl || storedUrl` con
+  `SUPABASE_URL_FIXED` **siempre** con valor ⇒ `storedUrl` nunca se usa y el `setItem` guarda el
+  mismo valor que ya está en el código. 22 usos que se pueden quitar sin cambiar comportamiento —
+  pero tocan la conexión a Supabase, así que van en su propia tanda y con cuidado.
+- **SE QUEDAN por decisión del dueño:** `nx_auth_session`, `nx_sesion_persist`, `nx_user_persist`,
+  `nx_auth_mode` (la sesión y el modo de login).
+
+### La actualización de la app, ~30% más rápida (26-jul-2026, v49.79)
+Pedido del dueño: *"Que la actualización sea rápido"*.
+- **Medido primero, no supuesto:** `index.html` = **171 KB** comprimido · `parches.js` = **500 KB**.
+  El grueso es el parche, y **bajaban en SERIE**: `chequearVersionApp` hacía `await fetch(index.html)`
+  → `document.write(html)` → recién ahí el navegador parseaba el HTML, llegaba al cargador del final
+  (`s.src='parches.js?v='+V`) y empezaba la descarga grande.
+- **El arreglo: disparar la del parche EN PARALELO** (`nxPrecargarParche(data.version)`, sin `await`,
+  con `.catch()`), usando **exactamente la misma URL** que pedirá el HTML nuevo — `parches.js?v=` +
+  la versión nueva. Cuando el `document.write` lo pide, el navegador lo sirve de su caché HTTP. Que
+  la URL calce es TODO el truco: si difiere en un carácter se descarga dos veces y se gastan 500 KB
+  de datos móviles al pedo, por eso hay una prueba dedicada a que el formato coincida con el del
+  cargador real.
+- **Números reales** (harness con los archivos REALES servidos por HTTP local, comprimidos, con
+  ancho de banda y latencia simulados): 3G lento (150 KB/s, 300ms) **5.205 → 3.760 ms (−28%)** ·
+  4G (600 KB/s, 120ms) **1.547 → 1.056 ms (−32%)** · wifi (2 MB/s, 60ms) **568 → 407 ms (−28%)**.
+- **Segunda espera quitada:** `if(window.caches){const ks=await caches.keys();await Promise.all(...)}`
+  bloqueaba ANTES de empezar a descargar. `sw.js` dice explícitamente que **nunca** intercepta
+  `index.html` ni `parches.js` (solo cachea manifest + 3 iconos), así que esa espera no aportaba nada
+  a la actualización — solo retrasaba el inicio. Se dejó la limpieza pero **sin `await`**, en
+  paralelo, para no perder el efecto ni pagar el tiempo.
+- **`nxPantallaActualizando()`:** el `toast('info','Actualizando app...')` desaparecía a los segundos
+  y dejaba al usuario mirando su pantalla vieja sin saber si se había pegado. Ahora una capa azul a
+  pantalla completa con spinner y "no cierres la app", que se queda hasta que el documento se
+  reemplaza. Idempotente (llamarla dos veces no apila capas).
+- **Aplicado en los DOS caminos de actualización**, no solo el automático: `chequearVersionApp()` (el
+  aviso al abrir la app) y `aplicarActualizacion()` (el botón de Ajustes). A este último se le pasó
+  la versión como 2º parámetro en vez de adivinarla de un elemento del DOM.
+- Verificado: **9 comprobaciones** contra la app real servida por HTTP (las 2 funciones existen, la
+  precarga pide la URL con la versión nueva, ese formato calza con el del cargador del HTML, sin
+  versión no pide nada, la pantalla se muestra con su texto y no se duplica, 0 errores de JS) + las 3
+  mediciones de velocidad + la prueba de humo de la app completa. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Detalle de método (2ª vez que muerde):** una aserción falló por comparar `innerText` contra
+    texto en minúsculas — la app fuerza MAYÚSCULAS por CSS global, e `innerText` devuelve el texto
+    **renderizado**. El texto estaba bien (se confirmó con la captura); la prueba estaba mal.
+
+### DÓNDE ME QUEDÉ — al actualizar la app se vuelve a la MISMA pantalla (26-jul-2026, v49.78)
+Pedido del dueño: *"Algo muy importante para todo el sistema NEXUS PRO: que al momento de yo
+actualizar quiero que mantenga en el mismo lugar donde estoy trabajando."*
+- **Investigado antes de tocar nada** (es el mecanismo de actualización de TODO el sistema; romperlo
+  dejaría la app sin poder actualizarse). Dos hallazgos que cambiaron el diseño:
+  1. **La restauración YA existía, a medias.** `nav()` guardaba `localStorage['nx_last_view']`
+     ("Guardar pantalla actual para F5") e `iniciarApp()` la leía y hacía `nav(lastView)`.
+  2. **Pero solo cubre el núcleo de Seguros.** Los módulos de `parches.js` **NO pasan por `nav()`** —
+     `nxAbrirPOS`/`nxAbrirPrestamos`/etc. pintan la `.view` por su cuenta y **no guardaban nada**. Así
+     que trabajando en el POS, `nx_last_view` seguía teniendo la última vista de Seguros y al
+     actualizar (`document.open()+document.write(html)`, que reinicia la app entera) caías en el
+     Dashboard. Esa era la causa raíz, no un bug del updater.
+- **Clasificación real hecha con grep, no a ojo:** de las **25** funciones `window.nxAbrir*` del
+  archivo, solo **9** son pantalla completa (usan `ensureView()`/`ensureHubView()` + `.view.on`): POS,
+  Rifas, Consultorio, Multiempresa, Financiamiento (`nxAbrirPrestamos`), Vehículos, AGUAPRO, Clientes
+  SaaS y NEXUS AI CONTENT. Las otras 16 son modales/formularios (`nxAbrirSmart`, `nxAbrirCierre`,
+  `nxAbrirFormEgreso`...) — restaurar un modal suelto al arrancar sería raro, así que quedan fuera a
+  propósito.
+- **UN solo registro para los dos mundos:** `localStorage['nx_last_place']` = `{k,s}` — `k='seguros'`
+  con `s=vista`, o `k='pos'` con `s=pestaña`. `nav()` lo escribe también (así **volver a Seguros pisa
+  el módulo anterior** y no quedan dos registros peleando); `nx_last_view` se sigue escribiendo solo
+  por compatibilidad.
+- **Lista BLANCA obligatoria (`NX_MODULOS_LUGAR`), no `window[nombre]()` a ciegas:** el valor viene de
+  `localStorage`, así que ejecutar cualquier nombre que aparezca ahí sería una puerta abierta (y
+  además rompería con un nombre viejo/renombrado). Solo esas 9 claves se ejecutan; cualquier otra cosa
+  devuelve `false` y la app arranca normal. Probado con `k='logout'`: no se ejecuta.
+- **Retrocompatibilidad, que es el caso de la PRIMERA actualización:** si no existe `nx_last_place`
+  (el usuario viene de una versión anterior), `nxRestaurarLugar()` cae al viejo `nx_last_view`, o sea
+  el comportamiento de siempre. Por eso la primera actualización (49.77→49.78) todavía puede devolver
+  al Dashboard si estabas en un módulo — de ahí en adelante ya funciona. Se le dijo explícitamente al
+  dueño y va en el changelog.
+- **Si el módulo aún no cargó** (`parches.js` se registra después; ya hay precedente documentado con
+  el retry de `aplicarOrgSidebar`): se pinta el Dashboard para **no dejar la pantalla en blanco** y se
+  reintenta cada 300ms hasta ~6s; cuando la función aparece, abre el módulo solo. Si el módulo YA está
+  cargado (caso normal) se abre directo, **sin pasar por el Dashboard** — se conserva el "sin
+  parpadeo" que el comentario original de `iniciarApp` cuidaba a propósito.
+- **La pestaña del POS** se guarda en `nxPosTab` y se restaura 700ms después de abrir el módulo
+  (`nxAbrirPOS` es `async`).
+- **Lo que NO se guarda, a propósito:** el carrito de una venta a medias (`_cart` vive en memoria; ese
+  es su diseño y persistirlo sería otro proyecto, con el riesgo de cobrar un carrito viejo). Se vuelve
+  a la pantalla de Factura en blanco, y se dice claro en el changelog.
+- Verificado con Playwright, código real extraído de `index.html` (el bloque completo "DÓNDE ME QUEDÉ"
+  + el trozo de `nav()` que guarda) servido por HTTP local (`localStorage` necesita un origen real):
+  **16 comprobaciones** — Seguros guarda y restaura, POS restaura módulo **y** pestaña sin pasar por el
+  Dashboard, volver a Seguros pisa el registro del POS, un `localStorage` con solo `nx_last_view`
+  (versión vieja) sigue funcionando, módulo desconocido / registro corrupto / vacío no revientan, la
+  lista blanca no ejecuta un nombre arbitrario, y el caso "módulo aún no cargado" pinta el Dashboard y
+  luego abre el módulo cuando aparece. **Más una prueba de humo de la app REAL** (`index.html` +
+  `parches.js` completos en un navegador): carga con **0 errores de JS**, las 2 funciones nuevas
+  existen, la lista blanca trae los 9 módulos y `parches.js` se registró bien — importaba porque
+  `NX_MODULOS_LUGAR` es `const` (no se hoistea) y había que confirmar que ninguna llamada a
+  `iniciarApp()` corre antes de su inicialización (las 2 están dentro de funciones, no en el parseo).
+
+### POS · REVERTIDO el botón de imprimir de Cobrar — el dueño detectó el fallo de lógica (26-jul-2026, v49.77)
+El dueño mandó una captura del pie de la ventana de Cobrar y preguntó: *"De manera lógica no se puede
+imprimir una factura sin guardar, ¿verdad?"*. **Tenía razón** — y al verificar el código el problema
+resultó ser peor que el argumento con el que lo planteó. Se quitó el botón (v49.72/73), su función
+`nxPagoImprimir`, su regla CSS `.nxPgPr` y la marca `_preview` de `ticketHTML` (que quedó sin ningún
+caller — regla #1 de depurar).
+- **El fallo real, confirmado leyendo el código:** `proxNumeroFacturaCorto()` solo **MIRA**
+  `sq.proximo` de `pos_secuencias` — **no aparta el número**. La secuencia se consume recién al
+  confirmar, en `nextSeq('factura_contado'|'factura_credito')` dentro de `nxPosConfirmar`. Así que si
+  el cajero imprimía y luego cancelaba la venta —o si otro usuario cobraba primero desde otro
+  dispositivo— **ese número impreso le tocaba a OTRA factura**: un papel en la calle con un número
+  que pertenece a otra venta. Con la DGII de por medio eso es un lío, no un detalle estético.
+- **Sumado:** salía sin NCF (el comprobante se consume también al confirmar), o sea un papel que dice
+  "FACTURA" sin comprobante fiscal en un negocio que factura con NCF.
+- **El caso legítimo YA tenía su herramienta, y es mejor:** si el cliente quiere ver/llevarse cuánto
+  va a pagar antes de pagar, para eso está la **Prefactura** (documento real pensado para eso, marcado
+  NO FISCAL, con su propio consecutivo `PF-` que SÍ se guarda, sin quemar NCF, convertible a factura
+  de un toque) y "Vista previa" para mirarlo en pantalla. El ticket, además, **ya sale solo** al
+  confirmar (`nxPosConfirmar`) — nunca hizo falta un botón para eso.
+- **Lección de proceso (mía):** cuando el dueño dijo *"falta el botón de imprimir"* lo implementé
+  literal sin cuestionar si tenía sentido EN ESE punto del flujo. Ponerle la marca "VISTA PREVIA — NO
+  COBRADA" tapaba el síntoma, no la causa: **el momento estaba mal, no la etiqueta**. Bajo la regla
+  #12 ("siempre aportar ideas"), un pedido que choca con la lógica del negocio hay que plantearlo
+  ANTES de construirlo, no después de publicarlo dos veces.
+- Verificado con las **59** comprobaciones de la ventana de cobro (las 70 anteriores menos las 12 del
+  botón, + 8 nuevas: no queda el botón ni la función, el pie tiene exactamente 2 botones, y el ticket
+  de una venta YA GUARDADA salió idéntico a antes de la v49.73 — "¡Gracias por su compra!", su NCF
+  real y sus 2 botones, sin rastro de la marca de vista previa). Captura del pie revisada.
+
+### POS · quitado el enlace "Elegir cliente", duplicado con la lupa (26-jul-2026, v49.76)
+Se le había propuesto al dueño al cerrar la v49.74 y respondió *"Quita elegir cliente"*. Con la lupa
+del círculo (v49.74) haciendo lo mismo, el enlace de texto de abajo era un segundo botón para una sola
+cosa — el mismo criterio de redundancia con el que ya se quitaron el "+ Agregar producto" (v48.41),
+los botones de escanear (v48.40) y el bloque de pago repetido (v48.37).
+- **Auditado antes de borrar:** `#facCliBtn` está definido en **dos** funciones distintas — `renderVender`
+  (línea ~17426, el botón compacto que muestra el nombre en Vender) y `facPartesHTML` (el enlace del
+  documento). Solo se quitó el segundo. Confirmado con grep que **nadie lee ese id** por
+  `getElementById`/`querySelector`, así que no hubo que ajustar ninguna otra función.
+- **El texto ahora guía:** sin cliente decía solo "Sin cliente asignado — la venta se registra a
+  consumidor final."; al quitar el enlace, la lupa quedaba como único camino y un icono sin etiqueta no
+  se descubre solo — se le agregó "Toca la 🔍 para elegir un cliente." (mismo criterio del placeholder
+  de la v49.75: una función que no se anuncia no existe para quien la usa).
+- **`.plinks` solo se pinta si hay cliente** — si no, quedaba un `<div>` vacío con su `margin-top`
+  dejando un hueco. "Ver perfil" (`nxCliente360`) no se tocó.
+- Verificado con las **76** comprobaciones de Factura (74 anteriores + 2 nuevas: el id ya no existe y el
+  texto "Elegir cliente" desapareció del bloque; el texto guía a la lupa; no queda fila de enlaces
+  vacía). El clic del harness pasó de `#facCliBtn` al círculo `.pav`. Capturas con y sin cliente
+  revisadas, sin desborde en 360-1440px, 0 errores.
+
+### POS · buscar el cliente por TELÉFONO (26-jul-2026, v49.75)
+Primera sugerencia propia bajo la regla nueva #12 ("siempre aportar ideas"), verificada antes de
+proponerla: `nxPosClientePintar` filtraba por **nombre, código y cédula** — el `telefono` estaba en
+`pos_clientes` y en la ficha, pero **no se podía buscar por él**. En una tienda de celulares el cliente
+dice su número antes que su cédula, así que era el camino más usado del mostrador y el único que
+faltaba.
+- **Comparación por dígitos, no por texto:** `qd = ql.replace(/\D/g,'')` contra
+  `String(c.telefono).replace(/\D/g,'')`. Sin eso, dictar "809 555 1234" nunca empataría con
+  "(809)555-1234" guardado en la ficha — y ese desajuste de formato es la norma, no la excepción.
+- **Piso de 3 dígitos** (`qd.length >= 3`): con 1-2 números casi cualquier teléfono empata y traería
+  medio catálogo, que es peor que no buscar. Nombre/código/cédula siguen sin piso.
+- El **placeholder** se actualizó a "Buscar por nombre, teléfono, código o cédula…" — una función que
+  no se anuncia no existe para quien la usa.
+- Aplica a las **dos** ventanas del motor compartido `nxPosClienteAbrir` (Facturar y Cobrar).
+- Verificado con Playwright y el código real extraído por contenido (`nxPosClientePintar` +
+  `nxPosCliSnap`/`nxPosCliSubtxt`/`nxPosCliFilaHTML` tal cual): **12 comprobaciones** — nombre/código/
+  cédula siguen igual (sin regresión), teléfono con espacios, seguido, con guiones y por los últimos 4
+  dígitos, 2 dígitos NO disparan la búsqueda, un proveedor (`es_cliente:false`) no aparece ni buscando
+  su teléfono, un cliente sin teléfono no rompe nada, y sin texto siguen saliendo todos. 0 errores.
+
+### POS · Factura: el círculo de "Facturar a" es la lupa, y la lista de clientes con líneas (26-jul-2026, v49.74)
+Dos pedidos con capturas del iPhone: *"donde el punto negro vamos a poner ese mismo punto pero con el
+icono de lupa y clickear ahí para buscar los clientes"* y *"que la ventana flotante de buscar cliente
+tenga líneas para diferenciar bien los clientes"*.
+- **El círculo (`.pav` de `facPartesHTML`) era decorativo** — mostraba la inicial del cliente, o un `—`
+  cuando no había ninguno, y **no hacía nada al tocarlo**. Pasó de `<div>` a `<button>` real con
+  `<i class="ti ti-search">` que llama a `window.nxFacCliToggle()` (la misma función del enlace de
+  abajo, cero lógica nueva). Mismo tamaño, misma forma, mismo color — solo cambió qué muestra y que
+  ahora responde.
+  - **Decisión: la lupa se queda SIEMPRE**, también con cliente ya elegido (el `aria-label`/`title`
+    cambia a "Cambiar el cliente"). Un control que cambia de función según el estado es menos
+    predecible, y el nombre del cliente ya se lee al lado — la inicial no aportaba nada que faltara.
+  - Se borró la variable `ini` (quedó sin uso, regla #1 de depurar). CSS: `border:0;cursor:pointer;
+    padding:0;font-family:inherit` + `:hover` azul + `:focus-visible`. **`:active` con
+    `filter:brightness()`, NUNCA `transform`** — el propio CLAUDE.md ya advierte del bug de botones
+    que se "inflan" en iPhone dentro de ventanas con `backdrop-filter`.
+- **Líneas en la lista de clientes:** `.nxPf .pf2clirow` ganó `border-bottom:1px solid var(--pf-line)`
+  (el token del sistema, no un gris inventado) + `:last-child{border-bottom:0}` para que la última no
+  deje una raya suelta contra el borde de la ventana. Beneficia a las **dos** ventanas que comparten
+  ese motor (`nxPosClienteAbrir`: Facturar y Cobrar), no solo la de la captura.
+- **NO se tocó el enlace de texto "Elegir cliente"/"Cambiar cliente"** de abajo, aunque ahora hace lo
+  mismo que el círculo. El dueño pidió agregar la lupa, no quitar el enlace — y el texto es más
+  descubrible que un icono suelto para quien entra por primera vez. Se le comentó como algo que se
+  puede quitar si prefiere.
+- Verificado con Playwright y el código real extraído (`facPartesHTML`/`nxFacCliToggle`/
+  `nxPosCliFilaHTML` + el CSS real de `.nxDoc` y `.nxPf`): **74 comprobaciones** de Factura (las 65
+  anteriores sin regresión + 9 nuevas — es un `<button>`, lleva la lupa, ya NO muestra la inicial,
+  nombre accesible correcto en los 2 estados, tocarlo abre el buscador, sigue midiendo 38×38 redondo y
+  oscuro con `cursor:pointer`) y **12** del selector (las 6 anteriores + 6 nuevas: 1ra y 2da fila con
+  línea de 1px medida con `getComputedStyle`, la última en `0px`, el color es el `--pf-line` real, y
+  las filas quedan pegadas —la línea es lo que separa, no un hueco—). Sin desborde en 360-1440px, 0
+  errores de consola. Capturas revisadas. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · el botón de imprimir de Cobrar saca el TICKET, no el documento (26-jul-2026, v49.73)
+El dueño: *"Que salga el ticket térmico en vez del documento grande"*. El botón de impresora que se
+había puesto en la ventana de Cobrar (v49.72) abría `docFacturaHTML` (la factura de página completa);
+ahora abre **`ticketHTML`** — la tirilla de 300px monospace del mostrador, la misma que sale al
+confirmar la venta. Tiene sentido: quien está cobrando quiere el recibo del mostrador, no un
+documento de oficina (ese sigue en "Vista previa" de Factura y en el Historial, sin cambios).
+- **El problema de fondo:** `ticketHTML(v)` está escrita para una venta **YA guardada**. Se le arma
+  una venta-fantasma desde `_cart` + `leerCobro()` y, clave, **se deja `v.id` AUSENTE** — los dos
+  botones del ticket (`📄 Factura completa` y `↩︎ Devolver`) ya estaban gateados a `v.id`, así que
+  no aparecen solos, sin tocar una línea de esa lógica. Ofrecer "Devolver" sobre una venta que
+  todavía no existe habría sido un botón muerto.
+- **La garantía usa la MISMA fórmula que `nxPosConfirmar`** al guardar las líneas de verdad
+  (`new Date(Date.now() + gd*86400000).toISOString().slice(0,10)`), no la variante local de RD que
+  usa Reparaciones — a propósito: lo que importa aquí es que la fecha del preview coincida con la
+  que después queda en `pos_venta_items`, no con el calendario de RD.
+- **Marca `v._preview` nueva en `ticketHTML`** (2 líneas, retrocompatible — una venta guardada sale
+  idéntica a antes): recuadro punteado **"VISTA PREVIA — NO COBRADA"**, y el pie cambia de
+  "¡Gracias por su compra!" a "Todavía no se ha cobrado ni guardado nada. El comprobante fiscal
+  (NCF) se asigna al confirmar la venta." Un "gracias por su compra" sobre algo que no se ha
+  cobrado sería justo el tipo de mentira que este sistema evita.
+- **Sin NCF a propósito:** el comprobante se consume en `asignarNCF` al confirmar; imprimir un NCF
+  antes sería quemarlo (o peor, mostrar uno que le va a tocar a otra factura).
+- **Desglose real de cómo se está pagando:** una línea por método con monto > 0 (Efectivo/Tarjeta/
+  Transferencia/Cheque/Nota de crédito) + una fila **"A crédito (fiado)"** si queda pendiente — se
+  arma explícitamente para no caer en el respaldo `[{metodo:v.metodo_pago}]` de `ticketHTML`, que
+  con una venta-fantasma imprimiría `undefined`.
+- Verificado con Playwright y el código real extraído por contenido (`nxPosCobrar`, `nxPagoImprimir`,
+  `ticketHTML`, `leerCobro` tal cual, interceptando `window.open` para capturar el HTML y luego
+  cargándolo como página real): **70 comprobaciones** de la ventana de cobro (las 58 anteriores sin
+  regresión + 12 nuevas) — es el ticket de 300px monospace y NO la factura de página completa, lleva
+  el número que le tocará, la marca de vista previa, sin NCF, sin los 2 botones de venta guardada, el
+  cliente elegido EN COBRAR, la garantía del producto, el descuento del cobro (TOTAL 42,750 sobre
+  47,500 con 10%), los métodos desglosados sin ningún `undefined`, la parte a crédito, y con el
+  carrito vacío avisa sin abrir nada — más **7 de no-regresión** confirmando que una venta YA
+  guardada sale exactamente igual que antes (dice "¡Gracias por su compra!", muestra su NCF real,
+  conserva "Factura completa" y "Devolver"). Sin desborde en 390px, 0 errores de consola. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### POS · FACTURA imprimible de página completa (26-jul-2026, v49.68)
+El dueño dijo *"continúa con factura"*. Se auditó qué faltaba de verdad y el hueco real era este:
+la PANTALLA ya se ve como documento (v49.67), pero **lo único que se podía imprimir de una venta
+seguía siendo el ticket térmico de 300px** (`ticketHTML`, monospace) — correcto para el mostrador,
+pobre cuando el cliente es una empresa que pide Crédito Fiscal B01.
+- **`docFacturaHTML(d)` (nueva):** documento de página completa (`window.open`+`document.write`,
+  mismo patrón que `nxPrestamoComprobante`/`nxRepImprimir`) con la misma cara de la pantalla:
+  encabezado empresa+RNC+dirección+teléfono / FACTURA + Nº + NCF + fecha + condición, "Facturar a"
+  con código y cédula, tabla con código/IMEI/garantía por línea, forma de pago, TOTAL grande, línea
+  roja "Pendiente por pagar" si quedó fiado, firmas (Entregado por / Recibido conforme) y aviso
+  legal. Botones **Cerrar · Imprimir/PDF · WhatsApp** — los handlers van en un `<script>` del propio
+  documento con `addEventListener`, NO en `onclick` con `JSON.stringify` (el bug de comillas ya
+  documentado en v49.23). `@media print` quita la barra y el fondo.
+- **Recibe un objeto ya normalizado**, así que hay una sola plantilla y dos armadores:
+  `facDocDesdeCarrito()` (lo que hay AHORA en pantalla — no guarda nada) y
+  **`window.nxFacDocVenta(ventaId)`** (una venta ya guardada: trae `pos_venta_items` igual que
+  `nxPosTicket`, cruza el cliente con `_clientes` para su cédula/RNC, y usa `v.pagos` si existe).
+- **3 entradas:** el botón **"Vista previa"** de Factura (`nxFacVistaPrevia` dejó de abrir un modal
+  `.nx-inv-*` y ahora abre este documento), el botón **"Factura"** nuevo en el detalle de una venta
+  (`nxFacVerVenta` — el de al lado se relabeló "Ticket" para que se distingan), y **"📄 Factura
+  completa"** dentro del propio ticket (vía `window.opener.nxFacDocVenta`, mismo patrón que el botón
+  Devolver que ya vivía ahí).
+- **Honesto sobre el estado, no finge:** antes de cobrar sale con badge **"VISTA PREVIA · SIN
+  GUARDAR"** y sin bloque de forma de pago (todavía no se cobró); en Prefactura, **"BORRADOR · NO
+  FISCAL"** sin NCF ni condición y con la nota impresa; una venta guardada sale **PAGADA** (verde) o
+  **ANULADA** (roja, con "DOCUMENTO ANULADO — no tiene validez"). El ticket térmico **no se tocó**.
+- **Desborde real encontrado midiendo y corregido antes de publicar:** a 390px la tabla de 6
+  columnas se salía 13px. Arreglado en la media query del documento: se oculta la columna `#`
+  (no aporta en pantalla angosta), se sueltan los anchos fijos y baja la tipografía. Medido después:
+  `scrollWidth === clientWidth` exacto en 390px y en 900px.
+- Verificado con Playwright y el código real extraído por contenido (`docFacturaHTML`,
+  `facDocDesdeCarrito`, `nxFacDocVenta`, `nxFacVistaPrevia`, `facEmpresa`, `lineBase`/
+  `lineDescMonto`/`lineImporte`), interceptando `window.open` para capturar el HTML generado y
+  cargándolo después como página real: **37 comprobaciones** — vista previa con empresa/RNC/número/
+  comprobante/cliente/IMEI/garantía/descuento de línea y totales exactos (39,966 / 240 / 7,194 /
+  47,160), venta guardada con su NCF real, badge PAGADA, vendedor, forma de pago y pendiente 7,160,
+  garantía con fecha real, el texto de WhatsApp lleva el total, prefactura con su nota y su aviso de
+  proforma, y el carrito vacío avisa sin abrir nada. Sin desborde en 390/900px, 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### POS · Factura/Prefactura como DOCUMENTO — la muestra B aprobada (26-jul-2026, v49.67)
+Segunda mitad del rediseño que el dueño aprobó ("me gusta la B... se ve incompleta" → se completó y
+dijo *"Aplícalo"*). `renderFactura()`/`pintarFactura()` pasaron de un formulario de 2 columnas con
+panel lateral a **un documento**: encabezado con la empresa, dos columnas Facturar a / Condición de
+pago, tabla de artículos y pie con Otras acciones + totales.
+- **Las 2 preguntas que quedaron sin responder, resueltas y por qué:**
+  1. **El encabezado SÍ lleva empresa + RNC** — `empInfo()` (nombre/RNC/teléfono/dirección de `CFG`)
+     ya existía y es lo que el ticket impreso ya usa, así que no es dato inventado. Helper nuevo
+     `facEmpresa()`: si `CFG` no trae nombre (organización de tienda, que no lee la config de
+     Seguros) cae al **nombre real de la organización** en vez de dejar el genérico "NEXUS PRO".
+  2. **El botón Cobrar NO quedó fijo abajo en el celular.** Se descartó midiendo el riesgo: la app
+     ya tiene su propia barra flotante inferior (`.mobile-bottom-nav-clean`, `position:fixed`) y dos
+     barras fijas apiladas en un iPhone se tapan entre sí. En su lugar, en el celular el bloque de
+     **TOTAL + Cobrar va ANTES de "Otras acciones"** (`order` en la rejilla del pie) — se llega a
+     cobrar sin bajar hasta el final, con cero riesgo de choque.
+- **Todos los ids y `onclick` intactos** (`facNumPrev`, `facNCFSel`, `facFecha`, `facAlmSel`,
+  `facCliBtn`, `facCliTxt`, `facCliInfoWrap`, `facSearchBox`, `facTabla`, `facNota`, `facResumen`) —
+  ninguna función de negocio se tocó: precios, ITBIS, descuentos, IMEI, NCF, almacén y el flujo de
+  cobro son los mismos.
+- **`facPartesHTML(c)` (nueva)** pinta el bloque "Facturar a" + "Condición de pago" con los datos
+  reales que ya usaba `facCliInfoHTML` (`saldoCli`, `limite_credito`, última compra perezosa).
+  **`pintarFacCliInfo()` elige el renderizador según la pantalla montada:** `#facCliInfoWrap` lleva
+  `data-doc="1"` en Factura/Prefactura → bloque de documento; en Vender no lo lleva → tarjeta
+  compacta de siempre. Así Vender no se tocó.
+- **La casilla "A crédito" pasó a un segmentado Contado / A crédito** (`nxFacSetCredito`, misma
+  función).
+- **BUG REAL arreglado de paso:** `nxFacSetCredito` escribía el número nuevo en `el.textContent`,
+  pero `#facNumPrev` es un `<input>` — en un input eso no se ve. O sea, **al marcar "A crédito" el
+  número nunca cambiaba a la serie de crédito**. Ahora va en `.value` (y usa
+  `proxNumeroFacturaCorto`, el mismo formato con el que se pinta al abrir). Verificado con una
+  prueba dedicada: `00001248` → `CR-00000091` → vuelve al tocar Contado.
+- **Segundo detalle real, encontrado al construir:** el callback de `nxFacCliToggle` pisaba
+  `#facCliTxt` con texto plano DESPUÉS de que `pintarFacCliInfo()` ya había repintado el bloque
+  bien formateado — en el documento eso dañaba el nombre (le pegaba el código delante y borraba el
+  chip "por mayor"). Ahora ese ajuste manual solo corre cuando NO es la vista de documento (o sea,
+  solo para el botón compacto de Vender).
+- **Tabla de 10 columnas → 7** (# · Descripción · Precio · Cant. · Desc. · Importe · ✕): el código,
+  el chip de IMEI y la garantía bajaron a una línea de etiquetas debajo del nombre. En el celular
+  cada artículo colapsa a una tarjeta con `data-l` (mismo patrón que `.sf-tbl` de Seguros).
+- **Quitado por redundante:** la fila "Pendiente por cobrar" del resumen (mostraba literalmente el
+  mismo `t.total` de arriba) y el **indicador de pasos** Cliente→Productos→Pago→Confirmar — el
+  documento ya muestra el cliente y los artículos, así que `facStepsHTML()` quedó sin llamadores y
+  se borró (regla #1, depurar).
+- **CSS nuevo con namespace propio `.nxDoc`** (dentro de `.nxPf`), en el mismo bloque
+  `st.textContent +=` del POS. **Ojo:** el selector `td[data-l="Descripción"]` va con comillas
+  DOBLES — con simples rompe la cadena de JavaScript que envuelve el CSS (pasó al escribirlo, `node
+  --check` lo atrapó).
+- Verificado con Playwright y el código real extraído por contenido (`facEmpresa`, `facPartesHTML`,
+  `renderFactura`, `pintarFactura`, `pintarFacCliInfo`, `facCliInfoHTML`, `nxFacSetCredito`,
+  `nxFacCliToggle`, `nxFacQtyStep`, `lineBase`/`lineDescMonto`/`lineImporte`/`saldoCli` + el CSS
+  real): **65 comprobaciones** — encabezado con empresa/RNC/número/comprobante/fecha, cliente con
+  código y cédula, balance 12,500 y crédito disponible 37,500 calculados de verdad, el segmentado
+  cambia el estado Y el número de factura, la lupa abre el historial, el buscador abre la ventana de
+  artículos, 7 columnas, chips de código/IMEI/garantía, el + recalcula el importe, Subtotal 39,966 /
+  Descuento 240 / ITBIS 7,194 / TOTAL 47,160 exactos, Cobrar / Vista previa / Cancelar enganchados,
+  el caso sin cliente no inventa balance, Prefactura sin comprobante ni crédito y con su nota, y el
+  carrito vacío deja Cobrar deshabilitado. Sin desborde en 360/390/430/768/1180/1440px, 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### POS · Cobrar: ventana con PESTAÑAS por forma de pago (26-jul-2026, v49.66)
+El dueño pidió rediseñar la Factura del POS; al mostrarle 3 direcciones eligió la **B**, y después
+pidió que además **la forma de pago fuera una ventana con pestañas**. Se le enseñaron 3 muestras de
+la ventana de cobro y eligió **la No. 3, completa con sus pestañas**. Se construyó esa primero (es la
+más contenida y de efecto inmediato); la Factura B completa queda en cola.
+- **Arquitectura que hace esto seguro (es una pantalla de DINERO):** los 5 campos reales
+  (`payEfe`/`payTar`/`payTra`/`payChe`/`payNc`) **siguen SIEMPRE en el DOM**, dentro del panel
+  "Mixto" (oculto cuando no toca). Las pestañas de un solo método usan un campo grande **espejo**
+  (`#payBig`) que escribe en el campo real del método activo. Así `leerCobro()`, `nxPosCobroCalc()`
+  y `nxPosConfirmar()` **no se tocaron** — leen exactamente lo mismo que siempre. Todos los ids
+  quedaron idénticos (`posCliId`, `posCliDisp`, `posCliNomBox`, `posCli`, `posVendId`, `posDesc`,
+  `posTotalLbl`, `cobroPagado`, `cobroResto`, `cobroRestoLbl`, `cobroDev`, `cobroFiadoNote`,
+  `finBox`/`finChk`/`finCfg`/`finN`/`finFrec`/`finPrev`).
+- **Lo que se ve:** encabezado azul degradado (el mismo del Login/POS) con **TOTAL A COBRAR** en 33px
+  + el cliente; fila de 6 pestañas (Efectivo · Tarjeta · Transfer. · Cheque · N. Créd. · **Mixto**);
+  en Efectivo un campo grande "Monto recibido" con botones rápidos **Exacto / +500 / +1,000 / +2,000
+  / +5,000** (los `+N` SUMAN a lo tecleado, que es como cuenta billetes un cajero) y la **DEVUELTA**
+  en un recuadro verde de 23px; en los otros métodos el mismo campo grande con **Todo el total /
+  Mitad**; en Mixto las 5 casillas de siempre. Abajo siempre Pagado / Falta, el aviso de fiado y la
+  caja de CUOTAS. Pie con **Opciones** (despliega Nombre para el ticket + Vendedor + Descuento %) y
+  **Confirmar venta** en verde.
+- **Funciones nuevas, todas de presentación:** `nxPagoTab(k)` (cambia de pestaña, limpia los 5
+  métodos y prellena el elegido con el total), `nxPagoBigIn()` (el espejo), `nxPagoQuick(v)`
+  (`'T'`=total, `'M'`=mitad, número=suma) y `nxPagoOpts()`. En `nxPosCobroCalc` solo se agregaron
+  escrituras guardadas (`cobroDevBig`, la fila `pgDevRow`) y `posTotalLbl` ahora acepta `<div>` o
+  `<input>` indistintamente.
+- **Dead code eliminado (regla #1):** `nxPosPagoExacto` y `nxPosPayQuick` (las fichas viejas de pago)
+  y su CSS `.nxPayTiles`/`.nxPayTile` — verificado con grep que no los usaba nada más en el archivo.
+- **2 defectos propios encontrados MIDIENDO, corregidos antes de publicar:** (1) con las 6 pestañas
+  a `flex:1 0 auto` **más su ícono**, la fila medía más que el modal y "Mixto" quedaba **cortada** —
+  y como la barra tiene scroll horizontal con la barra oculta, el usuario no tendría cómo saber que
+  hay más. Se quitó el ícono de las pestañas (el rótulo en español ya es claro) y pasaron a
+  `flex:1 1 auto`; medido después: caben exactas en 360/390/430/1280px (`scrollWidth === clientWidth`).
+  (2) El grid de Mixto colapsaba a 1 columna desde 400px, alargando muchísimo la ventana en un iPhone;
+  se bajó ese corte a 340px.
+- Verificado con Playwright y el código real extraído por contenido (`nxPosCobrar`, `nxPagoTab`,
+  `nxPagoBigIn`, `nxPagoQuick`, `nxPagoOpts`, `nxPosCobroCliToggle`, `nxPosCobroCalc`, `leerCobro`,
+  más el CSS real): **49 comprobaciones** — abre con el total correcto, Efectivo prellena y el campo
+  REAL recibe el espejo, `+2,000` suma y la devuelta da 2,000 exactos, `leerCobro()` devuelve
+  `efe:49500 / devuelta:2000`, cambiar a Tarjeta limpia efectivo y prellena tarjeta, "Mitad" da
+  23,750 y la etiqueta pasa a "Falta / Crédito" con el aviso de elegir cliente, Mixto lee los 5
+  campos reales (20,000 + 27,500 = 47,500), el botón de cliente abre la ventana compartida y al
+  elegirlo aparece la caja de CUOTAS con su vista previa, Opciones despliega Vendedor/Descuento y el
+  10% recalcula el total del encabezado a 42,750, Confirmar llama a `nxPosConfirmar`. Sin desborde en
+  390/430/1280px, 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** la **Factura B completa** que el dueño ya aprobó (rediseño de `renderFactura`/
+  `pintarFactura`), con 2 preguntas suyas sin responder todavía: si el encabezado lleva el nombre de
+  la empresa + RNC, y si el botón Cobrar debe quedar fijo abajo en el celular.
+
+### WhatsApp: elegir destinatario (cliente o agente) + ronda de cobro por agente (26-jul-2026, v49.65)
+El dueño pidió un WhatsApp al AGENTE para que le dé seguimiento a su cliente atrasado; al proponerle
+dos botones separados respondió *"que yo pueda elegir al cliente o al agente"* — un solo botón con
+elección. **Se investigó la base ANTES de diseñar**, y eso cambió la propuesta dos veces:
+- **`agentes.tel` está VACÍO en los dos agentes** (la columna existe y el campo está en el formulario
+  desde siempre, nunca se llenó). Sin eso el botón no puede hacer nada → cuando falta el número, en
+  vez de fallar en silencio lleva a `editarCli`/`editarAgt` para ponérselo.
+- **ROBINSON tiene 60 de sus 61 clientes atrasados** (ESTERLIN 32 de 39, y ESTERLIN es el propio
+  dueño). Un botón por cliente = 60 WhatsApps a la misma persona; **no es usable**. Por eso, además
+  del selector pedido, se construyó la **ronda por agente**: un solo mensaje con toda su lista.
+- **`nxWaElegir(cid)`** — hoja de elección (`.waSheet`, CSS propio inyectado una vez): nombre del
+  cliente + cuánto debe, y dos filas — **Al cliente** (reusa `nxCobroWA`, sin tocarlo) y **A su
+  agente** (`nxAgenteWA`, nueva). Cliente sin agente asignado muestra una fila honesta "Sin agente"
+  en vez de una opción muerta. Entradas: botón verde nuevo en la fila de Clientes y el botón de las
+  tarjetas de atrasados en Avisos (ese pasó de ir directo al cliente a dejar elegir).
+- **`nxAgenteWARonda(agId)`** — sección nueva **"Seguimiento por agente"** arriba de Avisos, una
+  tarjeta por agente con cuántos atrasados tiene y por cuánto. El mensaje lista sus clientes
+  ordenados **de mayor a menor deuda** (el orden en que conviene perseguirlos).
+  - **Corte por TAMAÑO del enlace, no por cantidad fija.** El primer intento acotaba a 30 líneas y
+    midió **2.288 caracteres** — por encima del margen seguro de un `wa.me`. Se cambió a un cupo de
+    1.750 caracteres del texto ya codificado, sumando línea por línea: un nombre largo pesa el doble
+    que uno corto, así que una cantidad fija no sirve. Medido después: **1.948 caracteres, 25 líneas
+    y "…y 35 más"**.
+- Auditoría nueva: `AGENTE_SEGUIMIENTO_WA` (por cliente, con `cliente_id` para que salga en la línea
+  de tiempo de su ficha) y `AGENTE_RONDA_WA` (la ronda completa).
+- Verificado con Playwright y el código real extraído por contenido, con datos que **reproducen el
+  caso real** (60 clientes de Robinson sin teléfono del agente + 1 de Esterlin con teléfono): la
+  tarjeta de Robinson dice "Ponerle el WhatsApp" y **no abre nada** sino que lleva a editar el
+  agente; con teléfono arma el enlace correcto y el registro de auditoría con el monto exacto; el
+  selector muestra los 2 destinatarios con su número, elegir "A su agente" abre `wa.me` del agente
+  con el nombre y la referencia del cliente en el mensaje; un cliente sin agente muestra "Sin
+  agente". 0 errores de consola.
+  - **Nota de método (error propio, 2da vez en la sesión):** al re-extraer una sola función con
+    `re.sub` el reemplazo contenía `\n` de los template literals y Python los interpretó como
+    escapes, rompiendo el harness. Para re-extraer, volver a generar el archivo entero — no parchear
+    con `re.sub` texto que lleva backslashes.
+
+### Clientes en el celular: la tabla se volvió tarjeta, y un bug real de la lupa (26-jul-2026, v49.64)
+El dueño mandó DOS capturas de la misma pantalla — una con scroll a la izquierda y otra a la derecha —
+y preguntó qué mejorar. Al deslizar a la derecha **se pierde el nombre**: tres filas seguidas diciendo
+`PARCIAL · RD$ 4,500` sin saber de quién son.
+- **Causa: un pendiente mío.** En la v48.54 Facturas se convirtió a `.sf-tbl` (colapsa a tarjeta en
+  móvil) pero a Clientes **solo se le puso el color** — se quedó con `<table>` dentro de `.tw`, 9
+  columnas, y la regla global `@media(max-width:480px){table{min-width:500px}}` forzándole scroll.
+- **La tabla estática pasó a `class="sf-tbl sf-cli"`** y cada `<td>` del render ganó su `data-lb`.
+  Bloque `.sf-cli` nuevo dentro del `@media(max-width:720px)` ya existente, con `order:` para el
+  orden visual **sin tocar el DOM** (reordenar movería las columnas del escritorio): nombre (100%) →
+  Pendiente + Estado → Prima · Plan · Agente → Acciones (100%). Empresa y Vigencia se ocultan con
+  `sf-tbl-hide-mb`. Etiquetas `::before` en línea para las 3 celdas chicas; ocultas en Estado y
+  Acciones (el badge y los botones se explican solos).
+- **Fila compacta:** el nombre pasó a UNA línea con elipsis (`.cli-nom`) y referencia + cédula + ARS +
+  creador a una sub-línea (`.cli-sub`). Antes "ADELMA RULLINER LUNA ALMONTE" se partía en 4 líneas.
+  El nombre del agente se recorta con elipsis en vez de envolverse y salirse de la tarjeta.
+- **BUG REAL encontrado MIDIENDO, no a ojo (v49.57, mío):** la lupa medía **19px de alto** cuando su
+  CSS dice 42px. Causa: `nxBuscaFiltroHTML()` llamaba a `nxBuscaEnsureCSS()` (el CSS del *campo*)
+  pero **no a `nxBuscaFiltroCSS()`** — que solo se invocaba desde `nxBuscaFiltroAbrir()`. O sea el
+  botón salía **sin ningún estilo hasta que se abría la ventana una vez**; en la captura del dueño se
+  ve como un iconito pelado. Afectaba también a Facturas. Arreglado llamándolo también al renderizar.
+  Se le sumó una opción `label` (retrocompatible) y ahora dice **"Buscar"** en las dos pantallas.
+- **Pestañas:** `.nxft-flex` es una tira con scroll horizontal y **la barra oculta a propósito**, así
+  que la última pestaña (VIP/Inhabilitados) no se veía ni había cómo llegar a ella. En ≤620px ahora
+  envuelve (`flex-wrap:wrap`) en vez de deslizarse: nada queda cortado.
+- **Filtros y rótulos:** los 3 `<select>` con `flex:1 1 0;min-width:0` y etiquetas cortas (Plan /
+  Estado / Agente) caben en una fila. Los rótulos de los KPI (`.lb`/`.sub`) pueden ocupar 2 líneas en
+  ≤480px en vez de cortarse ("CON BALANCE PENDIE…") — **el monto (`.v`) sigue protegido** como se
+  decidió en la v48.56, solo se relajaron etiqueta y subtítulo.
+  - **Detalle de orden en la cadena (misma trampa que la v49.35):** la primera versión de esa media
+    query se insertó en el primer bloque `@media(max-width:480px)` del archivo, que va ~230 líneas
+    ANTES de la regla base `.nxSf .sf-kpi .lb` — misma especificidad, gana la última, no hacía nada.
+    Se movió justo después de la regla base. Verificar la POSICIÓN, no solo la especificidad.
+- **Una alternativa se probó y se descartó con medición:** meter Acciones en la misma fila que
+  Pendiente/Estado bajaba la tarjeta de 167px a 149px, pero la captura mostró los botones cayendo en
+  medio de la tarjeta con Prima/Plan flotando al lado. 18px no valen una tarjeta desordenada — se
+  volvió al reparto limpio de 4 filas.
+- Verificado con Playwright y el código real extraído por contenido (`rCli`, `pintarLupaCli`,
+  `nxBuscaFiltroHTML/CSS` + ~20 helpers reales y el CSS real), servido por HTTP y con los 3 clientes
+  de la captura del dueño: en 390px cada cliente es una tarjeta de 167px con **cero desborde**
+  (página y contenedor de tabla en 0), el nombre y el pendiente siempre visibles, la lupa mide
+  **92×42** con su texto, y en 1280px la tabla sigue con sus 9 columnas igual que antes. 0 errores de
+  consola.
+  - **Nota de método (error propio):** al armar el harness escribí
+    `open(f,'w').write(... + open(f).read())` — Python trunca el archivo al abrirlo para escritura
+    ANTES de evaluar el argumento, así que la lectura devolvió vacío y borré el extracto. Nunca leer
+    y escribir el mismo archivo en una sola expresión.
+
+### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
+El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
+contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le
+ahorra tiempo:
+1. **La tarjeta ocupaba ~200px con 95 facturas** → 3 por pantalla, ~32 pantallas de scroll. De sus
+   8 líneas etiquetadas, **3 no aportaban**: `ARS —` (la mayoría de sus clientes no tienen ARS
+   registrada), **Total y Balance mostrando el MISMO número** (solo difieren si hubo abono parcial),
+   y la etiqueta "ACCIONES". Además el balance —lo que hay que cobrar— iba chiquito abajo, con el
+   mismo peso que la fecha (contra NPGS §14). Reestructurada: nombre + BALANCE grandes arriba,
+   pastilla de estado en `position:absolute` arriba a la derecha, resto en una línea de 10.5px.
+   **Medido: 200px → 111px.**
+   - **Cómo, sin romper el escritorio ni Historial de pagos:** la tabla ganó una clase extra
+     `sf-fact` y TODO el CSS nuevo va scopeado a ella dentro del `@media(max-width:720px)` que ya
+     existía. El orden visual se cambió con `order:` — **no** reordenando el DOM, que habría movido
+     las columnas del escritorio. Ocultar ARS/Total reusa la clase `sf-tbl-hide-mb` que ya existía.
+2. **El KPI "Pagadas" siempre marcaba 0**: contaba las pagadas DE LA LISTA, y con el filtro en
+   "Pendientes" esa lista las excluye por definición. Cambiado por **ATRASADAS** (facturas de meses
+   anteriores sin pagar, respetando el corte 20-al-20 igual que el filtro `atrasadas`), en rojo si
+   hay alguna y clicable para ir a verlas.
+3. **El botón rojo de anular estaba del mismo tamaño y pegado a Cobrar** — contra NPGS §4
+   ("eliminar nunca junto a la acción principal") y §10 ("agrupar en ⋮ Más acciones"). A la vista
+   quedan **Cobrar** y **WhatsApp**; Ver factura / Corregir precio / Anular pasaron a `nxFactMenu`.
+   El menú usa `position:fixed` con la posición REAL del botón (`getBoundingClientRect`) **acotada
+   al ancho de la pantalla** — misma lección del menú del POS (v48.99), donde un popup posicionado
+   dentro de un contenedor angosto se salía por el borde en el celular.
+4. **El buscador pasó a la ventana del §5**, mismo patrón de riesgo mínimo que Clientes: `#factQ`
+   sigue existiendo oculto, así que `rFact()` lee el término igual que siempre.
+- Verificado con Playwright y el código real de `rFact`/`nxFactMenu`/`pintarLupaFact` + el CSS real
+  extraído: **20 comprobaciones** — alto de tarjeta 111px, sin etiquetas repetidas, ARS vacía
+  oculta y ARS real visible, Total oculto cuando repite el balance y visible cuando hubo abono, el
+  3er KPI dice Atrasadas con el número correcto, 3 botones a la vista, el menú abre con las 3
+  opciones y **no se sale de la pantalla** (left=165, right=365 en 390px), elegir dispara la acción
+  y cierra, la ventana de búsqueda filtra y la ✕ devuelve todas, Cobrar sigue funcionando, sin
+  desborde, 0 errores de JS.
+
+### BUG MÍO en producción: salía código escrito en el Inicio (26-jul-2026, v49.58)
+El dueño mandó una captura de su iPhone: en el Dashboard aparecían pedazos de JavaScript como
+texto (`VITCHTAB('COB'),200)`, `{VAR ETELEMENTBYID('FFA…`) encima de los accesos **Clientes** y
+**Facturas Pendientes**, y esos dos botones no respondían.
+- **Causa raíz, mía, de la v49.55:** al agregar el teclado a los 108 elementos clicables usé
+  `<(div|tr|td|li|span|a)\b[^>]*\bonclick\s*=[^>]*>` — y **`[^>]*` se detiene en el PRIMER `>`**.
+  Los `onclick` que llevan una **función flecha `=>`** tienen un `>` por dentro, así que la
+  coincidencia terminaba a mitad del atributo y mis atributos nuevos se insertaban ahí, partiendo
+  el `onclick` en dos: la primera mitad quedaba como atributo roto y el resto salía a la pantalla
+  como texto suelto.
+- **Por qué no lo atrapó la verificación:** `node --check` valida SINTAXIS de JavaScript, y el
+  archivo seguía siendo JavaScript válido — el daño era en el HTML dentro de una cadena. Las
+  pruebas Playwright de esa versión midieron el menú lateral (`.ni`) y un botón de ícono, que no
+  tienen flechas. **Lección: una transformación mecánica sobre HTML no se valida con un chequeo de
+  sintaxis de JS; hay que renderizar los elementos tocados.**
+- **Detección:** un verificador que, por cada inserción, retrocede hasta el `<` que abre la
+  etiqueta y comprueba que **las comillas estén balanceadas** antes de la inserción. Dio 4 rotas en
+  `index.html` y 0 en `parches.js`.
+- **Reparación:** por cada una, quitar la inserción de donde quedó y volver a ponerla antes del
+  `>` que de VERDAD cierra la etiqueta, encontrado con una máquina de estados que respeta comillas
+  (no con otra expresión regular). Las 4: los 2 accesos rápidos del Dashboard, el KPI "En proceso"
+  y la zona de soltar documentos.
+- **Comprobación final, más estricta:** las 108 inserciones revisadas una por una — cada una debe
+  quedar justo antes del cierre real de su etiqueta. Salieron 107 bien y **1 falso positivo** del
+  propio verificador (`notif-item`, donde las comillas viven dentro de una cadena de JavaScript en
+  un template literal, no del HTML) — revisado a mano y correcto.
+- **Verificado en navegador con el marcado REAL** del bloque `.qa-g` extraído del archivo: los 6
+  accesos rápidos se ven con su etiqueta correcta, **cero código filtrado como texto**, y un clic
+  real dispara `nav()`. 0 errores de JS.
+
+### NPGS §5 — Fase 3 arrancada: la ventana de filtro compartida + Clientes (26-jul-2026, v49.57)
+El dueño zanjó el conflicto C2 con **"aplicar los reglamentos"** — cumplimiento literal del §5, que
+ya había elegido en la v49.36 y reafirmó ahora después de que la enmienda lo reabriera. Se procede
+con su decisión: los ~24 buscadores "filtrar lo que ya veo" pasan a ventana.
+- **Inventario real medido** (no el del documento, que estaba desactualizado): **25 buscadores
+  renderizados por función** (`posBuscador` 14, `agBuscador` 6, `prBuscador` 3, `rfBuscador` 2,
+  `vhBuscador`/`mdBuscador`/`pendBuscador` 1 c/u, `nxBuscaHTML` directo 3) **+ 5 escritos a mano
+  como HTML estático** en `index.html` (`cliQ`, `polQ`, `cobQ`, `factQ`, `pgBuscar`) — estos
+  últimos no aparecen buscando llamadas a función, hay que buscar el `id=` en el markup.
+- **UN SOLO motor nuevo, `nxBuscaFiltroHTML` / `nxBuscaFiltroAbrir`** (`index.html`, junto a
+  `nxBuscaHTML` y `ModalBusquedaBase`) — no 24 ventanas (NPGS §6). Renderiza **solo la lupa** + una
+  pastilla con el término activo y su ✕; al tocarla abre una ventana con **Buscar · Recientes ·
+  Favoritos · Filtros · Resultados**, tal cual el §5.
+  - **Diferencia con `ModalBusquedaBase`:** aquel ELIGE un registro de un catálogo y lo devuelve a
+    un formulario; este solo FILTRA lo que ya está en pantalla. Reusa `nxBuscaHTML` por dentro como
+    caja de búsqueda y `mbbLSGet`/`mbbLSSet`/`MBB_REC_MAX`/`MBB_FAV_MAX` para Recientes/Favoritos.
+  - **`onterm` es una FUNCIÓN, no un string** (a diferencia de `onElegir` de `ModalBusquedaBase`):
+    casi todos los handlers de `parches.js` viven dentro de un IIFE y NO están en `window`, así que
+    un string no los alcanzaría. La config se guarda en un registro `window.__nbfReg[id]`, y el
+    HTML del botón solo lleva `nxBuscaFiltroAbrir('id')`.
+  - **"Resultados" honesto:** el componente no sabe pintar filas de 24 módulos distintos, así que
+    cuenta las filas reales del contenedor que le pasa el llamador (`cont:`) y muestra "N
+    resultados" en vivo mientras escribes. Al aceptar cierra y la lista de atrás queda filtrada.
+- **Primera pantalla migrada: Clientes de Seguros (`cliQ`).** Patrón de migración de **riesgo
+  mínimo**, el que se repetirá en las demás: el `<input id="cliQ">` **sigue existiendo, oculto**
+  (`type="hidden"`), así que `rCli()`/`rCliBuscar()` leen el término exactamente igual que antes —
+  **cero cambios en la lógica de filtrado**. Lo único nuevo es `pintarLupaCli()`, llamada desde
+  `rCli()`, que pinta la lupa y le pasa un `onterm` que escribe en ese input y vuelve a llamar
+  `rCliBuscar()`.
+- **Verificado con Playwright, código real extraído del archivo** (`nxBuscaEnsureCSS`,
+  `nxBuscaHTML`, los helpers de localStorage y todo el bloque `nxBuscaFiltro*` tal cual), servido
+  por HTTP local (localStorage necesita un origen real): **17 comprobaciones** — solo se ve la
+  lupa y no queda ninguna barra fija, la ventana trae campo/Recientes/Resultados, escribir filtra
+  la lista de atrás y el contador dice "2 resultados", aceptar cierra dejando la pastilla y la
+  lista filtrada, reabrir muestra lo buscado en Recientes, la estrella lo guarda en Favoritos,
+  elegir un guardado filtra y cierra, y la ✕ de la pastilla lo quita todo. Sin desborde en 390px,
+  0 errores de JS.
+  - **2 fallos iniciales eran de la prueba, no del código:** el CSS pone los títulos de sección en
+    MAYÚSCULAS (`text-transform:uppercase`) y yo comparaba contra "Recientes"/"Favoritos" en
+    minúscula — `innerText` devuelve el texto RENDERIZADO. Corregida la comparación, 17/17.
+- **Pendiente:** los otros ~24 buscadores. Se migran en tandas con este mismo patrón (input oculto
+  + `nxBuscaFiltroHTML`), cada tanda probada antes de publicar. Se publicó **una sola pantalla
+  primero** a propósito, para que el dueño pruebe la sensación real en su iPhone antes de que
+  cambien Facturas, Cobros y Vender — las que usa todos los días.
+
+### Los 3 respaldos: cerrados, y el respaldo diario ya no dejaba fuera medio sistema (26-jul-2026)
+Continuación directa de lo de abajo. Al aplicar el mismo arreglo a `respaldo-diario`,
+`respaldo-correo-mensual` y `verificar-respaldo` aparecieron **dos cosas más graves que el hueco
+que se venía a cerrar**:
+- **La clave de Gmail seguía escrita en texto plano en 2 funciones.** La Ronda 1 la sacó de
+  `enviar-reporte-email` pero **`verificar-respaldo` y `respaldo-correo-mensual` la tenían igual**,
+  y las dos son públicas. El dueño ya rotó esa clave, así que ese valor concreto quedó neutralizado
+  — pero las 2 funciones estaban rotas desde entonces (no podían enviar). Ahora las 3 leen el
+  Secret `GMAIL_PASS`, igual que la primera. **Lección: cuando se saca un secreto del código, hay
+  que buscarlo en TODAS las funciones, no solo en la que se está mirando.**
+- **`respaldo-diario` dejaba fuera 59 tablas con datos.** Su lista de tablas estaba **escrita a
+  mano** hacía un año: cubría el núcleo de Seguros y **nada** del POS, Rifas, Consultorio, AGUAPRO,
+  Financiamiento, Clientes SaaS ni NEXUS AI CONTENT — ni siquiera `organizaciones`/`profiles`, sin
+  las cuales no se podrían restaurar los logins. Un respaldo que no respalda el negocio es peor que
+  no tenerlo: da confianza falsa. Ahora la lista **se descubre sola** con
+  `tablas_para_respaldo()` (SQL `SECURITY DEFINER`, `EXECUTE` solo para `service_role`), así que un
+  módulo nuevo entra al respaldo sin que nadie se acuerde. **`cron_secretos` se excluye a
+  propósito** — meterla pondría los secretos compartidos dentro de un archivo del bucket.
+  Queda `TABLAS_MINIMAS` como red de seguridad si la consulta fallara.
+- **El peligro real de dejar `respaldo-diario` abierta** (por eso no era solo "spam"): rota y
+  conserva **solo 4 copias**. Cualquiera podía llamarla 4 veces seguidas y **borrar todo el
+  historial de respaldos reales**, dejando 4 copias idénticas del mismo instante.
+- **Las 3 llevan ahora el mismo `x-cron-token`** (secretos propios en `cron_secretos`), y los jobs
+  5, 6 y 7 se actualizaron para mandarlo. De paso se descubrió que esos 3 jobs llevaban años
+  mandando un `Authorization: Bearer` que **era la clave anónima** — no protegía nada.
+- **Verificado con llamadas HTTPS reales:** las 3 sin token → **401**; `verificar-respaldo` con
+  token → **200** con datos correctos (último respaldo, 4 copias); `respaldo-diario` con token →
+  generó un respaldo de **10.46 MB frente a los 4.43 MB del día anterior** — la prueba medida de
+  que ahora sí entra todo (la lista de respaldo mínima es MÁS corta que la vieja, así que un fallo
+  del descubrimiento habría dado menos de 4 MB, no más de 10).
+- **Efecto de la prueba, dicho claro:** esa llamada creó un respaldo real y la rotación sacó el más
+  viejo (22-jul). Se cambió una copia vieja parcial por una nueva completa.
+
+### El reporte diario ya no lo puede disparar cualquiera desde internet (26-jul-2026, v49.56)
+Punto #6 de la lista. `enviar-reporte-email` es `verify_jwt:false` (tiene que serlo, la llama un cron)
+y **no comprobaba nada**: un `POST` desde cualquier parte del mundo disparaba el reporte del dueño.
+- **Hallazgo que cambió el plan (por eso NO se hizo lo obvio):** la lista decía "poner
+  `verify_jwt:true`". **Eso no habría protegido nada** — la clave anónima es PÚBLICA (va escrita en
+  `index.html`, tiene que estar ahí para el login) y el gateway de Supabase la acepta como un JWT
+  válido. Comprobado de verdad, no supuesto: con la clave anónima la función responde **401**.
+  La comprobación real tiene que estar DENTRO de la función.
+- **`quienLlama(req, supabase)`** (nueva, arriba de `Deno.serve`): acepta solo dos. (1) El **cron**,
+  que manda un **secreto compartido** en el header `x-cron-token`; (2) un **usuario logueado con rol
+  admin** (`auth.getUser(token)` → `profiles.rol==='admin'`). Cualquier otra cosa: 401 con el motivo
+  concreto. También acepta la service_role por si hace falta una llamada manual.
+- **Tabla nueva `cron_secretos`** (migración `cron_secretos_para_funciones`): RLS **activado y CERO
+  políticas a propósito** — ni `anon` ni `authenticated` la ven; solo la service_role, o sea solo la
+  función Edge por dentro. El secreto se generó con `gen_random_bytes(32)` dentro de la propia base:
+  **nunca pasó por el navegador ni por este chat**.
+- **Por qué un secreto compartido y no la service_role key:** se descubrió que los 3 jobs de respaldo
+  (`respaldo-diario`/`respaldo-correo-mensual`/`verificar-respaldo`) llevaban años mandando un
+  `Authorization: Bearer` que **es la clave ANÓNIMA**, no la de servicio (decodificada su carga:
+  `"role":"anon"`). La base no puede firmar un token de servicio (`app.settings.jwt_secret` no es
+  visible desde SQL, `pgjwt` no está instalado), así que la única salida sin pedirle nada al dueño
+  era un secreto que ambos lados sí pueden leer. **El primer intento falló justo por esto** — el cron
+  salió 401 en la prueba, y ahí se destapó que la clave guardada no era la que se creía.
+- **Frontend (`nxProbarReporte`, `parches.js`):** el botón "Enviar reporte de prueba" mandaba
+  `api.key` (la anónima); ahora manda `api.token || api.key` — el token de la SESIÓN — más `apikey`
+  aparte. Mismo patrón que `API.hdr()` usa en todo el resto del sistema.
+- **Verificado con llamadas HTTPS reales** (`pg_net`, la única salida de red de este entorno) contra
+  la función ya desplegada: sin credencial → **401**; con la clave anónima pública → **401**; con un
+  token de cron inventado → **401**; **como el cron real → pasa la puerta** (llega al aviso de
+  `GMAIL_PASS`, que es el pendiente del dueño, no una regresión).
+- **NO verificable desde aquí (queda al dueño, y se sabe cómo se ve):** la ruta del admin necesita un
+  JWT de sesión real, que este entorno no puede emitir. Está construida sobre dos cosas ya
+  confirmadas por SQL (`profiles.rol` de sterlin08 es `admin`). **Prueba para el dueño:** al tocar
+  "Enviar reporte de prueba", si sale *"Falta el secreto GMAIL_PASS"* la puerta lo dejó pasar (bien);
+  si saliera *"No autorizado"*, no.
+- **Pendiente del mismo tipo, NO hecho (se documenta, no se improvisa):** `respaldo-diario`,
+  `respaldo-correo-mensual` y `verificar-respaldo` siguen abiertas igual — cualquiera puede
+  dispararlas (llenar el bucket de respaldos, mandar correos). El arreglo es idéntico: un
+  `x-cron-token` propio en `cron_secretos` + la misma puerta. Son 3 redespliegues completos.
+
+### Borradas 5 tablas muertas que estaban abiertas a cualquier usuario (26-jul-2026)
+Punto #4 de la lista de pendientes. Eran andamiaje de cosas que nunca se conectaron, y las 5 tenían
+RLS `USING(true)` **para cualquier usuario logueado de cualquier empresa** — o sea, Francis o el
+doctor podían borrarlas enteras.
+- **`roles` (5), `permissions` (37), `role_permissions` (59), `user_permissions` (0)** — un sistema
+  de permisos que jamás se enganchó al frontend. **Verificado antes de borrar, no asumido:** cero
+  referencias en `index.html`/`parches.js`, cero claves foráneas apuntándoles, y `permissions.name`
+  estaba **NULL en las 37 filas** (ni siquiera era configuración real). El sistema de permisos que
+  SÍ funciona es `configuracion.roles_perms` (jsonb) → `localStorage nx_roles_perms` →
+  `tienePermiso()`, confirmado leyendo la función. Los 5 roles guardados (ADMINISTRADOR/SUPERVISOR/
+  AGENTE/CAJERO/COBROS) quedaron registrados en el chat antes de borrar, por si alguna vez se
+  quisieran de referencia.
+- **`changelog`** — una tabla con **una sola columna (`id`)**, **cero filas** y cero referencias. El
+  historial de versiones que ve el dueño vive en `version.json`, no aquí.
+- **Resultado medido:** ya no queda **ninguna** tabla con `USING(true)` de escritura en toda la base.
+  Las 2 que siguen con `USING(true)` son de **solo lectura** y a propósito: `organizaciones`
+  (el login necesita leerla antes de que haya sesión — sus escrituras ya son solo-admin desde la
+  Ronda 1) y `ai_content_niches` (catálogo global de plantillas; escribir sigue siendo solo-admin).
+- Migraciones `borrar_tablas_permisos_muertas` y `borrar_tabla_changelog_vacia`. Cero cambios de
+  código.
+
+### Accesibilidad — el sistema completo se puede usar sin mouse (26-jul-2026, v49.55)
+Cierra el punto #3 de la lista: los 144 botones de solo ícono sin nombre y los 112 elementos
+clicables sin teclado que la Ronda 3 había dejado explícitamente sin tocar ("hay que redactar cada
+etiqueta a mano" / "hay que decidir caso por caso").
+- **Botones de solo ícono: 328 → 0 sin nombre.** Los 144 que faltaban no tenían ningún `title` de
+  donde derivar la etiqueta, así que se **escribieron a mano en español**, agrupando por (ícono +
+  función que llama): se midieron **82 pares distintos** cubriendo los 150 botones, y cada uno se
+  redactó por lo que de verdad hace — "Eliminar este artículo", "Editar este empleado", "Registrar un
+  pago al proveedor", "Limpiar el patrón", "Borrar el último dígito", "Página anterior". Los 6
+  botones de editar de NEXUS AI CONTENT (que llamaban todos a `nxAiEditar(n)`) se desambiguaron
+  mirando dentro de qué tarjeta vive cada uno: Empresa / Nicho / Objetivos / Público / Marca /
+  Pilares.
+- **108 elementos clicables que no son `<button>`** (menú lateral `.ni`, accesos rápidos del
+  Dashboard `.qa`, filas de tabla, tarjetas de préstamo/vehículo, chips de IMEI, tiles de
+  configuración, números de cuenta que se copian al tocarlos) ahora llevan `tabindex="0"` +
+  `onkeydown` que dispara la misma acción con Enter o Espacio. **`role="button"` sí para div/span/a,
+  NO para `<tr>`/`<td>`** — ponerle rol de botón a una fila la saca del árbol de la tabla para el
+  lector de pantalla, que es peor que el problema que resuelve.
+- **Detalle técnico que importa para el futuro:** el `onkeydown` usa `event.keyCode==13||
+  event.keyCode==32` en vez de `event.key==='Enter'` **a propósito** — la mayoría de estas etiquetas
+  viven dentro de cadenas de JavaScript delimitadas por comilla simple en `parches.js`, y una comilla
+  simple dentro del atributo habría cortado la cadena. `keyCode` no necesita ninguna comilla. El
+  handler llama `this.click()` en vez de repetir el `onclick`, así que no hay lógica duplicada ni
+  problemas de comillas anidadas.
+- **11 elementos se dejaron SIN teclado a propósito** (y así debe quedarse): las capas de fondo que
+  cierran una ventana al tocar afuera (`.overlay`, `.gs-overlay`, `.cs-overlay`, `#mobOverlay`,
+  `.nxFP-sideOverlay`, `.nxTBackdrop`), los `<td>`/`<div>` cuyo único trabajo es
+  `event.stopPropagation()`, y el tile de producto de AGUAPRO cuyo `onclick` queda **vacío** cuando
+  no hay existencia. Darles foco crearía paradas de Tab que no hacen nada.
+- **Aro de foco nuevo** para todo esto (`[tabindex="0"][role="button"]:focus-visible` +
+  `tr/td[tabindex="0"]`, azul 2px con `outline-offset:-2px` para que no se salga de la fila).
+- Verificado con Playwright cargando el **CSS y el marcado reales extraídos del archivo**: Tab llega
+  al primer ítem del menú lateral con `role=button`, el aro se mide como `solid 2px rgb(37,99,235)`
+  (no a ojo), **Enter** dispara `nav('dashboard')`, **Espacio** dispara `nav('facturas')` sin
+  desplazar la página, y un botón de ícono recibe el foco con su nombre accesible — 0 errores de JS.
+- Cambio 100% aditivo: solo atributos nuevos y una regla CSS. Ningún id, función, color, posición ni
+  texto visible cambió. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Sigue pendiente de la Ronda 3:** los **14 selectores sin etiqueta** (hay que mirar el contexto de
+  cada uno, no se puede mecanizar).
+
+### SISTEMA ÚNICO DE BOTONES en todo el ERP (NPGS §12, 25-jul-2026, v49.52)
+El dueño pidió "aplicar las skills de diseño" a los **botones**. Se cargaron `ui-ux-pro-max` y
+`frontend-design`, pero el estándar que manda ya estaba escrito: **NPGS §12** ("todo el ERP debe
+compartir exactamente: tipografía · iconos · **botones** · sombras · bordes…"). `DESIGN_SYSTEM.md`
+tenía documentado que las **alturas** ya se habían normalizado (C4, v49.34) pero que seguían
+existiendo **5 familias de clases de botón** con formas distintas.
+- **Auditoría con medición real, no a ojo** (Playwright cargando el CSS REAL de los 2 archivos en
+  el MISMO orden que producción — `index.html` primero, lo que inyecta `parches.js` después):
+  16 botones representativos de las 5 familias daban **7 radios distintos** (0/7/8/9/11/12/14 px)
+  y **6 pesos de letra** (400/500/600/700/800/900), con `:hover`/`:active`/`:focus-visible`
+  ausentes en la mayoría y `:disabled` con 4 opacidades diferentes (.4/.45/.5/.55) o ninguna.
+- **Arreglo — un solo bloque de CSS en `index.html`**, no 5 ediciones dispersas: normaliza SOLO la
+  forma y los estados de las 5 familias (`radius:10px`, `font-weight:700`, piso de letra 12px,
+  `transition` explícita, `hover`/`active` por brillo, `disabled` opacidad .5 + `not-allowed`,
+  `focus-visible` con el acento de SU app). **El color no se toca** — cada app conserva el suyo
+  (enmienda "un color por app" del NPGS §12).
+  - **Por qué `html body …` + `!important`:** `parches.js` inyecta su CSS DESPUÉS de `index.html`,
+    así que sin ese blindaje ganaría el suyo. Mismo patrón ya usado y documentado con el sidebar
+    del POS y el de Financiamiento. Además `.btn.bsm.bghost` (0,3,0) le gana a `html body .btn`
+    (0,1,2) por especificidad — el `!important` cubre ese caso sin tener que enumerar todos los
+    compuestos posibles.
+  - **`:active` con `filter:brightness()`, NUNCA `transform`** — el propio CLAUDE.md ya advierte
+    que `transform:scale` en `:active` dentro de ventanas con `backdrop-filter` hace que el botón
+    se "infle" en iPhone. El brillo no mueve nada de sitio.
+  - **Excluidos a propósito** (no son botones de acción): chips/pastillas de filtro, pestañas,
+    filas del menú lateral (26px, decretadas así en v47.6), steppers +/− de las tablas,
+    `.nxFP-qbtn` (mosaico de acceso, es una tarjeta) y los botones circulares por diseño
+    (`.mbbFavBtn`, `.mbbHead button`).
+- **Lo único que podía cambiar el ancho se midió aparte:** subir la letra de `.btn` (11px) y
+  `.bsm` (10px) al piso de 12px. Se probaron 4 filas reales del peor caso (acciones de WhatsApp
+  masivo, filtros de Auditoría, barra de un modal, íconos de fila de tabla) a 390px — **ninguna
+  cambió de alto ni se desbordó** (las filas ya usan `flex-wrap` y tenían holgura). Honesto: son
+  4 casos representativos, no los 137 sitios que usan `.btn`.
+- Verificado con **24 comprobaciones Playwright** midiendo el CSS real: los 16 botones quedan con
+  **un solo radio (10px) y un solo peso (700)**, ninguna etiqueta bajo 12px, los 4 deshabilitados
+  con la misma opacidad y `cursor:not-allowed`, todos con transición, el aro de foco visible en
+  las 5 familias y **con el color de su app** (POS azul ≠ Financiamiento morado), los 4 colores de
+  marca intactos (verde Guardar, azul Cobrar, azul Seguros, morado núcleo) y las alturas NPGS §3
+  sin romperse (44/40/34). Capturas antes/después revisadas. Llaves del CSS balanceadas (734/734),
+  `node --check parches.js` limpio, los 3 `<script>` de `index.html` pasan `new Function()`.
+- **Pendiente si el dueño quiere seguir:** unificar también el **tamaño de letra por rol**
+  (hoy va de 12 a 15px según la clase; NPGS no lo especifica) y los **iconos** dentro de los
+  botones (tamaños 15/17/18px según la familia). Se dejó fuera de esta ronda a propósito: son las
+  dos cosas que sí mueven el ancho del botón y merecen su propia medición.
+
+### POS · Ajustes — rediseño visual (Tanda 3, pieza 3, CIERRA LA FASE 4, 25-jul-2026, v49.51)
+`renderAjustes()` (la última pantalla del POS que quedaba con el diseño viejo) reskineada al look
+premium `.nxPf` — mismo patrón que Caja/Compras/RRHH: salida envuelta en `.nxPf .nxAjWrap` +
+`nxPfEnsureCSS()`. Las 8 secciones (Numeración de facturas · Recargo por mora · Garantía de
+reparación · Secuencias de documentos · Roles y accesos · NCF · Vendedores y comisiones · Zona de
+peligro) pasaron de una sola columna con separadores `border-top` a **8 tarjetas `.card` con su
+`h4` + icono de color** (helper nuevo `ajCard(ico,color,titulo,desc)`, patrón `.card/h4` ya usado
+en Contabilidad/Financiamiento). Los campos `.fr`/`.fr-row` viejos pasaron a `.g2`/`.fld`/`.inw`
+(los del formulario de artículo) y los botones a `.ab g2/g3/g4 sm`. CSS nuevo scopeado a
+`.nxAjWrap` (encabezados de tabla azules, filas theme-aware, `max-width:660px`, `ajd`/`ajbtns`) —
+en modo oscuro ya no quedan recuadros ni campos blancos (antes tenían `#fff`/`#1e293b`/`#475569`
+hardcodeados). **Cero cambios de lógica:** los 5 ids de campo (`cfgPrefCo`/`cfgPrefCr`/`cfgMoraPct`/
+`cfgMoraDias`/`cfgGarantiaRepDias`) y los 16 `onclick`/`onchange` (`nxPosGuardarCfg`/`nxPosGuardarMora`/
+`nxPosGuardarGarantiaRep`/`nxSecNueva`/`nxSecHistTodos`/`nxSecEdit`/`nxSecHistorial`/`nxRolNuevo`/
+`nxStaffNuevo`/`nxAccesoEdit`/`nxRolPreview`/`nxNcfNuevo`/`nxNcfEdit`/`nxVendNuevo`/`nxVendEdit`/
+`nxLimpiarPruebas`) quedaron idénticos; solo se agregaron `aria-label` a los botones de solo-ícono
+de las tablas. Verificado con 39 pruebas Playwright del código real (`renderAjustes`/`ajCard`/
+`ajustesSecuencias`/`ajustesRoles`/`ajustesNCF`/`ajustesVendedores`/`rolesLista` extraídos por
+contenido + CSS real de `nxPfEnsureCSS`, con datos simulados): 8 tarjetas con los títulos
+correctos, los 5 campos con su valor real, los 16 handlers enganchados, secuencias/NCF/vendedores/
+roles mostrando sus datos reales, sin desbordes en 390px ni 1280px, 0 errores de consola, y en
+modo oscuro tarjetas/campos/encabezados oscuros (medido con `getComputedStyle`, no a ojo).
+`node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+`version.json` válido. **Con esta pieza cierra la Tanda 3 y la Fase 4 completa** — los ~17 módulos
+internos del POS están todos en `.nxPf`.
+- **Nota del harness (repetida a propósito):** el bloque extraído YA declara `const NCF_DESC` — no
+  hay que volver a declararlo en los stubs o el `<script>` entero muere con
+  "Identifier already declared" y la página queda en blanco (pasó al construir esta prueba).
+
+### POS · Recursos Humanos / Nómina — rediseño visual (Tanda 2, cierre, 25-jul-2026, v49.24)
+`renderRRHH()` (pestañas Empleados y Nóminas del POS) reskineado al look premium `.nxPf` — mismo patrón
+que Historial/Kardex/Reportes (v49.05-06): salida envuelta en `.nxPf .nxRhWrap` + `nxPfEnsureCSS()`,
+KPIs `.nxCtaKpis`/`.nxCtaKpi` → `kpiPf()`/`.kpirow` (Empleados activos/Nómina mensual en `rhEmpleados`;
+Total bruto/Deducciones/Neto en `rhNominaDetalle`), y CSS scopeado a `.nxRhWrap` para las tablas
+(encabezado azul `--pf-blue-l`, filas theme-aware). **Cero cambios de cálculo** — nómina, deducciones de
+ley (SFS 3.04%/AFP 2.87%/ISR), recibos y contabilidad (`postAsientoNomina`) intactos; solo el "vestido".
+Verificado con 21 pruebas Playwright del código real (funciones `renderRRHH`/`rhEmpleados`/`rhNominas`/
+`rhNominaDetalle`/`kpiPf` extraídas + CSS real de `nxPfEnsureCSS`, con empleados/nóminas simulados): 2
+KPIs en Empleados, 3 en el detalle de nómina, 0 `.nxCtaKpi` viejos, tabla con 3 empleados / 2 líneas de
+nómina, neto 64,800 correcto, variables de tema oscuro aplican en `.nxPf`, sin desbordes en 390px ni
+1000px, 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+`new Function()`; `version.json` válido. **Con esta pieza cierra la Tanda 2** de la Fase 4 (Reparaciones,
+Kardex, Historial de ventas, Reportes, Recursos Humanos — todos en `.nxPf`). **Pendiente Tanda 3**
+(riesgo alto, dinero): Compras, Caja (arqueo), Ajustes (Contabilidad ya está en `.nxPf` desde v49.03).
+
+### POS · Reparaciones — modal de diagnóstico (`nxRepVer`) rediseñado (23-jul-2026, v49.09)
+El dueño pidió darle "el mismo look" al modal de diagnóstico (la ventana que abre al tocar una
+reparación, donde se ve el equipo, se mueve el estado, se escribe diagnóstico/presupuesto y se
+entrega/cobra) — para cerrar la continuidad visual con el formulario de "Recibir equipo" (v49.08).
+Es también lo que cubre lo real de la **Diagnóstico Técnico V3** y **Recepción V3** de ChatGPT
+(ambas dejadas en `chatgpt/visual-draft`): las dos convergen en las mismas 2 piezas NUEVAS que
+**deliberadamente NO se construyeron** — "Piezas a reemplazar" y "Mano de obra" como líneas — porque
+hoy el taller solo tiene un número manual `costo_piezas`, no consume piezas del inventario, y eso
+sería un módulo nuevo con esquema nuevo (pendiente de que el dueño confirme si el taller descuenta
+piezas del inventario). Todo lo demás real de esas dos specs ya está hecho entre v49.07/08/09.
+- `nxRepVer` pasó del viejo modal `.nxPrForm` al look `.nxPf` — **mismo criterio quirúrgico: todos los
+  ids (`repDiag`/`repPre2`/`repAbo2`, la clave `repEdit_<id>`) y las funciones (`nxRepEstado`/`nxRepDet`/
+  `nxRepImprimir`/`nxRepEntregar`) intactos, cero cambios de lógica**. 4 tarjetas: Equipo (+cliente/
+  tel/IMEI/recibido/técnico + caja de falla/físico/dejó), Estado (los `nxRepChip` de siempre, ahora
+  theme-aware dentro de `.nxPf`), Diagnóstico (textarea + widget de clave/patrón), Presupuesto
+  (presupuesto/avance + resumen en vivo).
+- **Barra de pasos `.nxRepFlow`** que refleja el AVANCE real: marca "on" (azul) todos los pasos hasta
+  el estado actual inclusive (`REP_ESTADOS.findIndex(estado)`), no solo el primero como en Recepción —
+  aquí es más informativo mostrar progreso. Badge de estado en el header (`.bdg2`, pill nuevo con el
+  color real del estado).
+- **`nxRepEstim` generalizado** (retrocompatible): ahora acepta `(preId, aboId, boxId)` con los
+  defaults de Recepción (`repPre`/`repAbo`/`nxRepEstimBox`) — el modal de diagnóstico lo llama con
+  `('repPre2','repAbo2','nxRepEstimBox2')`. La llamada de Recepción (`nxRepEstim()`) sigue igual.
+- CSS nuevo scopeado a `.nxPf` en `nxPfEnsureCSS()`: `.bdg2` (pill de estado) + `.nxPf .nxRepChip`/
+  `.nxPf .nxRepChip.on` (los chips globales de estado, ahora con `var(--pf-*)` para verse bien en
+  claro y oscuro — antes eran blancos hardcodeados).
+- Verificado con Playwright, código real extraído (no reconstrucción — `nxRepVer`/`nxRepEstim`/`repEst`/
+  `repDias`/`garantiaInfo`/`claveCapturaHTML`/`nxClaveBodyHTML`/`claveParse` tal cual): el modal abre con
+  6 pasos (3 "on" para una reparación en 'reparando'), los 6 chips con el activo correcto, los ids
+  presentes, el resumen calcula Presupuesto 3,500 − Avance 1,000 = Falta 2,500 (y baja a 0 al igualar),
+  4 botones cuando no está entregado / 3 cuando sí (sin "Entregar") con la garantía mostrada; capturas
+  claro y oscuro a 390px y 1280px sin desbordes, 0 errores. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Verificación de la propuesta "Recepción de Equipos V2" de ChatGPT (23-jul-2026)
+El dueño pidió verificar una spec corta que ChatGPT dejó en `chatgpt/visual-draft`
+(`docs/visual-drafts/taller/RECEPCION_EQUIPOS_V2.md`, solo texto, sin mockup) para el formulario de
+recibir equipo del taller. Auditada contra el código real (`nxRepNueva`, `REP_ESTADOS`, esquema
+`pos_reparaciones`). Veredicto (para no fingir funciones): **la mayor parte NO es visual, es construir
+funciones nuevas.**
+- **Ya existe / no requiere cambio:** IMEI y Serie ya son opcionales en `nxRepNueva` (solo Cliente/Equipo/
+  Falla llevan `*`); el código interno automático ya existe (`nextSeq('reparacion')` → `REP-#####`).
+- **Estados inventados:** la "barra de progreso" que propone tiene 8 pasos (Recibido→Diagnóstico→
+  **Presupuesto**→**Aprobación**→Reparación→**Control de calidad**→Listo→Entregado) — pero los estados
+  REALES de `pos_reparaciones` son solo 6 (recibido/diagnostico/reparando/esperando_pieza/listo/entregado,
+  +cancelado). Presupuesto/Aprobación/Control de calidad NO existen. Una barra con los 6 estados reales sí
+  se podría, pero no con los 8 del mockup.
+- **Funciones nuevas, no visuales (requieren esquema + lógica):** "Panel de Piezas a reemplazar con
+  buscador, disponibilidad y costos" — el taller NO consume piezas del inventario hoy (decisión ya
+  documentada en Fase 5 del Kardex Inteligente: `pos_reparaciones` solo tiene un costo manual, sin ligar a
+  `pos_productos`); "Panel de Mano de obra" — no existe campo de mano de obra separado. Construir esos 2
+  paneles sería un módulo nuevo (tablas/columnas + lógica), no un reskin.
+- **Se puede hacer con datos reales:** el "Resumen estimado lateral" (deriva de Presupuesto/Avance que ya
+  existen). **Conclusión comunicada al dueño:** de la V2, casi todo lo aprovechable ya existe; lo nuevo
+  (piezas + mano de obra) es construcción de funciones que se agenda aparte si el dueño la quiere, no se
+  finge. NO se implementó nada de la V2 en esta ronda (solo el reskin del kanban, arriba).
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
@@ -4581,6 +8244,65 @@ Functions) para integrarlo sin plataforma intermedia.
 - **NEXUS AI CONTENT sigue en PAUSA** (decisión del dueño, problema de configuración del secreto de
   Anthropic sin resolver del todo — ver sección arriba) — no se retomó en esta fase, es un módulo aparte.
 
+### httpSMS — puente TEMPORAL de SMS mientras se resuelve WhatsApp Business API (31-jul-2026, v53.5)
+El dueño mandó una captura del proyecto **httpSMS** (`github.com/NdoleStudio/httpsms`, AGPL-3.0 —
+Android como pasarela de SMS reales) preguntando qué era. Se le explicó y, con `AskUserQuestion`
+(la ambigüedad era real: podía ser "reemplazo temporal de WhatsApp", "canal aparte permanente" o
+"solo para pruebas"), confirmó **"Reemplazo temporal de WhatsApp"** — mientras la verificación de
+negocio de Meta (FASE 3, arriba) sigue bloqueada, mandar SMS real de verdad en vez de solo el enlace
+manual `wa.me`.
+- **Contrato de API verificado contra el código fuente REAL, no de memoria:** este entorno bloquea
+  `api.httpsms.com` por política de red, pero **`raw.githubusercontent.com` sí es alcanzable**
+  (confirmado con `curl` — hallazgo nuevo, útil para futuras integraciones) — se bajó el
+  `swagger.yaml` real del repo y de ahí salió el contrato exacto: `POST /v1/messages/send`, header
+  `x-api-Key`, body `{content, from, to}` en E.164, respuesta `{status, message, data}`. `from` es el
+  número del Android del propio dueño con la app httpSMS instalada; `to` es el destinatario.
+- **Edge Function nueva `sms-httpsms-enviar`** (`verify_jwt:true`, mismo patrón exacto que
+  `whatsapp-enviar-plantilla`): lee `HTTPSMS_API_KEY`/`HTTPSMS_FROM_NUMBER` con
+  `Deno.env.get(...).trim()`, exige `acepta_whatsapp===true` en el body (**reusa el MISMO
+  consentimiento** de `pos_clientes.acepta_whatsapp` — es un puente temporal, no se crea una columna
+  nueva solo para esto), normaliza el teléfono a E.164 (`aE164`, mismo criterio +1 de NANP que ya usa
+  el resto del sistema para WhatsApp), y hace el POST real a httpSMS. Si faltan los secretos, responde
+  con el error claro de siempre en vez de fallar en silencio. **Verificado desplegada y reachable con
+  `net.http_post`** (mismo método ya usado en esta sesión para probar Edge Functions sin salida a
+  internet directa): responde 500 con *"Falta configurar HTTPSMS_API_KEY y/o HTTPSMS_FROM_NUMBER…"* —
+  correcto, porque el dueño todavía no ha configurado esos 2 secretos.
+- **Enganchado SOLO en "Cuotas vencidas" del Centro de Avisos** (`renderAvisos()`, `parches.js`) —
+  a propósito, NO en Apartados ni Reparaciones: se auditó el esquema y solo `pos_financiamientos`
+  tiene `cliente_id` como FK real a `pos_clientes` (confirmado por grep, se llena desde `cliId` en
+  `nxPosConfirmar`); `pos_apartados`/`pos_reparaciones` solo guardan `cliente_nombre`/`telefono` como
+  texto libre, sin enlace confiable — no se podía revisar su consentimiento de verdad, así que no se
+  fingió el botón ahí (mismo criterio de "no fingir funciones que no existen" de todo el sistema).
+  Botón **"SMS"** azul junto al de WhatsApp verde, con `data-tel`/`data-msg` en **base64** (evita pelear
+  con comillas/apóstrofes de nombres reales dentro de un `onclick` inline — caso real probado:
+  "Juan D'León") y `data-consiente` (atenuado a mitad de opacidad si el cliente no consintió, con
+  `title` explicando por qué). `window.nxSmsEnviarBtn(btn)` bloquea con un toast de advertencia si no
+  hay consentimiento (sin llamar a la función nunca); `window.nxSmsEnviar(tel,msg,aceptaWa,btn)` llama
+  a la Edge Function con el **token de sesión real** (`api.token`, no solo la anon key — mismo patrón
+  ya usado en `nxProbarReporte`), deshabilita el botón mientras envía, y muestra toast de éxito +
+  `logAudit('SMS_ENVIADO', tel, 'POS')`, o toast de error con el motivo real del servidor si falla.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una
+  reconstrucción — `nxSmsEnviarBtn`/`nxSmsEnviar`/`renderAvisos` + sus 9 helpers reales, con balance
+  de llaves real, cargados en un navegador dentro de su propia IIFE — envolver el extracto en su
+  propia función fue necesario para que el `toast`/`esc`/`fmt` locales del módulo no se filtraran a
+  `window` y pisaran el spy de la prueba, el mismo aislamiento que la app real logra siendo un IIFE):
+  **23 comprobaciones** — 2 botones SMS (uno por cliente con cuota vencida), el que consiente sale con
+  `data-consiente=1`/opacidad completa y el mensaje decodificado trae el nombre con apóstrofe intacto,
+  el que no consiente sale atenuado y el clic queda bloqueado sin llamar a `fetch` (con su toast de
+  advertencia), el envío real llama a `fetch` UNA vez con la URL/headers (`apikey` + `Authorization`
+  con el TOKEN de sesión, no solo la clave anónima)/body (`telefono`/`mensaje`/`acepta_whatsapp`)
+  correctos, toast de éxito + `logAudit` en el camino feliz, toast de error con el mensaje real del
+  servidor cuando httpSMS rechaza, toast de error sin tronar la app cuando la red falla, el botón se
+  re-habilita y recupera su texto original después de cada intento, y las secciones de Apartados/
+  Reparaciones/Bajo stock quedan exactamente igual (sin ningún botón SMS). 0 errores de consola. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Pendiente, del dueño (no de código, mismo tipo de bloqueo que `GMAIL_PASS`):** crear cuenta en
+  httpsms.com, instalar la app en el Android que va a mandar los SMS, generar la API key en
+  httpsms.com/settings, y pegar `HTTPSMS_API_KEY` + `HTTPSMS_FROM_NUMBER` (el número de ESE teléfono,
+  formato E.164) en Supabase Dashboard → Edge Functions → Secrets — nombres EXACTOS. Mientras tanto el
+  botón avisa con el error claro en vez de fallar en silencio.
+
 ---
 
 ### AGUAPRO ERP — módulo para distribuidoras de agua, dentro de Multiempresa (10-jul-2026)
@@ -4854,6 +8576,60 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
 
 ---
 
+## ENRUTAMIENTO AUTOMÁTICO DE SKILLS (decretado por el dueño, 25-jul-2026) — OBLIGATORIO
+
+**El dueño no habla inglés y no va a escribir comandos como `/gstack-investigate`.** Pidió
+explícitamente que las skills se usen **solas**, según lo que él pida en español llano. Esta
+sección es esa regla: **es responsabilidad de Claude reconocer el caso y cargar la skill que
+corresponde, sin que el dueño la nombre.** Que el dueño no escriba el comando NO es señal de que
+no quiera el método — es que no lo conoce ni tiene por qué.
+
+### Qué skill cargar según lo que diga el dueño (en sus propias palabras)
+
+| Cuando el dueño diga algo como… | Cargar automáticamente |
+|---|---|
+| "no me funciona", "está dando error", "esto está mal", "se ve raro", manda una captura de algo roto, "¿por qué pasa esto?" | **`gstack-investigate`** — obliga a demostrar la causa ANTES de escribir el arreglo (su regla #3: "arreglos de RAÍZ, no parches") |
+| "revisa antes de publicar", "¿está bien esto?", o el cambio toca **dinero** (cobro, cuotas, contabilidad, facturación, comisiones, nómina, caja) | **`gstack-review`** — antes de abrir el PR |
+| "quiero que haga X" sin más detalle, manda un mockup/imagen/brief de ChatGPT, "hazme un módulo de…" | **`gstack-spec`** — primero convertir en especificación (qué se construye y qué NO), después programar |
+| Piden **construir/agregar algo nuevo** (una función, un botón, un módulo) — ANTES de escribir la primera línea | **`ponytail`** (modo `full`) — repasa la escalera: ¿ya existe en el repo una función/patrón que sirva? Reusarla antes de escribir código nuevo. Evita repetir el error real de los 4 intentos fallidos de ChatGPT en Vender/Prefactura (`MutationObserver` genérico adivinando el DOM en vez de editar `renderVender`/`gridHTML`, que ya existían — ver "Limpieza de 4 intentos de ChatGPT" más abajo) |
+| "¿qué construyo primero?", "¿vale la pena?", "quiero vender esto", decisiones de alcance o precio | **`gstack-plan-ceo-review`** |
+| Antes de un cambio grande de arquitectura, esquema o algo que toque varias pantallas | **`gstack-plan-eng-review`** |
+| Cualquier cosa de RLS, permisos, `organizacion_id`, aislamiento entre empresas, logins, claves | **`gstack-cso`** |
+| "el código está hecho un desastre", "¿cómo está el sistema?", limpieza general | **`gstack-health`** |
+| "¿qué hemos hecho?", cierre de una tanda grande de trabajo | **`gstack-retro`** |
+| Trabajo visual: rediseño, "que se vea mejor", mockup de interfaz | **`frontend-design`** + **`ui-ux-pro-max`**, y **`web-design-guidelines`** al terminar (auditoría de accesibilidad) |
+| Cualquier cambio de UI que haya que verificar antes de publicar | **`webapp-testing`** (Playwright contra el código real — ya es el método estándar de este proyecto) |
+
+### Reglas de sentido común (para no volverlo pesado)
+
+1. **Proporción.** Un arreglo de una línea, un cambio de texto o de color NO necesita
+   `gstack-review` ni `gstack-spec`. Estas skills son para trabajo con riesgo real: dinero,
+   esquema de base de datos, seguridad, o algo que toque varias pantallas. Si el cambio es chico
+   y evidente, hacerlo y ya — el dueño valora la velocidad tanto como el método.
+2. **Avisar en una línea, en español.** Al cargar una, decirle qué se está usando y por qué:
+   *"Voy a usar el método de investigación de causa raíz porque esto es un bug de dinero."* Así
+   se entera de lo que existe sin tener que aprender inglés ni memorizar comandos.
+3. **Él manda.** Si dice "no, hazlo directo" o "eso es muy largo", se salta la skill y se hace
+   directo. La regla es un default, no una camisa de fuerza.
+4. **Nunca traducir la salida en crudo.** Las skills están en inglés; el dueño solo debe ver
+   español llano, del que ya se usa en todo el proyecto. Nada de pegarle texto en inglés.
+5. **Este `CLAUDE.md` manda por encima de cualquier skill.** Si una skill contradice algo de aquí
+   (el flujo de publicación, "no fingir funciones", el color propio de cada app, el idioma), gana
+   este archivo. Las skills aportan MÉTODO de trabajo, no conocimiento de NEXUS PRO.
+6. **`ship`/`land-and-deploy` de gstack NO están instaladas a propósito** — el flujo de
+   publicación de este proyecto ya está definido (subir `APP_VERSION` + `version.json`, rama
+   propia → PR → fusionar con las herramientas MCP de GitHub). No buscar reemplazarlo.
+7. **`ponytail` en modo `ultra` NUNCA en Cobro/Crédito/Contabilidad/Inventario** (los reglamentos
+   de negocio, `REGLAMENTOS.md` §1-§9) — su propia filosofía es "cuestiona el requerimiento,
+   dispara el one-liner", y este sistema exige auditar antes de recortar. Modo `full`/`lite` sí se
+   pueden usar ahí — respetan la excepción de no simplificar seguridad/manejo de errores que la
+   propia skill ya trae.
+
+> Catálogo completo de las 12 skills de gstack instaladas, con qué se le quitó a cada una:
+> `.agents/skills/GSTACK-README.md`.
+
+---
+
 ## Cómo le gusta trabajar al dueño (estilo y preferencias — IMPORTANTE)
 
 Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto:
@@ -4900,6 +8676,42 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
     la lista de colores ya asignados — Deluxe dorado, Amatista dorado/morado, BayolCell su propio,
     POS azul, Rifas índigo, Consultorio teal, AGUAPRO azul marino, etc.) para no generar confusión
     entre sistemas.
+    - **CONFIRMADO Y ACOTADO por el dueño el 25-jul-2026 ("un color por app")** al resolver el
+      choque entre esta regla y el §12 de `NPGS.md`: la independencia visual entre apps **se
+      mantiene** (cada una su acento), pero **DENTRO de una app va un solo acento, sin
+      excepciones**, y todo lo demás (tipografía, iconos, botones, sombras, tablas, espaciados) es
+      idéntico en TODO el ERP. Las excepciones de color/tipografía negociadas antes de esa fecha
+      **quedan derogadas** — incluida la de Cuotas del POS (morado + Plus Jakarta Sans, v48.16),
+      que es la única desviación real que queda por normalizar (ver `DESIGN_SYSTEM.md` §6, C1).
+12. **SIEMPRE APORTAR IDEAS Y SUGERENCIAS (decretado 26-jul-2026).** Textual del dueño: *"Siempre
+    buenas ideas y sugerencias que vayan a hacer genial para cualquier proyecto o acción del
+    proyecto."* No basta con ejecutar lo pedido: **en cada entrega hay que proponer**. Reglas de cómo
+    hacerlo bien (si no, se vuelve ruido):
+    - **Verificar antes de sugerir.** Nunca proponer algo que ya existe o que el sistema no puede
+      hacer — revisar el código/esquema real primero. Una sugerencia falsa cuesta más que ninguna
+      (ej. antes de sugerir "buscar cliente por teléfono" se leyó `nxPosClientePintar` y se confirmó
+      que de verdad no filtraba por ese campo).
+    - **Priorizar por lo que le CONVIENE al negocio**, no por lo que es entretenido de programar:
+      primero lo que le va a doler si no se hace (fechas legales, cosas que están bloqueando algo que
+      ya funciona), después el dinero, después la comodidad diaria del mostrador, y al final lo
+      cosmético.
+    - **Decir el costo y el riesgo real**, y cuál recomiendo — no un menú de opciones sin postura.
+    - **Si es chico, seguro y de valor claro: hacerlo ya** en la misma entrega en vez de solo
+      proponerlo. Lo grande o lo que toca dinero/esquema se propone y se espera su OK.
+    - **Recordarle sus pendientes propios** (los que solo él puede hacer: secretos, ajustes del panel
+      de Supabase, dominios, trámites) — se le olvidan y quedan bloqueando funciones ya construidas.
+13. **EL DUEÑO NO ESCRIBE COMANDOS (decretado 25-jul-2026).** No habla inglés y no va a invocar
+    skills por su nombre (`/gstack-investigate`, etc.). **Reconocer el caso y cargar la skill
+    correcta es responsabilidad de Claude, no suya** — ver la sección "ENRUTAMIENTO AUTOMÁTICO DE
+    SKILLS" arriba, con la tabla de "qué dice el dueño → qué skill se carga". Que no la pida por
+    nombre NO significa que no la quiera. Avisarle en una línea, en español, cuál se está usando y
+    por qué (así se entera de lo que existe sin tener que aprender inglés).
+14. **La palabra "leer" (decretado 8-ago-2026) — atajo para revisar la bitácora ChatGPT↔Claude.**
+    Cuando el dueño escribe solo **"leer"** (o similar, sin más contexto), es la señal de ir a
+    revisar `docs/BITACORA-CHATGPT-CLAUDE.md` en `main` por lo que ChatGPT haya dejado —
+    no una instrucción de leer un archivo cualquiera. Mismo mecanismo ya establecido: `git fetch`
+    + comparar contra el marcador guardado en el scratchpad de la sesión (ver la propia bitácora
+    para el formato y la rutina programada que ya la vigila cada hora).
 
 ### Estilo del changelog (`version.json`)
 - En **español llano, para el usuario final** (no técnico). Explica QUÉ cambió y
@@ -4960,3 +8772,3449 @@ infra: pg_cron + Edge Functions + wa.me. WhatsApp 100% auto requiere API de Meta
 msj); plan pragmático: Fase 1 = "Centro de avisos" cron que detecta vencidos y arma cola con
 WhatsApp 1-toque (gratis) · Fase 2 = correo automático (función enviar-reporte-email existe) ·
 Fase 3 = WhatsApp API real.
+
+### REGLAMENTO DE COBRO Y CAJA — decretado y auditado (26-jul-2026, v49.88)
+Segunda tanda del pedido "un reglamento por cada módulo". Método de siempre: **el reglamento sale de
+lo que se encuentra auditando, no al revés** — primero se leyó `nxPosConfirmar`/`leerCobro`/
+`nxPosCobroCliToggle`/`nxPosAbonar` línea por línea, después se midió cada hueco contra la base real,
+y solo entonces se escribieron las 10 reglas (texto completo en **`REGLAMENTOS.md` §2**).
+- **Lo que ya estaba bien** (se confirmó, no se tocó): crédito sin cliente bloqueado · nota de crédito
+  validada contra `pos_devoluciones` reales del cliente · existencia estricta · IMEI obligatorio ·
+  RD$ 0 bloqueado · cantidad mínima del nivel · descuento global acotado 0-100 % · devuelta y crédito
+  nunca negativos · el número de factura es transaccional y no retrocede.
+- **HUECO 1, cerrado — se cobraba en efectivo con la caja CERRADA.** `caja_id: (_caja && _caja.id) ||
+  null` en el insert de la venta: si nadie había abierto caja, la venta entraba con `caja_id` en null
+  y **ese efectivo no aparecía en ningún arqueo**. Medido contra la base: bayolsale tenía **1 venta
+  con `caja_id` null cargando RD$ 14,500 de efectivo fuera de toda caja**, y en ese momento había
+  **0 cajas abiertas** en todo el sistema — o sea el hueco estaba vivo, no era teórico. Arreglado:
+  si hay efectivo y no hay caja, **se re-consulta `pos_cajas` primero** (por si la abrieron en otro
+  dispositivo — `_caja` solo se carga al abrir el POS) y solo entonces se bloquea con un aviso que
+  dice el monto. **Tarjeta/transferencia/cheque/nota de crédito/crédito NO se bloquean** (no pasan
+  por la gaveta) — regla deliberada para no paralizar un negocio que no usa caja física. El mismo
+  candado se puso en `nxPosAbonar` (abono de fiado en efectivo).
+- **HUECO 2, cerrado — inconsistencia MÍA de la v49.86.** El piso de precio se revisa en 2 momentos:
+  al teclear (`nxFacPrecio`) y al confirmar (`nxPosConfirmar`). En la v49.86 migré el primero a
+  `minimoDe(p)` (el mínimo del NIVEL del cliente) y **dejé el segundo leyendo `_p.precio_minimo`**
+  (el global). Medido: **7 artículos tienen mínimo por nivel y solo 2 tienen mínimo global**, así que
+  la revalidación final estaba ciega para la mayoría. Los dos usan ya `minimoDe(_p)`.
+- **HUECO 3, cerrado — `limite_credito` era un 5to campo fantasma.** Se leía en 2 sitios
+  (`facCliInfoHTML` y la ficha del cliente) **solo para mostrar "crédito disponible"**, nunca para
+  validar nada al fiar. Medido: **2 de 3 clientes tienen límite configurado**. Ahora `saldoCli(c) +
+  c.credito` no puede pasar del límite; **límite en 0 = sin límite** (como el resto de los topes del
+  sistema). Decisión de criterio: **al cajero se le bloquea** (con el monto exacto por el que se pasa),
+  **a admin/gerente se les pregunta** con `confirm()` y, si aceptan, queda
+  `logAudit('POS_LIMITE_CREDITO_EXCEDIDO', ...)`. Mismo patrón de permiso que el piso de precio
+  (`puedeVerMin()`): la regla no se ignora en silencio, pero el dueño no queda paralizado en el
+  mostrador.
+- **HUECO 4, cerrado — se le podía cobrar a un cliente con los precios de OTRO.** `nxPosCobroCliToggle`
+  llenaba el campo oculto `posCliId` pero **no tocaba `_factCli`**, que es de quien depende `precioCli()`
+  — así que el carrito conservaba los precios del cliente de la pantalla anterior mientras el crédito
+  se le cargaba al nuevo. Medido: **6 filas de `pos_producto_niveles` tienen un precio distinto al de
+  lista**, o sea el hueco mueve dinero real. Ahora elegir cliente en Cobrar sincroniza `_factCli`,
+  re-precia el carrito y **avisa el total de antes → después** (no se cambia el total en silencio
+  frente a alguien contando efectivo).
+- **BUG VIEJO encontrado de paso y corregido — los COMBOS se empezaban a cobrar.** Las líneas de combo
+  van en `precio: 0` con `_combo: true` ("+ X (incluido)"). `nxFacSetCli` re-preciaba **todas** las
+  líneas con `precioCli(p)`, así que cambiar de cliente le ponía su precio real al acompañante del
+  combo. Corregido en los dos sitios que re-precian (`nxFacSetCli` y el nuevo de Cobrar) saltando
+  `it._combo`. Es anterior a esta sesión.
+- Verificado con **37 comprobaciones** contra el código REAL extraído por contenido (`nxPosConfirmar`,
+  `nxPosCobroCliToggle`, `nxPosAbonar`, `nxFacSetCli`, `leerCobro`, `totales`, `precioCli`,
+  `filaNivel`, `minimoDe`, `saldoCli`, `puedeVerMin` — 21 funciones, balance de llaves real) con un
+  Supabase simulado: los 4 huecos cerrados en sus dos sentidos (bloquea cuando toca / deja pasar
+  cuando toca), el caso "caja abierta en otro equipo", el combo intacto en las 2 rutas, y **4 de
+  no-regresión** sobre las reglas que ya existían. Más la prueba de humo de la app real (`index.html`
+  + `parches.js` completos en un navegador): **0 errores de JS**. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Nota de método (2 fallos de la PRUEBA, no del código):** (1) el extractor anclaba en
+    `'function totales'` y agarraba **`async function totalesCaja`**, que aparece antes en el archivo
+    — un `await` suelto rompía el harness entero; se acotó a `'function totales('`. **Al anclar por
+    nombre, cuidado con las funciones cuyo nombre es prefijo de otra.** (2) el espía de
+    `window.nxPosCobroCalc` se ponía ANTES de evaluar el código real, que define esa misma función y
+    lo pisaba; hay que envolverlo DESPUÉS de construir el mundo.
+- **Pendiente de este reglamento (NO construido):** el arqueo no distingue el efectivo cobrado por
+  cada cajero (la caja es una por organización, no por persona) · no hay retiro parcial de efectivo a
+  bóveda durante el turno.
+
+### REGLAMENTO DE CRÉDITO Y COBRANZA — decretado y auditado (26-jul-2026, v49.89)
+Tercera tanda del "un reglamento por módulo". Cubre lo que pasa con la deuda DESPUÉS de fiar: el
+fiado, las cuotas (financiamiento del POS), los apartados y el centro de avisos. Método de siempre:
+auditar `nxPosConfirmar`/`nxFinPagarGo`/`nxApaAbonarGo`/`nxPosAbonar`/`renderAvisos` línea por línea,
+medir contra la base, y solo entonces redactar (texto completo en **`REGLAMENTOS.md` §3**).
+- **Medición previa (SQL directo):** la base tiene HOY **0 planes de cuotas, 0 apartados, 0 ventas
+  fiadas activas y 0 organizaciones con mora configurada** — o sea todas las reglas de este reglamento
+  son forward-looking (mismo caso que los campos fantasma del §1). Se dejan correctas ANTES de que se
+  usen. Esto se documenta con honestidad, no se oculta.
+- **Lo que ya estaba bien** (confirmado, no tocado): la mora es un recargo ÚNICO por cuota vencida
+  pasada la gracia, se cobra después del principal, nunca negativa ni sobre una cuota pagada
+  (`moraDeCuota`) · el ledger `pos_fin_pagos` es la fuente de verdad vía `resyncCuotasPagos` · la
+  exposición del cliente ya suma fiado + cuotas en un solo `saldoCli` (v48.9) · el pago de cuota ya se
+  topaba al pendiente + mora · la mora ya se reconoce aparte en la cuenta 4103.
+- **HUECO 1, cerrado — no había freno para fiarle a un cliente ya en mora.** El §2 cerró el LÍMITE de
+  crédito, pero un cliente bien por debajo del límite podía tener una cuota vencida sin pagar y aun así
+  llevarse más fiado — `nxPosConfirmar` no miraba las cuotas. Helper nuevo `clienteConCuotaVencida(cliId)`
+  (junto a `diasAtraso`, en su mismo scope): recorre los planes activos del cliente y devuelve
+  `{n, monto}` de sus cuotas vencidas sin pagar (con mora incluida). En `nxPosConfirmar`, si hay crédito
+  y el cliente tiene cuotas vencidas: **al cajero se le bloquea, a admin/gerente se les pregunta** y, si
+  aceptan, `logAudit('POS_FIADO_CON_MORA', ...)`. Mismo patrón de permiso que el límite de crédito
+  (`puedeVerMin()`). El trigger es "tiene cuota vencida sin pagar" (no "en mora" a secas) — más robusto,
+  no depende de que la mora esté configurada.
+- **HUECO 2, cerrado — el candado de caja del §2 no cubría cuotas ni apartados.** `nxFinPagarGo` (pago
+  de cuota) y `nxApaAbonarGo` (abono de apartado) recibían efectivo sin revisar si la caja estaba
+  abierta — el mismo hueco 1 del §2, en las funciones de cobranza. `nxFinPagarGo` posteaba el
+  `pos_abonos` con `caja_id: null`; `nxApaAbonarGo` simplemente no insertaba el `pos_caja_movimientos`.
+  Los dos ahora re-consultan `pos_cajas` y bloquean si sigue cerrada (transferencia/tarjeta pasan).
+- **HUECO 3, cerrado — el abono de apartado no se topaba.** `nxFinPagarGo` ya validaba `monto > pend`;
+  `nxApaAbonarGo` no — se podía meter más de lo que faltaba del apartado. Ahora se topa a
+  `total - abonado`, igual que el pago de cuota.
+- Verificado con **23 comprobaciones** contra el código REAL extraído por contenido (`nxPosConfirmar`,
+  `nxFinPagarGo`, `nxApaAbonarGo`, `clienteConCuotaVencida`, `cuotasDe`, `diasAtraso`, `moraDeCuota`,
+  `saldoCli`, `leerCobro`, `totales`, `precioCli` — 26 funciones, balance de llaves real) con Supabase
+  simulado: el fiado a un cliente en mora bloqueado/autorizado en sus dos sentidos, la cuota vencida de
+  otro cliente que no estorba, la venta de contado exenta, el candado de caja en cuota y apartado en sus
+  dos sentidos, el tope del apartado, y 4 de no-regresión (el pago de cuota que ya se topaba + los 3
+  casos de `moraDeCuota`). Más la prueba de humo de la app real: **0 errores de JS**. `node --check`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** no hay refinanciamiento ni "dar de baja" una deuda como incobrable · el bloqueo por
+  mora es aviso + autorización, no un corte duro automático · un fiado puro (sin cuotas) no tiene fecha
+  de vencimiento, así que su "mora" no existe — solo las cuotas la tienen.
+
+### REGLAMENTO DE INVENTARIO — decretado y auditado (26-jul-2026, v49.90)
+Cuarta tanda del "un reglamento por módulo" (el §4 Fiscal se saltó a pedido del dueño). Cubre la
+existencia, el kardex y los almacenes — y cierra los 2 pendientes que dejó el Reglamento de Venta
+(que la existencia de un artículo con IMEI SEA la cuenta de IMEI, y que el IMEI sepa su almacén).
+Texto completo en **`REGLAMENTOS.md` §5**.
+- **Lo que ya estaba blindado (confirmado, no tocado):** el embudo único `moverStock`/
+  `moverStockTransferencia` de la Fase 5 sigue siendo el único camino — se auditaron TODAS las
+  escrituras a `pos_productos` (grep de `patch`/`post`) y todas pasan por el embudo o son campos que
+  no son stock (favorito/activo/precios); el guardado de producto separa el stock y lo mete por
+  `moverStock('ajuste'/'apertura')`; los 2 importadores (CSV e Infoplus) crean en 0 y meten el stock
+  inicial por `moverStock('apertura')`. Cero fugas nuevas desde la Fase 5. El CHECK constraint en
+  `pos_inv_movimientos.tipo` y el piso 0 por almacén siguen en pie.
+- **Medición previa (SQL):** `pos_seriales` YA tiene columna `almacen_id` (la compra la llena, el
+  registro manual no). Había **1 artículo con IMEI descuadrado** (stock ≠ cuenta de IMEI disponibles)
+  — el bug era real y vivo, no teórico.
+- **HUECO 1, cerrado — registrar IMEI no subía el stock.** `nxSerialAdd` insertaba los IMEI en
+  `pos_seriales` pero **no tocaba `pos_productos.stock`** — registrabas 5 teléfonos y el artículo se
+  quedaba en "SIN STOCK", imposible de vender (IMEI obligatorio, stock 0). La compra sí subía stock,
+  el registro manual no — inconsistente. Ahora `nxSerialAdd` sube el stock en N por
+  `moverStock('ajuste', +N)` (queda en el kardex) y estampa el **almacén activo** en cada IMEI
+  (cierra el 2do pendiente del Reglamento de Venta). `nxSerialDel` baja el stock en 1 (leyendo el
+  almacén y estado del IMEI ANTES de borrarlo, y solo si estaba `disponible` — un IMEI vendido no
+  cuenta en el stock).
+- **HUECO 2, cerrado — no había forma de cuadrar un descuadre viejo.** `window.nxSerialCuadrar(pid)`
+  nueva + un aviso ámbar en `nxSerialMgr` cuando `stock ≠ cuenta de IMEI disponibles`, con un botón
+  "Cuadrar a N" que ajusta el total por `moverStock('ajuste', delta)`. Ajusta solo el total (el
+  reparto por almacén queda como pendiente documentado).
+- Verificado con **17 comprobaciones** contra el código REAL extraído por contenido (`nxSerialAdd`,
+  `nxSerialDel`, `nxSerialCuadrar`, `moverStock`, `upsertStockAlm`, `logMov`, `stockKey` + la const
+  `MOV_TIPOS_VALIDOS`) con Supabase simulado: registrar sube el stock y deja el movimiento, estampa
+  el almacén activo (y `null` sin almacenes), borrar baja el stock solo si estaba disponible, cuadrar
+  ajusta al conteo real, y el embudo sigue rechazando tipos inválidos y respetando el piso 0. Más el
+  humo de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+  - **Nota de método (2 fallos de la PRUEBA, no del código):** (1) el extractor por contenido perdió
+    el `async` de `moverStock`/`upsertStockAlm`/`logMov` porque `'function X'` es substring de
+    `'async function X'` — hay que anclar en `'async function X'`. (2) el harness declaraba un stub de
+    `stockKey` que el código real ya trae — colisión de identificador; se quitó el stub.
+- **Pendiente:** el reparto de un artículo con IMEI POR almacén es aproximado (el cuadre ajusta el
+  total, no reparte los IMEI entre almacenes) · el invariante "total = suma de almacenes" no se fuerza
+  en cada operación para artículos normales (decisión de la Fase 5, el total es autoritativo).
+
+### REGLAMENTO DE CONTABILIDAD — decretado y auditado (26-jul-2026, v49.91)
+Quinta tanda del "un reglamento por módulo". Cubre la partida doble y los asientos automáticos.
+Método de siempre: auditar el motor de asientos (`postAsientoConcepto`, `postAsientoVenta`,
+`postAsientoNomina`, `nxCtaGuardarGasto`, `nxAsGuardar` + los que pasan por `postAsientoConcepto`)
+línea por línea, medir la base, y solo entonces redactar (texto completo en **`REGLAMENTOS.md` §6**).
+- **Medición previa (SQL):** 0 asientos, 0 sin líneas, 0 descuadrados, 0 líneas huérfanas — la base
+  está limpia. La regla es forward-looking, se deja el motor a prueba de balas antes de que se use.
+- **Lo que ya estaba bien (confirmado, no tocado):** el asiento MANUAL (`nxAsGuardar`) ya validaba
+  Debe=Haber · cada asiento nace con `tipo`+`origen_id` y se reversa con `delAsientoOrigen` al anular/
+  eliminar el documento · un asiento sin plan de cuentas no se inventa (los posters salen temprano si
+  no hay `pos_cuentas`) · la mora se reconoce aparte (4103) y la nota de crédito no entra a Caja (2105).
+- **HUECO CENTRAL, cerrado — los asientos AUTOMÁTICOS posteaban sin verificar Debe=Haber.**
+  `postAsientoConcepto`/`postAsientoVenta`/`postAsientoNomina` (y el gasto) creaban la cabecera y
+  posteaban las líneas a ciegas — un error de cálculo o de redondeo dejaba la contabilidad
+  descuadrada en silencio (solo el manual estaba protegido). **Arreglo de raíz:** motor ÚNICO nuevo
+  `guardarAsientoBalanceado(cab, lineas)` por el que pasan TODOS (los 4 automáticos + el gasto + el
+  manual, refactorizados): (1) valida Debe=Haber ANTES de postear nada — si no cuadra, no se registra
+  y queda `logAudit('ASIENTO_DESCUADRADO', ...)`; (2) estampa el `asiento_id` en las líneas
+  (`Object.assign({}, l, {asiento_id})`, ganando siempre); (3) si las líneas fallan tras crear la
+  cabecera, **borra la cabecera colgada** (antes el `catch` se lo tragaba y dejaba un asiento sin
+  líneas). `postAsientoConcepto` quedó como un envoltorio de una línea sobre el motor. El asiento de
+  venta (dinero sensible) es best-effort igual que antes — nunca bloquea la venta, solo ahora se
+  niega a escribir un asiento descuadrado en vez de corromper los libros.
+- Verificado con **19 comprobaciones** contra el código REAL extraído por contenido
+  (`guardarAsientoBalanceado`, los 6 `postAsiento*`, `ctasMap`, `lnCta`, `nxCtaGuardarGasto`,
+  `nxAsGuardar`): el motor guarda lo cuadrado, rechaza lo descuadrado con su registro de auditoría,
+  exige ≥2 líneas, cuadra por redondeo, borra la cabecera cuando las líneas fallan; y los 6 asientos
+  automáticos (venta contado/crédito, compra, abono con mora, nómina, devolución, servicio) cuadran
+  por construcción con los montos exactos, y sin plan de cuentas no postean ni revientan. Más el humo
+  de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Pendiente:** no hay cierre de período (los libros nunca se "cierran") · el COGS usa el costo de
+  HOY del producto, no el costo real del día de la venta (`pos_venta_items` no lo guarda) · sin
+  conciliación bancaria ni centro de costo.
+
+### REGLAMENTO DE CLIENTES Y ENTIDADES — decretado y auditado (26-jul-2026, v49.92)
+Sexta tanda del "un reglamento por módulo". Cubre el maestro de terceros del POS (`pos_clientes`, una
+ficha puede ser cliente/proveedor/empleado/banco) y los proveedores. Texto completo en
+**`REGLAMENTOS.md` §7**.
+- **Medición previa (SQL):** 0 clientes con fiado, 0 proveedores con cuenta por pagar — la regla del
+  borrado es forward-looking.
+- **Lo que ya estaba bien (confirmado, no tocado):** `nxEntGuardar` exige al menos un rol · detecta
+  duplicados al CREAR (teléfono/cédula normalizados, ofrece abrir el existente) · sincroniza empleado ↔
+  RRHH (quitar el rol desactiva la ficha) · un proveedor-Entidad no se borra desde Compras (redirige a
+  Entidades) · el borrado es SUAVE (`activo:false`, historial recuperable).
+- **HUECO 1, cerrado — se podía eliminar un cliente que debe con solo un aviso saltable.** `nxPosDelCli`
+  solo mostraba `confirm('tiene saldo pendiente...')` — cualquiera podía saltarlo, y si el cliente
+  desaparecía de la lista activa se perdía de vista al deudor. Inconsistente con Financiamiento
+  (`nxPrClienteBorrar`, v49.33, que SÍ bloquea). Ahora: si `saldoCli(c) > 0`, al **cajero** se le
+  bloquea (con el monto), **admin/gerente** confirman y queda `logAudit('POS_CLIENTE_ELIMINADO_CON_DEUDA')`.
+  Mismo patrón de permiso que el límite de crédito (`puedeVerMin()`).
+- **HUECO 2, cerrado — se podía eliminar un proveedor al que le debes.** `nxPosDelProv` no miraba la
+  cuenta por pagar. Ahora usa `saldoProv(pp)`: si le debes, cajero bloqueado / admin confirma +
+  `logAudit('POS_PROVEEDOR_ELIMINADO_CON_CXP')`.
+- **Decisión honesta:** los apartados no tienen `cliente_id` (solo nombre/teléfono), así que NO se
+  cuentan como deuda al borrar un cliente — no se finge un enlace que la base no tiene.
+- Verificado con **21 comprobaciones** contra el código REAL extraído por contenido (`nxEntGuardar`,
+  `nxPosDelCli`, `nxPosDelProv`, `saldoCli`, `saldoProv`, `puedeVerMin`) con Supabase simulado y un DOM
+  controlable: sin rol no guarda, crear con duplicado ofrece abrir el existente / Aceptar crea otra,
+  editar no revisa duplicados, borrar cliente/proveedor con deuda bloqueado al cajero y autorizado al
+  admin con auditoría, sin deuda se borra normal, y el proveedor-Entidad sigue protegido. Más el humo
+  de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Pendiente:** no hay fusión de dos fichas duplicadas en una sola (solo se avisa al crear) · los
+  apartados no se ligan por id a su cliente.
+
+### REGLAMENTO DEL TALLER (Reparaciones) — decretado y auditado (26-jul-2026, v49.93)
+Séptima y última tanda del "un reglamento por módulo" (el §4 Fiscal quedó saltado a pedido del dueño).
+Cubre recibir/mover/entregar/cobrar una reparación y su garantía. Texto completo en
+**`REGLAMENTOS.md` §8**.
+- **Medición previa (SQL):** 0 reparaciones — el candado de caja es forward-looking.
+- **Lo que ya estaba bien (confirmado, no tocado):** `nxRepGuardar` exige cliente/equipo/falla y asigna
+  número consecutivo · el estado avanza por sus pasos y "Entregado" pasa obligatoriamente por la
+  ventana de cobro (`nxRepEstado`→`nxRepEntregar`) · la garantía se fija al entregar (v48.64,
+  `garantia_rep_dias`) y `garantiaInfo` la calcula vigente/vencida en vivo · el cobro de la entrega NO
+  se topa al presupuesto (el diagnóstico final manda — decisión correcta, no un hueco).
+- **HUECO ÚNICO, cerrado — el dinero del taller se salía del arqueo con la caja cerrada.**
+  `nxRepGuardar` (avance al recibir, siempre efectivo) insertaba el `pos_caja_movimientos` solo
+  `if (abono > 0 && _caja)`, y `nxRepEntregarGo` (cobro al entregar) solo `if (monto > 0 && _caja &&
+  efectivo)` — así que con la caja cerrada el efectivo simplemente no se registraba en ningún arqueo.
+  Es el mismo hueco 1 del §2, que se cerró en ventas/cuotas/apartados pero no en el taller. Los dos
+  ahora re-consultan `pos_cajas` y bloquean el efectivo con la caja cerrada (transferencia/tarjeta
+  pasan; recibir sin avance no exige caja).
+- Verificado con **20 comprobaciones** contra el código REAL extraído por contenido (`nxRepGuardar`,
+  `nxRepEntregarGo`, `garantiaInfo`, `hoyISOPos`) con Supabase simulado: avance en efectivo con caja
+  cerrada no recibe / con caja abierta (incl. abierta en otro equipo) sí, sin avance recibe igual,
+  cliente obligatorio; cobro en efectivo con caja cerrada no entrega / transferencia sí / caja abierta
+  entrega con `cobrado_monto` = avance + cobro; la garantía se estampa al entregar solo si está
+  configurada y `garantiaInfo` da vigente/vencida/null correctos. Más el humo de la app real: **0
+  errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** el taller no consume piezas del inventario (costo manual, no descuenta stock) · no hay
+  flujo de "reclamo de garantía" que reabra la orden (la garantía es informativa).
+- **Con esta pieza cierran los 7 reglamentos de negocio de la tanda** (Venta · Cobro y caja · Crédito y
+  cobranza · Inventario · Contabilidad · Clientes y entidades · Taller). Queda pendiente solo el §4
+  Fiscal y documentos (NCF/e-CF/notas de crédito), saltado a pedido del dueño — es donde vive la
+  auditoría del e-CF de la DGII (obligatorio 15-nov-2026). **(Ya no está pendiente: se hizo en v49.94,
+  ver abajo — esta línea queda como registro histórico.)**
+
+### REGLAMENTO FISCAL (NCF / e-CF / notas de crédito) — decretado y auditado (26-jul-2026, v49.94)
+Última tanda del "un reglamento por módulo" — el dueño pidió "Si la 4". Con esta cierran los **8**
+reglamentos de negocio. Texto completo en **`REGLAMENTOS.md` §4**.
+- **Medición previa (SQL directo):** 0 ventas con NCF, 0 duplicados, 3 secuencias, `mi_organizacion()`
+  existe, no había RPC `pos_siguiente_ncf`. Forward-looking, pero el hueco estaba VIVO.
+- **HUECO CRÍTICO, cerrado — dos ventas simultáneas podían recibir el MISMO NCF.** `asignarNCF`
+  (parches.js) leía `s.actual` de la caché en memoria `_ncfSecs`, calculaba el NCF, y luego pateaba
+  `actual+1` — una **carrera de lectura-y-escritura**: dos cajeros/pestañas cobrando en el mismo
+  instante leían el mismo `actual` y emitían el MISMO comprobante, una violación seria de la DGII (el
+  NCF debe ser único). **Arreglo de raíz en dos capas:**
+  1. **Base — apartado atómico.** Migración `pos_ncf_atomico_y_unico`: función `pos_siguiente_ncf(p_tipo)`
+     (`SECURITY DEFINER`, acotada a `mi_organizacion()`, `grant execute` solo a `authenticated`) que hace
+     `UPDATE pos_ncf_secuencias SET actual=actual+1 ... RETURNING prefijo, actual-1` — el `UPDATE...RETURNING`
+     serializa por bloqueo de fila, así que dos llamadas concurrentes reciben números distintos, jamás el
+     mismo. Devuelve el NCF ya formateado (`prefijo || lpad(num,8,'0')`) o `null` si no hay secuencia
+     disponible (misma condición que la app: activa, `actual ≤ hasta`, no vencida). Red de seguridad de
+     último nivel: índice único parcial `pos_ventas(organizacion_id, ncf) where ncf is not null and ncf<>''`
+     — la base rechaza guardar dos facturas con el mismo NCF pase lo que pase (sí excluye las ventas sin
+     NCF, que pueden ser muchas). `get_advisors(security)` sin hallazgos nuevos.
+  2. **Navegador — `asignarNCF` llama la RPC.** Primero `getAPI().post('rpc/pos_siguiente_ncf', {p_tipo:cod})`
+     (desenvuelve escalar o `[escalar]`, mismo patrón que `next_recibo_anio`); mantiene `_ncfSecs` al día
+     para el aviso "restan ≤10"; y **solo cae al camino viejo de lectura+patch si la RPC lanza error o no
+     existe** (base vieja) — menos seguro ante concurrencia, pero ahí el índice único atrapa cualquier
+     duplicado. Con la RPC desplegada, el respaldo casi nunca corre. Aplica igual al NCF de venta y al
+     B04 de anulación/devolución (los dos pasan por `asignarNCF`).
+- **Verificado con 15 comprobaciones** contra el código REAL extraído por contenido (`asignarNCF`) con un
+  Supabase simulado: camino atómico (consumo→B02, crédito→B01, B04, `'sin'`→null sin tocar la RPC, escalar
+  en array), RPC null (caché vacía→null limpio / caché con secuencia→respaldo asigna), y respaldo (RPC
+  lanza→patch clásico, secuencia agotada→null, vencida→null). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **e-CF (DGII, obligatorio 15-nov-2026) — mapa de lo que FALTA, para el trámite del dueño** (rule #12,
+  aportar; detalle completo en `REGLAMENTOS.md` §4): hoy el POS emite NCF "de papel" (B0x), NO e-CF. Para
+  llegar a e-CF: (A) **certificado digital tributario** del negocio (entidad autorizada, trámite/costo del
+  dueño, semanas) · (B) contratar un **PSFE** (Alanube u otro, por API — NEXUS ya tiene Edge Functions para
+  integrarlo) · (C) generar/firmar el XML e-CF (e-31/e-32/e-34…), enviarlo y guardar el track-id + capturar
+  el **RNC del comprador** (hoy no se captura) · (D) 606/608 (solo hay 607 parcial). **Recomendación dada al
+  dueño:** arrancar YA con (A) el certificado y elegir (B) el PSFE — son las piezas de plazo largo que no
+  dependen del código; la integración (C/D) se construye después, con el certificado en mano, en su propia
+  ronda supervisada.
+
+### REGLAMENTO DE SEGUROS (núcleo, `index.html`) — decretado y auditado (26-jul-2026, v49.95)
+Reglamento #9, pedido por el dueño ("Ahora reglamento para los seguros"). Es el negocio ORIGINAL
+—correduría de seguros de salud— y el **único módulo con datos reales en producción**: 109 clientes,
+300 facturas, 174 cobros. Por eso se auditó con más cuidado que ninguno: es dinero en vivo, no
+forward-looking. Texto completo en **`REGLAMENTOS.md` §9**.
+- **Medición previa (SQL directo):** la base estaba SANA en lo grande — 0 NCF duplicados, `deuda_total`
+  cuadra con la suma de primas en los 109 clientes (ni inflada ni por debajo). El modelo de deuda
+  (`deuda_total`=primas facturadas · `pagado` · `deuda_anterior` bolsa separada · `pendTot=pend+deudaAnt`)
+  se confirmó intacto.
+- **HUECO 1, cerrado — el estado de factura se quedaba mostrando deuda ya pagada.** El estado
+  Pendiente/Parcial/Pagado de cada factura es una CACHÉ; la verdad se calcula repartiendo el `pagado`
+  del cliente de la factura más vieja a la más nueva (`_saldoFacturasCliente`). `regAbono` ya
+  resincronizaba (v48.5), pero **`nxEditarPrecioFactura` (corregir precio) y `anularFactura` NO** —
+  cambiar/quitar una factura mueve el reparto oldest-first, dejando a las HERMANAS con una etiqueta
+  vieja. Medido: **11 facturas reales** mostrando más deuda de la real (6 "Parcial" que ya estaban
+  Pagadas, 3 "Pendiente"→Pagada, 2 "Pendiente"→Parcial — todas en la dirección de perseguir a alguien
+  que ya pagó). Arreglado: `await resyncEstadoFacturas(f.cliente_id)` agregado a las 2 funciones + las
+  11 filas corregidas por SQL (**solo la etiqueta — cero montos de deuda/pago tocados**, la verdad
+  financiera ya estaba bien, solo el label estaba viejo). Reverificado: 0 stale restantes.
+- **HUECO 2, cerrado — NCF manual con formato distinto al de la DGII.** El `siguiente_ncf` manual
+  producía `B02-00000005` (con guion), pero la auto-facturación del servidor (`crear_factura_auto_tx`)
+  y el estándar DGII usan `B0200000005` (11 caracteres, sin guion). Comparten el MISMO contador
+  (`secuencias_ncf`), así que los NÚMEROS nunca chocan — solo el string difería. Migración
+  `seguros_ncf_formato_dgii_y_unico`: `siguiente_ncf` pasó al formato sin guion (unifica con la
+  auto-facturación) + índice único parcial `facturas(ncf)` como red de seguridad (mismo patrón que el
+  POS §4). Los 103 NCF históricos con guion (todos viejos, números 1-126) se DEJAN como están — no se
+  reescriben documentos fiscales ya emitidos. `get_advisors` sin hallazgos nuevos (las advertencias de
+  SECURITY DEFINER son las mismas ya aceptadas de siempre).
+- **Confirmado sano, no tocado:** `regAbono` ya resincroniza y exige agente/referencia/banco · el
+  NCF ya era atómico (`UPDATE...RETURNING`) · anti-duplicado de facturación consulta la BASE no solo
+  memoria · el corte 20-al-20 (`mesCorte`) · una factura pagada no se corrige ni se anula · una
+  anulada no se cobra ni se corrige · `nxRegAbonoDeudaAnterior` no resincroniza a propósito (solo toca
+  la bolsa de deuda anterior, no el reparto de facturas).
+- **Verificado con 10 comprobaciones end-to-end** sobre el código real extraído por contenido
+  (`_saldoFacturasCliente`/`resyncEstadoFacturas`/`nxEditarPrecioFactura`/`anularFactura`) con un
+  Supabase simulado que aplica los patches a memoria: corregir el precio de una factura vieja pasa a la
+  SIGUIENTE de Pendiente a Parcial (solo ocurre si el resync corrió sobre todo el cliente), anular una
+  factura re-reparte su crédito a las demás, y los guardas de siempre (pagada no se anula/corrige)
+  sin regresión + el reparto oldest-first exacto. `node --check` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** e-CF de la DGII (ver §4, obligatorio 15-nov-2026, aplica igual a Seguros) · las
+  comisiones de agente y las transferencias entre agentes tienen su propia lógica, no auditadas en
+  esta tanda (serían su propio reglamento si el dueño lo pide).
+
+### Seguros · Factura impresa — sin NCF + pendiente de meses anteriores en vivo (26-jul-2026, v49.96)
+El dueño pidió sobre la factura impresa que se le da al cliente (`generarHTMLFactura`): (1) quitar el
+número de comprobante, (2) mostrar lo que debe de meses anteriores.
+- **Quitado el NCF:** se eliminó el recuadro amarillo "NCF: ..." del encabezado y la línea "Tipo de
+  comprobante: B02 - ..." del pie. **OJO fiscal:** el NCF es obligatorio por la DGII en una factura con
+  Comprobante Fiscal (Crédito Fiscal B01). La mayoría de los clientes del seguro son Consumidor Final,
+  pero si algún día factura a un cliente B01, hay que devolver el NCF para ese caso — se le avisó al
+  dueño. Es solo display: el NCF se sigue guardando y asignando de forma atómica (ver §9/§4).
+- **Pendiente de meses anteriores EN VIVO:** la línea (antes "Deuda de períodos anteriores", que usaba
+  el `f.deuda_ant` CONGELADO al generar) ahora calcula el saldo real al momento de imprimir con
+  `_saldoFacturasCliente(c.id)` — suma el saldo de las OTRAS facturas del cliente (excluye la que se
+  está imprimiendo) + `deudaAnt(c)` (la deuda anterior al sistema, que antes NO salía en la factura).
+  Solo se muestra si es > 0. `TOTAL A PAGAR` pasó de `f.total` (congelado) a `primaMes + pendPrev`
+  (prima del mes + pendiente real). **Respaldo:** si no hay cliente cargado (`c` null), cae al
+  `f.deuda_ant`/`f.total` congelados de siempre. Como el documento ya no lleva NCF, funciona como un
+  estado de cuenta/cobro (refleja la realidad actual), no como comprobante fiscal congelado.
+- Verificado con 13 comprobaciones sobre el código real (`generarHTMLFactura`+`_saldoFacturasCliente`
+  extraídos por contenido): sin NCF ni tipo de comprobante, el pendiente en vivo (mayo pagada + deuda
+  anterior 500 → 500), total = prima + pendiente, cliente al día no muestra la línea, y el respaldo sin
+  cliente usa el valor congelado. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Seguimiento (v49.97):** el dueño mandó una captura de la LISTA de facturas donde el NCF
+  (`B0200000608`) todavía salía en cada tarjeta al lado del monto. Se quitó la columna "Factura" (el
+  `f.ncf`) de `rFact` (header + celda `<td data-lb="Factura">` + su CSS móvil `sf-fact`). La tabla pasó
+  de 9 a 8 columnas (verificado que th y td cuadran). El NCF se sigue guardando/asignando; solo se dejó
+  de mostrar en la lista, igual que en la factura impresa.
+- **Seguimiento (v49.98) — reorganización de la tarjeta de factura (`rFact`, móvil):** el dueño pidió
+  "poner cobrar debajo del estado pendiente y del lado izquierdo poner la deuda de mes anterior si
+  tiene". (1) El botón **Cobrar** se sacó de la celda `Acciones` a su propia celda `<td data-lb="Cobro">`
+  (la tabla volvió a 9 columnas: se agregó `<th>Cobro</th>`), y en el CSS móvil `sf-fact` se posiciona
+  **absoluto `top:34px;right:11px`** — justo bajo el badge de Estado (que está en `top:9px`). WhatsApp y
+  el menú (…) quedaron en la celda `Acciones` al pie. (2) **Deuda de meses anteriores** a la izquierda:
+  se calcula en vivo dentro del `.map` de `rFact` — reusa el `_saldoMemo` (memo de `_saldoFacturasCliente`)
+  para sumar el saldo de las facturas del cliente con `periodo < f.periodo` (no anuladas) + `deudaAnt(cli)`
+  (la deuda anterior al sistema); se muestra como una línea roja `<span class="deuda-prev">` dentro de la
+  `.cli-cell`, solo si `> 0.009`. CSS nuevo `.cli-cell span.deuda-prev` (rojo `--sf-err`, negrita).
+  Verificado con Playwright a 390px usando el CSS real de `index.html` + el markup real de dos tarjetas
+  (una con deuda anterior y nombre largo de 2 líneas, otra sin deuda): `scrollWidth-clientWidth=0` (sin
+  desborde), Cobrar por debajo del badge (top 46 vs estado bottom 37), sin solape con el monto, y la
+  línea de deuda solo en la tarjeta que debe. Solo visual — cero cambios de montos/deuda; `node --check`
+  limpio, los 3 `<script>` pasan `new Function()`, `version.json` válido.
+- **Seguimiento (v49.99):** el dueño pidió que la línea diga "Meses anteriores" y que **al tocarla abra
+  Cobrar**. La `<span class="deuda-prev">` pasó a chip tocable (`role="button" tabindex="0"` + `onclick`/
+  `onkeydown` con `event.stopPropagation()` para no disparar el `verCliente` de la `.cli-cell`) que llama
+  a `cobrarDesdeFact(f.cliente_id)` — el mismo flujo de cobro del cliente (su modal de abono con el
+  selector de destino meses/deuda anterior). Label: `<i ti-wallet> Meses anteriores: RD$ X ›`. CSS:
+  pastilla `background:rgba(239,68,68,.12)` + `:hover` + `:focus-visible` (aro rojo). Verificado con
+  Playwright a 390px: el chip rojo tocable con la flecha `›`, sin desborde, y solo en la tarjeta con
+  deuda anterior. `node --check` limpio; los 3 `<script>` pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.0):** el dueño pidió el chip "debajo del mes actual, un poco más grande". Se movió
+  de la `.cli-cell` (donde salía ARRIBA del monto) a la celda del **Balance** (queda justo debajo del
+  número del mes), como `display:block;width:fit-content` (cae a su propia línea, hugea el contenido).
+  Font 10.5px→12.5px. La celda Balance móvil ganó `text-align:left` para que el monto no se corra a la
+  derecha al ensancharse la celda por el chip. Selector CSS de `.cli-cell span.deuda-prev` →
+  `.sf-fact .deuda-prev`. Sigue tocable (`cobrarDesdeFact`). Verificado con Playwright a 390px: el chip
+  debajo del monto, más grande, sin desborde ni solape con Cobrar; la 2da tarjeta (sin deuda) no lo
+  muestra.
+- **Seguimiento (v50.1):** el dueño (con captura) pidió "meses anteriores debajo de la fecha, y cuando
+  se le click al monto que haya opciones de pago". Dos cambios: (1) el chip de deuda salió de la celda
+  `Balance` y pasó a una **celda propia `MesAnt`** — columna nueva `<th class="mesant-col">` insertada
+  después de Fecha (la tabla pasó de 9 a 10 columnas, th=td=10 verificado). En escritorio la columna se
+  oculta (`.nxSf table.sf-fact th.mesant-col,td[data-lb="MesAnt"]{display:none}`); en móvil se muestra
+  con `order:6` (Fecha es `order:5`), ancho completo, y `:empty{display:none}` para que una factura sin
+  deuda anterior no deje un bloque en blanco. El `.deuda-prev` pasó de `display:block;width:fit-content;
+  margin-left:auto` a `display:inline-flex` alineado a la izquierda (ya no necesita empujarse a la
+  derecha, vive en su propia línea). (2) el **monto del mes** (celda `Balance`) ahora es un botón
+  (`role="button" tabindex="0"` + `onclick`/`onkeydown` con `event.stopPropagation()` → `cobrarDesdeFact`,
+  gateado a `!anul`) — tocarlo abre la ventana de Cobrar, igual que la pastilla y el botón Cobrar. El
+  chip sigue tocable. Verificado con Playwright a 390px (markup real de las 10 columnas): sin desborde,
+  MesAnt debajo de la fecha, chip visible sin solape con el monto, Balance con `role=button`, y la
+  celda MesAnt vacía oculta en la 2da tarjeta (sin deuda). Solo visual/UX — cero cambios de montos.
+- **Seguimiento (v50.2) — tarjeta compacta + monto/ARS ordenados:** el dueño mandó una captura de la
+  lista y dijo "vamos a mejorar"; por `AskUserQuestion` eligió **compactar la tarjeta** + **ordenar el
+  monto y ARS** (descartó fecha corta y COBRAR más grande). Solo CSS del bloque móvil `@media(max-width:720px)`
+  de `.sf-fact`, cero HTML/lógica: (1) el botón **COBRAR** dejó de estar `position:absolute` arriba a la
+  derecha y pasó al flujo (`order:8;flex:1 1 auto`, con `.btn{width:100%}` para que se vea ancho), junto
+  a **WhatsApp + menú** (`Acciones`, `order:9;flex:0 0 auto`) en **una sola fila abajo** — antes esos
+  iconos flotaban abajo con un hueco vacío grande arriba. (2) el **monto** (`Balance`) pasó a `flex:1 1
+  100%` (solo en su línea, 20px), y **ARS + Total + Fecha** quedan en una línea aparte chica y gris
+  (`order:3/4/5`). (3) **truco clave para uniformidad:** la celda `MesAnt` **vacía** ya no es
+  `display:none` sino un **salto de línea invisible** (`flex:1 1 100%;height:0;padding:0`) — así la fila
+  de acciones SIEMPRE baja a su propia línea, incluso en facturas sin deuda anterior (si no, COBRAR se
+  pegaba a la línea de ARS solo en esas y las tarjetas se veían disparejas — regla #5, rejillas
+  uniformes). Resultado medido con Playwright a 390px: tarjeta sin meses anteriores **~280px → 166px**
+  (casi el doble de facturas por pantalla), con meses anteriores 196px, las 3 uniformes, `scrollWidth
+  === clientWidth` (sin desborde), COBRAR ancho + iconos en la misma fila y debajo de la línea de ARS en
+  las 3. La `.badge` de estado (PENDIENTE) sigue `position:absolute` arriba a la derecha; el
+  `padding-right` de la celda del nombre bajó de 96px a 82px (ya no hay que dejarle sitio al COBRAR
+  arriba). `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Seguimiento (v50.3) — detalle de meses anteriores + compartir:** el dueño (con captura) pidió que
+  al tocar el chip "Meses anteriores" se vea el DETALLE (qué mes debe y cuánto) + opción de compartir,
+  en vez de abrir Cobrar directo. Se construyó un modal nuevo (`nxMesesAntVer(cid,periodo)`, junto a
+  `cobrarDesdeFact`): helper `_mesesAntData(cid,periodoActual)` (reusado por el modal y por compartir,
+  sin duplicar el cálculo) recorre las facturas de períodos ANTERIORES al de la factura tocada con saldo
+  real >0 (`_saldoFacturasCliente`, mismo cálculo que el chip) + `deudaAnt(c)`, y devuelve
+  `{items:[{lbl,monto}], da, total}`. El modal (`.overlay`/`.modal`, patrón `nxWaElegir`, CSS propio
+  `mesesAntCSS`, id `mMesesAnt`) muestra mes por mes (ej. Mayo 2026: RD$ 4,000 / Junio 2026: RD$ 4,000 /
+  Deuda anterior al sistema: RD$ 500 en rojo) + total + 2 botones: **Compartir** (`nxMesesAntCompartir`:
+  arma un texto "Estado de cuenta — Meses anteriores" con el desglose y usa `navigator.share` nativo →
+  respaldo WhatsApp del cliente → respaldo copiar al portapapeles; registra
+  `logAudit('MESES_ANTERIORES_COMPARTIDO')`) y **Cobrar** (cierra el modal y llama a `cobrarDesdeFact`,
+  el flujo de siempre). El chip de la tarjeta (`rFact`) cambió su `onclick`/`onkeydown` de
+  `cobrarDesdeFact` a `nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')`; el **monto del mes**
+  (celda Balance) sigue abriendo Cobrar directo (v50.1, sin cambio). Verificado con Playwright + código
+  real extraído por contenido (`_saldoFacturasCliente`/`_mesesAntData`/`nxMesesAntVer`/
+  `nxMesesAntCompartir`): con un cliente con 2 meses viejos con saldo + deuda anterior, el modal lista
+  las 3 filas correctas, el total (RD$ 8,500) cuadra, los 2 botones existen, el mensaje de compartir se
+  arma bien y `navigator.share` recibe el texto correcto, la auditoría se registra, sin desborde en
+  390px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Seguimiento (v50.4) — COBRAR arriba, WhatsApp+menú debajo pequeños:** el dueño (con captura) pidió
+  "poner el botón cobrar arriba de whatsapp y botón acción con el mismo tamaño de pendiente". Solo CSS
+  del bloque móvil `@media(max-width:720px)` de `.sf-fact`: (1) la celda `Cobro` pasó de `flex:1 1 auto`
+  (compartía fila con las acciones) a **`flex:1 1 100%`** — COBRAR ocupa su propia fila completa arriba.
+  (2) la celda `Acciones` (WhatsApp + menú ⋮) pasó de `flex:0 0 auto` a **`flex:1 1 100%`** — baja a su
+  propia fila DEBAJO de COBRAR, alineada a la derecha. (3) sus botones se achicaron al tamaño del badge
+  PENDIENTE (`.badge` = `padding:3px 9px;border-radius:20px`): `td[data-lb="Acciones"] .btn{height:auto;
+  min-height:0;min-width:0;padding:3px 14px;border-radius:20px}` + icono a 14px — la especificidad
+  (`.nxSf table.sf-fact td[data-lb="Acciones"] .btn` = 0,4,2) gana sobre `.btn.bsm.bghost` (0,3,0) y el
+  `min-height:34px` global de `.btn`, así que los botones quedan como pastillas pequeñas en vez de los
+  cuadros pálidos de 38px. Verificado con Playwright a 390px: COBRAR arriba y ancho (>300px), WhatsApp
+  debajo con alto similar al badge (±8px), sin desborde. La tarjeta sin meses anteriores subió de ~166px
+  a ~180px (una fila más, esperado). `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.5) — COBRAR a la derecha:** el dueño pidió "a la derecha botón cobrar". La celda
+  `Cobro` dejó de estirar el botón a ancho completo (`width:100%`→`width:auto`, `padding:9px 26px`) y se
+  alinea a la derecha. **Detalle:** el primer intento con `text-align:right` NO funcionó — una regla más
+  específica pisaba el `text-align` de la celda a `left` (medido: `getComputedStyle` daba `left` y el
+  botón quedaba a la izquierda). Se cambió a `display:flex;justify-content:flex-end` en la propia celda
+  (mismo patrón que ya usaba `Acciones`, que sí alineaba bien) — así el botón (item flex) va a la derecha
+  sin depender del `text-align`. El WhatsApp+menú pequeños ya estaban a la derecha (`justify-content:
+  flex-end`), sin cambio. Verificado con Playwright a 390px: COBRAR compacto a la derecha, arriba del
+  WhatsApp, sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Seguimiento (v50.6) — tarjetas más compactas + el menú de acciones sigue a su botón al hacer
+  scroll:** el dueño pidió 2 cosas. **(1) Compactar:** COBRAR de `padding:9px 26px`→`6px 18px` +
+  `min-height:0` (antes el `min-height:34px` global lo mantenía alto), botones de acción de
+  `padding:3px 14px`→`3px 12px`, monto de `font-size:20px`→`18px`, `padding-top` de las filas Cobro/
+  Acciones bajado (9/7→6/5px) y el `tr` de `11px`→`9px` vertical — tarjeta sin meses anteriores ~180px→
+  ~162px. **(2) El menú `nxFactMenu` (Ver factura / Corregir precio / Anular) se despegaba al hacer
+  scroll:** `.factMenu` es `position:fixed` y se colocaba UNA sola vez con la posición del botón al abrir,
+  así que al hacer scroll el menú se quedaba flotando fijo en la pantalla mientras la tarjeta se movía.
+  Arreglado: la función de colocar (`colocar()`, misma lógica de acotar al viewport de siempre) se guarda
+  en `_factMenuRepos` y se engancha a `scroll` (con **`capture:true`** para atrapar el scroll del
+  contenedor de la lista, no solo el de `window`) y a `resize`; en cada evento recalcula la posición con
+  el `getBoundingClientRect()` VIVO del botón, así el menú lo sigue. Si el botón sale de la pantalla
+  (`r.bottom<4||r.top>innerHeight-4`) el menú se cierra solo. `nxFactMenuCerrar` ahora también quita esos
+  2 listeners (además de remover el `.factMenu`), y abrir otro menú los limpia primero. El menú puede
+  voltear de arriba↔abajo del botón según el espacio disponible (comportamiento correcto, no un bug).
+  Verificado con Playwright: al abrir el menú del 4º botón y hacer scroll de 120px en el contenedor, el
+  menú se reposiciona pegado al botón (dist botón→menú = 6px) en vez de quedarse flotando; tarjeta 162px,
+  sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Seguimiento (v50.7) — los botones de la tarjeta AHORA sí se achican (bug de estilo en línea):** el
+  dueño pidió seguir con "el tamaño" (botones más chicos), pero en producción seguían viéndose grandes
+  (~44px) pese a que el CSS de v50.4-50.6 les ponía `padding:3px 12px`/etc. **Causa raíz:** el helper
+  local `btn()` de `rFact` generaba cada botón (COBRAR, WhatsApp, menú) con **`style="padding:5px 8px"`
+  EN LÍNEA** — y un estilo en línea (especificidad 1,0,0,0) le gana a CUALQUIER selector CSS, así que
+  mi `padding` nunca se aplicaba. Arreglado quitando ese `style="padding:5px 8px"` del helper `btn()`
+  (es un helper LOCAL de `rFact`, solo lo usan esos 3 botones de la tarjeta, todos dentro de celdas con
+  mi CSS de tamaño). Ahora mi CSS controla: COBRAR `padding:6px 18px` → **~32px** de alto, WhatsApp/menú
+  `padding:3px 12px` → **~23px** (del tamaño del badge PENDIENTE de 16px). Medido con Playwright con el
+  markup REAL del botón (sin el padding en línea) + el CSS real: `cobH=32`, `waH=23`, `min-height:0px`
+  aplicado, `padding` computado = el mío (`6px 18px`/`3px 12px`), sin desborde. **Lección:** un botón con
+  `style="padding:..."` en línea NO se puede redimensionar desde una hoja de estilos por más específico
+  que sea el selector — hay que quitar el estilo en línea o usar `!important`. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.8) — tarjeta de factura más compacta EN CONJUNTO:** el dueño dijo "ahora vamos con
+  el tamaño" y, al preguntarle por `AskUserQuestion` cuál "ventana completa de la factura" (documento
+  imprimible / ficha del cliente / ventana de Cobrar / **tarjeta en la lista**), eligió **la tarjeta en
+  la lista** — quería achicar la tarjeta como unidad, no un botón. Solo CSS móvil de `.sf-fact` + el
+  `font-size` en línea de la referencia en `rFact`: nombre `13.5px`→`12.5px`, referencia morada (inline)
+  `11px`→`10px`, línea agente·ubicación (`.cli-cell span`) `10px`→`9.5px`, monto (`Balance`) `18px`→`16px`,
+  padding vertical del `tr` `9px`→`7px` + `margin-bottom:7px` (scopeado a `.sf-fact`, NO toca el `.sf-tbl
+  tr` compartido con Clientes/Historial de pagos), badge de estado `top:11px`→`9px`, `cli-cell`
+  `padding-right:82px`→`78px`. Verificado con Playwright a 390px con el markup real (botones ya sin
+  padding en línea de v50.7): sin desborde, las 3 tarjetas más apretadas. Se le dijo al dueño que si la
+  quería al revés (más grande) se invierte. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
+### Facturas (seguro) · VISTA RUEDA — modo experimental solo para el admin (27-jul-2026, v50.9)
+El dueño eligió la "rueda" (de varias muestras de scroll que se le enseñaron como Artifacts: destello
+metálico, naipes 3D, carrusel horizontal, billetera Apple Wallet, mezcla lista+billetera, y la RUEDA
+frontal — un tambor que rueda hacia el frente). Pidió aplicarla **como modo de prueba, visible SOLO
+para él (administrador)**, dejando a los demás usuarios con la lista actual, y que se le implementara
+un **reglamento** para ese modo. Se le propuso un borrador de 12 reglas; lo aprobó con un cambio
+(regla #6: **todas** las tarjetas tocables, no solo la del centro). El reglamento completo quedó en
+**`REGLAMENTOS.md` §10**.
+- **Gateado en 3 capas (`nxUsarRueda()`):** `sesion.rol==='admin'` **y** el interruptor encendido
+  (`nxPref('vista_rueda',false)`, guardado en la base, no en el navegador — respeta la regla de "nada
+  en localStorage") **y** celular (`matchMedia('(max-width:720px)')`). Si falta cualquiera → la tabla
+  de siempre. Por defecto apagado. Como solo el admin lo ve al encenderlo, se publicó a `main` sin
+  riesgo para los clientes reales.
+- **Interruptor:** en `rApariencia()` (Ajustes → Apariencia) se agregó una tarjeta "🎡 Vista
+  experimental (rueda)" que **solo se dibuja si `sesion.rol==='admin'`**. `nxToggleVistaRueda(on)`
+  guarda la preferencia, deja `VISTA_RUEDA_ON`/`OFF` en auditoría, y repinta Facturas al instante si
+  estás ahí.
+- **La rueda vive dentro de `rFact()`, no es una función aparte:** tras filtrar/ordenar la `lista`
+  (idéntico a la tabla) y pintar los KPIs, si `nxUsarRueda()` arma las tarjetas `.sfr-*` (Platinum,
+  brillo sutil, logo real de ARS, color por estado: rojo pendiente/ámbar parcial/verde pagado/gris
+  anulada) y hace `return` antes del `<table>`. **Cero cambios a la lógica de la tabla** (la rama else
+  es la de siempre) ni a los cálculos de saldo/deuda. **Todas las tarjetas tocables** (regla #6):
+  nombre→`verCliente`, monto→`cobrarDesdeFact`, tira roja→`nxMesesAntVer`, COBRAR/WhatsApp
+  (`enviarWA`)/⋮ (`nxFactMenu`) — todos wrappers de las acciones que ya existían.
+- **El scroll de la rueda** (`nxRuedaAplicar`/`nxRuedaScrollOn`/`nxRuedaScrollOff`): por cada
+  `.sfr-slot` calcula rotación/profundidad/velo según su distancia al centro del viewport
+  (`getBoundingClientRect`, robusto sin importar qué contenedor scrollee — mismo patrón que
+  `nxFactMenu`). `requestAnimationFrame` + salta las tarjetas fuera de vista (±300px) para ir fluido
+  con 100+ facturas. Respeta "reducir movimiento" (se aplana). **Se auto-apaga** al salir de Facturas
+  (guardia al inicio de `nxRuedaAplicar` que llama a `nxRuedaScrollOff`). `rFact` llama a
+  `nxRuedaScrollOff()` al inicio para no duplicar listeners.
+- **Verificado con Playwright sobre el código REAL de `rFact` extraído del archivo** (no una
+  reconstrucción): con admin+pref+390px la rueda renderiza las 3 tarjetas ACTIVAS (excluye la Pagada,
+  igual que la tabla), con COBRAR/WhatsApp/Meses anteriores, transformaciones 3D aplicadas, y al tocar
+  cada parte dispara la acción real (cobrar/ver cliente/meses anteriores); la rueda rueda al hacer
+  scroll (Parcial muestra bien la mitad del saldo); sin desborde horizontal en 390px; 0 errores de JS.
+  **Sin regresión:** con el interruptor apagado (390px) o en escritorio (1200px con pref encendido)
+  sale la **tabla** de siempre. Los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Honesto sobre el alcance:** es modo de EXHIBICIÓN, no de velocidad (muestra 1 factura de frente a
+  la vez; para cobrar en volumen la lista es más rápida). Solo móvil (en la computadora se verá aparte
+  más adelante, probablemente tabla o varias columnas). **Pendiente:** que el dueño lo pruebe en su
+  iPhone real y decida ajustes (más/menos inclinación, etc.) o si se lleva a Cobros/Pendientes/
+  Historial.
+
+### Vista rueda — ampliada a COBROS (27-jul-2026, v51.0)
+El dueño pidió llevar la rueda también a las otras pestañas de Facturas. Al auditarlas, decisión
+honesta (regla "lo que conviene"): **Cobros** (`rCob`) es una lista de tarjetas de cliente por cobrar
+→ la rueda encaja perfecto, se aplicó. **Historial de pagos** (`rPagos`, bitácora de pagos ya hechos) y
+**Avisos** (`rAvisos`, tablero de varias secciones) NO se pasaron — la rueda de tarjetas de crédito no
+es la forma correcta de verlos; se le explicó al dueño y se dejaron como están.
+- **Cobros:** rama `if(nxUsarRueda())` en `rCob` (mismo gate admin+pref+celular). Tarjetas Platinum por
+  estado (rojo pendiente / ámbar parcial / verde al día), logo de ARS, agente, "Deuda anterior" como
+  chip, y las acciones REALES: COBRAR=`abrirAbono`, WhatsApp=`nxCobroWA`, ficha=`verCliente`. Todas
+  tocables.
+- **Motor de scroll generalizado:** `nxRuedaAplicar` pasó de buscar `#tbFact .sfr-slot` a
+  `#v-facturas .sfr-slot` (Facturas y Cobros comparten la vista por pestañas) + salta las pestañas
+  ocultas (`offsetParent===null`). El auto-apagado al salir de la vista sigue igual.
+- Verificado con Playwright sobre `rCob` real: 3 tarjetas por estado, transformaciones 3D, acciones
+  reales al tocar (cobrar/ver/deuda anterior), sin desborde en 390px, 0 errores. Facturas sin
+  regresión (el mismo motor generalizado la sigue moviendo). Los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido. Reglamento actualizado (`REGLAMENTOS.md` §10, regla #4).
+
+### Vista rueda — BUG real en el iPhone del dueño: tarjeta gigante con muchas facturas (27-jul-2026, v51.1)
+El dueño probó la rueda en su iPhone (92 facturas) y mandó captura: **una sola tarjeta llenaba toda la
+pantalla, enorme**. La rueda funcionaba (gate OK, se veía la tarjeta Platinum roja con su ARS/monto),
+pero el tamaño estaba roto. **Causa raíz:** el CSS `.sfr-wheel` usaba `perspective:820px` +
+`perspective-origin:50% 50%` a nivel de CONTENEDOR. Con pocas tarjetas (la muestra, ~14) la lista es
+corta y el punto de fuga al 50% queda cerca — se veía bien. Pero con 92 facturas la lista mide ~17,000px
+de alto, el punto de fuga al 50% queda a ~8,500px, y las tarjetas visibles (arriba) están a miles de px
+del origen de perspectiva → proyección extrema → tarjeta gigante. **Por eso no se detectó en el harness:
+las pruebas usaban pocas tarjetas.** Arreglo: quitar `perspective`/`perspective-origin` del contenedor y
+aplicar `perspective(820px)` POR tarjeta dentro del `transform` de `nxRuedaAplicar` (va primero: `perspective(820px)
+translateZ(...) rotateX(...) scale(...)`) — cada tarjeta se curva sobre su propio centro, independiente
+de cuántas facturas haya. Verificado con un harness NUEVO de **30 tarjetas** (lista alta, como su caso):
+la tarjeta central mide 231px (no ~500px), caben 4 en pantalla, sin desborde, 0 errores — igual que la
+muestra. **Lección: los efectos 3D con `perspective` de contenedor hay que probarlos con LISTAS LARGAS,
+no con 3-14 elementos; el bug solo aparece cuando el contenedor es muy alto.** Aplica a Facturas y Cobros
+(comparten `.sfr-wheel`/`nxRuedaAplicar`). Cambio 100% CSS/transform, cero lógica tocada.
+
+### Vista rueda — parpadeo en el iPhone del dueño (27-jul-2026, v51.2)
+Tras arreglar la tarjeta gigante (v51.1), el dueño reportó **"Y parpadea mucho"** al desplazar la rueda
+en su iPhone. Es el parpadeo clásico de compositing de Safari con capas 3D. Se quitaron las 3 causas
+conocidas de iOS, sin cambiar la lógica: (1) **`mix-blend-mode:screen`** en `.sfr-cc::before` (el brillo
+metálico) — el modo de mezcla sobre capas transformadas en 3D que se solapan es la causa #1 de parpadeo en
+Safari; se cambió a un `linear-gradient` blanco normal (bajado de `.30` a `.16` de opacidad porque ya no
+se "quema" con screen). (2) **`s.style.zIndex` reescrito cada cuadro** en `nxRuedaAplicar` — aunque el
+valor casi siempre es el mismo, escribirlo fuerza al compositor a reevaluar el apilado; ahora se guarda
+(`const z=...; if(s.style.zIndex!==z)s.style.zIndex=z;`), igual el `transform` y la opacidad del velo. (3)
+**solape entre tarjetas** — `.sfr-slot` subió de 186px a 210px para que las tarjetas (~231px) se enciman
+menos. **Nota honesta:** el harness de Chromium headless NO reproduce el parpadeo de iOS Safari (es
+específico del compositor de WebKit en el dispositivo), así que la corrección se basa en buenas prácticas
+conocidas de iOS, no en reproducir el bug. Lo verificable SÍ se verificó: el harness de 30 tarjetas sigue
+correcto (central 231px, 4 visibles, sin desborde, 0 errores) y una prueba de idempotencia confirma que
+re-aplicar `nxRuedaAplicar` sin desplazar deja los 20 slots con transform+zIndex **idénticos** (20/20), o
+sea que las guardas de verdad suprimen las escrituras redundantes. Pendiente que el dueño confirme en su
+iPhone. Aplica a Facturas y Cobros. Cambio 100% CSS/transform, cero lógica de negocio tocada.
+
+### Vista rueda — más claridad a la tarjeta central + buscador visible (27-jul-2026, v51.3)
+El dueño: *"A la tarjeta principal más claridad y el buscador"*. Dos piezas, sin tocar lógica de negocio:
+- **Tarjeta central más clara:** `nxRuedaAplicar` ahora marca **solo la tarjeta más centrada** con la clase
+  `.focus` (busca el `min|d|` entre las visibles y la asigna; la quita de las demás — barato, solo cambia
+  al cambiar de tarjeta, no cada cuadro). `.sfr-cc.focus` = aro blanco nítido (`box-shadow 0 0 0 2px
+  rgba(255,255,255,.92)` + sombra más fuerte) y **menos oscurecimiento de esquinas** (`.sfr-cc.focus::after
+  {opacity:.5}`) para que el texto se lea más claro. Además el velo de las tarjetas de los lados subió de
+  `.58/*0.7` a `.62/*0.85` → receden más y la del centro resalta por contraste. Se le agregó `transition:
+  box-shadow .2s` a `.sfr-cc` para que el aro entre/salga suave.
+- **Buscador visible en la rueda (Facturas):** Facturas usaba la lupa colapsada NPGS §5 (un iconito); Cobros
+  ya tenía una barra `.nxBusca` visible desde siempre. En **modo rueda**, Facturas ahora muestra la MISMA
+  barra visible (`#factQBar`, componente global `.nxBusca` con lupa+campo+✕), y oculta la lupa §5. Fuera de
+  la rueda, la lupa §5 sigue igual (no se toca el estándar del sistema). **Clave de por qué no pierde el
+  foco al escribir:** la barra es HTML **estático** en el template (no la reconstruye `rFact`/`pintarLupaFact`
+  en cada tecla) — mismo patrón que ya usa Cobros. `#factQ` pasó de `<input type=hidden>` a ser el input
+  visible de esa barra (mismo id, así `rFact` lo lee igual en los 2 modos); `pintarLupaFact` solo alterna
+  `display` entre la barra y la lupa §5 según `nxUsarRueda()`. Reusa `nxBuscaTog`/`nxBuscaClear`/`nxBuscaLupa`/
+  `nxBuscaEnsureCSS` (cero CSS nuevo para el buscador).
+- **Cobros:** la claridad de la tarjeta central le aplica automáticamente (comparten `.sfr-cc`/`nxRuedaAplicar`);
+  su buscador ya era visible, así que quedó parejo sin tocarlo.
+- Verificado con Playwright y el código real extraído (CSS + `pintarLupaFact`/`rFact`/`nxRuedaAplicar` +
+  los helpers `nxBusca*`, 25 tarjetas): **exactamente 1** tarjeta con `.focus` (la central), tarjeta central
+  214px (no gigante), 4 visibles, la barra visible en rueda con la lupa §5 oculta, **escribir NO pierde el
+  foco** y filtra la rueda (25→1), la ✕ aparece, sin desborde horizontal, 0 errores de JS. Los 3 `<script>`
+  de `index.html` compilan; `version.json` válido. Nota: el harness headless no reproduce el parpadeo de iOS
+  (ver v51.2), pero el aro `.focus` y el velo solo cambian al cambiar de tarjeta (no cada cuadro), así que no
+  reintroducen el parpadeo que se arregló en v51.2.
+
+### Vista tarjetas — cambiada de RUEDA 3D a BILLETERA Apple Wallet (27-jul-2026, v51.4)
+El dueño: *"Vamos a cambiar el scroll a cómo me enseñaste tipo apple semejante una mezcla"*. Antes de la
+rueda le enseñé varias muestras de scroll; eligió la **"mezcla"** (`muestra-mezcla.html`, lista + billetera
+Apple Wallet) y ahora pidió aplicarla en vez de la rueda 3D. **Cambio de mecanismo completo, mismo gate
+admin-only/celular, mismo contenido de tarjeta, mismas acciones.**
+- **De rueda 3D a billetera (sticky):** las tarjetas dejaron de ser `.sfr-slot` con transform 3D por-cuadro
+  (`nxRuedaAplicar`) y pasaron a una **lista vertical con `position:sticky`**: `.sfr-cc{position:sticky;
+  top:calc(6px + min(var(--i,0)*5px, 26px))}` — cada tarjeta se pega arriba con un escalón (tuck) que crece
+  con su índice `--i` (tope 26px), apilándose como tarjetas de crédito de Apple Wallet. Entrada suave con
+  **IntersectionObserver** (`.inview`: `opacity:0;translateY(22px)` → `1;none`), one-shot por tarjeta.
+- **Esto MATA el parpadeo de raíz (no lo mitiga):** el parpadeo de iOS (v51.1/51.2) venía del motor 3D
+  (transform + `mix-blend`/z-index por cada scroll). Ese motor se **retiró por completo** — `nxRuedaAplicar`,
+  `_ruedaScrollH`, `_ruedaRaf`, `.sfr-slot`, `.sfr-veil` y la clase `.sfr-cc.focus` (de v51.3) ya NO existen.
+  Ahora el scroll es 100% CSS `sticky` + un IntersectionObserver que solo agrega una clase una vez. No hay
+  transform por-cuadro, así que el parpadeo no puede volver.
+- **Se conservó el buscador visible de v51.3** (`pintarLupaFact`/`#factQBar` intactos) — la barra sigue
+  saliendo arriba en modo tarjetas. Se quitó la **claridad de la tarjeta central de v51.3** (el aro `.focus`)
+  porque en una lista billetera todas las tarjetas se ven completas, no hay "central" — el foco es el tuck/
+  apilado, no un aro.
+- **`nxRuedaScrollOn`/`Off` reescritas:** `On` monta el IntersectionObserver sobre `#v-facturas .sfr-cc`
+  (con respaldo: si no hay `IntersectionObserver`, agrega `.inview` a todas de una); `Off` lo desconecta.
+  `rFact`/`rCob` marcan cada tarjeta con `style="--i:${ix}"` (índice del `.map`), sin `.sfr-slot`/`.sfr-veil`.
+- **Etiqueta de Ajustes actualizada** ("💳 Vista experimental de tarjetas", ya no "🎡 rueda"); el pref key
+  `vista_rueda` se conserva (sin migración). `nxUsarRueda()` sin cambios (admin + pref + celular).
+- **ERROR DE GIT detectado y corregido a mitad del trabajo (nota honesta):** las primeras ediciones de la
+  mezcla se aplicaron por error sobre una copia del working tree que había quedado en la base v51.2 (rama
+  `flicker`), **perdiendo el buscador de v51.3**. Se detectó al probar (`barShown:false` + `pintarLupaFact`
+  viejo en el snippet). Se descartó esa copia, se hizo `git checkout -B ... origin/main` (v51.3 real, con
+  buscador) y se **re-aplicó toda la mezcla limpia encima de v51.3** — así el buscador quedó conservado.
+  Lección: antes de editar, confirmar `git branch --show-current` + `APP_VERSION` del archivo contra
+  `origin/main`; el working tree puede no estar donde uno cree tras varios `stash`/`checkout`.
+- **`.sfr-wheel`/`.sfr-cc` y las clases de contenido (`.sfr-top`/`.sfr-nm`/`.sfr-amt`/`.sfr-prev`/`.sfr-foot`/
+  `.sfr-ico`/`.sfr-cob`/`.sfr-pill`/`.sfr-ars`) se conservan** (mismo look de tarjeta Platinum) — solo cambió
+  el contenedor y el mecanismo de scroll. El nombre `sfr` (de "seguros rueda") se dejó para no churnar.
+- Verificado con Playwright montando la vista en un `.content` con scroll real (replica el scroller de la
+  app): 20 tarjetas, `position:sticky` confirmado, la tarjeta 0 se **pega arriba** al hacer scroll (222px →
+  16px), el IntersectionObserver revela las tarjetas (`.inview`), sin tarjeta gigante (197px), el buscador
+  visible se conserva (`barShown:true`), tocar el monto dispara `cobrarDesdeFact`, sin desborde horizontal,
+  0 errores de JS. Capturas del apilado (tuck) a 390px. Los 3 `<script>` de `index.html` compilan;
+  `version.json` válido. Aplica a Facturas y Cobros. **Pendiente:** que el dueño confirme en su iPhone real
+  (el harness headless no reproduce la física de scroll de iOS, pero el sticky es CSS estándar y sin
+  transform ya no hay riesgo de parpadeo).
+
+### Vista tarjetas — fondo ESPACIAL detrás de las tarjetas (27-jul-2026, v51.5)
+El dueño: *"El fondo de atrás se vea como espacial al hacer scroll"*. Se agregó una capa de espacio
+(cielo estrellado + nebulosa) DETRÁS de las tarjetas billetera.
+- **`.sfr-space`** — un `<div>` que se inyecta como primer hijo de `.sfr-wheel` (en `rFact` y `rCob`),
+  con `position:sticky;top:0;height:100dvh` → se queda FIJO llenando la pantalla mientras las tarjetas
+  (que son `sticky` con su tuck) hacen scroll POR ENCIMA. Ese contraste (espacio quieto + tarjetas que
+  suben) es el parallax "flotando en el espacio" que pidió el dueño. `margin-bottom:-100dvh` cancela su
+  alto en el flujo (no empuja las tarjetas); `margin-left:calc(-50vw + 50%)`+`width:100vw` la hacen
+  full-bleed al ancho de la pantalla (el `overflow-x:hidden` de `.content` evita scroll horizontal).
+- **Fondo 100% CSS, sin imágenes ni animación por-cuadro:** base `#05070f` (espacio profundo) + ~18
+  estrellas (`radial-gradient` de 1-2px en posiciones `%`, brillos variados) + 2 nebulosas tenues
+  (índigo `#6366f1` y violeta `#a855f7`) + un realce central. **Sin animación** → cero riesgo de
+  parpadeo o de cargar la CPU (el "movimiento" lo da el scroll contra la capa fija, no un `@keyframes`).
+- **Las tarjetas se elevan sobre el espacio:** `.sfr-cc` ganó `z-index:1` (la capa de espacio es
+  `z-index:0`) y su sombra pasó de sombras oscuras (invisibles sobre negro) a `0 6px 26px rgba(0,0,0,.5)`
+  + una hairline clara `0 0 0 1px rgba(255,255,255,.06)` para que se despeguen del espacio. `pointer-
+  events:none` en la capa para que no bloquee toques.
+- Solo aparece en la vista de tarjetas (la capa solo se pinta en la rama `nxUsarRueda()` de `rFact`/
+  `rCob`); la lista/tabla normal no la lleva. Verificado con Playwright + `.content` con scroll real:
+  la capa existe con `position:sticky`, `z-index:0`, fondo `rgb(5,7,15)`, las tarjetas quedan en
+  `z-index:1` (encima), sin desborde horizontal, 0 errores de JS; captura del scroll confirma el espacio
+  detrás. `node --check`/compilación de los 3 `<script>` limpia; `version.json` válido. **Pendiente:** que
+  el dueño lo vea en su iPhone y diga si quiere más/menos estrellas, más nebulosa, o estrellas en
+  movimiento (hoy son fijas — mover­las sería un `@keyframes` que habría que medir en iOS antes).
+
+### Vista tarjetas — el espacio pasó a PANTALLA COMPLETA (27-jul-2026, v51.6)
+El dueño (con `AskUserQuestion`): *"Vamos a usar el mismo espacio"* → eligió **"Toda la pantalla de
+tarjetas"**. En v51.5 el espacio vivía DENTRO de `.sfr-wheel`, así que solo cubría la columna de
+tarjetas — las pestañas, los KPIs, los filtros y el buscador seguían sobre el fondo blanco de `.content`.
+Ahora el espacio cubre TODA la vista de Facturas/Cobros (modo tarjetas).
+- **La capa `.sfr-space` se movió** de ser primer hijo de `.sfr-wheel` a ser **primer hijo de
+  `#v-facturas`** (el contenedor de toda la vista, tabs + paneles). Pasó de `position:sticky` (se movía con
+  su columna) a **`position:fixed;inset:0;z-index:0`** — queda FIJA al viewport mientras TODO el contenido
+  hace scroll por encima (mismo parallax, ahora de pantalla completa). `pointer-events:none` para no
+  bloquear toques.
+- **Gateada por clase, no siempre visible:** `.sfr-space{display:none}` por defecto; solo se pinta bajo
+  `#v-facturas.nxEspacio.on>.sfr-space`. El helper nuevo **`nxEspacioModo(on)`** pone/quita la clase
+  `.nxEspacio` en `#v-facturas`: `rFact`/`rCob` la encienden con `nxUsarRueda()` (admin+pref+celular, modo
+  tarjetas), y `rPagos`/`rAvisos` la apagan con `false` (Historial de pagos y Avisos NO son vista tarjetas,
+  quedan con su fondo normal). Fuera del `nxUsarRueda()` (lista/tabla normal) tampoco se enciende.
+- **El contenido flota sobre el espacio, sin la tarjeta blanca de por medio:** reglas scopeadas a
+  `#v-facturas.nxEspacio.on` — `.nxft-tabs`/`#panelFact`/`#panelCob` con `z-index:1`; **`.nc`
+  (la tarjeta blanca contenedora) pasa a `background:transparent;border-color:transparent;box-shadow:none`**
+  → el contenido queda directo sobre el espacio en vez de dentro de una caja blanca; las pestañas a vidrio
+  oscuro (`rgba(255,255,255,.07)`) y los textos de encabezado (`.ch .ct`/`.ct-s`) a claro para leerse sobre
+  el fondo. Los KPIs siguen siendo tarjetas blancas (legibles, flotando); las tarjetas billetera y el
+  buscador visible (v51.3) no cambian.
+- **Se revirtió lo de v51.5:** la capa dentro de `.sfr-wheel` se quitó de los dos renders (`rFact`/`rCob`)
+  y el CSS `.sfr-space` sticky se reemplazó por el fijo gateado. Cambio 100% CSS/estructura, cero lógica de
+  negocio tocada.
+- **Verificado con Playwright** montando la vista COMPLETA (tabs + KPIs + filtros + buscador + tarjetas) en
+  un `.content` con scroll real: la clase `.nxEspacio` aplica, la capa es `position:fixed` en `z-index:0`
+  con fondo `rgb(5,7,15)`, `.nc` queda transparente (`rgba(0,0,0,0)`), el título en blanco, sin desborde
+  horizontal, 0 errores de JS; capturas arriba y con scroll confirman que toda la pantalla (pestañas, KPIs,
+  filtros, buscador y tarjetas) se lee bien sobre el espacio. `node --check`/compilación de los 3
+  `<script>` limpia; `version.json` válido. **Pendiente:** que el dueño lo confirme en su iPhone real (el
+  harness headless no reproduce la física de scroll de iOS, pero es fondo fijo + CSS estándar, sin
+  transform, así que no reintroduce el parpadeo de v51.2).
+
+### Vista tarjetas — REVERTIDO el fondo espacial, vuelve a la billetera limpia (27-jul-2026, v51.7)
+El dueño, tras ver el espacio en su iPhone: *"Ponerlo como estaba dos actualizaciones atrás"*. Dos
+actualizaciones atrás desde v51.6 = **v51.4** (la vista billetera Apple Wallet con su buscador visible,
+ANTES de cualquier fondo espacial). No le gustó el espacio, ni detrás de las tarjetas (v51.5) ni de
+pantalla completa (v51.6).
+- **Cómo se revirtió, exacto y sin hand-editing:** se confirmó por `git diff ef95052 origin/main -- index.html`
+  (v51.4 vs v51.6) que **lo ÚNICO que cambió entre esas dos versiones fue el código del fondo espacial +
+  el número de versión** — nada más se tocó en esas 2 PRs (#206/#207). Así que se restauró el `index.html`
+  del commit de v51.4 tal cual (`git checkout ef95052 -- index.html`) y solo se subió `APP_VERSION` a
+  **51.7** (no se puede "des-publicar": la app compara versiones y necesita un número MÁS ALTO que el vivo
+  para ofrecer "Actualizar", aunque el comportamiento vaya hacia atrás).
+- **Qué queda:** la billetera Apple Wallet (sticky stacking, `nxUsarRueda()` gate admin+pref+celular), el
+  buscador visible arriba (v51.3, `#factQBar`/`pintarLupaFact`), la entrada suave con IntersectionObserver
+  (`.inview`). **Qué se fue:** toda la capa `.sfr-space` (estrellas/nebulosa), el helper `nxEspacioModo` y
+  sus llamadas en `rFact`/`rCob`/`rPagos`/`rAvisos`, y el box-shadow oscuro que v51.5 le había puesto a
+  `.sfr-cc` para el fondo negro (vuelve al de v51.4, pensado para fondo claro). Confirmado con grep:
+  `nxEspacio`=0, `sfr-space`=0, `factQBar`=3, billetera sticky presente.
+- Verificado: los 3 `<script>` de `index.html` compilan (3/3); `version.json` válido (51.7).
+- **Nota para el futuro:** el fondo espacial (v51.5/v51.6) fue una idea que al dueño no le convenció en el
+  dispositivo real — no reintroducir sin que lo pida explícitamente. El código está en el historial (PRs
+  #206/#207) si algún día se retoma.
+
+### POS · Compras — elegir artículo con BUSCADOR (método InfoplusWEB), no desplegable (27-jul-2026, v51.8)
+El dueño mandó 2 fotos de la pantalla de Compra de InfoplusWEB y pidió: *"Ese método que usa infoplus
+podemos usarlo para agregar mercancías y también cuando la eliges se pone en la pantalla por si quiere
+hacer una corrección"*. **Auditoría antes de tocar nada:** el módulo de Compras (`nxPosNuevaCompra`,
+`parches.js`) YA tenía la mitad del método — un área de staging (Cantidad + Costo + botón "Agregar") y una
+lista editable (tocar una fila → `nxCompraEditItem` la devuelve al staging para corregir). El hueco real:
+el artículo se elegía con un **`<select>` desplegable** de TODOS los productos, no un buscador con lupa
+como InfoplusWEB. Con catálogo grande eso es lento.
+- **Cambio quirúrgico, cero lógica de negocio tocada:** el `<select id="compArt">` se reemplazó por
+  (1) un **`<input type="hidden" id="compArt">`** (mismo id, así `nxPosCompraAddItem`/`nxCompraEditItem`/
+  `nxCompraArtCambio` lo leen idéntico — mismo patrón que el selector de cliente en v49.02/v49.37) +
+  (2) un **botón** (`#compArtBtn`/`#compArtTxt`) que muestra el artículo elegido o "Buscar artículo…" y
+  abre una ventana de búsqueda. `nxPosGuardarCompra` (guardar/costo/inventario/asiento) **no se tocó**.
+- **Funciones nuevas** (junto a `nxCompraArtCambio`, mismo IIFE del POS): `nxCompraArtBuscar()` (ventana
+  `.overlay`/`.modal` con `posBuscador` — filtra por nombre/código/referencia/marca), `pintarCompArtList(q)`
+  (filas con nombre + código + chip de stock + costo actual), `nxCompArtFiltrar(q)`, `nxCompraArtPick(id)`
+  (fija el id oculto, llama a `nxCompraArtCambio()` para prellenar el costo y mostrar el área IMEI si es
+  serial, cierra la ventana, y enfoca Cantidad —o el input de IMEI si es serial— para revisar/corregir), y
+  `nxCompraArtSync()` (refresca el texto del botón según el artículo elegido). `nxCompraArtCambio()` llama a
+  `nxCompraArtSync()` al inicio para que tanto elegir como editar-fila mantengan el botón sincronizado;
+  `nxPosCompraAddItem()` lo llama tras limpiar para resetear el botón a "Buscar artículo…". `prodOpts`
+  (definición del viejo desplegable) se borró como código muerto (regla #1).
+- **El "por si quiere hacer una corrección" es real y en 2 momentos:** (1) ANTES de agregar — al elegir el
+  artículo, su nombre + costo quedan en pantalla y puedes cambiar costo/cantidad antes de tocar "Agregar";
+  (2) DESPUÉS de agregar — la lista sigue siendo editable (tocar la fila la devuelve al staging), que ya
+  existía. Los artículos con IMEI/serial siguen exigiendo sus IMEI uno por uno (sin cambio).
+- **Verificado con Playwright, código real extraído por contenido** (`posBuscador`, `nxPosNuevaCompra`,
+  `nxCompraArtBuscar`, `pintarCompArtList`, `nxCompraArtPick`, `nxCompraArtSync`, `nxCompraArtCambio`,
+  `nxPosCompraAddItem`, `nxCompraEditItem`, `pintarCompraItems` — 14 funciones, balance de llaves real) con
+  datos de tienda de celulares: **22 comprobaciones** — el desplegable ya no existe (es input hidden + botón),
+  la ventana de búsqueda abre y filtra por nombre/código, elegir carga el artículo en el botón + prellena el
+  costo, corregir el costo (10,460→11,000) y la cantidad se guarda tal cual en la lista, el botón se resetea
+  tras agregar, editar una fila la devuelve al staging con el botón sincronizado, y un artículo serial muestra
+  el área de IMEI. Sin desborde horizontal en 390px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado (en v51.8):** los selectores de Proveedor/Empleado — se hicieron en la v51.9
+  (abajo). La lógica de guardado de la compra no se tocó.
+
+### POS · Compras — lupa también para Proveedor y Empleado (27-jul-2026, v51.9)
+Seguimiento del pedido del dueño: *"Las ventanas de empleado proveedor todos los lupas"* — aplicar el mismo
+buscador (lupa) del artículo (v51.8) a los otros 2 `<select>` de la pantalla de Nueva compra.
+- **Mismo patrón quirúrgico que el artículo:** los `<select id="compProv">` y `<select id="compEmp">` se
+  reemplazaron por **`<input type="hidden">`** (mismo id) + un **botón** que abre una ventana de búsqueda.
+  `nxPosGuardarCompra` lee `val('compProv')`/`val('compEmp')` idéntico — **cero lógica de guardado tocada**.
+- **Opener genérico compartido `nxCompBuscadorAbrir(modalId, titulo, placeholder, oninputExpr, pintarInit)`**
+  (junto a `nxPosNuevoProvDesdeCompra`) + helper de fila `_compRowHTML(onclick, nombre, sub)` — para no
+  triplicar el boilerplate de la ventana (el artículo conserva su `nxCompraArtBuscar` propio porque además
+  prellena costo + área IMEI). Proveedor: `nxCompraProvBuscar`/`pintarCompProvList`/`nxCompProvFiltrar`/
+  `nxCompraProvPick`/`nxCompraProvSync` (filtra por nombre/RNC/teléfono/contacto). Empleado:
+  `nxCompraEmpBuscar`/`pintarCompEmpList`/`nxCompEmpFiltrar`/`nxCompraEmpPick`/`nxCompraEmpSync` (filtra por
+  nombre/código/cédula, lista solo `es_empleado`, con una fila **"— Sin empleado —"** para dejarlo en blanco).
+- **Bug de flujo corregido:** al crear un proveedor nuevo desde la compra (`nxPosGuardarProv` con
+  `fromCompra==='1'`) el código repoblaba el `<select id="compProv">` con `.innerHTML` y seleccionaba el
+  nuevo — con el botón eso ya no aplica; ahora fija el `#compProv` oculto = id nuevo y llama a
+  `nxCompraProvSync()`. El botón "+" de nuevo proveedor y el flujo de crearlo siguen igual.
+- `provOpts`/`empOpts` (definiciones de los viejos desplegables) borradas como código muerto (regla #1).
+- **Verificado con Playwright, código real extraído por contenido** (16 funciones): **21 comprobaciones** —
+  los 2 son input hidden + botón (no queda ningún `<select>`), la ventana de proveedor filtra por nombre Y
+  por RNC, la de empleado lista "Sin empleado" + solo los `es_empleado` (excluye no-empleados), filtrar/
+  elegir actualiza el botón + el id oculto, "Sin empleado" limpia el campo, y crear un proveedor nuevo
+  sincroniza el botón. Sin desborde en 390px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Con esto las 3 lupas de la pantalla de Compra quedan listas** (Artículo v51.8, Proveedor + Empleado
+  v51.9). El único `<select>` que queda en esa pantalla es Almacén (solo aparece con multi-almacén, lista
+  corta — no hace falta buscador).
+
+### POS · Compras — "Nueva compra" pasa de cuadro flotante a PANTALLA DEL SISTEMA (27-jul-2026, v52.0)
+El dueño: *"La ventana de compra no sea una ventana flotante sea una ventana del sistema con criterios
+claros"*. `nxPosNuevaCompra` era un `.overlay`/`.modal` centrado (cuadro flotante). Ahora es una pantalla
+completa dentro del POS (como Vender/Factura/etc.), organizada en secciones.
+- **Cómo se hizo (dentro del sistema de pestañas del POS, no un modal):** variable de módulo nueva
+  **`_compraVista`** (`'lista'` | `'nueva'`). `renderCompras()` devuelve `renderCompraForm()` cuando está en
+  `'nueva'`, si no la lista de siempre. `nxPosNuevaCompra` ya NO crea overlay — hace `_compraVista='nueva'`
+  + `renderPOS(v-pos)`. `nxPosCompraCancelar` (nueva) y el guardado exitoso (`nxPosGuardarCompra`) hacen
+  `_compraVista='lista'` + re-render. `nxPosTab` resetea `_compraVista='lista'` al navegar (entrar a Compras
+  siempre muestra la lista; la pantalla se abre con el botón "Nueva compra").
+- **Hook de inicialización en `renderPOS`** (junto a `pintarCarrito`/`pintarFactura`): cuando
+  `_posTab==='compras' && _compraVista==='nueva'` corre `scanMoney(view)` (activa el campo de dinero) +
+  `pintarCompraItems()` — antes eso corría tras crear el overlay; ahora corre tras el render de la pantalla.
+- **`renderCompraForm()` (nueva):** wrapper `.nxPf .nxPrForm` (max-width 880px centrado) con encabezado
+  (botón "← Compras" + título) y 2 tarjetas con títulos claros — **"Datos de la compra"** (proveedor/
+  empleado con lupa, fecha, vencimiento, factura, NCF, orden, liquidación, crédito, almacén) y
+  **"Artículos"** (buscador + staging cant/costo/IMEI + lista) — más un bloque de **"Total de la compra"**
+  y la barra de acciones (Cancelar / Guardar e imprimir / Guardar compra). **Todos los ids de campo son
+  idénticos** a los del viejo modal (`compProv`/`compEmp`/`compFecha`/`compArt`/`compCant`/`compCosto`/
+  `compItemsList`/`compTotal`/etc.), así que `nxPosGuardarCompra` y las 3 lupas (v51.8/51.9) **no
+  cambian** — cero lógica de guardado/costo/inventario tocada.
+- **Verificado con Playwright, código real extraído por contenido** (`renderCompras`, `nxPosNuevaCompra`,
+  `nxPosCompraCancelar`, `renderCompraForm`, `pintarCompraItems` + un `renderPOS` stub que replica el hook
+  real): **29 comprobaciones** — inicio muestra la lista, "Nueva compra" pone `_compraVista='nueva'` y
+  renderiza **sin `.overlay`/`.modal`** (pantalla dentro de `#v-pos`, `.nxPf`), con título + las 2 secciones
+  + botón Volver, los 14 ids de campo presentes, prov/emp/art son input hidden con sus botones de lupa, el
+  hook corre `scanMoney`, y Cancelar vuelve a la lista. Sin desborde en 390px, 0 errores de JS. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Nota de publicación:** v51.9 (lupas prov/emp) y v52.0 fueron a la rama `claude/compras-lupas-prov-emp`;
+  al reconectarse el conector de GitHub se fusionaron juntas a `main` vía PR #210 (ya en vivo).
+
+### REGLAMENTO DEL + Y − (decretado por el dueño, 27-jul-2026) — POS, por tandas
+El dueño: *"Vamos ponerle al sistema completo el signo de + y - para agregar y eliminar en sistema completo
+de pos todos sus criterios de uso"*. Se confirmaron 2 decisiones por `AskUserQuestion`: (1) el **−** rojo se
+usa también para ELIMINAR de la base, **pero el borrado permanente SIEMPRE pide confirmación** antes; (2) se
+aplica **por tandas**, empezando por las pantallas más usadas, para que el dueño las revise en su iPhone.
+- **Criterio de uso (el estándar):**
+  - 🟢 **+ (verde, `ti-plus`)** = **agregar / sumar**: meter una línea al carrito/compra/cotización, subir la
+    cantidad, agregar un IMEI, crear un registro nuevo (producto, cliente, proveedor…).
+  - 🔴 **− (rojo, `ti-minus`)** = **quitar / restar / eliminar**: sacar una línea de una lista, bajar la
+    cantidad, y borrar un registro de la base (el borrado permanente **siempre** con `confirm()` antes).
+  - Los **steppers de cantidad** (`− N +`) ya cumplían el estándar de antes (Vender `citqty`/`nxPosQty`,
+    Factura `stp`/`nxFacQtyStep`) — no se tocaron.
+- **Excepción deliberada (chips/tags):** la ✕ para quitar un chip/etiqueta (ej. un IMEI ya escrito en la
+  ventanilla de compra, un filtro) se **mantiene como ✕** — en una etiqueta la ✕ es la convención universal
+  de "quitar este tag", cambiarla a − se vería raro. Solo los BOTONES de acción de quitar/eliminar pasan a −.
+- **TANDA 1 — HECHA (v52.1): Vender, Factura, Compra, Inventario.** Cambios quirúrgicos (solo ícono + color,
+  cero lógica):
+  - Vender carrito (`pintarCarrito`, `.citdel`): quitar línea ✕ → **− rojo** (CSS `.citdel` pasó de gris
+    transparente a chip rojo `#fee2e2`/`#dc2626`).
+  - Factura (`pintarFactura`, `.del`): quitar línea ✕ → **− rojo** (CSS `.del` del POS a chip rojo igual).
+  - Compra (`pintarCompraItems`): quitar artículo ✕ → **− rojo** (ya tenía color rojo inline).
+  - Inventario (`renderProductos`, `nxPosDelProd`): eliminar artículo 🗑️ → **− rojo**. `nxPosDelProd` **ya
+    pedía `confirm()`** desde antes (encaja con la decisión del dueño) — no hizo falta agregarlo.
+  - Verificado con Playwright: los 4 botones ahora usan `ti-minus`; `getComputedStyle` confirma texto rojo
+    `rgb(220,38,38)` sobre fondo `rgb(254,226,226)` en `.citdel` y `.del` (chips rojos limpios); `node
+    --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **TANDA 2 — HECHA (v52.2): 18 botones de quitar/eliminar del POS.** Cambios quirúrgicos (solo ícono +
+  color, cero lógica de negocio), `ti-trash`/`ti-x` → `ti-minus`:
+  - **Rojo por fondo (botón rojo, ícono blanco):** `nxRolDel`, `nxVendDel`, `nxNcfDel`, `nxRhDelEmp`
+    (`.bc3` red bg), `nxPfNivelEliminarNuevo`, `nxCrmDel` (`.ab.g4` red bg), `nxPosDelProd` (`.danger`,
+    color rojo).
+  - **Rojo inline (botón ghost/claro, ícono ya rojo):** `nxSerialDel`, `nxPosDelCat`, `nxPosDelAbono`,
+    `nxPosDelCli`, `nxPosDelCompra`, `nxPosDelPagoProv`, `nxPosDelProv`, `nxPosDelMov`.
+  - **Se les AGREGÓ el rojo inline** (eran gris `.nxPosX`/`.nxFacDel` #cbd5e1): `nxCtaDelAsiento`,
+    `nxAsDelLinea`, `nxCotDel`, `nxTransDel` → `<i class="ti ti-minus" style="color:#dc2626">`.
+  - **CONFIRMACIÓN agregada a `nxSerialDel`** (era la única función de borrado permanente de la tanda SIN
+    `confirm()` — hueco real: borraba el IMEI de `pos_seriales` de una): ahora
+    `if(!confirm('¿Eliminar este IMEI/serial? Esta acción no se puede deshacer.'))return;` como primera
+    línea. `nxPfNivelEliminarNuevo` NO lleva confirm a propósito — solo quita un nivel del BORRADOR en
+    memoria (`_pfDraft.nivelesNuevos`), aún no guardado en la base (es "quitar de staging", como sacar
+    una línea del carrito). Las otras 14 funciones YA tenían su `confirm()`/`swalConfirm()`.
+  - **NO tocados a propósito:** las ✕ de chips/tags (quitar un IMEI escrito en la compra — la ✕ es la
+    convención de "quitar este tag"), las ✕ de cerrar ventana (`.nxBack`/`.nxPosX` de cierre), los
+    bulk-clear (`Vaciar carrito`, `nxLimpiarPruebas` "Borrar datos de prueba" — mismo criterio de Tanda 1),
+    y las anulaciones/cambios de estado (`nxApaCancelar` de apartados = cancelar, no eliminar de una lista).
+  - Verificado: `node --check parches.js` limpio, los 3 `<script>` de `index.html` pasan `new Function()`,
+    el `confirm` es la primera sentencia de `nxSerialDel`, y los colores computados de los íconos con rojo
+    inline ganan (estilo en línea > CSS). `version.json` válido.
+- **TANDA 3 — HECHA (v52.3): el COLOR del + y el − en los steppers de cantidad + cierre del POS.** Las
+  Tandas 1-2 cubrieron el ícono del lado − (borrar/quitar); esta cierra la parte de COLOR que faltaba en
+  los DOS controles +/− más usados de todo el POS — las casillas de cantidad `− N +` de **Vender**
+  (`.citqty`) y **Factura** (`.stp`), que estaban en gris para ambos signos. Ahora, puro CSS: `−` (bajar)
+  en **rojo** y `+` (subir) en **verde**, usando `button:first-child`/`button:last-child` (la estructura
+  es siempre `<button>−</button><span>N</span><button>+</button>`). `.citqty` usa `var(--pf-red)`/
+  `var(--pf-green)` (ya tiene sus variantes de tema oscuro); `.stp` usa `#dc2626`/`#16a34a` (literales,
+  consistente con el `#475569` que ya tenía). Cero lógica tocada (`nxPosQty`/`nxFacQtyStep` intactos).
+  - **Cerró el último hueco del sistema de íconos del POS:** la pastilla de un componente de combo
+    (`nxComboDel`, en la ficha de artículo) usaba un carácter `✕` de texto suelto en vez del sistema de
+    íconos — se pasó a `<i class="ti ti-x">` (mismo render que el chip de IMEI de Compra), conservando la
+    ✕ (correcto para un chip/token, ver excepción del reglamento) + se le agregó teclado (`role="button"`/
+    `tabindex`/`onkeydown`) y `aria-label` que no tenía.
+  - **Verificado con Playwright (código+CSS reales extraídos):** el − de `.citqty` y `.stp` computa rojo
+    `rgb(220,38,38)` y el + verde `rgb(22,163,74)`; la pastilla de combo es un `ti-x`. `node --check`
+    limpio, los 3 `<script>` de `index.html` pasan `new Function()`, `version.json` válido.
+- **REGLAMENTO DEL +/− COMPLETO EN EL POS.** Auditoría final confirmada: TODOS los botones de borrar/quitar
+  por fila usan `− rojo` (ti-minus); TODOS los de agregar/crear usan `+ verde` (ti-plus); los steppers de
+  cantidad tienen − rojo / + verde. Excepciones intencionales, con su razón: ✕ de cerrar ventana; basurero
+  de vaciado masivo (`Vaciar carrito`, `Borrar datos de prueba`); ✕ de chips/tokens (IMEI en Compra,
+  componente de combo); backspace/limpiar del teclado de patrón/PIN; ✕ de Cancelar/anular (`nxApaCancelar`);
+  ✕ de quitar imagen de una miniatura; `ti-sparkles` de "generar el juego base de defaults" (secuencias/
+  roles/plan de cuentas — no es "agregar uno", es sembrar el set inicial); floppy/check de submit de
+  formulario.
+  **Extensión a los demás módulos (el dueño eligió "Opción 1", 27-jul-2026) — por tandas:**
+  - **Tanda 4 — HECHA (v52.5): módulos secundarios de `parches.js`.** 21 botones de borrar/quitar
+    pasaron a `− rojo` (`ti-minus`), mismo criterio quirúrgico (solo ícono/color, cero lógica):
+    **Financiamiento** (`nxPrClienteBorrar` ×2, `nxPrestamoBorrar`, `nxPrestamoBorrarPago`,
+    `nxPrestamoBorrarDoc`), **Rifas** (`nxRifaEliminar`, `nxRifaFaqDel`, `nxRifaTutDel`,
+    `nxCuentaEliminar`, `nxPaqEliminar`, `nxVendEliminar`), **Vehículos** (`nxVehBorrar`,
+    `nxVehDelGasto`, `nxVehBorrarDoc`), **NEXUS AI** (`nxAiPilarDel`, `nxAiEliminarItem` — a estos 2 se
+    les agregó el rojo inline, eran gris `bghost`), y **admin/Seguros-en-parches** (`nxEliminarCuenta`,
+    `nxEliminarDest`, `nxEliminarEgreso`, `nxQuitarHora`, `nxQuitarBauche` — ya traían el rojo en el
+    botón, solo se cambió el glifo). Los botones de agregar/crear ya usaban `ti-plus`/`ti-user-plus`
+    (verificado, sin cambios). AGUAPRO y Consultorio NO tienen botones de borrar con basurero/✕.
+  - **Tanda 5 — HECHA (v52.5): núcleo de Seguros (`index.html`).** 14 botones de borrar de la app de
+    Seguros de producción (`eliminarEmp`, `eliminarAgt`, `eliminarUsu`, `eliminarTenantCfg`,
+    `eliminarClienteDef`, `eliminarBanco`, `eliminarAbono` ×3, `eliminarDoc` ×2) → `− rojo`. Casi todos
+    ya eran `bc3` (rojo) o rojo inline; a `eliminarBanco` (`bghost` gris) se le agregó el rojo.
+  - **Con esto el estándar +/− queda aplicado en TODO NEXUS PRO.** Excepciones documentadas siguen
+    igual (cerrar-ventana ✕, chips/tokens, keypad, cancelar/anular, vaciado masivo, quitar imagen).
+
+### REGLAMENTO DE BOTONES DE ACCIÓN Y BARRA INFERIOR — decretado y auditado, Tanda 1 (27-jul-2026, v53.3)
+El dueño pidió un reglamento formal para el pie de acciones (Guardar/Cancelar/Anular/Guardar e
+imprimir) — mismo patrón que los demás reglamentos de negocio, ahora sobre el pie de las pantallas.
+Confirmó explícitamente el grupo primario: "guardar + imprimir, guardar, cancelar, Anular" — y señaló
+un hueco real: "el botón de guardar e imprimir juntos no están", es decir, esa pareja de opciones (una
+que solo guarda, otra que guarda Y abre el documento) solo existía de verdad en 2 de las 25 pantallas
+del sistema con este tipo de pie.
+- **Auditoría primero (agente de exploración sobre `parches.js`, 25 pantallas, evidencia línea a
+  línea):** solo Factura/Prefactura y Compras ya tenían "Guardar e imprimir" como opción separada de
+  "Guardar" — con orden distinto entre su pie en línea y su barra fija (hallazgo real, corregido en el
+  texto del reglamento). Reparaciones-Nueva y Notas de crédito imprimían SIEMPRE tras guardar, sin
+  opción de solo guardar. 5 pantallas no tenían Cancelar en el pie, dependiendo solo de la flecha
+  "Volver" del header. El texto del verbo "Guardar" variaba en 8+ formas (Guardar cotización, Emitir
+  devolución, Transferir y despachar, Crear apartado...) — se decidió que ESO está bien (más claro que
+  un "Guardar" pelado), lo que se corrige es que el ÍCONO refleje lo que el botón hace de verdad.
+- **REGLAMENTOS.md §11 escrito** con el estándar completo: grupo primario de 4 posiciones
+  ([Eliminar] → Cancelar → [Guardar e imprimir] → Guardar), cuándo aplica "Guardar e imprimir" (solo
+  pantallas que producen un documento para un tercero) y cuándo no (nunca inventarlo donde no hay nada
+  que imprimir), y cuándo construir la barra fija (`nxStickyBarSet`) vs. cuándo el modal con su propio
+  pie sticky ya resuelve el problema sin duplicar el motor.
+- **Tanda 1, 4 arreglos reales, todos verificados contra el código real:**
+  1. **Reparaciones — Nueva (`nxRepNueva`):** el botón forzado "Recibir e imprimir orden" se dividió en
+     3 — Cancelar · Guardar e imprimir · Guardar. `nxRepGuardar(imprimir)` ganó el parámetro; antes
+     siempre llamaba a `nxRepImprimir`, ahora solo si `imprimir` es `true`.
+  2. **Notas de crédito (`abrirDevolucion`):** imprimía SIEMPRE tras guardar. Ahora Cancelar · Guardar
+     e imprimir · Emitir devolución — el botón primario (sin argumento) ya NO abre el documento;
+     `nxDevGuardar(imprimir)` solo llama a `nxDevImprimirObj` si se pidió explícitamente. **Cambio de
+     comportamiento por defecto**, documentado en el changelog para que el dueño lo sepa antes de
+     usarlo.
+  3. **Cotizaciones (`abrirCotizacion`):** no tenía forma de imprimir desde el propio formulario
+     (`nxCotImprimir` solo se llamaba desde la lista de cotizaciones). Ahora tiene su "Guardar e
+     imprimir" — `nxCotGuardar(imprimir)` llama a `window.nxCotImprimir(cotId)` tras guardar, con el
+     id real recién creado o editado.
+  4. **Cancelar agregado a 4 formularios que no lo tenían:** Financiamiento — Préstamo (`abrirForm`,
+     la pantalla completa de v52.7 que deliberadamente quitó el cierre-al-tocar-fuera — la que más
+     necesitaba un Cancelar de verdad), Financiamiento — Cliente (`abrirClienteForm`, conserva el
+     Eliminar condicional a la izquierda cuando el cliente ya existe), Apartados — Nuevo y Apartados —
+     Abonar (`nxApaNuevo`/`nxApaAbonar`, volvieron a la rejilla de 2 columnas de siempre en vez de
+     forzar 1 columna).
+- **Verificado con Playwright, código real extraído de `parches.js` por contenido** (no una
+  reconstrucción): 25 comprobaciones por regex sobre las 7 funciones tocadas (footer con los botones
+  correctos, en el orden correcto, con el `onclick` literal correcto, y el guardia `if(imprimir)` en el
+  lugar correcto) + **14 comprobaciones de clic real en un navegador** (las 7 pantallas renderizadas con
+  el código REAL — no un stub del footer — con las funciones de guardado espiadas: tocar "Guardar e
+  imprimir" llama con `true`, tocar el botón primario llama sin argumento, tocar Cancelar cierra el
+  modal) — las 39 comprobaciones pasan, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado en esta tanda** (no son botones rotos, son verbos de negocio correctos o
+  pantallas sin nada que imprimir): Transferencias ("Transferir y despachar" ya implica el conduce),
+  Producto/Artículo ("Imprimir etiqueta" vive aparte en el menú "..." del header a propósito — es una
+  etiqueta interna del inventario, no un documento para el cliente de la venta), y ninguna de las
+  pantallas sin documento (CRM, Entidades, Roles, Vendedores, NCF, Almacenes, Cuentas, Asientos,
+  Empleados, Nómina, Vehículos, Rifas, Proveedores) — forzarles "Guardar e imprimir" habría sido fingir
+  una función que no existe.
+- **Pendiente (fases siguientes, si el dueño las pide):** unificar formalmente los 8+ verbos de
+  "Guardar" en un inventario si algún día se decide que hace falta (hoy se deja variar a propósito) ·
+  extender `nxStickyBarSet` a Cotizaciones si algún día deja de ser modal · revisar si Producto/
+  Artículo debería tener "Guardar e imprimir etiqueta" en el pie en vez de en el menú del header.
+
+### POS · Vender — "Suspender venta" (27-jul-2026, v53.4)
+El dueño, tras la auditoría de la guía de botones de PC (ver arriba), pidió construir de verdad
+uno de los 3 huecos reales identificados: **"Suspender venta"** — *"que guarde el carrito y lo
+pueda retomar después, no poner suponer"* (que sea real, no un botón decorativo).
+- **Distinto de Prefactura A PROPÓSITO** (no se reusó esa tabla ni ese flujo): Prefactura es un
+  **documento** — numeración fiscal-adyacente, entra al Motor de Documentos, se imprime, es para
+  el cliente. Suspender venta es puramente **operativo** — el cajero se ve interrumpido (llega
+  otro cliente, hay que atender el taller) y necesita "guardar y seguir" sin perder nada. Sin
+  impresión, sin Motor de Documentos (`registrarDocumento` nunca se llama), sin marcar ningún
+  `estado` — al retomarla, el registro simplemente **se borra** (no queda un historial permanente
+  de carritos pausados, a diferencia de Prefactura que sí se conserva como historial).
+- **Tabla nueva `pos_ventas_suspendidas`** (migración `pos_ventas_suspendidas`, mismo patrón
+  org+trigger `set_organizacion_id()`+RLS `mi_rol() is not null AND organizacion_id =
+  mi_organizacion()` que `pos_prefacturas`): `numero`, `cliente_id`, `cliente_nombre`, `items`
+  (jsonb, el carrito completo), `total`, `notas`, `created_by_name`, `created_at`.
+  `get_advisors(security)` sin hallazgos nuevos para esta tabla.
+- **4 funciones nuevas** (junto a `nxPrefGuardar`/`nxPrefFacturar`/`nxPrefAnular`, mismo patrón
+  calcado con las diferencias de arriba): `window.nxVentaSuspender()` (guarda `_cart` completo —
+  igual que `nxPrefGuardar` pero sin Motor de Documentos ni imprimir; numeración con
+  `nextSeq('venta_suspendida')` y respaldo `'SV-'+...` si la org no sembró esa secuencia, mismo
+  criterio que Prefactura/Reparaciones cuando falta la secuencia), `window.nxVentaSuspLista()`
+  (ventana con la lista, mismo componente visual `.oppcard` que ya usa Prefactura),
+  `window.nxVentaRetomar(id)` (carga el carrito de vuelta, pide confirmación SOLO si el carrito
+  actual tiene algo que se perdería, **borra** el registro de la base — nunca lo marca
+  `estado:'facturada'` como hace Prefactura — y navega a la pestaña Vender), y
+  `window.nxVentaSuspBorrar(id)` (descartar sin retomar, con `confirm()` — mismo criterio de
+  "el borrado permanente siempre pide confirmación" ya establecido en el reglamento del +/−).
+- **UI en `pintarCarrito()` (Vender), 2 piezas:** (1) 3er botón "Suspender" en la fila `.cartsave`
+  (junto a Prefactura/Cotización, mismo estilo `.cartsavebtn`, deshabilitado con el carrito
+  vacío — el CSS de esa fila pasó de `grid-template-columns:1fr 1fr` a `repeat(3,1fr)`); (2) una
+  insignia circular (`.cartsuspbadge`, icono de pausa) junto al botón "Vaciar carrito" en el
+  encabezado del panel — **siempre visible** (para que se descubra la función aunque nunca se
+  haya usado) con un contador ámbar que solo aparece si `_ventasSusp.length>0`, abre la lista al
+  tocarla.
+- **Cargada en `cargarPOS()`** (`_ventasSusp`, junto a `_prefs`/`_prefHist`, mismo patrón
+  `Promise.all` en paralelo — `pos_ventas_suspendidas?select=*&order=created_at.desc&limit=100`).
+- **Deliberadamente no se tocó Factura/Prefactura** — el botón vive solo en `pintarCarrito()`
+  (el panel de Vender, `#posCartWrap`), que es la única pantalla que lo renderiza; como Vender y
+  Factura ya comparten el mismo `_cart` (desde v48.36), suspender desde cualquiera de las dos
+  pestañas suspende lo mismo — no hacía falta duplicar el botón en el panel de Factura.
+- Verificado con Playwright, código real extraído por contenido (`pintarCarrito`/
+  `nxVentaSuspender`/`nxVentaSuspLista`/`nxVentaSuspRows`/`nxVentaRetomar`/`nxVentaSuspBorrar`
+  + `totales`/`nextSeq`/`clienteSel`/`curSesPOS` tal cual, con balance de llaves real, no una
+  reconstrucción): **34 comprobaciones** — carrito vacío deja los 3 botones deshabilitados,
+  suspender con carrito lleno postea el total/items/cliente correctos y limpia el carrito, sin
+  carrito no postea nada, la insignia muestra el conteo real, la ventana lista la venta
+  suspendida con su número/total/cliente, retomar restaura el carrito y BORRA el registro (no lo
+  marca `facturada`) y navega a Vender, retomar con el carrito ya ocupado pide confirmación y
+  respeta cancelar/aceptar, descartar borra de la base con confirmación y respeta cancelar, sin
+  desborde horizontal en 390px. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente si el dueño lo pide:** los otros 2 huecos reales de la misma auditoría — Exportar
+  universal en pantallas de reporte, y botones reales de WhatsApp/Correo en el flujo post-cobro
+  (hoy solo hay auto-impresión + los botones de "Ver factura" del ticket).
+
+### Login — quitada la pantalla vieja de "Conectar base de datos" con `admin123` de ejemplo (31-jul-2026, v53.6)
+El dueño conectó **firecrawl** (MCP, ver arriba) y usó `mcp__firecrawl__firecrawl_scrape` contra
+`nexusprord.com` para probar que ya se podía navegar la web de verdad. El resultado del scrape trajo
+algo inesperado: una pantalla "Configuración inicial — Conectar base de datos Supabase" con un
+recuadro de SQL de ejemplo que incluía `insert into usuarios_sistema(...) values('Administrador',
+'Admin General','admin','admin123','admin')` **en texto plano**, marcada "NEXUS PRO v6" (versión
+vieja — la app real va por v53.5 en ese momento).
+- **Investigado ANTES de tocar nada, con el código real del repo (no solo el HTML capturado por el
+  scrape):** se confirmó que `SUPABASE_URL_FIXED`/`SUPABASE_KEY_FIXED` (dos constantes fijas, no
+  vacías, línea ~2472 de `index.html`) son la fuente REAL de credenciales de la app en producción —
+  se pusieron ahí hace mucho para que la app "funcione en cualquier dispositivo" sin que nadie tenga
+  que teclear una URL/clave de Supabase. Esto hace que `if(url && key)` en el `DOMContentLoaded`
+  **siempre** sea verdadero, así que la pantalla de "Conectar base de datos" (`#setupScreen`) y su
+  enlace de entrada (`.lsetup`, "⚙️ Primera vez — conectar base de datos") **nunca se llegaban a
+  mostrar en producción** — quedaron ahí desde una versión mucho más vieja del sistema (antes de que
+  las credenciales quedaran fijas), antes de esta sesión de trabajo. **Conclusión: NO era un agujero
+  de seguridad vivo contra el backend real** — el `admin123` de ese SQL es solo texto de ejemplo para
+  alguien que arrancara un proyecto Supabase distinto desde cero, nunca se ejecuta contra la base
+  real del dueño (`tnwsgcxurfyuszxsewsn`). **Pero SÍ era código muerto expuesto en el código fuente
+  de la página** (visible con "Ver código fuente" o cualquier scraper, como pasó aquí) — exactamente
+  el tipo de cosa que la propia regla #1 de este archivo pide quitar ("Depurar — quitar dead code").
+  Se le explicó esto al dueño con la evidencia real antes de proponer nada; confirmó "Si" para
+  eliminarlo.
+- **Quitado por completo, sin dejar ninguna referencia colgada:** el `<div id="setupScreen">`
+  completo (instrucciones, caja de SQL, campos de URL/clave, botón "Conectar y entrar al sistema"),
+  el enlace `.lsetup` del login, todo el bloque CSS `/* ── SETUP ── */` (`.sbox`/`.slogo`/`.smk`/
+  `.sh`/`.sp`/`.sfr`/`.serr`/`.sbtn`/`.ssteps`/`.sstep`/`.ssn`/`.sql-box`/`.sql-btn` — verificado con
+  grep, uno por uno, que ninguna de esas clases se usaba en ningún otro lugar del archivo antes de
+  borrarlas), la constante `const SQL_SCRIPT = ...` (el script con el `admin123`), y las 3 funciones
+  que solo existían para esa pantalla: `mostrarSetup()`, `copiarSQL()` y `conectar()`. El enlace
+  muerto dentro del mensaje de error de `doLogin()` ("Haz clic aquí para configurar →", que llamaba a
+  `mostrarSetup()`) se cambió a un texto plano ("Contacta al administrador") — ese mensaje de error en
+  sí tampoco se llega a mostrar nunca en producción (mismo motivo: `url`/`key` siempre están puestas),
+  pero se corrigió igual por si algún día cambia esa condición.
+- **El paso más delicado — 6 llamadas sueltas a `document.getElementById('setupScreen').style.
+  display=...` repartidas por el archivo** (dentro de `iniciarApp()`, del flujo SSO, de la
+  restauración de sesión, y dos dentro del `DOMContentLoaded` — una de ellas en la rama
+  `if(url && key){...}` que corre en **cada carga de página en producción**, sin ningún `if(el)` de
+  por medio). Quitar el HTML sin quitar también estas 6 líneas habría hecho que la app **crasheara
+  en el arranque para todos los usuarios** (`TypeError: Cannot read properties of null`) — exactamente
+  el tipo de bug que este mismo archivo ya documentó una vez (v49.58, "BUG MÍO en producción"). Se
+  quitaron las 6, sin tocar nada más de esas funciones. La lógica de "recordar el último usuario"
+  (`nx_user_persist`) que vivía después de la rama muerta de `setupScreen` se dejó **intacta en su
+  lugar** (sigue siendo una rama inalcanzable, como ya lo era antes de este cambio) — es un bug
+  aparte y menor (esa lógica nunca corre porque la rama de arriba siempre retorna primero), y no se
+  mezcló en este cambio sin preguntarle antes al dueño.
+- **Verificado en 3 capas, no solo `node --check`:** (1) los 3 bloques `<script>` de `index.html`
+  pasan `new Function()` (1,423 / 486,869 / 681 caracteres); (2) `node --check parches.js` limpio
+  (archivo no tocado en este cambio); (3) **Playwright cargando el `index.html` real** (con
+  `parches.js` real al lado) en un navegador, sirviendo los archivos por HTTP local — confirmado:
+  la pantalla de login carga (`display:flex`), `#setupScreen`/`.lsetup` ya no existen en el DOM,
+  **cero excepciones sin capturar** (`pageerror`), y tocar "Entrar al sistema" con los campos vacíos
+  sigue disparando `doLogin()` correctamente ("Ingresa usuario y contraseña."). Los 12 errores de
+  consola que salieron en la prueba son ruido de red del propio entorno de esta sesión (bloqueado sin
+  salida real a internet — `net::ERR_TUNNEL_CONNECTION_FAILED` contra CDNs de fuentes/íconos y contra
+  el API real de Supabase), no errores de JavaScript — se filtraron aparte y se confirmó que **cero**
+  eran errores reales de código.
+- Verificado también que `admin123`/`SQL_SCRIPT`/"NEXUS PRO v6" (el texto exacto del hallazgo
+  original) ya no aparece en ningún lugar del archivo — las únicas coincidencias de "NEXUS PRO v6"
+  que quedan son 7 usos completamente distintos y legítimos (el ticker del Dashboard, el pie de
+  documentos impresos, encabezados de exportación a Excel), sin relación con la pantalla eliminada.
+
+### Login — logo real del dueño arriba de la tarjeta (31-jul-2026, v53.7)
+El dueño mandó un logo nuevo ("NEXUS PRO — Multiempresa · POS · ERP", banda oscura con degradado
+azul→negro, "NEXUS" en blanco + "PRO" en un recuadro azul + una barra diagonal, brillo cálido en la
+esquina) y pidió aplicarle mejoras y agregarlo al sistema — hasta ahora el único "logo" que existía
+en toda la app era una insignia CSS (cuadrado azul redondeado con un ícono `ti-shield-check` de
+Tabler), sin ningún archivo de imagen real de por medio.
+- **Mejora aplicada a la imagen (gratis, sin gastar créditos de generación):** el archivo que mandó
+  era un JPEG de 1125×268 — se revisó de cerca (zoom 3x sobre el texto) y no tenía artefactos de
+  compresión visibles, así que **no hacía falta un upscale pagado** — se optimizó de forma
+  conservadora: convertido a **PNG sin pérdida** (para no volver a comprimir con JPEG, el tipo de
+  archivo más propenso a manchar los bordes del texto blanco sobre fondo oscuro), con un realce
+  sutil de nitidez (`UnsharpMask`) + contraste (+4%). Guardado como `logo-nexus-pro.png` en la raíz
+  del repo (mismo patrón que `icon-*.png`, servido tal cual por el Worker de Cloudflare).
+- **Dónde se agregó — la pantalla de Login, arriba de la tarjeta blanca, NO adentro:** el fondo de
+  `#loginScreen` ya es un degradado azul marino oscuro (`radial-gradient(...#1e3a6e→#132a52→#0a1730)`)
+  — casi idéntico en tono al fondo del logo — así que el logo se puso como banner (`<img class="lhero">`)
+  **encima** de `.lbox` (la tarjeta blanca del formulario), envueltos los dos en un `.lwrap` nuevo
+  (`display:flex;flex-direction:column;align-items:center` — necesario porque `#loginScreen` es
+  `display:flex` sin `flex-direction:column`, así que sin el wrapper el logo y la tarjeta habrían
+  quedado uno al lado del otro en vez de apilados). Meterlo DENTRO de la tarjeta blanca se descartó
+  a propósito — el logo tiene fondo oscuro de punta a punta (sin transparencia), así que sobre blanco
+  se habría visto como un rectángulo oscuro pegado, no como parte del diseño.
+- **BUG VISUAL real encontrado con la primera captura (no a ojo — con Playwright), corregido antes de
+  publicar:** al agregar el logo grande arriba, la insignia azul + el texto "NEXUS PRO" que ya vivían
+  DENTRO de la tarjeta blanca (`.llogo`/`.lmk`/`.lbrand`) quedaban **repetidos** — la marca salía dos
+  veces, una encima de la otra, en dos estilos distintos. Se quitó esa insignia+texto por completo
+  (código muerto verificado por grep antes de borrar — no lo usaba nada más en el archivo) y se dejó
+  solo la línea descriptiva que sí aportaba algo nuevo, `.lver` ("Plataforma de gestión · República
+  Dominicana"), ahora como subtítulo independiente arriba de "Iniciar sesión". Se limpió de paso la
+  regla CSS `.lbrand{font-size:20px}` del `@media(max-width:768px)` — quedó huérfana al quitar el
+  `<div class="lbrand">` del HTML.
+- **Deliberadamente NO tocado en esta pasada:** el ícono de la PWA (`icon-*.png`, generado por
+  `gen_icon.py` con un escudo hexagonal azul cristalino) y el favicon — es un mark cuadrado con un
+  recorte distinto al del banner (que trae texto/tagline horizontal, ilegible reducido a 16-32px), y
+  cambiar el icono real afectaría el icono ya instalado en el celular de cada usuario — no se pidió
+  explícito, así que se dejó para una ronda aparte si el dueño quiere ese paso también. Tampoco se
+  tocó la pantalla de bienvenida/splash (`#nxSplash`) ni el loader (`#nxLoader`) — misma insignia CSS
+  de siempre, sin cambios, para no arriesgar esa pantalla también sin que se pidiera.
+- **Verificado con Playwright, código real, en los dos anchos típicos** (390px móvil / 1280px
+  escritorio): el logo carga (`naturalWidth/naturalHeight` reales, `complete:true`), sin desborde
+  horizontal en ninguno de los dos, la tarjeta quedó decluttered (sin la marca duplicada), y el flujo
+  de login sigue funcionando igual (`doLogin()` con campos vacíos sigue mostrando su aviso de
+  siempre) — 0 errores de JavaScript reales (los de red son el mismo ruido de este entorno sin salida
+  a internet, documentado varias veces en este archivo). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Login — vuelta al cristal esmerilado, DECISIÓN REVERTIDA A PROPÓSITO por el dueño (31-jul-2026, v53.8)
+El dueño mandó un mockup detallado ("PROMPT PARA CLAUDE") de un login completo: tarjeta oscura
+semitransparente con desenfoque de verdad (`backdrop-filter`) sobre una foto de oficina difuminada,
+insignia circular de escudo, "Bienvenido de nuevo" + "Inicia sesión para continuar", campos con
+ícono a la izquierda, casilla "Recordarme" + enlace "¿Olvidaste tu contraseña?", botón grande, y un
+panel de "Seguridad de nivel empresarial" al pie.
+- **Conflicto real detectado ANTES de tocar nada, no ignorado ni aplicado a ciegas:** ese mismo look
+  —tarjeta de cristal esmerilado sobre una foto difuminada— es EXACTAMENTE lo que este archivo ya
+  documenta que se **quitó a propósito** en v48.14 ("REDISEÑO PREMIUM"): "se quitaron las 4 manchas
+  de color flotantes animadas... el `backdrop-filter`... y el brillo animado del botón — todo eso es
+  el 'look genérico de plantilla de IA' que ya se había identificado como problema". Aplicar el
+  mockup tal cual habría revertido esa decisión sin que nadie lo supiera. Se le explicó al dueño esa
+  historia exacta y se le preguntó cómo seguir (3 opciones: volver al cristal esmerilado tal cual,
+  quedarse con el estilo sólido actual y sumar solo las piezas reales, o un punto medio sin foto/
+  blur). **El dueño confirmó explícitamente: "Sí, quiero ese look ahora"** — decisión suya, informada,
+  documentada aquí como el registro de la autorización.
+- **Auditado antes de construir, qué del mockup era real y qué no** (mismo criterio de "no fingir
+  funciones que no existen" de siempre):
+  1. **"Recordarme" — YA era real, solo le faltaba la casilla en pantalla.** `doLogin()`/
+     `doLoginAuth()` ya leían `document.getElementById('rememberMe')?.checked` y ya guardaban
+     `nx_sesion_persist`/`nx_user_persist` en el navegador si estaba marcado — el código llevaba
+     tiempo esperando un checkbox que nunca se agregó al HTML. **Bug real encontrado de paso:** la
+     lógica que RELLENA el usuario recordado al volver a abrir la app vivía después de un `return`
+     dentro de la rama `if(url && key)` del arranque — como esa rama SIEMPRE es verdadera en
+     producción (las credenciales de Supabase están fijas en el código, ver más arriba), ese código
+     de restauración nunca se ejecutaba, dead code puro. Se movió DENTRO de la rama alcanzable, antes
+     del `return`, protegido con `if(el)`/`if(rm)` por si el checkbox aún no existiera.
+  2. **"¿Olvidaste tu contraseña?" — NO existe ningún flujo de recuperación de contraseña en el
+     sistema (verificado con grep en `index.html` y `parches.js`, cero resultados).** Se decidió
+     **NO agregarlo** — un enlace que no lleva a ningún lado sería justo el tipo de función fingida
+     que este archivo evita en cada módulo (ver NEXUS AI CONTENT, Cuotas, Financiamiento...).
+- **La foto de fondo del mockup se sustituyó por 2 manchas de luz difuminadas hechas 100% en CSS**
+  (`#loginScreen::before`/`::after`, azul + ámbar, `filter:blur(90px)`) — no una foto real. Se le
+  avisa esto al dueño explícitamente (no se ocultó): este entorno de sesión no tiene salida a
+  internet para buscar/descargar una foto, y el intento de generar una imagen con Higgsfield falló
+  por dos motivos reales (Recraft exige un plan de pago que la cuenta no tiene; el modelo de
+  respaldo `nano_banana_pro` dio "Out of credits in the selected workspace", sin ningún plan
+  gratuito de respaldo disponible — confirmado con `models_explore(unlim:true)` → `available:false`).
+  Si el dueño manda o consigue una foto real más adelante, se puede meter como `background-image` de
+  `#loginScreen` sin tocar nada más — el desenfoque real (`backdrop-filter`) de la tarjeta seguiría
+  funcionando exactamente igual encima de una foto real.
+- **Piezas nuevas construidas (`index.html`, solo la pantalla de login — cero cambios en
+  `doLogin()`/`doLoginAuth()`/RLS/lo que hace el botón):**
+  - `.lbox` pasó de `background:#ffffff` sólido a `background:rgba(13,17,23,.72)` +
+    `backdrop-filter:blur(24px) saturate(140%)` (con prefijo `-webkit-` para Safari/iOS) + borde y
+    sombra ajustados para el fondo oscuro.
+  - `.lshield` (nueva): insignia circular con degradado azul tenue + ícono `ti-shield-check`, entre
+    el logo (v53.7) y el encabezado.
+  - Encabezado cambiado a "Bienvenido de nuevo" (`.lh`, ahora blanco y más grande) +
+    "Inicia sesión para continuar" — reusa la clase `.lver` (antes mostraba "Plataforma de gestión ·
+    República Dominicana" en mono chico; se redefinió como subtítulo normal en vez de crear una
+    clase nueva y dejar `.lver` como CSS muerto).
+  - `.lfi` (nueva): envoltorio de cada campo con un ícono a la izquierda (`ti-user` para Usuario,
+    `ti-lock` para Contraseña) — `.lfr .lfi input{padding-left:42px}` (especificidad 0,2,1, a
+    propósito más específica que la regla base `.lfr input`, mismo criterio de siempre en este
+    archivo sobre no confiar en el orden de las reglas para vencer un empate de especificidad). El
+    campo de contraseña conserva su `padding-right:42px` inline para el botón de mostrar/ocultar
+    (`loginPwdEye`, sin tocar) — los dos paddings conviven sin chocar porque son lados distintos.
+  - `.lchkrow`/`#rememberMe`: casilla real con su `<label for="rememberMe">`, `accent-color:#2563eb`.
+  - `.lerr`: recolorada para verse bien sobre fondo oscuro (antes roja sobre blanco).
+  - `.lsec` (nueva): panel "Seguridad de nivel empresarial" al pie, con ícono + texto — 100%
+    decorativo/informativo (no afirma nada que el sistema no cumpla — cifrado en tránsito vía HTTPS
+    es real, RLS de Supabase respalda "los mismos estándares que usan bancos", sin exagerar).
+  - `#authToggleLink` (el enlace oculto "Probar inicio de sesión seguro (beta)", `display:none` de
+    por sí) ganó el mismo color claro por consistencia si algún día se muestra.
+- **Verificado con Playwright, código real, 390px y 1280px:** el fondo de `.lbox` se confirmó por
+  `getComputedStyle` (`rgba(13,17,23,.72)` + `backdrop-filter:blur(24px) saturate(1.4)`, no a ojo),
+  la insignia/encabezado/subtítulo/panel de seguridad existen, la casilla `#rememberMe` es un
+  checkbox real que se marca/desmarca de verdad (`.check()` de Playwright), **no existe ningún
+  enlace de "olvidaste tu contraseña"** (aserción explícita de ausencia), sin desborde horizontal en
+  ninguno de los 2 anchos, 0 errores de JavaScript reales, y `doLogin()` con campos vacíos sigue
+  mostrando su aviso de siempre. `node --check parches.js` limpio (archivo no tocado); los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** el ícono de la PWA/favicon, la pantalla de splash (`#nxSplash`) ni
+  el loader — mismos motivos que en v53.7, no se pidió y cambiar el ícono ya instalado en el celular
+  de cada usuario no es un ajuste trivial de reversar.
+
+### Login — mockup pixel-a-pixel del dueño, estilo Enterprise (31-jul-2026, v53.9)
+El dueño mandó un mockup mucho más detallado que el anterior — marcado "PROMPT PARA CLAUDE" con
+medidas exactas (colores hex, alturas en px, radios, tipografía) e instrucción explícita:
+*"No quiero una reinterpretación... quiero reproducir prácticamente la misma composición del mockup
+aprobado."* Se construyó tal cual, con 2 desviaciones deliberadas y documentadas (logo real en vez de
+recrearlo, y el enlace de recuperar contraseña con una acción honesta en vez de un flujo inexistente).
+- **Logo real DENTRO de la tarjeta, no recreado a mano.** El mockup pedía "NEXUS" blanco + "PRO" en
+  caja azul + tagline con separadores — exactamente lo que YA tiene el logo real que el dueño mandó y
+  aprobó en v53.7 (`logo-nexus-pro.png`). En vez de reinterpretar esa composición en HTML/CSS (arriesgando
+  una tipografía/proporción distinta a la marca real), se **recortó el fondo oscuro de la imagen
+  original** dejando el emblema con transparencia real: se midió el histograma de brillo de la imagen
+  (`PIL`+`numpy`, sin herramientas de pago) para separar las letras/caja azul (brillo alto) del fondo casi
+  negro (brillo bajo), con una rampa de transición suave en los bordes para que no quedara dentado. El
+  recorte se acotó al ancho x=[165,925] para excluir a propósito el brillo cálido que la imagen original
+  tenía en la esquina derecha (decorativo del banner ancho, no del emblema) — confirmado con un escaneo
+  columna por columna de píxeles brillantes antes de cortar, no a ojo. Resultado: `logo-nexus-pro-mark.png`
+  (756×224, fondo transparente), colocado a `width:70%;max-width:300px` como pedía el mockup. El banner
+  ancho original (`logo-nexus-pro.png`) se queda en el repo sin usar, por si sirve en otra pantalla más
+  adelante (splash, documentos impresos) — no se borró.
+- **El anillo del escudo central usa "no fondos sólidos" tal como pedía el mockup** — círculo con solo
+  borde azul + `box-shadow` de glow, sin relleno. El círculo MÁS CHICO del panel "Seguridad de nivel
+  empresarial" SÍ lleva relleno (`radial-gradient` tenue) — confirmado con zoom del propio mockup que son
+  2 tratamientos distintos a propósito, no un descuido.
+- **Checkbox "Recordarme" — de `accent-color` a un checkbox 100% custom**, tal como pedía "No usar estilo
+  HTML por defecto": `appearance:none` + `border-radius:6px` + fondo/borde propios + un check en `::after`
+  dibujado con 2 bordes rotados 45° (sin SVG ni ícono de fuente, CSS puro). Mismo `<label for=>` de
+  siempre, accesible.
+- **"¿Olvidaste tu contraseña?" — esta vez SÍ se agregó** (el dueño lo pidió explícito, dos veces, con
+  color/hover exactos) pero **sin fingir un flujo que no existe**: se verificó con grep en `index.html` y
+  `parches.js` que no hay NINGÚN sistema de recuperación de contraseña por correo (los logins usan un
+  correo sintético `<usuario>@<org>.local`, no una bandeja de correo real que se le pueda mandar un enlace
+  de reseteo). Función nueva `nxForgotPassword()` (junto a `nxTogglePwd`): al tocar el enlace, muestra un
+  `toast('info',...)` — "Contacta al administrador del sistema para restablecer tu contraseña" — honesto
+  sobre lo que el sistema puede hacer hoy, en vez de un enlace muerto o una pantalla de "revisa tu correo"
+  falsa. Si el dueño más adelante quiere un flujo de verdad, es un proyecto aparte (necesitaría decidir
+  cómo resetear una cuenta con correo sintético — probablemente un flujo asistido por el admin, no
+  autoservicio por correo).
+- **BUG REAL encontrado y arreglado, no solo estético — un tema global viejo pisaba TODOS los campos de
+  la app.** Al verificar con Playwright que el fondo oscuro de los campos se veía bien, salió que los
+  inputs/checkbox/botón del login se rendereaban con un fondo BLANCO translúcido en vez del oscuro que
+  el CSS pedía. Investigado con un volcado de TODAS las reglas CSS que hacían match contra el elemento
+  (no a ojo): `parches.js` inyecta, sin condición de tema ni de pantalla, un bloque
+  `input,select,textarea{background:rgba(255,255,255,.78)!important;...}` +
+  `.btn,button,.bsm,.bxl{border-radius:14px!important;border:1px solid rgba(139,92,246,.2)!important;...}`
+  — un tema "semi-glass" antiguo (`nx-semi-glass-global-css`) que corre en **cualquier pantalla del
+  sistema**, no solo donde se pensó. Como usa `!important` sobre selectores de TAG (`input`, `button`), le
+  ganaba a las reglas del login nuevo que no tenían esa fuerza. **Esto no es un bug nuevo de esta sesión —
+  ya afectaba a TODOS los campos e botones de toda la app desde antes**, solo que en pantallas con fondo
+  claro pasaba desapercibido (un input "blanco translúcido" sobre un fondo ya blanco no se nota); en el
+  login oscuro nuevo se hizo evidente. Arreglado con el mismo patrón de "blindaje" que ya usan el sidebar
+  del POS y el de Financiamiento contra exactamente este tipo de conflicto: reglas `#loginScreen .lfr
+  input{...!important}`/`#loginScreen .lchk input[type=checkbox]{...!important}`/`#loginScreen
+  .lbtn{...!important}` con más especificidad (id+clase) que gana al `!important` de tag-solo. **Alcance
+  del arreglo: solo el login** — el resto de la app sigue con el mismo tema "semi-glass" corriendo de
+  fondo; si el dueño quiere, cerrar esto de raíz en TODA la app sería una auditoría aparte (encontrar por
+  qué ese bloque no está condicionado a ningún tema y decidir si debe estarlo).
+- **Verificado con Playwright, código real, en 3 anchos (390/768/1280px):** los 4 elementos afectados por
+  el bug del tema global (usuario, contraseña, checkbox, botón) se confirmaron con `getComputedStyle`
+  ANTES (fondo/borde/sombra del tema viejo, medido) y DESPUÉS del blindaje (los valores propios del
+  diseño nuevo, medido) — no se dio por bueno a ojo. El checkbox se marca de verdad con un clic real y
+  queda azul (`rgb(37,99,235)`, confirmado por color exacto); tocar "¿Olvidaste tu contraseña?" dispara el
+  toast correcto; el logo con transparencia carga y mide 70% del ancho de la tarjeta; sin desborde
+  horizontal en los 3 anchos; 0 errores de JavaScript reales. `node --check parches.js` limpio (archivo no
+  tocado en el login, aunque el bug del tema vive ahí); los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Nota honesta sobre los íconos:** en este entorno de prueba (sandbox sin salida a internet) el webfont
+  de Tabler Icons no carga (bloqueado el CDN), así que las capturas de esta sesión muestran círculos de
+  color en vez de los glifos reales (persona, candado, ojo, escudo, entrar) — es la misma limitación ya
+  documentada varias veces en este archivo, no un bug del código. En `nexusprord.com` el CDN sí carga y
+  los íconos se ven normales.
+
+### NEXUS PRO — LIBRERÍAS Y ESTÁNDARES OBLIGATORIOS, FASE 1: tema oscuro unificado + núcleo de Seguros (31-jul-2026, v54.0)
+El dueño mandó un pedido de "Design System único" para todo NEXUS PRO (íconos exclusivos Tabler, tipografía
+Plus Jakarta Sans, botones/inputs/modales/sombras/colores/animaciones estandarizados, y una lista de
+componentes globales reutilizables — con la regla "NO se permiten excepciones"). Se auditó contra el
+código real antes de tocar nada (mismo criterio de siempre — verificar, no asumir):
+- **Ya cumplido, sin tocar nada:** Tabler Icons ya es 100% exclusivo (1,504 usos, cero Font Awesome/
+  Bootstrap/Material/Remix/Heroicons/Ionicons). El sistema ya evita maquetar con `<table>` para layout.
+- **`npm install` no aplica a este proyecto:** NEXUS PRO no tiene `package.json` ni build ni bundler — es
+  `index.html`+`parches.js` editados a mano y subidos directo, decisión del dueño desde el principio. El
+  dueño pidió instalar `@tabler/icons-react` y luego `lucide-react` para "probar" — los dos corrieron
+  bien como comando de npm (142 MB y 182 MB de `node_modules` respectivamente) pero **quedan
+  completamente inertes**: `index.html` no tiene ningún `<script type="module">`/`import`, y
+  `@tabler/icons-react` además necesita React, que no existe en el proyecto. Confirmado con el dueño
+  (`AskUserQuestion`) que era para NEXUS PRO, no un proyecto aparte — se retiró el experimento
+  (`rm -rf node_modules package.json package-lock.json`, con `.gitignore` nuevo por si se repite) y se
+  redirigió el esfuerzo a lo que sí produce resultado real en la arquitectura actual: aplicar los VALORES
+  del pedido (colores/radios/sombras/tipografía/tema) directo sobre el `index.html` real.
+- **3 decisiones confirmadas con el dueño por `AskUserQuestion`** (conflictos reales con reglas ya
+  decretadas, no se resolvieron por cuenta propia — mismo criterio que el propio NPGS.md exige):
+  1. **Tema oscuro en TODO el sistema** — el dueño lo confirmó pese al costo real explicado (semanas de
+     trabajo por tandas, dado que la mayoría del sistema —`.nxSf` Seguros, `.nxPf` POS— es hoy 100% tema
+     claro).
+  2. **"Cada app su color" SE QUEDA** — el reglamento ya decretado (Financiamiento morado, POS azul,
+     Rifas índigo, Consultorio teal, AGUAPRO navy, Clientes SaaS verde, Panel del Dueño ámbar, NEXUS AI
+     CONTENT magenta) NO se reversa; el tema oscuro se aplica como FONDO parejo, pero cada módulo
+     conserva su acento — como Notion/Linear con temas, no como "todo azul".
+  3. **Segoe UI se queda como fuente base** — Plus Jakarta Sans sigue siendo la excepción ya decretada
+     en v48.1/v48.16 (Cuotas del POS, Financiamiento), no se extiende a más módulos.
+- **HALLAZGO CLAVE antes de construir nada nuevo (investigado, no asumido):** ya existía un tema
+  "PREMIUM DARK" A MEDIAS construido (Ajustes → Apariencia, `aplicarTema()`/picker de 4 opciones:
+  Clásico/Premium Dark/Liquid Glass/Automático) — con **2 problemas reales**:
+  1. **Dos mecanismos de oscuro sin coordinar.** El botón de la barra superior (`toggleDarkMode()`)
+     prendía su PROPIA clase `body.dark` (17 reglas CSS, básicas) con su propia preferencia
+     (`nxPref('dark',...)`); el picker de Ajustes (`aplicarTema('premium')`) prendía `body.tema-premium`
+     (~90 reglas, mucho más completo) con OTRA preferencia (`nxPref('tema',...)`) — un usuario podía
+     tener uno prendido y el otro apagado sin saberlo, violando la propia regla #13 del dueño ("no crear
+     estilos distintos por módulo"). Además había un tercer nombre huérfano, `body.tema-oscuro`
+     (usado en una sola regla de `.nxPf` en `parches.js`), que **ningún JS del sistema prendía jamás**
+     — dead code puro.
+  2. **`.nxSf` (el núcleo de Seguros — Clientes/Facturas/Ficha del cliente/Historial de pagos/Pólizas/
+     Agentes/Empresas/Comisiones/Contabilidad/Reportes/Ajustes/Usuarios, lo que el dueño usa TODOS LOS
+     DÍAS con datos reales) tenía **CERO cobertura oscura** en cualquiera de los dos mecanismos — hoy,
+     activar "Premium Dark" dejaba el negocio entero de seguros en azul claro sobre un shell oscuro,
+     roto.
+- **Arreglo — consolidación a UN SOLO mecanismo** (`index.html`): `toggleDarkMode()` reescrito como
+  envoltorio de una línea sobre `aplicarTema()` (alterna clásico↔premium, ya no toca ninguna clase ni
+  preferencia propia); `aplicarTema()` ganó la sincronización del ícono luna/sol del botón superior
+  (antes solo `toggleDarkMode` lo hacía — ahora es el ÚNICO lugar que decide, así el botón y el picker de
+  Ajustes SIEMPRE quedan de acuerdo entre sí, sin importar cuál se tocó). `aplicarDarkGuardado()` (la
+  función vieja) se **eliminó por completo** junto con su única llamada — dead code, regla #1 del
+  reglamento ("depurar"). **Rescate por única vez** en `cargarTemaGuardado()`: quien había prendido el
+  botón viejo (`dark:true`) pero **JAMÁS** tocó el picker nuevo migra solo a "premium" la primera vez que
+  entra tras esta versión, sin perder su preferencia en silencio (mismo criterio que el rescate de
+  `nx_last_place` en v49.80). Limpieza de CSS muerto: las 12 reglas `body.dark{...}` de `index.html` se
+  borraron (ya cubiertas, mejor, por `body.tema-premium`); las 5 reglas combinadas
+  `body.tema-premium X, body.dark X` de `parches.js` se dejaron solo con `body.tema-premium X`; se quitó
+  el `body.tema-oscuro` huérfano de la regla `--pf-*` del POS.
+- **BUG REAL encontrado y corregido durante la propia verificación, antes de publicar (no llegó a
+  producción):** el primer intento del rescate comparaba `nxPref('tema','clasico')==='clasico'` — pero
+  eso **no distingue** "nunca tocó el tema" (valor por defecto) de "eligió Clásico a propósito en
+  Ajustes" (mismo valor guardado explícito) — con esa comparación, alguien que hubiera usado el botón
+  viejo alguna vez y DESPUÉS elegido "Clásico" a propósito en el picker nuevo habría sido forzado de
+  vuelta a oscuro en cada entrada, revirtiendo su elección real sin que lo pidiera. Corregido comparando
+  la EXISTENCIA de la clave (`Object.prototype.hasOwnProperty.call(_prefs,'tema')`), no su valor — solo
+  se rescata a quien de verdad nunca guardó ninguna preferencia de tema. Detectado con una prueba
+  Playwright dedicada a ese caso exacto (ver abajo), no a ojo.
+- **Cobertura oscura completa de `.nxSf`:** bloque nuevo `body.tema-premium .nxSf{...}` que redefine los
+  17 tokens `--sf-*` (bg/card/line/primary/ok/warn/err/tx, cada uno con su variante clara/oscura) con los
+  MISMOS tonos ya usados y probados en `--pf-*` del POS (`#0B0F19`/`#121826`/`#232B3D`/`#3B82F6`...) para
+  que el sistema se sienta como una sola identidad, no dos temas oscuros distintos por módulo. Como las
+  73 reglas de `.nxSf` ya estaban construidas 100% sobre estos tokens (verificado con grep: solo 4 hex
+  sueltos fuera del sistema de variables en todo el namespace), una sola redefinición cubre las 12
+  pantallas del núcleo sin tocar su HTML/JS. Los 4 hex sueltos (el ícono morado del KPI y la referencia
+  del cliente) se oscurecieron a mano con el mismo criterio que `--pf-purple`/`--pf-purple-l` del POS
+  (`#1E1B33`/`#A78BFA`) — el texto blanco sobre íconos de color sólido no necesitaba cambiar.
+- **Verificado con Playwright, código y CSS reales extraídos del archivo** (no una reconstrucción — el
+  `<style>` completo de `index.html` cargado tal cual contra markup real de `.nxSf`/`.sf-kpi`/`.sf-tbl`/
+  `.tw`, y las 3 funciones `aplicarTema`/`toggleDarkMode`/`cargarTemaGuardado` extraídas por balance de
+  llaves): **8 comprobaciones** de color (fondo/tarjeta/texto base, KPI de estado, KPI morado, referencia
+  del cliente, badge, encabezado de tabla — los 8 cambian correctamente entre claro y Premium Dark, con
+  los valores hex exactos) y **10 comprobaciones** del mecanismo unificado (arranque limpio en clásico,
+  el botón de arriba prende/apaga premium de ida y vuelta con el ícono sincronizado, el picker de Ajustes
+  queda de acuerdo con el botón y viceversa, elegir Liquid Glass y luego tocar el botón lleva a premium
+  —no se queda pegado en glass—, el rescate de la preferencia vieja migra solo cuando de verdad nunca se
+  tocó el tema, y NO migra cuando hay una elección explícita de "Clásico" guardada). Más una prueba de
+  humo de la app completa real (`index.html`+`parches.js`, 0 excepciones sin capturar, las 3 funciones
+  existen, `aplicarDarkGuardado` confirmado inexistente). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO construido en esta fase** (demasiado grande para un solo lote sin verificar cada
+  pantalla — mismo criterio de "por fases, no todo de golpe" usado en el rediseño Enterprise azul de las
+  12 pantallas de Seguros y en el rediseño del POS): el resto del sistema (POS extendido más allá de lo
+  que `--pf-*` ya cubre, Financiamiento `.nxFP`, Rifas, AGUAPRO, Consultorio, Clientes SaaS, NEXUS AI
+  CONTENT, hub de Multiempresa) sigue en tema claro cuando se activa "Premium Dark" — se completa módulo
+  por módulo en fases siguientes, cada una verificada antes de publicar, igual que toda esta sesión.
+- **Publicado desde una rama propia** (`claude/design-system-tema-oscuro` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
+
+### Login — el escudo verde era caché del teléfono, no un bug del código (1-ago-2026, v54.1)
+El dueño mandó una captura REAL de `nexusprord.com` en su iPhone mostrando el escudo del login en
+**verde brillante tipo esfera 3D** — el diseño se hizo azul con anillo (v53.9), así que algo no cuadraba.
+- **Investigado con el método correcto, no a ojo:** se cargó el código real (`index.html`+`parches.js`)
+  en un navegador limpio y se enumeraron TODAS las reglas CSS que de verdad hacen match contra
+  `.lshield`/`.lsec-ic` (con `document.styleSheets`+`el.matches(...)`, la misma técnica que ya había
+  destapado el bug del checkbox en v53.9) — el resultado: **solo su propia regla aplica, calculan azul
+  exacto**, sin ningún otro selector pisándolas. Se revisó también el bloque "semi-glass" de `parches.js`
+  completo (no solo la parte ya blindada de inputs/botones) y las clases `.nxs-badge`/`.nxl-logo` del
+  splash/loader (también usan `ti-shield-check` pero son cuadrados navy→morado, sin relación) — ninguno
+  de los dos toca estos elementos. **Conclusión: NO hay bug en el código** — con máxima probabilidad es
+  una copia vieja guardada en el teléfono del dueño (se le indicó tocar "Actualizar" en Ajustes o cerrar
+  y reabrir la app).
+- **Sí se corrigió una diferencia real contra el mockup que el dueño mandó de referencia:** el ícono del
+  panel "Seguridad de nivel empresarial" (`.lsec-ic`) era un círculo RELLENO (`radial-gradient`); en el
+  mockup es un anillo, igual que el escudo grande de arriba. Se cambió a `background:rgba(37,99,235,.08);
+  border:1.5px solid rgba(37,99,235,.5)` — mismo lenguaje visual que `.lshield`, solo más chico.
+- **Pendiente igual que antes (sin cambios, ya documentado en v53.8/v53.9):** la foto de fondo desenfocada
+  del mockup (sala con planta, ventana con luz cálida) sigue sin poder generarse — se probó de nuevo con
+  la herramienta de imágenes disponible en este entorno (modelo `soul_location`, costo real de 1 crédito
+  confirmado con `get_cost`) pero la cuenta sigue en **0 créditos**. El fondo se queda con el desenfoque
+  100% CSS de siempre.
+- Verificado con Playwright, código real, 390px y 1280px: `.lsec-ic` ahora es anillo (`background-image:
+  none`, borde azul, fondo `rgba(37,99,235,.08)`), `.lshield` intacto, sin desbordes, 0 errores de JS.
+  `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **El dueño insistió que seguía viendo el escudo verde en producción, con captura real de
+  `nexusprord.com`** — obligó a descartar la teoría de caché con evidencia dura, no repetirla a ciegas.
+  Se hizo `git log -p --all -S ".lshield{"` sobre TODO el historial del repo: **el escudo nunca fue
+  verde en ningún commit**, siempre azul desde que se creó (v53.8). Se confirmó que `origin/main` (lo
+  que Cloudflare sirve) trae el CSS azul correcto, que ningún otro chat había tocado el archivo en
+  paralelo, y que `worker.js` (el Worker real de Cloudflare, leído con las herramientas MCP) sirve
+  `index.html` como archivo estático directo — sin ninguna lógica que pudiera recolorearlo. Con el
+  código 100% descartado, se le pidió al dueño la prueba decisiva: abrir el sitio en una pestaña de
+  **Navegación Privada** de Safari (sin ningún caché posible). **Resultado: ahí el escudo sale azul,
+  exactamente como el código** — confirma que era caché de su Safari normal, no del código ni de
+  Cloudflare. Se le indicó borrar los datos del sitio desde Ajustes → Safari → Avanzado → Datos de
+  sitios web → `nexusprord.com`, para que su pestaña normal también se ponga al día.
+- **Lección de método:** cuando el dueño reporta "sigue igual" DESPUÉS de un fix ya publicado y
+  verificado, no alcanza con repetir la misma comprobación de código — hay que buscar evidencia que
+  la CONTRADIGA activamente (acá: recorrer TODO el historial de git de esa clase CSS específica, no
+  solo el estado actual) antes de insistir de nuevo en "es caché". Y cuando el código está agotado
+  como sospechoso, la prueba que de verdad zanja la duda es una que el propio dueño pueda correr en su
+  dispositivo real (Navegación Privada) — no otra ronda de grep.
+
+### Login — foto real de fondo (`login-bg.jpg`) + la SEGUNDA causa real del "escudo verde" (1-ago-2026, v54.2)
+El único pendiente que quedaba del mockup pixel-a-pixel (v53.9) era la foto de fondo corporativa
+desenfocada — este entorno no tiene salida a internet para buscarla y la herramienta de generación de
+imágenes seguía con **0 créditos** (confirmado dos veces, en v53.9 y v54.1). Se retomó el flujo
+**"ChatGPT diseña, Claude implementa"** ya establecido (ver "ChatGPT — nuevo flujo de trabajo para la
+parte visual" más arriba): el dueño preguntó qué pedirle a ChatGPT — se le armó un encargo concreto en
+español con los tokens de color ya en producción (`#08101c`, `rgba(13,17,23,.95)`, `#2563eb`/`#3b82f6`)
+y las reglas de siempre (subir a `chatgpt/visual-draft`, carpeta `docs/visual-drafts/login/`, nunca
+tocar `main` ni el código de la app).
+- **3 entregas de ChatGPT, las 3 rotas — verificadas con evidencia técnica, no a ojo, cada vez:**
+  1. Un SVG con la foto embebida en base64 **truncado a mitad de cadena** (459 bytes, sin cerrar
+     etiquetas) — se le explicó al dueño el punto exacto del corte y se sugirió mandar un archivo
+     binario normal en vez de base64 dentro de un SVG.
+  2. Un `.jpg` con cabecera JFIF válida (`file` lo reconoce como JPEG real) pero **con los píxeles
+     corruptos** — `PIL.Image.load()` tiraba `OSError: broken data stream`, y hasta con lectura
+     tolerante (`ImageFile.LOAD_TRUNCATED_IMAGES=True`) lo único recuperable era un PNG negro sólido
+     de 750 bytes. Además las dimensiones no coincidían con lo documentado (640×360 real vs 1280×853
+     que decía el `.md`).
+  3. Un tercer aviso de "ya está" que resultó ser **el mismo archivo roto** — confirmado comparando el
+     hash de blob de git (`git hash-object`) contra la copia ya verificada como corrupta: idéntico
+     byte a byte, no había llegado nada nuevo.
+  - El dueño terminó **subiendo la foto directo por el chat** (adjunto), saltándose la rama por esta
+    vez. Verificada con PIL antes de usarla: JPEG real, 1280×853, 38,983 bytes, decodifica limpio sin
+    ningún error — pasillo de oficina nocturno, salas de reunión con vidrio, un panel/monitor con
+    gráficas en la pared, luz cálida bajo un mueble, una planta, piso oscuro reflectante, sin personas.
+    **Pendiente:** avisarle al dueño que le diga a ChatGPT que suba esta MISMA foto (ya buena) a
+    `chatgpt/visual-draft` para que quede el registro — esa rama todavía solo tiene el `.jpg` viejo
+    roto de 11,907 bytes.
+- **Implementación (`index.html`, solo `#loginScreen` y sus pseudo-elementos):** las 2 manchas de luz
+  100% CSS que estaban de sustituto desde la v53.8/v53.9 (`repeating-linear-gradient`+`blur(60px)`) se
+  reemplazaron por la foto real: `background:#08101c url('login-bg.jpg') center/cover no-repeat`, con
+  un degradado oscurecedor en `::before` (`rgba(4,9,20,.58)→.74`, arriba más claro que abajo, donde
+  vive la tarjeta) y una viñeta radial en `::after` para que las esquinas se apaguen y el centro (la
+  tarjeta) quede legible — mismo criterio que el `.md` de ChatGPT pedía ("mantener un overlay oscuro y
+  frío si hace falta legibilidad, sin cambiar la paleta aprobada"). El archivo `login-bg.jpg` se guardó
+  en la raíz del repo, mismo patrón que `logo-nexus-pro-mark.png`/`icon-*.png` — Cloudflare lo sirve tal
+  cual, sin build.
+- **LA SEGUNDA CAUSA REAL, encontrada al verificar la foto en un navegador — distinta de la v54.1,
+  NO era caché:** con el fondo real ya puesto, el escudo (`.lshield`) volvió a salir **verde relleno**,
+  el mismo síntoma que el dueño ya había reportado dos veces. Se investigó a fondo, con 2 intentos
+  fallidos antes de dar con la causa real (documentados aquí porque explican por qué el problema no era
+  obvio):
+  1. **Intento 1 — oscurecer el fondo del círculo** (de `transparent`/`rgba(37,99,235,.08)` a un navy
+     sólido `#0d1420`), por la teoría de que el `backdrop-filter` de la tarjeta se estaba "manchando"
+     con algún color de fondo. Reprobado: el ícono siguió verde con el fondo del contenedor ya opaco —
+     el mecanismo real no tenía nada que ver con el fondo del círculo.
+  2. **Intento 2 — neutralizar el propio ícono por CSS con `!important`**
+     (`.lshield i,.lsec-ic i{background:none!important;...}`), tras encontrar por enumeración de CSSOM
+     (`document.styleSheets` + `el.matches(...)`, la misma técnica de la v53.9) un sistema genérico de
+     "badge con relieve 3D" para íconos sueltos. Reprobado también: el `backdrop-filter` sí quedó en
+     `none` (confirmado por `getComputedStyle`), pero el `background-image` **siguió siendo el
+     degradado verde** — ninguna regla de hoja de estilos, por más específica o con `!important`, le
+     podía ganar a lo que sea que estuviera pintando ese verde.
+  3. **La causa real, encontrada inspeccionando el atributo `style` del elemento directamente** (no el
+     CSSOM — el CSSOM solo enumera reglas de HOJAS de estilo, nunca estilos puestos por JavaScript):
+     `el.getAttribute('style')` mostraba `background: linear-gradient(145deg, rgb(37, 208, 117),
+     rgb(77, 230, 204)) !important; box-shadow: ... !important` **con un `data-nxc="1"` al lado** — un
+     estilo en línea con `!important` puesto por JavaScript, que le gana a CUALQUIER regla de CSS sin
+     importar su especificidad. Un `grep` de `data-nxc` en `parches.js` llevó directo al culpable: la
+     IIFE **"Iconos multicolor"** (línea ~12601), un sistema que existe desde hace mucho (`v13.1: iconos
+     multicolor con relieve 3D uniforme en todo el sistema`, muy anterior a esta sesión) y que le pone
+     un color calculado a CUALQUIER `<i class="ti ...">` suelto de TODA la app — el color sale de un
+     hash del nombre del ícono (`hue(name)=(suma de char-code*31)%360`), así que es 100% determinístico:
+     **verificado a mano que `hue('ti-shield-check')=148` → `hsl(148,70%,48%)=rgb(37,208,117)`, el
+     verde EXACTO que se veía en la captura del dueño** — no una coincidencia, una prueba matemática.
+  - **La raíz del bug: `SKIP_CTX` (la lista de contextos donde el sistema debe dejar el ícono plano)
+    nunca se actualizó cuando el login cambió de badge.** Antes de la v53.7 el logo del login usaba las
+    clases `.lmk`/`.smk`, que SÍ estaban protegidas en esa lista desde siempre. Al rediseñarse el login
+    en la v53.8 (cristal esmerilado), el badge cambió de nombre a `.lshield`/`.lsec-ic` — y nadie sumó
+    esos 2 nombres nuevos a `SKIP_CTX`. El escudo quedó expuesto al sistema de colores desde ese
+    momento, silenciosamente, sin que ningún cambio posterior del login (v53.9, v54.1) lo notara.
+  - **Arreglo de raíz — cero parche de CSS, un candado en la fuente:** se agregó `.lshield,.lsec-ic` a
+    `SKIP_CTX` (con un comentario explicando la causa exacta, para que quien toque este archivo después
+    sepa por qué están ahí) — así el sistema de íconos nunca vuelve a tocar el escudo, sin importar
+    cuántas veces cambie de color el resto de la app. Se revirtieron los 2 intentos fallidos (el fondo
+    opaco y la regla CSS de neutralización) — `.lshield`/`.lsec-ic` quedaron EXACTAMENTE en sus valores
+    originales ya aprobados (fondo transparente/tenue, borde y color azul `#3b82f6`).
+  - **Honestidad sobre lo que esto deja sin resolver del todo:** este bug es 100% determinístico (mismo
+    hash → mismo verde, en CUALQUIER carga de la página, en cualquier navegador o modo) y estuvo vivo
+    en `main` desde que se fusionó el PR #228 (31-jul-2026, el rediseño de cristal esmerilado) — es
+    decir, ya estaba presente durante la prueba de **Navegación Privada** que en la v54.1 se tomó como
+    confirmación de que el problema era solo caché. Un bug determinístico no debería dar verde en una
+    pestaña y azul en otra con el MISMO código corriendo — así que esa prueba, en sentido estricto, no
+    se explica del todo con lo que se sabe ahora. La investigación de la v54.1 revisó el bloque
+    "semi-glass" de `parches.js` (que sí es JS y sí pone estilos con `!important`, pero afecta a
+    `input`/`select`/`button`, NUNCA a `<i class="ti">`) — nunca llegó a la IIFE de "Iconos multicolor",
+    que es un mecanismo completamente aparte. No se tiene una explicación confirmada de por qué la
+    Navegación Privada mostró azul en ese momento (la más plausible, sin confirmar: que `parches.js` no
+    llegara a cargar/ejecutar del todo en esa prueba puntual, por lo que fuera — condición de red,
+    alguna protección de privacidad de Safari en modo privado — y el ícono se quedara con su CSS base,
+    que ya es azul). **Lo que sí es cierto y no depende de resolver ese misterio histórico:** con
+    `SKIP_CTX` arreglado, el escudo no puede volver a colorearse por este mecanismo nunca más, sin
+    importar caché, sin importar modo de navegación — el candado está en la fuente, no en un efecto
+    secundario de las circunstancias de una prueba puntual.
+- **Verificado con Playwright, código real, en los dos anchos de siempre** (390px móvil / 1280px
+  escritorio, servidos por HTTP local — `login-bg.jpg` copiada junto a `index.html`/`parches.js` en el
+  webroot de prueba): el fondo referencia `login-bg.jpg` con `cover`/`center`, la imagen carga sin
+  romperse (1280×853 reales), la tarjeta sigue con su fondo oscuro casi opaco de siempre, sin desborde
+  horizontal en ninguno de los 2 anchos. Para el ícono: `.lshield` y `.lsec-ic` NO tienen ningún
+  `style` en línea (el sistema de colores los saltó, tal como debía), su `background-color` computado
+  es transparente (el de diseño), y capturas de pantalla en los 2 anchos confirman visualmente el
+  círculo azul de vidrio de siempre, con la foto de fondo asomando alrededor de la tarjeta. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 488,428 / 681 caracteres)
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que ChatGPT suba la foto ya buena a `chatgpt/visual-draft` para dejar el registro
+  (el dueño ya sabe que hay que pedírselo). Los 4 extras opcionales que traía el `.md` original del
+  fondo (glow de foco sutil, entrada de la tarjeta con fade+scale de ~180ms, intensidad del glow del
+  escudo, legibilidad en móvil) quedan sin construir — no eran obligatorios y no se pidieron esta vez.
+
+### Login — el escudo verde de la v54.2 era una corrección INCOMPLETA: hay DOS listas, no una (1-ago-2026, v54.3)
+El dueño mandó 2 capturas REALES de `nexusprord.com` (no de un mockup) — el ícono del campo "Usuario
+o correo electrónico" como una esfera glossy azul-cian, y el escudo de arriba TODAVÍA como esfera
+glossy, pese al arreglo de la v54.2 — con la instrucción "Quitar esos iconos 3D".
+- **Corrección honesta sobre lo dicho en la v54.2:** ahí se le dijo al dueño "el escudo mostrando 3D
+  es muy probablemente caché" — **eso era incorrecto**, y se descubrió al investigar el campo
+  Usuario (un ícono que NUNCA se había tocado, así que no podía ser cuestión de caché). La v54.2
+  arregló de raíz el mecanismo que decide **qué color de hash** ponerle a un ícono
+  (`SKIP_CTX` en JavaScript) — pero ese es solo UN lado del sistema. Investigando el CSS real se
+  encontró una **segunda lista, completamente aparte, en CSS puro** (comentada en el propio archivo
+  como "ICONOS GLOBALES: todo icono 'suelto' como círculo de color... Excepciones: estos NO deben
+  ser círculo") que existe desde `v13.1` (mucho antes de esta sesión) — TODO ícono `.ti` recibe por
+  defecto, vía una regla CSS base de baja especificidad, una esfera de vidrio violeta→cian
+  (`#8b5cf6→#22d3ee`) con relieve 3D y un reflejo (`::after`), y esta lista de excepciones tiene sus
+  PROPIAS 14 clases protegidas (`.btn`, `button`, `.nx-fab`, `.lmk`, `.smk`...) — que **nunca**
+  incluyó `.lshield`/`.lsec-ic`/`.lfi`, exactamente el mismo hueco que `SKIP_CTX` tenía, pero en un
+  mecanismo COMPLETAMENTE distinto que la v54.2 nunca tocó. Por eso el escudo seguía en 3D: la v54.2
+  arregló que no le pusiera un color de HASH específico, pero nunca le quitó el color POR DEFECTO
+  que la base ya le pone a todo ícono suelto, así que seguía viéndose como esfera de cristal —
+  cambió de "verde" a "violeta-cian genérico", pero seguía siendo una esfera 3D, no el anillo plano
+  del diseño.
+- **Arreglado:** se agregaron `.lshield .ti, .lsec-ic .ti` a la lista de excepciones de CSS (y sus
+  correspondientes `::after` a la lista que suprime el reflejo) — mismo patrón exacto que las otras
+  14 entradas ya existentes, ninguna tocada.
+- **Efecto secundario real, encontrado y corregido ANTES de publicar (no llegó a producción):** el
+  ícono del campo Usuario (`.lfi i`) es distinto a los otros 14 — **necesita quedarse
+  `position:absolute`** para sentarse encima del campo (`.lfi i{position:absolute;left:16px;
+  top:50%;...}`, es un adorno de input, no un badge suelto). La lista de excepciones de CSS, además
+  de quitar el fondo/sombra, **también fuerza `position:static!important`** en las 14 entradas
+  existentes (correcto para ellas — íconos dentro de botones/celdas no necesitan posicionarse solos)
+  — pero agregar `.lfi` ahí de la misma forma **le quitaba el `position:absolute` que necesita para
+  su propio layout**, Y de paso rompía el propio chequeo de posición que se había arreglado en la
+  v54.2 (`getComputedStyle(el).position==='absolute'` — con la posición forzada a `static`, ese
+  chequeo dejaba de detectarlo, así que JavaScript LO SEGUÍA coloreando, solo que con otro tono).
+  Detectado con un test de tiempos (`t=0ms` hasta `t=2000ms`) que mostró el ícono coloreado desde el
+  primer instante con `pos:"static"` en vez de `"absolute"`. **Arreglo real:** `.lfi .ti` se sacó de
+  la lista compartida de las 14 y se le hizo su PROPIA regla, con los mismos resets de fondo/sombra/
+  relieve pero SIN tocar `position` — así conserva su sitio Y el chequeo de JavaScript lo detecta
+  bien.
+- **Verificado con Playwright, código real, timing explícito** (se midió el estado del ícono del
+  campo Usuario en 8 momentos distintos, de 0ms a 2000ms, para descartar una condición de carrera —
+  quedó estable "sin colorear" en los 8): en 390px y 1280px, los 3 íconos (Usuario/escudo grande/
+  escudo del panel de seguridad) quedan sin `background-image`, sin `box-shadow`, sin `border-radius`
+  forzado y con su reflejo `::after` suprimido; el ícono del campo Usuario sigue centrado
+  verticalmente sobre el campo y a 16px del borde (no perdió su sitio); un ícono normal SIN excluir
+  (probado con `ti-shopping-cart` fuera de cualquier contexto protegido) sigue recibiendo su color de
+  hash normalmente — sin regresión en el resto del sistema. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Hallazgo real, NO corregido en esta versión (fuera de alcance de lo pedido, se le avisa al
+  dueño):** esta MISMA lista de excepciones de CSS también le falta a `.nxPf .inw i` (~20 íconos
+  distintos del formulario "Nuevo/Editar producto" del POS — código de barras, efectivo, categoría,
+  paquete...) y a algunos otros adornos de input fuera del login (confirmado con grep del propio
+  archivo) — esos íconos, HOY, también deberían estar saliendo como esferas de cristal violeta-cian
+  en vez de íconos planos grises, en una pantalla de uso diario del POS. No se tocó en esta versión
+  porque el pedido de hoy era específicamente el login y ampliar el arreglo a todo el sistema es un
+  barrido más grande que merece su propia verificación — queda anotado como pendiente real, no
+  inventado, para cuando el dueño confirme si lo quiere resuelto ahora.
+
+### POS · el mismo hueco de íconos 3D del login, cerrado en el formulario de artículo (1-ago-2026, v54.4)
+El dueño confirmó ("Si") cerrar el pendiente que había quedado anotado en la v54.3: `.nxPf .inw i`
+— el patrón "campo con ícono a la izquierda" que usan ~20+ campos del formulario de Nuevo/Editar
+artículo (`abrirProd`), Ajustes, Entidades y el modal de Nivel de precio — tenía el mismo hueco que
+el escudo/usuario del login, sin haberse tocado nunca en la lista de excepciones.
+- **Investigado antes de tocar nada, con el CSS real** (no a ojo): `.nxPf .inw i{position:absolute;
+  left:11px;color:var(--pf-txt3);font-size:14px}` vive dentro de `nxPfEnsureCSS()` — así que el
+  chequeo mejorado de la v54.3 (`getComputedStyle(el).position==='absolute'`) YA los detecta y el
+  sistema NO les pone un gradiente en línea (confirmado: `inlineStyle:null`) — pero la regla BASE de
+  CSS (`.ti{background:linear-gradient(145deg,#8b5cf6,#22d3ee);...}`, el sistema global de íconos)
+  sigue aplicando su esfera violeta-cian por defecto, porque `.inw` nunca estuvo en la lista de
+  excepciones — confirmado con una prueba real: `bg:"linear-gradient(145deg, rgb(139, 92, 246),
+  rgb(34, 211, 238))"` con `position:absolute` intacto. Mismo mecanismo exacto que el escudo del
+  login, en un lugar distinto.
+- **Trampa real encontrada AL EXTRAER el CSS para verificar** (documentada porque puede repetirse):
+  el sistema global de íconos ("ICONOS GLOBALES") NO vive dentro de `st.textContent = \`...\`` como
+  se asumió al principio (esa era la trampa de `nx-menu-editor-css` ya documentada en v49.69) —
+  vive dentro de `style.textContent = \`...\`` (variable `style`, no `st`) con
+  `style.id = "nx-dashboard-icons-3d-css"`. Un extractor que ancla en el string `"st.textContent = \`"`
+  sin verificar el nombre real de la variable cae en el injector equivocado, aunque no sea el mismo
+  error exacto del pasado — hay que contar backticks no-escapados desde el inicio del archivo hasta
+  el texto que se busca para confirmar cuál template literal lo contiene de verdad, no adivinar por
+  el primer patrón que calce.
+- **Arreglo — mismo patrón que `.lfi .ti` (v54.3):** se agregó `.nxPf .inw .ti` a la lista de
+  excepciones de CSS, con los mismos resets (sin fondo, sin sombra, sin `border-radius`, sin
+  `backdrop-filter`, `content:none` en su `::after`) pero **sin tocar `position`** — igual que el
+  ícono de Usuario del login, estos íconos necesitan quedarse `position:absolute` para verse en su
+  sitio dentro del campo; forzarlos a `static` los sacaría de lugar Y volvería a exponerlos al chequeo
+  de JavaScript (que dejaría de verlos como `absolute` y los coloriaría de nuevo).
+- Verificado con Playwright y el CSS real extraído de los 2 injectores correctos
+  (`nx-dashboard-icons-3d-css` y `nxPfCSS`) cargados juntos en un navegador, contra el markup real de
+  7 campos distintos del sistema (`ppNom`/`ppCat`/`ppCod`/`ppProv`/`cfgPrefCo` y el chevron de
+  selects, cada uno con su ícono real): **72 comprobaciones** (7 íconos × 5 chequeos × 2 anchos +
+  2 de regresión) — todas pasan: sin degradado, sin sombra, sin `border-radius`, `::after` suprimido,
+  y **siguen en `position:absolute`** en los 7 casos y en 390px/1280px; un ícono normal fuera de
+  `.nxPf .inw` sigue con su color de siempre (no se rompió el sistema global), y un ícono dentro de
+  `.nxPf` pero fuera de `.inw` (el título de una tarjeta) también sigue con su color. Más una prueba
+  de tiempo (8 marcas de 0 a 2000ms) confirmando que el ícono nunca recibe un estilo en línea de
+  color en ningún momento y se queda estable en `position:absolute`. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Pantalla de carga (Splash) — rediseño completo, mismo lenguaje visual del Login Enterprise (1-ago-2026, v54.5)
+El dueño mandó una captura real del splash viejo (`nexusprord.com` en su iPhone: gradiente navy, esfera
+morado-azul con brillo/relieve 3D, sin relación con el Login Enterprise ya publicado en v53.8-54.4) y avisó
+que estaba preparando un reemplazo con ChatGPT. Después mandó la especificación exacta, con medidas
+concretas (colores hex, duración en segundos, timings de transición) — se implementó tal cual, sin pedirle
+confirmación de más porque el pedido ya venía completo y sin ambigüedad real.
+- **Especificación aplicada punto por punto:** fondo `#08101C` plano (sin degradado, sin manchas de color,
+  sin decoración) · en el centro, el ícono `ti-shield` de Tabler en `#2563EB` con **3 ondas circulares**
+  alrededor que se expanden lentamente (`@keyframes nxsWave`, 1.4s, loop infinito, opacidad entre 15% y
+  30%, escalonadas con `animation-delay` de 0/.467/.933s para que no las 3 exploten a la vez) · **sin**
+  spinner clásico, sin barras, sin puntos, sin porcentajes (se borró por completo la `.nxs-bar` que existía
+  antes) · título "Cargando NEXUS PRO" + subtítulo "Preparando tu espacio de trabajo..." en **Plus Jakarta
+  Sans** (fuente nueva cargada solo para esta pantalla — `nxPfEnsureCSS()` ya la carga para el POS, pero el
+  splash aparece ANTES de que esa función corra, así que se agregó su propio `<link>` en el `<head>`) ·
+  transición de salida: fade-out 200ms + `scale(.98)` (`#nxSplash.nxs-out{opacity:0;transform:scale(.98);
+  visibility:hidden}`) · el Login aparece después con su propio fade-in de 220ms.
+- **Desviación deliberada, documentada:** la especificación pedía "usar Motion para las animaciones" — Motion
+  es una librería de JavaScript (requiere `npm install`, y en su variante para React necesitaría React). Este
+  proyecto **no tiene build, no tiene npm, no tiene bundler, no tiene React** — es la arquitectura de
+  siempre, decidida por el dueño desde el principio (ver arriba, "Arquitectura (importante)"). Instalar
+  Motion habría quedado 100% inerte, igual que ya pasó esta misma sesión con `@tabler/icons-react` y
+  `lucide-react` (se probaron y se retiraron por inertes — ver la sección de más arriba). Se implementó con
+  **CSS puro** (`@keyframes`/`animation`), el mismo mecanismo que usa el 100% del resto del sistema (el
+  vocabulario de animación global de `nxPopIn`/`nxFadeUp`, v48.61) — el resultado visual es idéntico al
+  pedido (ondas expandiéndose, timings exactos), solo cambia la tecnología por debajo.
+- **`#nxLoader` (el spinner corto que sale al ACTUALIZAR la app, no al abrirla por primera vez) recibió el
+  mismo tratamiento** — no lo pedía la especificación explícita (que hablaba del "Splash Screen" de la
+  primera carga), pero es la MISMA pantalla en espíritu (fondo oscuro + espera) y antes tenía su propio
+  ícono `.nxl-logo` con degradado en caja cuadrada, chocando visualmente con el splash nuevo. Ahora reusa el
+  mismo `.nxs-badge` (escudo + 3 ondas) sin el texto — mismo criterio de "un solo lenguaje visual", no dos
+  pantallas de espera con look distinto. `.nxl-logo` (la clase vieja) quedó sin ningún uso — código muerto,
+  se limpiaron sus 2 apariciones en las listas de excepciones de íconos de `parches.js` (quedaba ahí de
+  antes, protegiéndolo del sistema de color automático — ya no hacía falta).
+- **Respeta "reducir movimiento"** (`@media (prefers-reduced-motion:reduce)`): las ondas dejan de latir
+  (`animation-duration:.01ms!important;opacity:0!important`) y el texto aparece de inmediato sin el
+  deslizamiento de entrada — mismo criterio que el resto del vocabulario de animación del sistema (v48.61).
+- **`body:has(#nxSplash) #loginScreen{opacity:0;transition:none}`** — mientras el splash sigue en el DOM, el
+  Login se queda invisible por debajo (aunque esté tapado, evita un parpadeo si el splash se remueve un
+  instante antes de que el Login termine de pintar) sin necesitar tocar ninguno de los 8+ sitios del código
+  que hacen `document.getElementById('loginScreen').style.display=...` — mismo patrón `:has()` ya
+  establecido y probado en el sistema (`body:has(.overlay.open) .nx-fab{display:none}`, v53.4). Si el
+  splash sale del DOM, la regla deja de aplicar sola y el Login usa su propia transición de opacidad de
+  220ms — sin `:has()` en el navegador, la regla se ignora entera y el Login queda visible desde siempre
+  (degrada limpio).
+- **BUG DE RAÍZ encontrado y arreglado ANTES de que llegara a pasar (no fue una regresión detectada
+  después, fue una revisión propia antes de escribir el CSS final):** `.nxs-badge`/`.nxl-logo` ya estaban
+  en las 2 listas de excepciones de íconos de `parches.js` desde antes (protegiéndolos del sistema global
+  que le pinta a cada ícono suelto un color automático — el mismo mecanismo de los bugs del login v54.1-3 y
+  del formulario del POS v54.4) — pero una de esas 2 listas **también fuerza `position:static!important`**
+  en todo lo que protege (correcto para íconos dentro de botones/celdas, que no necesitan posicionarse
+  solos). El escudo nuevo SÍ necesita quedarse `position:relative;z-index:1` para pintarse ENCIMA de las 3
+  ondas (`position:absolute`) — por las reglas de pintado de CSS (los elementos posicionados siempre pintan
+  después/encima de los hermanos sin posicionar, sin importar el orden del HTML ni el `z-index` que se le
+  ponga a un elemento `static`, que simplemente no aplica). Con el `static` forzado, el escudo habría
+  quedado **tapado detrás de las ondas**. Se sacó `.nxs-badge`/`.nxl-logo` de esa lista y se les hizo una
+  regla PROPIA (mismo patrón "excepción a prueba de posición" ya usado 2 veces esta sesión — `.lfi .ti` del
+  login v54.3, `.nxPf .inw .ti` del POS v54.4): quita color/sombra/relieve pero **sin tocar `position`**.
+- **Trampa real del propio método de prueba, encontrada y documentada para el futuro:** `page.screenshot()`
+  de Playwright espera internamente a que las fuentes web pendientes terminen de cargar antes de capturar
+  el frame — y en este entorno sandbox (sin salida general a internet) la petición a Google Fonts nunca
+  resuelve (`net::ERR_CONNECTION_RESET`), así que esa espera interna consume tiempo REAL de reloj muy por
+  encima de cualquier `page.waitForTimeout(...)` del propio test. Mientras Playwright esperaba en silencio,
+  los timers propios del splash (mínimo 2800ms, tope 8000ms) seguían corriendo en tiempo real — y para
+  cuando el screenshot por fin se tomaba, el splash YA se había auto-ocultado, dejando capturas que
+  mostraban el Login en vez del splash, aunque todas las aserciones de `getComputedStyle`/
+  `elementFromPoint` (que no dependen de `screenshot()`) confirmaran que el splash SÍ estaba presente y
+  visible en el momento exacto de la prueba. Confirmado el diagnóstico con un control mínimo (un overlay
+  rojo simple SÍ se capturaba bien) y aislando la causa con `element screenshot: Element is not attached to
+  the DOM` tras "waiting for fonts to load" en el log de Playwright. **Arreglo del harness (no del
+  código de la app):** se agregó un interceptor `page.route('**/*', ...)` que aborta al instante cualquier
+  petición que no sea al servidor HTTP local de prueba — así ninguna espera de red real consume presupuesto
+  de tiempo de los timers de la app. Es la misma clase de lección ya documentada en esta sesión con
+  `waitUntil:'load'` vs `'domcontentloaded'` (v54.5 la extiende: cualquier API de Playwright que dependa
+  de red-completa-o-fuentes-completas hay que blindarla contra este sandbox, no solo la navegación).
+- **Verificado con Playwright, código real, con el interceptor de red ya corregido:** **32 comprobaciones**
+  — fondo plano sin degradado y el hex exacto `#08101c`, exactamente 3 ondas con sus 3 delays escalonados y
+  su color azul exacto, el ícono es `ti-shield` (no `ti-shield-check`) sin degradado ni estilo en línea de
+  color, azul exacto, sigue en `position:relative` con `z-index:1` (pinta encima de las ondas), título y
+  subtítulo con el texto exacto, la fuente incluye Plus Jakarta Sans, no queda ninguna barra de progreso,
+  el Login arranca en `opacity:0` mientras el splash sigue arriba, la transición de salida deja
+  `opacity:0`+`scale(.98)`+`visibility:hidden`, tras remover el splash el Login termina en `opacity:1`
+  (tolerancia numérica, no comparación exacta de string — el muestreo cae a mitad de una transición de
+  270ms), con "reducir movimiento" activo las ondas casi no animan (duración parseada numéricamente, no
+  comparación de string) y quedan invisibles, el camino de recarga (`#nxLoader`) reusa el mismo badge con
+  las mismas 3 ondas y el mismo ícono sin ningún rastro de `.nxl-logo`, y de regresión: un ícono normal
+  fuera del splash sigue con su color automático de siempre y uno dentro de un botón sigue plano — el
+  arreglo no rompió nada del sistema de íconos existente. Capturas de pantalla revisadas visualmente (con
+  el interceptor de red ya corregido, muestran el splash real: escudo azul con las ondas visibles sobre
+  fondo `#08101c`, y el Login Enterprise revelado después). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Login — el amarillo del autofill, el panel "Seguridad" fuera, y los efectos de la 3ra imagen (1-ago-2026, v54.6)
+El dueño mandó 3 capturas: (1) una REAL de su iPhone mostrando los campos Usuario/Contraseña con un
+fondo **amarillo** en vez del oscuro del diseño; (2) otra REAL mostrando el panel "Seguridad de nivel
+empresarial" (con el FAB flotante morado encimado, prueba de que es la captura real de producción); (3)
+un mockup de referencia (ChatGPT) con el login ya funcionando bien: escudo con halo vívido, botón azul
+con un destello de vidrio, sin el panel de seguridad. Pidió 3 cosas: quitar el amarillo (usar el color
+de la imagen 3), quitar el panel "Seguridad de nivel empresarial" por completo, y aplicarle los mismos
+efectos de la imagen 3.
+- **1. El amarillo — diagnóstico correcto sin necesitar reproducirlo en este entorno:** el patrón
+  (fondo pálido amarillo, SOLO en los 2 campos con `autocomplete="username"`/`"current-password"`) es
+  la firma exacta del resaltado nativo de `:-webkit-autofill` que Safari/Chrome/Edge le ponen a un
+  campo cuando reconocen una credencial guardada — el navegador pinta su PROPIO fondo por encima del
+  `background:#0f172a` de siempre, y ningún `background` de autor (con o sin `!important`) le puede
+  ganar; el único truco que funciona es un `box-shadow: 0 0 0 1000px <color> inset` (llena el campo con
+  nuestro color "desde adentro") + `-webkit-text-fill-color` (fuerza el texto blanco, que igual queda
+  ignorado por el color normal del texto bajo autofill). Se agregó dentro del bloque "blindaje" ya
+  existente (`#loginScreen .lfr input`, el mismo que ya pelea contra el tema semi-glass global) — mismo
+  patrón de siempre en este archivo. **Verificación honesta:** el navegador headless de este entorno SÍ
+  implementa `:-webkit-autofill` (a diferencia de otros bugs de iOS ya documentados aquí que son
+  imposibles de reproducir fuera de un dispositivo real), pero simular el estado "credencial guardada
+  por el sistema" dentro de una prueba automatizada es frágil — se verificó en su lugar que la regla CSS
+  existe y trae el `box-shadow` correcto (el mecanismo, no el disparador), y se dejó documentado el
+  criterio estándar de la industria para este arreglo, que es el mismo en todos los navegadores basados
+  en WebKit/Blink.
+- **2. Panel "Seguridad de nivel empresarial" — QUITADO por completo.** Se borró el `<div class="lsec">`
+  entero del HTML (icono+título+texto) y sus 4 reglas CSS (`.lsec`/`.lsec-ic`/`.lsec b`/`.lsec span`),
+  que ya no las usaba nadie más. **Limpieza en cascada, siguiendo la regla #1 del reglamento ("depurar —
+  quitar dead code"):** `.lsec-ic` vivía también en las DOS listas de excepciones del sistema de íconos
+  de `parches.js` (la de CSS y el `SKIP_CTX` de JS, ambas creadas en v54.1-54.3 específicamente para
+  proteger este mismo panel del "escudo verde") — al quedar el panel sin ningún elemento en el DOM, esas
+  2 referencias a `.lsec-ic` quedaron huérfanas; se sacaron de las 2 listas (con el comentario actualizado
+  explicando por qué), dejando `.lshield` (el escudo de arriba, que SÍ sigue existiendo) intacto en ambas.
+- **3. Efectos de la imagen 3 — comparación pieza por pieza, con capturas ampliadas de la referencia
+  (no a ojo):** se recortó y amplió el escudo, el botón y el checkbox del mockup para ver exactamente qué
+  faltaba. El checkbox ya calzaba (relleno azul sólido + check blanco, sin cambios). Dos piezas sí
+  necesitaban más: (a) **el halo del escudo** — la referencia muestra un aro más vívido con un brillo
+  más extendido; se subió la opacidad del borde y se agregó una 3ra capa de `box-shadow` (antes 2 capas,
+  ahora `0 0 20px` + `0 0 46px` + `0 0 90px`, todas en el mismo azul), más un fondo radial tenue detrás
+  del ícono y un `filter:drop-shadow` en el propio glifo del escudo para que el brillo se sienta también
+  en los trazos del ícono, no solo en el aro. (b) **el destello del botón** — la referencia muestra un
+  degradado más vivo con una banda más clara arriba, un efecto "vidrio" típico de botones Apple/Stripe.
+  Se agregó como una SEGUNDA capa de `background` (gradiente blanco-a-transparente encima del gradiente
+  azul de siempre, en la MISMA propiedad `background`, separadas por coma) — a propósito NO se usó un
+  pseudo-elemento `::before` para esto: por el orden de pintado de CSS, un `::before` con
+  `position:absolute` pintaría ENCIMA del ícono y el texto del botón (que son contenido en línea sin
+  posicionar), tapándolos parcialmente; una segunda capa de `background` en cambio se pinta siempre
+  DETRÁS de cualquier contenido, sin ese riesgo — evitado antes de escribir el código, no descubierto
+  después de un bug visual.
+- **El cambio se hizo en LOS DOS lugares donde vive cada regla** (la base `.lbtn`/`.lshield` y el bloque
+  "blindaje" `#loginScreen .lbtn{...!important}` que existe para ganarle al tema semi-glass global de
+  `parches.js`) — mismo cuidado ya documentado varias veces en este archivo: cambiar solo la base y
+  olvidar el blindaje deja el `!important` del blindaje pisando el valor nuevo con el viejo.
+- **Se investigó pero DELIBERADAMENTE NO se tocó** un hallazgo real que salió de las propias capturas del
+  dueño: el botón flotante morado (`.nx-fab`, el menú "Más" del móvil) aparece encimado sobre el login en
+  las 2 capturas reales — confirmado que es un bug genuino (`crearFAB()`/`crearMenuMas()` en `parches.js`
+  se disparan en cualquier `DOMContentLoaded` en móvil, sin comprobar si el usuario ya inició sesión). Se
+  investigó un arreglo con `:has()` (mismo patrón ya usado en el splash) pero se descartó por un riesgo
+  real: `#loginScreen` y `#app` NUNCA se quitan del DOM (solo alternan `style.display`), así que un
+  selector `:has(#loginScreen)` habría escondido el FAB **para siempre, incluso después de iniciar
+  sesión** — un bug peor que el que se quería arreglar. La alternativa robusta (comparar el atributo
+  `style` serializado) depende de detalles de cuándo el navegador re-serializa ese atributo, que no se
+  pudo confirmar sin riesgo de una regresión intermitente; y tocar los 8+ puntos del flujo de login para
+  agregar una señal propia se sale del tamaño de "arreglo chico y seguro" para esta ronda. Se le queda
+  pendiente al dueño como hallazgo documentado, no como algo resuelto en silencio.
+- Verificado con Playwright, código real, 390px y 1280px (splash forzado a ya-mostrado vía
+  `sessionStorage` para llegar directo al login): **14 comprobaciones** — el panel `.lsec`/`.lsec-ic` ya
+  no existe en el DOM ni su texto aparece, existe una regla CSS para `:-webkit-autofill` con el
+  `box-shadow` inset correcto, el escudo tiene sus 3 capas de sombra + `drop-shadow` en el ícono (y el
+  ícono sigue SIN estilo en línea de color — el sistema de íconos automático lo sigue respetando), el
+  botón tiene sus 2 capas de `background` (destello + gradiente), los campos Usuario/Contraseña siguen
+  con su fondo oscuro normal (`rgb(15, 23, 42)`, sin regresión), sin desborde horizontal en 390px ni
+  1280px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### El botón flotante del móvil ya no se encima sobre el login (1-ago-2026, v54.7)
+Al cerrar el arreglo del login (v54.6) se le avisó al dueño de un hallazgo real, sin tocarlo, porque
+tocar código cerca del flujo de login sin cuidado es peligroso: sus propias capturas mostraban el
+**botón flotante morado** (`.nx-fab`, el menú "Más" del celular) **encimado sobre la pantalla de
+login**. El dueño respondió: *"Hazlo con cuidado"*.
+- **Causa raíz:** `crearFAB()`/`crearMenuMas()` (mismo IIFE de `parches.js`) se disparan en
+  `DOMContentLoaded` con la única condición de `isMobile()` — **nunca comprueban si el usuario ya
+  inició sesión**. En cualquier carga móvil (login, cambio de clave obligatorio, o ya adentro) el
+  botón se crea igual, y como es `position:fixed` de alto z-index, queda flotando sobre lo que sea
+  que esté en pantalla — incluida la tarjeta de login.
+- **El arreglo obvio se descartó por peligroso, investigado ANTES de escribir código:** un
+  `body:has(#loginScreen) .nx-fab{display:none}` (mismo patrón `:has()` ya usado para ocultar el FAB
+  cuando hay una ventana abierta, o para el splash) parecía la solución rápida — pero
+  `#loginScreen`/`#app` **NUNCA se quitan del DOM en ningún lugar del sistema**: solo alternan
+  `style.display` en **~8 sitios distintos** repartidos por todo el flujo de login/logout/
+  restauración de sesión de `index.html`. Como `#loginScreen` SIEMPRE está presente (solo a veces
+  oculto), un selector de presencia como ese habría escondido el botón **para siempre, incluso ya
+  logueado** — un bug peor que el que se quería arreglar. Se le explicó esto al dueño antes de
+  construir nada, y su "Hazlo con cuidado" confirmó seguir adelante con un diseño más seguro.
+- **Arreglo real — cero cambios al flujo de login, todo autocontenido en el IIFE del botón
+  flotante:** `vigilarSesionParaFAB()` (nueva, junto a `crearFAB`/`crearMenuMas`/`init`) monta un
+  `MutationObserver` que **vigila el atributo `style` de `#app`** (nunca lo escribe, solo lo lee) y
+  refleja su estado REAL (`getComputedStyle(app).display`, no el texto crudo del atributo — evita el
+  problema ya documentado de que un mismo valor se serializa distinto según si lo escribió el HTML
+  original o una mutación de JavaScript) en una clase nueva de `body`: `nx-sin-sesion`. La regla CSS
+  que la usa se agregó **justo al lado** de la que ya existía para "hay una ventana abierta, esconde
+  el botón" (`body:has(.overlay.on) .mobile-bottom-nav-clean, .nx-fab, .nx-menu-backdrop,
+  .mobile-more-sheet-clean`) — mismos 4 elementos, mismo criterio, solo cambia la condición que los
+  esconde. `#mobile-bottom-nav-clean` es una clase heredada de una versión anterior de la barra móvil
+  (hoy nadie la crea, solo queda su CSS de compatibilidad) — se incluyó igual por consistencia con el
+  patrón ya establecido, sin costo.
+- **Verificado con Playwright, código real, 5 escenarios:** (1) pantalla de login (`#app` oculto) →
+  el botón SÍ se crea en el DOM (viewport móvil) pero queda oculto por CSS; (2) simular un login
+  exitoso (`#app` visible) → la clase `nx-sin-sesion` desaparece y el botón reaparece; (3) simular un
+  logout → la clase vuelve y el botón se oculta de nuevo; (4) escritorio (1280px) → el botón ni
+  siquiera se crea (`isMobile()` en falso, sin regresión); (5) 0 excepciones de JavaScript sin
+  capturar en toda la carga. Las 10 comprobaciones pasan. Capturas de pantalla revisadas: sin rastro
+  del botón morado sobre el login, y reaparece limpio tras "iniciar sesión". `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Barra de acciones fija ahora TAMBIÉN en PC (1-ago-2026, v54.8)
+El dueño: *"Con relación al POS la barra inferior en la Pc no se visualiza solo se ve en el iPhone ese
+POS está más enfocado a Pc por qué es para vender"*. La barra fija de abajo (Cancelar/Guardar/Cobrar,
+`.nxFacBar`/`.nxCompBar`, `nxStickyBarSet`) era mobile-only desde que se construyó (v52.9→v53.2,
+`@media(max-width:760px)`) — investigado con `AskUserQuestion` antes de tocar nada, porque prenderla en
+PC sin más habría dejado los botones **duplicados** (los mismos ya vivían dentro del propio documento
+en PC, visibles sin scroll, y la barra los repetiría flotando abajo). El dueño eligió **"Prenderla
+también en PC"**.
+- **Arreglo, solo CSS/HTML, cero lógica de cobro tocada:** se sacó todo el bloque de la barra del
+  `@media(max-width:760px)` — `body:has(#v-pos.on) .nxFacBar{display:flex}` ya no depende del ancho de
+  pantalla. Los botones internos que antes solo se ocultaban en móvil (`.nxDoc .facTot .acc`/`.cancel`
+  en Factura, el pie de "Nueva compra" — se le agregó la clase nueva `.compResFoot` para poder
+  apuntarle) ahora se ocultan por **`body:has(...)` de la barra**, no por ancho — así nunca se duplican
+  en NINGÚN tamaño de pantalla. El levantamiento del FAB (`.nx-fab.nxFabLift`) se dejó sin media query
+  también — es inofensivo en PC porque el FAB (`.nx-fab`) solo se crea en móvil (`isMobile()`), así que
+  esas reglas simplemente no matchean nada ahí.
+- **BUG REAL encontrado y corregido ANTES de publicar, con una prueba automatizada (no se vio a
+  simple vista):** el primer intento ocultaba el pie de Compras con `body:has(.nxCompBar) .compResFoot
+  {display:none}` — pero `nxStickyBarSet()` (el motor compartido) le pone **SIEMPRE** `className =
+  'nxFacBar'` al elemento que crea, sin importar si el `id` que recibió es `'nxFacBar'` o `'nxCompBar'`
+  — o sea, la clase `.nxCompBar` **nunca existe** en el DOM (solo existe como `id`). Con ese selector
+  roto, el pie de Compras jamás se habría ocultado y habría quedado duplicado con la barra flotante en
+  producción. Corregido a `body:has(#nxCompBar) .compResFoot{display:none!important}` (selector de ID,
+  que sí existe). **Lección repetida en este archivo, otra vez confirmada:** una prueba automatizada
+  contra el CSS real encontró el bug antes de publicarlo — a ojo, mirando solo el código, este error
+  era fácil de pasar por alto.
+- Verificado con Playwright cargando el **CSS real extraído del archivo** (literal, no reconstruido) en
+  markup sintético fiel a la estructura real, en PC (1280px) y móvil (390px): **16 comprobaciones** —
+  la barra se ve en los 2 anchos (Factura y Compras), los botones internos de Factura quedan ocultos,
+  el pie de Compras queda oculto, `.nxTMain` gana el padding-bottom para no tapar contenido, sin
+  ninguna barra los botones internos se ven normal (sin regresión del caso base), y con un overlay
+  abierto la barra se sigue ocultando en cualquier ancho. Las 16 pasan en los 2 anchos. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### AGUAPRO ERP — eliminado (1-ago-2026, v54.9)
+El dueño: *"AGUAPRO eliminarlo / El cliente no lo quiso"* — el negocio de distribuidora de agua
+para el que se construyó el módulo (ver historia arriba, "AGUAPRO ERP — módulo para distribuidoras
+de agua") decidió no usarlo, así que se sacó del sistema por completo.
+- **Auditoría de alcance ANTES de tocar nada** (dado que borrar tablas de la base es irreversible):
+  el módulo era 100% autocontenido — una sola IIFE (`(function(){...})()`, ~1,040 líneas) al inicio
+  de `parches.js`, registrada en el hub de Multiempresa vía `nxMERegistrar({orden:6,...})`, con su
+  propio CSS (`nxAguaCSS`) y sus 10 tablas propias (`agua_clientes`/`agua_productos`/`agua_pedidos`/
+  `agua_botellones`/`agua_produccion`/`agua_caja`/`agua_movimientos`/`agua_proveedores`/
+  `agua_compras`/`agua_config`, todas con `organizacion_id`+trigger+RLS, patrón `pos_*`/`rifa_*`).
+  Verificado con `grep` en todo el repo (no solo `parches.js`) que **ninguna otra parte del
+  sistema** hacía referencia a AGUAPRO — el único enlace externo real era la entrada
+  `agua:'nxAbrirAguaPro'` dentro de `NX_MODULOS_LUGAR` (la lista blanca de "dónde me quedé",
+  v49.78) en `index.html`.
+- **Verificado con SQL directo, antes de decidir si dropear las tablas o solo dejarlas vacías:**
+  las 10 tablas tenían en total 6 filas (`agua_clientes`=1, `agua_movimientos`=2,
+  `agua_produccion`=1, `agua_productos`=1, `agua_proveedores`=1, el resto en 0) — y el único
+  cliente guardado se llamaba literalmente **"PRUEBA 1"**, en la propia organización del dueño
+  (`nexus-pro`). Nunca hubo un cliente real usándolo — es exactamente el mismo tipo de dato de
+  prueba que ya se limpió una vez en el propio POS (ver "Cuadrar el inventario: era todo dato de
+  prueba", v49.87). Con eso confirmado, y sin ninguna FK externa apuntando a las tablas `agua_*`
+  (verificado con `information_schema`, las únicas FK eran internas entre ellas mismas), se
+  borraron las 10 de una — mismo criterio y mismo patrón ya usado en "Borradas 5 tablas muertas"
+  (26-jul-2026): verificar cero uso real antes de dropear, nunca a ciegas.
+- **Cambios reales:**
+  1. Se quitó la IIFE completa de AGUAPRO de `parches.js` (banner + módulo + helpers locales,
+     1,037 líneas).
+  2. Se quitó la entrada `agua:'nxAbrirAguaPro'` de `NX_MODULOS_LUGAR` en `index.html` — sin
+     esto, un usuario cuya última pantalla guardada hubiera sido AGUAPRO habría intentado llamar
+     a una función que ya no existe (el propio mecanismo ya tenía un respaldo honesto para ese
+     caso — reintenta unos segundos y cae al Dashboard — pero quitar la entrada muerta es más
+     limpio, regla #1 del reglamento: "depurar, quitar dead code").
+  3. Migración `borrar_tablas_aguapro`: `DROP TABLE ... CASCADE` de las 10 tablas `agua_*`.
+- **Deliberadamente NO tocado:** 5 comentarios sueltos en `parches.js` que mencionan "AGUAPRO"
+  solo como ejemplo ilustrativo dentro de un patrón general (ej. "nxBuscaHTML en caché, mismo
+  criterio que ya usa AGUAPRO/POS") — no son referencias funcionales, tocarlas era ruido
+  innecesario en el diff.
+- Verificado: `node --check parches.js` limpio; los 3 bloques `<script>` de `index.html`
+  (1,423 / 488,406 / 681 caracteres) pasan `new Function()`; `version.json` válido. Con Playwright
+  cargando el `index.html`+`parches.js` reales (0 excepciones de JS al arrancar): confirmado que
+  `window.nxAbrirAguaPro` ya no existe, `NX_MODULOS_LUGAR` ya no tiene la entrada `agua`, y
+  `nxMERegistrar` (el mecanismo del hub) sigue funcionando para el resto de módulos. `get_advisors`
+  de seguridad en Supabase corrido después del `DROP`: sin ningún hallazgo nuevo — solo
+  desaparecieron las 10 tablas de AGUAPRO, todo lo demás del listado de siempre quedó igual.
+
+### El icono del iPhone (PWA) — colores al día con la marca nueva (1-ago-2026, v55.0)
+El dueño: *"Vamos a cambiar el logo del icono en el menú de inicio del iPhone"*. El icono que se
+ve al instalar NEXUS PRO como PWA (`icon-*.png`, generados por `gen_icon.py`, referenciados desde
+`manifest.json` y `<link rel="apple-touch-icon">` en `index.html`) seguía siendo el azul claro
+genérico de la versión original — **de antes** del rediseño del login (v53.8-54.6), que ya pasó
+a un navy/azul de marca real (`#08101c`/`#2563eb`/`#3b82f6`).
+- **El logo completo "NEXUS PRO" (el que se usa en el login) no cabe legible en un icono de 16-180px**
+  — es un logotipo horizontal ancho con texto ("NEXUS" + insignia "PRO" + línea de tagline), pensado
+  para un encabezado, no para un ícono cuadrado chico. Se le explicó esto al dueño y se le mostraron
+  **3 propuestas simplificadas** (generadas con PIL/Python, mismo método que ya usa `gen_icon.py`,
+  renderizadas con el recorte redondeado real de iOS para que se vieran como quedarían de verdad):
+  (A) una insignia "PRO" sola, reusando el mismo azul/forma de la insignia real del logo aprobado;
+  (B) un monograma "NP" en blanco con el acento diagonal azul del logo; (C) el escudo hexagonal de
+  siempre, con los colores nuevos de la marca en vez de los viejos.
+- **El dueño eligió C** — mantener el escudo de siempre (mismo criterio que un rediseño de colores,
+  no una nueva identidad) pero con los tonos reales de la marca actual.
+- **Bug de legibilidad encontrado y corregido ANTES de publicar (no llegó a producción):** el primer
+  intento de la opción C usaba la fuente del sistema para dibujar "NP" (2 letras) — a 16px (el tamaño
+  del favicon) se veía como un borrón sin forma, ilegible. El icono ORIGINAL nunca tuvo ese problema
+  porque su "N" no es texto de fuente — son 3 trazos gruesos dibujados a mano con `ImageDraw.line` +
+  remates redondeados en las uniones (mucho más tolerante a downscale agresivo que un glifo de
+  fuente con detalles finos). Se corrigió replicando exactamente esa misma técnica (una sola letra
+  "N", no dos) con los colores nuevos — verificado a 16/32/76/180px que sigue legible en los 4.
+- **`gen_icon.py` actualizado** (mismos 9 tamaños de siempre: `icon-16/32/192/512.png`,
+  `icon-apple-76/120/152/180.png`, `icon-512 (1).png`): fondo `vgrad` de navy `#182e54`→`#08101c`
+  (antes un azul más claro sin relación con el login), escudo cristalino `#609afa`→`#1e40af` (antes
+  `#6eafff`→`#1d4ed8`, un azul distinto), glow radial en `#3b82f6` (el mismo tono exacto que
+  `.lshield` del login). La forma del hexágono, la sombra, el brillo de vidrio, el borde blanco y la
+  "N" a trazos gruesos **no cambiaron** — es un cambio de paleta, no de diseño.
+- **Cero cambios en `manifest.json` ni `index.html`** — los 9 archivos se sobrescribieron con el
+  MISMO nombre de siempre, así que las referencias existentes (`<link rel="apple-touch-icon"...>`,
+  `manifest.json.icons[]`) siguen apuntando a los archivos correctos sin tocar una línea.
+- Verificado: los 9 archivos regenerados con las dimensiones y el modo de color correctos (RGB,
+  mismo tamaño que antes en cada uno); comparación visual a 180/76/32/16px confirmando que la "N"
+  se sigue leyendo en los 4 tamaños. `node --check parches.js` limpio (archivo no tocado);
+  `version.json` válido.
+
+### POS · barra fija de abajo — arreglado el ancho en PC (1-ago-2026, v55.1)
+El dueño mandó una foto real de la pantalla de Prefactura en su computadora (monitor ThinkVision) tras el
+cambio de v54.8 (la barra fija de Cancelar/Guardar/Cobrar se extendió de móvil-only a también-en-PC).
+**Causa raíz, confirmada mirando la foto antes de tocar código:** `.nxFacBar` es `position:fixed;left:0;
+right:0` (borde a borde, correcto para móvil) y el botón primario `.fbP` es `flex:1 1 auto` (crece para
+llenar lo que sobre) — en un monitor de escritorio ese "lo que sobre" es casi todo el viewport, así que el
+botón GUARDAR terminaba estirado a ~1900px de ancho, dejando una franja gris enorme y desproporcionada.
+No se había notado en v54.8 porque esa versión solo verificó que la barra apareciera en PC (visibilidad),
+no su proporción/ancho.
+- **Arreglo — mismo criterio de breakpoint ya usado en el resto del sistema** (`.nxDoc` ya usa
+  `@media(max-width:760px)` para sus reglas móviles, así que `@media(min-width:761px)` es el corte
+  complementario correcto): regla nueva que en pantallas de escritorio cambia `.nxFacBar` de barra
+  borde-a-borde a **panel flotante centrado** — `left:50%;right:auto;transform:translateX(-50%);
+  width:min(640px,calc(100% - 48px))`, con esquinas redondeadas arriba y una sombra más elevada (mismo
+  lenguaje visual que un pie de modal/diálogo, no un pie de pantalla completa). El botón primario sigue
+  creciendo con `flex:1 1 auto`, pero ahora DENTRO de un ancho ya razonable — nunca vuelve a verse
+  desproporcionado. En móvil (`max-width:760px`) no se tocó nada — sigue exactamente borde a borde, como
+  siempre.
+- **`.nxCompBar` (Compras) queda cubierto por la misma regla** — `nxStickyBarSet()` siempre le pone la
+  clase `.nxFacBar` al elemento que crea, sin importar el `id` recibido (`'nxFacBar'` o `'nxCompBar'`,
+  gotcha ya documentado en v54.8) — así que un solo selector de clase basta para las dos barras.
+- **BUG DEL PROPIO MÉTODO DE PRUEBA, encontrado y corregido ANTES de confiar en el resultado (no era un
+  bug del código):** el primer intento de extraer el CSS real del archivo (para probarlo contra el
+  código de verdad, no una reconstrucción a mano) cortaba el texto justo DESPUÉS del `';` que cierra el
+  string de JavaScript (`st.textContent += '...';`) — ese `';` es sintaxis de JS, no CSS, pero al quedar
+  pegado al final del fragmento extraído metía una comilla simple suelta y sin cerrar dentro del
+  `<style>` de la página de prueba. El navegador, al toparse con una comilla sin cerrar, descarta en
+  silencio TODO lo que viene después como un token de string sin terminar — sin ningún error visible.
+  Confirmado inspeccionando `document.styleSheets[...].cssRules` directamente: la regla de la media
+  query simplemente NO estaba en el CSSOM parseado, aunque el archivo real la tuviera bien escrita.
+  Corregido cortando la extracción exactamente en la llave `}` que cierra la propia regla CSS, nunca en
+  la puntuación de JavaScript que viene después — con eso, 10 de 11 comprobaciones pasaron de inmediato
+  (la única que seguía fallando era un umbral arbitrario de la propia prueba —"< 500px"— contra un botón
+  de 550px que en realidad es perfectamente razonable dentro de una barra de 640px; se ajustó el umbral a
+  algo con sentido real, `< 640 && > 40`, y las 11 pasaron limpio).
+- **Verificado con Playwright, CSS real extraído del archivo** (no una reconstrucción), en 5 anchos:
+  1920px (barra capada <700px, centrada con >400px de margen a cada lado, esquinas redondeadas, botón
+  GUARDAR de 550px dentro de la barra de 640px), 1366px (sigue capada), Compras a 1920px (también capada,
+  misma clase compartida), 390px móvil (sin regresión — sigue borde a borde exacto, botón creciendo
+  normal) y justo en el punto de corte (760px sigue borde-a-borde, 761px ya capada). Las 11
+  comprobaciones pasan. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
+### POS · Ventana de Cobrar — auditoría, mockup aprobado y rediseño real (1-ago-2026, v55.2)
+El dueño pidió auditar el proceso de cobro y el botón "Opciones" de la ventana de Cobrar, confirmar que
+tuvieran reglamento/procedimiento documentado, y **presentarlo antes de tocar código** ("Muéstrame una
+muestra primero" — mismo criterio de siempre, ver §2/§11 de `REGLAMENTOS.md`). Se auditó `nxPosCobrar`/
+`leerCobro`/`nxPosConfirmar` línea por línea contra el código real, se confirmaron 3 problemas con
+evidencia (no a ojo): (1) `.nxPgQ{display:flex;flex-wrap:wrap}`+`button{flex:1 1 auto}` producía un botón
+"+2,000" gigante y solo en una fila aparte en casi cualquier iPhone (reproducido con Playwright de 360 a
+428px, con la fuente REAL `'Segoe UI',system-ui,-apple-system,sans-serif` — un test aislado sin ese font-
+stack no lo reproducía, lección ya anotada en otras partes de este archivo sobre no confiar en fuentes por
+defecto del navegador de prueba); (2) el pie solo tenía "Opciones"+"Confirmar venta" — sin Cancelar,
+contra el propio REGLAMENTOS.md §11 ("todo pie de acción necesita Cancelar"); (3) "Opciones" no mapea a
+ninguno de los 4 roles canónicos del reglamento y esconde campos de uso frecuente (Vendedor, Descuento).
+Se le mostró un mockup (`Artifact`, favicon 💳) con 2 direcciones, luego se le pidió feedback puntual y
+respondió con 3 correcciones exactas — **el cliente no se puede remover**, **faltan botones de
+imprimir**, **el vendedor debe ser el mismo del login automático** — más una pregunta técnica ("¿la barra
+inferior en qué va a funcionar?", respondida con evidencia: el pie de Cobrar YA usa el patrón correcto de
+REGLAMENTOS.md §11 — modal `max-height:94vh` con flexbox-column y su propio pie fijo DENTRO, no necesita
+el mecanismo `nxStickyBarSet`/`.nxFacBar` de las pantallas completas). Se le mostró el módulo real de
+Vendedores (`ajustesVendedores`/`abrirVend`) como referencia visual de datos reales, y finalmente una
+comparación lado a lado del ancho de escritorio (460px actual vs 620px ensanchado, mismo criterio que la
+barra fija v55.1) — **eligió la recomendada (ensanchar)**.
+- **HALLAZGO CLAVE que cambió el diseño del botón de imprimir:** el propio historial de este archivo ya
+  documentaba (v49.72→v49.77) que un botón de imprimir DENTRO de Cobrar se había revertido porque
+  `proxNumeroFacturaCorto()` solo mira la secuencia, no la aparta — imprimir antes de confirmar arriesgaba
+  entregar un número que después le tocara a OTRA venta. Esa razón sigue vigente y no se tocó. Pero al
+  investigar el flujo actual (`nxPosConfirmar`) se encontró la causa real de "faltan botones de imprimir":
+  al confirmar, el sistema cerraba el modal de Cobrar y abría el ticket con `window.open('','_blank')`
+  **después de varios `await`** (el POST a `pos_ventas`, a `pos_venta_items`, etc.) — casi cualquier
+  navegador (Safari del iPhone incluido) bloquea un popup que no viene pegado de forma síncrona al toque
+  original del usuario. En producción, ese ticket probablemente nunca llegaba a abrirse — de ahí que el
+  dueño viera "faltar" los botones: estaban ahí, encerrados en una ventana que el navegador nunca mostró.
+- **Arreglo real (parches.js, `nxPosCobrar`/`nxPosConfirmar`), 6 piezas quirúrgicas, cero cambios a la
+  lógica de dinero/validaciones/impuestos de `nxPosConfirmar` (los §2/§3 de REGLAMENTOS.md siguen intactos
+  — límite de crédito, caja abierta, cuotas vencidas, IMEI, mínimos, etc.):**
+  1. **`.nxPgQ` pasó de flex-wrap a `display:grid;grid-template-columns:repeat(3,1fr)`** — 6 botones =
+     siempre 2 filas de 3, sin importar el ancho de pantalla; nunca un huérfano que se estire a ocupar
+     toda la fila.
+  2. **Chip de cliente con ✕ dedicada:** `.nxPgCli` pasó de `<button>` a `<div role="button" tabindex="0">`
+     (mismo patrón ya usado con la estrella de favorito en Vender, v48.81 — un `<button>` no puede
+     contener otro `<button>`) con un `<button class="nxPgCliX">` real adentro (`event.stopPropagation()`
+     para no disparar el toggle del contenedor). Refactor: la lógica de re-precio que antes vivía inline
+     dentro del callback de `nxPosClienteAbrir` se extrajo a `_posCobroCliAplicar(c)`, compartida por
+     `nxPosCobroCliToggle` (abre el buscador) y `nxPosCobroCliClear` (la ✕, sin abrir nada) — evita
+     duplicar la regla de re-precio del §2 en dos sitios.
+  3. **Vendedor auto-completado:** `_posVendAuto()` busca en `_vendedores` por coincidencia de nombre
+     contra `curSesPOS().nom` (no hay FK real entre el login y `pos_vendedores`, es intencional — mismo
+     criterio "safe no-op fallback" ya usado en otras partes del sistema); si hay match, el `<option>`
+     sale preseleccionado con un badge azul "AUTO" junto a la etiqueta; sin match, cae a "— Sin vendedor —"
+     como siempre, sin bloquear ni forzar nada — el cajero lo cambia libremente en cualquier caso.
+  4. **Botón Cancelar** (`.nxPgCan`, nuevo) en el pie, antes de Opciones — cierra el modal sin pedir
+     confirmación (abrir Cobrar no toca el carrito, solo lo hace Confirmar venta, así que no hay nada que
+     perder al cancelar).
+  5. **Estado "✅ Vendido" DENTRO del mismo modal, reemplaza el popup ciego:** `nxPosConfirmar` ya no hace
+     `cerrarModal('nxPosPago')` + `ticketHTML(ventaTicket)` al final — ahora llama a `_posVentaExito(v)`,
+     que reemplaza el `innerHTML` del `.modal` (el mismo nodo, sigue abierto y visible) por un encabezado
+     verde "Vendido" + número real + resumen (cliente/artículos/total) + **3 botones reales, cada uno
+     disparado por el CLIC del cajero, no por un callback async** — así ningún navegador los bloquea:
+     "Imprimir ticket" (llama a `ticketHTML(v)`, la misma función de siempre, ahora desde un clic directo),
+     "Factura completa" (llama a `window.nxFacDocVenta(v.id)`, ya existía, solo le faltaba este botón), y
+     "Enviar por WhatsApp" (`nxPosVentaWA`, nuevo — arma un mensaje con los artículos y el total, usa
+     `waNum(c.telefono)` + el mismo formato `https://wa.me/`+num que ya usa `nxPosCliWA`; si el cliente no
+     tiene teléfono válido, el botón sale deshabilitado con `title` explicando por qué, en vez de un botón
+     muerto). "Nueva venta" cierra el modal — mismo punto de salida de siempre.
+  6. **Ensanchada en escritorio:** `@media(min-width:761px){.nxPago{max-width:620px}...}` — mismo
+     breakpoint exacto ya usado en la barra fija (v55.1) — con `.nxPgHd`/`.nxPgBody`/`.nxPgFt` (padding) y
+     `.nxPgTot`/`.nxPgBig input` (tipografía) proporcionalmente más grandes; en móvil (`≤760px`) no cambia
+     nada, sigue en 460px como siempre.
+- **Verificado con Playwright, código real extraído por contenido de `parches.js`** (no una reconstrucción
+  — el bloque completo desde `function leerCobro()` hasta el cierre de `nxPosConfirmar`, 38.224 caracteres,
+  cargado en un navegador con un backend Supabase simulado): **34 comprobaciones** — la rejilla de 6
+  botones nunca produce un huérfano gigante (ancho parejo, 3 columnas reales), el pie tiene Cancelar/
+  Opciones/Confirmar venta, sin cliente la ✕ está oculta y el chevron se ve (y viceversa con cliente
+  elegido), el vendedor se auto-selecciona a "Robinson" cuando la sesión es "Robinson" (badge AUTO
+  visible) y cae a "Sin vendedor" sin badge cuando no hay match, la ✕ del cliente limpia el chip SIN abrir
+  el buscador completo (verificado que `nxPosClienteAbrir` no se llama), Cancelar cierra sin confirmar,
+  `.nxPago` mide `620px` en 1600px y `460px` en 390px, una venta completa en efectivo deja el modal
+  ABIERTO con el estado "Vendido" (nunca se cierra solo), NO se abre ningún popup automático, los 3
+  botones llaman a `ticketHTML`/`nxFacDocVenta`/WhatsApp con los datos reales de la venta recién creada
+  (incluido el número de teléfono correcto en la URL de `wa.me` y el total en el mensaje), el botón de
+  WhatsApp queda deshabilitado con un cliente sin teléfono, "Nueva venta" cierra el modal, y una venta a
+  Consumidor final (sin cliente elegido) se confirma igual de bien. Capturas de pantalla revisadas en
+  390px (con y sin cliente, y el estado "Vendido") y 1600px (desktop ensanchado) — sin desbordes, 0
+  errores de JavaScript en todo el recorrido. `node --check parches.js` limpio.
+- **Deliberadamente NO tocado:** ninguna validación de negocio de `nxPosConfirmar` (límite de crédito,
+  caja abierta, IMEI, mínimos, cuotas vencidas — REGLAMENTOS.md §2/§3, todas intactas), ni la restricción
+  histórica de "no imprimir antes de confirmar" (el número de factura sigue sin apartarse hasta el POST
+  real — el estado "Vendido" solo aparece DESPUÉS de que la venta ya existe en la base, con su NCF/número
+  reales).
+
+### Seguros · Clientes — bug real: "Inhabilitar" se reactivaba solo al editar (2-ago-2026, v55.3)
+El dueño: *"Con mi sistema de seguro con relación a factura y cobros y pendientes audita presiento que
+hay algo mal."* Sin síntoma concreto — investigación de causa raíz contra la base real (109 clientes,
+300 facturas, 184 cobros), no contra supuestos.
+- **Lo que se auditó y estaba SANO (confirmado, no tocado):** el modelo de deuda (`deuda_total`/`pagado`/
+  `deuda_anterior`/`pendTot`) cuadra en los 109 clientes; `resyncEstadoFacturas` (el arreglo de la v49.95
+  para el estado cacheado de las facturas) sigue funcionando — 0 facturas con el badge desactualizado,
+  replicado con una ventana `SUM(...) OVER (PARTITION BY cliente_id ORDER BY periodo ROWS BETWEEN
+  UNBOUNDED PRECEDING AND CURRENT ROW)` en SQL puro contra las 300 facturas reales.
+- **HALLAZGO REAL — un cliente inhabilitado se reactivaba SOLO, en silencio, al editarlo por cualquier
+  motivo ajeno.** `clientes` tiene DOS campos de estado independientes: `activo` (booleano, la fuente de
+  verdad real que usa toda la UI — badge, filtro de pestañas, `getEst()`) y `estado_cliente` (texto:
+  ACTIVO/EN_PROCESO/SUSPENDIDO/CANCELADO, el desplegable "Estado del cliente" del formulario). El botón
+  **"Inhabilitar"** (`confirmarInhab()`) y **"Reactivar"** (`reactivar()`) solo tocaban `activo` — nunca
+  `estado_cliente`. Pero `guardarCli()` (el guardado GENERAL del formulario de editar cliente) **re-deriva
+  `activo` desde `estado_cliente` en CADA guardado**: `if(estado_cliente==='SUSPENDIDO'||'CANCELADO')
+  activo=false; else activo=true`. Resultado: un cliente inhabilitado por falta de pago, con
+  `estado_cliente` todavía en 'ACTIVO' (nunca se tocó), se reactivaba SOLO la próxima vez que alguien le
+  editara el teléfono, la ARS, o cualquier dato sin relación — **sin ningún aviso, sin diferenciarse en
+  Auditoría de una edición normal**. Confirmado con el historial real (`auditoria`, cruzado por nombre por
+  no tener `cliente_id` poblado en eventos viejos) que el bug **no se había disparado todavía** en ningún
+  cliente — riesgo vivo, no incidente ya ocurrido. Afectaba a los 4 clientes reales hoy inhabilitados por
+  falta de pago (Yelvel Silverio, Vanessa Hiciano, Angelica Maria Santos Martinez, Lino Andres Peña Reyes).
+- **Arreglo — mínimo, sin abstracción nueva** (revisado con `/ponytail-review`: "Lean already. Ship.",
+  se descartó extraer un helper compartido: `confirmarInhab`/`reactivar` divergen de verdad — una limpia
+  `motivo_inhab`, la otra lo pone, y `reactivar` además renueva la póliza vencida): `confirmarInhab()`
+  ahora manda `estado_cliente:'SUSPENDIDO'` junto a `activo:false` en el mismo `PATCH`;
+  `reactivar()` manda `estado_cliente:'ACTIVO'` junto a `activo:true`. Mismo patrón exacto ya usado para
+  `motivo_inhab`/`nota_inhab` en esas mismas líneas.
+- **Corrección de datos, una sola vez (SQL, verificado contra la base en vivo antes de escribir, no de
+  memoria):** los 4 clientes reales con el desfase (`estado_cliente='ACTIVO'` con `activo=false`)
+  actualizados a `estado_cliente='SUSPENDIDO'` — pinneado por id explícito, no por predicado ancho.
+  Confirmado el valor correcto por el propio patrón ya existente en la tabla: los otros clientes
+  inhabilitados por "Falta de pago" (o sin motivo) ya tenían `SUSPENDIDO`; los inhabilitados por
+  "Solicitud del cliente" tenían `CANCELADO` — los 4 corregidos son todos "Falta de pago", así que
+  `SUSPENDIDO` es consistente con el resto de la tabla, no solo con el código. Verificado después:
+  `0` clientes con `activo=false` y `estado_cliente` fuera de (SUSPENDIDO, CANCELADO).
+- Verificado con un harness de Node contra el código real extraído del archivo tras el edit (7/7,
+  incluida la prueba control que reproduce el bug exacto contra el estado real de los 4 clientes antes
+  del fix). `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html`
+  (1,423 / 488,791 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Nota aparte, sin tocar (no era el bug, es una operación distinta):** CARMEN ISELSA CABREJA ARIAS
+  aparece en el historial como reactivada manualmente en algún momento y vuelta a inhabilitar después —
+  hoy está sana (`activo=false`, `estado_cliente='SUSPENDIDO'`, sincronizados). No se investigó más a
+  fondo por no ser parte de este bug.
+
+### Seguros · Avisos — bug real: "Facturas atrasadas" mostraba deuda ya pagada (2-ago-2026, v55.4)
+El dueño mandó una captura real de la pestaña Avisos: una clienta (CARMEN ISELSA CABREJA ARIAS — la
+misma del bug anterior, sin relación entre los dos) aparecía debiendo **RD$13,500** de meses anteriores,
+pero su deuda real es **RD$500**. Investigado contra la base real, no contra supuestos.
+- **Causa raíz:** `rAvisos()` (sección "Facturas atrasadas") sumaba **`f.total`** — el monto CONGELADO
+  de cada factura al momento de crearse — en vez de calcular cuánto debe el cliente HOY. En facturas
+  viejas ese `total` puede traer deuda anterior ya arrastrada (de antes de que el sistema separara esa
+  deuda en su propia columna, ver "DEUDA ANTERIOR" v36.0 más arriba en este archivo) — un monto que ya
+  no refleja la realidad aunque el cliente haya ido pagando desde entonces. Además filtraba por
+  `f.estado!=='Pagado'`, que es una CACHÉ (`resyncEstadoFacturas`, v49.95) que puede quedar
+  desactualizada por caminos que no la resincronizan.
+- **Arreglo — mismo criterio que el resto del sistema, reusar la fuente de verdad ya establecida:**
+  en vez de sumar `f.total`/filtrar por `f.estado`, ahora se recalcula el saldo real de cada factura con
+  **`_saldoFacturasCliente(cid)`** — la MISMA función que ya usan Facturas, Cobros y la Ficha del
+  cliente (reparte `cliente.pagado` oldest-first sobre las facturas no anuladas) — y solo se cuenta lo
+  que en verdad sigue pendiente. Un cliente que ya pagó del todo **deja de aparecer por completo** en
+  Avisos, sin importar qué diga la etiqueta guardada de esa factura. Cero tablas/columnas nuevas, cero
+  cambio en `_saldoFacturasCliente` en sí — solo se cambió qué usa `rAvisos()` para sumar.
+- **Revisado con `/ponytail-review`:** se había agregado una memoización (`_saldoCache`) para no
+  recalcular el saldo del mismo cliente dos veces — la skill la marcó `yagni` dado el tamaño real del
+  dataset (~300 facturas totales, el costo de recalcular es insignificante) y no es un patrón que el
+  resto del código use en este contexto. Se quitó — `_saldoFacturasCliente(cid)[f.id]??0` se llama
+  directo por cada factura, sin caché.
+- Verificado con **5 pruebas** contra el código real extraído del archivo (no reconstruido): (1) el caso
+  exacto reportado — con `deuda_total:4500,pagado:4000` y una factura vieja con `total:13500` congelado,
+  muestra RD$500 (saldo real) y NUNCA RD$13,500; (2) cliente con el estado cacheado "Parcial" pegado
+  pero que ya pagó del todo (`deuda_total===pagado`) — desaparece de Avisos por completo; (3) cliente que
+  sí debe, sin regresión — sigue apareciendo con el monto correcto; (4) reparto oldest-first entre 2
+  facturas de un mismo cliente — el monto mostrado es solo lo que falta (no la suma ciega de las 2
+  facturas) y el conteo de "meses atrasados" excluye la que ya quedó cubierta por el reparto; (5) factura
+  `Anulada` — nunca se cuenta. Las 5 pasan. `node --check parches.js` limpio (archivo no tocado); los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** las otras 2 secciones de Avisos — "Seguimiento por agente" (ya usaba
+  `pendTot(c)`, la fuente correcta, confirmado sano) y "Pólizas por vencer" (usa `getEstPol()`, un
+  cálculo distinto sin relación con este bug).
+
+### Seguros · rediseño — barra de urgencia compartida en Pendientes, Cobros, Ficha y Avisos (2-ago-2026, v55.5)
+El dueño pidió "un rediseño en pendientes, cobros, y los ficheros de cada cliente". Investigado primero
+el código/CSS real (`.nxSf` tokens, `rFact`/`rCob`/`verCliente`), luego construido y publicado un mockup
+Artifact de 3 pantallas con un elemento visual compartido (Pendientes/Cobros/Ficha del cliente, todas con
+una "barra de urgencia" de color) — el dueño lo revisó y, al reportar de paso el bug de Avisos (arreglado
+arriba, v55.4), pidió agregar Avisos como 4ta pantalla al mismo mockup con el mismo lenguaje visual.
+Confirmó las 4 con **"Si las 4 pantalla"**.
+- **El elemento firma:** una barra de color (roja=hay que cobrar YA, ámbar=parcial/en gracia,
+  verde=al día) que se agrega a la tarjeta/fila/encabezado que cada pantalla YA renderiza — cero campos
+  nuevos, cero cálculo nuevo, el color sale del mismo `estado`/`saldo` que cada pantalla ya calcula.
+- **Cobros (`rCob`):** borde izquierdo en `.nxCobCard`, clase `u-crit`/`u-warn`/`u-ok` derivada de
+  `estCls` (el mismo que ya pinta el badge PENDIENTE/PARCIAL/AL DÍA de la tarjeta).
+- **Facturas/Pendientes (`rFact`):** borde izquierdo, pero NO en el `<tr>` — con
+  `border-collapse:collapse` (que `.sf-tbl` ya usa) un `border` puesto directo en `<tr>` no se pinta, es
+  un gotcha de CSS conocido. Se puso en la 1ra celda (`.cli-cell`) para escritorio; en móvil el `<tr>` YA
+  es una tarjeta con su propio borde de 1px (`.sf-tbl` colapsa a bloque bajo 720px), así que ahí se
+  sobreescribe solo el lado izquierdo del borde existente. Mismo criterio de `f.estado` que ya usa el
+  badge (`ec`): Pendiente=rojo, Parcial=ámbar, Pagado=verde, Anulada=sin barra (además de su opacidad
+  reducida de siempre).
+- **Avisos (`rAvisos`):** borde izquierdo en `.nxAvCard`, en sus 3 secciones — "Seguimiento por agente"
+  siempre rojo (la lista de por sí solo trae agentes con clientes atrasados, `x.n>0`, así que no hacía
+  falta un umbral arbitrario); "Facturas atrasadas" ámbar con 1 mes, rojo con 2+ (grounded en el propio
+  campo `o.meses` que ya se mostraba, sin inventar un umbral de monto); "Pólizas por vencer" rojo si
+  `e.est==='vencida'`, ámbar si `'gracia'` — mismo criterio que ya usaba el color del texto de esa
+  tarjeta (`e.est==='vencida'?'#dc2626':'#b45309'`), solo se llevó también al borde.
+- **Ficha del cliente (`verCliente`):** borde ARRIBA (no a la izquierda — el encabezado `.sf-head` es
+  horizontal, un borde superior calza mejor con esa forma) según `getEst(c)`: Al día=verde,
+  Parcial=ámbar, el resto (Pendiente/Inhabilitado)=rojo.
+- **Verificado con 19 pruebas de lógica** contra el código real de las 4 funciones extraído del archivo
+  (no reconstruido, balance de llaves real): la clase de urgencia correcta en cada caso (incluidos los 2
+  casos límite de Avisos — 2+ meses atrasados y póliza vencida vs. en gracia), y que ningún
+  `onclick`/botón real se tocó (`cobrarDesdeFact`/`abrirAbono`/`nxCobroWA`/etc. siguen intactos).
+- **Más 17 pruebas visuales con Playwright**, cargando el `<style>` estático real de `index.html`
+  (85,896 caracteres extraídos tal cual) + el CSS que `_nxCobCSS()`/`_nxAvCSS()` inyectan en runtime
+  (capturado interceptando `document.createElement('style').textContent`) + el HTML real generado por
+  las 4 funciones con datos de prueba realistas — midiendo `getComputedStyle` para confirmar los colores
+  EXACTOS (`rgb(225,29,72)` rojo Cobros, `rgb(239,68,68)` rojo Facturas, `rgb(34,197,94)` verde
+  Facturas, etc. — cada pantalla con su propia paleta hex, sin asumir que coinciden) y 0 desbordes
+  horizontales. Captura de pantalla completa revisada visualmente antes de publicar.
+  - **Bug del propio harness de prueba, encontrado y corregido antes de confiar en el resultado:** el
+    primer intento de stub de `document.getElementById` devolvía SIEMPRE un elemento (creándolo si no
+    existía) — pero `_nxCobCSS()`/`_nxAvCSS()` empiezan con `if(document.getElementById('nxCobCSS'))
+    return;` (el guardia de "solo inyectar una vez"), así que con ese stub el guardia SIEMPRE daba
+    verdadero y el CSS real nunca se llegaba a capturar — las 3 primeras pruebas de color de Cobros
+    fallaban en falso. Corregido acotando el stub a una lista blanca de ids "de pantalla" que la app
+    real ya trae en el DOM (`tbCob`, `fMes`, `csBody`...); cualquier otro id (como los guardias de CSS)
+    devuelve `null` la primera vez, igual que en el navegador real.
+- `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html` (1,423 /
+  490,124 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** ninguna lógica de negocio, ninguna tabla/columna nueva, ningún
+  `onclick` — 100% visual sobre datos que cada pantalla ya calculaba. La reorganización más grande del
+  mockup (tabs Resumen/Facturas/Pagos/Notas en la Ficha del cliente, en vez del grid de 2 columnas
+  actual) NO se implementó en esta ronda — habría requerido traer datos de abonos que hoy solo vive en
+  el modal aparte `verHistorialAbonos`, un cambio de mayor alcance que el elemento firma compartido que
+  el dueño aprobó explícitamente.
+
+### Skill nueva `i-have-adhd` (2-ago-2026)
+El dueño mandó una captura de `github.com/ayghri/i-have-adhd` y pidió instalarla. Es un output-style
+de un solo archivo (`SKILL.md`, MIT, sin scripts/instaladores) que reformatea las respuestas para que
+sean accionables de inmediato: acción primero, pasos numerados, sin preámbulo ("Great question!"), sin
+cierre de cortesía ("Hope this helps!"), estimados de tiempo concretos, listas topadas a 5. Trae
+`disable-model-invocation: true` — se activa a propósito con `/i-have-adhd`, no solo (mismo patrón que
+las skills de un solo comando ya instaladas, ej. `gstack-spec`).
+- Instalada con el mismo patrón que el resto (`.agents/skills/i-have-adhd/SKILL.md`+`LICENSE.txt`,
+  enlace en `.claude/skills/i-have-adhd`) — copia directa, sin correr el instalador oficial del repo
+  (no trae ninguno; es un solo archivo, a diferencia de gstack que sí traía maquinaria de instalador).
+
+### NPGS §5 — Tanda A: Pólizas, Cobros, Historial de pagos, Auditoría (2-ago-2026, v55.6)
+Continuación de la Fase 3 de buscadores (v49.36-49.37, ya documentada arriba) — el dueño pidió seguir
+migrando los buscadores que quedaban como barra fija en pantalla al patrón de ventana del §5. Antes de
+tocar código se investigó el inventario REAL (no el documentado, que estaba desactualizado): **28
+pendientes**, no ~23 — la cifra vieja incluía ~6 buscadores de AGUAPRO, módulo eliminado por completo el
+1-ago-2026 (ver más arriba). Se partió el trabajo en 4 tandas por bloque funcional (A: núcleo de Seguros
+estático · B: POS ~15 · C: Financiamiento ~4 · D: Rifas/Consultorio/Vehículos ~4). Esta versión cierra la
+**Tanda A**, los 4 buscadores estáticos del núcleo de Seguros que quedaban con la barra vieja `.nxBusca`
+siempre visible en vez de la lupa: **Pólizas** (`polQ`), **Cobros** (`cobQ`), **Historial de pagos**
+(`pgBuscar`) y **Auditoría** (`auditFiltroUsr`).
+- **Mismo patrón ya probado con Clientes (`cliQ`, v49.36-37), sin variación:** el `<input>` original se
+  queda en el DOM pero pasa a `type="hidden"` — así la función de filtrado que ya existía
+  (`rPolizas`/`rCob`/`aplicarFiltrosPagos`/`rAuditRows`) sigue leyendo `document.getElementById(id).value`
+  exactamente igual, cero líneas de lógica de filtrado tocadas. Un `<span id="XLupa">` nuevo se llena con
+  `nxBuscaFiltroHTML({...})`, cuyo `onterm` escribe en el input oculto y vuelve a llamar la función de
+  filtrado correcta. Se agregó una función `pintarLupaX()` por pantalla, llamada al inicio del render.
+- **2 variantes del patrón, según si la función de entrada de la pantalla es pesada o liviana:**
+  - Pólizas y Cobros: la MISMA función (`rPolizas`/`rCob`) sirve de entrada Y de filtro — `onterm` la
+    llama directo, igual que ya hacían sus `<select>` vecinos con `onchange="rPolizas()"`.
+  - Historial de pagos: `rPagos()` (async, trae `pos_ventas`/`abonos` del servidor por rango de fecha) es
+    pesada; `aplicarFiltrosPagos()` (filtro en memoria) es liviana — igual que ya hacían los `<select>` de
+    empresa/agente/método/banco de ese mismo panel. `pintarLupaPagos()` se llama una sola vez dentro de
+    `rPagos()`; el `onterm` de la lupa llama solo a `aplicarFiltrosPagos()`.
+  - Auditoría: `rAuditoria()` reconstruye TODA la barra de filtros (incluida la propia lupa) en un solo
+    template string — se le agregó `pintarLupaAudit()` al final, después de montar el HTML. `rAuditRows()`
+    (repinta solo `#auditRows`) es la que ya usaban los filtros de Módulo/Fecha en su `onchange` — el
+    `onterm` de la lupa llama a esa, NUNCA a `rAuditoria()` de nuevo (que reconstruiría la barra completa
+    en cada tecla, perdiendo el foco del campo — el mismo bug de "Auditoría" que ya se había encontrado y
+    arreglado una vez, en v47.7, con el patrón de fondo intacto).
+- **Desperdicio real encontrado y corregido de paso:** el `onterm` original de `pgBuscar` (antes de esta
+  migración) llamaba a la función PESADA `rPagos()` en cada tecla — un refetch completo al servidor por
+  cada letra escrita, cuando sus 4 filtros vecinos (empresa/agente/método/banco) en esa misma pantalla ya
+  usaban el camino liviano `aplicarFiltrosPagos()`. Quedó corregido al construir `pintarLupaPagos()`.
+- **`limpiarFiltrosPagos()`/`limpiarFiltrosAudit()`** (los botones "Limpiar" de esos 2 paneles) ahora
+  también llaman a su `pintarLupaX()` correspondiente antes de re-filtrar — si no, el dato se limpiaba
+  pero el chip de búsqueda de la lupa se quedaba pegado mostrando el término viejo.
+- **Deliberadamente NO tocado — `factQ` en modo "vista rueda":** `pintarLupaFact()` (Facturas) mantiene a
+  propósito la barra vieja visible cuando el admin activa el modo experimental de tarjetas (`nxUsarRueda()`,
+  v51.3) — es una excepción de diseño ya decidida y documentada, no un hueco de esta migración.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una reconstrucción —
+  `nxBuscaFiltroHTML`/`nxBuscaFiltroAbrir`/`nxBuscaFiltroEscribe`/`nxBuscaFiltroAceptar`/
+  `nxBuscaFiltroLimpiar`/`nbfRefrescarChip` + las 4 funciones de pantalla y sus `pintarLupaX` nuevas,
+  extraídas con balance de llaves real): **34 comprobaciones** — en las 4 pantallas: la barra vieja
+  `.nxBusca` ya no existe, el input queda oculto, la lupa abre la ventana, escribir en vivo actualiza el
+  input oculto y dispara la función real (confirmado que es la correcta y no otra, con contadores de
+  llamadas sobre las funciones reales), los resultados filtran de verdad, aceptar cierra y deja el chip
+  visible, y "Limpiar"/la ✕ del chip devuelven la lista completa y borran el chip. Más 2 rondas de
+  verificación visual con capturas a 390px y 1280px (con el `<style>` REAL de `index.html` cargado, 85,896
+  caracteres) confirmando 0px de desborde horizontal en ambos anchos — en el camino se encontraron y
+  corrigieron 4 bugs del propio harness de prueba (nunca del código real): la extracción por regex se
+  comía la palabra `async` al extraer `rPagos` (rompía la compilación entera del script generado con un
+  `SyntaxError` silencioso), 2 helpers globales sin stub (`inits`, `_ordTablas`), y 2 fragmentos HTML
+  copiados a mano al harness a los que les faltaba una clase real de producción (`.view.on` en Pólizas,
+  `.nxSf` en el panel de Pagos) — confirmado contra el markup real de `index.html` que la producción SÍ
+  tiene esas clases, el error era solo de la copia de prueba. `node --check parches.js` limpio (archivo no
+  tocado); los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** Tandas B (POS, ~15 buscadores), C (Financiamiento, ~4), D (Rifas 2 + Consultorio 1 +
+  Vehículos 1) — mismo patrón, cada tanda se construye y verifica por separado antes de publicar.
+
+### NPGS §5 — Tanda B: Notas de crédito, Historial de ventas, Prefacturas, Inventario, Reparaciones (2-ago-2026, v55.7)
+Continuación de la Tanda A (Pólizas/Cobros/Historial de pagos/Auditoría, arriba). El dueño confirmó
+seguir con **"Si"** al ofrecer avanzar sobre el POS.
+- **El inventario real no era ~15 — auditado antes de tocar código:** se leyeron los 15 sitios crudos
+  con `posBuscador(` en `parches.js` y se encontró que **9 de los 15 ya viven DENTRO de su propia
+  ventana de selección** (elegir cliente en Facturar/Cobrar, elegir proveedor/empleado en Compras,
+  elegir artículo en la ventanilla `nxProdPicker`, elegir IMEI en `nxFacSerial`, el buscador de nivel de
+  precio dentro de `abrirProd`, el buscador de artículo dentro de `nxCompraArtBuscar`, y los 2 modales
+  rápidos `nxPrefLista`/`nxFacHist`) — meterlos en OTRA ventana habría sido un paso atrás, no una mejora
+  (mismo criterio ya establecido con `ModalBusquedaBase`: un campo de búsqueda que ya vive dentro de una
+  ventana abierta cumple el espíritu del §5, no hace falta anidarlo). El alcance real era **6 candidatos**:
+  5 migrados aquí (Notas de crédito, Historial de ventas, Prefacturas historial, Inventario/Productos,
+  Reparaciones) + 1 dejado a propósito sin tocar (**Vender**, `posBuscar` — su lupa hoy abre
+  `nxProdPicker('vender')`, el catálogo completo con precio/existencia/IMEI, en vez de solo filtrar; es
+  una decisión de diseño real —¿se quiere seguir abriendo el catálogo, o cambiar a filtrar en línea como
+  las demás?— no algo que se decida solo, se le comunica al dueño en el changelog para que lo confirme).
+  `finQ` (Financiamiento) queda para una futura Tanda C, sin investigar más en esta ronda.
+- **Mismo motor compartido de la Tanda A (`nxBuscaFiltroHTML`/`nxBuscaFiltroAbrir`), aplicado con el
+  mismo criterio de riesgo mínimo:** cada función de filtro real (`nxNCBuscar`, `nxPosVentasBuscar`,
+  `nxPHBuscar`, `nxProdTablaBuscar`, `nxRepBuscar`) se llama EXACTAMENTE igual que antes — cero cambios
+  en la lógica de filtrado de ninguna de las 5. Un `<span id="XQLupa"></span>` reemplaza la barra vieja
+  `posBuscador({...})`; una función nueva `pintarLupaX()` por pantalla llena ese `<span>` con
+  `nxBuscaFiltroHTML({id, titulo, placeholder, value, onterm})`, cuyo `onterm` llama a la función de
+  filtro real de siempre.
+  - **Diferencia real con la Tanda A, resuelta con una decisión de diseño explícita:** `nbfContar` (el
+    contador de "N resultados" del motor compartido) sabe excluir un `<tr>` oculto por
+    `offsetParent===null` para elementos que NO son `<tr>`, pero **no** para los que sí lo son —
+    Inventario/Productos y Reparaciones filtran ocultando filas/tarjetas con `display:none` (no
+    reconstruyen la lista), así que pasarles `cont:` habría mostrado un número FALSO (el total, no lo
+    filtrado). Se dejó sin `cont:` en esas 2 — el componente cae solo a su mensaje honesto ("Buscando
+    '...'") en vez de mentir con un conteo — sin tocar el motor compartido en sí (usado con éxito en
+    otras 4+ pantallas, riesgoso modificarlo para este caso puntual).
+- **BUG REAL encontrado y corregido ANTES de publicar (no llegó a producción):** el primer intento
+  llamaba a `pintarLupaX()` DESDE ADENTRO de cada función que arma la pantalla (mismo patrón que ya
+  funcionaba en la Tanda A) — pero las pantallas de la Tanda A tienen su barra de búsqueda escrita a
+  mano en el HTML estático de `index.html` desde el arranque, mientras que estas 5 son funciones SPA que
+  CONSTRUYEN Y DEVUELVEN el HTML completo como un string — el `<span id="XQLupa">` no existe todavía en
+  el DOM mientras la propia función que lo genera sigue corriendo. La falla era completamente silenciosa
+  (`if(!box)return;`), y solo salió a la luz al cronometrar el clic de Playwright contra el botón de la
+  lupa, que nunca aparecía. **Arreglo de raíz:** investigado el flujo real de `renderPOS(view)` — el
+  patrón correcto, ya usado y documentado desde v48.98 para Compras, es: `view.innerHTML =
+  shellTienda(...)` primero, y SOLO DESPUÉS correr los hooks por pestaña (`pintarCarrito()` para Vender,
+  `pintarFactura()` para Factura/Prefactura). Se movieron los 5 `pintarLupaX()` a ese mismo punto, como
+  hooks nuevos gateados por `_posTab` (`'notascredito'`/`'prefhist'`/`'productos'`/`'reparaciones'`/
+  `'ventas'` — este último confirmado con `grep` como el valor real que usa el botón de navegación, no
+  supuesto), y se quitaron las llamadas internas redundantes de dentro de cada función de render.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una reconstrucción —
+  se construyó un extractor nuevo con un helper `extractVarFn` para las 5 funciones reales declaradas
+  como `window.NAME = function(...)`, junto con las 5 pantallas y sus ~35 dependencias reales,
+  descubiertas iterativamente por los `ReferenceError` reales que fue tirando el harness —
+  `ncFiltradas`/`hoy`/`kpiPf`/`ventasFiltradas`/`claveParse`, cada una agregada solo tras confirmar que
+  el error venía de código de negocio real, no de un stub faltante): **31 comprobaciones** — en las 5
+  pantallas: la barra vieja ya no existe, la lupa abre la ventana compartida, escribir en vivo llama a
+  la función de filtro real (contador de invocaciones, no solo "algo pasó") y filtra de verdad (3→1
+  fila/tarjeta en los 5 casos), el contador de resultados dice el número correcto en las 3 que sí lo
+  llevan y cae al mensaje honesto en las 2 que no, aceptar cierra la ventana y deja el chip visible con
+  el término, y en Notas de crédito limpiar el chip devuelve las 3 filas. Capturas de pantalla en 390px
+  y 1280px (las 5 pantallas apiladas) y 2 capturas más con la ventana de Reparaciones abierta —
+  revisadas visualmente, sin desbordes horizontales ni roturas de layout, datos de prueba correctos.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** confirmar con el dueño qué hacer con `posBuscar` (Vender) — mantener el catálogo
+  completo actual o migrarlo a filtro en línea — y las Tandas C (Financiamiento, `finQ` +
+  `nxPrElegirCliente`) y D (Rifas/Consultorio/Vehículos), mismo patrón, cada una en su propia ronda.
+
+### NPGS §5 — Tanda C: Financiamiento (préstamos + clientes) y Cuotas del POS (2-ago-2026, v55.8)
+Continuación de la Tanda B (arriba), pedida con "Sigue con lo pendiente".
+- **Alcance real auditado antes de tocar código:** de los 4 candidatos de Financiamiento, solo **3**
+  califican — la lista de préstamos (`nxPrBuscar`, filtra `nxPrestamoFiltrar`→`repintarPrLista`), la
+  lista de Clientes de Financiamiento (`nxPrCliBuscar`, filtra `nxPrClienteFiltrar`) y **Cuotas del
+  POS** (`finQ`, filtra `nxFinBuscar`→`finRepintarLista`). El 4to, `nxPrCliPickQ`, vive DENTRO de la
+  ventana "Elegir cliente" (`nxPrElegirCliente`) — mismo criterio de las Tandas anteriores: un campo
+  de búsqueda que ya vive en una ventana abierta cumple el §5, anidarle otra sería un paso atrás. Se
+  dejó intacto.
+- **Mismo motor y mismo patrón de riesgo mínimo:** un `<span id="XLupa">` reemplaza la barra vieja
+  (`prBuscador`/`posBuscador`) y una `pintarLupaX()` por pantalla lo llena con `nxBuscaFiltroHTML`,
+  cuyo `onterm` llama la función de filtro real de siempre — cero cambios en la lógica de filtrado.
+  `prBuscador` NO quedó muerto: conserva su único uso real dentro del picker de cliente.
+- **Los hooks van donde cada módulo inyecta de verdad** (la lección de la Tanda B, aplicada según la
+  arquitectura de CADA módulo, no copiada a ciegas): Financiamiento NO pasa por `renderPOS` —
+  `renderLista(view)` hace `view.innerHTML = ...` directo, así que las 2 lupas se pintan AL FINAL de
+  esa misma función (junto al hook `evInit()` que ya existía), espejando el ternario de vistas
+  (clientes → su lupa; el ELSE de préstamos → la suya). Cuotas SÍ es una pestaña del POS
+  (`_posTab==='cuotas'` → `renderCuotas()` devuelve string) — su hook se sumó a la lista de la Tanda
+  B en `renderPOS`, después de `view.innerHTML = shellTienda(...)`.
+- **Contador de resultados, decidido por estructura real, no parejo:** las 2 listas de Financiamiento
+  van SIN `cont:` — sus tablas viven envueltas en `.nxFP-tblWrap` (el contador contaría 1 wrapper, no
+  las filas) y la de préstamos además pagina de a 12 (un conteo de página engañaría). Caen al
+  "Buscando…" honesto. Cuotas SÍ lleva `cont:'finList'` (tarjetas como hijos directos, reconstruidas
+  por tecla).
+- **BUG REAL encontrado POR el harness, corregido antes de publicar:** `finCardHTML` produce **2
+  nodos raíz por préstamo** — la tarjeta + el `.nxFP-cardMenuWrap` del menú "..." — así que el
+  contador habría dicho "6 resultados" con 3 préstamos (y "1 resultado" con 0, por el estado vacío).
+  Arreglado con `data-nbf-ignorar` (el soporte que el motor compartido ya traía) en el wrap del menú
+  y en los 2 estados vacíos de `finListaHTML` — 3 préstamos dicen "3 resultados" y 0 dicen
+  "0 resultados", verificado explícitamente en ambos sentidos.
+- **Verificado con Playwright, código real extraído por contenido** (no una reconstrucción — el motor
+  completo de `index.html` + 40 funciones reales de `parches.js`, incluidas la cadena de cálculo
+  completa `creditoCalc`/`amortizar`/`prEstadoInfo`/`finEstado` descubierta iterativamente por los
+  `ReferenceError` reales del harness, nunca stubbeada): **23 comprobaciones** — en las 3 pantallas:
+  la barra vieja no existe, la lupa abre la ventana, escribir llama la función de filtro REAL
+  (contador de invocaciones) y filtra de verdad (3→1, incluida la búsqueda por TELÉFONO en Clientes),
+  el contador dice el número correcto donde va y el mensaje honesto donde no, el caso 0-resultados
+  dice "0 resultados", el chip queda tras aceptar y limpiarlo restaura la lista. Capturas en 390px y
+  1280px **con el CSS real de `nxFPEnsureCSS()` extraído y ejecutado** (la primera pasada de
+  capturas dio 272px de desborde falso porque el harness no tenía ese CSS — es CSS inyectado por
+  `parches.js`, no del `<style>` de `index.html`; con el real, 0px en ambos anchos). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** la Tanda D (Rifas `rfTabQ`/`tkQ`, Consultorio `mdQ`, Vehículos `nxVhBuscar`,
+  Pendientes-prev `nxPendBuscar` — auditar cada uno primero, algunos pueden vivir ya en ventana) y la
+  decisión de Vender (`posBuscar`) que sigue esperando al dueño.
+
+### NPGS §5 — Tanda D: Vehículos, Consultorio, Rifas y Pendientes — CIERRA LA MIGRACIÓN (2-ago-2026, v55.9)
+Última tanda del plan de buscadores (A núcleo Seguros · B POS · C Financiamiento · D esta). El dueño
+confirmó seguir; con esta pieza **todos los buscadores del sistema quedan en el patrón del §5** — lo
+único abierto es la decisión de Vender (`posBuscar`), que es del dueño (ver abajo).
+- **Auditoría primero, alcance real:** de los 5 candidatos, **`tkQ` (lista de tickets de Rifas) se
+  excluyó** — ya vive dentro de su propia ventana (`#nxTks`), anidarle otra sería un paso atrás
+  (mismo criterio que los 9 excluidos de la Tanda B y `nxPrCliPickQ` de la C). Migrados los otros 4:
+  **Vehículos** (`nxVhBuscar`), **Consultorio · Pacientes** (`mdQ`/`nxMdBuscar`), **Rifas · tablero
+  de números** (`rfTabQ`/`nxRifaBuscar`) y **Facturas pendientes de meses anteriores**
+  (`nxPendBuscar`/`nxFiltrarPend`, módulo `__NEXUS_FACT_PENDIENTES_PREV__`).
+- **Mismo motor compartido de las Tandas A-C** (`nxBuscaFiltroHTML`), mismo patrón de riesgo mínimo:
+  cero cambios en las funciones de filtrado — cada `pintarLupaX()` nueva llena un `<span>` y su
+  `onterm` llama la función real de siempre. **Los enganches respetan la arquitectura de inyección
+  de cada módulo** (la lección de la Tanda B): Vehículos/Consultorio/Rifas pintan su propia vista
+  con `view.innerHTML = ...` dentro de `renderLista`/`renderMed`/`renderRifaPanel` — el hook va al
+  FINAL de esas mismas funciones (precedente: el hook de `evInit()` en Financiamiento); Pendientes
+  usa `renderPendPanel(inner,...)` — hook al final de esa función.
+- **Decisiones por pantalla, con su razón:**
+  - **Rifas conserva `inputmode:'numeric'`** (los boletos se buscan por número — la opción ya
+    existía en el motor desde v48.0, solo había que pasarla) y va **SIN `cont:`** a propósito: el
+    tablero pagina de a 120 celdas (`boardHTML`), un contador contra la página visible mentiría —
+    cae al mensaje honesto "Buscando…" (mismo criterio que Inventario/Reparaciones en la B).
+  - **Vehículos, Pacientes y Pendientes SÍ llevan contador real** (`cont:` a `nxVhLista`/
+    `mdPacLista`/`nxPendLista` — este último es un `id` nuevo en el `<div>` que ya envolvía las
+    tarjetas, solo el atributo). Sus estados vacíos ("No hay vehículos…", `.nxMdEmpty`) se marcaron
+    con `data-nbf-ignorar` para que "0 resultados" diga 0, no 1.
+  - En Consultorio el botón "Nuevo paciente" quedó con `margin-left:auto` en la misma fila de la
+    lupa (la barra vieja ocupaba el espacio flexible; al colapsarla, el botón se corría).
+- **Dead code eliminado (regla #1):** `pendBuscador`, `vhBuscador` y `mdBuscador` — los helpers de
+  respaldo del buscador viejo quedaron sin ningún uso tras la migración; verificado con grep antes
+  de borrar. **`rfBuscador` se queda** — la lista de tickets (`tkQ`, la excluida) todavía lo usa.
+  El primer intento de borrado con un solo regex para los 3 falló en `vhBuscador` (cuerpo distinto)
+  — el `assert n==1` abortó ANTES de escribir nada; se rehízo con corte por límites exactos +
+  verificación de balance de llaves sobre el texto removido.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (extractor con
+  balance de llaves; se evitaron a propósito los nombres que colisionan entre IIFEs —
+  `renderLista`/`cardHTML`/`esc`/`fmt` — extrayendo solo nombres únicos y stubbeando `esc`/`fmt`
+  equivalentes en el harness): **28 comprobaciones, todas a la primera** — en las 4 pantallas: la
+  lupa existe, la función de filtro real se llama de verdad (espías con contador de invocaciones),
+  filtra 3→1, chip persiste al aceptar y limpiar restaura; más los casos específicos: Rifas "015" →
+  exactamente 11 celdas (0015 + 0150-0159) con `inputmode=numeric` en el campo de la ventana y el
+  mensaje honesto sin contador; Pacientes con 0 resultados dice "0 resultados" (vacío ignorado);
+  Vehículos con `display:none` excluido del conteo. Capturas en 390px/1280px + la ventana abierta —
+  0px de desborde en los 3 casos, revisadas visualmente. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **DECIDIDO por el dueño (2-ago-2026) — Vender se queda como está, y con esto el plan §5 CIERRA
+  COMPLETO.** Era la única pieza abierta: la lupa de Vender (`posBuscar`) no filtra la lista, abre el
+  catálogo completo (`nxProdPicker('vender')`, con precio/existencia/IMEI). Se le planteó la decisión
+  al dueño con la recomendación de dejarla así (para el cajero, ver precio y existencia antes de
+  agregar vale más que un filtro simple) y respondió **"Déjalo asi"**. **No reabrir sin que lo pida
+  explícitamente** — no es un hueco de la migración, es una excepción decidida a propósito.
+
+### POS · Factura/Prefactura en la computadora: el documento no tenía tope de ancho (2-ago-2026, v56.0)
+El dueño: *"El modal de factura y prefactura en la web de Pc se ve mal hay que organizar"*. Se
+investigó con el método de siempre — código real extraído por contenido (`renderFactura`,
+`facPartesHTML`, `facEmpresa`, `pintarFactura` + el CSS real de `.nxDoc` y `.nxFacBar`) cargado en un
+navegador dentro del armazón real del POS, midiendo el ancho de cada bloque con
+`getBoundingClientRect` en 1920/1440/1280/390px, no a ojo.
+- **Causa raíz medida:** `.nxDocCard` **no tenía `max-width`** — el documento se estiraba al ancho
+  completo del contenedor. Medido: **1,884px de tarjeta en una pantalla de 1920**, con la columna
+  "Descripción" en **1,338px** — un océano de blanco entre el nombre del artículo y su precio, que
+  obliga a pasear el ojo de una punta a la otra para leer una sola línea. En 1440 seguía en 1,404px
+  de tarjeta / 858px de descripción. Es un documento (una factura), no un tablero: necesita ancho de
+  lectura, no ancho de pantalla.
+- **Segundo efecto del mismo problema:** `.facPie` es `grid-template-columns:1fr 280px` — o sea el
+  bloque de totales quedaba fijo en 280px mientras "Otras acciones" se llevaba TODO lo demás
+  (**1,532px en 1920**), dejando 4 botones chiquitos perdidos en una franja enorme y el TOTAL
+  arrinconado contra el borde derecho, lejos de la tabla que resume.
+- **Arreglo, 100% CSS, solo escritorio (`@media(min-width:761px)`), cero lógica tocada:**
+  `.nxDoc .nxDocCard{max-width:1080px;margin:0 auto}` (ancho de lectura + centrado — mismo criterio
+  ya establecido en el proyecto: `renderCompraForm` usa `max-width:880px` centrado desde v52.0, el
+  formulario de préstamo 640px desde v52.7, y la barra fija se capó a 640px en v55.1) ·
+  `.facPie` pasó a `1fr 300px` con más `gap` · `.facTot` ganó fondo `#f8fafc` + borde + radio +
+  padding, así el resumen se lee como un **bloque** y no como números sueltos flotando.
+  **En móvil no cambia NADA** — la media query es `min-width:761px`, y el bloque `max-width:760px`
+  de siempre quedó intacto (verificado con captura: 390px idéntico antes y después).
+- **Medición después del arreglo:** tarjeta **1,884 → 1,080px** (constante en 1920/1440/1280),
+  descripción **1,338 → 534px**, "Otras acciones" **1,532 → 702px**, totales 280 → 300px, cero
+  desborde horizontal en los 4 anchos, 0 errores de JS.
+- **Trampa del propio harness, encontrada y corregida antes de confiar en el "antes":** la primera
+  extracción de CSS se llevó solo el bloque `st.textContent += '.nxDocCard{...}'` y el de
+  `.nxFacBar{position:fixed...}` — pero la regla que capa la barra fija en PC (v55.1) vive en un
+  `st.textContent +=` **aparte** (`@media(min-width:761px){.nxFacBar{...}}`), así que la primera
+  captura mostraba la barra a todo lo ancho y parecía un bug del producto. Se amplió el extractor y
+  con la regla real la barra sale correctamente capada a 640px centrada. **Al extraer CSS de
+  `parches.js` hay que buscar TODOS los `st.textContent +=` que tocan la clase, no solo el primero**
+  — el CSS de una misma pantalla está repartido en varios trozos.
+- **Deliberadamente NO tocado:** la barra de acciones fija en PC (`.nxFacBar`) se queda — fue un
+  pedido explícito del dueño en v54.8 ("ese POS está más enfocado a Pc porque es para vender"), no
+  se revierte. Tampoco se tocó el hueco vertical bajo "Otras acciones" (es el resultado natural de
+  dos columnas de altura distinta en un documento, y con el cap ya casi no se nota).
+- **Ambigüedad real del pedido, comunicada al dueño (no resuelta por cuenta propia):** "el modal de
+  factura y prefactura" puede leerse como (a) las PANTALLAS de Factura/Prefactura — lo que se
+  arregló aquí — o (b) las dos VENTANAS que abre la lupa: "Facturas generadas" (`nxFacHist`) y
+  "Prefacturas abiertas" (`nxPrefLista`). Se auditaron también las (b) y **sí tienen una
+  inconsistencia real, sin arreglar todavía**: son ventanas hermanas pero usan estilos distintos —
+  `nxPrefLista` usa `.modal nxPf` (460px, `padding:0`, encabezado `.head` con flecha) y `nxFacHist`
+  usa **`.modal nxPrForm`**, que es la clase de modal de **Financiamiento** (480px, `padding:20px`,
+  encabezado `.mt` con "← Cerrar") — un préstamo de estilo entre módulos que explica por qué las dos
+  se ven diferentes. Queda anotado como pendiente real hasta que el dueño confirme si era eso lo que
+  quería organizar.
+
+### POS · Factura/Prefactura en el celular: el bloque de arriba se quedaba a la derecha (2-ago-2026, v56.1)
+El dueño mandó una captura real de su iPhone: el encabezado (título FACTURA, N°, comprobante,
+fecha) aparecía apretado del lado derecho de la pantalla en vez de ir claramente a la izquierda,
+debajo del nombre de la empresa. Pidió: *"Yo quiero que esa información esté del lado izquierdo en
+ambas ventas"* (Factura y Prefactura).
+- **Investigado antes de tocar nada — confirmado con el código real, no a ojo:** la regla móvil ya
+  existente (`.nxDoc .dhr{flex:1 1 100%}`, desde v49.67) fuerza a `dhr` a envolver a su propia fila
+  completa dentro del contenedor flex `.dh` (`display:flex;flex-wrap:wrap`) — y con datos cortos
+  (nombre de empresa corto, como en mi prueba original) SÍ se apila bien. Pero ese mecanismo depende
+  de que el "wrap" se dispare — y `flex-wrap` solo envuelve cuando el contenido no cabe en una sola
+  fila. Con un nombre de empresa/cliente corto o cierta combinación de anchos reales, `dhl` (nombre
+  de empresa) y `dhr` (título+N°+comprobante+fecha) pueden caber juntos en una sola fila — y como
+  `.dh` es `justify-content:space-between`, `dhr` queda pegado al borde DERECHO, exactamente lo que
+  se ve en la captura del dueño.
+- **Arreglo de raíz, no un parche de texto:** en vez de depender de que el wrap se dispare solo, se
+  fuerza el apilado de forma **incondicional**: `.nxDoc .dh{flex-direction:column}` en el bloque
+  móvil (`@media(max-width:760px)`) — así `dhl` y `dhr` SIEMPRE van uno debajo del otro, sin
+  importar cuánto midan sus contenidos.
+- **Bug real encontrado y corregido ANTES de publicar, durante la propia verificación:** al pasar
+  `.dh` a `flex-direction:column`, el `flex-basis` que `dhl`/`dhr` traían desde el diseño de
+  escritorio (`flex:1 1 200px` y `flex:1 1 100%`, pensados como ANCHO en fila) se reinterpretó como
+  ALTO al estar ahora en columna — eso dejaba un hueco vacío enorme (~220px) entre el nombre de la
+  empresa y el título FACTURA. Corregido con `.nxDoc .dhl,.nxDoc .dhr{width:100%;flex:0 0 auto}` —
+  cada bloque mide según su contenido real, no según un ancho heredado mal aplicado como alto.
+- **Verificado con Playwright, código real extraído por contenido, bajo estrés** (nombre de empresa
+  y de cliente artificialmente largos, para forzar el peor caso — el mismo tipo de dato que reveló
+  el bug original) en 6 anchos de celular (320/360/375/390/414/430px): los 2 bloques siempre quedan
+  en el MISMO borde izquierdo, uno debajo del otro, **cero desborde horizontal** en los 6 anchos.
+  Capturas de Factura y de Prefactura revisadas visualmente — el hueco del bug intermedio ya no
+  aparece. En escritorio (1920/1440/1280px) `.dh` sigue en `flex-direction:row` (la media query es
+  `max-width:760px`, no la toca), tarjeta capada a 1080px como en v56.0, 0 errores de consola.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
+### POS · el ticket de venta — botones del header apretados y con texto cortado (2-ago-2026, v56.2)
+El dueño mandó una captura real de `nexusprord.com` — el ticket que se abre al cobrar (`ticketHTML`,
+la tirilla monospace tipo recibo térmico) con los 3 botones de arriba (Cerrar / Factura completa /
+Devolver) desnivelados: "Factura completa" partido en dos líneas ("Factura" / "completa"), la fila
+más alta de lo normal, y "Devolver" cortado contra el borde derecho.
+- **Causa raíz medida, no supuesta.** El cuerpo del ticket usa a propósito `max-width:300px` (imita
+  una tirilla de impresora térmica de 80mm) — pero los 3 botones a su ancho natural (sin apretar)
+  suman **382px + 16px de gaps = 398px**, muy por encima de los ~300px disponibles. La barra
+  (`.noprint`) era `display:flex` sin `flex-wrap`, y los botones no tenían `white-space:nowrap` ni
+  `flex-shrink:0` — así que el navegador los apretaba (flex-shrink por defecto) hasta que el texto de
+  2 palabras de "Factura completa" partía en dos líneas, mientras "Cerrar"/"Devolver" (más cortos)
+  aguantaban en una línea, produciendo la fila desnivelada. **Esto NO era un capricho del dispositivo
+  del dueño** — se reprodujo igual en Chromium a CUALQUIER ancho de viewport probado (320/375/390/428px)
+  porque el ancho que manda es el `max-width:300px` del propio documento, no la pantalla del teléfono.
+- **Arreglo, quirúrgico, cero cambios de lógica:** `.noprint{...flex-wrap:wrap...}` (el contenedor
+  ahora puede pasar un botón a una segunda fila si no caben los 3) + cada botón ganó
+  `white-space:nowrap;flex-shrink:0` (nunca se aprietan ni se les parte el texto por dentro — si no
+  caben, el navegador manda el botón completo a la fila de abajo, nunca corta su texto a la mitad).
+  Mismo arreglo aplicado, por consistencia y mismo riesgo real, a `.bar button` de `docFacturaHTML`
+  (la Factura de página completa, Imprimir/PDF + WhatsApp) — comparte la misma clase de bug con
+  etiquetas de 2+ palabras, aunque su barra ya tenía `flex-wrap:wrap` desde antes.
+- **Hallazgo aparte, NO corregido (fuera de alcance de lo pedido):** al verificar `docFacturaHTML` a
+  320px salió un desborde horizontal real de 17px — no es de la barra de botones (confirmado
+  elemento por elemento con `getBoundingClientRect`), es la tabla de artículos de la factura completa
+  que a 320px (tamaño de un iPhone 5/SE de 1ra gen, prácticamente extinto hoy) no cabe del todo pese
+  a la media query `@media(max-width:700px)` que ya reduce sus columnas. Se documenta para no perderlo,
+  pero no se tocó — es un problema distinto, en otra pantalla, que no fue lo que el dueño señaló.
+- Verificado con Playwright y el código real extraído por contenido de `ticketHTML`/`docFacturaHTML`
+  (balance de llaves, no reconstrucción): reproducido el bug exacto de la captura (foto idéntica:
+  "Factura completa" partido en 2 líneas, fila desnivelada, "Devolver" cortado) ANTES del arreglo;
+  después, en 320/375/390/428px los 3 botones quedan siempre en una sola línea de texto cada uno
+  (nunca se parten), y cuando no caben los 3 en una fila (el caso real, dado el `max-width:300px`),
+  se acomodan en 2 filas limpias sin corte ni desborde (`desborde:0` en los 4 anchos). `docFacturaHTML`
+  verificado igual en 320/360/390px, sus 3 botones también en líneas únicas sin partirse. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Factura completa de página entera — la tabla de artículos se salía en el celular (2-ago-2026, v56.3)
+Cierre del hallazgo aparte que quedó documentado en v56.2 (el dueño: "Arréglalo"). En `docFacturaHTML`
+(la factura formal de página completa — distinta al ticket, esta se abre con "📄 Factura completa"),
+la tabla de artículos desbordaba 17px a 320px de ancho aunque la media query móvil ya reducía padding
+y ocultaba la columna `#`.
+- **Causa raíz medida, no supuesta.** El `<table>` tiene `width:100%`, pero con `table-layout:auto`
+  (el default) `width:100%` es solo una SUGERENCIA — si el contenido de las columnas lo pide, el
+  navegador igual expande la tabla más allá de su contenedor. Medido con `getBoundingClientRect` en
+  cada `<th>`/`<td>`: la tabla terminaba en 309px cuando el espacio real disponible dentro de `.doc`
+  era de 264px — 45px de diferencia, exactamente lo que sumaban los anchos "preferidos" de las 5
+  columnas visibles (Descripción 88 + Cant. 42 + Precio 52 + Desc. 43 + Importe 84 = 309).
+- **Arreglo de raíz:** en la media query móvil (`@media(max-width:700px)`), la tabla pasó a
+  `table-layout:fixed` — con esto `width:100%` deja de ser una sugerencia y se vuelve un límite real;
+  las 5 columnas visibles se repartieron en porcentajes fijos que suman exactamente 100%
+  (Descripción 36% / Cant. 11% / Precio 18% / Desc. 15% / Importe 20%, con `!important` para ganarle
+  a los anchos en píxeles que el escritorio ya trae en línea). `th,td` ganaron
+  `overflow-wrap:break-word` (defensivo, para un código/SKU sin espacios que algún día sea más largo)
+  y `td.b` (la celda de Importe, que en escritorio es `white-space:nowrap` a propósito) pasó a
+  `white-space:normal` solo en móvil — mismo criterio ya establecido en este archivo para montos
+  ("el monto NUNCA se trunca, envuelve a 2 líneas en vez de perder dígitos", v48.56): si un total no
+  cabe en una línea, pasa a la siguiente, nunca se corta ni se pierde un dígito.
+- **Un segundo reparto de porcentajes se probó y se descartó.** Se intentó darle más aire a Importe
+  (27%) achicando Cant./Desc. — el desborde seguía en 0, pero el encabezado "CANT." se partía en 3
+  líneas feas ("CA"/"N"/"T.") y "Precio" empezaba a partir números a la mitad, cambiando un problema
+  cosmético por otro sin ganancia real. Se volvió al primer reparto (36/11/18/15/20), que no
+  presentaba ninguno de los dos defectos en las pruebas.
+- **Desktop (>700px) verificado sin regresión:** la media query es exclusiva de `max-width:700px`, así
+  que en escritorio la tabla sigue en `table-layout:auto` con sus anchos en píxeles de siempre
+  (incluida la columna `#`, oculta solo en móvil) — confirmado a 800/1000/1400px, `desborde:0` en
+  los 3, sin cambios visuales.
+- Verificado con Playwright y el código real de `docFacturaHTML` extraído por contenido (no una
+  reconstrucción): 2 casos de contenido (el caso real de la captura del dueño, RD$1,000 con un solo
+  artículo de nombre largo; y un caso de monto grande de 6 cifras con 2 artículos, para estresar la
+  columna Importe) × 4 anchos móviles (320/360/390/428px) = 8 combinaciones, **`desborde:0` en las
+  8**, con `tableWidth` calzando exacto contra el ancho real disponible de `.doc` en cada una.
+  Capturas de pantalla revisadas visualmente en 320px: sin solapamientos, los montos wrappean a 2
+  líneas en vez de cortarse, encabezados legibles. `node --check parches.js` limpio; los 3 `<script>`
+  de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — pestaña "Cobranza" con vista propia + bug real de raíz en el listado móvil (2-ago-2026, v56.4)
+El dueño pidió aplicar el trabajo pendiente en `chatgpt/visual-draft` — se investigó qué había ahí
+(mismo flujo ya establecido, "ChatGPT diseña, Claude implementa") y se le presentaron 4 candidatos
+reales encontrados en esa rama. Eligió **"Cobranza V2 (Financiamiento)"**
+(`docs/visual-drafts/financiamiento/COBRANZA_V2_INTEGRACION.md`).
+- **Qué faltaba de verdad:** tocar "Cobranza" en la barra lateral de Financiamiento solo aplicaba
+  el filtro genérico `vencidos` sobre la lista de siempre — la misma tabla, mismos KPIs de arriba,
+  nada dedicado a "a quién llamo primero". El spec pedía 4 funciones nuevas, nada más, consumiendo
+  SOLO `_prestamos`/`_pagosByPrestamo` ya cargados (sin tabla/columna/estado nueva en Supabase).
+- **`prPrioridadCobranza(p)`** (nueva, junto a `estadoDe`): clasificación DERIVADA (nunca se guarda) —
+  `critico` (vencido >30 días), `alta` (vencido 8-30 días — y por decisión deliberada, también
+  1-7 días, rango que el spec no cubría explícito: se le dio la misma urgencia que el resto de
+  "vencido" en vez de inventar una 5ta categoría), `porvencer` (próximo pago en 0-7 días),
+  `aldia` (el resto). Un préstamo `pagado` devuelve `null` — queda 100% fuera de Cobranza.
+- **`prCobranzaListaFiltrada()`**: filtra por la pestaña activa (`_prCobTab`) + el buscador
+  (`_prCobQ`, por nombre o cédula) y ordena por prioridad (crítico→alta→porvencer→aldia) y, dentro
+  de la misma prioridad, por saldo pendiente descendente — el que más debe, primero.
+- **`prCobranzaTablaHTML()`**: reusa la MISMA clase `.nxFP-tbl` (con sus clases de columna
+  `.nxFP-tdNom`/`.nxFP-tEst`/`.nxFP-tRef`/`.nxFP-tCed`/`.nxFP-tTot`/`.nxFP-tProx`/`.nxFP-tAccC`) que
+  ya usa la lista general de préstamos — el colapso a tarjeta en el celular se hereda gratis, sin
+  CSS responsive nuevo. Columnas: Ref/Prestatario/Cédula/Saldo pendiente/Próximo pago (para
+  crítico/alta muestra "N días vencido" en vez de una fecha)/Prioridad (pastilla de color)/Acciones
+  — **las 4 acciones reales de siempre** (Ver detalle/Editar/Estado de cuenta/WhatsApp,
+  `nxPrestamoVer`/`Editar`/`EstadoCuenta`/`WA`, ninguna nueva).
+- **`prCobranzaMainHTML()`**: topbar propia ("Cobranza"), **5 KPIs con datos reales** (Cobrar hoy =
+  saldo de los críticos; Cobrar esta semana = saldo de alta prioridad; Próximos vencimientos = saldo
+  de por-vencer; Pagos registrados hoy = suma real de `_pagosByPrestamo` con fecha=hoy; Total por
+  cobrar = saldo de TODA la cartera activa), la lupa del §5 (`nxBuscaFiltroHTML`/`pintarLupaPrCob`,
+  sin `cont:` a propósito — la tabla vive envuelta en `.nxFP-tblWrap`, un contador contaría 1
+  wrapper, no filas, mismo criterio ya usado en `pintarLupaPr`), pestañas de prioridad con contador
+  real, la tabla, y una tarjeta lateral de resumen (`.nxFP-cobSide`, sticky en escritorio).
+- **Enganchado en `renderLista(view)`** (el mismo punto de entrada de siempre): la rama
+  `(_prView==='prestamos' && _prFiltro==='vencidos')` decide si se pinta `prCobranzaMainHTML()` en
+  vez del dashboard genérico, y el hook de la lupa se agregó al mismo `if/else if` que ya despacha
+  `pintarLupaPrCli()`/`pintarLupaPr()` según la vista activa. El botón "Cobranza" de la barra
+  lateral **no se tocó** — sigue llamando a `nxPrestamoFiltroTipo('vencidos')`, que ya ponía
+  exactamente ese filtro.
+- **BUG REAL DE RAÍZ, encontrado por la propia verificación (no era un problema de mi código nuevo
+  — reproducible con el código genérico de la lista de préstamos, sin tocar Cobranza):** en el
+  celular (≤760px), `.nxFP-tbl tbody tr` tiene `width:100%` + `padding:12px 14px` + `border:1px
+  solid` para verse como tarjeta — pero **sin `box-sizing:border-box`**. Con el `box-sizing`
+  por defecto (`content-box`), el navegador interpreta `width:100%` como el ancho del CONTENIDO, y
+  le suma los 14px+14px de padding + 1px+1px de borde por FUERA — 30px de más, que era exactamente
+  el desborde horizontal de 22px medido en la pantalla (verificado quitando/forzando el
+  `box-sizing` con estilos inyectados en tiempo de ejecución hasta aislar la causa exacta: con
+  `box-sizing:border-box` puesto a mano, `scrollWidth` pasó de 412 a 390 sin ningún otro cambio).
+  Arreglo de una sola propiedad en la regla ya existente (línea ~24522 de `parches.js`,
+  `@media(max-width:760px){.nxFP-tbl tbody tr{...}}`): se agregó `box-sizing:border-box` — nada
+  más se tocó. Como la regla es compartida, el arreglo beneficia TANTO a Cobranza como a la lista
+  general de préstamos (`_prFiltro='todos'`), que tenía el mismo desborde desde antes de este
+  trabajo, sin relación con la funcionalidad nueva.
+- **Verificado con Playwright, código real extraído por contenido de `parches.js`** (extractor
+  propio con balance de llaves, string/backtick-aware — no una reconstrucción a mano) — **61
+  comprobaciones**: clasificación de prioridad (7/7, incluidos los 2 casos límite de "3 días" vs
+  "15 días vencido" y el préstamo pagado excluido), orden y filtros de la lista (6/6, incluida la
+  búsqueda por cédula), que la vista de Cobranza se pinta y NO el dashboard genérico (4/4), los 5
+  KPIs con montos EXACTOS calculados a mano contra el seed (6/6), las 5 pestañas con su contador
+  real (5/5), la tabla con sus columnas/pastillas/texto de "próximo pago" (8/8), el resumen lateral
+  (3/3), las 4 acciones de fila con `stopPropagation` (no disparan también el clic de la fila,
+  4/4), el repintado parcial al cambiar de pestaña (los KPIs NO se recalculan, solo la tabla, 3/3),
+  el flujo real del buscador compartido del §5 (abrir/escribir/filtrar en vivo/cerrar/chip/limpiar,
+  6/6), regresión de que otros filtros (`todos`/`activos`) NO activan la vista de Cobranza y el
+  botón de la barra lateral sigue llamando exactamente a lo mismo de siempre (5/5), y CERO
+  desborde horizontal en 1600/1280/390px (3/3, el 390px es el que estaba fallando antes del
+  arreglo de `box-sizing`) — 0 errores de consola. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` (1,423 / 493,343 / 681 caracteres) pasan `new Function()`;
+  `version.json` válido.
+- **Publicado por rama propia** (`claude/cobranza-v2-financiamiento` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main` — como pedía explícitamente el spec.
+
+### Financiamiento — Cobranza V2.1: bug de fondo en la clasificación + mejoras operativas (2-ago-2026, v56.5)
+El dueño mandó un segundo spec de ChatGPT (`docs/visual-drafts/financiamiento/
+COBRANZA_V2_1_MEJORAS_OPERATIVAS.md`), esta vez con reglas explícitas: **no romper ninguna
+funcionalidad existente, no duplicar funciones, no crear tablas nuevas en Supabase, no usar
+observadores DOM, no usar temporizadores, mantener el namespace `.nxFP`, mantener compatibilidad
+móvil y escritorio, ejecutar las pruebas necesarias antes de finalizar.** Pidió primero una
+**auditoría de solo lectura** ("No implementes cambios todavía... entrega ✅ Correcto / ⚠️
+Mejorable / ❌ Errores encontrados / 💡 Recomendaciones. No publiques todavía") — se hizo, sin
+tocar código, y el dueño aprobó implementar todo lo marcado ❌/💡 con un **"Si"**, excluyendo (por
+recomendación propia de la auditoría) la migración `event.keyCode`→`event.key` y cualquier cambio
+a `esVencido`/`prDiasVencido`/`prMoraDe`/la lista general de préstamos.
+- **❌ EL HALLAZGO GRAVE — la clasificación de Cobranza tenía un bug de fondo, no cosmético.**
+  `prPrioridadCobranza(p)` (v56.4) calculaba `diasHasta(prProximoPago(p))` pero **solo reconocía
+  el rango `[0,7]`** ("por vencer") — cualquier `d` NEGATIVO (préstamo ya vencido) caía sin ninguna
+  rama que lo atrapara y terminaba en el `else` final, que era `'aldia'`. Un préstamo de línea de
+  crédito o de cuotas cuya PRIMERA cuota lleva meses vencida, a mitad de su plazo total (no cerca
+  de su fecha límite), se mostraba como **"Al día"** — exactamente lo contrario de lo que Cobranza
+  existe para mostrar. Reescrito: `d<0` ahora sí se atrapa (`dv=-d; dv>30?'critico':dv>=8?'alta':
+  'morareciente'`), agregando una **5ta categoría real, "Mora reciente"** (1-7 días vencido, ámbar,
+  entre "Alta prioridad" y "Por vencer") que antes no existía — antes esos préstamos recién
+  atrasados se perdían dentro de "alta" o, peor, dentro de "al día". Cero cambios a
+  `esVencido()`/`prDiasVencido()`/`prMoraDe()` (que siguen sirviendo a la lista general, la mora y
+  los reportes) — el arreglo es exclusivo de la clasificación derivada de esta pantalla.
+- **❌ El modelo se recalculaba ~6 veces por entrada a la pantalla** (KPIs, pestañas, resumen
+  lateral, tabla, paginación y exportación llamaban cada uno a `prPrioridadCobranza`/`amortizar`
+  por su cuenta). Un caché único `_prCobModelo` (calculado una sola vez en `prCobranzaMainHTML`,
+  reusado por todo lo demás) lo resuelve sin tocar la forma en que cada pieza consume el dato.
+- **💡 "Exportar" exportaba TODA la cartera, ignorando el filtro/búsqueda activos** —
+  `window.nxPrCobranzaExportar()` ahora lee de `prCobranzaListaFiltrada()`, no de `_prestamos`
+  completo.
+- **💡 Sin acción primaria en la fila** — había que abrir el detalle completo del préstamo para
+  registrar un cobro. `window.nxPrCobPagar(id)` (nueva) reusa **el mismo modal de siempre**
+  (`nxPrestamoVer`, ya existente, cero modal nuevo) y enfoca su campo real de monto
+  (`#prPagoMonto`) — un solo `appendChild` síncrono, sin `setTimeout` (cumple "no usar
+  temporizadores"). Botón dual: "Registrar pago" en escritorio, "Cobrar" en móvil (mismo `<button>`,
+  dos `<span>` que alternan por CSS con `@media`, sin JS de por medio).
+- **💡 Menú "..." por fila** (`window.nxPrCobMenu`/`nxPrCobMenuGo`, reusa `nxPrestamoVer`/
+  `Editar`/`EstadoCuenta`/`WA` — cero funciones nuevas de acción, solo el menú que las agrupa).
+  Requirió una clase nueva `.nxFP-tMenuWrap{position:relative}` — a diferencia de
+  `.nxFP-cardMenuWrap` (pensada para flotar sobre una tarjeta con `position:absolute`), el menú de
+  Cobranza vive dentro de una `<td>` sin ningún ancestro posicionado, así que necesita su propio
+  contexto de posicionamiento o el popup se ancla al viewport en vez de al botón.
+- **💡 Columna nueva "Último pago"** (`.nxFP-tUlt`, cuándo y cuánto pagó por última vez, leído de
+  `_pagosByPrestamo` ya cargado — cero consulta nueva).
+- **💡 Buscador por nombre/cédula** con el motor compartido NPGS §5 (`nxBuscaFiltroHTML`), mismo
+  patrón que el resto del sistema — no un campo de búsqueda nuevo.
+- **BUG REAL DE CSS, encontrado DURANTE la propia verificación (nunca llegó a producción con este
+  defecto):** entre ~901px y ~1150px (una laptop de 13", una tablet en horizontal — zona que el
+  barrido de anchos original de Cobranza V2 no cubría) la página entera desbordaba horizontalmente.
+  Causa: `.nxFP-cobGrid{grid-template-columns:260px 1fr}` — un track `1fr` puro tiene un mínimo
+  implícito de `auto` (el ancho mínimo de su contenido), así que la columna que aloja la tabla
+  (~830px de ancho intrínseco) no podía encogerse por debajo de ese mínimo aunque el viewport fuera
+  más angosto — el `overflow-x:auto` de `.nxFP-tblWrap` nunca llegaba a activarse porque su propio
+  contenedor nunca se encogía lo suficiente para necesitarlo. **Mismo bug de "grid con
+  `min-width:auto`" ya documentado varias veces en este archivo** (Historial crediticio v49.19,
+  detalle de préstamo v49.38, entre otros). Arreglo de una sola propiedad:
+  `grid-template-columns:260px minmax(0,1fr)` — con el mínimo del track puesto en `0`, la columna sí
+  se encoge y `.nxFP-tblWrap` retoma su scroll horizontal PROPIO (contenido, no de página) para las
+  anchuras donde la tabla de 8 columnas no cabe cómoda. Verificado en 3 capas: `document.
+  documentElement.scrollWidth===clientWidth` (0 en 1024/1100/901px, antes 84/207px de desborde real
+  de página) Y por separado que `.nxFP-tblWrap` sí sigue conteniendo su propio scroll interno
+  (`wrap.scrollWidth-wrap.clientWidth=84` en 1024px — comportamiento correcto y ya establecido en
+  el sistema, no un defecto: la tabla de 8 columnas simplemente no cabe cómoda en 1024px sin
+  scroll propio, igual que `.tw` en Seguros).
+- **2 arreglos de wiring, chicos pero reales, encontrados auditando `renderLista(view)`:** (1)
+  entrar/salir de la vista de Cobranza no reiniciaba `_prCobTab`/`_prCobQ`/`_prCobPage` — quedaban
+  pegados de una visita anterior; ahora se resetean junto con `_prPage`/`_prQuery` (mismo punto
+  donde ya se reseteaban esos otros dos). (2) `pintarLupaPrCob()` se llamaba sin ningún `try/catch`
+  — si el motor `nxBuscaFiltroHTML` fallara por cualquier razón, rompería silenciosamente el resto
+  del render sin dejar rastro; ahora está envuelta como sus pares (`pintarLupaPrCli`/`pintarLupaPr`)
+  ya lo hacían, con `console.error` explícito.
+- **Verificado, dos capas, código real extraído del archivo por contenido (no una reconstrucción a
+  mano):** **59 comprobaciones en Node** (`vm`, reloj congelado en `'2026-08-02'`) — incluido el
+  caso EXACTO del bug de fondo (préstamo vencido 45/60 días antes → `'critico'`, no `'aldia'`),
+  los 5 niveles con sus 2 límites (7↔8 días, 30↔31 días), el orden de la lista, el modelo cacheado,
+  la exportación filtrada — 59/59. **49 comprobaciones en Playwright** (Chromium real, servidor
+  HTTP local): estructura DOM, los 5 KPIs con montos exactos calculados a mano contra el seed, las
+  6 pestañas con su contador real, los 5 colores de badge (incluido el nuevo "Mora reciente",
+  medido por `rgb()` real vía `getComputedStyle`, no a ojo), el botón primario (texto dual
+  desktop/móvil, abre el modal real, enfoca el campo real), el menú de 3 puntos, el buscador real
+  con su debounce de 200ms, **el barrido de anchos ampliado a 1600/1280/1100/1024/901/900/760/390px
+  a propósito** (para que la "zona gris" 901-1150px que dejó pasar el bug quede cubierta para
+  siempre), el `grid-template-columns` correcto en cada zona, el compound-class `.nxFP-tbl.
+  nxFP-cobTbl` en móvil sin afectar la lista general — 49/49, 0 errores de consola. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Deliberadamente NO tocado, por decisión explícita del dueño (recomendación de la propia
+  auditoría, aceptada tal cual):** la migración `event.keyCode`→`event.key` en el resto del
+  sistema (cambio de mayor alcance, sin relación directa con Cobranza) y cualquier ajuste a
+  `esVencido`/`prDiasVencido`/`prMoraDe`/la lista general de préstamos — ya estaban sanos, y
+  tocarlos habría sido exactamente el tipo de riesgo que las reglas del propio spec pedían evitar
+  ("no romper ninguna funcionalidad existente").
+- **Publicado por rama propia** (`claude/cobranza-v2-1-mejoras` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
+
+### Financiamiento — Cobranza "V3": el FORMATO del mockup, sin los colores (2-ago-2026, v56.6)
+El dueño mandó un tercer boceto de ChatGPT (`chatgpt/visual-draft`, dentro de la carpeta de
+Financiamiento) y pidió — textual — **"Omite la parte de los colores pero la visualización de los
+botones y las ubicaciones y el formato que sea tal cual"**. O sea: copiar la disposición/tamaño de
+botones y el orden de la información, pero **NO** el azul/Inter del mockup — el morado y Plus
+Jakarta Sans propios de Financiamiento se quedan intactos (regla decretada "un color por app, sin
+excepciones", ya aplicada en las 2 rondas anteriores de esta misma pantalla).
+- **Auditado el mockup contra el esquema real antes de tocar nada** (mismo criterio de "no fingir
+  datos" de siempre): el boceto traía 3 piezas sin ningún dato real detrás — "Promesas de pago",
+  una barra de progreso "Meta del día", y un feed de "Actividad reciente" con eventos inventados
+  (recordatorios enviados, notas de gestión). Este módulo de Financiamiento (`prestamos`/
+  `prestamo_pagos`, sin `organizacion_id`) **no registra promesas de pago ni metas ni un log de
+  gestión** — se le explicó al dueño en el propio changelog por qué esas 3 piezas se dejaron
+  fuera, en vez de inventarlas.
+- **Lo real del mockup, sí implementado — reformateo puro, cero lógica de cobro/mora/saldo
+  tocada:**
+  - **Tabla de escritorio, de 8 a 9 columnas**, con una columna genuinamente nueva:
+    **"Monto vencido"** — no es el saldo total del préstamo, es lo que YA venció (calculado
+    recorriendo el plan de pagos real hasta la fecha de hoy, un helper nuevo
+    `prMontoVencidoDe(p)` junto a `prCobranzaCalcularModelo`). El resto de columnas (Cliente,
+    Referencia, Estado, Días vencido, Próxima cuota, Saldo, Último pago, Acciones) se
+    reordenaron para calzar con el mockup, sin cambiar ningún dato.
+  - **Los 5 indicadores de arriba se reorganizaron**: Crítico / Alta prioridad / Mora reciente /
+    Vence en 7 días (los 4 en monto, como antes) y **Al día pasó de no existir a ser un
+    CONTEO** (cuántos préstamos, no cuánto dinero — el mockup lo pedía así, y contar dinero "al
+    día" no es información accionable de cobranza).
+  - **Panel lateral rediseñado**: "Resumen del día" (Cobrar hoy = suma de lo vencido en
+    crítico+alta+mora reciente; Clientes críticos; Pagos registrados hoy = suma real de
+    `_pagosByPrestamo` con fecha de hoy) + **"Pagos recientes"** — una línea de tiempo real con
+    los últimos 5 cobros de TODA la cartera (no solo los que aparecen filtrados en la tabla),
+    ordenados del más reciente al más viejo, con un estado vacío honesto ("Sin pagos registrados
+    todavía.") cuando no hay ninguno.
+  - **Tarjetas del celular reformateadas a cuadrícula de 2×2** (Cliente+Estado arriba, Días
+    vencido/Monto vencido/Próxima cuota/Saldo en 2 columnas debajo, con etiqueta chica encima de
+    cada valor — patrón `data-l`/`::before`, el mismo ya usado en otras tablas responsivas del
+    sistema), botón "Cobrar" a ancho completo + el menú "…" al lado, igual que el mockup.
+- **2 bugs REALES, encontrados durante la propia verificación (nunca llegaron a producción con
+  estos defectos — no eran del mockup, eran de la implementación V2/V2.1 anterior, expuestos
+  recién ahora por la tabla más ancha de la V3):**
+  1. **A 900px de ancho la página volvía a desbordar horizontalmente** — la MISMA clase de bug de
+     `grid-template-columns:1fr` que ya se había arreglado una vez en esta pantalla (el track de
+     la columna izquierda del grid, `.nxFP-cobGrid`) y otra vez en Historial crediticio/detalle de
+     préstamo (v49.19/v49.38): un `1fr` puro tiene un mínimo implícito igual al ancho de su
+     contenido, así que no se dejaba encoger. Esta vez el `1fr` roto vivía en la media query de
+     `@media(max-width:900px){.nxFP-cobGrid{grid-template-columns:1fr}}` (colapso a una sola
+     columna en tablet) — corregido a `minmax(0,1fr)`.
+  2. **El botón "Cobrar" de cada tarjeta, en el celular, mostraba el texto cortado** ("Cobra" en
+     vez de "Cobrar") — se detectó revisando las CAPTURAS de pantalla, no por ninguna aserción
+     numérica. Causa: una regla más genérica del sistema, `.nxFP-tAcc button{width:30px;
+     height:30px}` (pensada para el botón del menú "…", que sí es un cuadrado de ícono), le ganaba
+     por especificidad a `.nxFP-tPay{...}` y forzaba el botón "Cobrar" a un cuadrado de 30px,
+     apretando su propio texto. Arreglado con una regla más específica,
+     `.nxFP-tAcc .nxFP-tPay{width:auto}`.
+- **Verificado con 85 pruebas contra el código real extraído del archivo** (scripts propios de
+  corte por llaves balanceadas, nunca una reconstrucción a mano — extractor nuevo que suma
+  `PR_AVATAR_COLORES`/`prIniciales`/`toast` a los ya usados en la ronda anterior): clasificación y
+  el nuevo `prMontoVencidoDe`, los 5 KPIs con montos exactos calculados a mano contra los datos de
+  prueba, las pestañas, el panel lateral (incluida la línea de tiempo de pagos recientes y su
+  estado vacío), la tabla de 9 columnas, el menú "…" de cada fila (incluida la opción de
+  WhatsApp), "Registrar pago"/"Cobrar" abriendo el mismo modal real de siempre con el campo de
+  monto ya enfocado, el buscador compartido NPGS §5 con exportación filtrada, el formato de
+  tarjeta del celular, y un barrido de anchos de pantalla (1600/1280/1100/1024/901/900/760/390px
+  — incluida a propósito la franja 900-1150px que ya había fallado antes) sin ningún desborde en
+  ninguno — 85/85, con captura de pantalla revisada visualmente en escritorio (1440px) y celular
+  (390px) confirmando el formato del mockup CON el morado/Plus Jakarta Sans del módulo, sin
+  ningún rastro del azul/Inter original. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Publicado por rama propia** (`claude/cobranza-v3-formato` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
+
+### Financiamiento — los documentos del cliente ya se ven desde su propia ficha (2-ago-2026, v56.7)
+El dueño mandó un cuarto spec de ChatGPT (`chatgpt/visual-draft`,
+`docs/visual-drafts/financiamiento/MOVER_DOCUMENTOS_COBRANZA_A_CLIENTE.md`), con reglas explícitas:
+no duplicar la subida/borrado/URL firmada de `nxPrestamoDocs` (el gestor de documentos POR
+PRÉSTAMO, ya existente y probado), no inventar "Registrar promesa de pago" si no hay tabla detrás.
+- **El hueco real, confirmado antes de tocar código:** el Historial Crediticio
+  (`nxPrHistCredito`/`hcRender`, 6 pestañas — Resumen/Préstamos/Pagos/Evaluaciones/Gestiones/
+  Documentos) tenía su pestaña "Documentos" con un placeholder honesto de una versión anterior a
+  que se confirmara que Supabase Storage existe de verdad (ver "SUPABASE STORAGE — SÍ EXISTE",
+  v49.40 más arriba en este archivo): *"Este módulo aún no guarda documentos del cliente (no hay
+  almacenamiento de archivos configurado)"* — un texto que ya no era cierto (`pos_reparaciones`/
+  `prestamos.documentos` sí guardan archivos por préstamo desde hace tiempo), solo que nunca se
+  había juntado en la vista del CLIENTE (solo existía por PRÉSTAMO, `nxPrestamoDocs`).
+- **3 piezas reales, cero tabla/columna nueva, cero lógica de subida duplicada:**
+  1. **Pestaña "Documentos" real**: por cada préstamo del cliente (`loans`, ya cargado por
+     `hcRender`), una tarjeta con referencia (`prRef`)+badge de estado (mismo `prEstadoInfo` de
+     siempre), fecha+saldo, los primeros 3 documentos por nombre (`DOC_TIPOS` para la etiqueta si
+     el documento no trae la suya), "+N más — Ver todos" si hay más de 3, y un botón **"Administrar
+     documentos"** que llama a `window.nxPrestamoDocs(p.id)` — la MISMA función que ya existía, sin
+     ninguna copia de su lógica de subida/borrado/URL firmada. Un cliente sin préstamos muestra un
+     estado vacío honesto ("Este cliente todavía no tiene préstamos"), no una lista rota.
+  2. **El header de `nxPrestamoDocs` ya no confundía de quién eran los documentos**: antes decía
+     `Documentos — [primer nombre]` (sin decir de qué préstamo, un problema real si el cliente tiene
+     varios). Ahora dice **"Documentos del préstamo"** + una línea con el nombre completo del
+     cliente y la referencia (`PR-XXXXXX`) del préstamo — deja claro de inmediato cuál de los
+     préstamos del cliente se está viendo.
+  3. **"Ver cliente" en el menú de 3 puntos de Cobranza** (`prCobranzaFilaHTML`/
+     `window.nxPrCobMenuGo`, el módulo de la v56.4-56.6): salta directo a `nxPrHistCredito(cliente_id)`
+     — solo si el préstamo tiene `cliente_id` (uno tecleado a mano, sin cliente enlazado, NO muestra
+     esta opción, evitando un botón que no llevaría a ningún lado).
+- **Deliberadamente NO implementado, del propio mockup — "Registrar promesa de pago":** este
+  módulo (`prestamos`/`prestamo_pagos`/`prestamos_config`/`prestamo_clientes`) no tiene ninguna
+  tabla ni campo de promesas de pago — agregar el botón sin nada real detrás habría sido fingir
+  una función que no existe, mismo criterio de siempre en este proyecto.
+- **BUG REAL DE MÉTODO encontrado y corregido durante la propia verificación (nunca fue un problema
+  de producción — era del harness de pruebas, no del código real):** la primera ronda de pruebas
+  midió un desborde horizontal de ~133px, **IDÉNTICO en las 4 pestañas del Historial Crediticio**
+  (Resumen/Préstamos/Pagos/Documentos), lo cual era la pista de que no era un bug real de la
+  pestaña nueva — un bug real de layout varía con el contenido de cada pestaña, uno constante en
+  las 4 apunta a algo estructural que no cambia entre ellas. Investigado: **`window.nxFPEnsureCSS`**
+  (el motor que inyecta TODO el CSS de `.hc-2col`/`.hc-main`/`.hc-tblwrap`/`.hc-kpis`/etc. — el
+  mismo motor documentado en v48.17/v49.11 como "compartido con Cuotas del POS") **vive en OTRO
+  módulo de `parches.js`**, físicamente separado del módulo de Financiamiento (`nxAbrirPrestamos`,
+  que solo lo LLAMA, nunca lo DEFINE). El harness solo extraía y cargaba el módulo de
+  Financiamiento — `window.nxFPEnsureCSS` nunca existía de verdad ahí, así que se había estado
+  probando (en esta ronda y muy probablemente en rondas anteriores de Cobranza) contra HTML **sin
+  ningún CSS real aplicado** — ni la media query `minmax(0,1fr)` de `.hc-2col`, ni el colapso a
+  tarjeta en móvil, nada. Arreglado extrayendo la función completa (369 líneas, autocontenida — solo
+  usa `document.getElementById`/`createElement`/`head.appendChild`, sin depender de nada más del
+  módulo que la define) y cargándola en el navegador de prueba ANTES del módulo de Financiamiento.
+  Con el CSS real aplicado, el desborde bajó a **0px exacto en 390px y 1440px** en las 4 pestañas.
+  **Lección para la próxima vez que se pruebe cualquier pantalla de este módulo: cargar siempre
+  `window.nxFPEnsureCSS` real (extraída del archivo), nunca un `stub` vacío** — un stub silencioso
+  hace que el `TypeError: not a function` desaparezca pero deja el CSS entero sin aplicar, lo que
+  puede esconder o inventar bugs de layout que no tienen nada que ver con el cambio que se está
+  probando.
+- **Verificado con Playwright, código real extraído del archivo** (arranque de módulo por ancla de
+  texto único —`window.__NX_PRESTAMOS__`→`})();`—, no por número de línea; confirmado el archivo
+  extraído corresponde exactamente a `parches.js:11732-15259`): **22 comprobaciones** — el módulo
+  carga sin errores de JS, Cobranza muestra "Ver cliente" solo en los préstamos con `cliente_id`,
+  tocarlo abre el Historial Crediticio del cliente correcto, la pestaña Documentos muestra 2
+  tarjetas (una por préstamo) con el conteo/nombres/"Ver todos" correctos y el estado vacío honesto
+  en el préstamo sin documentos, las pestañas Resumen y Préstamos siguen funcionando sin regresión,
+  sin desborde horizontal en 390px ni 1440px, el botón "Administrar documentos" llama a
+  `nxPrestamoDocs('p1')` con el id correcto, el modal muestra el título y subtítulo nuevos con los 4
+  archivos reales del préstamo correcto, y navegar a "Administrar documentos" cierra el Historial de
+  fondo — **mismo patrón ya establecido en esta pantalla** para "Ver detalle"/"Ver cliente" (no es
+  un bug, es consistencia con lo que ya existía). 0 errores de consola en todo el recorrido. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 493,343 / 681 caracteres)
+  pasan `new Function()`; `version.json` válido.
+- **Publicado por rama propia** (`claude/mover-documentos-a-cliente` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
+
+### Rifas — panel administrativo "V3" (mockup de ChatGPT auditado e implementado, 3-ago-2026, v56.10) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió auditar el paquete `docs/visual-drafts/rifas/` de `chatgpt/visual-draft` contra el
+módulo real de Rifas ANTES de tocar código — mismo flujo ya establecido ("ChatGPT diseña, Claude
+implementa", ver v48.88/v56.4-56.7). Se hizo la auditoría, se entregó un plan de integración por
+escrito (qué se reusa, qué se descarta del mockup y por qué), y el dueño autorizó implementarlo tal
+cual con **"Continúa"**. Esta versión cierra la implementación completa: verificada con `node --check`
++ Playwright y publicada en rama propia — **sin fusionar todavía**, a la espera de que el dueño la
+revise (mismo criterio que ya se usó con la reconstrucción del formulario de artículo, v48.98).
+- **Lo que el panel de una rifa mostraba antes:** 4 KPIs genéricos (Vendidos/Confirm./Pend./
+  Recaudado) y un solo tablero de números, sin ninguna forma de saber de un vistazo "a quién hay que
+  atender ahora" ni de separar "los que ya pagaron y solo faltan confirmar" del resto.
+- **Auditado del mockup, qué era real y qué NO** (mismo criterio de "no fingir funciones que no
+  existen" de todo este archivo): SÍ existen ya en el sistema — aprobar/liberar un boleto
+  (`nxRifaConfirmar`/`nxRifaLiberar`), cambiar número (`nxRifaCambiarNum`), vender/apartar
+  (`nxRifaVender`), ver el comprobante (`nxVerVoucher`), el enlace de WhatsApp
+  (`boletoWaHref`), y la lista completa de tickets (`tkRowsHTML`, del modal "Lista de tickets") — el
+  plan fue reusarlos TODOS sin duplicar ni una línea de esa lógica. NO existen y se descartaron del
+  mockup: un flujo de "rechazar con motivo" (solo hay Aprobar o Liberar), un estado "bloqueado" (no
+  está en el esquema `rifa_boletos.estado`), y la tipografía Inter que traía el mockup (el reglamento
+  de este proyecto — "cada app su color y su tipografía, sin excepciones" — mantiene el índigo y la
+  fuente propia de Rifas, no se adopta la del boceto).
+- **5 KPIs reales, separados y clicables** (`rfKpisData`, reemplaza el viejo `rifaStats()` de 2
+  buckets solo para este panel — `rifaStats()` no se tocó, lo sigue usando el modal `nxRifaStats()`):
+  Disponibles → filtra el tablero a ese estado; Apartados → idem; Pagos x revisar → salta a la pestaña
+  de pagos; Confirmados → abre `nxRifaTickets('confirmado',...)` de siempre; Recaudado → abre
+  `nxRifaPorCuenta()` de siempre.
+- **Bloque "Atención requerida"** (`atencionRifa()`), calculado en vivo, **nunca se guarda**: cuenta
+  pagos `por_confirmar` y apartados cuyo `apartado_hasta` vence en menos de 1 hora — aparece solo si
+  hay algo de qué avisar, con un botón por cada categoría que salta directo a resolverlo.
+- **3 pestañas internas** (`_rfTab`, reseteado a `'resumen'` cada vez que se abre una rifa distinta):
+  **Resumen** = el tablero de siempre (`boardHTML`), con un `<select>` nuevo para filtrar por estado
+  (Disponible/Apartado/Por confirmar/Confirmado — helper `estadoCelda(s)` compartido entre el filtro
+  y el pintado de cada celda, para no repetir el ternario en dos sitios). **Pagos por revisar** =
+  bandeja nueva (`rfPagosTabHTML`/`rfPagosRowsHTML`), solo boletos `por_confirmar`, con buscador propio
+  y un ícono de recibo si el boleto trae comprobante; tocar una fila abre el mismo panel de detalle de
+  siempre (`nxTkOpen`→`gestBoleto`). **Participantes** = reusa `tkRowsHTML()` **sin tocar su lógica**
+  (mismo comportamiento del modal "Lista de tickets" de siempre: no filtra anulados por defecto), con
+  buscador propio y `_tkEst` reseteado para no arrastrar un filtro pegado de un uso anterior del modal.
+- **Buscadores de las 2 pestañas nuevas, patrón NPGS §5** (`nxBuscaFiltroHTML`, la lupa colapsada de
+  siempre — no el buscador viejo `.rfSearch` siempre visible): `pintarLupaRfPagos()`/`pintarLupaRfPt()`,
+  unificadas bajo un dispatcher nuevo `pintarLupaRfTabActiva()` que pinta la lupa de la pestaña que
+  esté activa en ese momento (Resumen sigue con su `pintarLupaRfTab()` de siempre, sin tocar).
+- **`gestBoleto` — de modal centrado a panel LATERAL (drawer):** mismo `#nxRbGest` / `.overlay`/
+  `.modal` de siempre — solo se le agregaron 2 clases (`.rfDrawerOv`/`.rfDrawer`) que cambian su
+  posición/tamaño por CSS, sin tocar el HTML interno ni ninguna de las funciones que ya cierran ese
+  id (`nxRifaConfirmar`/`nxRifaLiberar`/`nxRifaCambiarNum` llaman `cerrarModal('nxRbGest')` igual que
+  antes). Se agregó una miniatura del comprobante de pago (clicable, abre `nxVerVoucher` de siempre)
+  arriba de los botones si el boleto trae voucher — antes solo había un botón de texto "Voucher" entre
+  los demás; ahora ese botón se quitó (ya no aportaba nada nuevo) y la miniatura hace ese trabajo de
+  forma visual. El botón de aprobar pasó de decir "Confirmar" a "Aprobar pago" (mismo `onclick`).
+- **CSS nuevo, agregado al bloque `st.textContent` de siempre** (mismo patrón de inyección única del
+  módulo): `.rfTabs`/`.rfTab`/`.rfTabBadge` (las 3 pestañas), `.rfAttn`/`.rfAttnRow` (el bloque de
+  atención), `.rfPayRow`/`.rfPayIni`/`.rfPayEmpty` (la bandeja de pagos), `.rfVouThumb` (la miniatura
+  del comprobante), y `.overlay.open.rfDrawerOv`/`.modal.rfDrawer`/`@keyframes rfDrawerIn` (el panel
+  lateral — fondo más claro que el de un modal normal para mantener visible la pantalla de atrás,
+  como pedía el mockup, con `!important` porque el tema oscuro `body.tema-premium .overlay{...}` es
+  más específico por el selector `body` y sin eso le habría ganado al color nuevo).
+- **Verificado con Playwright, código real extraído del archivo por contenido** (38 pruebas): los 5
+  KPIs y el bloque de atención con datos exactos contra un backend simulado (7 boletos: 2 confirmados,
+  2 `por_confirmar` —uno con comprobante—, 2 apartados —uno vence en 30min, otro en 24h, para probar
+  que solo el de 30min entra en "atención"— y 1 anulado), las 3 pestañas cambiando de contenido
+  correctamente (Participantes lista los 7 boletos, incluido el anulado — comportamiento correcto de
+  `tkRowsHTML` sin tocar, no un bug), el filtro de estado del tablero, los 2 buscadores nuevos
+  filtrando en vivo, el panel lateral abriendo con la miniatura y el botón "Aprobar pago", aprobar/
+  liberar mutando los datos correctos, el enlace de WhatsApp armado bien, y **cero desborde
+  horizontal ni errores de consola en 390/760/901/1024/1280/1600px**. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()` (1,423 / 493,343 / 681 caracteres).
+- **NOTA DE MÉTODO — 2 lecciones reales de esta ronda, para la próxima vez que se toque un módulo
+  grande de `parches.js`:**
+  1. **Localizar el inicio/fin exacto de un módulo por conteo de llaves a mano NO es seguro.** El
+     escáner de balance de llaves que se intentó primero (contando `{`/`}` carácter por carácter,
+     saltando strings/comentarios) se desincronizó porque este mismo módulo tiene una expresión
+     regular real (`/[&<>"']/g`, dentro de su helper `esc()`) — un regex literal en JavaScript
+     contiene caracteres que parecen delimitadores de string, y distinguir "esto es un regex" de
+     "esto es una comilla" es un problema de tokenización ambiguo (division vs. regex-literal) que un
+     escáner ingenuo no resuelve. El método que sí funcionó: `grep` del comentario-banner del SIGUIENTE
+     módulo + `grep "^})();$"` para las líneas candidatas de cierre entre medio, confirmando a mano
+     cuál cierre es el correcto leyendo el código real alrededor (el correcto termina con el bloque
+     `registrar()`/`nxMERegistrar({orden:4, nombre:'Rifas',...})` de siempre).
+  2. **Medir/capturar una animación de entrada CSS (`@keyframes`) requiere esperar MÁS que su
+     duración.** El panel lateral nuevo usa un deslizamiento de 220ms (`transform:translateX`); las
+     primeras mediciones/capturas se tomaron con una espera de solo 60ms — la mitad de la transición
+     todavía sin terminar se ve EXACTAMENTE como un bug de posicionamiento real (el panel parecía estar
+     "fuera de la pantalla", con coordenadas que no cuadraban con ninguna regla de CSS escrita). Se
+     investigó a fondo (especificidad de `.modal{margin:auto}`, comportamiento de `flexbox
+     justify-content:flex-end`, dimensiones computadas del `.overlay`) antes de confirmar, remidiendo
+     con una espera de 350ms, que el CSS estaba bien desde el principio — era un problema de tiempo del
+     propio test, no del código.
+- **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` y confirme fusionar a `main`.
+
+### Rifas — panel administrativo, RONDA 2 sobre el documento completo de ChatGPT (3-ago-2026, v56.11) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+Después de publicar el panel V3 (arriba), el dueño pidió revisar qué había subido ChatGPT a
+`chatgpt/visual-draft` — apareció un archivo NUEVO,
+`docs/visual-drafts/rifas/RIFAS_V3_AUDITORIA_IMPLEMENTACION.md` (498 líneas, subido ~26 min después
+de que se abriera el PR de la V3), con el spec COMPLETO de lo que se había pedido — la V3 solo
+había cubierto una parte real (3 pestañas de las 5 pedidas; "Resumen" seguía siendo el tablero de
+números sin ningún dato de negocio; "Participantes" reusaba la tabla cruda de tickets, una fila por
+BOLETO, no por persona). Se comparó el documento completo contra lo ya construido, se le explicó al
+dueño el hueco real, y con su **"Si"** se continuó la construcción sobre la MISMA rama
+`claude/rifas-v3-admin` (todavía sin fusionar), antes de que revisara el PR.
+- **(1) "Resumen" dejó de ser el tablero — ahora es un dashboard de 3 tarjetas REALES:**
+  `rfResumenTabHTML(r)` (reescrita) muestra **"Próximo sorteo"** (fecha real de `rifas.fecha_sorteo`
+  con cuenta regresiva "Faltan N días"/"Es hoy"/"Ya pasó" — si la rifa NO tiene fecha, un aviso
+  honesto "Sin fecha de sorteo definida" + botón directo a `nxRifaEditar` para ponérsela, en vez de
+  inventar una), **"Por cobrar en revisión"** (la SUMA en pesos de los boletos `por_confirmar` —
+  antes el único dato visible era el CONTEO en el KPI de arriba, nunca el monto en dinero) e
+  **"Ingreso potencial restante"** (`disponibles × precio_boleto` — cuánto más entraría si se vende
+  todo lo que queda). Las 2 últimas tienen un enlace directo ("Revisar ahora"/"Ver disponibles") que
+  salta a la pestaña correspondiente, solo si hay algo real que revisar (`k.porConf>0`/`k.disp>0`).
+- **(2) El tablero de números se movió a su PROPIA pestaña, "Números"** (`rfNumerosTabHTML`, es el
+  MISMO contenido que antes vivía en "Resumen" — filtro por estado, "A la suerte", paginación —
+  solo cambió de pestaña; renombrada, no reescrita). `window.nxRfIrDisponibles`/`nxRfIrApartados`
+  (los KPIs de arriba que saltan al tablero filtrado) ahora navegan a `'numeros'`, no a `'resumen'`.
+- **(3) Pagos por revisar — miniatura real del comprobante:** `rfPagosRowsHTML` reemplaza el avatar
+  de iniciales por la imagen real del voucher (`<img class="rfPayThumb">`) cuando el boleto la trae
+  — se ve de un vistazo si ya hay foto o no, sin abrir cada fila. Sin voucher, cae al avatar de
+  iniciales de siempre (mismo dato `b.voucher`, cero consulta nueva).
+- **(4) "Participantes" — la pieza más grande de esta ronda: de tabla cruda a agregado REAL por
+  persona.** `rfParticipantesData(q)` agrupa `_boletos` (excluyendo anulados) por `telKey()` — el
+  MISMO normalizador de teléfono que el propio módulo ya usaba en `nxRifaPrevBoletos` para detectar
+  "cliente repetido" al vender — o `'n:'+nombre` si no hay teléfono (mismo criterio que
+  `nxRifaStats`, para no inventar un 2do criterio de agrupación). Cada grupo suma su monto
+  confirmado y lo que tiene pendiente de aprobar, y muestra `comprador_cedula`/`comprador_email` (sí
+  son columnas reales de `rifa_boletos`, confirmado por SQL directo antes de usarlas) cuando el
+  comprador las dejó — nunca se inventa un dato que no vino. `_rfPartCache` (array indexado, se
+  refresca en cada pintado) + `window.nxRfPartVer(idx)` — el detalle recibe un **ÍNDICE numérico**,
+  no el nombre/teléfono embebido en el `onclick`, a propósito: un nombre con apóstrofe (ej.
+  "d'León") habría roto el string de JavaScript del atributo — el mismo tipo de bug ya documentado
+  en este archivo (v53.5). El detalle muestra cédula/correo + KPI de Confirmado/En revisión + un
+  chip por cada boleto del participante (ordenados por número), cada uno abre su detalle real de
+  siempre vía `nxTkOpen`.
+- **(5) Pestaña nueva "Tickets"** (`rfTicketsTabHTML`) — la lista CRUDA que antes vivía (mal
+  ubicada) dentro de "Participantes": reusa `tkRowsHTML` **sin tocar su lógica**, con su propio
+  selector de estado (comparte `_tkEst` con el modal `nxRifaTickets` a propósito — es el mismo
+  filtro global que ya usan los KPIs/botones del panel, no un estado nuevo) y su propio buscador
+  (`_rfTkQ`, patrón NPGS §5). Distinta a propósito de "Participantes": una ve boletos, la otra ve
+  personas — no se fusionaron en una sola pantalla.
+- **Auditado del documento y DESCARTADO a propósito, con su razón** (mismo criterio de "no fingir
+  funciones que no existen" de siempre): la restructuración completa de la barra lateral/topbar del
+  hub de Multiempresa (cambiaría la navegación de TODO el hub, no solo de Rifas — fuera del alcance
+  de este pedido puntual), una barra de navegación inferior aparte para el celular (la fila de 5
+  pestañas ya hace scroll horizontal por sí sola — un segundo menú de navegación habría sido
+  redundante, mismo criterio ya usado y documentado en otras pantallas de este sistema, ej. v48.16),
+  y "Promesas de pago"/un log de "Actividad reciente" (ninguno tiene una tabla real detrás en este
+  módulo de rifas — inventarlos habría sido fingir un historial de gestión que no existe).
+- **Verificado con 72 pruebas de Playwright** contra el módulo REAL re-extraído del archivo (no una
+  reconstrucción a mano — con el `stubs.js` ampliado a 8 boletos de prueba, uno de ellos
+  deliberadamente con el MISMO teléfono que otro para probar que la agregación de verdad suma en vez
+  de listar duplicado, y una 2da rifa sin `fecha_sorteo` para probar el aviso honesto sin depender
+  del reloj del entorno): los 5 KPIs recalculados, las 5 pestañas en el orden correcto, las 3
+  tarjetas del dashboard con los montos exactos, el tablero intacto en su nueva pestaña, la
+  miniatura del comprobante solo en la fila que la trae, los 6 participantes agregados
+  correctamente (uno con 2 boletos reales sumando RD$1,200), su detalle con cédula/correo cuando
+  existen y sus boletos ordenados, la pestaña Tickets con su filtro y buscador propios sin excluir
+  anulados (igual que el modal de siempre), y **CERO desborde horizontal** en las 5 pestañas × 6
+  anchos de pantalla (390/760/901/1024/1280/1600px) — 72/72, 0 errores de consola. Capturas de
+  pantalla revisadas visualmente en 390px y 1600px para las 4 pestañas nuevas/rediseñadas.
+- **NOTA DE MÉTODO — 2 fallos de la primera corrida eran del PROPIO script de prueba, no del
+  código** (se investigaron antes de tocar el código de producción): un `startsWith('0005')` al que
+  le faltaba el símbolo `#` que el texto real sí trae, y una comparación de correo en minúscula
+  contra `element.innerText` — que SIEMPRE devuelve el texto YA RENDERIZADO (el sistema fuerza
+  mayúsculas globales por CSS, el mismo gotcha que este archivo ya documentó varias veces en otras
+  rondas de verificación de esta sesión). Se corrigieron las 2 aserciones, no el código — confirmado
+  releyendo la salida real de la primera corrida antes de decidir cuál lado tenía el error.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` (ahora con esta 2da ronda
+  encima) y confirme fusionar a `main` — mismo criterio de siempre, no se fusiona sin su OK
+  explícito.
+
+### Rifas — panel administrativo, RONDA 3: auditoría formal + "Rechazar pago" (3-ago-2026, v56.12) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió una **auditoría formal antes de tocar código**: leer `RIFAS_V3_AUDITORIA_IMPLEMENTACION.md`
+en `chatgpt/visual-draft`, compararlo contra el código real de Rifas, y entregar primero la matriz
+✅/⚠️/❌ + el mapa de funciones existentes — sin programar hasta terminarla. Se hizo así. Resultado: la
+ronda 2 (arriba) ya había cerrado casi todo lo real del documento; el único hueco genuino que quedaba
+era **"Rechazar pago"** — el sistema solo tenía "Aprobar" (`nxRifaConfirmar`) o "Liberar"
+(`nxRifaLiberar`, un DELETE permanente sin motivo ni rastro). El dueño confirmó: **"Con notas, has lo
+recomendable"**.
+- **Migración aditiva:** `rifa_boletos.motivo_rechazo` (text, nullable). `get_advisors(security)` sin
+  hallazgos nuevos.
+- **`window.nxRifaRechazar(id)`/`nxRifaRechazarGuardar(id)`** (nuevas, junto a `nxRifaConfirmar`/
+  `nxRifaLiberar`): ventana de verdad — `.overlay`/`.modal`, mismo patrón que `nxRifaCambiarNum`/
+  `nxPrSolicitudPedirCorreccion` — con un `<textarea>` para el motivo (**nunca `prompt()`**, regla ya
+  establecida en el proyecto). Al confirmar: `PATCH estado:'anulado', motivo_rechazo:<texto o null>`.
+  **`'anulado'` YA EXISTÍA como estado** en el sistema desde antes de esta sesión — aparecía en el
+  filtro "Anulados" de la pestaña Tickets y en `tkEstInfo()`, pero **ninguna función lo escribía
+  nunca** (quedaba fantasma, confirmado por auditoría). Al reusarlo, el número queda libre SOLO —
+  `_bolMap` (el mapa de números ocupados) ya excluye `'anulado'` desde que se construyó, así que no
+  hizo falta tocar ese mecanismo. Queda en Auditoría (`RIFA_PAGO_RECHAZADO`, con el número y el
+  motivo). Motivo vacío/solo espacios se guarda como `null`, no como cadena vacía.
+- **`gestBoleto` (el panel lateral del boleto), 3 ajustes:** (1) el botón "Aprobar pago" ahora también
+  se esconde si el boleto ya está `'anulado'` (antes solo se ocultaba con `'confirmado'` — un boleto
+  rechazado seguía mostrando "Aprobar pago", sin sentido); (2) botón nuevo **"Rechazar pago"** (rojo),
+  visible SOLO mientras el estado es `'por_confirmar'` — no aplica a uno ya aprobado ni a uno ya
+  rechazado; (3) si el boleto está `'anulado'` con `motivo_rechazo` guardado, se muestra en un
+  recuadro rojo. El texto de estado (`estTxt`) ahora distingue "Rechazado" de "Por confirmar" (antes
+  los mostraba igual, porque el estado anulado nunca se había contemplado ahí).
+- **Bandeja "Pagos por revisar" (`rfPagosRowsHTML`):** cada fila ganó 2 botones de un toque —
+  ✓ verde Aprobar / ✕ rojo Rechazar (mismo reglamento de color +/− del sistema) — con
+  `event.stopPropagation()` para no disparar también el clic de la fila completa (que abre el panel
+  lateral). CSS nuevo `.rfPayBtns`/`.rfPayBtn`/`.rfPayBtnOk`/`.rfPayBtnNo`.
+- **Deliberadamente NO se tocó** (ya identificado y descartado en la ronda 2, misma razón): el menú de
+  3 puntos por fila, y el rediseño de la barra lateral/topbar/navegación inferior del hub.
+- **Verificado con 44 pruebas Playwright contra el módulo REAL re-extraído del archivo** (no una
+  reconstrucción): el botón Aprobar/Rechazar aparece o se esconde según el estado real en los 3 casos
+  (por confirmar/confirmado/ya rechazado), el motivo se guarda y se ve al reabrir el boleto, un motivo
+  en blanco se guarda como `null`, rechazar libera el número (mismo `_bolMap` de siempre, sin tocarlo),
+  los 2 botones de la bandeja aprueban/rechazan sin abrir el panel lateral por accidente
+  (`stopPropagation` confirmado), y **0 errores de JavaScript** en todo el recorrido. Se verificó
+  también con un caso realista (nombre largo + monto de 6 cifras) que la fila con los 2 botones nuevos
+  **no desborda horizontalmente** a 390px — usando el reset global `*{box-sizing:border-box;margin:0;
+  padding:0}` y el padding real de `.content`/`.nc` de `index.html` (un primer intento de la prueba,
+  sin ese reset, había medido un falso desborde de 24px — corregido en la propia prueba, no en el
+  código, antes de dar el resultado por bueno). `node --check parches.js` limpio; los 4 `<script>` del
+  sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño** — mismo
+  criterio de siempre.
+
+### Rifas — panel administrativo, RONDA 4: rediseño de FORMATO (3-ago-2026, v56.13) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura de un dashboard de referencia ("RIFAS PRO") y preguntó "Verifica qué opción
+hace falta" — se malinterpretó como pedido funcional; corrigió: **"Me refiero al formato / Como se
+visualiza"**. Se compararon capturas reales del panel V3.1 contra el mockup (harness Playwright con
+datos mezclados no-contiguos, para que la página 1 del tablero mostrara una mezcla real de colores en
+vez del artefacto de la primera prueba, donde los 648 confirmados seguidos hacían ver la página 1 de un
+solo color) y salieron 8 diferencias de FORMATO, no de función: layout de 1 columna + cajón vs 3
+columnas fijas, sin encabezado global, KPI sin ícono/dona, sin panel de detalle fijo, paleta más plana.
+Se le ofreció al dueño con `AskUserQuestion` qué hacer con esas diferencias; eligió **"Rehacer todo el
+layout"**, con sus palabras exactas: *"3 columnas fijas (nav+tablero+detalle en escritorio), números
+con color de fondo por estado, tarjetas KPI con ícono/dona, panel de detalle como columna fija en vez
+de cajón. Cambio grande, toca toda la pantalla."*
+- **(1) Semántica de color del tablero, reordenada** — `.rfN-disp/pend/conf/apar` YA pintaban el color
+  correcto por estado desde antes (no era un bug, era un artefacto de los datos de prueba de la
+  comparación inicial); lo único que cambió es CUÁL color le toca a cada uno: disponible=gris neutro
+  (`#f8fafc`/`#e2e8f0`/`#64748b`, antes verde), por confirmar=naranja (`#fff7ed`/`#fdba74`/`#c2410c`,
+  antes ámbar), confirmado=verde (`#f0fdf4`/`#86efac`/`#15803d`, antes índigo), apartado=ámbar
+  (`#fffbeb`/`#fde68a`/`#b45309`, antes gris) — calzando con la convención semántica del mockup
+  (verde=éxito/confirmado, no un color arbitrario).
+- **(2) Las 5 tarjetas KPI** (Disponibles/Apartados/Pagos x revisar/Confirmados/Recaudado) ganaron un
+  `<div class="rfKpiIco">` — círculo de 26px con un ícono Tabler y su color de estado — arriba de la
+  etiqueta, dentro de cada `.rfKpi`.
+- **(3) Tarjeta nueva "Progreso de ventas"** en la pestaña Resumen (`rfResumenTabHTML`, antes del grid
+  de 3 tarjetas de siempre): una dona (`conic-gradient`, reusa las clases `.pie`/`.pieLeg`/`.pieRow`/
+  `.pieDot`/`.pieK`/`.piePct` que ya existían para "Medios de pago" en `nxRifaStats()` — cero CSS
+  nuevo para el propio gráfico) con el % vendido en el centro (círculo blanco superpuesto) y la
+  leyenda de los 4 estados (Confirmados/Apartados/Por confirmar/Disponibles) con su monto y
+  porcentaje, ordenados por prioridad. Solo aparece si `k.total>0 && k.vendidos>0` — sin datos, no
+  se pinta un donut vacío/engañoso.
+- **(4) Barra lateral fija en escritorio (`.rfSide`), reemplaza las píldoras horizontales SOLO en
+  `min-width:900px`.** `renderRifaPanel` arma `sideHTML` con los mismos 5 botones (Resumen/Números/
+  Pagos por revisar con badge/Participantes/Tickets) usando la MISMA clase `rfTab` y el MISMO
+  `data-tab` que ya usaban las píldoras `.rfTabs` — el alternador `nxRfTab()` (que hace
+  `querySelectorAll('.rfTab').forEach(...)`) no necesitó ningún cambio: sirve a los dos formatos a la
+  vez, sin saber cuál está visible. El shell pasó de `<div class="nc">...</div>` a `<div
+  class="rfShell">` + `sideHTML` + `<div class="rfMain"><div class="nc">...</div></div>` — 2 divs de
+  cierre extra al final. CSS: `.rfShell{display:block}.rfSide{display:none}` por defecto,
+  `@media(min-width:900px){.rfShell{display:flex}.rfSide{display:flex...}.rfTabs{display:none}}` — en
+  móvil (`<900px`) es idéntico a como estaba antes de esta ronda: solo las píldoras `.rfTabs`, sin
+  ninguna barra lateral.
+- **(5) Panel de detalle FIJO en escritorio, solo para la pestaña Números** —
+  `rfNumerosTabHTML(r)` envuelve el tablero + un `<div class="rfDetailDock" id="rfDetailDock">` con un
+  estado vacío (`RF_DOCK_EMPTY`: "Toca un número del tablero para ver su detalle aquí."). `gestBoleto(b)`
+  ganó una constante `RF_DOCK_MIN=900` (el MISMO breakpoint de la media query, a propósito, para que JS
+  y CSS nunca se desincronicen) — arma el detalle en una variable `body2` y, si `_rfTab==='numeros' &&
+  window.innerWidth>=RF_DOCK_MIN`, lo inyecta DENTRO de `#rfDetailDock` (con un mini-encabezado propio y
+  botón "Cerrar" → `window.nxRfDockCerrar()`, que resetea al estado vacío) en vez de crear el
+  `.overlay`/`.modal` de siempre. Si la condición es falsa (móvil, O cualquier otra pestaña que también
+  llama `gestBoleto` vía `nxTkOpen` — Pagos/Participantes/Tickets), cae exactamente al camino de
+  overlay/drawer que ya existía, sin ningún cambio. CSS: `.rfNumRow{display:block}.rfDetailDock{
+  display:none}` por defecto, `@media(min-width:900px){.rfNumRow{display:grid;grid-template-columns:1fr
+  360px}.rfDetailDock{display:block;position:sticky;top:10px}}`.
+- **BUG REAL encontrado por la propia verificación (nunca en producción):** la dona nueva referenciaba
+  una variable `pct` que solo existía en el scope de `renderRifaPanel` (la función que llama), no
+  dentro de `rfResumenTabHTML` (la función separada donde se usa, alcanzada vía `rfTabBodyHTML`) — dio
+  `ReferenceError: pct is not defined` al abrir la pestaña Resumen. Lo atrapó Playwright (ejecución
+  real en navegador), NO `node --check` (es un error de scope en tiempo de ejecución, no de sintaxis).
+  Corregido agregando `var pct = k.total ? Math.min(100, Math.round(k.vendidos/k.total*100)) : 0;`
+  localmente al inicio de `rfResumenTabHTML`, justo después de `var k = rfKpisData(r);`.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción),
+  escritorio (1536×900) y móvil (390×844): en escritorio, `hasOverlay=false` al tocar un número (el
+  dock se llena en vez de abrir un cajón), `dockHasContent=true` con el detalle real del boleto,
+  `sideDisplay=flex`/`pillsDisplay=none` (barra lateral visible, píldoras ocultas), 0px de desborde
+  horizontal; en móvil, CONFIRMADO que el comportamiento previo a esta ronda queda intacto —
+  `hasOverlay=true` (el cajón sigue abriendo al tocar un número, sin dock), `sideDisplay=none`/
+  `pillsDisplay=flex` (barra lateral oculta, píldoras visibles), `dockDisplay=none`, 0px de desborde.
+  **NOTA DE MÉTODO (2 rondas de verificación, no una):** la primera tanda de capturas móviles usó un
+  shell de prueba con `.sidebar{width:220px;flex-shrink:0}` SIN la media query real que tiene `.sb` en
+  `index.html` (línea 471: `@media(max-width:768px){.sb{position:fixed;top:0;left:-220px;...}}` — en
+  producción el sidebar sale de pantalla y NO ocupa espacio en móvil) — eso comprimía el contenido de
+  prueba a solo ~170px de los 390px reales, haciendo ver un apretón/desborde que no existe en
+  producción. Se corrigió el shell del harness para replicar exactamente esa media query y se
+  reconfirmó `contentWidth=390` (el ancho completo real) sin desborde. Un segundo falso positivo (el
+  cajón móvil "cortado" contra el borde derecho en una captura) resultó ser la animación CSS
+  `rfDrawerIn .22s` capturada a mitad de camino (sin ningún `waitForTimeout` antes del screenshot) —
+  confirmado con `getComputedStyle`/`getBoundingClientRect` que el elemento real mide 390×844 (ancho
+  completo) una vez que la animación termina; con una espera de 400ms antes de la captura, la imagen
+  final confirma el cajón a ancho completo como siempre. `node --check parches.js` limpio; los 4
+  `<script>` del sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
+### Rifas — detalle del participante: "Confirmado"/"En revisión" clicables (3-ago-2026, v56.14) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura real del modal de un participante (`nxRfPartVer`, dentro de la pestaña
+Participantes de la ronda 4, arriba) y pidió: *"cuando demos clic en confirmado y por revisar... nos
+dirija a la ventana de cada sección, [la] que está pendiente, [la que] está confirmado[a]"* — que las 2
+tarjetas KPI (Confirmado RD$X / En revisión RD$Y) dejen de ser solo números y filtren la lista de "Sus
+boletos" de abajo a esa sección.
+- **Sin navegar a otra pantalla ni abrir otra ventana** — se decidió así porque los boletos que
+  respaldan esos 2 montos YA se listan como chips dentro del mismo modal; filtrar ahí mismo es más
+  directo que cerrar el participante y saltar a otra pestaña a buscarlos.
+- **`partChipHTML(b)`/`partChipsFiltrar(g,tipo)`** (nuevos, junto a `nxRfPartVer`): la construcción de
+  chips se extrajo a helpers reusables — `tipo=''` todos, `'confirmado'` solo `estado==='confirmado'`,
+  `'pendiente'` solo `estado!=='confirmado'` (por_confirmar + apartado — MISMO criterio que ya usaba
+  `g.pend` al sumar el monto, para que el filtro coincida exacto con lo que dice la tarjeta).
+- **`window.nxRfPartFiltro(idx,tipo)`** (nuevo): toca "Confirmado"/"En revisión" → filtra
+  `#rfPartChips` y actualiza la etiqueta ("Confirmados (6)"/"En revisión (3)"); tocar la MISMA tarjeta
+  2 veces limpia el filtro (toggle); aparece un enlace **"Ver todos"** solo cuando hay un filtro activo.
+  Las 2 tarjetas ganaron `id`/`tabindex="0"`/`role="button"`/`aria-label`/teclado (Enter/Espacio) — no
+  eran accesibles antes, mismo patrón ya usado en el resto del sistema.
+- **Los montos de las 2 tarjetas NUNCA cambian al filtrar** (son totales de siempre, no se recalculan
+  contra la vista filtrada) — solo la lista de chips de abajo se acota.
+- **CSS:** reusa `.rfKpiT` (el mismo chevron+cursor:pointer que ya usan los KPI del panel principal,
+  cero clase nueva para eso) + `.rfKpi.on` nuevo (fondo índigo tenue, mismo lenguaje "activo" que
+  `.rfSide .rfTab.on`) + `.rfKpiT:focus-visible` (aro de foco, no existía en esta tarjeta).
+- **Verificado con Playwright reproduciendo el caso EXACTO de la captura del dueño** (LIC. ESTERLIN
+  ESPINAL, 9 boletos, RD$1,200 confirmado + RD$600 en revisión — código real extraído del archivo, no
+  reconstrucción): tocar "Confirmado" filtra a los 6 boletos verificados correctos (#0400/#2244/#2672/
+  #2679/#2712/#2746), tocar "En revisión" filtra a los 3 correctos (#0335/#1476 pendiente + #2077
+  apartado = RD$600 exacto), tocar de nuevo limpia el filtro, "Ver todos" limpia el filtro, Enter por
+  teclado hace lo mismo que el clic, los montos de las 2 tarjetas se quedan fijos en cualquier estado
+  del filtro, 0 errores de JavaScript. `node --check parches.js` limpio; los 4 `<script>` del sistema
+  compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
+### Rifas — el detalle de un boleto YA NO se cierra al aprobar/rechazar/editar (3-ago-2026, v56.15) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura del detalle de un boleto ("BOLETO 1476", estado "POR CONFIRMAR") y pidió,
+con sus palabras: *"Cuando le demos aprobar, rechazar o cambiar o algo o algún cambio en esa ventana,
+que no se cierre... para poder ahí mismo darle a Enviar por WhatsApp, porque si se me cierra tengo que
+volver a buscar el cliente"*.
+- **Investigado antes de tocar nada:** de las 5 acciones del detalle (`gestBoleto`), 2 cerraban la
+  ventana sin dejar nada abierto (**Aprobar pago** — `nxRifaConfirmar` — y **Editar** —
+  `nxRifaEditBoletoGuardar`), 1 la dejaba cerrada porque el flujo pasa por un formulario aparte
+  (**Rechazar pago** — `nxRifaRechazar` cierra la ventana al abrir el textarea del motivo,
+  `nxRifaRechazarGuardar` nunca la reabría), y 1 (**Cambiar número**) YA hacía lo que el dueño pedía —
+  `nxRifaCambNumGuardar` cierra su formulario y REABRE el detalle con `gestBoleto(nb)` usando el
+  boleto ya refrescado. Ese patrón existente fue la plantilla para las otras 3.
+- **Arreglo, mismo patrón en las 3 funciones (Aprobar/Rechazar/Editar):** en vez de `cerrarModal
+  ('nxRbGest')` al final, cada una hace `await cargarBoletos(_rifaSel)` (que reemplaza `_boletos` con
+  datos frescos del servidor) y luego busca el boleto actualizado por id
+  (`_boletos.find(x=>x.id===id)`) y llama a `gestBoleto(nb)` — que se encarga de reabrir en el
+  contenedor que corresponda (el panel FIJO de escritorio en la pestaña Números, o el panel lateral
+  que se desliza en móvil/otras pestañas — la misma función ya distingue los dos casos desde la ronda
+  4). El badge de estado cambia solo (Por confirmar → Pago verificado / Rechazado), los botones
+  "Aprobar"/"Rechazar" desaparecen porque `gestBoleto` los gatea al `estado` real, y "Enviar por
+  WhatsApp" queda ahí, a un toque.
+- **Excepción a propósito, documentada en el propio código:** "Liberar" (`nxRifaLiberar`) SIGUE
+  cerrando la ventana — es un DELETE real del boleto, no queda ningún registro que volver a mostrar.
+  El panel cae solo a su mensaje "Toca un número para ver su detalle" de siempre (el mismo estado
+  vacío que ya usaba antes de seleccionar cualquier número) — no hizo falta ningún código nuevo para
+  eso, es el comportamiento natural de re-renderizar la pestaña sin nada seleccionado.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción —
+  1,762 líneas, `26331` a `28092` de `parches.js`), con un backend simulado que de verdad APLICA los
+  cambios (PATCH/DELETE mutan los datos en memoria, no solo se registran como llamadas) para que el
+  boleto reabierto refleje el estado posterior real: **10 comprobaciones** — Aprobar deja el panel
+  abierto con "Pago verificado" y sin los botones Aprobar/Rechazar, con WhatsApp disponible, probado
+  en las 2 formas (panel fijo de escritorio en Números, y panel lateral fuera de esa pestaña); Rechazar
+  (con un motivo escrito) reabre mostrando "Rechazado" + el motivo guardado + WhatsApp; Editar reabre
+  mostrando el dato corregido (probado cambiando el nombre del comprador); Liberar sigue cerrando y el
+  panel cae a su mensaje vacío de siempre, sin boleto fantasma. Capturas de pantalla revisadas
+  visualmente. `node --check parches.js` limpio; los 4 `<script>` del sistema compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
+### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
+El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
+tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al
+enviar el formulario) y pidió analizar esa animación para aplicarla a nuestro login.
+- **Se separó la TÉCNICA del TEMA.** El fondo de luna+desierto NO se aplicó — rompería la
+  identidad navy/azul + escudo ya establecida en el login (rediseño Enterprise v53.8-v54.7) y sería
+  una foto sin relación con el negocio. Se identificaron **3 técnicas genuinamente trasladables**
+  y se le presentaron al dueño con `AskUserQuestion` (multi-select); eligió **"Las 3"**.
+- **(1) Tilt 3D hacia el cursor:** `pointermove` en `#loginScreen` calcula la posición relativa del
+  mouse y setea `--lx-ry`/`--lx-rx` (tope ±7° horizontal, ±4° vertical) en `.lwrap` — **el transform
+  vive en el envoltorio, NUNCA en `.lbox`**: `.lbox` ya tiene su propia animación de entrada
+  (`lxBoxIn`) sobre `transform`, y mezclar un `@keyframes` con un `transform` inline en el MISMO
+  elemento arriesgaba que la animación le ganara la cascada al tilt (nunca se habría visto). Se
+  apaga solo (`matchMedia('(pointer:fine)')` + `prefers-reduced-motion`) — en touch no hay
+  `pointermove` continuo, así que el listener ni se agrega.
+- **(2) Brillo que respira:** `.lshield::before` pulsa lento (4.6s, `opacity`+`scale`, compositor-
+  friendly, nunca `box-shadow` animado) — mismo patrón exacto que ya usan las ondas del splash
+  (`.nxs-badge`/`.nxs-wave`, v54.5): el halo detrás en `z-index:0`, el ícono encima en `z-index:1`,
+  para que el brillo nunca tape el escudo. Antes el glow era estático (solo `box-shadow` fijo).
+- **(3) Transición al entrar:** el escudo "se abre" (crece + brilla + se disuelve, `lxShieldPop`) y
+  la tarjeta se apaga (`lxCardOut`) ANTES de ocultar `#loginScreen` — mismo idioma que
+  `#nxSplash.nxs-out`/`#nxLoader.nxl-out`: una clase (`lx-revelando`) + `setTimeout` calzado con la
+  duración real del CSS (440ms). **`nxLoginRevelar()` se llama UNA sola vez, dentro de
+  `iniciarApp()`** — investigado antes de tocar nada: es el ÚNICO punto de convergencia real de los
+  3 caminos de login exitoso (usuario/clave clásico en `doLogin()`, Auth en `doLoginAuth()`/
+  `nxFinalizarLoginAuth()`, y SSO entrante en `nxRecibirPaseSSO()` — los 3 terminan llamando
+  `iniciarApp()`), así que no hizo falta duplicar la llamada en 3 sitios. Se salta entera —sin
+  ningún `setTimeout`, retorno inmediato— si `#loginScreen` nunca se mostró (el caso SSO oculta la
+  pantalla ANTES de llegar a `iniciarApp()`, línea 9936) o si el usuario prefiere menos movimiento,
+  para no penalizar el flujo de acceso por accesibilidad.
+- **BUG REAL encontrado y arreglado en el propio proceso de verificación, ANTES de publicar (nunca
+  llegó a producción):** un comentario CSS nuevo escribía literalmente `<script>` como texto de
+  prosa ("ver el `<script>` junto a este HTML") — el script de verificación de esta sesión (separa
+  el HTML en bloques `<script>` reales para validarlos con `new Function()`) confundió ese texto de
+  comentario con una etiqueta real, y arrastró la "validación" 83,193 caracteres de más, mezclando
+  CSS con JS de otro bloque completamente distinto. Se corrigió el propio comentario (ya no
+  contiene la secuencia literal `<script>`) — mismo tipo de trampa "naive regex vs. prosa" ya
+  documentada varias veces en este archivo, aquí en la propia herramienta de verificación, no en el
+  producto. Los 4 bloques `<script>` del archivo (antes 3 — el nuevo es el pequeño IIFE del tilt,
+  colocado junto al markup del login) vuelven a validar limpio.
+- **Verificado con 25 pruebas Playwright contra el login real, servido por HTTP local** (código
+  extraído tal cual, no una reconstrucción): el tilt responde a `pointermove` de verdad —incluido
+  el `matrix3d` resultante confirmado con una escritura directa de 600ms de espera, más allá de la
+  duración de la transición (400ms)—, invierte el signo entre izquierda y derecha, vuelve a 0° al
+  salir el cursor (`pointerleave`), y se queda inerte con `reduced-motion` y en viewport táctil; el
+  halo respira con `opacity`/`scale` variando en el tiempo (muestreado 4 veces con 600ms de
+  separación) y se apaga con `reduced-motion`; la transición de apertura agrega su clase, tarda
+  ~440ms (calzados con la duración real del CSS), y se salta entera en el caso SSO simulado y con
+  `reduced-motion`; `doLogin()` con campos vacíos sigue mostrando el aviso de siempre (sin
+  regresión); 0 errores de JavaScript; sin desbordes horizontales en 390px ni 1280px. **Nota de
+  método:** la primera ronda usó `page.mouse.move()` de Playwright (input a nivel de sistema
+  operativo) y salió intermitente por timing de la transición/proceso cruzado — se reescribió con
+  `dispatchEvent(new PointerEvent(...))` síncrono (corre en el mismo tick, sin cruce de proceso) y
+  quedó estable en 3 corridas seguidas, 25/25 cada vez. Capturas de pantalla en 390px y 1280px
+  revisadas visualmente (el escudo sale como círculo liso sin el glifo Tabler porque el sandbox de
+  esta sesión no tiene salida al CDN de íconos — limitación del entorno ya documentada varias
+  veces en este archivo, no un bug; en `nexusprord.com` el ícono carga normal).
+- **Publicado directo a `main`** (push fast-forward, sin PR) — cambio chico, aditivo, verificado a
+  fondo, sin tocar lógica de autenticación/negocio, dentro del criterio por defecto del dueño
+  ("Publicar EN VIVO directo a `main`... reservar rama/PR para cambios grandes o riesgosos").
+
+### Seguimiento v56.9 — el ícono del escudo se pintaba DEBAJO del brillo (bug real, mismo patrón que el Splash)
+El dueño reportó dos veces que las 3 animaciones no se veían ("actualicé y no hace nada" / "igual",
+incluso después de cerrar sesión y volver a entrar). Investigado a fondo, no asumido:
+- **Descartado — sesión persistida:** confirmado leyendo el código que la primera vez SÍ podía ser eso
+  (`nx_sesion_persist` salta `#loginScreen` entero sin pasar por `iniciarApp()`, líneas 10008-10034) —
+  se le explicó y se le pidió cerrar sesión. Que siguiera igual después de eso obligó a investigar el
+  código en sí, no repetir la misma explicación.
+- **Prueba con Playwright contra `iniciarApp()` real (no una reconstrucción):** simulando el camino
+  exacto de un login exitoso (mismo `sesion`+`iniciarApp()` que usan `doLogin`/`nxFinalizarLoginAuth`)
+  se confirmó que el MECANISMO de las 3 técnicas funciona — `nxLoginRevelar()` agrega la clase
+  `lx-revelando`, espera, y solo entonces `#loginScreen` se oculta y `#app` aparece.
+- **BUG REAL encontrado por la propia prueba, con evidencia — `.lshield i` quedaba `position:static` en
+  vez de `relative`:** en v56.8 el ícono del escudo ganó `position:relative;z-index:1` (índex.html) para
+  pintarse ENCIMA del brillo que respira (`.lshield::before`, `position:absolute`) — pero la lista de
+  "iconos globales" de `parches.js` (protege al escudo del sistema de colores automáticos desde la saga
+  del "escudo verde", v54.1-54.3) seguía forzando `position:static!important` sobre `.lshield .ti`, esa
+  MISMA regla, con más especificidad — anulando la capa nueva. **La suite de la v56.8 (25 pruebas) NO lo
+  detectó** porque solo medía `zIndex` (una propiedad que se puede fijar en el CSS aunque no tenga ningún
+  efecto visual en un elemento `static`), nunca `position` en sí. `getComputedStyle(icono).position` daba
+  `'static'`, confirmado con una prueba nueva. **Ya existía el patrón correcto para copiar:** el escudo
+  del Splash (`.nxs-badge .ti`, v54.5) había resuelto exactamente este mismo problema — se replicó ese
+  patrón: `.lshield .ti` salió del reset compartido (`position:static!important`) y pasó a su propia
+  excepción, con los mismos resets MENOS `position`.
+- **Honesto sobre el alcance real de este bug:** solo afecta cómo se superponen el ÍCONO y el resplandor
+  detrás — NO afecta si la transición de la tarjeta/escudo se dispara (esa animación vive en `.lshield`
+  el CONTENEDOR, no en `.ti` el ícono, y nunca estuvo en la lista de exclusión). Así que es real y se
+  arregló, pero **no se puede confirmar que fuera la causa completa** de "no se ve nada" — la transición
+  dura ~420ms justo cuando la pantalla cambia entera al Dashboard, fácil de no notar a simple vista; y
+  este entorno no tiene salida a internet para comprobar si `nexusprord.com` ya sirve la versión nueva.
+- Verificado con Playwright contra el código real (`iniciarApp`/`nxLoginRevelar` extraídos por contenido,
+  con `sesion` inyectado igual que lo haría `doLogin`): antes del fix, `position:'static'` confirmado;
+  después, `position:'relative'`. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que el dueño confirme en su iPhone tras actualizar. Si sigue "sin ver nada", el próximo
+  paso es preguntarle algo puntual (¿el círculo azul detrás del escudo late lento en la pantalla de
+  login, antes de tocar nada? ¿la tarjeta se encoge/desvanece un instante justo antes de que aparezca el
+  Dashboard?) para distinguir "no se dispara" de "se dispara pero es muy sutil/rápido para notarlo".
+
+### Skills nuevas `*-with-strix` (12-ago-2026)
+El dueño mandó una captura mostrando "Strix" y "Playwright CLI" (de un reel sobre herramientas) y
+preguntó cómo ayudarían. Playwright ya es el método de verificación de todo este proyecto (sin
+instalar nada nuevo). Strix (`usestrix/strix`, pentesting autónomo con IA — corre exploits reales
+contra el objetivo, no solo lee código) se instaló con `npx skills add usestrix/strix`: 4 skills
+(`penetration-testing-with-strix`, `managed-pentesting-with-strix`,
+`fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`), instalador limpio
+(sin tocar `git`/`CLAUDE.md`, a diferencia de `gstack` — detalle en `.agents/skills/STRIX-README.md`).
+**Quedan instaladas pero NO ejecutables todavía:** necesitan Docker con el daemon corriendo + clave
+de LLM (CLI local), o una cuenta+clave de `app.strix.ai` (nube gestionada) — ninguna de las dos está
+configurada. Preparadas para cuando el dueño decida darle la clave/cuenta, no fingir que ya
+funcionan sin eso. **Antes de apuntarlas a NEXUS PRO** (producción real, datos de clientes): mismo
+criterio de `docs/METODOLOGIA-PRUEBAS-DESTRUCTIVAS.md` — preferir un objetivo que no sea producción
+cuando la prueba no lo exija, y confirmar con el dueño antes de lanzar un pentest real contra la app
+en vivo.

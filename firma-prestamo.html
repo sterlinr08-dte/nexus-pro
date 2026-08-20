@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Firma de préstamo · NEXUS PRO Financiamiento</title>
+<meta name="robots" content="noindex,nofollow">
+<!-- El cliente abre esta página UNA vez desde un link de WhatsApp: si el teléfono guarda una
+     copia vieja, un arreglo publicado después nunca le llega y el fallo "se queda pegado"
+     (pasó de verdad). Se pide siempre la versión fresca. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{--c:#4f46e5;--c2:#6d28d9}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f3fb;color:#0f172a;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:36px}
+.topaccent{height:6px;background:linear-gradient(90deg,var(--c),var(--c2))}
+.nav{display:flex;align-items:center;gap:11px;padding:14px}
+.nav .lg{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex:0 0 auto}
+.nav .ttl b{display:block;font-size:15px;font-weight:800}
+.nav .ttl span{display:block;font-size:11px;color:#64748b;font-weight:600}
+.body{padding:0 14px 14px}
+.msg{text-align:center;padding:60px 20px;color:#64748b;font-size:14px}
+.msg i{font-size:34px;display:block;margin-bottom:10px;color:var(--c)}
+.spin{width:26px;height:26px;border:3px solid #e2e8f0;border-top-color:var(--c);border-radius:50%;margin:0 auto 10px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.card{background:#fff;border:1px solid #e8e6f7;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 10px rgba(76,29,149,.05)}
+.sec{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.sec .nb{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sec h3{margin:0;font-size:14px;font-weight:800}
+.termrow{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid #f1f0fa}
+.termrow:last-child{border-bottom:0}
+.termrow span:first-child{color:#64748b}
+.termrow b{color:#1e1b4b}
+.corrig{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 14px;margin-bottom:14px}
+.corrig b{display:block;color:#92400e;font-size:13px;margin-bottom:5px}
+.corrig span{display:block;color:#78350f;font-size:13px;line-height:1.55}
+.declar{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px;font-size:12.5px;color:#4c1d95;line-height:1.55;margin-top:10px}
+label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 6px}
+label.fl:first-child{margin-top:0}
+.in{width:100%;height:46px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:11px;font-size:15px;outline:none;font-family:inherit;background:#fff}
+.in:focus{border-color:var(--c)}
+.docbtn{display:flex;align-items:center;gap:10px;border:1.5px dashed #c7b8f5;border-radius:12px;padding:12px;cursor:pointer;background:#faf9ff}
+.docbtn i{font-size:22px;color:var(--c)}
+.docbtn b{font-size:12.5px;display:block}
+.docbtn span{font-size:10.5px;color:#7c748f}
+.docbtn.ok{border-style:solid;border-color:#86efac;background:#f0fdf4}
+.docbtn.ok i{color:#16a34a}
+.docprev{margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}
+.docprev img{width:100%;display:block;max-height:160px;object-fit:cover}
+.sigwrap{border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff;touch-action:none}
+.sigwrap canvas{width:100%;height:160px;display:block}
+.sigbar{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.sigbar span{font-size:10.5px;color:#94a3b8}
+.sigbar button{background:none;border:0;color:var(--c);font-weight:800;font-size:11.5px;cursor:pointer;padding:6px 8px}
+.chk{display:flex;align-items:flex-start;gap:9px;font-size:12px;color:#334155;line-height:1.5;margin-top:4px}
+.chk input{margin-top:2px;width:18px;height:18px;flex:0 0 auto}
+.pubbtn{width:100%;border:0;border-radius:14px;padding:16px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease,opacity .15s ease}
+.pubbtn:active{transform:scale(.97)}
+.pubbtn:disabled{opacity:.4;cursor:not-allowed}
+.okwrap{text-align:center;padding:50px 20px}
+.okwrap .ic{width:64px;height:64px;border-radius:50%;background:#dcfce7;color:#16a34a;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.okwrap h2{font-size:17px;margin:0 0 8px}
+.okwrap p{font-size:13px;color:#64748b;line-height:1.6}
+.guion{background:#0f172a;color:#f8fafc;border-radius:12px;padding:14px;font-size:14.5px;line-height:1.65;margin:10px 0}
+.guion .gl{display:block;font-size:10px;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.guion b{color:#fff}
+.vidprev{margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;background:#000}
+.vidprev video{width:100%;display:block;max-height:220px}
+.subiendo{display:flex;align-items:center;gap:8px;font-size:12px;color:#4c1d95;background:#f5f3ff;border-radius:10px;padding:10px;margin-top:8px}
+.subiendo .spin{width:16px;height:16px;border-width:2px;margin:0}
+/* Grabadora dentro de la misma página: el guion se queda VISIBLE encima del video
+   mientras el cliente graba (la cámara nativa del teléfono lo tapaba por completo). */
+.rec{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999}
+.rec .rv{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000}
+.recTop{position:absolute;top:0;left:0;right:0;padding:12px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(rgba(0,0,0,.7),transparent);color:#fff;font-size:12.5px;font-weight:700;z-index:3}
+.recX{background:rgba(255,255,255,.18);border:0;color:#fff;width:34px;height:34px;border-radius:50%;font-size:20px;line-height:1;flex:0 0 auto;padding:0}
+.recDot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ef4444;margin-right:6px;animation:recBlink 1s infinite}
+@keyframes recBlink{50%{opacity:.2}}
+.recTxt{position:absolute;left:0;right:0;bottom:146px;max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(15,23,42,.88);color:#fff;padding:13px 16px 16px;font-size:17px;line-height:1.6;z-index:2}
+.recTxt .gl{display:block;font-size:10px;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.recBar{position:absolute;left:0;right:0;bottom:0;height:146px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;background:linear-gradient(transparent,rgba(0,0,0,.8));z-index:3}
+.recBtn{width:68px;height:68px;border-radius:50%;border:5px solid #fff;background:#ef4444;padding:0;flex:0 0 auto}
+.recBtn:disabled{opacity:.4}
+.recBtn.on{background:#fff}
+.recBtn.on:after{content:"";display:block;width:24px;height:24px;background:#ef4444;border-radius:5px;margin:0 auto}
+.recAlt{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:20px;padding:8px 14px;font-size:11.5px;font-weight:700}
+.recMsg{position:absolute;top:0;left:0;right:0;bottom:146px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:26px;font-size:14px;line-height:1.6;z-index:4}
+</style>
+</head>
+<body>
+<div class="topaccent"></div>
+<div class="wrap" id="app"><div class="msg"><div class="spin"></div>Cargando…</div></div>
+<script>
+(function(){
+  var FUNC="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/prestamo-solicitud";
+  var app=document.getElementById("app");
+  var id=new URLSearchParams(location.search).get("id")||"";
+  var S=null;
+  var doc={frente:"",dorso:"",selfie:""};
+  var sigCanvas=null, sigCtx=null, sigDrawing=false, sigTiene=false, sigLastXY=null;
+  var enviando=false;
+  var vid={path:"",subiendo:false};
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
+  function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
+  function primerNombre(n){return String(n||"").trim().split(/\s+/)[0]||"";}
+
+  if(!id){ mostrarMsg("ti-link-off","Enlace inválido","Este link de firma no es válido. Pide al negocio que te envíe uno nuevo."); return; }
+  cargar();
+
+  function cargar(){
+    fetch(FUNC+"?id="+encodeURIComponent(id)).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+      if(d.error){ mostrarMsg("ti-alert-triangle","No se pudo cargar","Este link no existe o ya no está disponible."); return; }
+      S=d;
+      if(S.estado==="enviada"){ mostrarMsg("ti-hourglass-high","Ya enviaste tus datos","Estamos revisando tu información. El negocio te avisará cuando esté listo."); return; }
+      if(S.estado==="aprobada"){ mostrarMsg("ti-circle-check","Préstamo ya aprobado","Este trámite ya fue completado y aprobado. Gracias."); return; }
+      if(S.estado==="rechazada"){ mostrarMsg("ti-x","Solicitud no aprobada","Esta solicitud no fue aprobada. Comunícate con el negocio para más información."); return; }
+      render();
+    }).catch(function(){ mostrarMsg("ti-wifi-off","No se pudo cargar","Verifica tu conexión e intenta de nuevo."); });
+  }
+
+  function mostrarMsg(ico,tit,sub){
+    app.innerHTML='<div class="nav"><div class="lg"><i class="ti ti-signature"></i></div><div class="ttl"><b>Firma de préstamo</b><span>NEXUS PRO Financiamiento</span></div></div>'
+      +'<div class="body"><div class="msg"><i class="ti '+ico+'"></i><b style="display:block;color:#1e293b;font-size:15px;margin-bottom:6px">'+esc(tit)+'</b>'+esc(sub)+'</div></div>';
+  }
+
+  function terminosTexto(){
+    if(S.modo==="credito"){
+      return "Línea de crédito de "+fmt(S.capital)+" con "+ (S.tasa_interes||0) +"% de interés mensual"+(S.plazo_meses?", a devolver el capital en un plazo de "+S.plazo_meses+" meses":"")+".";
+    }
+    var frecTxt={semanal:"semanal",quincenal:"quincenal",mensual:"mensual"}[S.frecuencia]||S.frecuencia||"";
+    return (S.num_cuotas||"—")+" cuotas "+frecTxt+" de "+fmt(S.cuota_calculada)+" cada una, sobre un capital de "+fmt(S.capital)+".";
+  }
+
+  // La declaración que el negocio revisó y aprobó al generar el link manda. La de abajo es
+  // solo el respaldo para links viejos, creados antes de que se pudiera corregir.
+  function declaracionTexto(){
+    if (S.declaracion && String(S.declaracion).trim()) return String(S.declaracion).trim();
+    return "Yo, "+String(S.nombre||"").trim()+", declaro que acordé este préstamo con el negocio y me comprometo a pagarlo según lo descrito arriba: "+terminosTexto();
+  }
+
+  // El guion NO es texto libre: se arma con los términos REALES de este préstamo, para que
+  // lo que el cliente dice en el video coincida exactamente con lo que va a firmar.
+  // Si el negocio ya lo revisó y corrigió al generar el link (viene en `video_guion`), manda
+  // ESE — el de aquí abajo es solo el respaldo para solicitudes que no traigan ninguno.
+  function guionTexto(){
+    if (S.video_guion && String(S.video_guion).trim()) return String(S.video_guion).trim();
+    var nom=String(S.nombre||"").trim();
+    if(S.modo==="credito"){
+      return "Yo, "+nom+", declaro que recibí una línea de crédito de "+fmt(S.capital)
+        +" con "+(S.tasa_interes||0)+" por ciento de interés mensual"
+        +(S.plazo_meses?", y me comprometo a devolver el capital en un plazo de "+S.plazo_meses+" meses":"")
+        +", y a pagar los intereses cada mes.";
+    }
+    var frecTxt={semanal:"semanales",quincenal:"quincenales",mensual:"mensuales"}[S.frecuencia]||"";
+    return "Yo, "+nom+", declaro que recibí un préstamo de "+fmt(S.capital)
+      +", y me comprometo a pagarlo en "+(S.num_cuotas||"—")+" cuotas "+frecTxt
+      +" de "+fmt(S.cuota_calculada)+" cada una, para un total de "+fmt(S.total_devolver)+".";
+  }
+
+  function render(){
+    var nom=esc(S.nombre||"");
+    app.innerHTML =
+      '<div class="nav"><div class="lg"><i class="ti ti-signature"></i></div><div class="ttl"><b>Firma de préstamo</b><span>NEXUS PRO Financiamiento</span></div></div>'
+      +'<div class="body">'
+      // Si el negocio le pidió corregir algo, va ARRIBA del todo: es lo primero que
+      // tiene que leer al reabrir el mismo enlace.
+      +(S.correccion_motivo ? '<div class="corrig"><b>⚠️ Hay algo que corregir</b><span>'+esc(S.correccion_motivo)+'</span></div>' : '')
+      +'<div class="card"><div class="sec"><div class="nb">1</div><h3>Tu préstamo</h3></div>'
+      +'<div class="termrow"><span>Cliente</span><b>'+nom+'</b></div>'
+      +'<div class="termrow"><span>Monto prestado</span><b>'+fmt(S.capital)+'</b></div>'
+      +(S.modo==="credito"?('<div class="termrow"><span>Tasa mensual</span><b>'+(S.tasa_interes||0)+'%</b></div>'):(
+        '<div class="termrow"><span>Cuotas</span><b>'+(S.num_cuotas||"—")+' '+esc(S.frecuencia||"")+'</b></div>'
+        +'<div class="termrow"><span>Cuota</span><b>'+fmt(S.cuota_calculada)+'</b></div>'
+      ))
+      +'<div class="declar">'+esc(declaracionTexto())+'</div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">2</div><h3>Tu cédula</h3></div>'
+      +'<label class="fl">Frente</label>'
+      +'<input type="file" id="fFrente" accept="image/*" capture="environment" style="display:none" onchange="window.__docFile(this,\'frente\')">'
+      +'<div class="docbtn" id="bFrente" onclick="document.getElementById(\'fFrente\').click()"><i class="ti ti-camera"></i><div><b>Tomar o subir foto</b><span>Parte de adelante, con letra clara</span></div></div>'
+      +'<div id="pFrente"></div>'
+      +'<label class="fl">Dorso</label>'
+      +'<input type="file" id="fDorso" accept="image/*" capture="environment" style="display:none" onchange="window.__docFile(this,\'dorso\')">'
+      +'<div class="docbtn" id="bDorso" onclick="document.getElementById(\'fDorso\').click()"><i class="ti ti-camera"></i><div><b>Tomar o subir foto</b><span>Parte de atrás</span></div></div>'
+      +'<div id="pDorso"></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">3</div><h3>Foto tuya con la cédula</h3></div>'
+      +'<div style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:10px">Tómate una foto sosteniendo tu cédula al lado de tu cara. Que se vea tu rostro y la cédula con claridad.</div>'
+      +'<input type="file" id="fSelfie" accept="image/*" capture="user" style="display:none" onchange="window.__docFile(this,\'selfie\')">'
+      +'<div class="docbtn" id="bSelfie" onclick="document.getElementById(\'fSelfie\').click()"><i class="ti ti-user-scan"></i><div><b>Tomar la foto</b><span>Tu cara junto a la cédula</span></div></div>'
+      +'<div id="pSelfie"></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">4</div><h3>Video de compromiso</h3></div>'
+      +'<div style="font-size:12.5px;color:#64748b;line-height:1.5">Graba un video corto leyendo en voz alta lo siguiente:</div>'
+      +'<div class="guion"><span class="gl">Lee esto en el video</span>'+esc(guionTexto())+'</div>'
+      +'<input type="file" id="fVideo" accept="video/*" capture="user" style="display:none" onchange="window.__videoFile(this)">'
+      +'<div class="docbtn" id="bVideo" onclick="window.__grabarVideo()"><i class="ti ti-video"></i><div><b>Grabar el video</b><span>'+(puedeGrabar()?'El texto se queda en pantalla mientras grabas':'Se abre la cámara de tu teléfono')+'</span></div></div>'
+      +'<div id="pVideo"></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">5</div><h3>Tu firma</h3></div>'
+      +'<div class="sigwrap"><canvas id="sigCv"></canvas></div>'
+      +'<div class="sigbar"><span>Firma con el dedo dentro del recuadro</span><button type="button" onclick="window.__sigLimpiar()">Borrar</button></div>'
+      +'</div>'
+
+      +'<div class="card">'
+      +'<label class="chk"><input type="checkbox" id="chkAcepto" onchange="window.__revisar()"> Acepto los términos de este préstamo tal como se describen arriba y confirmo que la cédula, la foto, el video y la firma son míos.</label>'
+      +'<button type="button" class="pubbtn" id="btnPublicar" disabled onclick="window.__publicar()"><i class="ti ti-send"></i> Publicar</button>'
+      +'</div>'
+      +'</div>';
+    setTimeout(initSig,0);
+  }
+
+  function initSig(){
+    sigCanvas=document.getElementById("sigCv"); if(!sigCanvas)return;
+    var rect=sigCanvas.getBoundingClientRect();
+    var ratio=window.devicePixelRatio||1;
+    sigCanvas.width=rect.width*ratio; sigCanvas.height=160*ratio;
+    sigCtx=sigCanvas.getContext("2d"); sigCtx.scale(ratio,ratio);
+    sigCtx.lineWidth=2.4; sigCtx.lineCap="round"; sigCtx.lineJoin="round"; sigCtx.strokeStyle="#1e1b4b";
+    function pos(ev){
+      var r=sigCanvas.getBoundingClientRect();
+      var t=ev.touches&&ev.touches[0];
+      var x=(t?t.clientX:ev.clientX)-r.left, y=(t?t.clientY:ev.clientY)-r.top;
+      return {x:x,y:y};
+    }
+    function start(ev){ ev.preventDefault(); sigDrawing=true; sigLastXY=pos(ev); }
+    function move(ev){
+      if(!sigDrawing)return; ev.preventDefault();
+      var p=pos(ev);
+      sigCtx.beginPath(); sigCtx.moveTo(sigLastXY.x,sigLastXY.y); sigCtx.lineTo(p.x,p.y); sigCtx.stroke();
+      sigLastXY=p; sigTiene=true; window.__revisar();
+    }
+    function end(){ sigDrawing=false; }
+    sigCanvas.addEventListener("mousedown",start); sigCanvas.addEventListener("mousemove",move); window.addEventListener("mouseup",end);
+    sigCanvas.addEventListener("touchstart",start,{passive:false}); sigCanvas.addEventListener("touchmove",move,{passive:false}); sigCanvas.addEventListener("touchend",end);
+  }
+  window.__sigLimpiar=function(){ if(!sigCtx)return; sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height); sigTiene=false; window.__revisar(); };
+
+  // Mismo patrón de compresión ya usado en el sistema (canvas, máx 900px, JPEG 0.72) —
+  // ver nxRifaImgFile en parches.js. Aquí es standalone (página pública aparte).
+  window.__docFile=function(input,cual){
+    var f=input.files&&input.files[0]; if(!f)return;
+    if(f.size>12*1024*1024){ alert("La imagen es muy grande (máximo 12 MB)."); return; }
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){
+        var dataUrl;
+        try{
+          var max=1000, w=img.width, h=img.height;
+          if(w>max){ h=Math.round(h*max/w); w=max; }
+          var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+          cv.getContext("2d").drawImage(img,0,0,w,h);
+          dataUrl=cv.toDataURL("image/jpeg",0.75);
+        }catch(er){ dataUrl=ev.target.result; }
+        doc[cual]=dataUrl;
+        // Convención de ids: frente→bFrente/pFrente/fFrente, dorso→b/p/fDorso, selfie→b/p/fSelfie
+        var cap=cual.charAt(0).toUpperCase()+cual.slice(1);
+        var btn=document.getElementById("b"+cap);
+        if(btn){ btn.classList.add("ok"); btn.innerHTML='<i class="ti ti-circle-check"></i><div><b>Foto lista</b><span>Toca para cambiarla</span></div>'; btn.onclick=function(){document.getElementById("f"+cap).click();}; }
+        var prev=document.getElementById("p"+cap);
+        if(prev) prev.innerHTML='<div class="docprev"><img src="'+dataUrl+'"></div>';
+        window.__revisar();
+      };
+      img.onerror=function(){ alert("No se pudo leer la imagen."); };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  };
+
+  // El video NO viaja como dataURL (pesa demasiado): se pide al servidor una URL firmada
+  // de un solo uso y el teléfono sube el archivo directo a Storage. La ruta la decide el
+  // servidor — aquí solo se guarda la que devuelve.
+  function subirVideo(f, ext, mime){
+    if(f.size>80*1024*1024){ alert("El video es muy largo (máximo 80 MB). Graba uno más corto."); return; }
+    if(vid.subiendo)return;
+    vid.subiendo=true; vid.path="";
+    var prev=document.getElementById("pVideo");
+    if(prev) prev.innerHTML='<div class="subiendo"><div class="spin"></div>Subiendo tu video…</div>';
+    window.__revisar();
+
+    fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id,accion:"firmar-video",ext:ext})})
+      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
+      .then(function(res){
+        if(!res.ok||!res.d.signedUrl) throw new Error(res.d&&res.d.error||"No se pudo preparar la subida");
+        // x-upsert: si el cliente vuelve a grabar, se sobreescribe el video anterior en vez
+        // de fallar porque el archivo ya existe (la ruta es fija por solicitud).
+        return fetch(res.d.signedUrl,{method:"PUT",headers:{"Content-Type":mime||f.type||"video/mp4","x-upsert":"true"},body:f})
+          .then(function(up){
+            if(up.ok) return res.d.path;
+            return up.text().catch(function(){return "";}).then(function(t){ throw new Error("La subida falló ("+up.status+"). "+String(t).slice(0,160)); });
+          });
+      })
+      .then(function(path){
+        vid.path=path; vid.subiendo=false;
+        var btn=document.getElementById("bVideo");
+        if(btn){ btn.classList.add("ok"); btn.innerHTML='<i class="ti ti-circle-check"></i><div><b>Video listo</b><span>Toca para grabar otro</span></div>'; btn.onclick=function(){window.__grabarVideo();}; }
+        if(prev){ try{ prev.innerHTML='<div class="vidprev"><video controls playsinline src="'+URL.createObjectURL(f)+'"></video></div>'; }catch(e){ prev.innerHTML=""; } }
+        window.__revisar();
+      })
+      .catch(function(e){
+        vid.subiendo=false; vid.path="";
+        // Se muestra el motivo REAL, no un mensaje fijo: un "no se pudo, intenta de nuevo"
+        // sin detalle fue justo lo que dejó este fallo a ciegas la primera vez.
+        var det=(e&&e.message)?String(e.message):"";
+        if(prev) prev.innerHTML='<div style="font-size:12px;color:#dc2626;padding:8px 0">No se pudo subir el video. Toca arriba para intentarlo de nuevo.'
+          +(det?'<br><span style="font-size:10.5px;color:#94a3b8">'+esc(det)+'</span>':'')+'</div>';
+        window.__revisar();
+      });
+  }
+
+  // Camino de respaldo: la cámara nativa del teléfono (tapa la pantalla, no deja leer el guion).
+  window.__videoFile=function(input){
+    var f=input.files&&input.files[0]; if(!f)return;
+    var ext=(f.name&&f.name.indexOf(".")>=0)?f.name.split(".").pop():"";
+    if(!ext) ext=(f.type&&f.type.indexOf("quicktime")>=0)?"mov":"mp4";
+    subirVideo(f, ext, f.type);
+    try{ input.value=""; }catch(e){}
+  };
+
+  // ── Grabadora dentro de la página (teleprónter) ────────────────────────────
+  // Con la cámara nativa el cliente NO puede leer el guion: la app de cámara cubre
+  // toda la pantalla. Aquí se graba con la propia página, así el texto se queda
+  // encima del video mientras habla. Si el teléfono no lo soporta, se cae a la
+  // cámara nativa de siempre (nunca se queda sin poder grabar).
+  var rec={stream:null,mr:null,chunks:[],t0:0,timer:null};
+
+  function mimeGrabacion(){
+    if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
+    var c=["video/mp4","video/mp4;codecs=avc1","video/webm;codecs=vp8,opus","video/webm"];
+    for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+    return "";
+  }
+  function puedeGrabar(){
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder && mimeGrabacion());
+  }
+  function extDeMime(m){ m=String(m||""); if(m.indexOf("webm")>=0)return "webm"; if(m.indexOf("quicktime")>=0)return "mov"; return "mp4"; }
+  function recEstado(t){ var e=document.getElementById("recEst"); if(e) e.innerHTML=t; }
+  function recPararStream(){
+    if(rec.stream){ try{ rec.stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} }
+    rec.stream=null;
+    if(rec.timer){ clearInterval(rec.timer); rec.timer=null; }
+  }
+  function recReloj(){
+    var s=Math.floor((Date.now()-rec.t0)/1000);
+    recEstado('<span class="recDot"></span>'+Math.floor(s/60)+":"+(s%60<10?"0":"")+(s%60));
+    if(s>=180){ try{ rec.mr && rec.mr.state==="recording" && rec.mr.stop(); }catch(e){} } // tope 3 min
+  }
+
+  window.__grabarVideo=function(){
+    if(vid.subiendo)return;
+    if(!puedeGrabar()){ document.getElementById("fVideo").click(); return; }
+    if(document.getElementById("recOv"))return;
+    var ov=document.createElement("div"); ov.className="rec"; ov.id="recOv";
+    ov.innerHTML='<video class="rv" id="recPrev" autoplay muted playsinline></video>'
+      +'<div class="recTop"><button type="button" class="recX" onclick="window.__recCerrar()">&times;</button><span id="recEst">Preparando la cámara…</span></div>'
+      +'<div class="recTxt"><span class="gl">Lee esto en voz alta</span>'+esc(guionTexto())+'</div>'
+      +'<div class="recBar"><button type="button" class="recBtn" id="recBtn" onclick="window.__recToggle()" disabled aria-label="Grabar"></button>'
+      +'<button type="button" class="recAlt" onclick="window.__recCerrar();document.getElementById(\'fVideo\').click()">Usar la cámara del teléfono</button></div>';
+    document.body.appendChild(ov);
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true}).then(function(st){
+      if(!document.getElementById("recOv")){ try{ st.getTracks().forEach(function(t){t.stop();}); }catch(e){} return; }
+      rec.stream=st;
+      var v=document.getElementById("recPrev");
+      if(v){ try{ v.srcObject=st; }catch(e){ try{ v.src=URL.createObjectURL(st); }catch(e2){} } }
+      var b=document.getElementById("recBtn"); if(b) b.disabled=false;
+      recEstado("Toca el botón rojo para empezar");
+    }).catch(function(){
+      var o=document.getElementById("recOv"); if(!o)return;
+      recEstado("Cámara no disponible");
+      var m=document.createElement("div"); m.className="recMsg";
+      m.innerHTML='No pudimos usar la cámara desde aquí.<br><br>Toca <b>“Usar la cámara del teléfono”</b> abajo para grabar con la app de cámara.';
+      o.appendChild(m);
+    });
+  };
+
+  window.__recToggle=function(){
+    if(!rec.stream)return;
+    if(rec.mr && rec.mr.state==="recording"){ try{ rec.mr.stop(); }catch(e){} return; }
+    var mt=mimeGrabacion();
+    try{ rec.mr = mt ? new MediaRecorder(rec.stream,{mimeType:mt}) : new MediaRecorder(rec.stream); }
+    catch(e){ try{ rec.mr=new MediaRecorder(rec.stream); }catch(e2){ recEstado("Tu teléfono no permite grabar aquí"); return; } }
+    rec.chunks=[];
+    rec.mr.ondataavailable=function(ev){ if(ev.data && ev.data.size>0) rec.chunks.push(ev.data); };
+    rec.mr.onstop=function(){
+      var tipo=(rec.mr && rec.mr.mimeType) || mt || "video/mp4";
+      var blob=rec.chunks.length ? new Blob(rec.chunks,{type:tipo}) : null;
+      rec.mr=null; rec.chunks=[];
+      recPararStream();
+      var o=document.getElementById("recOv"); if(o) o.remove();
+      if(blob && blob.size>0) subirVideo(blob, extDeMime(tipo), tipo);
+    };
+    try{ rec.mr.start(); }catch(e){ recEstado("No se pudo empezar a grabar"); return; }
+    rec.t0=Date.now();
+    var b=document.getElementById("recBtn"); if(b){ b.classList.add("on"); b.setAttribute("aria-label","Detener"); }
+    recReloj(); rec.timer=setInterval(recReloj,500);
+  };
+
+  window.__recCerrar=function(){
+    if(rec.mr){ try{ rec.mr.ondataavailable=null; rec.mr.onstop=null; if(rec.mr.state==="recording") rec.mr.stop(); }catch(e){} rec.mr=null; }
+    rec.chunks=[];
+    recPararStream();
+    var o=document.getElementById("recOv"); if(o) o.remove();
+  };
+
+  window.__revisar=function(){
+    var btn=document.getElementById("btnPublicar"); if(!btn)return;
+    var chk=document.getElementById("chkAcepto");
+    var listo=!!doc.frente && !!doc.dorso && !!doc.selfie && !!vid.path && !vid.subiendo && sigTiene && chk && chk.checked;
+    btn.disabled=!listo;
+  };
+
+  window.__publicar=function(){
+    if(enviando)return; enviando=true;
+    var btn=document.getElementById("btnPublicar");
+    if(btn){ btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Enviando…'; }
+    var firma=sigCanvas.toDataURL("image/png");
+    fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      id:id, cedula_frente:doc.frente, cedula_dorso:doc.dorso, firma:firma,
+      selfie:doc.selfie, video_path:vid.path, video_guion:guionTexto(), declaracion:declaracionTexto()
+    })}).then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});}).then(function(res){
+      enviando=false;
+      if(!res.ok || res.d.error){
+        if(btn){ btn.disabled=false; btn.innerHTML='<i class="ti ti-send"></i> Publicar'; }
+        alert(res.d && res.d.error ? res.d.error : "No se pudo enviar. Intenta de nuevo.");
+        return;
+      }
+      app.innerHTML='<div class="nav"><div class="lg"><i class="ti ti-signature"></i></div><div class="ttl"><b>Firma de préstamo</b><span>NEXUS PRO Financiamiento</span></div></div>'
+        +'<div class="body"><div class="okwrap"><div class="ic"><i class="ti ti-circle-check"></i></div><h2>¡Listo, '+esc(primerNombre(S.nombre))+'!</h2>'
+        +'<p>Tu cédula y tu firma se enviaron correctamente.<br>El negocio va a revisar tu información y te avisará cuando tu préstamo quede aprobado.</p></div></div>';
+    }).catch(function(){
+      enviando=false;
+      if(btn){ btn.disabled=false; btn.innerHTML='<i class="ti ti-send"></i> Publicar'; }
+      alert("No se pudo enviar. Verifica tu conexión e intenta de nuevo.");
+    });
+  };
+})();
+</script>
+</body>
+</html>
