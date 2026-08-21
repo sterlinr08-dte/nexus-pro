@@ -17070,6 +17070,28 @@
   // de una pantalla a otra — se limpia apenas se consume, para no "pegar" un origen viejo a una
   // venta nueva sin relación.
   let _facOrigenDoc = null;
+  // Mismo patrón que _facOrigenDoc, pero para Reparaciones (que no participa del Motor de
+  // Documentos, así que no hay padreId que enlazar — solo necesitamos saber, apenas se
+  // complete el cobro real en Factura, qué reparación hay que marcar como entregada/cobrada
+  // y con qué garantía). Antes, "Entregar y cobrar" cerraba el ciclo sin pasar por Factura
+  // — el dinero quedaba en caja/contabilidad pero SIN NCF, invisible para la DGII y ausente
+  // de la lista de Facturas. Se limpia apenas se consume (igual que _facOrigenDoc).
+  let _facOrigenReparacion = null;
+  let _repServicioProdId = null;
+  // Producto tipo "servicio" (sin stock) reusado para facturar reparaciones — se crea una
+  // sola vez la primera vez que hace falta, igual que cualquier artículo nuevo del catálogo.
+  async function repServicioProductoId() {
+    if (_repServicioProdId) return _repServicioProdId;
+    try {
+      const ex = await getAPI().get('pos_productos', "select=id&codigo=eq.SERV-REP&limit=1");
+      if (ex && ex[0]) { _repServicioProdId = ex[0].id; return _repServicioProdId; }
+    } catch (e) {}
+    const nuevo = await getAPI().post('pos_productos', { nombre: 'Servicio de reparación', codigo: 'SERV-REP', tipo: 'servicio', precio: 0, costo: 0, itbis: false, stock: 0 });
+    const p = nuevo && nuevo[0]; if (!p) throw new Error('No se pudo crear el producto de servicio');
+    _repServicioProdId = p.id;
+    try { _prods.push(p); } catch (e) {}
+    return _repServicioProdId;
+  }
   async function registrarDocumento(tipo, codigo, tablaOrigen, registroId, opts) {
     opts = opts || {};
     try {
@@ -19236,6 +19258,24 @@
         }
       } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
       _facOrigenDoc = null;
+      // Reparación entregada vía Factura (ver nxRepEntregarGo): la venta YA está cobrada y
+      // completa a esta altura (REGLAMENTOS §2 regla 10 — nunca se revierte por esto). Solo
+      // falta marcar la reparación como entregada/con garantía; si eso falla, la factura
+      // igual queda bien hecha — se avisa para revisar manualmente, no se bloquea nada.
+      if (_facOrigenReparacion) {
+        const _rr = _facOrigenReparacion; _facOrigenReparacion = null;
+        try {
+          const rep = _reps.find(x => String(x.id) === String(_rr.id));
+          const dRep = { estado: 'entregado', cobrado: true, cobrado_monto: Number(_rr.abono || 0) + c.total, cobrado_metodo: metodoLabel, entregado_at: new Date().toISOString() };
+          if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); dRep.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }
+          await getAPI().patch('pos_reparaciones', 'id=eq.' + _rr.id, dRep);
+          if (rep) Object.assign(rep, dRep);
+          try { window.logAudit && window.logAudit('REP_ENTREGADA', ((rep && rep.numero) || '') + ' · cobrado ' + fmt(dRep.cobrado_monto) + ' · Factura ' + (numFac || venta.numero), 'Reparaciones'); } catch (e2) {}
+        } catch (eRep) {
+          try { window.logAudit && window.logAudit('REP_ENTREGA_INCOMPLETA', 'id ' + _rr.id + ' — la factura ' + (numFac || venta.numero) + ' se creó bien, pero no se pudo marcar la reparación como entregada: ' + String(eRep && eRep.message || eRep), 'Reparaciones'); } catch (e2) {}
+          toast('warn', 'Factura creada — revisa esta reparación', 'El cobro quedó registrado, pero hay que marcarla como entregada a mano.');
+        }
+      }
       // Los IMEI ya quedaron marcados 'vendido' por el candado atómico de arriba
       // (reservarImeisCart/confirmarImeisReservados) — no coexiste con el PATCH best-effort viejo.
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
@@ -25076,6 +25116,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(r.equipo || '')} · ${esc(r.cliente_nombre || '')} · resta <b style="color:#dc2626">${fmt(resto)}</b></div>
       <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${Math.round(resto).toLocaleString('en-US')}"></div>
       <div class="fr"><label>Método</label><select id="reMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
+      <div class="fr" style="margin-top:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" id="reItbis" style="width:17px;height:17px"> ¿Esta reparación lleva ITBIS (18%)?</label></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxRepEntregarGo('${id}')"><i class="ti ti-check"></i> Entregar equipo</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
@@ -25083,19 +25124,37 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   window.nxRepEntregarGo = async function (id) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const monto = moneyVal('reMonto'); const metodo = val('reMet') || 'Efectivo';
-    // REGLAMENTO DEL TALLER: cobrar la entrega en efectivo exige caja abierta (mismo candado del §2/§3).
-    if (monto > 0 && /efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
-      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
+    if (monto > 0) {
+      // Antes de aquí, "Entregar y cobrar" cerraba el ciclo solo (asiento contable +
+      // movimiento de caja) SIN pasar por Factura — el dinero quedaba en caja/contabilidad
+      // pero sin NCF, invisible para la DGII y ausente de la lista de Facturas (confirmado
+      // en vivo, 20-ago-2026). Ahora, si hay algo real que cobrar, se carga como una línea
+      // de servicio en el carrito y se manda a Factura — el mismo camino ya probado que usan
+      // Cotizaciones y Prefacturas para convertirse en venta real (nxCotConvertir/
+      // nxPrefFacturar): el cajero elige el tipo de comprobante y completa el cobro ahí, con
+      // caja/NCF/contabilidad/inventario resueltos por el código de venta de siempre. Cuando
+      // esa venta se complete, el gancho de abajo (checkout, _facOrigenReparacion) termina de
+      // marcar la reparación como entregada. Si el cajero cancela en Factura, la reparación
+      // se queda tal cual — no se pierde nada, solo no se completó el cobro.
+      if (_cart.length && !confirm('El cuadro de Factura ya tiene artículos. ¿Reemplazarlos para cobrar esta reparación?')) return;
+      let servId; try { servId = await repServicioProductoId(); } catch (e) { toast('err', 'No se pudo preparar el cobro', String(e && e.message || e)); return; }
+      const conItbis = !!(document.getElementById('reItbis') || {}).checked;
+      _cart = [{ producto_id: servId, nombre: 'Reparación ' + (r.numero || '') + ' — ' + (r.equipo || ''), precio: Math.round(monto), cantidad: 1, itbis: conItbis, desc: 0, descT: 'pct' }];
+      _factCli = '';
+      _facOrigenReparacion = { id: id, abono: Number(r.abono || 0) };
+      cerrarModal('nxRepEnt'); cerrarModal('nxRepM');
+      window.nxPosTab('factura');
+      toast('ok', 'Reparación cargada', 'Completa el cobro en Factura');
+      return;
     }
+    // Nada nuevo que cobrar (ya estaba saldada por el avance) — se entrega sin pasar por
+    // Factura, como siempre; no tiene sentido generar una factura de RD$0.
     try {
-      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
+      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
       if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); d.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }
       await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
-      if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
-      try { await postAsientoServicio('Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), monto, metodo, id); } catch (e) {}
-      try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · cobrado ' + fmt(d.cobrado_monto), 'Reparaciones'); } catch (e) {}
-      cerrarModal('nxRepEnt'); toast('ok', 'Entregado y cobrado', fmt(monto || 0));
+      try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · sin cobro pendiente', 'Reparaciones'); } catch (e) {}
+      cerrarModal('nxRepEnt'); toast('ok', 'Entregado', r.numero || '');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };

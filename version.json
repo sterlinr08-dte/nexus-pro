@@ -1,7 +1,12 @@
 {
-  "version": "56.61",
+  "version": "56.62",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.62",
+      "fecha": "2026-08-21",
+      "texto": "ARREGLADO: cobrar una reparación al entregarla no generaba ninguna factura fiscal — el dinero quedaba registrado en caja y contabilidad, pero sin NCF, invisible para la DGII y ausente de la lista de Facturas. Ahora, si hay algo real que cobrar, \"Entregar y cobrar\" manda ese cobro a la pantalla de Factura (el mismo camino ya probado que usan Cotizaciones y Prefacturas) para que quede una factura real con su comprobante — y de paso se agregó un casillero para decidir si esa reparación lleva 18% de ITBIS o no. Cuando la factura se completa, la reparación queda marcada como entregada y con su garantía automáticamente, igual que antes."
+    },
     {
       "v": "56.61",
       "fecha": "2026-08-20",
