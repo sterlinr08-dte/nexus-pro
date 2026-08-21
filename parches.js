@@ -17324,14 +17324,15 @@
     document.querySelectorAll('#posGrid .nxPosCard').forEach(c => { const b = c.getAttribute('data-busca') || ''; c.style.display = (!t || b.includes(t)) ? '' : 'none'; });
   };
   window.nxPosAdd = function (id) {
-    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
-    if (!puedeAgregar(id, 1)) return;
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return false;
+    if (!puedeAgregar(id, 1)) return false;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1;
     else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     ajustarCombos(p.id, 1);
     pintarCarrito();
+    return true;
   };
   window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
@@ -17688,13 +17689,14 @@
     setTimeout(function () { const el = document.querySelector('.nxPpkWrap.on'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 50);
   };
   window.nxFacAdd = function (id) {
-    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
-    if (!puedeAgregar(id, 1)) return;
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return false;
+    if (!puedeAgregar(id, 1)) return false;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
     ajustarCombos(p.id, 1);
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     pintarFactura();
+    return true;
   };
   // ── Ventana flotante "Buscar artículo": muestra TODO el catálogo, clic para agregar ──
   let _prodPickDest = 'factura', _ppkOpen = '', _ppkSerSel = [], _ppkSerRows = [];
@@ -17826,7 +17828,12 @@
   };
   window.nxProdPickFiltrar = function (q) { _ppkOpen = ''; pintarProdPick(q); };
   window.nxProdPickAdd = function (id) {
-    if (_prodPickDest === 'factura') window.nxFacAdd(id); else window.nxPosAdd(id);
+    // nxPosAdd/nxFacAdd ya avisan "Sin stock disponible" y no agregan nada si no
+    // hay existencia (puedeAgregar) — antes esta función igual mostraba "Agregado"
+    // encima de ese aviso, aunque el carrito no hubiera cambiado. Ahora solo
+    // confirma si de verdad se agregó.
+    const ok = _prodPickDest === 'factura' ? window.nxFacAdd(id) : window.nxPosAdd(id);
+    if (!ok) return;
     const p = _prods.find(x => String(x.id) === String(id));
     toast('ok', 'Agregado', p ? p.nombre : '');
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}

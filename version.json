@@ -1,7 +1,12 @@
 {
-  "version": "56.60",
+  "version": "56.61",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.61",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Vender/Factura, elegir un artículo agotado mostraba \"Agregado\" al mismo tiempo que \"Sin stock disponible\" — dos avisos contradictorios que podían hacer creer al cajero que la venta iba a proceder, aunque el carrito seguía vacío. Ahora solo avisa \"Agregado\" cuando de verdad se agregó."
+    },
     {
       "v": "56.60",
       "fecha": "2026-08-20",
