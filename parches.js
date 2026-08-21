@@ -12497,52 +12497,6 @@
       const d = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000);
       return d >= 0 && d <= 7;
     }).length;
-    // GLASS V1 · ChatGPT · 2026-08-19 — SOLO composición visual del dashboard.
-    // Datos derivados de fuentes YA cargadas; no se persiste ni se cambia ninguna regla.
-    const esDashboardGlass = _prView === 'prestamos' && _prFiltro === 'todos';
-    const moraTotalGlass = _prestamos.reduce((s, p) => s + prMoraDe(p), 0);
-    // La guía mencionaba prCobranzaCalcularModelo().pagosHoy, pero la función real
-    // devuelve el arreglo de modelo. Reusamos exactamente la misma fuente real que
-    // prCobranzaMainHTML(): _pagosByPrestamo filtrado por la fecha de hoy.
-    const pagosHoyGlass = Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr
-      .filter(pg => String(pg.fecha || '').slice(0, 10) === hoy())
-      .reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
-    const proximosGlass = _prestamos
-      .filter(p => estadoDe(p) !== 'pagado' && saldoDe(p) > 0 && !!prProximoPago(p))
-      .slice()
-      .sort((a, b) => String(prProximoPago(a)).localeCompare(String(prProximoPago(b))))
-      .slice(0, 5);
-    const proximosGlassHTML = proximosGlass.length ? proximosGlass.map(p => {
-      const av = prIniciales(p.nombre), info = prEstadoInfo(p), prox = prProximoPago(p);
-      return `<button type="button" class="nxFP-glPayRow" onclick="window.nxPrestamoVer('${p.id}')">
-        <span class="nxFP-glPayAv" style="background:${av.color}">${esc(av.ini)}</span>
-        <span class="nxFP-glPayMid"><span class="nxFP-glPayTop"><b>${esc(p.nombre || 'Sin nombre')}</b><em>${esc(prRef(p))}</em></span><span class="nxFP-glPaySub"><i class="nxFP-glState ${info.key}">${esc(info.label)}</i> · ${esc(prox || '—')}</span></span>
-        <span class="nxFP-glPayAmt"><b>${fmt(saldoDe(p))}</b><small>saldo</small></span>
-        <i class="ti ti-chevron-right nxFP-glPayArrow"></i>
-      </button>`;
-    }).join('') : '<div class="nxFP-glEmpty">No hay pagos próximos pendientes.</div>';
-    const glassIntro = `<section class="nxFP-glIntro" aria-label="Resumen de financiamiento">
-      <div class="nxFP-glTitleRow"><div><div class="nxFP-glEyebrow">NEXUS PRO · FINANCIAMIENTO</div><h1>Financiamiento</h1><p>${clientesActivos} cliente${clientesActivos === 1 ? '' : 's'} activo${clientesActivos === 1 ? '' : 's'}</p></div><div class="nxFP-glBrand"><i class="ti ti-wallet"></i></div></div>
-    </section>`;
-    const glassBody = `<section class="nxFP-glBody">
-      <div class="nxFP-glSec">RESUMEN GENERAL</div>
-      <div class="nxFP-glKpis">
-        <div class="nxFP-glKpi"><span class="ico ac"><i class="ti ti-wallet"></i></span><small>Cartera activa</small><b>${fmt(totalSaldo)}</b><em>${nActivos} préstamo${nActivos === 1 ? '' : 's'} activo${nActivos === 1 ? '' : 's'}</em></div>
-        <div class="nxFP-glKpi"><span class="ico ok"><i class="ti ti-cash"></i></span><small>Cobros de hoy</small><b>${fmt(pagosHoyGlass)}</b><em>Pagos registrados hoy</em></div>
-        <div class="nxFP-glKpi"><span class="ico warn"><i class="ti ti-clock-exclamation"></i></span><small>Cuotas vencidas</small><b>${nVencidos}</b><em>Préstamos con atraso</em></div>
-        <div class="nxFP-glKpi"><span class="ico danger"><i class="ti ti-alert-triangle"></i></span><small>Mora</small><b>${fmt(moraTotalGlass)}</b><em>Recargo pendiente</em></div>
-      </div>
-      <button type="button" class="nxFP-glCTA" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i><span>Nuevo financiamiento</span></button>
-      <div class="nxFP-glSec">ACCESOS RÁPIDOS</div>
-      <div class="nxFP-glQuick">
-        <button type="button" class="nxFP-glQuickItem" onclick="window.nxPrestamoFiltroTipo('vencidos')"><span><i class="ti ti-cash"></i></span><b>Cobrar cuota</b></button>
-        <div class="nxFP-glQuickItem soon" aria-disabled="true"><span><i class="ti ti-file-certificate"></i></span><b>Contratos</b><em>Próximamente</em></div>
-        <div class="nxFP-glQuickItem soon" aria-disabled="true"><span><i class="ti ti-device-mobile"></i></span><b>MDM</b><em>Próximamente</em></div>
-        <button type="button" class="nxFP-glQuickItem" onclick="window.nxPrView('reportes')"><span><i class="ti ti-chart-bar"></i></span><b>Reportes</b></button>
-      </div>
-      <div class="nxFP-glListHead"><div class="nxFP-glSec">PRÓXIMOS PAGOS</div><button type="button" onclick="window.nxPrestamoFiltroTipo('vencidos')">Ver todos</button></div>
-      <div class="nxFP-glPayList">${proximosGlassHTML}</div>
-    </section>`;
     const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
       <div class="nxFP-sideOverlay" onclick="window.nxFPToggleSide()"></div>
@@ -12566,7 +12520,6 @@
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
       <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
-        ${esDashboardGlass ? glassIntro : ''}
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -12586,7 +12539,6 @@
           </div>
         </div>
         <div class="nxFP-searchRow"><span id="nxPrBuscarLupa"></span></div>
-        ${esDashboardGlass ? glassBody : ''}
         <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span></div>
         <div id="nxPrLista">${prTablaHTML()}</div>
         <div class="nxFP-dash">
@@ -12909,7 +12861,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:0 0 auto;margin-left:auto;min-width:120px" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
@@ -13011,15 +12963,15 @@
     const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
     const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
     const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
-    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'cuotas', 'pagados', 'credito'].includes(_prFiltro));
+    const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
     const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
     host.innerHTML = `<div class="nxFP-dockBackdrop" onclick="window.nxFPToggleMore()"></div>
       <div class="nxFP-dockSheet">
         <div class="nxFP-popHead"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>Financiamiento</b><span>NEXUS PRO</span></div></div>
+        <button type="button" class="nxFP-popNew" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
         <div class="nxFP-popGrp">Cartera</div>
         ${moreItem('activos', 'Activos', 'ti-circle-check')}
-        ${moreItem('cuotas', 'Cuotas', 'ti-calendar-dollar')}
         ${moreItem('pagados', 'Pagados', 'ti-checks')}
         ${moreItem('credito', 'Líneas de crédito', 'ti-credit-card')}
         <div class="nxFP-popGrp">Personas</div>
@@ -13027,16 +12979,15 @@
         ${moreView('solicitudes', 'Solicitudes', 'ti-file-check', nSol)}
         <div class="nxFP-popGrp">Sistema</div>
         ${moreView('reportes', 'Reportes', 'ti-report-money')}
-        <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         <button type="button" class="nxFP-popItem" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
         <div class="nxFP-popDiv"></div>
         <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </div>
       <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
-        ${dockBtn('todos', 'Inicio', 'ti-home')}
+        ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
+        ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
+        ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
         ${dockView('clientes', 'Clientes', 'ti-users-group')}
-        <button type="button" class="nxFP-dockBtn nxFP-dockCenter" onclick="window.nxPrestamoNuevo()" aria-label="Nuevo financiamiento"><i class="ti ti-plus"></i><span>Financiar</span></button>
-        ${dockBtn('vencidos', 'Cobros', 'ti-cash')}
         <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
       </nav>`;
     host.classList.remove('dock-open');
@@ -13353,7 +13304,7 @@
           </div>
          </div>
         </div>
-        <div class="nxPrFormFoot"><div class="nxPrFormInner" style="display:flex;gap:8px"><button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrModal').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
+        <div class="nxPrFormFoot"><div class="nxPrFormInner" style="display:flex;gap:8px"><button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrModal').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:0 0 auto;margin-left:auto;min-width:120px" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
       </div>`;
     document.body.appendChild(ov);
     pintarModo();
@@ -13514,14 +13465,14 @@
         </div>
       </div>
       <div class="ev-tabs">
-        <button type="button" class="ev-tab on" onclick="window.evTab(this,'evSecGeneral')"><span class="ev-tn">1</span> Información general</button>
-        <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecAnalisis')"><i class="ti ti-chart-bar"></i> Análisis financiero</button>
-        <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecSimul')"><i class="ti ti-calculator"></i> Simulador</button>
+        <button type="button" class="ev-tab on" onclick="window.evTab(this,'evColGeneral')"><span class="ev-tn">1</span> Información general</button>
+        <button type="button" class="ev-tab" onclick="window.evTab(this,'evColAnalisis')"><i class="ti ti-chart-bar"></i> Análisis financiero</button>
+        <button type="button" class="ev-tab" onclick="window.evTab(this,'evColSimulador')"><i class="ti ti-calculator"></i> Simulador</button>
         <button type="button" class="ev-tab" onclick="window.evTab(this,'evSecRecom')"><i class="ti ti-clipboard-check"></i> Recomendación</button>
       </div>
       <div class="ev-grid nxPrForm">
         <div class="ev-cols">
-          <div class="ev-col">
+          <div class="ev-col on" id="evColGeneral">
             <div class="ev-card" id="evSecGeneral">
               <div class="ev-sechd">Información económica</div>
               <div class="fr-row">
@@ -13553,7 +13504,7 @@
               <div style="text-align:right;font-size:10px;color:#94a3b8;margin-top:2px"><span id="evNotasCnt">0</span> / 500</div>
             </div>
           </div>
-          <div class="ev-col">
+          <div class="ev-col" id="evColAnalisis">
             <div class="ev-card" id="evSecAnalisis">
               <div class="ev-sechd">Análisis financiero</div>
               <div id="evAnalisis"></div>
@@ -13563,7 +13514,7 @@
               <div id="evScoreBox"></div>
             </div>
           </div>
-          <div class="ev-col">
+          <div class="ev-col" id="evColSimulador">
             <div class="ev-card" id="evSecSimul">
               <div class="ev-sechd">Simulador de préstamo</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -13616,7 +13567,12 @@
   }
   window.evTab = function (btn, id) {
     try { document.querySelectorAll('.ev-tab').forEach(b => b.classList.remove('on')); if (btn) btn.classList.add('on'); } catch (e) {}
-    const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById(id); if (!el) return;
+    if (el.classList && el.classList.contains('ev-col')) {
+      try { document.querySelectorAll('.ev-cols > .ev-col').forEach(c => c.classList.remove('on')); } catch (e) {}
+      el.classList.add('on');
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   window.evVerPerfil = function () { if (_evCli) abrirClienteForm(_evCli, null); };
   function evInit() {
@@ -13843,6 +13799,19 @@
       return { c: dl <= 5 ? 'y' : dl <= 15 ? 'o' : 'r', f: r.fecha };
     });
   }
+  // % de cuotas YA vencidas que se pagaron a tiempo (mismo dato que pinta la línea de
+  // tiempo). Antes se calculaba con "préstamos vencidos HOY / total préstamos", lo que
+  // podía dar 100% aunque el historial mostrara meses en mora — quedaba
+  // contradictorio con los puntos rojo/amarillo de abajo. Si el cliente no tiene
+  // préstamos en modo cuotas (línea de crédito / abonos libres), se usa el criterio
+  // anterior como respaldo.
+  function prPuntualidad(loans) {
+    let ok = 0, cont = 0;
+    loans.forEach(p => { const dots = prCuotaDots(p); if (!dots) return; dots.forEach(d => { if (d.c === 'g') return; cont++; if (d.c === 'ok') ok++; }); });
+    if (cont) return Math.round((ok / cont) * 100);
+    const total = loans.length;
+    return total ? Math.round(((total - loans.filter(p => esVencido(p)).length) / total) * 100) : 100;
+  }
   // Línea de tiempo MENSUAL: peor estado de las cuotas que caen en cada mes (últimos 12 con actividad).
   function prTimelineMeses(loans) {
     const byM = {}, rank = { ok: 0, g: 1, y: 2, o: 3, r: 4 };
@@ -13891,26 +13860,22 @@
     const intereses = loans.reduce((s, p) => s + interesCobradoDe(p), 0);
     const moraAcum = loans.reduce((s, p) => s + prMoraDe(p), 0);
     const promAtraso = vencidos.length ? Math.round(vencidos.reduce((s, p) => s + prDiasVencido(p), 0) / vencidos.length) : 0;
-    const puntualidad = total ? Math.round(((total - vencidos.length) / total) * 100) : 100;
-    // ── Header cliente · Glass V1 ──
+    const puntualidad = prPuntualidad(loans);
+    // ── Header cliente (con gauge de puntualidad, mismo dato que abajo en Indicadores) ──
     const dato = (ico, lbl, v) => `<div class="hc-cd"><div class="hc-cdl"><i class="ti ${ico}"></i> ${lbl}</div><div class="hc-cdv">${esc(v || '—')}</div></div>`;
-    const clihead = `<div class="hc-cli hc-glProfile">
+    const puntCol = puntualidad >= 80 ? '#059669' : puntualidad >= 50 ? '#d97706' : '#dc2626';
+    const clihead = `<div class="hc-cli">
       <div class="hc-clav">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
-      <div class="hc-glProfileMid"><div class="hc-glNameRow"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span><span class="hc-glScoreChip"><i class="ti ti-star"></i>${sc.s == null ? '—' : sc.mil + '/1000'} · ${esc(sc.clas)}</span></div>
+      <div style="flex:1;min-width:0"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span>
         <div class="hc-cgrid">${dato('ti-id', 'Cédula', c.cedula)}${dato('ti-phone', 'Teléfono', c.telefono)}${dato('ti-mail', 'Correo', c.email)}${dato('ti-calendar', 'Cliente desde', c.created_at ? String(c.created_at).slice(0, 10) : '—')}${dato('ti-clock', 'Última actividad', prUltActividad(loans))}</div>
       </div>
-      <div class="hc-glGaugeWrap"><div class="ev-gauge hc-glGauge" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">/1000</div></div></div><span>${esc(sc.clas)}</span></div>
-    </div>`;
-    const hcHero = `<div class="hc-glHero">
-      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Monto financiado</span><i class="ti ti-cash-banknote"></i></div><b>${fmt(financiado)}</b><em>Pagado: ${fmt(pagado)}</em></div>
-      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Puntualidad de pago</span><i class="ti ti-thumb-up"></i></div><b>${puntualidad}%</b><div class="hc-glProgress"><i style="width:${Math.max(0, Math.min(100, puntualidad))}%"></i></div><em>Promedio atraso: ${promAtraso} ${promAtraso === 1 ? 'día' : 'días'}</em></div>
-      <div class="hc-glHeroCard"><div class="hc-glHeroHead"><span>Balance pendiente</span><i class="ti ti-wallet"></i></div><b>${fmt(balance)}</b><em>Mora acumulada: ${fmt(moraAcum)}</em></div>
-    </div>`;
-    // ── 10 KPI tiles ──
-    const kt = (ico, col, lbl, v) => `<div class="hc-k"><div class="hc-kic" style="color:${col};background:${col}14"><i class="ti ${ico}"></i></div><div style="min-width:0"><div class="hc-kl">${lbl}</div><div class="hc-kv">${v}</div></div></div>`;
+      <div class="hc-hgauge"><div class="ev-gauge hc-gsm" style="--pct:${puntualidad};--gc:${puntCol}"><div class="ev-gaugein"><div class="ev-gnum">${puntualidad}%</div></div></div><div class="hc-hglbl">Puntualidad<br>de pago</div></div>
+      </div>`;
+    // ── 9 KPI tiles (icono en insignia circular de color) ──
+    const kt = (ico, col, lbl, v) => `<div class="hc-k"><div class="hc-kic" style="background:linear-gradient(140deg,${col},${col}cc)"><i class="ti ${ico}"></i></div><div style="min-width:0"><div class="hc-kl">${lbl}</div><div class="hc-kv">${v}</div></div></div>`;
     const kpis = `<div class="hc-kpis">
       ${kt('ti-chart-bar', '#2563eb', 'Total préstamos', total)}${kt('ti-file-dollar', '#0891b2', 'Préstamos activos', activos)}${kt('ti-circle-check', '#059669', 'Préstamos pagados', pagados)}${kt('ti-cash-banknote', '#6d28d9', 'Monto financiado', fmt(financiado))}${kt('ti-wallet', '#059669', 'Total pagado', fmt(pagado))}
-      ${kt('ti-clock-dollar', '#d97706', 'Balance pendiente', fmt(balance))}${kt('ti-percentage', '#0891b2', 'Intereses pagados', fmt(intereses))}${kt('ti-alert-triangle', '#dc2626', 'Mora acumulada', fmt(moraAcum))}${kt('ti-calendar-stats', '#d97706', 'Promedio atraso', promAtraso + (promAtraso === 1 ? ' día' : ' días'))}${kt('ti-thumb-up', puntualidad >= 80 ? '#059669' : '#d97706', 'Puntualidad de pago', puntualidad + '%')}</div>`;
+      ${kt('ti-clock-dollar', '#d97706', 'Balance pendiente', fmt(balance))}${kt('ti-percentage', '#0891b2', 'Intereses pagados', fmt(intereses))}${kt('ti-alert-triangle', '#dc2626', 'Mora acumulada', fmt(moraAcum))}${kt('ti-calendar-stats', '#d97706', 'Promedio atraso', promAtraso + (promAtraso === 1 ? ' día' : ' días'))}</div>`;
     // ── Tabs ──
     const tabDef = [['resumen', 'ti-layout-dashboard', 'Resumen'], ['prestamos', 'ti-file-dollar', 'Préstamos'], ['pagos', 'ti-cash', 'Pagos'], ['evaluaciones', 'ti-clipboard-check', 'Evaluaciones'], ['gestiones', 'ti-phone-call', 'Gestiones de cobro'], ['documentos', 'ti-files', 'Documentos']];
     const tabs = `<div class="hc-tabs">${tabDef.map(t => `<button type="button" class="hc-tab${_hcTab === t[0] ? ' on' : ''}" onclick="window.nxPrHcTab('${t[0]}')"><i class="ti ${t[1]}"></i> ${t[2]}</button>`).join('')}</div>`;
@@ -13926,7 +13891,13 @@
         <td data-l="Balance" style="text-align:right;color:${saldoDe(p) > 0 ? '#d97706' : '#059669'}">${fmt(saldoDe(p))}</td>
         <td data-l="Estado"><span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span></td>
         <td data-l="Días atraso" style="text-align:center">${dias > 0 ? '<span class="hc-diasb">' + dias + '</span>' : '0'}</td>
-        <td data-l="Acciones" style="text-align:center"><button type="button" class="hc-eye" title="Ver" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" aria-label="Ver"><i class="ti ti-eye"></i></button></td></tr>`;
+        <td data-l="Acciones" style="text-align:center"><div class="nxFP-tAcc" style="justify-content:center">
+          <button type="button" title="Ver / cobrar" aria-label="Ver / cobrar" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button>
+          <button type="button" title="Contrato" aria-label="Contrato" onclick="window.nxPrestamoContrato('${p.id}')"><i class="ti ti-file-certificate"></i></button>
+          <button type="button" title="Documentos${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}" aria-label="Documentos" onclick="window.nxPrestamoDocs('${p.id}')"><i class="ti ti-folder"></i></button>
+          ${_prSolicitudes.some(s => String(s.prestamo_id) === String(p.id)) ? `<button type="button" title="Expediente firmado" aria-label="Expediente firmado" onclick="window.nxPrestamoExpediente('${p.id}')"><i class="ti ti-file-check"></i></button>` : ''}
+          <button type="button" title="Borrar préstamo" aria-label="Borrar préstamo" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoBorrar('${p.id}')"><i class="ti ti-minus" style="color:#dc2626"></i></button>
+        </div></td></tr>`;
     }).join('');
     const loanTable = (lista) => `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th># Préstamo</th><th>Fecha</th><th style="text-align:right">Monto</th><th style="text-align:right">Tasa</th><th>Plazo</th><th style="text-align:right">Cuota</th><th style="text-align:right">Total pagado</th><th style="text-align:right">Balance</th><th>Estado</th><th style="text-align:center">Días</th><th></th></tr></thead><tbody>${lista.length ? loanRows(lista) : '<tr><td colspan="11" class="hc-empty">Sin préstamos.</td></tr>'}</tbody></table></div>`;
     // ── Contenido por pestaña ──
@@ -14013,7 +13984,7 @@
     if (balance > 0 && !vencidos.length) alertas.push({ ico: 'ti-clock-dollar', col: '#0891b2', t: 'Balance pendiente por cobrar: ' + fmt(balance) });
     const alertPanel = `<div class="hc-pcard"><div class="hc-pt">Alertas importantes</div>${alertas.length ? alertas.map(a => `<div class="hc-alrow"><i class="ti ${a.ico}" style="color:${a.col}"></i> ${esc(a.t)}</div>`).join('') : '<div class="hc-empty" style="padding:14px">Sin alertas por ahora. Todo al día.</div>'}<div class="hc-note">Solo se muestran alertas con datos reales del módulo. (Evaluación pendiente, documento vencido o garantía pendiente no existen aún aquí — no se inventan.)</div></div>`;
 
-    body.innerHTML = clihead + hcHero + kpis + `<div class="hc-2col"><div class="hc-main">${tabs}${mainTab}</div><aside class="hc-side">${rec}${indicadores}${alertPanel}</aside></div>`;
+    body.innerHTML = clihead + kpis + `<div class="hc-2col"><div class="hc-main">${tabs}${mainTab}</div><aside class="hc-side">${rec}${indicadores}${alertPanel}</aside></div>`;
   }
 
   window.nxPrestamoGuardar = async function (id) {
@@ -14062,6 +14033,10 @@
   };
 
   // ── Detalle + pagos ──
+  // Pantalla de cobro: solo lo que hace falta para cobrar (WhatsApp, Estado de
+  // cuenta, Imprimir, Editar). Contrato/Documentos/Expediente/Borrar viven en la
+  // ficha del cliente (hcRender → loanRows, pestaña Préstamos) — pedido del dueño
+  // para no mezclar tareas de cobranza diaria con gestión del expediente.
   window.nxPrestamoVer = function (id) {
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     cerrarModal('nxPrModal');
@@ -14153,7 +14128,8 @@
     const cliCard = `<div class="prCard">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <div style="width:44px;height:44px;border-radius:12px;background:${prIniciales(p.nombre).color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex:0 0 auto">${esc(prIniciales(p.nombre).ini)}</div>
-        <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e1b4b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || '')}</div><div style="font-size:10.5px;font-weight:800;color:${est === 'pagado' ? '#16a34a' : (est === 'vencido' ? '#dc2626' : '#16a34a')}">${est === 'pagado' ? '● Saldado' : (esVencido(p) ? '● En mora' : '● Al día')}</div></div>
+        <div style="min-width:0;flex:1"><div style="font-size:14px;font-weight:800;color:#1e1b4b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || '')}</div><div style="font-size:10.5px;font-weight:800;color:${est === 'pagado' ? '#16a34a' : (est === 'vencido' ? '#dc2626' : '#16a34a')}">${est === 'pagado' ? '● Saldado' : (esVencido(p) ? '● En mora' : '● Al día')}</div></div>
+        ${p.cliente_id ? `<button class="btn bsm bghost" type="button" style="flex:none" onclick="document.getElementById('nxPrModal').remove();window.nxPrHistCredito('${p.cliente_id}')" title="Ver ficha del cliente (contrato, documentos, historial)"><i class="ti ti-id-badge-2" style="color:#6d28d9"></i> Ficha</button>` : ''}
       </div>
       <div style="font-size:11.5px;color:#475569;display:flex;flex-direction:column;gap:4px">
         ${p.telefono ? `<div><i class="ti ti-phone" style="color:#94a3b8;width:16px;display:inline-block"></i> ${esc(p.telefono)}</div>` : ''}
@@ -14207,13 +14183,9 @@
           <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
           <div class="nxPrActs">
             ${waNumero(p.telefono) ? `<button class="nxPrAcc wa" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
-            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoAmortizacion('${id}')"><i class="ti ti-printer"></i> Imprimir</button>
-            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
-            ${_prSolicitudes.some(s => String(s.prestamo_id) === String(id)) ? `<button class="nxPrAcc" type="button" onclick="window.nxPrestamoExpediente('${id}')"><i class="ti ti-file-check"></i> Expediente firmado</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-minus"></i> Borrar</button>
           </div>
         </div>
       </div>`;
@@ -16504,6 +16476,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
+  let _prodQ = '', _prodPage = 1, _prodPageSize = 15, _prodSel = new Set(); // buscador/paginación/selección de la tabla premium de Inventario
   let _impModo = 'nuevos'; // modal Importar (Productos): nuevos (Infoplus, pegar) | precios (CSV, actualizar existentes)
   let _niveles = [], _prodNiveles = []; // Niveles de precio ilimitados por org (pos_niveles_precio) + precio de cada producto en cada nivel (pos_producto_niveles)
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
@@ -17097,6 +17070,28 @@
   // de una pantalla a otra — se limpia apenas se consume, para no "pegar" un origen viejo a una
   // venta nueva sin relación.
   let _facOrigenDoc = null;
+  // Mismo patrón que _facOrigenDoc, pero para Reparaciones (que no participa del Motor de
+  // Documentos, así que no hay padreId que enlazar — solo necesitamos saber, apenas se
+  // complete el cobro real en Factura, qué reparación hay que marcar como entregada/cobrada
+  // y con qué garantía). Antes, "Entregar y cobrar" cerraba el ciclo sin pasar por Factura
+  // — el dinero quedaba en caja/contabilidad pero SIN NCF, invisible para la DGII y ausente
+  // de la lista de Facturas. Se limpia apenas se consume (igual que _facOrigenDoc).
+  let _facOrigenReparacion = null;
+  let _repServicioProdId = null;
+  // Producto tipo "servicio" (sin stock) reusado para facturar reparaciones — se crea una
+  // sola vez la primera vez que hace falta, igual que cualquier artículo nuevo del catálogo.
+  async function repServicioProductoId() {
+    if (_repServicioProdId) return _repServicioProdId;
+    try {
+      const ex = await getAPI().get('pos_productos', "select=id&codigo=eq.SERV-REP&limit=1");
+      if (ex && ex[0]) { _repServicioProdId = ex[0].id; return _repServicioProdId; }
+    } catch (e) {}
+    const nuevo = await getAPI().post('pos_productos', { nombre: 'Servicio de reparación', codigo: 'SERV-REP', tipo: 'servicio', precio: 0, costo: 0, itbis: false, stock: 0 });
+    const p = nuevo && nuevo[0]; if (!p) throw new Error('No se pudo crear el producto de servicio');
+    _repServicioProdId = p.id;
+    try { _prods.push(p); } catch (e) {}
+    return _repServicioProdId;
+  }
   async function registrarDocumento(tipo, codigo, tablaOrigen, registroId, opts) {
     opts = opts || {};
     try {
@@ -17351,14 +17346,15 @@
     document.querySelectorAll('#posGrid .nxPosCard').forEach(c => { const b = c.getAttribute('data-busca') || ''; c.style.display = (!t || b.includes(t)) ? '' : 'none'; });
   };
   window.nxPosAdd = function (id) {
-    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
-    if (!puedeAgregar(id, 1)) return;
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return false;
+    if (!puedeAgregar(id, 1)) return false;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1;
     else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     ajustarCombos(p.id, 1);
     pintarCarrito();
+    return true;
   };
   window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
@@ -17715,13 +17711,14 @@
     setTimeout(function () { const el = document.querySelector('.nxPpkWrap.on'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 50);
   };
   window.nxFacAdd = function (id) {
-    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
-    if (!puedeAgregar(id, 1)) return;
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return false;
+    if (!puedeAgregar(id, 1)) return false;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
     ajustarCombos(p.id, 1);
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     pintarFactura();
+    return true;
   };
   // ── Ventana flotante "Buscar artículo": muestra TODO el catálogo, clic para agregar ──
   let _prodPickDest = 'factura', _ppkOpen = '', _ppkSerSel = [], _ppkSerRows = [];
@@ -17853,7 +17850,12 @@
   };
   window.nxProdPickFiltrar = function (q) { _ppkOpen = ''; pintarProdPick(q); };
   window.nxProdPickAdd = function (id) {
-    if (_prodPickDest === 'factura') window.nxFacAdd(id); else window.nxPosAdd(id);
+    // nxPosAdd/nxFacAdd ya avisan "Sin stock disponible" y no agregan nada si no
+    // hay existencia (puedeAgregar) — antes esta función igual mostraba "Agregado"
+    // encima de ese aviso, aunque el carrito no hubiera cambiado. Ahora solo
+    // confirma si de verdad se agregó.
+    const ok = _prodPickDest === 'factura' ? window.nxFacAdd(id) : window.nxPosAdd(id);
+    if (!ok) return;
     const p = _prods.find(x => String(x.id) === String(id));
     toast('ok', 'Agregado', p ? p.nombre : '');
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
@@ -19256,6 +19258,24 @@
         }
       } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
       _facOrigenDoc = null;
+      // Reparación entregada vía Factura (ver nxRepEntregarGo): la venta YA está cobrada y
+      // completa a esta altura (REGLAMENTOS §2 regla 10 — nunca se revierte por esto). Solo
+      // falta marcar la reparación como entregada/con garantía; si eso falla, la factura
+      // igual queda bien hecha — se avisa para revisar manualmente, no se bloquea nada.
+      if (_facOrigenReparacion) {
+        const _rr = _facOrigenReparacion; _facOrigenReparacion = null;
+        try {
+          const rep = _reps.find(x => String(x.id) === String(_rr.id));
+          const dRep = { estado: 'entregado', cobrado: true, cobrado_monto: Number(_rr.abono || 0) + c.total, cobrado_metodo: metodoLabel, entregado_at: new Date().toISOString() };
+          if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); dRep.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }
+          await getAPI().patch('pos_reparaciones', 'id=eq.' + _rr.id, dRep);
+          if (rep) Object.assign(rep, dRep);
+          try { window.logAudit && window.logAudit('REP_ENTREGADA', ((rep && rep.numero) || '') + ' · cobrado ' + fmt(dRep.cobrado_monto) + ' · Factura ' + (numFac || venta.numero), 'Reparaciones'); } catch (e2) {}
+        } catch (eRep) {
+          try { window.logAudit && window.logAudit('REP_ENTREGA_INCOMPLETA', 'id ' + _rr.id + ' — la factura ' + (numFac || venta.numero) + ' se creó bien, pero no se pudo marcar la reparación como entregada: ' + String(eRep && eRep.message || eRep), 'Reparaciones'); } catch (e2) {}
+          toast('warn', 'Factura creada — revisa esta reparación', 'El cobro quedó registrado, pero hay que marcarla como entregada a mano.');
+        }
+      }
       // Los IMEI ya quedaron marcados 'vendido' por el candado atómico de arriba
       // (reservarImeisCart/confirmarImeisReservados) — no coexiste con el PATCH best-effort viejo.
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
@@ -19574,34 +19594,68 @@
       onterm: function (v) { window.nxProdTablaBuscar(v); }
     });
   }
-  function renderProductos() {
-    const esBajo = p => p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
-    const esSin = p => p.tipo !== 'servicio' && Number(p.stock || 0) <= 0;
-    const bajos = _prods.filter(esBajo).length;
-    // Pastillas de filtro (inventario premium)
+  function prodEsBajo(p) { return p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0; }
+  function prodEsSin(p) { return p.tipo !== 'servicio' && Number(p.stock || 0) <= 0; }
+  // Lista final tras pastilla + texto buscado + orden — una sola fuente de verdad que
+  // usan tanto el render completo como el refresco parcial de la tabla (buscar/paginar).
+  function prodListaFiltrada() {
     const lista = _prods.filter(p => _prodFiltro === 'todos' ? true
       : _prodFiltro === 'stock' ? (p.tipo !== 'servicio' && Number(p.stock || 0) > 0)
-      : _prodFiltro === 'bajo' ? esBajo(p)
-      : _prodFiltro === 'sin' ? esSin(p)
+      : _prodFiltro === 'bajo' ? prodEsBajo(p)
+      : _prodFiltro === 'sin' ? prodEsSin(p)
       : p.tipo === 'servicio');
+    const ql = String(_prodQ || '').trim().toLowerCase();
+    const filtrada = ql ? lista.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase().includes(ql)) : lista;
+    return sortRows(filtrada, p => prodSortVal(p, _prodSort.k), _prodSort.d);
+  }
+  function prodFilaHTML(p) {
+    const serv = p.tipo === 'servicio';
+    const bajo = prodEsBajo(p), sin = prodEsSin(p);
+    const stkCell = serv ? '<span style="color:#cbd5e1">—</span>'
+      : sin ? '<span class="nxInvStk out">● Agotado</span>'
+      : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
+      : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
+    const sel = _prodSel.has(String(p.id));
+    return `<tr class="${sel ? 'nxProdRowSel' : ''}">
+      <td class="nxProdChk"><input type="checkbox" aria-label="Seleccionar ${esc(p.nombre || '')}" ${sel ? 'checked' : ''} onchange="window.nxProdSelToggle('${p.id}',this)"></td>
+      <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
+      <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
+      <td style="text-align:right;white-space:nowrap">${stkCell}</td>
+      <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
+      <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
+    </tr>`;
+  }
+  // Cuerpo de la tabla (tbody + pie de paginación) — se puede reconstruir SOLO esta
+  // parte (buscar/paginar/seleccionar) sin tocar el buscador de arriba, para no
+  // robarle el foco al campo mientras se escribe (ver nxProdRefrescarTabla).
+  function prodTablaCuerpoHTML() {
+    const todos = prodListaFiltrada();
+    const total = todos.length;
+    const totalPag = Math.max(1, Math.ceil(total / _prodPageSize));
+    _prodPage = Math.min(Math.max(1, _prodPage), totalPag);
+    const desde = (_prodPage - 1) * _prodPageSize;
+    const pagina = todos.slice(desde, desde + _prodPageSize);
+    const tbody = pagina.length ? pagina.map(prodFilaHTML).join('')
+      : `<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prodQ ? 'Nada coincide con la búsqueda.' : (_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.')}</td></tr>`;
+    const btnPag = (n, lbl, on, dis) => `<button type="button" class="nxProdPg${on ? ' on' : ''}" ${dis ? 'disabled' : ''} onclick="window.nxProdPage(${n})">${lbl}</button>`;
+    let nums = '';
+    if (total > 0) {
+      const ini = Math.max(1, _prodPage - 2), fin = Math.min(totalPag, ini + 4), ini2 = Math.max(1, fin - 4);
+      for (let n = ini2; n <= fin; n++) nums += btnPag(n, String(n), n === _prodPage, false);
+    }
+    const foot = `<div class="nxProdFoot">
+      <span class="nxProdFootTxt">${total ? `Mostrando ${desde + 1}-${Math.min(desde + _prodPageSize, total)} de ${total}` : 'Sin resultados'} ${_prods.length !== total ? `(de ${_prods.length} en total)` : ''}</span>
+      ${total > _prodPageSize ? `<div class="nxProdPgWrap">${btnPag(_prodPage - 1, '<i class="ti ti-chevron-left"></i>', false, _prodPage <= 1)}${nums}${btnPag(_prodPage + 1, '<i class="ti ti-chevron-right"></i>', false, _prodPage >= totalPag)}</div>` : ''}
+    </div>`;
+    return { tbody, foot, pagina };
+  }
+  function renderProductos() {
+    const bajos = _prods.filter(prodEsBajo).length;
     const pill = (f, l, n) => `<button type="button" class="nxInvPill${_prodFiltro === f ? ' on' : ''}" onclick="window.nxProdFiltro('${f}')">${l}${n != null ? ` <span>${n}</span>` : ''}</button>`;
     const pills = `<div class="nxInvPills">${pill('todos', 'Todos', _prods.length)}${pill('stock', 'En stock')}${pill('bajo', 'Bajo stock', bajos || null)}${pill('sin', 'Sin stock')}${pill('servicio', 'Servicios')}</div>`;
-    const filas = lista.length ? sortRows(lista, p => prodSortVal(p, _prodSort.k), _prodSort.d).map(p => {
-      const serv = p.tipo === 'servicio';
-      const bajo = esBajo(p), sin = esSin(p);
-      const stkCell = serv ? '<span style="color:#cbd5e1">—</span>'
-        : sin ? '<span class="nxInvStk out">● Agotado</span>'
-        : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
-        : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
-      return `<tr data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase())}">
-        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
-        <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
-        <td style="text-align:right;white-space:nowrap">${stkCell}</td>
-        <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
-        <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
-      </tr>`;
-    }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
-    return `<div style="margin-bottom:8px"><span id="prodQLupa"></span></div>
+    const { tbody, foot } = prodTablaCuerpoHTML();
+    return `<div class="nxProdWrap">
+      <div style="margin-bottom:8px"><span id="prodQLupa"></span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
@@ -19609,11 +19663,40 @@
         ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
       ${pills}
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw nxProdTw" style="font-size:11px"><table style="width:100%" id="nxProdTbl"><thead><tr>
+        <th class="nxProdChk"><input type="checkbox" aria-label="Seleccionar todos los de esta página" onchange="window.nxProdSelAll(this.checked)"></th>
+        ${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th>
+      </tr></thead><tbody id="nxProdTbody">${tbody}</tbody></table></div>
+      <div id="nxProdFootBox">${foot}</div>
+    </div>`;
   }
-  window.nxProdTablaBuscar = function (q) {
-    const ql = String(q || '').trim().toLowerCase();
-    document.querySelectorAll('#v-pos tbody tr[data-busca]').forEach(tr => { tr.style.display = (!ql || (tr.getAttribute('data-busca') || '').includes(ql)) ? '' : 'none'; });
+  // Refresco PARCIAL (solo tbody + pie): usado por buscar/paginar/seleccionar para no
+  // reconstruir el buscador de arriba (que le robaría el foco al campo en cada letra
+  // escrita — el mismo motivo por el que el buscador viejo usaba display:none en vez
+  // de reconstruir; ahora sí soporta paginación real porque filtra la lista completa,
+  // no solo las filas que ya estaban pintadas en la página actual).
+  function prodRefrescarTabla() {
+    const tbodyEl = document.getElementById('nxProdTbody'), footEl = document.getElementById('nxProdFootBox');
+    if (!tbodyEl) return;
+    const { tbody, foot } = prodTablaCuerpoHTML();
+    tbodyEl.innerHTML = tbody;
+    if (footEl) footEl.innerHTML = foot;
+    const chkAll = document.querySelector('#nxProdTbl thead .nxProdChk input');
+    if (chkAll) { const vis = [...tbodyEl.querySelectorAll('input[type=checkbox]')]; chkAll.checked = vis.length > 0 && vis.every(c => c.checked); chkAll.indeterminate = vis.some(c => c.checked) && !chkAll.checked; }
+  }
+  window.nxProdTablaBuscar = function (q) { _prodQ = q || ''; _prodPage = 1; prodRefrescarTabla(); };
+  window.nxProdPage = function (n) { _prodPage = n; prodRefrescarTabla(); };
+  window.nxProdSelToggle = function (id, chkEl) {
+    const checked = !!(chkEl && chkEl.checked);
+    if (checked) _prodSel.add(String(id)); else _prodSel.delete(String(id));
+    const row = chkEl && chkEl.closest('tr'); if (row) row.classList.toggle('nxProdRowSel', checked);
+    const chkAll = document.querySelector('#nxProdTbl thead .nxProdChk input');
+    if (chkAll) { const vis = [...document.querySelectorAll('#nxProdTbody input[type=checkbox]')]; chkAll.checked = vis.length > 0 && vis.every(c => c.checked); chkAll.indeterminate = vis.some(c => c.checked) && !chkAll.checked; }
+  };
+  window.nxProdSelAll = function (checked) {
+    const { pagina } = prodTablaCuerpoHTML();
+    pagina.forEach(p => { if (checked) _prodSel.add(String(p.id)); else _prodSel.delete(String(p.id)); });
+    prodRefrescarTabla();
   };
   window.nxProdFiltro = function (f) { _prodFiltro = f || 'todos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxComboPaint = function () {
@@ -20245,7 +20328,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
                     <div class="cols">
                       <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
                       <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                      <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
+                      <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Ej: 1004 (opcional)"></div></div>
                       <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
                       <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
                       <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
@@ -20290,7 +20373,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
 
               <div class="card" style="margin-bottom:12px">
                 <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
-                <div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <!-- El lápiz de cada fila (tabla de abajo) ya elige el nivel a editar — este
+                     <select> se deja oculto solo como estado interno (varios sitios del código
+                     leen/escriben su .value e .innerHTML), para no duplicar la selección. -->
+                <div class="fld" style="display:none"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                 <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + prodId + "',{q:this.value})" })}</div>
                 <div style="overflow-x:auto"><table class="tbl">
                   <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>🔒 Mínimo</th><th>Margen</th><th></th></tr></thead>
@@ -20418,6 +20504,15 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
         </div>
       </div>`;
     document.body.appendChild(ov);
+    // El "pop-in" (.overlay.open .modal, nxPopIn) termina en transform:none, pero el
+    // fill-mode "both" lo deja resuelto como matrix(1,0,0,1,0,0) — sigue sin ser
+    // "none" para el navegador, así que el modal queda actuando como contenedor de
+    // los menús position:fixed (⋮ y el de Guardar), que terminan saliendo pegados al
+    // formulario en vez de a su botón. Al terminar la animación se apaga del todo
+    // (style.animation='none'), no solo su transform, porque el "fill" pesa más que
+    // un transform inline y no alcanza con sobreescribirlo.
+    const modalEl = ov.querySelector('.modal');
+    if (modalEl) modalEl.addEventListener('animationend', () => { modalEl.style.animation = 'none'; }, { once: true });
     setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
     ['ppNom', 'ppNivEsp'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
@@ -25021,6 +25116,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(r.equipo || '')} · ${esc(r.cliente_nombre || '')} · resta <b style="color:#dc2626">${fmt(resto)}</b></div>
       <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${Math.round(resto).toLocaleString('en-US')}"></div>
       <div class="fr"><label>Método</label><select id="reMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
+      <div class="fr" style="margin-top:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" id="reItbis" style="width:17px;height:17px"> ¿Esta reparación lleva ITBIS (18%)?</label></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxRepEntregarGo('${id}')"><i class="ti ti-check"></i> Entregar equipo</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
@@ -25028,19 +25124,37 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   window.nxRepEntregarGo = async function (id) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const monto = moneyVal('reMonto'); const metodo = val('reMet') || 'Efectivo';
-    // REGLAMENTO DEL TALLER: cobrar la entrega en efectivo exige caja abierta (mismo candado del §2/§3).
-    if (monto > 0 && /efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
-      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
+    if (monto > 0) {
+      // Antes de aquí, "Entregar y cobrar" cerraba el ciclo solo (asiento contable +
+      // movimiento de caja) SIN pasar por Factura — el dinero quedaba en caja/contabilidad
+      // pero sin NCF, invisible para la DGII y ausente de la lista de Facturas (confirmado
+      // en vivo, 20-ago-2026). Ahora, si hay algo real que cobrar, se carga como una línea
+      // de servicio en el carrito y se manda a Factura — el mismo camino ya probado que usan
+      // Cotizaciones y Prefacturas para convertirse en venta real (nxCotConvertir/
+      // nxPrefFacturar): el cajero elige el tipo de comprobante y completa el cobro ahí, con
+      // caja/NCF/contabilidad/inventario resueltos por el código de venta de siempre. Cuando
+      // esa venta se complete, el gancho de abajo (checkout, _facOrigenReparacion) termina de
+      // marcar la reparación como entregada. Si el cajero cancela en Factura, la reparación
+      // se queda tal cual — no se pierde nada, solo no se completó el cobro.
+      if (_cart.length && !confirm('El cuadro de Factura ya tiene artículos. ¿Reemplazarlos para cobrar esta reparación?')) return;
+      let servId; try { servId = await repServicioProductoId(); } catch (e) { toast('err', 'No se pudo preparar el cobro', String(e && e.message || e)); return; }
+      const conItbis = !!(document.getElementById('reItbis') || {}).checked;
+      _cart = [{ producto_id: servId, nombre: 'Reparación ' + (r.numero || '') + ' — ' + (r.equipo || ''), precio: Math.round(monto), cantidad: 1, itbis: conItbis, desc: 0, descT: 'pct' }];
+      _factCli = '';
+      _facOrigenReparacion = { id: id, abono: Number(r.abono || 0) };
+      cerrarModal('nxRepEnt'); cerrarModal('nxRepM');
+      window.nxPosTab('factura');
+      toast('ok', 'Reparación cargada', 'Completa el cobro en Factura');
+      return;
     }
+    // Nada nuevo que cobrar (ya estaba saldada por el avance) — se entrega sin pasar por
+    // Factura, como siempre; no tiene sentido generar una factura de RD$0.
     try {
-      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
+      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
       if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); d.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }
       await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
-      if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
-      try { await postAsientoServicio('Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), monto, metodo, id); } catch (e) {}
-      try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · cobrado ' + fmt(d.cobrado_monto), 'Reparaciones'); } catch (e) {}
-      cerrarModal('nxRepEnt'); toast('ok', 'Entregado y cobrado', fmt(monto || 0));
+      try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · sin cobro pendiente', 'Reparaciones'); } catch (e) {}
+      cerrarModal('nxRepEnt'); toast('ok', 'Entregado', r.numero || '');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
@@ -25278,7 +25392,17 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-hAsi{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFP-hAsi.warn{background:rgba(252,165,165,.28);color:#fecaca}' +
       '.nxFP-hAsl{font-size:10px;font-weight:700;opacity:.82;text-transform:uppercase;letter-spacing:.3px}' +
       '.nxFP-hAsv{font-size:16.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}' +
-      '@media(max-width:640px){.nxFP-hA{padding:22px 20px}.nxFP-hAbig{font-size:36px}.nxFP-hAR{grid-template-columns:1fr 1fr;width:100%}}' +
+      // Móvil: las 4 estadísticas (Prestado/Cobrado/Vencido/Clientes) pasan de
+      // filas translúcidas metidas en el morado a tarjetas blancas sueltas con
+      // ícono circular de color — mismo dato y mismo lugar, solo el vestido
+      // (pedido del dueño sobre una referencia visual, financiamiento en celular).
+      '@media(max-width:640px){.nxFP-hA{padding:22px 20px}.nxFP-hAbig{font-size:36px}.nxFP-hAR{grid-template-columns:1fr 1fr;gap:10px;width:100%}' +
+      '.nxFP-hAst{background:rgba(255,255,255,.97);border-radius:16px;padding:10px 11px;box-shadow:0 10px 22px -10px rgba(20,20,50,.4)}' +
+      '.nxFP-hAsi{border-radius:50%;background:linear-gradient(140deg,#60a5fa,#2563eb);color:#fff}' +
+      '.nxFP-hAR .nxFP-hAst:nth-child(2) .nxFP-hAsi{background:linear-gradient(140deg,#2dd4bf,#0d9488)}' +
+      '.nxFP-hAsi.warn{background:linear-gradient(140deg,#fb923c,#ea580c)!important;color:#fff}' +
+      '.nxFP-hAR .nxFP-hAst:nth-child(4) .nxFP-hAsi{background:linear-gradient(140deg,#a78bfa,#7c3aed)}' +
+      '.nxFP-hAst .nxFP-hAsl{color:#94a3b8;opacity:1}.nxFP-hAst .nxFP-hAsv{color:#1e1b4b}}' +
       '.nxFP-tblWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #eef0f5;border-radius:16px;background:#fff}' +
       '.nxFP-tbl{width:100%;border-collapse:collapse;font-size:12px}' +
       '.nxFP-tbl thead th{text-align:left;font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;border-bottom:1px solid #eef0f5;white-space:nowrap;background:#faf9ff}' +
@@ -25456,7 +25580,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.ev-tab{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12.5px;font-weight:700;padding:9px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}' +
       '.ev-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}.ev-tab i{font-size:15px}.ev-tn{width:18px;height:18px;border-radius:6px;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}' +
       '.ev-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}' +
-      '.ev-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;min-width:0}.ev-col{display:flex;flex-direction:column;gap:14px;min-width:0}' +
+      '.ev-cols{display:block;min-width:0}.ev-col{display:none;flex-direction:column;gap:14px;min-width:0}.ev-col.on{display:flex}' +
       '.ev-aside{min-width:0}.ev-card{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05)}' +
       '.ev-sticky{position:sticky;top:12px}' +
       '.ev-sechd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}' +
@@ -25484,18 +25608,20 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.ev-asesor{border-top:1px solid #f1f5f9;padding-top:10px;margin-top:4px}.ev-aslbl{font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase}.ev-asnom{font-size:12.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;margin:3px 0}.ev-asnom i{color:#4f46e5}.ev-asfch{font-size:10.5px;color:#94a3b8}' +
       '.ev-aprobar{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}.ev-aprobar:disabled{opacity:.45;cursor:not-allowed}' +
       '.ev-cancel{width:100%;margin-top:8px;background:transparent;border:0;color:#dc2626;font-size:12px;font-weight:700;padding:8px;cursor:pointer;font-family:inherit}' +
-      '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}.ev-cols{grid-template-columns:1fr}}' +
+      '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}}' +
       // ── Historial crediticio (mockup rico, 2 columnas) ──
       '.hcModal .hc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 12px;border-bottom:1px solid #eef}.hc-title{font-size:20px;font-weight:800;color:#0f172a}.hc-sub{font-size:12px;color:#94a3b8;margin-top:2px}' +
-      '.hc-cli{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.05);flex-wrap:wrap}' +
-      '.hc-clav{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:0 0 auto}' +
+      '.hc-cli{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#faf9ff,#f4f1ff 55%,#fff);border:1px solid #e9e6f7;border-radius:20px;padding:18px 20px;box-shadow:0 12px 28px -16px rgba(76,29,149,.3);flex-wrap:wrap}' +
+      '.hc-clav{width:68px;height:68px;border-radius:18px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;flex:0 0 auto;box-shadow:0 10px 20px -8px rgba(109,40,217,.5)}' +
+      '.hc-hgauge{display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;margin-left:auto;padding-left:10px}' +
+      '.hc-hglbl{font-size:9px;font-weight:800;color:#94a3b8;text-align:center;line-height:1.25;text-transform:uppercase;letter-spacing:.3px}' +
       '.hc-clnm{font-size:18px;font-weight:800;color:#1e1b4b;display:inline-block;margin-right:8px}.hc-clbadge{font-size:10.5px;font-weight:700;color:#059669;background:#ecfdf5;border-radius:20px;padding:3px 10px}' +
       '.hc-cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}.hc-cdl{font-size:10px;color:#94a3b8;font-weight:700;display:flex;align-items:center;gap:4px}.hc-cdl i{font-size:13px}.hc-cdv{font-size:12.5px;color:#1e293b;font-weight:700;margin-top:1px;word-break:break-word}' +
-      '.hc-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}' +
-      '.hc-k{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9e6f7;border-radius:12px;padding:10px 11px;min-width:0}.hc-kic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}.hc-kl{font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-kv{font-size:15px;font-weight:800;color:#1e1b4b}' +
+      '.hc-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}' +
+      '.hc-k{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #eef0f8;border-radius:16px;padding:11px 12px;min-width:0;box-shadow:0 6px 16px -12px rgba(30,35,60,.25)}.hc-kic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 auto;color:#fff;box-shadow:0 4px 10px -3px rgba(15,23,42,.3)}.hc-kl{font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-kv{font-size:15px;font-weight:800;color:#1e1b4b}' +
       '.hc-2col{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}.hc-main{min-width:0}.hc-side{min-width:0;display:flex;flex-direction:column;gap:12px}' +
       '.hc-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid #e9e6f7;margin-bottom:12px}.hc-tab{display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12px;font-weight:700;padding:9px 11px;cursor:pointer;font-family:inherit;white-space:nowrap}.hc-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}.hc-tab i{font-size:14px}' +
-      '.hc-card{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:12px}.hc-ct{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}.hc-est{font-weight:600;color:#94a3b8;font-size:10px}' +
+      '.hc-card{background:#fff;border:1px solid #eef0f8;border-radius:18px;padding:16px 17px;box-shadow:0 8px 22px -16px rgba(30,35,60,.22);margin-bottom:12px}.hc-ct{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}.hc-est{font-weight:600;color:#94a3b8;font-size:10px}' +
       '.hc-tlwrap{overflow-x:auto;padding:6px 0 2px}.hc-tl{display:flex;min-width:max-content;position:relative}.hc-tl:before{content:\"\";position:absolute;left:6%;right:6%;top:32px;height:2px;background:#e5e7eb}.hc-tli{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1 0 66px;position:relative}.hc-tlm{font-size:9.5px;color:#64748b;font-weight:600;white-space:nowrap}' +
       '.hc-tli .hc-dot{width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 3px #fff}' +
       '.hc-dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex:0 0 auto}.hc-ok{background:#22c55e}.hc-y{background:#eab308}.hc-o{background:#f97316}.hc-r{background:#ef4444}.hc-g{background:#94a3b8}' +
@@ -25503,13 +25629,14 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.hc-tblwrap{overflow-x:auto}.hc-tbl{width:100%;border-collapse:collapse;font-size:11.5px}.hc-tbl thead th{color:#94a3b8;font-size:9.5px;text-transform:uppercase;letter-spacing:.2px;padding:7px 8px;text-align:left;white-space:nowrap;border-bottom:1px solid #eef}.hc-tbl tbody td{padding:9px 8px;border-bottom:1px solid #f5f5f9;color:#1e293b}.hc-ref{color:#2563eb;font-weight:800;cursor:pointer}.hc-est-b{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:20px;white-space:nowrap}.hc-diasb{background:#fef2f2;color:#dc2626;font-weight:800;border-radius:20px;padding:1px 8px;font-size:10.5px}' +
       '.hc-eye{width:26px;height:26px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}.hc-verall{text-align:center;color:#2563eb;font-size:12px;font-weight:700;padding:10px;cursor:pointer}.hc-evrow{font-size:12px;color:#475569;padding:7px 0;border-bottom:1px solid #f5f3ff}' +
       '.hc-empty{text-align:center;color:#94a3b8;font-size:12px;padding:22px;line-height:1.5}.hc-note{font-size:10px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
-      '.hc-pcard{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.hc-pt{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:10px}' +
+      '.hc-pcard{background:#fff;border:1px solid #eef0f8;border-radius:18px;padding:16px 17px;box-shadow:0 8px 22px -16px rgba(30,35,60,.22)}.hc-pt{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:10px}' +
       '.hc-rechd{display:flex;align-items:center;gap:10px;margin-bottom:6px}.hc-recico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto}.hc-rectit{font-size:15px;font-weight:800}.hc-recsub{font-size:11.5px;color:#64748b;line-height:1.5;margin-bottom:10px}' +
       '.hc-prow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#64748b;padding:8px 0;border-bottom:1px solid #f5f3ff}.hc-prow b{color:#1e293b;font-weight:800;text-align:right}.hc-prow i{font-size:14px}' +
       '.hc-scorerow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#64748b;padding-top:10px}.hc-scmini{display:flex;flex-direction:column;align-items:center;gap:2px}.hc-gsm{width:56px;height:56px}.hc-gsm .ev-gaugein{width:42px;height:42px}.hc-gsm .ev-gnum{font-size:14px}.hc-gsm .ev-gsub{font-size:7px}.hc-scclas{font-size:10px;font-weight:800}' +
       '.hc-alrow{display:flex;align-items:center;gap:9px;font-size:12px;color:#334155;padding:8px 0;border-bottom:1px solid #f5f3ff}.hc-alrow i{font-size:16px;flex:0 0 auto}' +
       '@media(max-width:960px){.hc-2col{grid-template-columns:1fr}.hc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}' +
-      '@media(max-width:560px){.hc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-tbl thead{display:none}.hc-tbl tbody td{display:flex;justify-content:space-between;border:0;padding:4px 10px}.hc-tbl tbody td:before{content:attr(data-l);color:#94a3b8;font-weight:700;font-size:10px}.hc-tbl tbody tr{display:block;border:1px solid #eef;border-radius:10px;margin:6px 0;padding:4px 0}}' +
+      '@media(max-width:560px){.hc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-tbl thead{display:none}.hc-tbl tbody td{display:flex;justify-content:space-between;border:0;padding:4px 10px}.hc-tbl tbody td:before{content:attr(data-l);color:#94a3b8;font-weight:700;font-size:10px}.hc-tbl tbody tr{display:block;border:1px solid #eef;border-radius:10px;margin:6px 0;padding:4px 0}' +
+      '.hc-cli{padding:16px;align-items:flex-start}.hc-clav{width:56px;height:56px;font-size:22px;border-radius:16px}.hc-hgauge{flex-direction:row;align-items:center;gap:10px;margin-left:0;padding-left:0;width:100%;justify-content:flex-start}.hc-hglbl{text-align:left}.hc-gsm{width:48px;height:48px}.hc-gsm .ev-gaugein{width:36px;height:36px}.hc-gsm .ev-gnum{font-size:12px}}' +
       '.nxFP-main{flex:1;min-width:0}' +
       '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
       '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +
@@ -25778,34 +25905,6 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // solo que a la inversa: aquí se esconde el dock salvo que #v-prestamos.on exista.
       'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
       '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
-    // GLASS V1 · ChatGPT · 2026-08-19 — apéndice visual aprobado.
-    st.textContent += `
-/* GLASS V1 · ChatGPT · 2026-08-19
-   Escopeado al Financiamiento real. No aplicar a .nxFP-pos (Cuotas del POS). */
-.nxFPShell{--gl-bg:#f3f4fa;--gl-ink:#171a2b;--gl-ink2:#565b78;--gl-ink3:#9498b3;--gl-ac:#6d28d9;--gl-ac2:#4f46e5;--gl-acsoft:rgba(109,40,217,.10);--gl-card:rgba(255,255,255,.62);--gl-strong:rgba(255,255,255,.82);--gl-border:rgba(255,255,255,.75);--gl-shadow:0 10px 34px -14px rgba(30,27,75,.20),0 1px 1px rgba(30,27,75,.03);background:radial-gradient(680px 420px at 6% -8%,#efe8ff 0%,transparent 58%),radial-gradient(620px 400px at 102% 10%,#e5ecff 0%,transparent 55%),var(--gl-bg);color:var(--gl-ink)}
-.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-topbar,.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-hA,.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-listHead,.nxFPShell .nxFP-main:has(.nxFP-glIntro)>#nxPrLista,.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-dash{display:none!important}
-.nxFP-glIntro{margin:2px 0 12px}.nxFP-glTitleRow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.nxFP-glEyebrow{font-size:9.5px;font-weight:800;letter-spacing:1.05px;color:var(--gl-ink3);margin-bottom:5px}.nxFP-glIntro h1{font-size:29px;line-height:1.08;letter-spacing:-.65px;margin:0;color:var(--gl-ink)}.nxFP-glIntro p{font-size:12.5px;color:var(--gl-ink2);font-weight:600;margin:4px 0 0}.nxFP-glBrand{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--gl-ac2),var(--gl-ac));color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 10px 22px -8px rgba(109,40,217,.55)}
-.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-searchRow{height:48px;display:flex;align-items:center;margin:0 0 20px;padding:0 13px;border-radius:999px;background:var(--gl-card);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--gl-border);box-shadow:var(--gl-shadow)}.nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-searchRow>span{width:100%;display:block}
-.nxFP-glBody{padding-bottom:8px}.nxFP-glSec{font-size:10.5px;font-weight:800;letter-spacing:.7px;color:var(--gl-ink3);text-transform:uppercase;margin:2px 0 10px}.nxFP-glKpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:18px}.nxFP-glKpi{position:relative;overflow:hidden;min-width:0;border-radius:22px;padding:15px 16px;background:var(--gl-card);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--gl-border);box-shadow:var(--gl-shadow)}.nxFP-glKpi:before{content:"";position:absolute;right:-26%;top:-35%;width:72%;height:72%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 68%);pointer-events:none}.nxFP-glKpi .ico{width:31px;height:31px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative}.nxFP-glKpi .ico.ac{background:var(--gl-acsoft);color:var(--gl-ac)}.nxFP-glKpi .ico.ok{background:rgba(15,157,88,.12);color:#0f9d58}.nxFP-glKpi .ico.warn{background:rgba(194,118,10,.14);color:#c2760a}.nxFP-glKpi .ico.danger{background:rgba(211,55,76,.12);color:#d3374c}.nxFP-glKpi small{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--gl-ink3);margin-bottom:3px}.nxFP-glKpi>b{display:block;font-size:19px;letter-spacing:-.35px;font-weight:800;color:var(--gl-ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}.nxFP-glKpi>em{display:block;font-style:normal;font-size:9.8px;color:var(--gl-ink3);font-weight:700;margin-top:3px}
-.nxFP-glCTA{width:100%;height:55px;border:0;border-radius:21px;background:linear-gradient(135deg,var(--gl-ac2),var(--gl-ac) 82%);color:#fff;font-family:inherit;font-size:14.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 18px 34px -14px rgba(109,40,217,.58),inset 0 1px 0 rgba(255,255,255,.28);cursor:pointer;margin-bottom:21px;-webkit-tap-highlight-color:transparent}.nxFP-glCTA:active{box-shadow:inset 3px 3px 8px rgba(55,48,163,.38),inset -2px -2px 6px rgba(255,255,255,.16)}
-.nxFP-glQuick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:23px}.nxFP-glQuickItem{min-width:0;border:1px solid var(--gl-border);border-radius:18px;background:var(--gl-card);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);box-shadow:var(--gl-shadow);padding:13px 5px 11px;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:inherit;color:var(--gl-ink2);cursor:pointer;-webkit-tap-highlight-color:transparent}.nxFP-glQuickItem>span{width:36px;height:36px;border-radius:12px;background:var(--gl-acsoft);color:var(--gl-ac);display:flex;align-items:center;justify-content:center;font-size:16px}.nxFP-glQuickItem>b{font-size:9.5px;line-height:1.15;text-align:center;font-weight:800}.nxFP-glQuickItem>em{font-size:7.4px;font-style:normal;font-weight:800;letter-spacing:.25px;text-transform:uppercase;color:var(--gl-ink3);margin-top:-3px}.nxFP-glQuickItem.soon{opacity:.48;cursor:default}.nxFP-glQuickItem.soon>span{background:#eef0f7;color:var(--gl-ink3)}
-.nxFP-glListHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.nxFP-glListHead .nxFP-glSec{margin:0}.nxFP-glListHead button{border:0;background:transparent;color:var(--gl-ac);font-family:inherit;font-size:11px;font-weight:800;cursor:pointer}.nxFP-glPayList{display:flex;flex-direction:column;gap:9px}.nxFP-glPayRow{width:100%;border:1px solid var(--gl-border);border-radius:20px;background:var(--gl-card);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);box-shadow:var(--gl-shadow);padding:11px 13px;display:flex;align-items:center;gap:11px;text-align:left;font-family:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}.nxFP-glPayAv{width:39px;height:39px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;flex:none}.nxFP-glPayMid{flex:1;min-width:0}.nxFP-glPayTop{display:flex;align-items:center;gap:7px;min-width:0}.nxFP-glPayTop>b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFP-glPayTop>em{font-style:normal;font:700 9px "Cascadia Code","Consolas",monospace;color:var(--gl-ac);background:var(--gl-acsoft);padding:2px 6px;border-radius:6px;flex:none}.nxFP-glPaySub{display:block;font-size:10px;color:var(--gl-ink3);font-weight:600;margin-top:3px}.nxFP-glState{font-style:normal;font-size:8px;font-weight:800;text-transform:uppercase;border-radius:999px;padding:2px 6px}.nxFP-glState.activo{background:rgba(15,157,88,.12);color:#0f9d58}.nxFP-glState.vencido{background:rgba(211,55,76,.12);color:#d3374c}.nxFP-glState.porvencer{background:rgba(194,118,10,.14);color:#c2760a}.nxFP-glState.pagado{background:#e0e7ff;color:#4338ca}.nxFP-glPayAmt{text-align:right;flex:none}.nxFP-glPayAmt>b{display:block;font-size:13px;font-weight:800;color:var(--gl-ink);font-variant-numeric:tabular-nums}.nxFP-glPayAmt>small{display:block;font-size:8.5px;font-weight:700;color:var(--gl-ink3);margin-top:1px}.nxFP-glPayArrow{width:24px;height:24px;border-radius:8px;background:var(--gl-acsoft);color:var(--gl-ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}.nxFP-glEmpty{padding:20px;text-align:center;border-radius:18px;background:var(--gl-card);border:1px solid var(--gl-border);color:var(--gl-ink3);font-size:11.5px;font-weight:600}
-#nxFPDockHost .nxFP-dock{height:66px;border-radius:999px;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));padding:7px 9px;background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.85);box-shadow:0 20px 40px -16px rgba(30,27,75,.28),inset 0 1px 0 rgba(255,255,255,.65)}#nxFPDockHost .nxFP-dockBtn{height:51px;border-radius:19px;color:#9498b3;gap:3px}#nxFPDockHost .nxFP-dockBtn i{font-size:18px;transform:none}#nxFPDockHost .nxFP-dockBtn span{font-size:8.5px;opacity:1;transform:none}#nxFPDockHost .nxFP-dockBtn.on{color:#6d28d9}#nxFPDockHost .nxFP-dockBtn.on:before{display:none}#nxFPDockHost .nxFP-dockBtn.on span{opacity:1;transform:none}#nxFPDockHost .nxFP-dockBtn.on:after{content:"";position:absolute;bottom:1px;width:4px;height:4px;border-radius:50%;background:#6d28d9}#nxFPDockHost .nxFP-dockCenter{width:60px;height:60px;margin:0 2px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#6d28d9 85%);color:#fff!important;transform:translateY(-13px);box-shadow:0 16px 30px -10px rgba(109,40,217,.62),0 0 0 5px #f3f4fa,inset 0 1px 0 rgba(255,255,255,.35)}#nxFPDockHost .nxFP-dockCenter i{font-size:21px}#nxFPDockHost .nxFP-dockCenter span{color:#fff;font-size:8px}#nxFPDockHost .nxFP-dockCenter:after{display:none!important}#nxFPDockHost .nxFP-dockSheet{bottom:calc(92px + env(safe-area-inset-bottom));background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.82);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%)}
-.hcModal{--gl-bg:#f3f4fa;--gl-ink:#171a2b;--gl-ink2:#565b78;--gl-ink3:#9498b3;--gl-ac:#6d28d9;--gl-ac2:#4f46e5;--gl-card:rgba(255,255,255,.62);--gl-strong:rgba(255,255,255,.82);--gl-border:rgba(255,255,255,.78);--gl-shadow:0 10px 34px -14px rgba(30,27,75,.18),0 1px 1px rgba(30,27,75,.03);background:radial-gradient(760px 460px at 7% -8%,#efe9ff 0%,transparent 58%),radial-gradient(700px 440px at 103% 5%,#e5ecff 0%,transparent 55%),var(--gl-bg)!important}.hcModal .hc-top{border-bottom:0;padding:17px 18px 13px}.hcModal #hcBody{padding:15px 16px 20px!important}.hcModal .hc-cli,.hcModal .hc-k,.hcModal .hc-card,.hcModal .hc-pcard{background:var(--gl-card);border:1px solid var(--gl-border);box-shadow:var(--gl-shadow);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%)}.hcModal .hc-cli{border-radius:26px;padding:20px 21px;gap:18px}.hc-glProfileMid{flex:1;min-width:230px}.hc-glNameRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hc-glScoreChip{display:inline-flex;align-items:center;gap:5px;background:rgba(109,40,217,.10);color:#6d28d9;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:800}.hc-glGaugeWrap{display:flex;flex-direction:column;align-items:center;gap:5px;flex:none}.hc-glGauge{width:82px;height:82px}.hc-glGauge .ev-gaugein{width:62px;height:62px;background:var(--gl-strong)}.hc-glGaugeWrap>span{font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;font-weight:800;color:var(--gl-ink3)}.hc-glHero{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px;margin:13px 0}.hc-glHeroCard{border-radius:20px;padding:16px 17px;background:var(--gl-card);border:1px solid var(--gl-border);box-shadow:var(--gl-shadow);-webkit-backdrop-filter:blur(18px) saturate(165%);backdrop-filter:blur(18px) saturate(165%)}.hc-glHeroHead{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--gl-ink2);margin-bottom:9px}.hc-glHeroHead i{width:30px;height:30px;border-radius:10px;background:rgba(109,40,217,.10);color:#6d28d9;display:flex;align-items:center;justify-content:center}.hc-glHeroCard>b{display:block;font-size:23px;letter-spacing:-.45px;font-weight:800;color:var(--gl-ink);font-variant-numeric:tabular-nums}.hc-glHeroCard>em{display:block;font-style:normal;font-size:10px;color:var(--gl-ink3);font-weight:700;margin-top:5px}.hc-glProgress{height:8px;border-radius:999px;background:rgba(109,40,217,.12);overflow:hidden;margin:7px 0 3px}.hc-glProgress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#4f46e5,#6d28d9)}.hcModal .hc-kpis{gap:8px;margin:12px 0 16px}.hcModal .hc-k{border-radius:15px}.hcModal .hc-tabs{width:fit-content;max-width:100%;padding:5px;border:1px solid var(--gl-border);border-radius:15px;background:var(--gl-card);box-shadow:var(--gl-shadow);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%)}.hcModal .hc-tab{border:0;border-radius:10px;padding:9px 12px}.hcModal .hc-tab.on{color:#fff;background:linear-gradient(135deg,#4f46e5,#6d28d9);box-shadow:0 8px 18px -8px rgba(109,40,217,.55)}.hcModal .hc-card,.hcModal .hc-pcard{border-radius:20px}.hcModal .hc-tblwrap{border-radius:14px;overflow:auto}.hcModal .hc-tbl tbody tr{background:rgba(255,255,255,.28)}
-@media(max-width:900px){.nxFP-glKpis{grid-template-columns:1fr 1fr}.nxFPShell .nxFP-main:has(.nxFP-glIntro){padding-bottom:calc(104px + env(safe-area-inset-bottom))}}
-@media(max-width:560px){.nxFPShell{padding:13px;border-radius:20px}.nxFP-glIntro h1{font-size:27px}.nxFP-glBrand{width:36px;height:36px}.nxFP-glKpis{grid-template-columns:1fr 1fr;gap:9px}.nxFP-glKpi{padding:13px;border-radius:19px}.nxFP-glKpi>b{font-size:17px}.nxFP-glQuick{gap:7px}.nxFP-glQuickItem{padding:12px 3px 10px}.nxFP-glPayRow{padding:10px 11px;gap:9px}.nxFP-glPayTop>em{display:none}.nxFP-glPayAmt>b{font-size:11.5px}#nxFPDockHost .nxFP-dock{left:12px;right:12px}.hcModal .hc-cli{padding:16px;align-items:flex-start}.hc-glProfileMid{min-width:calc(100% - 74px)}.hc-glGaugeWrap{width:100%;flex-direction:row;justify-content:center}.hc-glHero{grid-template-columns:1fr}.hcModal .hc-kpis{grid-template-columns:1fr 1fr}.hcModal .hc-cgrid{grid-template-columns:1fr 1fr}.hcModal .hc-tab{padding:8px 10px;font-size:11px}.hcModal #hcBody{padding:12px!important}}
-/* El prototipo aprobado de Dashboard es móvil. En desktop se conserva la composición
-   actual para no perder Exportar/Nuevo préstamo ni duplicar encabezados. */
-@media(min-width:901px){
-  .nxFP-glIntro,.nxFP-glBody{display:none!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-topbar{display:flex!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-hA{display:flex!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-listHead{display:flex!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>#nxPrLista{display:block!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-dash{display:grid!important}
-  .nxFPShell .nxFP-main:has(.nxFP-glIntro)>.nxFP-searchRow{height:auto;display:block;padding:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;box-shadow:none;margin-bottom:16px}
-}
-    `;
     document.head.appendChild(st);
   };
   window.nxFinFiltro = function (key) {
@@ -27082,6 +27181,27 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxThSort.on{color:#4f46e5}',
       '.nxThI{font-size:11px;vertical-align:middle}',
       '.nxThIoff{opacity:.32}',
+      /* Tabla premium de Inventario (Punto de Venta → Productos): encabezado sólido,
+         checkbox de selección, filas alternadas/hover y paginación real. */
+      '.nxProdWrap{display:flex;flex-direction:column;gap:8px}',
+      '.nxProdTw{border:1px solid #dbeafe}',
+      '.nxProdTw table{border-collapse:collapse}',
+      '.nxProdTw thead th{background:#2563eb;color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;white-space:nowrap}',
+      '.nxProdTw thead th.nxThSort,.nxProdTw thead th.nxThSort:hover,.nxProdTw thead th.nxThSort.on{color:#fff}',
+      '.nxProdTw thead .nxThI{color:rgba(255,255,255,.85)}',
+      '.nxProdTw tbody td{padding:10px 12px;border-top:1px solid #eef2f7;vertical-align:middle}',
+      '.nxProdTw tbody tr:nth-child(even) td{background:#f8fafc}',
+      '.nxProdTw tbody tr:hover td{background:#eff6ff}',
+      '.nxProdTw tbody tr.nxProdRowSel td{background:#dbeafe}',
+      '.nxProdChk{width:36px;text-align:center;padding-left:12px!important;padding-right:4px!important}',
+      '.nxProdChk input{width:16px;height:16px;accent-color:#2563eb;cursor:pointer}',
+      '.nxProdFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 2px 2px}',
+      '.nxProdFootTxt{font-size:11px;color:#64748b}',
+      '.nxProdPgWrap{display:flex;gap:4px;align-items:center}',
+      '.nxProdPg{min-width:30px;height:30px;padding:0 8px;border:1.5px solid #e2e8f0;background:#fff;color:#334155;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}',
+      '.nxProdPg:hover:not(:disabled){border-color:#93c5fd;background:#eff6ff}',
+      '.nxProdPg.on{background:#2563eb;border-color:#2563eb;color:#fff}',
+      '.nxProdPg:disabled{opacity:.4;cursor:default}',
       /* Resaltado del IMEI que coincide con la búsqueda */
       '.nxSerHl{background:#fde68a;color:#92400e;border-radius:3px;padding:0 1px;font-weight:800}',
       /* Botón "Elegir" más compacto (antes ancho completo, quedaba muy largo) */

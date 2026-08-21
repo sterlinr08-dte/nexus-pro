@@ -1,11 +1,71 @@
 {
-  "version": "56.50",
+  "version": "56.62",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
+      "v": "56.62",
+      "fecha": "2026-08-21",
+      "texto": "ARREGLADO: cobrar una reparación al entregarla no generaba ninguna factura fiscal — el dinero quedaba registrado en caja y contabilidad, pero sin NCF, invisible para la DGII y ausente de la lista de Facturas. Ahora, si hay algo real que cobrar, \"Entregar y cobrar\" manda ese cobro a la pantalla de Factura (el mismo camino ya probado que usan Cotizaciones y Prefacturas) para que quede una factura real con su comprobante — y de paso se agregó un casillero para decidir si esa reparación lleva 18% de ITBIS o no. Cuando la factura se completa, la reparación queda marcada como entregada y con su garantía automáticamente, igual que antes."
+    },
+    {
+      "v": "56.61",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Vender/Factura, elegir un artículo agotado mostraba \"Agregado\" al mismo tiempo que \"Sin stock disponible\" — dos avisos contradictorios que podían hacer creer al cajero que la venta iba a proceder, aunque el carrito seguía vacío. Ahora solo avisa \"Agregado\" cuando de verdad se agregó."
+    },
+    {
+      "v": "56.60",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: el buscador de todo el sistema tiene ahora un brillo morado más lindo al tocarlo, y quedó lista la versión \"compacta\" (un círculo que se expande al tocarlo, como un buscador de app moderna) para cuando alguna pantalla la necesite. Además, la tabla de artículos en Punto de Venta → Inventario se ve más profesional: encabezado de color sólido, casillas para seleccionar varios artículos a la vez, filas alternadas y paginación de verdad (antes mostraba todo junto sin separar por páginas)."
+    },
+    {
+      "v": "56.59",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO (de raíz, en todo el sistema): la causa técnica del bug de los menús corridos de lugar que se arregló hoy mismo en Punto de Venta (v56.57) en realidad afectaba a TODAS las ventanas emergentes del sistema, no solo esa — se corrigió una sola vez para todas, así que no debería volver a pasar en ninguna pantalla nueva más adelante. Confirmado en Prefactura, que ya tenía el mismo problema latente sin causar fallas visibles todavía."
+    },
+    {
+      "v": "56.58",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Punto de Venta, al crear un artículo nuevo, el campo \"Código / código de barras\" mostraba un texto de ejemplo que decía \"Mismo código con el que se creó\" — no tenía sentido para algo que todavía no existe. Ahora muestra un ejemplo claro y aclara que es opcional."
+    },
+    {
+      "v": "56.57",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en Punto de Venta, al editar un artículo, el menú \"⋮\" (arriba a la derecha) y el menú de la flechita junto a \"Guardar artículo\" se abrían corridos de lugar, superpuestos con el panel de Resumen, en vez de justo debajo del botón. La causa era técnica: la animación de apertura del formulario dejaba un resto invisible que desubicaba esos menús. Ya se limpia solo al terminar de abrirse, así que ahora aparecen siempre pegados a su botón."
+    },
+    {
+      "v": "56.56",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Punto de Venta, al editar un artículo, la pestaña \"Precios y Niveles\" tenía dos formas de elegir el mismo nivel de precio (un menú desplegable arriba y un lápiz por fila en la tabla) que hacían exactamente lo mismo — confuso, no se sabía cuál usar. Se quitó el menú desplegable; ahora solo se elige con el lápiz de la tabla, que además ya muestra los precios de cada nivel de un vistazo."
+    },
+    {
+      "v": "56.55",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: el botón \"Guardar\" de los formularios de Cliente y de Préstamo (Financiamiento) ya no se estira ocupando casi todo el ancho de la pantalla — ahora es un botón normal, del mismo tamaño que \"Cancelar\", alineado a la derecha."
+    },
+    {
+      "v": "56.54",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en la pantalla donde se cobra una cuota, ya no aparecen mezclados los botones de Contrato, Documentos/foto y Borrar préstamo — esos quedan ahora en la ficha del cliente (pestaña Préstamos del Historial Crediticio), como acciones al lado de cada préstamo. La pantalla de cobro queda enfocada solo en cobrar (WhatsApp, Estado de cuenta, Imprimir, Editar), y desde ahí se agregó un botón \"Ficha\" para ir directo al cliente si hace falta lo demás. De paso, el botón \"Guardar y usar cliente\" del formulario de cliente ahora dice simplemente \"Guardar\" (era un texto muy largo para el botón)."
+    },
+    {
+      "v": "56.53",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: la ficha del cliente (Historial Crediticio) se ve más clara y ordenada, en celular y en computadora. El encabezado con el nombre y los datos del cliente ahora tiene más aire y un anillo circular que muestra la puntualidad de pago de un vistazo. Los 9 recuadros de números (préstamos, montos, mora, etc.) pasaron de un iconito plano a una insignia circular de color, igual que ya se ve en Financiamiento. Ningún dato cambió — solo se ve más fácil de leer."
+    },
+    {
+      "v": "56.52",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: en Financiamiento, visto desde el celular, las 4 estadísticas del encabezado (Prestado / Cobrado / Vencido / Clientes) ya no son filas translúcidas metidas dentro del morado — ahora son tarjetas blancas sueltas con un ícono circular de color distinto cada una (azul, verde, naranja, morado), más fácil de leer de un vistazo. Mismo dato, mismo lugar, solo el vestido."
+    },
+    {
+      "v": "56.51",
+      "fecha": "2026-08-20",
+      "texto": "ARREGLADO: en el Historial Crediticio, el dato \"Puntualidad de pago\" podía decir 100% aunque la línea de tiempo de abajo mostrara meses con pagos tardíos (puntos rojo/amarillo) — daba una impresión de riesgo equivocada. Ahora ese porcentaje se calcula con el mismo dato real que pinta la línea de tiempo (cuánto de lo ya vencido se pagó a tiempo), así que ambos siempre coinciden."
+    },
+    {
       "v": "56.50",
       "fecha": "2026-08-20",
-      "texto": "NUEVO: Financiamiento — rediseño de vidrio esmerilado en el Dashboard del celular (auditado desde una propuesta de ChatGPT contra el código real, antes de aplicarlo). Solo en pantallas angostas: el Dashboard ahora abre con 4 tarjetas de vidrio (Balance por cobrar, Mora acumulada, Cobrado hoy, Préstamos activos), un botón grande 'Financiar' arriba, 4 accesos rápidos (Cobranza, Cuotas, Clientes, Reportes) y una lista de 'Próximos pagos' con los 5 préstamos de vencimiento más cercano — calculados con la misma lógica real de saldo, vencimiento y mora que ya usa toda la cartera, nada inventado. En escritorio no cambia nada: se queda con el tablero morado y la barra lateral de siempre, para no perder 'Exportar'/'Nuevo préstamo' ni duplicar encabezados. Se le dio el mismo tratamiento al encabezado del Historial Crediticio de cada cliente: 3 tarjetas de vidrio nuevas (Monto financiado + Pagado, Puntualidad de pago con barra de progreso, Balance pendiente + Mora acumulada) — mismos datos que ya calculaba el sistema, con mejor jerarquía visual. Verificado con capturas reales en 390px y escritorio antes de publicar: cero errores de consola, cero desborde horizontal, montos cruzados a mano contra los datos reales de cada préstamo."
+      "texto": "MEJORADO: la pantalla de Nueva Evaluación Financiera (Financiamiento) ya no muestra Información, Análisis y Simulador apretados en 3 columnas angostas con texto cortado. Ahora las pestañas de arriba (Información general / Análisis financiero / Simulador / Recomendación) funcionan de verdad: cada una muestra su panel a todo el ancho, una a la vez, más fácil de leer y de llenar."
     },
     {
       "v": "56.49",
