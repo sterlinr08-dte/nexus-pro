@@ -12991,8 +12991,92 @@
         <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
       </nav>`;
     host.classList.remove('dock-open');
+    nxFPArcSync();
   }
   window.nxFPToggleMore = function () { const s = document.getElementById('nxFPDockHost'); if (s) s.classList.toggle('dock-open'); };
+
+  // ── "Luz que se estira" — pedida por el dueño (20-ago-2026, referencia: demo
+  // "ARC" de Instagram, tab-bar con un rayo de luz que "va a buscar" el ícono
+  // tocado). Es una capa puramente decorativa: NUNCA toca nxPrestamoFiltroTipo/
+  // nxPrView/nxPrestamoNuevo/nxFPToggleMore, solo se monta ENCIMA del dock ya
+  // existente (la burbuja ::before de arriba sigue siendo la que marca "estás
+  // aquí" — esto solo añade el trayecto fluido entre una pestaña y la otra).
+  // Física de 2 resortes (no una sola curva CSS): la punta "lead" persigue el
+  // objetivo con un resorte RÍGIDO (llega primero, "estira" la luz) y la punta
+  // "trail" con uno BLANDO cuya rigidez crece a medida que se acerca ("home"),
+  // así el trazo se alarga al viajar y se tensa/cierra de golpe al llegar —
+  // mismo lenguaje que la referencia, sin copiar su código (no lo tenemos, se
+  // reconstruyó la idea desde la descripción visual).
+  // Vive en un host PROPIO, colgado de <body> aparte de #nxFPDockHost — igual
+  // que el propio dock (ver el porqué arriba, "no se queda fija en la parte
+  // inferior") — porque host.innerHTML se REEMPLAZA ENTERO en cada
+  // renderFPDock(), y con eso adentro el SVG se destruiría en cada tecla/toque
+  // perdiendo la posición a medio viaje. Al vivir aparte, el estado del resorte
+  // (_fpArc) sobrevive a cualquier re-render del dock — solo se reposiciona.
+  const _fpArc = { leadX: null, trailX: null, targetX: null, tripDist: 0, raf: 0 };
+  function fpArcHost() {
+    let h = document.getElementById('nxFPArcHost');
+    if (h) return h;
+    h = document.createElement('div'); h.id = 'nxFPArcHost'; h.setAttribute('aria-hidden', 'true');
+    h.innerHTML = '<svg width="100%" height="60" style="display:block;overflow:visible">' +
+      '<defs>' +
+      // gradientUnits="userSpaceOnUse" a propósito: el default (objectBoundingBox)
+      // NO renderiza sobre una <line> perfectamente horizontal (y1===y2 → bounding
+      // box de alto CERO, un caso degenerado conocido de SVG donde el navegador
+      // simplemente no pinta el trazo, con opacity/stroke-width/color todos
+      // "correctos" por inspección — así se quedó invisible en la primera versión).
+      // Con userSpaceOnUse, x1/x2 son coordenadas ABSOLUTAS (no 0-1) y se actualizan
+      // en cada fpArcPaint() para que el gradiente siga viajando pegado al propio
+      // largo del rayo, igual que si fuera objectBoundingBox pero sin el bug.
+      '<linearGradient id="nxFPArcGrad" gradientUnits="userSpaceOnUse" x1="0" y1="55" x2="60" y2="55"><stop offset="0%" stop-color="#818cf8"/><stop offset="55%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#c084fc"/></linearGradient>' +
+      '<filter id="nxFPArcBlur" x="-80%" y="-300%" width="260%" height="700%"><feGaussianBlur stdDeviation="4.2"/></filter>' +
+      '</defs>' +
+      '<line id="nxFPArcHalo" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="11" stroke-linecap="round" filter="url(#nxFPArcBlur)" opacity="0"></line>' +
+      '<line id="nxFPArcCore" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="4" stroke-linecap="round" opacity="0"></line>' +
+      '</svg>';
+    document.body.appendChild(h);
+    return h;
+  }
+  function fpArcPaint(x1, x2, sw) {
+    const h = fpArcHost(), core = h.querySelector('#nxFPArcCore'), halo = h.querySelector('#nxFPArcHalo'), grad = h.querySelector('#nxFPArcGrad');
+    if (!core || !halo) return;
+    core.setAttribute('x1', x1.toFixed(2)); core.setAttribute('x2', x2.toFixed(2)); core.setAttribute('stroke-width', sw.toFixed(2)); core.style.opacity = '1';
+    halo.setAttribute('x1', x1.toFixed(2)); halo.setAttribute('x2', x2.toFixed(2)); halo.setAttribute('stroke-width', (sw + 7).toFixed(2)); halo.style.opacity = '.55';
+    // el gradiente (userSpaceOnUse) viaja pegado al propio largo del rayo — ver
+    // el porqué en fpArcHost(), junto a la definición de #nxFPArcGrad.
+    if (grad) { grad.setAttribute('x1', x1.toFixed(2)); grad.setAttribute('x2', x2.toFixed(2)); }
+  }
+  function fpArcStep() {
+    _fpArc.raf = 0;
+    if (_fpArc.targetX == null) return;
+    const dLead = _fpArc.targetX - _fpArc.leadX; _fpArc.leadX += dLead * .22; // resorte líder: rígido, llega rápido
+    const dTrail = _fpArc.targetX - _fpArc.trailX;
+    const home = _fpArc.tripDist > 0 ? Math.max(0, Math.min(1, 1 - Math.abs(dTrail) / _fpArc.tripDist)) : 1;
+    _fpArc.trailX += dTrail * (.045 + .155 * home); // resorte trasero: blando al salir, rígido al llegar (se "tensa")
+    const x1 = Math.min(_fpArc.leadX, _fpArc.trailX), x2 = Math.max(_fpArc.leadX, _fpArc.trailX);
+    const spread = x2 - x1, mid = (x1 + x2) / 2, w = Math.max(spread, 9);
+    fpArcPaint(mid - w / 2, mid + w / 2, Math.max(2.6, 4.6 - spread * .018));
+    const done = Math.abs(_fpArc.targetX - _fpArc.leadX) < .4 && Math.abs(_fpArc.targetX - _fpArc.trailX) < .4;
+    if (done) { _fpArc.leadX = _fpArc.trailX = _fpArc.targetX; fpArcPaint(_fpArc.targetX - 4.5, _fpArc.targetX + 4.5, 4); return; }
+    _fpArc.raf = requestAnimationFrame(fpArcStep);
+  }
+  function nxFPArcSync() {
+    try {
+      if (!window.matchMedia || !window.matchMedia('(max-width:900px)').matches) return; // en escritorio el dock ni se ve — no gastar ciclos
+      const dock = document.querySelector('#nxFPDockHost .nxFP-dock');
+      const on = dock && dock.querySelector('.nxFP-dockBtn.on');
+      const h = fpArcHost();
+      if (!on) { const c = h.querySelector('#nxFPArcCore'), ha = h.querySelector('#nxFPArcHalo'); if (c) c.style.opacity = '0'; if (ha) ha.style.opacity = '0'; _fpArc.targetX = null; return; }
+      const hr = h.getBoundingClientRect(), br = on.getBoundingClientRect();
+      const cx = br.left + br.width / 2 - hr.left;
+      const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+      if (_fpArc.targetX === null || reduce) { _fpArc.leadX = _fpArc.trailX = _fpArc.targetX = cx; if (_fpArc.raf) { cancelAnimationFrame(_fpArc.raf); _fpArc.raf = 0; } fpArcPaint(cx - 4.5, cx + 4.5, 4); return; }
+      if (Math.abs(_fpArc.targetX - cx) < .5) return; // mismo destino de siempre (re-render sin cambiar de pestaña) — no reinicia el viaje
+      _fpArc.targetX = cx;
+      _fpArc.tripDist = Math.max(Math.abs(cx - _fpArc.leadX), Math.abs(cx - _fpArc.trailX), 1);
+      if (!_fpArc.raf) _fpArc.raf = requestAnimationFrame(fpArcStep);
+    } catch (e) {}
+  }
 
   function ensureView() {
     let v = document.getElementById('v-prestamos');
@@ -25904,6 +25988,24 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // para esconder el FAB global mientras Financiamiento SÍ está activo (ver injectCSS()),
       // solo que a la inversa: aquí se esconde el dock salvo que #v-prestamos.on exista.
       'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
+      // ── "Luz que se estira" — mismas 3 reglas de visibilidad que el propio
+      // dock (arriba), calcadas a propósito: si el dock no se ve, la luz
+      // tampoco tiene sentido mostrarse. #nxFPArcHost es SOLO el lienzo (SVG),
+      // pointer-events:none para que nunca robe un toque a los botones reales
+      // que quedan justo debajo/alrededor.
+      // NO se le puso transition:opacity a propósito (se probó y se quitó): al
+      // llamar getBoundingClientRect() en nxFPArcSync() para medir el botón
+      // ANTES de fijar la opacidad final, se fuerza un layout intermedio que
+      // Chrome sí cuenta como "estado anterior" real — con una transición
+      // declarada, eso encendía un fundido de 200ms no pedido (y hacía que el
+      // primer pintado, pensado para ser instantáneo, apareciera casi invisible
+      // durante ese tramo). La única animación real de este efecto es la
+      // posición (el resorte de fpArcStep) — la opacidad entra/sale de un salto.
+      '#nxFPArcHost{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;pointer-events:none}' +
+      '#nxFPArcHost svg{width:100%;height:100%;display:block}' +
+      '@media(max-width:900px){#nxFPArcHost{display:block}}' +
+      'body:has(.overlay.open) #nxFPArcHost{display:none!important}' +
+      'body:not(:has(#v-prestamos.on)) #nxFPArcHost{display:none!important}' +
       '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
     document.head.appendChild(st);
   };

@@ -1,7 +1,12 @@
 {
-  "version": "56.62",
+  "version": "56.63",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.63",
+      "fecha": "2026-08-21",
+      "texto": "NUEVO: en Financiamiento (celular), el menú de abajo ahora tiene un pequeño rayo de luz morado que \"va a buscar\" el botón que tocas — se estira mientras viaja y se tensa al llegar, en vez de saltar de golpe. Es puramente decorativo (no cambia ningún botón ni función) y se apaga solo si el teléfono tiene activado \"reducir movimiento\"."
+    },
     {
       "v": "56.62",
       "fecha": "2026-08-21",
