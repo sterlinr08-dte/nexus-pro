@@ -25992,6 +25992,18 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-dockBtn.on i{transform:translateY(-22px)}' +
       '.nxFP-dockBtn.on span{opacity:0;transform:translateY(3px)}' +
       '.nxFP-dockBtn.on::before{content:"";position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 10px 22px -5px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.72)}' +
+      // v56.65 — el dueño aclaró: la luz de neón no era para el rayo (v56.64,
+      // se queda igual) sino para la CÍRCULO de selección (el círculo morado/
+      // índigo que "flota" arriba del botón activo, el ::before de arriba).
+      // Un ::after del mismo tamaño, MÁS ATRÁS (z-index:-2, entre el fondo del
+      // dock y el círculo), con un blur CSS (filter:blur(), no un <filter> de
+      // SVG — es un div normal, no hay riesgo del bug de v56.64) que respira
+      // igual que el rayo (2.6s, mismo ritmo, para que los dos efectos se
+      // sientan como UNA sola cosa) creciendo/apagándose detrás del círculo,
+      // como el halo de un tubo de neón real.
+      '.nxFP-dockBtn.on::after{content:"";position:absolute;top:-28px;left:50%;width:48px;height:48px;border-radius:50%;z-index:-2;background:linear-gradient(150deg,#4f46e5,#6d28d9);filter:blur(11px);animation:nxfpDockGlow 2.6s ease-in-out infinite}' +
+      '@keyframes nxfpDockGlow{0%,100%{opacity:.35;transform:translateX(-50%) scale(.88)}50%{opacity:.95;transform:translateX(-50%) scale(1.35)}}' +
+      '@media(prefers-reduced-motion:reduce){.nxFP-dockBtn.on::after{animation:none;opacity:.6;transform:translateX(-50%) scale(1.05)}}' +
       '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
       '#nxFPDockHost.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
       '.nxFP-dockBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +

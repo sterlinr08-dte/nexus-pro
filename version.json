@@ -1,7 +1,12 @@
 {
-  "version": "56.64",
+  "version": "56.65",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.65",
+      "fecha": "2026-08-21",
+      "texto": "ARREGLADO: la luz de neón de Financiamiento (celular) no era para el rayo del menú de abajo, sino para el círculo morado que \"flota\" arriba del botón seleccionado — ahora ese círculo tiene su propio halo brillante que pulsa despacio a su alrededor, para que la selección se sienta iluminada de verdad."
+    },
     {
       "v": "56.64",
       "fecha": "2026-08-21",
