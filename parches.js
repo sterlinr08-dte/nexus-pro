@@ -13030,7 +13030,33 @@
       // largo del rayo, igual que si fuera objectBoundingBox pero sin el bug.
       '<linearGradient id="nxFPArcGrad" gradientUnits="userSpaceOnUse" x1="0" y1="55" x2="60" y2="55"><stop offset="0%" stop-color="#818cf8"/><stop offset="55%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#c084fc"/></linearGradient>' +
       '<filter id="nxFPArcBlur" x="-80%" y="-300%" width="260%" height="700%"><feGaussianBlur stdDeviation="4.2"/></filter>' +
+      // Aura de neón: un 3er trazo, más ancho y más difuminado que el halo,
+      // detrás de todo. Su opacidad NO la controla JS — la controla ESTA
+      // animación CSS (2,6s de "respiro" lento, como un tubo de neón real).
+      // JS solo prende/apaga la <line> interna (0 o 1, mismo criterio de
+      // siempre); el <g> que la envuelve multiplica ESE valor por el pulso —
+      // así nunca "pisa" el mecanismo de mostrar/ocultar ya probado (si JS
+      // apaga la línea, 0×cualquier-pulso sigue siendo 0).
+      // BUG REAL encontrado y evitado (verificado con Chromium real, no
+      // supuesto): un difuminado hecho con <filter>+feGaussianBlur (el
+      // mecanismo SVG "clásico", el mismo que ya usa #nxFPArcBlur del halo)
+      // deja el trazo CONGELADO — el navegador cachea el resultado ya
+      // difuminado como un mapa de bits y NUNCA lo vuelve a pintar si lo
+      // único que cambia es la opacidad de un ancestro animado por CSS
+      // @keyframes (reproducido: opacidad SÍ cambiaba de verdad en el DOM,
+      // el píxel en pantalla NUNCA cambiaba un byte — probado también
+      // animando la opacidad de la propia línea, con `will-change:opacity`,
+      // y hasta con `stroke-opacity` — las tres se quedan igual de
+      // congeladas; SOLO deja de pasar si el difuminado se hace con la
+      // propiedad CSS `filter:blur()` en vez del atributo SVG). El halo NO
+      // tiene este problema porque su opacidad la mueve JS con
+      // `style.opacity=...` cada cuadro (no una animación CSS), y eso sí
+      // fuerza el repintado — por eso no hizo falta tocarlo. Por seguridad,
+      // el aura NUEVA usa el CSS `filter:blur()` de abajo en vez de este
+      // mecanismo, y no un <filter> de SVG aparte.
+      '<style>@keyframes nxfpNeonPulse{0%,100%{opacity:.32}50%{opacity:.85}}#nxFPArcGlowWrap{animation:nxfpNeonPulse 2.6s ease-in-out infinite}@media(prefers-reduced-motion:reduce){#nxFPArcGlowWrap{animation:none;opacity:.55}}</style>' +
       '</defs>' +
+      '<g id="nxFPArcGlowWrap"><line id="nxFPArcGlow" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="20" stroke-linecap="round" style="filter:blur(8.5px)" opacity="0"></line></g>' +
       '<line id="nxFPArcHalo" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="11" stroke-linecap="round" filter="url(#nxFPArcBlur)" opacity="0"></line>' +
       '<line id="nxFPArcCore" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="4" stroke-linecap="round" opacity="0"></line>' +
       '</svg>';
@@ -13038,10 +13064,14 @@
     return h;
   }
   function fpArcPaint(x1, x2, sw) {
-    const h = fpArcHost(), core = h.querySelector('#nxFPArcCore'), halo = h.querySelector('#nxFPArcHalo'), grad = h.querySelector('#nxFPArcGrad');
+    const h = fpArcHost(), core = h.querySelector('#nxFPArcCore'), halo = h.querySelector('#nxFPArcHalo'), glow = h.querySelector('#nxFPArcGlow'), grad = h.querySelector('#nxFPArcGrad');
     if (!core || !halo) return;
     core.setAttribute('x1', x1.toFixed(2)); core.setAttribute('x2', x2.toFixed(2)); core.setAttribute('stroke-width', sw.toFixed(2)); core.style.opacity = '1';
     halo.setAttribute('x1', x1.toFixed(2)); halo.setAttribute('x2', x2.toFixed(2)); halo.setAttribute('stroke-width', (sw + 7).toFixed(2)); halo.style.opacity = '.55';
+    // glow: JS solo la "prende" (opacity 1) — el respiro de neón lo pone la
+    // animación CSS de #nxFPArcGlowWrap (ver fpArcHost()), multiplicada sobre
+    // este valor.
+    if (glow) { glow.setAttribute('x1', x1.toFixed(2)); glow.setAttribute('x2', x2.toFixed(2)); glow.setAttribute('stroke-width', (sw + 16).toFixed(2)); glow.style.opacity = '1'; }
     // el gradiente (userSpaceOnUse) viaja pegado al propio largo del rayo — ver
     // el porqué en fpArcHost(), junto a la definición de #nxFPArcGrad.
     if (grad) { grad.setAttribute('x1', x1.toFixed(2)); grad.setAttribute('x2', x2.toFixed(2)); }
@@ -13066,7 +13096,7 @@
       const dock = document.querySelector('#nxFPDockHost .nxFP-dock');
       const on = dock && dock.querySelector('.nxFP-dockBtn.on');
       const h = fpArcHost();
-      if (!on) { const c = h.querySelector('#nxFPArcCore'), ha = h.querySelector('#nxFPArcHalo'); if (c) c.style.opacity = '0'; if (ha) ha.style.opacity = '0'; _fpArc.targetX = null; return; }
+      if (!on) { const c = h.querySelector('#nxFPArcCore'), ha = h.querySelector('#nxFPArcHalo'), gl = h.querySelector('#nxFPArcGlow'); if (c) c.style.opacity = '0'; if (ha) ha.style.opacity = '0'; if (gl) gl.style.opacity = '0'; _fpArc.targetX = null; return; }
       const hr = h.getBoundingClientRect(), br = on.getBoundingClientRect();
       const cx = br.left + br.width / 2 - hr.left;
       const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;

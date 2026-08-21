@@ -1,7 +1,12 @@
 {
-  "version": "56.63",
+  "version": "56.64",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.64",
+      "fecha": "2026-08-21",
+      "texto": "NUEVO: ese mismo rayo de luz morado del menú de abajo en Financiamiento (celular) ahora también \"respira\" como un tubo de neón — un brillo suave alrededor de la base que se enciende y apaga despacio, incluso mientras está quieto. Se apaga solo si el teléfono tiene activado \"reducir movimiento\"."
+    },
     {
       "v": "56.63",
       "fecha": "2026-08-21",
