@@ -3108,7 +3108,7 @@ const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 function nxBuscaEnsureCSS(){
   if(document.getElementById('nxBuscaCSS'))return;
   const st=document.createElement('style');st.id='nxBuscaCSS';
-  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;width:100%;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:180px;flex:0 0 auto;transition:border-color .15s,box-shadow .15s}'
+  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;width:100%;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:180px;flex:0 0 auto;transition:border-color .2s,box-shadow .2s}'
     // el crecer-para-compartir-fila (flex:1 1 200px) SOLO tiene sentido dentro de una fila de
     // filtros (.frow, display:flex ROW) — como regla base rompía cualquier buscador metido
     // directo en un contenedor flex EN COLUMNA (típico de un modal: display:flex;flex-direction:
@@ -3119,7 +3119,7 @@ function nxBuscaEnsureCSS(){
     // base, el buscador SIEMPRE mide 42px de alto sin importar el contenedor; solo dentro de
     // .frow se le devuelve el crecer/encoger para compartir la fila con otros filtros.
     +'.frow>.nxBusca,.frow .nxBusca{flex:1 1 200px}'
-    +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
+    +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12),0 8px 20px -10px rgba(109,40,217,.35)}'
     +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
     +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
     // !important: el input puede caer dentro de contenedores viejos con sus propios
@@ -3139,8 +3139,21 @@ function nxBuscaEnsureCSS(){
     +'.nxBusca.nxBusca-load .nxBusca-lupa i{animation:nxBuscaSpin 1s linear infinite}'
     +'@keyframes nxBuscaSpin{to{transform:rotate(360deg)}}'
     // compacto (espacios estrechos): solo la lupa hasta que se toca; se expande al abrir
-    +'.nxBusca-c:not(.open){flex:0 0 42px;width:42px}'
-    +'.nxBusca-c:not(.open) .nxBusca-in,.nxBusca-c:not(.open) .nxBusca-x{display:none!important}';
+    // con una transición de verdad (antes era un corte seco con display:none) — pedido
+    // del dueño sobre una referencia visual (buscador que "crece" con brillo suave).
+    +'.nxBusca-c{overflow:hidden;transition:flex-basis .32s cubic-bezier(.34,1.56,.64,1),width .32s cubic-bezier(.34,1.56,.64,1),min-width .32s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,border-color .25s}'
+    +'.nxBusca-c:not(.open){flex:0 0 42px;width:42px;min-width:42px;border-radius:21px;cursor:pointer;box-shadow:0 2px 8px -3px rgba(15,23,42,.18)}'
+    +'.nxBusca-c:not(.open):hover{border-color:#c4b5fd;box-shadow:0 6px 16px -6px rgba(109,40,217,.4)}'
+    +'.nxBusca-c .nxBusca-in,.nxBusca-c .nxBusca-x{opacity:0;transition:opacity .18s}'
+    +'.nxBusca-c:not(.open) .nxBusca-in,.nxBusca-c:not(.open) .nxBusca-x{pointer-events:none}'
+    +'.nxBusca-c.open{flex:1 1 240px;width:auto;min-width:180px}'
+    +'.nxBusca-c.open .nxBusca-in,.nxBusca-c.open .nxBusca-x{opacity:1;transition:opacity .3s .1s}'
+    // 2 puntitos que flotan apenas mientras está abierto — decoración discreta, no
+    // interactúan con nada (pointer-events:none), colores del propio acento morado.
+    +'.nxBusca-c.open::before,.nxBusca-c.open::after{content:"";position:absolute;top:-6px;width:5px;height:5px;border-radius:50%;background:#a78bfa;opacity:.4;pointer-events:none;animation:nxBuscaFloat 2.6s ease-in-out infinite}'
+    +'.nxBusca-c.open::before{left:20%}'
+    +'.nxBusca-c.open::after{left:74%;animation-delay:1.1s}'
+    +'@keyframes nxBuscaFloat{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-7px);opacity:.7}}';
   document.head.appendChild(st);
 }
 function nxBuscaHTML(o){
@@ -3161,7 +3174,34 @@ function nxBuscaHTML(o){
     +'<button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda"'+(o.value?'':' style="display:none"')+' onclick="nxBuscaClear(this)">✕</button>'
     +'</div>';
 }
-function nxBuscaLupa(btn){const w=btn.closest('.nxBusca');if(!w)return;w.classList.add('open');const i=w.querySelector('.nxBusca-in');if(i)i.focus();}
+function nxBuscaLupa(btn){
+  const w=btn.closest('.nxBusca');if(!w)return;
+  // Compacto ya abierto y vacío: un segundo toque a la lupa lo vuelve a cerrar,
+  // como se espera de cualquier buscador que se expande desde un ícono.
+  if(w.classList.contains('nxBusca-c')&&w.classList.contains('open')){
+    const i0=w.querySelector('.nxBusca-in');
+    if(i0&&!i0.value){w.classList.remove('open');i0.blur();return;}
+  }
+  w.classList.add('open');const i=w.querySelector('.nxBusca-in');if(i)i.focus();
+}
+// Cerrar el compacto solo: clic afuera (si está vacío, para no perder una búsqueda a
+// medio escribir) o Escape (vacía y cierra). Un único listener delegado en document,
+// no uno por instancia — este componente se re-crea muy seguido (cada renderizado de
+// lista) y listeners por instancia se irían acumulando sin limpiarse nunca.
+document.addEventListener('click',function(ev){
+  document.querySelectorAll('.nxBusca-c.open').forEach(function(w){
+    if(w.contains(ev.target))return;
+    const i=w.querySelector('.nxBusca-in');
+    if(i&&!i.value)w.classList.remove('open');
+  });
+},true);
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Escape')return;
+  const w=document.querySelector('.nxBusca-c.open');if(!w)return;
+  const i=w.querySelector('.nxBusca-in');
+  if(i){i.value='';i.blur();}
+  w.classList.remove('open');
+});
 function nxBuscaTog(inp){const w=inp.closest('.nxBusca');const x=w&&w.querySelector('.nxBusca-x');if(x)x.style.display=inp.value?'':'none';}
 function nxBuscaClear(btn){const w=btn.closest('.nxBusca');const i=w&&w.querySelector('.nxBusca-in');if(!i)return;i.value='';btn.style.display='none';i.focus();i.dispatchEvent(new Event('input',{bubbles:true}));}
 // Disponible para parches.js y módulos externos
@@ -4529,7 +4569,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.59';
+const APP_VERSION='56.60';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -16476,6 +16476,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
+  let _prodQ = '', _prodPage = 1, _prodPageSize = 15, _prodSel = new Set(); // buscador/paginación/selección de la tabla premium de Inventario
   let _impModo = 'nuevos'; // modal Importar (Productos): nuevos (Infoplus, pegar) | precios (CSV, actualizar existentes)
   let _niveles = [], _prodNiveles = []; // Niveles de precio ilimitados por org (pos_niveles_precio) + precio de cada producto en cada nivel (pos_producto_niveles)
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
@@ -19546,34 +19547,68 @@
       onterm: function (v) { window.nxProdTablaBuscar(v); }
     });
   }
-  function renderProductos() {
-    const esBajo = p => p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
-    const esSin = p => p.tipo !== 'servicio' && Number(p.stock || 0) <= 0;
-    const bajos = _prods.filter(esBajo).length;
-    // Pastillas de filtro (inventario premium)
+  function prodEsBajo(p) { return p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0; }
+  function prodEsSin(p) { return p.tipo !== 'servicio' && Number(p.stock || 0) <= 0; }
+  // Lista final tras pastilla + texto buscado + orden — una sola fuente de verdad que
+  // usan tanto el render completo como el refresco parcial de la tabla (buscar/paginar).
+  function prodListaFiltrada() {
     const lista = _prods.filter(p => _prodFiltro === 'todos' ? true
       : _prodFiltro === 'stock' ? (p.tipo !== 'servicio' && Number(p.stock || 0) > 0)
-      : _prodFiltro === 'bajo' ? esBajo(p)
-      : _prodFiltro === 'sin' ? esSin(p)
+      : _prodFiltro === 'bajo' ? prodEsBajo(p)
+      : _prodFiltro === 'sin' ? prodEsSin(p)
       : p.tipo === 'servicio');
+    const ql = String(_prodQ || '').trim().toLowerCase();
+    const filtrada = ql ? lista.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase().includes(ql)) : lista;
+    return sortRows(filtrada, p => prodSortVal(p, _prodSort.k), _prodSort.d);
+  }
+  function prodFilaHTML(p) {
+    const serv = p.tipo === 'servicio';
+    const bajo = prodEsBajo(p), sin = prodEsSin(p);
+    const stkCell = serv ? '<span style="color:#cbd5e1">—</span>'
+      : sin ? '<span class="nxInvStk out">● Agotado</span>'
+      : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
+      : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
+    const sel = _prodSel.has(String(p.id));
+    return `<tr class="${sel ? 'nxProdRowSel' : ''}">
+      <td class="nxProdChk"><input type="checkbox" aria-label="Seleccionar ${esc(p.nombre || '')}" ${sel ? 'checked' : ''} onchange="window.nxProdSelToggle('${p.id}',this)"></td>
+      <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
+      <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
+      <td style="text-align:right;white-space:nowrap">${stkCell}</td>
+      <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
+      <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
+    </tr>`;
+  }
+  // Cuerpo de la tabla (tbody + pie de paginación) — se puede reconstruir SOLO esta
+  // parte (buscar/paginar/seleccionar) sin tocar el buscador de arriba, para no
+  // robarle el foco al campo mientras se escribe (ver nxProdRefrescarTabla).
+  function prodTablaCuerpoHTML() {
+    const todos = prodListaFiltrada();
+    const total = todos.length;
+    const totalPag = Math.max(1, Math.ceil(total / _prodPageSize));
+    _prodPage = Math.min(Math.max(1, _prodPage), totalPag);
+    const desde = (_prodPage - 1) * _prodPageSize;
+    const pagina = todos.slice(desde, desde + _prodPageSize);
+    const tbody = pagina.length ? pagina.map(prodFilaHTML).join('')
+      : `<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prodQ ? 'Nada coincide con la búsqueda.' : (_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.')}</td></tr>`;
+    const btnPag = (n, lbl, on, dis) => `<button type="button" class="nxProdPg${on ? ' on' : ''}" ${dis ? 'disabled' : ''} onclick="window.nxProdPage(${n})">${lbl}</button>`;
+    let nums = '';
+    if (total > 0) {
+      const ini = Math.max(1, _prodPage - 2), fin = Math.min(totalPag, ini + 4), ini2 = Math.max(1, fin - 4);
+      for (let n = ini2; n <= fin; n++) nums += btnPag(n, String(n), n === _prodPage, false);
+    }
+    const foot = `<div class="nxProdFoot">
+      <span class="nxProdFootTxt">${total ? `Mostrando ${desde + 1}-${Math.min(desde + _prodPageSize, total)} de ${total}` : 'Sin resultados'} ${_prods.length !== total ? `(de ${_prods.length} en total)` : ''}</span>
+      ${total > _prodPageSize ? `<div class="nxProdPgWrap">${btnPag(_prodPage - 1, '<i class="ti ti-chevron-left"></i>', false, _prodPage <= 1)}${nums}${btnPag(_prodPage + 1, '<i class="ti ti-chevron-right"></i>', false, _prodPage >= totalPag)}</div>` : ''}
+    </div>`;
+    return { tbody, foot, pagina };
+  }
+  function renderProductos() {
+    const bajos = _prods.filter(prodEsBajo).length;
     const pill = (f, l, n) => `<button type="button" class="nxInvPill${_prodFiltro === f ? ' on' : ''}" onclick="window.nxProdFiltro('${f}')">${l}${n != null ? ` <span>${n}</span>` : ''}</button>`;
     const pills = `<div class="nxInvPills">${pill('todos', 'Todos', _prods.length)}${pill('stock', 'En stock')}${pill('bajo', 'Bajo stock', bajos || null)}${pill('sin', 'Sin stock')}${pill('servicio', 'Servicios')}</div>`;
-    const filas = lista.length ? sortRows(lista, p => prodSortVal(p, _prodSort.k), _prodSort.d).map(p => {
-      const serv = p.tipo === 'servicio';
-      const bajo = esBajo(p), sin = esSin(p);
-      const stkCell = serv ? '<span style="color:#cbd5e1">—</span>'
-        : sin ? '<span class="nxInvStk out">● Agotado</span>'
-        : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
-        : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
-      return `<tr data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase())}">
-        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
-        <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
-        <td style="text-align:right;white-space:nowrap">${stkCell}</td>
-        <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
-        <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
-      </tr>`;
-    }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
-    return `<div style="margin-bottom:8px"><span id="prodQLupa"></span></div>
+    const { tbody, foot } = prodTablaCuerpoHTML();
+    return `<div class="nxProdWrap">
+      <div style="margin-bottom:8px"><span id="prodQLupa"></span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
@@ -19581,11 +19616,40 @@
         ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
       ${pills}
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw nxProdTw" style="font-size:11px"><table style="width:100%" id="nxProdTbl"><thead><tr>
+        <th class="nxProdChk"><input type="checkbox" aria-label="Seleccionar todos los de esta página" onchange="window.nxProdSelAll(this.checked)"></th>
+        ${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th>
+      </tr></thead><tbody id="nxProdTbody">${tbody}</tbody></table></div>
+      <div id="nxProdFootBox">${foot}</div>
+    </div>`;
   }
-  window.nxProdTablaBuscar = function (q) {
-    const ql = String(q || '').trim().toLowerCase();
-    document.querySelectorAll('#v-pos tbody tr[data-busca]').forEach(tr => { tr.style.display = (!ql || (tr.getAttribute('data-busca') || '').includes(ql)) ? '' : 'none'; });
+  // Refresco PARCIAL (solo tbody + pie): usado por buscar/paginar/seleccionar para no
+  // reconstruir el buscador de arriba (que le robaría el foco al campo en cada letra
+  // escrita — el mismo motivo por el que el buscador viejo usaba display:none en vez
+  // de reconstruir; ahora sí soporta paginación real porque filtra la lista completa,
+  // no solo las filas que ya estaban pintadas en la página actual).
+  function prodRefrescarTabla() {
+    const tbodyEl = document.getElementById('nxProdTbody'), footEl = document.getElementById('nxProdFootBox');
+    if (!tbodyEl) return;
+    const { tbody, foot } = prodTablaCuerpoHTML();
+    tbodyEl.innerHTML = tbody;
+    if (footEl) footEl.innerHTML = foot;
+    const chkAll = document.querySelector('#nxProdTbl thead .nxProdChk input');
+    if (chkAll) { const vis = [...tbodyEl.querySelectorAll('input[type=checkbox]')]; chkAll.checked = vis.length > 0 && vis.every(c => c.checked); chkAll.indeterminate = vis.some(c => c.checked) && !chkAll.checked; }
+  }
+  window.nxProdTablaBuscar = function (q) { _prodQ = q || ''; _prodPage = 1; prodRefrescarTabla(); };
+  window.nxProdPage = function (n) { _prodPage = n; prodRefrescarTabla(); };
+  window.nxProdSelToggle = function (id, chkEl) {
+    const checked = !!(chkEl && chkEl.checked);
+    if (checked) _prodSel.add(String(id)); else _prodSel.delete(String(id));
+    const row = chkEl && chkEl.closest('tr'); if (row) row.classList.toggle('nxProdRowSel', checked);
+    const chkAll = document.querySelector('#nxProdTbl thead .nxProdChk input');
+    if (chkAll) { const vis = [...document.querySelectorAll('#nxProdTbody input[type=checkbox]')]; chkAll.checked = vis.length > 0 && vis.every(c => c.checked); chkAll.indeterminate = vis.some(c => c.checked) && !chkAll.checked; }
+  };
+  window.nxProdSelAll = function (checked) {
+    const { pagina } = prodTablaCuerpoHTML();
+    pagina.forEach(p => { if (checked) _prodSel.add(String(p.id)); else _prodSel.delete(String(p.id)); });
+    prodRefrescarTabla();
   };
   window.nxProdFiltro = function (f) { _prodFiltro = f || 'todos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxComboPaint = function () {
@@ -27051,6 +27115,27 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxThSort.on{color:#4f46e5}',
       '.nxThI{font-size:11px;vertical-align:middle}',
       '.nxThIoff{opacity:.32}',
+      /* Tabla premium de Inventario (Punto de Venta → Productos): encabezado sólido,
+         checkbox de selección, filas alternadas/hover y paginación real. */
+      '.nxProdWrap{display:flex;flex-direction:column;gap:8px}',
+      '.nxProdTw{border:1px solid #dbeafe}',
+      '.nxProdTw table{border-collapse:collapse}',
+      '.nxProdTw thead th{background:#2563eb;color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;white-space:nowrap}',
+      '.nxProdTw thead th.nxThSort,.nxProdTw thead th.nxThSort:hover,.nxProdTw thead th.nxThSort.on{color:#fff}',
+      '.nxProdTw thead .nxThI{color:rgba(255,255,255,.85)}',
+      '.nxProdTw tbody td{padding:10px 12px;border-top:1px solid #eef2f7;vertical-align:middle}',
+      '.nxProdTw tbody tr:nth-child(even) td{background:#f8fafc}',
+      '.nxProdTw tbody tr:hover td{background:#eff6ff}',
+      '.nxProdTw tbody tr.nxProdRowSel td{background:#dbeafe}',
+      '.nxProdChk{width:36px;text-align:center;padding-left:12px!important;padding-right:4px!important}',
+      '.nxProdChk input{width:16px;height:16px;accent-color:#2563eb;cursor:pointer}',
+      '.nxProdFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 2px 2px}',
+      '.nxProdFootTxt{font-size:11px;color:#64748b}',
+      '.nxProdPgWrap{display:flex;gap:4px;align-items:center}',
+      '.nxProdPg{min-width:30px;height:30px;padding:0 8px;border:1.5px solid #e2e8f0;background:#fff;color:#334155;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}',
+      '.nxProdPg:hover:not(:disabled){border-color:#93c5fd;background:#eff6ff}',
+      '.nxProdPg.on{background:#2563eb;border-color:#2563eb;color:#fff}',
+      '.nxProdPg:disabled{opacity:.4;cursor:default}',
       /* Resaltado del IMEI que coincide con la búsqueda */
       '.nxSerHl{background:#fde68a;color:#92400e;border-radius:3px;padding:0 1px;font-weight:800}',
       /* Botón "Elegir" más compacto (antes ancho completo, quedaba muy largo) */

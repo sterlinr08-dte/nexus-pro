@@ -1,7 +1,12 @@
 {
-  "version": "56.59",
+  "version": "56.60",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.60",
+      "fecha": "2026-08-20",
+      "texto": "MEJORADO: el buscador de todo el sistema tiene ahora un brillo morado más lindo al tocarlo, y quedó lista la versión \"compacta\" (un círculo que se expande al tocarlo, como un buscador de app moderna) para cuando alguna pantalla la necesite. Además, la tabla de artículos en Punto de Venta → Inventario se ve más profesional: encabezado de color sólido, casillas para seleccionar varios artículos a la vez, filas alternadas y paginación de verdad (antes mostraba todo junto sin separar por páginas)."
+    },
     {
       "v": "56.59",
       "fecha": "2026-08-20",
