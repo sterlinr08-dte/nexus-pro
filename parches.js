@@ -25929,7 +25929,20 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // tamaño completo del aura de una fila de tabla se encimaría con los
       // botones vecinos. rgba(79,70,229,...) = #4f46e5 en RGB, el mismo
       // acento de Financiamiento (var(--nxfp-accent)), no un color nuevo.
-      '.nxFP-dockBtn.on{background:#fff;color:var(--nxfp-accent);box-shadow:0 0 0 1.5px rgba(79,70,229,.55),0 0 0 5px rgba(79,70,229,.15),0 0 13px 3px rgba(79,70,229,.35)}' +
+      // BLINDAJE (v56.69 hotfix) — encontrado auditando por qué el aura NUNCA
+      // se veía en producción pese a estar bien escrita: el tema global
+      // "semi-glass" (ver nx-semi-glass-global-css, más arriba en este mismo
+      // archivo) le pone a CUALQUIER <button> del sistema
+      // `border:1px solid rgba(139,92,246,.20)!important;border-radius:14px
+      // !important;box-shadow:0 8px 18px rgba(15,23,42,.12),inset 0 1px 0
+      // rgba(255,255,255,.9)!important` — como los botones del dock SON
+      // <button> reales, ese !important les pisaba el borde/radio/box-shadow
+      // propios sin importar la especificidad (mismo patrón de "blindaje"
+      // que ya necesitan el sidebar del POS/Financiamiento y los inputs del
+      // login contra este mismo tema). Se repiten border/border-radius acá
+      // con !important para ganarle también en el estado inactivo.
+      '.nxFP-dockBtn{border:0!important;border-radius:15px!important}' +
+      '.nxFP-dockBtn.on{background:#fff!important;color:var(--nxfp-accent)!important;border:0!important;border-radius:15px!important;box-shadow:0 0 0 1.5px rgba(79,70,229,.55),0 0 0 5px rgba(79,70,229,.15),0 0 13px 3px rgba(79,70,229,.35)!important}' +
       '@media(prefers-reduced-motion:reduce){.nxFP-dockBtn{transition:none}.nxFP-dockBtn i,.nxFP-dockBtn span{transition:none}}' +
       '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
       '#nxFPDockHost.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +

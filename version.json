@@ -1,7 +1,12 @@
 {
-  "version": "56.69",
+  "version": "56.70",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.70",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: el aura índigo del menú de abajo de Financiamiento (v56.69) no se veía en el teléfono — un estilo general de botones del sistema le ganaba en silencio al nuevo diseño. Ya se corrigió de raíz: ahora el botón activo del menú sí muestra el halo de luz alrededor, como se pidió."
+    },
     {
       "v": "56.69",
       "fecha": "2026-08-22",
