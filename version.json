@@ -1,7 +1,12 @@
 {
-  "version": "56.67",
+  "version": "56.68",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.68",
+      "fecha": "2026-08-22",
+      "texto": "NUEVO: en la lista de préstamos de Financiamiento, al tocar una fila (o elegirla con el teclado) ahora se ve un aura de luz índigo alrededor de esa tarjeta, para confirmar de un vistazo cuál préstamo se está seleccionando antes de que se abra."
+    },
     {
       "v": "56.67",
       "fecha": "2026-08-22",

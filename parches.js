@@ -25614,6 +25614,19 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tbl thead th{text-align:left;font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;border-bottom:1px solid #eef0f5;white-space:nowrap;background:#faf9ff}' +
       '.nxFP-tbl tbody td{padding:11px 12px;border-bottom:1px solid #f4f5f9;color:#334155;vertical-align:middle}' +
       '.nxFP-tbl tbody tr{cursor:pointer}.nxFP-tbl tbody tr:hover{background:#faf9ff}.nxFP-tbl tbody tr:last-child td{border-bottom:0}' +
+      // Aura al seleccionar una fila/tarjeta (pedido del dueño, con captura de la
+      // "LISTA DE PRÉSTAMOS" en el celular): un halo con el color del módulo
+      // alrededor de la fila que se tocó/enfocó — un solo par de reglas cubre las
+      // DOS vistas (desktop <tr> normal y la tarjeta colapsada en móvil,
+      // display:grid vía la media query de abajo) porque es el MISMO elemento,
+      // solo cambia su layout, nunca su identidad. :active da el destello al
+      // tocar (la fila navega casi al instante a nxPrestamoVer, así que es la
+      // ventana real donde se ve "seleccionado"); :focus-visible deja el aura
+      // fija mientras se navega con teclado (Tab), útil también para verificarlo
+      // sin depender del timing táctil. z-index para que el resplandor no quede
+      // tapado por la fila de abajo. Compound .nxFP-tbl.nxFP-cobTbl (Cobranza)
+      // hereda esto gratis — comparte la misma regla base .nxFP-tbl tbody tr.
+      '.nxFP-tbl tbody tr:active,.nxFP-tbl tbody tr:focus-visible{outline:none;position:relative;z-index:1;background:#f3f1ff;border-radius:14px;box-shadow:0 0 0 2px rgba(79,70,229,.55),0 0 0 8px rgba(79,70,229,.16),0 0 26px 6px rgba(79,70,229,.4);transition:box-shadow .15s ease,background .15s ease}' +
       '.nxFP-tRef{font-family:"Plus Jakarta Sans",monospace;font-size:10.5px;color:#6d28d9;font-weight:800;white-space:nowrap}' +
       '.nxFP-tNom{font-weight:700;color:#0f172a}.nxFP-tSub{font-size:10px;color:#94a3b8}.nxFP-tMoney{font-variant-numeric:tabular-nums;white-space:nowrap}' +
       '.nxFP-tBadge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:999px;white-space:nowrap}' +
