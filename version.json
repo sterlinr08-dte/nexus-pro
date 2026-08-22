@@ -1,7 +1,12 @@
 {
-  "version": "56.68",
+  "version": "56.69",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.69",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: en el menú de abajo de Financiamiento (celular), el botón que tocas ya no se marca con la cápsula de luz que viajaba entre botones — ahora se ve exactamente la misma aura índigo alrededor del botón (el mismo efecto ya aplicado a la lista de préstamos), un cuadro blanco con un halo de luz a su alrededor, más simple y más consistente en todo el sistema."
+    },
     {
       "v": "56.68",
       "fecha": "2026-08-22",
