@@ -4569,7 +4569,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.70';
+const APP_VERSION='56.71';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6803,9 +6803,10 @@ async function guardarNumeracion(){
   const numIni=parseInt(inp?.value);
   if(!numIni||numIni<=0){toast('err','Número inválido','Ingrese un número mayor a 0');return;}
   try{
-    // Guardamos numIni-1 porque la próxima factura suma 1
-    await guardarTexto('seq_poliza',String(numIni-1));
-    ST.config['seq_poliza']=String(numIni-1);
+    // Bloque 2C-2: reinicio vía RPC (candado + rol admin server-side +
+    // salvaguarda contra bajar del máximo número de póliza ya emitido).
+    const r=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:numIni,p_forzar:false});
+    ST.config['seq_poliza']=String(r.valor_interno);
     toast('ok','Numeración guardada',`La próxima factura será la #${numIni}`);
     refrescarContadorNum();
     inp.value='';
@@ -6826,29 +6827,12 @@ async function refrescarContadorNum(){
   }
 }
 async function generarNumPoliza(){
-  try{
-    const cfg=await API.get('configuracion',`clave=eq.seq_poliza&select=*`);
-    const actual=(cfg&&cfg[0]?parseInt(cfg[0].valor):0)+1;
-    // Guardar el nuevo número — usa la columna correcta 'actualizado'
-    if(cfg&&cfg[0]){
-      try{
-        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual),actualizado:new Date().toISOString()});
-      }catch(eCol){
-        // Si la columna 'actualizado' no existe, reintentar sin ella
-        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual)});
-      }
-    }else{
-      // Si no existe la fila seq_poliza, crearla
-      try{
-        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual),actualizado:new Date().toISOString()});
-      }catch(eCol){
-        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual)});
-      }
-    }
-    return `POL-${new Date().getFullYear()}-${String(actual).padStart(6,'0')}`;
-  }catch(e){
-    return `POL-${new Date().getFullYear()}-${String(Date.now()%1000000).padStart(6,'0')}`;
-  }
+  // Bloque 2C-2: el contador seq_poliza ahora se incrementa por RPC atómica
+  // (candado pg_advisory_xact_lock, org+sesión validadas server-side) — ya no
+  // se lee/escribe directo la tabla configuracion desde el navegador. El
+  // caller (guardarCli) envuelve esta llamada en su propio try/catch.
+  const r=await API.post('rpc/seguros_siguiente_numero_poliza',{});
+  return r.numero;
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -9961,10 +9945,6 @@ async function guardarDatosEmp(){
   const get=id=>document.getElementById(id)?.value?.trim()||'';
   const nom=get('cfgEmpNom');
   if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
-  // Helper: guarda un valor de TEXTO PLANO en la tabla configuracion
-  const guardarTexto2NoUsar=async(clave,valor)=>{
-    return await guardarTexto(clave,valor);
-  };
   try{
     const datos=[
       {clave:'empresa_nom',valor:nom},
@@ -9977,11 +9957,11 @@ async function guardarDatosEmp(){
       await guardarTexto(d.clave,d.valor);
       ST.config[d.clave]=d.valor;
     }
-    // Guardar la numeración inicial de facturas
+    // Guardar la numeración inicial de facturas — Bloque 2C-2: vía RPC
     const numIni=get('cfgNumIni');
     if(numIni&&parseInt(numIni)>0){
-      await guardarTexto('seq_poliza',String(parseInt(numIni)-1));
-      ST.config['seq_poliza']=String(parseInt(numIni)-1);
+      const r=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:parseInt(numIni),p_forzar:false});
+      ST.config['seq_poliza']=String(r.valor_interno);
       ST.config['numIni']=numIni;
     }
     actualizarCFG();
@@ -10102,7 +10082,6 @@ function poblarSelectArsCliente(){
 
 async function guardarTarifas(){
   const numIni=document.getElementById('cfgNumIni')?.value;
-  if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),actualizado:new Date().toISOString()});}
   // gv: lee el valor del campo quitando las comas de miles (guardar limpio)
   const gv=id=>{const v=document.getElementById(id)?.value||'';return window.nxMoney?window.nxMoney.strip(v):String(v).replace(/,/g,'');};
   const datos=[{clave:'prima_basico',valor:gv('cfgT1')},{clave:'prima_superior',valor:gv('cfgT2')},{clave:'prima_esencial',valor:gv('cfgT3')},{clave:'dep_basico',valor:gv('cfgD1')},{clave:'dep_superior',valor:gv('cfgD2')},{clave:'dep_esencial',valor:gv('cfgD3')},{clave:'comision_basico',valor:gv('cfgC1')},{clave:'comision_superior',valor:gv('cfgC2')},{clave:'comision_esencial',valor:gv('cfgC3')}];
@@ -10116,7 +10095,15 @@ async function guardarTarifas(){
   // Detalle con valores ANTES→DESPUÉS de las primas, para que un cambio de precio quede trazable
   // en la bitácora (antes solo decía "modificadas" y un precio mal puesto pasaba silencioso).
   const antes=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
+  try{
+    // Bloque 2C-2: antes esta escritura vivía FUERA del try (bug real — si
+    // fallaba, moría la función entera en silencio, sin tocar tarifas ni
+    // avisar). Ahora vive adentro, vía la RPC atómica de siempre.
+    if(numIni&&parseInt(numIni)>0){
+      const rNum=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:parseInt(numIni),p_forzar:false});
+      ST.config['seq_poliza']=String(rNum.valor_interno);
+    }
+    for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
     const ahora=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
     logAudit('TARIFAS_ACTUALIZADAS',`Primas titular/dep — ANTES ${antes} → AHORA ${ahora}`,'Configuración');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
 }
