@@ -26085,7 +26085,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // píldora, compacto no alto) pero con la paleta CLARA ya establecida para Financiamiento
       // (rediseño "soft-glass" del propio dashboard/sidebar) — pintarlo oscuro chocaría con el
       // resto del módulo que ya se ve así.
-      '.nxFP-dock{--nxfp-accent:#4f46e5;display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
+      // v56.67 — pedido del dueño: se quitó la línea blanca del contenedor
+      // (el borde 1px + el brillo superior en inset, ambos rgba(255,255,255,..)
+      // que dejaban un filo blanco alrededor/arriba del dock) y, en su lugar,
+      // el núcleo de la cápsula (.light-core, el trazo brillante que marca la
+      // pestaña tocada/elegida — ver .nxfp-stop-a más abajo) pasó de un
+      // degradado blanco→índigo a uno AZUL→índigo — sigue siendo LA MISMA
+      // pieza única de luz (nunca dos indicadores separados), solo cambia de
+      // qué color nace su brillo interior. El glow/rim de fondo se quedan en
+      // el índigo de siempre del módulo (regla "un color por app").
+      '.nxFP-dock{--nxfp-accent:#4f46e5;display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:0;box-shadow:0 20px 36px -10px rgba(30,27,51,.28);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
       '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;cursor:pointer;position:relative;font-family:inherit}' +
       // v56.66 — REDISEÑO COMPLETO pedido por el dueño (spec técnica exacta,
       // 20-ago-2026): reemplaza el círculo flotante (::before/::after de las
@@ -26107,7 +26116,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // necesitar sus propias reglas — a diferencia del #nxFPArcHost viejo,
       // que vivía aparte y necesitaba 4 reglas de visibilidad calcadas.
       '.nxFP-dock .light{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}' +
-      '.nxfp-stop-a{stop-color:#fff;stop-opacity:.92}' +
+      '.nxfp-stop-a{stop-color:#2563eb;stop-opacity:.92}' +
       '.nxfp-stop-b{stop-color:var(--nxfp-accent);stop-opacity:.7}' +
       // 3 capas de neón (mínimo pedido por la especificación): glow difuso
       // detrás de todo (filter:blur CSS, NUNCA un <filter>+feGaussianBlur de

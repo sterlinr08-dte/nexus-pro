@@ -1,7 +1,12 @@
 {
-  "version": "56.66",
+  "version": "56.67",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.67",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: en el menú de abajo de Financiamiento (celular), se quitó la línea blanca que rodeaba el fondo del menú (el borde y el brillo de arriba) y ahora el centro de la cápsula de luz —el trazo que marca el botón que tocaste— es azul en vez de blanco, para que se note más la selección."
+    },
     {
       "v": "56.66",
       "fecha": "2026-08-22",
