@@ -1,7 +1,12 @@
 {
-  "version": "56.70",
+  "version": "56.71",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.71",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO (seguridad): el número de las pólizas nuevas (el contador que dice cuál es la próxima) ahora se genera y se reinicia con un candado seguro en el servidor, así que dos usuarios cobrando/creando pólizas al mismo tiempo nunca podrán terminar con el mismo número duplicado por accidente. De paso se corrigió un bug real en \"Tarifas y comisiones\": si guardar la numeración fallaba, antes la pantalla se quedaba pegada sin avisar nada y las tarifas no se guardaban — ahora siempre avisa con un mensaje claro."
+    },
     {
       "v": "56.70",
       "fecha": "2026-08-22",
