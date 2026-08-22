@@ -6,8 +6,9 @@
 > está cerrado, qué falta, y las reglas que rigen cómo se hace este trabajo** — no reemplaza la
 > bitácora (ahí está el detalle con evidencia), la hace navegable.
 >
-> Última actualización: **25-ago-2026**, contra el estado real de Supabase (`tnwsgcxurfyuszxsewsn`),
-> verificado con `get_advisors`/`execute_sql` al escribir este documento, no de memoria.
+> Última actualización: **22-ago-2026** (cierre del Bloque 2C-2), contra el estado real de Supabase
+> (`tnwsgcxurfyuszxsewsn`), verificado con `get_advisors`/`execute_sql` al escribir este documento,
+> no de memoria.
 
 ---
 
@@ -95,18 +96,15 @@ Verificado con SQL directo contra producción al escribir este documento (no lis
 | Historial TSS | por org | RPC append-only (nunca sobrescribe una fila, versiona) | 4D-2 |
 | Pagos (tabla legacy con 1 fila) | — | resuelto tras análisis de riesgo real (ver bitácora 4D-3) | 4D-3 |
 | `configuracion` (org + `roles_perms` admin-only) | por org | policy directa, verificado con SQL en este documento | 2C-1 |
+| `configuracion.seq_poliza` (número de póliza) | por org **+ carve-out**: INSERT/UPDATE/DELETE directo a `clave='seq_poliza'` rechazado por RLS (verificado: UPDATE afecta 0 filas, INSERT lanza `42501`), todas las demás claves de `configuracion` siguen escribibles directo sin regresión | 2 RPC con candado (`pg_advisory_xact_lock`) — `seguros_siguiente_numero_poliza` (incrementa), `seguros_resetear_seq_poliza` (reinicia, solo admin, no permite bajar del máximo ya emitido salvo `p_forzar`). Frontend migrado en los 4 sitios que antes escribían directo (`generarNumPoliza`, `guardarNumeracion`, `guardarDatosEmp`, `guardarTarifas` — esta última tenía además un bug real: la escritura vivía FUERA de su `try`, moría en silencio si fallaba) | **2C-2** |
 | `organizaciones` | lectura pública (necesaria para el login) / escritura admin | — | Ronda 1 (26-jul) |
 | `auditoria` | por org (con `organizacion_id` + trigger, backfill de 2,373 filas históricas) | — | 26-jul |
 | Artículo 360° — costo/margen visible solo si el rol lo permite | — | `puedeVerCosto360()` fail-closed | Fase A |
 
 ### Pendiente — propuesto y probado, esperando autorización para aplicar
 
-- **`configuracion.seq_poliza`** (Bloque **2C-2**): hoy cualquier sesión autenticada de `nexus-pro`
-  puede escribir directo esa fila (4 sitios en el frontend, sin candado real) — el número de póliza
-  se puede duplicar bajo carga concurrente. Diseño ya escrito y probado en branch desechable
-  (`docs/bitacora/2026-08-19-1200-claude-bloque2c2-final-candidato.sql`): 2 RPC
-  (`seguros_siguiente_numero_poliza`/`seguros_resetear_seq_poliza`) con candado compartido. **No
-  aplicado a producción todavía.**
+Ninguno por ahora — el último bloque pendiente (2C-2, `seq_poliza`) se cerró el 22-ago-2026 (ver
+tabla de arriba y `docs/bitacora/2026-08-22-*-claude-bloque2c2-cierre.md`).
 
 ### Sin tocar, documentado como riesgo conocido (no bloqueante hoy)
 
@@ -119,13 +117,14 @@ Verificado con SQL directo contra producción al escribir este documento (no lis
 
 ---
 
-## 5. `get_advisors(security)` — estado en vivo (25-ago-2026)
+## 5. `get_advisors(security)` — estado en vivo (22-ago-2026)
 
-**45 avisos totales, ninguno es un hueco real sin explicación:**
+**47 avisos totales, ninguno es un hueco real sin explicación** (subió de 45 a 47 al cerrar 2C-2: las
+2 RPC nuevas de la tabla de §4 entran, como es de esperar, en la categoría de abajo):
 
 | Tipo | Cantidad | Es un problema? |
 |---|---|---|
-| `authenticated_security_definer_function_executable` | 36 | **No** — son exactamente las RPC de §4 (candado + validación interna). Supabase avisa de toda función `SECURITY DEFINER`; su seguridad real está en la validación DENTRO de cada una, no en ocultar que existe. |
+| `authenticated_security_definer_function_executable` | 38 | **No** — son exactamente las RPC de §4 (candado + validación interna). Supabase avisa de toda función `SECURITY DEFINER`; su seguridad real está en la validación DENTRO de cada una, no en ocultar que existe. |
 | `anon_security_definer_function_executable` | 7 | **No** — son helpers de identidad (`mi_organizacion`, `mi_usuario_id`, `mi_es_superadmin`, `set_organizacion_id`, `set_auditoria_metadata`, `superadmin_orgs`, `tablas_para_respaldo`). Los primeros 5 son los que USAN las propias políticas RLS/triggers — tienen que ser invocables; devuelven poco o nada sin sesión válida. `mi_es_superadmin()` devuelve `false` sin sesión; `superadmin_orgs()` devuelve `[]`. |
 | `rls_enabled_no_policy` | 1 | **No** — `cron_secretos`: RLS activado a propósito, CERO políticas a propósito (ni `anon` ni `authenticated` la ven; solo la lee la service-role dentro de la Edge Function). |
 | `auth_leaked_password_protection` | 1 | **Sí, pendiente del dueño** — interruptor en el panel de Supabase Auth (comprueba contraseñas contra HaveIBeenPwned). No hay herramienta MCP para activarlo; es un clic que solo el dueño puede dar desde el Dashboard. |
@@ -159,8 +158,10 @@ conviven en las mismas superficies.
 
 ## 8. Próximo paso recomendado
 
-1. Aplicar 2C-2 (`seq_poliza`) — es el único hueco de escritura sin candado que queda identificado y
-   ya tiene diseño probado, solo falta autorización para aplicar.
-2. Activar la protección de contraseñas filtradas en el panel de Supabase Auth (acción del dueño).
-3. Mover la clave de Anthropic de `nexus-smart` a `Deno.env.get()` + decidir si necesita
+Con 2C-2 cerrado, no queda ningún bloque de escritura sin candado identificado y pendiente de
+aplicar — lo que sigue son las 2 piezas de §5/§4 que dependen de una acción fuera del alcance de este
+tipo de migración:
+
+1. Activar la protección de contraseñas filtradas en el panel de Supabase Auth (acción del dueño).
+2. Mover la clave de Anthropic de `nexus-smart` a `Deno.env.get()` + decidir si necesita
    `verify_jwt:true` (mismo patrón ya usado para cerrar el reporte diario por correo).
