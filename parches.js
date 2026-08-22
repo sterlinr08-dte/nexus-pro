@@ -12959,10 +12959,29 @@
   // desmontar el host a mano.
   function renderFPDock() {
     let host = document.getElementById('nxFPDockHost');
-    if (!host) { host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host); }
+    if (!host) {
+      host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host);
+      // Setup de UNA sola vez (gateado por la creación lazy del host, igual que
+      // el propio host): la cápsula tiene que re-medir cuando cambia el tamaño
+      // de la ventana, cuando terminan de cargar las fuentes web (el ancho de
+      // los botones puede correrse un poco) y cuando el propio contenedor
+      // cambia de ancho por cualquier otro motivo (rotación, safe-area...) —
+      // pedido explícito del dueño ("nunca cachear posiciones fijas"). Si
+      // alguno de estos listeners dispara sin que el dock exista/se vea,
+      // nxFPCapSync() se sale sola al toque (mismo guard que ya usa en cada
+      // llamada).
+      window.addEventListener('resize', () => nxFPCapSync());
+      if (window.document.fonts && document.fonts.ready) document.fonts.ready.then(() => nxFPCapSync()).catch(() => {});
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => nxFPCapSync());
+        // el nodo real todavía no existe (host recién creado, sin innerHTML) —
+        // se observa el propio host, que SÍ sobrevive a cada renderFPDock().
+        ro.observe(host);
+      }
+    }
     const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
-    const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
-    const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const dockBtn = (key, lbl, ico) => { const on = _prView === 'prestamos' && _prFiltro === key; return `<button type="button" role="tab" aria-selected="${on}" class="nxFP-dockBtn${on ? ' on' : ''}" style="--lit:${on ? 1 : 0}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`; };
+    const dockView = (v, lbl, ico) => { const on = _prView === v; return `<button type="button" role="tab" aria-selected="${on}" class="nxFP-dockBtn${on ? ' on' : ''}" style="--lit:${on ? 1 : 0}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`; };
     const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
     const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
@@ -12983,128 +13002,201 @@
         <div class="nxFP-popDiv"></div>
         <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </div>
-      <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
+      <nav class="nxFP-dock" role="tablist" aria-label="Navegación de Financiamiento">
+        <svg class="light" id="nxFPCapSvg" aria-hidden="true">
+          <defs><linearGradient id="nxFPCapLit" x1="0" y1="0" x2="0" y2="1"><stop class="nxfp-stop-a" offset="0%"></stop><stop class="nxfp-stop-b" offset="100%"></stop></linearGradient></defs>
+          <rect id="nxFPCapGlow" class="light-glow" opacity="0"></rect>
+          <rect id="nxFPCapRim" class="light-rim" opacity="0"></rect>
+          <rect id="nxFPCapCore" class="light-core" opacity="0"></rect>
+        </svg>
         ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
         ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
         ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
         ${dockView('clientes', 'Clientes', 'ti-users-group')}
-        <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
+        <button type="button" role="tab" aria-selected="${masOn}" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" style="--lit:${masOn ? 1 : 0}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
       </nav>`;
     host.classList.remove('dock-open');
-    nxFPArcSync();
+    nxFPCapSync();
   }
   window.nxFPToggleMore = function () { const s = document.getElementById('nxFPDockHost'); if (s) s.classList.toggle('dock-open'); };
 
-  // ── "Luz que se estira" — pedida por el dueño (20-ago-2026, referencia: demo
-  // "ARC" de Instagram, tab-bar con un rayo de luz que "va a buscar" el ícono
-  // tocado). Es una capa puramente decorativa: NUNCA toca nxPrestamoFiltroTipo/
-  // nxPrView/nxPrestamoNuevo/nxFPToggleMore, solo se monta ENCIMA del dock ya
-  // existente (la burbuja ::before de arriba sigue siendo la que marca "estás
-  // aquí" — esto solo añade el trayecto fluido entre una pestaña y la otra).
-  // Física de 2 resortes (no una sola curva CSS): la punta "lead" persigue el
-  // objetivo con un resorte RÍGIDO (llega primero, "estira" la luz) y la punta
-  // "trail" con uno BLANDO cuya rigidez crece a medida que se acerca ("home"),
-  // así el trazo se alarga al viajar y se tensa/cierra de golpe al llegar —
-  // mismo lenguaje que la referencia, sin copiar su código (no lo tenemos, se
-  // reconstruyó la idea desde la descripción visual).
-  // Vive en un host PROPIO, colgado de <body> aparte de #nxFPDockHost — igual
-  // que el propio dock (ver el porqué arriba, "no se queda fija en la parte
-  // inferior") — porque host.innerHTML se REEMPLAZA ENTERO en cada
-  // renderFPDock(), y con eso adentro el SVG se destruiría en cada tecla/toque
-  // perdiendo la posición a medio viaje. Al vivir aparte, el estado del resorte
-  // (_fpArc) sobrevive a cualquier re-render del dock — solo se reposiciona.
-  const _fpArc = { leadX: null, trailX: null, targetX: null, tripDist: 0, raf: 0 };
-  function fpArcHost() {
-    let h = document.getElementById('nxFPArcHost');
-    if (h) return h;
-    h = document.createElement('div'); h.id = 'nxFPArcHost'; h.setAttribute('aria-hidden', 'true');
-    h.innerHTML = '<svg width="100%" height="60" style="display:block;overflow:visible">' +
-      '<defs>' +
-      // gradientUnits="userSpaceOnUse" a propósito: el default (objectBoundingBox)
-      // NO renderiza sobre una <line> perfectamente horizontal (y1===y2 → bounding
-      // box de alto CERO, un caso degenerado conocido de SVG donde el navegador
-      // simplemente no pinta el trazo, con opacity/stroke-width/color todos
-      // "correctos" por inspección — así se quedó invisible en la primera versión).
-      // Con userSpaceOnUse, x1/x2 son coordenadas ABSOLUTAS (no 0-1) y se actualizan
-      // en cada fpArcPaint() para que el gradiente siga viajando pegado al propio
-      // largo del rayo, igual que si fuera objectBoundingBox pero sin el bug.
-      '<linearGradient id="nxFPArcGrad" gradientUnits="userSpaceOnUse" x1="0" y1="55" x2="60" y2="55"><stop offset="0%" stop-color="#818cf8"/><stop offset="55%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#c084fc"/></linearGradient>' +
-      '<filter id="nxFPArcBlur" x="-80%" y="-300%" width="260%" height="700%"><feGaussianBlur stdDeviation="4.2"/></filter>' +
-      // Aura de neón: un 3er trazo, más ancho y más difuminado que el halo,
-      // detrás de todo. Su opacidad NO la controla JS — la controla ESTA
-      // animación CSS (2,6s de "respiro" lento, como un tubo de neón real).
-      // JS solo prende/apaga la <line> interna (0 o 1, mismo criterio de
-      // siempre); el <g> que la envuelve multiplica ESE valor por el pulso —
-      // así nunca "pisa" el mecanismo de mostrar/ocultar ya probado (si JS
-      // apaga la línea, 0×cualquier-pulso sigue siendo 0).
-      // BUG REAL encontrado y evitado (verificado con Chromium real, no
-      // supuesto): un difuminado hecho con <filter>+feGaussianBlur (el
-      // mecanismo SVG "clásico", el mismo que ya usa #nxFPArcBlur del halo)
-      // deja el trazo CONGELADO — el navegador cachea el resultado ya
-      // difuminado como un mapa de bits y NUNCA lo vuelve a pintar si lo
-      // único que cambia es la opacidad de un ancestro animado por CSS
-      // @keyframes (reproducido: opacidad SÍ cambiaba de verdad en el DOM,
-      // el píxel en pantalla NUNCA cambiaba un byte — probado también
-      // animando la opacidad de la propia línea, con `will-change:opacity`,
-      // y hasta con `stroke-opacity` — las tres se quedan igual de
-      // congeladas; SOLO deja de pasar si el difuminado se hace con la
-      // propiedad CSS `filter:blur()` en vez del atributo SVG). El halo NO
-      // tiene este problema porque su opacidad la mueve JS con
-      // `style.opacity=...` cada cuadro (no una animación CSS), y eso sí
-      // fuerza el repintado — por eso no hizo falta tocarlo. Por seguridad,
-      // el aura NUEVA usa el CSS `filter:blur()` de abajo en vez de este
-      // mecanismo, y no un <filter> de SVG aparte.
-      '<style>@keyframes nxfpNeonPulse{0%,100%{opacity:.32}50%{opacity:.85}}#nxFPArcGlowWrap{animation:nxfpNeonPulse 2.6s ease-in-out infinite}@media(prefers-reduced-motion:reduce){#nxFPArcGlowWrap{animation:none;opacity:.55}}</style>' +
-      '</defs>' +
-      '<g id="nxFPArcGlowWrap"><line id="nxFPArcGlow" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="20" stroke-linecap="round" style="filter:blur(8.5px)" opacity="0"></line></g>' +
-      '<line id="nxFPArcHalo" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="11" stroke-linecap="round" filter="url(#nxFPArcBlur)" opacity="0"></line>' +
-      '<line id="nxFPArcCore" y1="55" y2="55" stroke="url(#nxFPArcGrad)" stroke-width="4" stroke-linecap="round" opacity="0"></line>' +
-      '</svg>';
-    document.body.appendChild(h);
-    return h;
+  // ── "Cápsula de neón líquida" — REEMPLAZA de raíz el rayo ARC (v56.64) y el
+  // halo del círculo flotante (v56.65): el dueño mandó la especificación
+  // técnica exacta (20-ago-2026) tras rechazar las 2 interpretaciones
+  // anteriores — "nunca dos indicadores separados", debe ser UNA sola pieza
+  // de luz: un anillo/cápsula que envuelve la pestaña activa cuando está
+  // quieta, y que se ESTIRA físicamente entre la pestaña vieja y la nueva al
+  // cambiar (nunca un transform:translateX ni una curva CSS de duración
+  // fija). Reemplaza también el círculo ::before que "flotaba" arriba del
+  // botón — ahora el ícono y el texto se quedan en su sitio de siempre,
+  // envueltos por la cápsula, y solo cambian de color (ver --lit abajo).
+  //
+  // Física de DOS resortes AMORTIGUADOS independientes, uno por borde
+  // (leftX/rightX) — fórmula exacta pedida por el dueño, integrada por
+  // cuadro con dt real (nunca una curva CSS ni un setTimeout):
+  //   velocity += (-stiffness*(position-target) - damping*velocity) * dt
+  //   position += velocity * dt
+  // El borde "cabeza" (el del lado hacia donde se viaja: derecho si el nuevo
+  // tab está a la derecha, izquierdo si está a la izquierda) usa un resorte
+  // RÍGIDO — llega primero, "estira" la cápsula. El borde "cola" usa uno
+  // BLANDO cuya rigidez crece a medida que la cabeza se acerca a SU destino
+  // (mismo principio que ya traía el _fpArc viejo con su variable `home`,
+  // aquí aplicado a un borde aparte en vez de a un solo punto) — así el
+  // trazo se alarga al salir y se cierra/tensa de golpe al llegar, con un
+  // pequeño rebote de sobregiro (emerge solo de la física subamortiguada,
+  // no hay ningún código de "bounce" aparte).
+  //
+  // "Nunca reiniciar desde cero" (pedido explícito y repetido dos veces por
+  // el dueño): si el usuario toca otra pestaña mientras la cápsula sigue en
+  // vuelo, nxFPCapSync() SOLO actualiza targetLeft/targetRight — leftX/
+  // rightX/leftV/rightV (posición y velocidad actuales) NUNCA se tocan. El
+  // resorte que ya estaba corriendo simplemente recibe un destino nuevo en
+  // su próximo cuadro.
+  //
+  // El SVG vive DENTRO de host.innerHTML (hijo de <nav class="nxFP-dock">,
+  // ANTES que los <button> en el HTML) a propósito — a diferencia del rayo
+  // viejo, la cápsula necesita pintarse DETRÁS del ícono/texto de cada botón
+  // (para que sigan legibles encima), y la única forma de lograr ese orden
+  // de pintado sin trucos de z-index es que compartan el mismo contexto de
+  // apilamiento en el mismo orden del DOM. Costo real de esto: el SVG se
+  // destruye y se recrea en CADA renderFPDock() (cada clic) — por eso el
+  // estado físico (_fpCap) vive en un objeto de módulo APARTE del DOM (sigue
+  // vivo aunque el nodo SVG se reemplace) y el propio loop de RAF vuelve a
+  // buscar los <rect> por id EN CADA CUADRO (nunca los cachea) para
+  // sobrevivir a un renderFPDock() que ocurra a mitad de un vuelo.
+  const _fpCap = {
+    leftX: null, leftV: 0, rightX: null, rightV: 0,
+    top: 5, bottom: 55,
+    targetLeft: null, targetRight: null,
+    headSide: 'right', tripDist: 0,
+    btnCenters: [], raf: 0, lastT: null
+  };
+  const FP_CAP_HEAD_K = 220, FP_CAP_HEAD_D = 22; // cabeza: rígida, llega primero
+  const FP_CAP_TAIL_K_MIN = 40, FP_CAP_TAIL_K_BOOST = 340, FP_CAP_TAIL_D = 26; // cola: blanda al salir, se tensa al llegar
+  const FP_CAP_PAD_X = 5, FP_CAP_PAD_Y = 4; // inset del anillo respecto al botón real
+  function fpSpringStep(pos, vel, target, k, d, dt) {
+    vel += (-k * (pos - target) - d * vel) * dt;
+    pos += vel * dt;
+    return [pos, vel];
   }
-  function fpArcPaint(x1, x2, sw) {
-    const h = fpArcHost(), core = h.querySelector('#nxFPArcCore'), halo = h.querySelector('#nxFPArcHalo'), glow = h.querySelector('#nxFPArcGlow'), grad = h.querySelector('#nxFPArcGrad');
-    if (!core || !halo) return;
-    core.setAttribute('x1', x1.toFixed(2)); core.setAttribute('x2', x2.toFixed(2)); core.setAttribute('stroke-width', sw.toFixed(2)); core.style.opacity = '1';
-    halo.setAttribute('x1', x1.toFixed(2)); halo.setAttribute('x2', x2.toFixed(2)); halo.setAttribute('stroke-width', (sw + 7).toFixed(2)); halo.style.opacity = '.55';
-    // glow: JS solo la "prende" (opacity 1) — el respiro de neón lo pone la
-    // animación CSS de #nxFPArcGlowWrap (ver fpArcHost()), multiplicada sobre
-    // este valor.
-    if (glow) { glow.setAttribute('x1', x1.toFixed(2)); glow.setAttribute('x2', x2.toFixed(2)); glow.setAttribute('stroke-width', (sw + 16).toFixed(2)); glow.style.opacity = '1'; }
-    // el gradiente (userSpaceOnUse) viaja pegado al propio largo del rayo — ver
-    // el porqué en fpArcHost(), junto a la definición de #nxFPArcGrad.
-    if (grad) { grad.setAttribute('x1', x1.toFixed(2)); grad.setAttribute('x2', x2.toFixed(2)); }
+  // Pintado: SOLO escrituras (setAttribute/style), CERO lecturas de layout —
+  // los centros de los botones (para iluminar por cercanía) se cachean UNA
+  // vez en nxFPCapSync(), nunca dentro del loop de RAF, para no alternar
+  // lectura/escritura de layout 60-120 veces por segundo (layout thrashing).
+  function fpCapPaint(nav) {
+    const glow = document.getElementById('nxFPCapGlow'), rim = document.getElementById('nxFPCapRim'), core = document.getElementById('nxFPCapCore');
+    if (!glow || !rim || !core) return;
+    const x1 = Math.min(_fpCap.leftX, _fpCap.rightX), x2 = Math.max(_fpCap.leftX, _fpCap.rightX);
+    const w = Math.max(6, x2 - x1), h = Math.max(6, _fpCap.bottom - _fpCap.top);
+    const rRim = h / 2, rCore = Math.max(0, h / 2 - 3), rGlow = rRim + 3;
+    glow.setAttribute('x', (x1 - 3).toFixed(1)); glow.setAttribute('y', (_fpCap.top - 3).toFixed(1)); glow.setAttribute('width', (w + 6).toFixed(1)); glow.setAttribute('height', (h + 6).toFixed(1)); glow.setAttribute('rx', rGlow.toFixed(1)); glow.setAttribute('ry', rGlow.toFixed(1));
+    rim.setAttribute('x', x1.toFixed(1)); rim.setAttribute('y', _fpCap.top.toFixed(1)); rim.setAttribute('width', w.toFixed(1)); rim.setAttribute('height', h.toFixed(1)); rim.setAttribute('rx', rRim.toFixed(1)); rim.setAttribute('ry', rRim.toFixed(1));
+    core.setAttribute('x', (x1 + 3).toFixed(1)); core.setAttribute('y', (_fpCap.top + 3).toFixed(1)); core.setAttribute('width', Math.max(0, w - 6).toFixed(1)); core.setAttribute('height', Math.max(0, h - 6).toFixed(1)); core.setAttribute('rx', rCore.toFixed(1)); core.setAttribute('ry', rCore.toFixed(1));
+    if (nav) {
+      // brillo del núcleo ligado a la velocidad de la CABEZA — pedido
+      // explícito ("sutil, no exagerado"): normalizado contra una velocidad
+      // "rápida" de referencia, acotado 0-1.
+      const headV = _fpCap.headSide === 'left' ? _fpCap.leftV : _fpCap.rightV;
+      nav.style.setProperty('--speed', Math.max(0, Math.min(1, Math.abs(headV) / 800)).toFixed(3));
+      // interpolación de color por cercanía del CENTRO de la cápsula al
+      // centro de cada botón (no un salto abrupto exactamente en el clic) —
+      // usa los centros ya cacheados en sync(), cero lectura de layout aquí.
+      const capCenter = (x1 + x2) / 2;
+      _fpCap.btnCenters.forEach(b => {
+        const lit = Math.max(0, 1 - Math.abs(b.center - capCenter) / Math.max(40, b.w * .9));
+        b.el.style.setProperty('--lit', lit.toFixed(3));
+      });
+    }
   }
-  function fpArcStep() {
-    _fpArc.raf = 0;
-    if (_fpArc.targetX == null) return;
-    const dLead = _fpArc.targetX - _fpArc.leadX; _fpArc.leadX += dLead * .22; // resorte líder: rígido, llega rápido
-    const dTrail = _fpArc.targetX - _fpArc.trailX;
-    const home = _fpArc.tripDist > 0 ? Math.max(0, Math.min(1, 1 - Math.abs(dTrail) / _fpArc.tripDist)) : 1;
-    _fpArc.trailX += dTrail * (.045 + .155 * home); // resorte trasero: blando al salir, rígido al llegar (se "tensa")
-    const x1 = Math.min(_fpArc.leadX, _fpArc.trailX), x2 = Math.max(_fpArc.leadX, _fpArc.trailX);
-    const spread = x2 - x1, mid = (x1 + x2) / 2, w = Math.max(spread, 9);
-    fpArcPaint(mid - w / 2, mid + w / 2, Math.max(2.6, 4.6 - spread * .018));
-    const done = Math.abs(_fpArc.targetX - _fpArc.leadX) < .4 && Math.abs(_fpArc.targetX - _fpArc.trailX) < .4;
-    if (done) { _fpArc.leadX = _fpArc.trailX = _fpArc.targetX; fpArcPaint(_fpArc.targetX - 4.5, _fpArc.targetX + 4.5, 4); return; }
-    _fpArc.raf = requestAnimationFrame(fpArcStep);
+  function fpCapStep(now) {
+    _fpCap.raf = 0;
+    const nav = document.querySelector('#nxFPDockHost .nxFP-dock');
+    // getClientRects() (no offsetParent: con position:fixed puede dar null
+    // en algunos navegadores aunque el elemento SÍ se vea) detecta de verdad
+    // si el dock (o cualquier ancestro) está display:none ahora mismo — si
+    // es así, no vale la pena seguir animando, y este es el ÚNICO punto de
+    // salida del loop cuando el usuario navega fuera de Financiamiento sin
+    // pasar por un nuevo renderFPDock()/sync().
+    if (!nav || !document.getElementById('nxFPCapSvg') || nav.getClientRects().length === 0) { _fpCap.lastT = null; return; }
+    if (_fpCap.lastT == null) _fpCap.lastT = now;
+    let dt = (now - _fpCap.lastT) / 1000; _fpCap.lastT = now;
+    dt = Math.max(0, Math.min(dt, 1 / 30)); // tope defensivo (pestaña en pausa/hilo bloqueado) — no un salto gigante de golpe
+    const headIsLeft = _fpCap.headSide === 'left';
+    // la cabeza se integra PRIMERO — su distancia restante decide qué tan
+    // rígida está la cola ESTE mismo cuadro (rampa dinámica pedida por el
+    // dueño: progress = 1 - distanciaRestante/distanciaTotal).
+    if (headIsLeft) { const r = fpSpringStep(_fpCap.leftX, _fpCap.leftV, _fpCap.targetLeft, FP_CAP_HEAD_K, FP_CAP_HEAD_D, dt); _fpCap.leftX = r[0]; _fpCap.leftV = r[1]; }
+    else { const r = fpSpringStep(_fpCap.rightX, _fpCap.rightV, _fpCap.targetRight, FP_CAP_HEAD_K, FP_CAP_HEAD_D, dt); _fpCap.rightX = r[0]; _fpCap.rightV = r[1]; }
+    const headDist = headIsLeft ? Math.abs(_fpCap.targetLeft - _fpCap.leftX) : Math.abs(_fpCap.targetRight - _fpCap.rightX);
+    const progress = _fpCap.tripDist > 0 ? Math.max(0, Math.min(1, 1 - headDist / _fpCap.tripDist)) : 1;
+    const tailK = FP_CAP_TAIL_K_MIN + progress * FP_CAP_TAIL_K_BOOST;
+    if (headIsLeft) { const r = fpSpringStep(_fpCap.rightX, _fpCap.rightV, _fpCap.targetRight, tailK, FP_CAP_TAIL_D, dt); _fpCap.rightX = r[0]; _fpCap.rightV = r[1]; }
+    else { const r = fpSpringStep(_fpCap.leftX, _fpCap.leftV, _fpCap.targetLeft, tailK, FP_CAP_TAIL_D, dt); _fpCap.leftX = r[0]; _fpCap.leftV = r[1]; }
+    fpCapPaint(nav);
+    // "asentada" = posición Y velocidad chicas en LOS DOS bordes (si solo se
+    // mirara la posición, se podría cortar el loop a mitad de un rebote —
+    // justo cuando pasa por el destino con velocidad todavía alta).
+    const settled = Math.abs(_fpCap.leftX - _fpCap.targetLeft) < .3 && Math.abs(_fpCap.rightX - _fpCap.targetRight) < .3 && Math.abs(_fpCap.leftV) < 3 && Math.abs(_fpCap.rightV) < 3;
+    if (settled) { _fpCap.leftX = _fpCap.targetLeft; _fpCap.rightX = _fpCap.targetRight; _fpCap.leftV = _fpCap.rightV = 0; fpCapPaint(nav); _fpCap.lastT = null; return; }
+    _fpCap.raf = requestAnimationFrame(fpCapStep);
   }
-  function nxFPArcSync() {
+  function nxFPCapSync() {
     try {
-      if (!window.matchMedia || !window.matchMedia('(max-width:900px)').matches) return; // en escritorio el dock ni se ve — no gastar ciclos
-      const dock = document.querySelector('#nxFPDockHost .nxFP-dock');
-      const on = dock && dock.querySelector('.nxFP-dockBtn.on');
-      const h = fpArcHost();
-      if (!on) { const c = h.querySelector('#nxFPArcCore'), ha = h.querySelector('#nxFPArcHalo'), gl = h.querySelector('#nxFPArcGlow'); if (c) c.style.opacity = '0'; if (ha) ha.style.opacity = '0'; if (gl) gl.style.opacity = '0'; _fpArc.targetX = null; return; }
-      const hr = h.getBoundingClientRect(), br = on.getBoundingClientRect();
-      const cx = br.left + br.width / 2 - hr.left;
+      if (!window.matchMedia || !window.matchMedia('(max-width:900px)').matches) return; // en escritorio el dock ni se ve (usa la barra lateral) — no gastar ciclos
+      const nav = document.querySelector('#nxFPDockHost .nxFP-dock');
+      if (!nav) return;
+      const on = nav.querySelector('.nxFP-dockBtn.on');
+      const glow = document.getElementById('nxFPCapGlow'), rim = document.getElementById('nxFPCapRim'), core = document.getElementById('nxFPCapCore');
+      // TODAS las lecturas de layout de esta función van aquí, de una sola
+      // vez — el loop de RAF (fpCapStep/fpCapPaint) no vuelve a leer el DOM,
+      // solo escribe, para no alternar lectura/escritura 60-120 veces/seg.
+      const navRect = nav.getBoundingClientRect();
+      _fpCap.btnCenters = [...nav.querySelectorAll('.nxFP-dockBtn')].map(el => {
+        const r = el.getBoundingClientRect();
+        return { el, center: r.left - navRect.left + r.width / 2, w: r.width };
+      });
+      if (!on) {
+        if (glow) glow.style.opacity = '0'; if (rim) rim.style.opacity = '0'; if (core) core.style.opacity = '0';
+        _fpCap.targetLeft = _fpCap.targetRight = null;
+        _fpCap.btnCenters.forEach(b => b.el.style.setProperty('--lit', '0'));
+        if (_fpCap.raf) { cancelAnimationFrame(_fpCap.raf); _fpCap.raf = 0; }
+        return;
+      }
+      if (glow) glow.style.opacity = '1'; if (rim) rim.style.opacity = '1'; if (core) core.style.opacity = '1';
+      const br = on.getBoundingClientRect();
+      const newLeft = br.left - navRect.left + FP_CAP_PAD_X, newRight = br.right - navRect.left - FP_CAP_PAD_X;
+      const newTop = br.top - navRect.top + FP_CAP_PAD_Y, newBottom = br.bottom - navRect.top - FP_CAP_PAD_Y;
       const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-      if (_fpArc.targetX === null || reduce) { _fpArc.leadX = _fpArc.trailX = _fpArc.targetX = cx; if (_fpArc.raf) { cancelAnimationFrame(_fpArc.raf); _fpArc.raf = 0; } fpArcPaint(cx - 4.5, cx + 4.5, 4); return; }
-      if (Math.abs(_fpArc.targetX - cx) < .5) return; // mismo destino de siempre (re-render sin cambiar de pestaña) — no reinicia el viaje
-      _fpArc.targetX = cx;
-      _fpArc.tripDist = Math.max(Math.abs(cx - _fpArc.leadX), Math.abs(cx - _fpArc.trailX), 1);
-      if (!_fpArc.raf) _fpArc.raf = requestAnimationFrame(fpArcStep);
+      const firstPaint = _fpCap.leftX === null;
+      if (firstPaint || reduce) {
+        // primer pintado, o "reducir movimiento" activo: la física elástica
+        // se QUITA por completo (pedido explícito) — se salta directo al
+        // destino, sin resortes ni rebote.
+        _fpCap.leftX = _fpCap.targetLeft = newLeft; _fpCap.rightX = _fpCap.targetRight = newRight;
+        _fpCap.leftV = _fpCap.rightV = 0; _fpCap.top = newTop; _fpCap.bottom = newBottom;
+        if (_fpCap.raf) { cancelAnimationFrame(_fpCap.raf); _fpCap.raf = 0; }
+        _fpCap.lastT = null;
+        fpCapPaint(nav);
+        _fpCap.btnCenters.forEach(b => b.el.style.setProperty('--lit', b.el === on ? '1' : '0'));
+        return;
+      }
+      // mismo destino de siempre (re-render sin cambiar de pestaña, o un
+      // resize que no movió nada real) — NO reinicia el viaje, ni siquiera
+      // recalcula de qué lado va la cabeza.
+      if (_fpCap.targetLeft !== null && Math.abs(_fpCap.targetLeft - newLeft) < .5 && Math.abs(_fpCap.targetRight - newRight) < .5) { _fpCap.top = newTop; _fpCap.bottom = newBottom; return; }
+      // Dirección del viaje = de qué lado va la cabeza. Se recalcula CADA VEZ
+      // (no solo al iniciar el viaje) comparando contra el centro VISUAL
+      // actual de la cápsula — así un cambio de destino a mitad de vuelo
+      // puede voltear la cabeza de lado sin perder posición/velocidad.
+      const curCenter = (_fpCap.leftX + _fpCap.rightX) / 2, newCenter = (newLeft + newRight) / 2;
+      if (newCenter > curCenter + .1) _fpCap.headSide = 'right';
+      else if (newCenter < curCenter - .1) _fpCap.headSide = 'left';
+      // "El usuario hace clic en otro tab mientras la luz sigue en vuelo: NO
+      // reinicies desde cero" — leftX/rightX/leftV/rightV NO se tocan aquí,
+      // solo el destino.
+      _fpCap.targetLeft = newLeft; _fpCap.targetRight = newRight; _fpCap.top = newTop; _fpCap.bottom = newBottom;
+      _fpCap.tripDist = Math.max(Math.abs(_fpCap.targetLeft - _fpCap.leftX), Math.abs(_fpCap.targetRight - _fpCap.rightX), 1);
+      if (!_fpCap.raf) _fpCap.raf = requestAnimationFrame(fpCapStep);
     } catch (e) {}
   }
 
@@ -25985,25 +26077,50 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // dentro de #nxFPShell (nieto de .content{overflow-y:auto}) — renderFPDock() los cuelga
       // de #nxFPDockHost, hijo directo de <body>, mismo patrón que nxStickyBarSet del POS. Las
       // 3 clases .dock-open (antes en .nxFPShell) ahora van en #nxFPDockHost.
-      '.nxFP-dock{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
-      '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;color:#8b85a8;cursor:pointer;position:relative;font-family:inherit;transition:color .15s ease}' +
-      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.4,.64,1),color .15s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;transition:opacity .18s ease,transform .18s ease}' +
-      '.nxFP-dockBtn.on{color:#fff}' +
-      '.nxFP-dockBtn.on i{transform:translateY(-22px)}' +
-      '.nxFP-dockBtn.on span{opacity:0;transform:translateY(3px)}' +
-      '.nxFP-dockBtn.on::before{content:"";position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 10px 22px -5px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.72)}' +
-      // v56.65 — el dueño aclaró: la luz de neón no era para el rayo (v56.64,
-      // se queda igual) sino para la CÍRCULO de selección (el círculo morado/
-      // índigo que "flota" arriba del botón activo, el ::before de arriba).
-      // Un ::after del mismo tamaño, MÁS ATRÁS (z-index:-2, entre el fondo del
-      // dock y el círculo), con un blur CSS (filter:blur(), no un <filter> de
-      // SVG — es un div normal, no hay riesgo del bug de v56.64) que respira
-      // igual que el rayo (2.6s, mismo ritmo, para que los dos efectos se
-      // sientan como UNA sola cosa) creciendo/apagándose detrás del círculo,
-      // como el halo de un tubo de neón real.
-      '.nxFP-dockBtn.on::after{content:"";position:absolute;top:-28px;left:50%;width:48px;height:48px;border-radius:50%;z-index:-2;background:linear-gradient(150deg,#4f46e5,#6d28d9);filter:blur(11px);animation:nxfpDockGlow 2.6s ease-in-out infinite}' +
-      '@keyframes nxfpDockGlow{0%,100%{opacity:.35;transform:translateX(-50%) scale(.88)}50%{opacity:.95;transform:translateX(-50%) scale(1.35)}}' +
-      '@media(prefers-reduced-motion:reduce){.nxFP-dockBtn.on::after{animation:none;opacity:.6;transform:translateX(-50%) scale(1.05)}}' +
+      // Nota sobre el "contenedor de vidrio/profundidad" de la spec v56.66: los valores dados
+      // (fondo oscuro rgba(20,22,30,.72), etc.) eran un EJEMPLO ilustrativo, igual que
+      // --accent:#E31E24 lo era para el color de acento — no una instrucción literal de
+      // recolorear el módulo. Este contenedor YA cumple la estructura pedida (blur real vía
+      // backdrop-filter, borde fino translúcido, sombra en 2 capas exterior+inset, forma de
+      // píldora, compacto no alto) pero con la paleta CLARA ya establecida para Financiamiento
+      // (rediseño "soft-glass" del propio dashboard/sidebar) — pintarlo oscuro chocaría con el
+      // resto del módulo que ya se ve así.
+      '.nxFP-dock{--nxfp-accent:#4f46e5;display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
+      '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;cursor:pointer;position:relative;font-family:inherit}' +
+      // v56.66 — REDISEÑO COMPLETO pedido por el dueño (spec técnica exacta,
+      // 20-ago-2026): reemplaza el círculo flotante (::before/::after de las
+      // versiones v56.47-v56.65) por una CÁPSULA de neón que envuelve el
+      // botón entero, en vez de "sacar" el ícono hacia arriba. El ícono y el
+      // texto se quedan en su sitio de siempre — solo cambian de color, vía
+      // --lit (0=apagado/gris, 1=encendido/acento), una sola variable que
+      // tanto el HTML (estado lógico, al pintar) como el loop de RAF de la
+      // cápsula (mientras viaja, interpolado por cercanía) escriben — nunca
+      // un salto abrupto de color exactamente en el clic.
+      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;color:color-mix(in srgb,#8b85a8,var(--nxfp-accent) calc(var(--lit,0)*100%))}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;color:color-mix(in srgb,#8b85a8,var(--nxfp-accent) calc(var(--lit,0)*100%))}' +
+      '@media(prefers-reduced-motion:reduce){.nxFP-dockBtn i,.nxFP-dockBtn span{transition:color .15s ease}}' +
+      // El SVG de la cápsula (ver window.nxFPCapSync/fpCapStep/fpCapPaint, en
+      // el bloque de renderFPDock más arriba en este archivo) vive DENTRO de
+      // <nav class="nxFP-dock">, ANTES que los <button> en el HTML — pinta
+      // primero, así los botones (fondo transparente) quedan siempre encima
+      // y legibles. Por eso hereda gratis TODA la visibilidad de .nxFP-dock
+      // (display:none/grid, :has(.overlay.open), :has(#v-prestamos.on)) sin
+      // necesitar sus propias reglas — a diferencia del #nxFPArcHost viejo,
+      // que vivía aparte y necesitaba 4 reglas de visibilidad calcadas.
+      '.nxFP-dock .light{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}' +
+      '.nxfp-stop-a{stop-color:#fff;stop-opacity:.92}' +
+      '.nxfp-stop-b{stop-color:var(--nxfp-accent);stop-opacity:.7}' +
+      // 3 capas de neón (mínimo pedido por la especificación): glow difuso
+      // detrás de todo (filter:blur CSS, NUNCA un <filter>+feGaussianBlur de
+      // SVG — ver el bug real ya documentado más arriba en fpArcHost/
+      // v56.64: un blur de SVG se queda CONGELADO si lo único que cambia es
+      // la opacidad de un ancestro animado; aquí la opacidad la escribe JS
+      // cuadro a cuadro sobre el propio elemento así que en teoría no
+      // aplicaría, pero se prefiere blur CSS de todos modos por ser el
+      // camino ya probado y sin riesgo) — borde fino + zona interior apenas
+      // iluminada — núcleo brillante encima, con un degradado blanco→acento.
+      '.light-glow{fill:var(--nxfp-accent);fill-opacity:.32;filter:blur(9px)}' +
+      '.light-rim{fill:var(--nxfp-accent);fill-opacity:.09;stroke:var(--nxfp-accent);stroke-opacity:.85;stroke-width:1.4}' +
+      '.light-core{fill:none;stroke:url(#nxFPCapLit);stroke-linecap:round;stroke-width:calc(2px + var(--speed,0) * .7px)}' +
       '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
       '#nxFPDockHost.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
       '.nxFP-dockBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +
@@ -26030,24 +26147,11 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // para esconder el FAB global mientras Financiamiento SÍ está activo (ver injectCSS()),
       // solo que a la inversa: aquí se esconde el dock salvo que #v-prestamos.on exista.
       'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
-      // ── "Luz que se estira" — mismas 3 reglas de visibilidad que el propio
-      // dock (arriba), calcadas a propósito: si el dock no se ve, la luz
-      // tampoco tiene sentido mostrarse. #nxFPArcHost es SOLO el lienzo (SVG),
-      // pointer-events:none para que nunca robe un toque a los botones reales
-      // que quedan justo debajo/alrededor.
-      // NO se le puso transition:opacity a propósito (se probó y se quitó): al
-      // llamar getBoundingClientRect() en nxFPArcSync() para medir el botón
-      // ANTES de fijar la opacidad final, se fuerza un layout intermedio que
-      // Chrome sí cuenta como "estado anterior" real — con una transición
-      // declarada, eso encendía un fundido de 200ms no pedido (y hacía que el
-      // primer pintado, pensado para ser instantáneo, apareciera casi invisible
-      // durante ese tramo). La única animación real de este efecto es la
-      // posición (el resorte de fpArcStep) — la opacidad entra/sale de un salto.
-      '#nxFPArcHost{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;pointer-events:none}' +
-      '#nxFPArcHost svg{width:100%;height:100%;display:block}' +
-      '@media(max-width:900px){#nxFPArcHost{display:block}}' +
-      'body:has(.overlay.open) #nxFPArcHost{display:none!important}' +
-      'body:not(:has(#v-prestamos.on)) #nxFPArcHost{display:none!important}' +
+      // No hace falta ninguna regla de visibilidad aparte para la cápsula
+      // (a diferencia del #nxFPArcHost viejo, que vivía en un host separado
+      // y necesitaba 4 reglas calcadas) — el SVG ahora es HIJO REAL de
+      // .nxFP-dock, así que hereda gratis display:none/grid y los 2 :has()
+      // de arriba en cuanto su padre se oculta/muestra.
       '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
     document.head.appendChild(st);
   };

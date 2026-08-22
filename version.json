@@ -1,7 +1,12 @@
 {
-  "version": "56.65",
+  "version": "56.66",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.66",
+      "fecha": "2026-08-22",
+      "texto": "NUEVO: en Financiamiento (celular), el menú de abajo tiene ahora un rediseño completo de la selección — una sola cápsula de luz de neón que ENVUELVE el botón activo (ya no un círculo flotando arriba). Al cambiar de pestaña, la cápsula no salta ni se desliza a velocidad pareja: la punta sale primero y la cola se queda un poco atrás, estirándose como líquido, hasta que alcanza y se cierra de nuevo alrededor del nuevo botón con un pequeño rebote al llegar. El ícono y el texto del botón se van encendiendo/apagando poco a poco según la luz se acerca, no de golpe. Si tocas otro botón mientras la luz todavía va en camino, no se reinicia — sigue con el mismo impulso hacia el nuevo destino. Se apaga solo (salta directo, sin el efecto) si el teléfono tiene activado \"reducir movimiento\"."
+    },
     {
       "v": "56.65",
       "fecha": "2026-08-21",
