@@ -1693,7 +1693,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que rPolizas() lea el término igual que siempre. -->
               <span id="polQLupa"></span><input id="polQ" type="hidden" value="">
-              <select id="polEst" onchange="rPolizas()"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
+              <select id="polEst" onchange="rPolizas()" class="nxFsel"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
             </div>
             <div class="tw"><table class="sf-tbl">
               <thead><tr><th style="width:12%">N° PÓLIZA</th><th style="width:20%">ASEGURADO</th><th style="width:9%">PLAN</th><th style="width:11%">INICIO</th><th style="width:11%">FIN</th><th style="width:8%">DÍAS</th><th style="width:9%">ESTADO POL.</th><th style="width:12%">NCF</th><th style="width:8%">PDF</th></tr></thead>
