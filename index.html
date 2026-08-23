@@ -1629,10 +1629,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                    El input sigue existiendo OCULTO para que rCli()/rCliBuscar() lean el
                    término exactamente igual que antes (cero cambios en el filtrado). -->
               <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
-              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
-              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
-              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Agente</option></select>
-              <button id="btnLimpiarCli" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="height:30px;padding:0 10px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx2);font-size:10px;cursor:pointer;display:none;align-items:center;gap:4px"><i class="ti ti-eraser"></i> Limpiar</button>
+              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
+              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
+              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select>
+              <button id="btnLimpiarCli" class="btn bsm bghost" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="display:none"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
             <div class="tw"><table class="sf-tbl sf-cli">
               <thead><tr><th class="col-cli" style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
@@ -1658,9 +1658,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que rPolizas() lea el término igual que siempre. -->
               <span id="polQLupa"></span><input id="polQ" type="hidden" value="">
-              <select id="polEst" onchange="rPolizas()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
+              <select id="polEst" onchange="rPolizas()"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
             </div>
-            <div class="tw"><table>
+            <div class="tw"><table class="sf-tbl">
               <thead><tr><th style="width:12%">N° PÓLIZA</th><th style="width:20%">ASEGURADO</th><th style="width:9%">PLAN</th><th style="width:11%">INICIO</th><th style="width:11%">FIN</th><th style="width:8%">DÍAS</th><th style="width:9%">ESTADO POL.</th><th style="width:12%">NCF</th><th style="width:8%">PDF</th></tr></thead>
               <tbody id="tbPol"><tr><td colspan="9"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
@@ -1804,10 +1804,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="ch">
               <div><div class="ct">Comisiones por agente</div><div class="ct-s">cálculo automático con retención ITBIS</div></div>
               <div style="display:flex;gap:6px">
-                <select id="comMes" style="height:30px;padding:0 8px;border:1px solid rgba(16,185,129,.2);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"></select>
-                <select id="comAnio" style="height:30px;padding:0 8px;border:1px solid rgba(16,185,129,.2);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px;width:68px"></select>
+                <select id="comMes" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"></select>
+                <select id="comAnio" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px;width:68px"></select>
                 <button class="btn bsm bc5" onclick="calcularComisiones()"><i class="ti ti-calculator"></i> Calcular</button>
-                <button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button>
+                <button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
             </div>
             <div id="comContent"><div class="empty">Selecciona mes y año, luego presiona Calcular</div></div>
@@ -1887,8 +1887,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="ch">
               <div><div class="ct">Clientes nuevos del mes</div><div class="ct-s">por fecha de ingreso</div></div>
               <div style="display:flex;gap:6px">
-                <select id="repNuevosMes" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"></select>
-                <select id="repNuevosAnio" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px;width:68px"></select>
+                <select id="repNuevosMes" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:8px;background:var(--bg2);color:var(--tx1);font-size:10px"></select>
+                <select id="repNuevosAnio" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:8px;background:var(--bg2);color:var(--tx1);font-size:10px;width:68px"></select>
                 <button class="btn bsm bc1" onclick="rRepNuevos()"><i class="ti ti-search"></i> Ver</button>
                 <button class="btn bsm bc4" onclick="exportarNuevosCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -2410,7 +2410,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div id="reciboSinWA" style="display:none;font-size:10px;color:#92400e;margin-top:4px">Este cliente no tiene WhatsApp registrado — usa "Ver / compartir recibo" para imprimirlo o compartirlo por otra vía.</div>
     </div>
     <div style="margin-bottom:8px"><button class="btn bsm" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
-    <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cerrar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
+    <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
   </div>
 </div>
 
@@ -2463,7 +2463,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Monto Crédito (RD$)</label><input type="text" id="asiMntCr" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     </div>
     <div class="fr" id="asiMotivoWrap" style="display:none"><label>Motivo de la corrección *</label><input type="text" id="asiMotivo" placeholder="Por qué se corrige este asiento"/></div>
-    <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bc2" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
+    <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bxl" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
   </div>
 </div>
 
@@ -2627,9 +2627,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       💡 <strong>Recomendación:</strong> Guarda el backup en Google Drive, USB o envíatelo por email. Hazlo <strong>una vez por semana</strong>.
     </div>
 
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="closeM('mBackup')" style="flex:1">Cancelar</button>
-      <button class="btn bxl" onclick="ejecutarBackup()" style="flex:2;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 3px 10px rgba(16,185,129,.3)">
+    <div class="fe">
+      <button class="btn" onclick="closeM('mBackup')">Cancelar</button>
+      <button class="btn bc5" onclick="ejecutarBackup()">
         <i class="ti ti-database-export"></i> Descargar Backup Completo
       </button>
     </div>
@@ -4381,12 +4381,12 @@ function mostrarEstadoErrorCfg(n,msg){
 function renderEmpresasCfg(){
   const grid=document.getElementById('empGrdCfg');
   if(!grid)return;
-  const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
+  const hex='#6d28d9'; // acento del módulo (= --c1); antes cada tarjeta tomaba color por posición (decorativo, NPGS §11)
   if(!ST.empresas.length){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:12px">🏭 No hay empresas registradas todavía.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mEmp\')"><i class="ti ti-plus"></i> Crear primera empresa</button></div>';
     return;
   }
-  grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 
 // ── Agentes dentro de Configuración (render directo) ───────────────
@@ -7382,15 +7382,15 @@ function rPolizas(){
     // Factura más reciente del cliente
     const ultimaFac=ST.facturas.filter(f=>f.cliente_id===c.id).sort((a,b)=>b.created_at?.localeCompare(a.created_at||'')||0)[0];
     return`<tr>
-      <td style="font-size:12px;color:#d97706;font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
-      <td><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
-      <td>${planB(c.plan)}</td>
-      <td style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
-      <td style="font-family:var(--mono);font-size:9px">${c.fecha_fin||'—'}</td>
-      <td style="font-family:var(--mono);font-size:9px;color:${dias!==null&&dias<0?'var(--c3)':dias!==null&&dias<=7?'var(--c4)':'var(--c1)'}">${dias!==null?dias+'d':'—'}</td>
-      <td><span class="badge ${ep.badge}">${ep.lbl.toUpperCase()}</span></td>
-      <td>${ultimaFac?`<span class="ncf-badge">${ultimaFac.ncf||'Sin NCF'}</span>`:'<span style="color:var(--tx3);font-size:9px">—</span>'}</td>
-      <td style="white-space:nowrap;display:flex;gap:2px">
+      <td data-lb="N° Póliza" style="font-size:12px;color:var(--c4);font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
+      <td data-lb="Asegurado"><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:var(--c1);font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
+      <td data-lb="Plan">${planB(c.plan)}</td>
+      <td data-lb="Inicio" style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
+      <td data-lb="Fin" style="font-family:var(--mono);font-size:9px">${c.fecha_fin||'—'}</td>
+      <td data-lb="Días" style="font-family:var(--mono);font-size:9px;color:${dias!==null&&dias<0?'var(--c3)':dias!==null&&dias<=7?'var(--c4)':'var(--c1)'}">${dias!==null?dias+'d':'—'}</td>
+      <td data-lb="Estado"><span class="badge ${ep.badge}">${ep.lbl.toUpperCase()}</span></td>
+      <td data-lb="NCF">${ultimaFac?`<span class="ncf-badge">${ultimaFac.ncf||'Sin NCF'}</span>`:'<span style="color:var(--tx3);font-size:9px">—</span>'}</td>
+      <td data-lb="PDF" style="white-space:nowrap;display:flex;gap:2px">
         <button class="btn bsm bc1" onclick="verCertificadoPDF('${c.id}')" title="Certificado de seguro"><i class="ti ti-file-certificate"></i> Cert.</button>
         <button class="btn bsm bwa" onclick="enviarWAPoliza('${c.id}')" title="WhatsApp vencimiento" aria-label="WhatsApp vencimiento"><i class="ti ti-brand-whatsapp"></i></button>
       </td>
@@ -9113,7 +9113,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
 
 // ── EMPRESAS ─────────────────────────────────────────────────────────────────
 function rEmpGrd(){
-  const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
+  const hex='#6d28d9'; // acento del módulo (= --c1); antes cada tarjeta tomaba un color por posición, decorativo y sin significado (NPGS §11)
   const grid=document.getElementById('empGrd');
   if(document.getElementById('empKpiTotal')){
     const clisAct=ST.clientes.filter(c=>c.activo&&c.empresa_id);
@@ -9122,7 +9122,7 @@ function rEmpGrd(){
     document.getElementById('empKpiPrima').textContent=fmt(clisAct.reduce((s,c)=>s+getTot(c),0));
   }
   if(!ST.empresas.length){grid.innerHTML='<div class="empty">Sin empresas</div>';return;}
-  grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
 async function guardarEmp(){
@@ -9803,7 +9803,7 @@ function detalleAgente(a){
     </div>`;
 }
 function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
-function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e,i)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const hex=COLS[i%COLS.length];return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%;background:${hex}"></div></div></div>`;}).join('');}
+function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),hex='#6d28d9';const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%"></div></div></div>`;}).join('');}
 
 function rRepAging(){
   const cont=document.getElementById('rAging');
