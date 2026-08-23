@@ -887,7 +887,14 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard{flex:0 0 auto;width:150px;position:relative;overflow:hidden;border-radius:18px;padding:15px 13px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
   background:radial-gradient(120% 90% at 100% 0%,var(--sf-err-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-err-l),transparent 65%),var(--sf-card);
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(220,38,38,.32);
-  border:1px solid rgba(220,38,38,.14);opacity:0;transform:translateY(12px) scale(.97);animation:nxFanIn .45s cubic-bezier(.2,.8,.2,1) forwards}
+  border:1px solid rgba(220,38,38,.14)}
+/* Estado de entrada en su PROPIA clase: si opacity:0/transform quedaran en la regla base
+   de .sf-fancard, quitar "animation" al terminar (animationend) hace que la tarjeta
+   pierda lo único que sostenía opacity:1 y transform:none, y vuelve a esconderse de
+   golpe — exactamente el bug reportado ("aparecen una vez y desaparecen"). Con la
+   entrada en .entering, quitar esa clase basta y la tarjeta cae a su estado normal. */
+.nxSf .sf-fancard.entering{opacity:0;transform:translateY(12px) scale(.97);animation:nxFanIn .45s cubic-bezier(.2,.8,.2,1) forwards}
+@media(prefers-reduced-motion:reduce){.nxSf .sf-fancard.entering{opacity:1;transform:none;animation:none}}
 .nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,var(--sf-warn-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-warn-l),transparent 65%),var(--sf-card);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(217,119,6,.3);border-color:rgba(217,119,6,.14)}
 .nxSf .sf-fancard.top{width:168px;padding:17px 15px}
 .nxSf .sf-fancard.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(220,38,38,.4)}
@@ -917,7 +924,7 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard.warn .fc-reason{color:var(--sf-warn-d)}
 .nxSf .fc-reason i{font-size:9px}
 body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
-@media(prefers-reduced-motion:reduce){.nxSf .sf-fancard{opacity:1;transform:none;animation:none}.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
+@media(prefers-reduced-motion:reduce){.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
 @media(max-width:480px){.nxSf .sf-fancard{width:130px}.nxSf .sf-fancard.top{width:146px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
@@ -7355,7 +7362,7 @@ function nxFanTiltInit(container){
   if(!container)return;
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   container.querySelectorAll('.sf-fancard').forEach(card=>{
-    card.addEventListener('animationend',()=>{card.style.animation='none';});
+    card.addEventListener('animationend',()=>{card.classList.remove('entering');});
     card.addEventListener('mouseenter',()=>{
       card.classList.add('tilting');
       card.style.transition='transform .05s linear';
@@ -7433,7 +7440,7 @@ function rCli(){
           const monto=x.pv>0?fmt(x.pv):(x.dv===0?'Vence hoy':'Vence en '+x.dv+'d');
           const motivo=x.pv>0?'Balance pendiente':'Próximo a renovar';
           const icono=x.pv>0?'ti-wallet':'ti-calendar-event';
-          return`<div class="sf-fancard${esWarn?' warn':''}${i===0?' top':''}" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
+          return`<div class="sf-fancard entering${esWarn?' warn':''}${i===0?' top':''}" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
             <span class="fc-rank">#${i+1}</span>
             <div class="fc-avwrap"><div class="fc-avring"></div><div class="fc-av">${inits(x.c.nom)}</div><div class="fc-badge"><i class="ti ${icono}"></i></div></div>
             <div class="fc-nm">${nm}</div>
