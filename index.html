@@ -3908,6 +3908,91 @@ function toast(tp,ttl,msg=''){
   setTimeout(()=>el.remove(),4500);
 }
 
+// ════════ VISOR DE ERRORES ══════════════════════════════════════════════════
+// Auditoría (2026-08-23): el HTML/CSS de esta función ya existía completo
+// (badge en la barra superior, tarjeta "¿qué ocurrió?/¿qué puedes hacer?/
+// detalles técnicos", modal con filtros/exportar/limpiar) pero NINGUNA de sus
+// 7 funciones existía en el código, ni había captura de errores — los botones
+// no hacían nada. Se implementa de verdad: captura global (window.onerror +
+// unhandledrejection), el registro persistido en localStorage (sobrevive
+// recargas hasta que se limpia), y las 7 funciones que ya llamaba el HTML.
+let _errLog=[];
+try{_errLog=JSON.parse(localStorage.getItem('nx_error_log')||'[]');}catch(e){_errLog=[];}
+let _logFiltro='todos';
+const _ERR_LOG_MAX=200;
+function _errGuardar(){try{localStorage.setItem('nx_error_log',JSON.stringify(_errLog.slice(-_ERR_LOG_MAX)));}catch(e){}}
+function _errBadgeActualizar(){
+  const n=_errLog.filter(e=>e.tipo==='error').length;
+  const cnt=document.getElementById('errBadgeCount');if(cnt)cnt.textContent=n;
+  document.getElementById('errBadge')?.classList.toggle('show',n>0);
+}
+function registrarError(tipo,msg,stack,mostrarTarjeta){
+  const entry={ts:new Date().toISOString(),tipo,msg:String(msg||'Error desconocido'),stack:String(stack||''),url:location.hash||location.pathname,usuario:sesion?.nom||'—'};
+  _errLog.push(entry);
+  if(_errLog.length>_ERR_LOG_MAX)_errLog=_errLog.slice(-_ERR_LOG_MAX);
+  _errGuardar();
+  _errBadgeActualizar();
+  // Si ya hay una tarjeta abierta, no la reemplaza a media lectura — solo queda en el registro.
+  if(mostrarTarjeta&&!document.getElementById('errOverlay')?.classList.contains('show'))mostrarErrorAmigable(entry);
+}
+function mostrarErrorAmigable(entry){
+  const panel=document.getElementById('errPanel'),overlay=document.getElementById('errOverlay');
+  if(!panel||!overlay)return;
+  panel.className='err-panel err-type-red';
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  const icon=document.getElementById('errIcon');if(icon)icon.innerHTML='<i class="ti ti-alert-triangle" style="color:#dc2626;font-size:22px"></i>';
+  set('errTitle','Algo salió mal');
+  set('errSubtitle','La aplicación encontró un error inesperado');
+  set('errWhat','No se pudo completar la última acción por un error del programa. Lo que ya estaba guardado antes no se pierde.');
+  set('errAction','Intenta la acción de nuevo. Si el problema sigue, recarga la página; si persiste después de eso, copia el detalle técnico y envíalo a soporte.');
+  set('errTechBody',`${entry.ts}\n${entry.msg}\n${entry.stack}`.trim());
+  document.getElementById('errTechBody')?.classList.remove('open');
+  set('errTechArrow','▼');
+  overlay.classList.add('show');
+}
+function toggleErrTech(){
+  const body=document.getElementById('errTechBody');if(!body)return;
+  const open=body.classList.toggle('open');
+  const arrow=document.getElementById('errTechArrow');if(arrow)arrow.textContent=open?'▲':'▼';
+}
+function cerrarError(){document.getElementById('errOverlay')?.classList.remove('show');}
+async function copiarErrorSoporte(){
+  const u=_errLog[_errLog.length-1];
+  const texto=u?`NEXUS PRO SEGUROS — reporte de error\nFecha: ${u.ts}\nVersión: ${typeof APP_VERSION!=='undefined'?APP_VERSION:'—'}\nUsuario: ${u.usuario}\nPantalla: ${u.url}\nMensaje: ${u.msg}\n\n${u.stack}`:'Sin error reciente que copiar.';
+  try{await navigator.clipboard.writeText(texto);toast('ok','Copiado','Pégalo en tu mensaje a soporte');}catch(e){toast('err','No se pudo copiar','Copia el texto manualmente');}
+}
+function abrirLog(){_logFiltro='todos';openM('mErrorLog');renderErrorLog();}
+function filtrarLog(tipo){_logFiltro=tipo;renderErrorLog();}
+function renderErrorLog(){
+  const box=document.getElementById('logViewer');if(!box)return;
+  const lista=(_logFiltro==='todos'?_errLog.slice():_errLog.filter(e=>e.tipo===_logFiltro)).slice().reverse();
+  const iconos={error:'ti-alert-circle',warn:'ti-alert-triangle',info:'ti-info-circle'};
+  const colores={error:'#dc2626',warn:'#d97706',info:'#2563eb'};
+  box.innerHTML=lista.map(e=>`<div style="border:1px solid #e2e8f0;border-left:3px solid ${colores[e.tipo]||'#94a3b8'};border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <span style="font-size:10px;font-weight:700;color:${colores[e.tipo]||'#475569'};text-transform:uppercase;display:flex;align-items:center;gap:5px"><i class="ti ${iconos[e.tipo]||'ti-info-circle'}"></i> ${e.tipo}</span>
+        <span style="font-size:9px;color:#94a3b8;font-family:var(--mono)">${(e.ts||'').replace('T',' ').slice(0,19)}</span>
+      </div>
+      <div style="font-size:11px;color:#334155;margin-top:4px;word-break:break-word">${escHtml(e.msg)}</div>
+    </div>`).join('')||'<div class="empty">Sin eventos registrados</div>';
+  const cnt=document.getElementById('logCount');if(cnt)cnt.textContent=`${lista.length} evento(s)`;
+}
+function exportarLog(){
+  const lista=_logFiltro==='todos'?_errLog:_errLog.filter(e=>e.tipo===_logFiltro);
+  if(!lista.length){toast('warn','Nada que exportar');return;}
+  const rows=[['Fecha','Tipo','Pantalla','Usuario','Mensaje','Detalle técnico']];
+  lista.forEach(e=>rows.push([e.ts,e.tipo,e.url,e.usuario,e.msg,e.stack]));
+  descCSV(rows,`Log_errores_${new Date().toISOString().slice(0,10)}.csv`);
+}
+function limpiarLog(){
+  if(!confirm('¿Borrar todo el registro de errores de este dispositivo?'))return;
+  _errLog=[];_errGuardar();_errBadgeActualizar();renderErrorLog();
+  toast('ok','Registro borrado');
+}
+window.addEventListener('error',ev=>registrarError('error',ev?.message||'Error de script',ev?.error?.stack||'',true));
+window.addEventListener('unhandledrejection',ev=>{const r=ev?.reason;registrarError('error',(r&&r.message)||String(r||'Promesa rechazada sin capturar'),(r&&r.stack)||'',true);});
+_errBadgeActualizar();
+
 // ── LOGIN ────────────────────────────────────────────────────────────────────
 // ── FASE 2 (opt-in): login por Supabase Auth ─────────────────────────────────
 // Se activa/desactiva con ?authmode=auth | ?authmode=legacy. Por defecto: legacy.
