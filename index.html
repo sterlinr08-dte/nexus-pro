@@ -883,8 +883,8 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
    -> v2 estilo Dashboard -> v3 movimiento/anillo -> v4 inclinación 3D real hacia el
    cursor, que fue la que pidió). Reusa los tokens --sf-* ya existentes de este mismo
    namespace — nada de fuente ni paleta nueva, esto vive dentro de Clientes/nxSf. */
-.nxSf .sf-fanrow{display:flex;gap:14px;align-items:flex-start;padding:14px 6px 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
-.nxSf .sf-fancard{flex:0 0 auto;width:150px;position:relative;overflow:hidden;border-radius:18px;padding:15px 13px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
+.nxSf .sf-fanrow{display:flex;gap:16px;align-items:flex-start;padding:16px 6px 22px;overflow-x:auto;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+.nxSf .sf-fancard{flex:0 0 auto;width:182px;position:relative;overflow:hidden;border-radius:20px;padding:18px 16px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
   background:radial-gradient(120% 90% at 100% 0%,var(--sf-err-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-err-l),transparent 65%),var(--sf-card);
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(220,38,38,.32);
   border:1px solid rgba(220,38,38,.14)}
@@ -896,7 +896,7 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard.entering{opacity:0;transform:translateY(12px) scale(.97);animation:nxFanIn .45s cubic-bezier(.2,.8,.2,1) forwards}
 @media(prefers-reduced-motion:reduce){.nxSf .sf-fancard.entering{opacity:1;transform:none;animation:none}}
 .nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,var(--sf-warn-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-warn-l),transparent 65%),var(--sf-card);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(217,119,6,.3);border-color:rgba(217,119,6,.14)}
-.nxSf .sf-fancard.top{width:168px;padding:17px 15px}
+.nxSf .sf-fancard.top{width:206px;padding:20px 18px}
 .nxSf .sf-fancard.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(220,38,38,.4)}
 .nxSf .sf-fancard.warn.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(217,119,6,.36)}
 .nxSf .sf-fancard::before{content:'';position:absolute;inset:-40% -60%;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.6) 48%,rgba(255,255,255,.05) 56%,transparent 65%);transition:opacity .25s ease}
@@ -906,36 +906,37 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard:nth-child(1){animation-delay:.02s}.nxSf .sf-fancard:nth-child(2){animation-delay:.07s}.nxSf .sf-fancard:nth-child(3){animation-delay:.12s}.nxSf .sf-fancard:nth-child(4){animation-delay:.17s}.nxSf .sf-fancard:nth-child(5){animation-delay:.22s}
 @keyframes nxFanIn{to{opacity:1;transform:none}}
 .nxSf .fc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;transform:translateZ(16px)}
-.nxSf .fc-days{font-size:8.5px;font-weight:800;color:#fff;background:var(--sf-err);padding:4px 8px;border-radius:7px;letter-spacing:.2px}
+.nxSf .fc-days{font-size:9.5px;font-weight:800;color:#fff;background:var(--sf-err);padding:5px 9px;border-radius:8px;letter-spacing:.2px}
 .nxSf .sf-fancard.warn .fc-days{background:var(--sf-warn)}
 .nxSf .fc-rank{font-size:9px;font-weight:800;color:var(--sf-tx3)}
-.nxSf .fc-avwrap{position:relative;width:42px;height:42px;margin-bottom:11px;transform:translateZ(30px);filter:drop-shadow(0 7px 10px rgba(220,38,38,.32))}
+.nxSf .fc-avwrap{position:relative;width:50px;height:50px;margin-bottom:13px;transform:translateZ(30px);filter:drop-shadow(0 7px 10px rgba(220,38,38,.32))}
 .nxSf .sf-fancard.warn .fc-avwrap{filter:drop-shadow(0 7px 10px rgba(217,119,6,.28))}
 .nxSf .fc-avring{position:absolute;inset:-3px;border-radius:14px;background:conic-gradient(from 200deg,#f87171,var(--sf-err),#f87171);opacity:.9;animation:nxFanRing 6s linear infinite}
 .nxSf .sf-fancard.warn .fc-avring{background:conic-gradient(from 200deg,#fbbf24,var(--sf-warn),#fbbf24)}
 @keyframes nxFanRing{to{transform:rotate(360deg)}}
-.nxSf .fc-av{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;background:linear-gradient(145deg,#f87171,var(--sf-err))}
+.nxSf .fc-av{position:absolute;inset:0;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;background:linear-gradient(145deg,#f87171,var(--sf-err))}
 .nxSf .sf-fancard.warn .fc-av{background:linear-gradient(145deg,#fbbf24,var(--sf-warn))}
-.nxSf .fc-nm{font-weight:800;font-size:11.5px;line-height:1.25;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transform:translateZ(8px)}
-.nxSf .fc-ars{font-size:9px;color:var(--sf-tx3);margin-bottom:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxSf .fc-nm{font-weight:800;font-size:13px;line-height:1.25;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transform:translateZ(8px)}
+.nxSf .fc-ars{font-size:10px;color:var(--sf-tx3);margin-bottom:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nxSf .fc-row2{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:11px;transform:translateZ(22px)}
-.nxSf .fc-amt{font-size:16px;font-weight:800;letter-spacing:-.3px;color:var(--sf-err-d);font-variant-numeric:tabular-nums;line-height:1}
-.nxSf .sf-fancard.warn .fc-amt{color:var(--sf-warn-d);font-size:12.5px}
-.nxSf .fc-pill{font-size:8px;font-weight:800;padding:3px 7px;border-radius:20px;background:rgba(255,255,255,.7);color:var(--sf-err-d);text-transform:uppercase;white-space:nowrap}
+.nxSf .fc-amt{font-size:19px;font-weight:800;letter-spacing:-.3px;color:var(--sf-err-d);font-variant-numeric:tabular-nums;line-height:1}
+.nxSf .sf-fancard.warn .fc-amt{color:var(--sf-warn-d);font-size:14.5px}
+.nxSf .fc-pill{font-size:9px;font-weight:800;padding:4px 9px;border-radius:20px;background:rgba(255,255,255,.7);color:var(--sf-err-d);text-transform:uppercase;white-space:nowrap}
 .nxSf .sf-fancard.warn .fc-pill{color:var(--sf-warn-d)}
 body.tema-premium .nxSf .fc-pill{background:rgba(255,255,255,.08)}
 .nxSf .fc-acts{display:flex;gap:6px;transform:translateZ(12px)}
-.nxSf .fc-ico{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;color:var(--sf-tx2);cursor:pointer;flex:0 0 auto;border:none}
+.nxSf .fc-ico{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;color:var(--sf-tx2);cursor:pointer;flex:0 0 auto;border:none}
+.nxSf .fc-ico i{font-size:14px}
 .nxSf .fc-ico.wa{color:var(--sf-ok-d)}
 .nxSf .fc-ico.call{color:var(--sf-primary-d)}
 .nxSf .fc-ico:disabled{opacity:.35;cursor:default}
 body.tema-premium .nxSf .fc-ico{background:rgba(255,255,255,.08)}
-.nxSf .fc-ficha{flex:1;height:28px;border-radius:8px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;gap:4px;font-size:9px;font-weight:800;color:var(--sf-tx2);cursor:pointer;min-width:0;border:none;font-family:inherit}
+.nxSf .fc-ficha{flex:1;height:32px;border-radius:9px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;gap:5px;font-size:10.5px;font-weight:800;color:var(--sf-tx2);cursor:pointer;min-width:0;border:none;font-family:inherit}
 body.tema-premium .nxSf .fc-ficha{background:rgba(255,255,255,.08)}
-.nxSf .fc-ficha i{font-size:11px}
+.nxSf .fc-ficha i{font-size:13px}
 body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 @media(prefers-reduced-motion:reduce){.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
-@media(max-width:480px){.nxSf .sf-fancard{width:130px}.nxSf .sf-fancard.top{width:146px}}
+@media(max-width:480px){.nxSf .sf-fancard{width:156px}.nxSf .sf-fancard.top{width:176px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
