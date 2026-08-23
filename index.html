@@ -884,7 +884,7 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
    cursor, que fue la que pidió). Reusa los tokens --sf-* ya existentes de este mismo
    namespace — nada de fuente ni paleta nueva, esto vive dentro de Clientes/nxSf. */
 .nxSf .sf-fanrow{display:flex;gap:16px;align-items:flex-start;padding:16px 6px 22px;overflow-x:auto;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
-.nxSf .sf-fancard{flex:0 0 auto;width:182px;position:relative;overflow:hidden;border-radius:20px;padding:18px 16px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
+.nxSf .sf-fancard{flex:0 0 auto;width:226px;position:relative;overflow:hidden;border-radius:20px;padding:19px 18px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
   background:radial-gradient(120% 90% at 100% 0%,var(--sf-err-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-err-l),transparent 65%),var(--sf-card);
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(220,38,38,.32);
   border:1px solid rgba(220,38,38,.14)}
@@ -896,7 +896,7 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fancard.entering{opacity:0;transform:translateY(12px) scale(.97);animation:nxFanIn .45s cubic-bezier(.2,.8,.2,1) forwards}
 @media(prefers-reduced-motion:reduce){.nxSf .sf-fancard.entering{opacity:1;transform:none;animation:none}}
 .nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,var(--sf-warn-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-warn-l),transparent 65%),var(--sf-card);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(217,119,6,.3);border-color:rgba(217,119,6,.14)}
-.nxSf .sf-fancard.top{width:206px;padding:20px 18px}
+.nxSf .sf-fancard.top{width:254px;padding:21px 20px}
 .nxSf .sf-fancard.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(220,38,38,.4)}
 .nxSf .sf-fancard.warn.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(217,119,6,.36)}
 .nxSf .sf-fancard::before{content:'';position:absolute;inset:-40% -60%;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.6) 48%,rgba(255,255,255,.05) 56%,transparent 65%);transition:opacity .25s ease}
@@ -936,7 +936,7 @@ body.tema-premium .nxSf .fc-ficha{background:rgba(255,255,255,.08)}
 .nxSf .fc-ficha i{font-size:13px}
 body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 @media(prefers-reduced-motion:reduce){.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
-@media(max-width:480px){.nxSf .sf-fancard{width:156px}.nxSf .sf-fancard.top{width:176px}}
+@media(max-width:480px){.nxSf .sf-fancard{width:192px}.nxSf .sf-fancard.top{width:216px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
