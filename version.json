@@ -1,7 +1,12 @@
 {
-  "version": "56.62",
+  "version": "56.63",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.63",
+      "fecha": "2026-08-23",
+      "texto": "NUEVO: en Punto de Venta → Inventario, ahora podés seleccionar varios artículos con las casillas de la tabla e imprimir todas sus etiquetas juntas (nombre, código y precio) en una sola hoja lista para recortar y pegar — útil para identificar rápido el inventario en el taller. Antes solo se podía imprimir una etiqueta a la vez, y solo desde la pantalla de editar cada artículo. AVISO: este cambio no se pudo probar en vivo por un bloqueo de seguridad de Windows en la PC (Smart App Control) que impidió usar la herramienta de pruebas — se revisó el código a mano con cuidado, pero avisame si algo no se ve bien."
+    },
     {
       "v": "56.62",
       "fecha": "2026-08-21",

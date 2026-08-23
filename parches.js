@@ -19628,6 +19628,18 @@
   // Cuerpo de la tabla (tbody + pie de paginación) — se puede reconstruir SOLO esta
   // parte (buscar/paginar/seleccionar) sin tocar el buscador de arriba, para no
   // robarle el foco al campo mientras se escribe (ver nxProdRefrescarTabla).
+  // Barra de acciones en lote — solo aparece con algo seleccionado. Vive aparte del
+  // buscador/tabla (misma razón que prodRefrescarTabla: repintar de más le roba el
+  // foco al campo de búsqueda mientras se escribe).
+  function prodBulkBarHTML() {
+    if (!_prodSel.size) return '';
+    return `<div class="nxProdBulk">
+      <span><b>${_prodSel.size}</b> artículo${_prodSel.size === 1 ? '' : 's'} seleccionado${_prodSel.size === 1 ? '' : 's'}</span>
+      <button type="button" class="btn bsm bc1" onclick="window.nxProdEtiquetasLote()"><i class="ti ti-printer"></i> Imprimir etiquetas</button>
+      <button type="button" class="btn bsm bghost" onclick="window.nxProdSelLimpiar()">Cancelar selección</button>
+    </div>`;
+  }
+  function prodBulkBarRefrescar() { const el = document.getElementById('nxProdBulkBar'); if (el) el.innerHTML = prodBulkBarHTML(); }
   function prodTablaCuerpoHTML() {
     const todos = prodListaFiltrada();
     const total = todos.length;
@@ -19662,6 +19674,7 @@
         <button class="btn bsm bghost" type="button" onclick="window.nxPosImportarUI()"><i class="ti ti-file-import"></i> Importar</button>
         ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
+      <div id="nxProdBulkBar">${prodBulkBarHTML()}</div>
       ${pills}
       <div class="tw nxProdTw" style="font-size:11px"><table style="width:100%" id="nxProdTbl"><thead><tr>
         <th class="nxProdChk"><input type="checkbox" aria-label="Seleccionar todos los de esta página" onchange="window.nxProdSelAll(this.checked)"></th>
@@ -19692,12 +19705,15 @@
     const row = chkEl && chkEl.closest('tr'); if (row) row.classList.toggle('nxProdRowSel', checked);
     const chkAll = document.querySelector('#nxProdTbl thead .nxProdChk input');
     if (chkAll) { const vis = [...document.querySelectorAll('#nxProdTbody input[type=checkbox]')]; chkAll.checked = vis.length > 0 && vis.every(c => c.checked); chkAll.indeterminate = vis.some(c => c.checked) && !chkAll.checked; }
+    prodBulkBarRefrescar();
   };
   window.nxProdSelAll = function (checked) {
     const { pagina } = prodTablaCuerpoHTML();
     pagina.forEach(p => { if (checked) _prodSel.add(String(p.id)); else _prodSel.delete(String(p.id)); });
     prodRefrescarTabla();
+    prodBulkBarRefrescar();
   };
+  window.nxProdSelLimpiar = function () { _prodSel.clear(); prodRefrescarTabla(); prodBulkBarRefrescar(); };
   window.nxProdFiltro = function (f) { _prodFiltro = f || 'todos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxComboPaint = function () {
     const box = document.getElementById('ppComboList'); if (!box) return;
@@ -20874,6 +20890,29 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       .pre{font-size:18px;font-weight:800;margin-top:6px}
     </style></head><body onload="window.print()">
       <div class="et"><div class="nom">${esc(nombre)}</div>${codigo ? `<div class="cod">${esc(codigo)}</div>` : ''}<div class="pre">${precio}</div></div>
+    </body></html>`);
+    w.document.close();
+  };
+  // Mismo criterio "honesto" de arriba (nombre + código + precio, sin código de barras
+  // falso), pero de varios artículos de una — pedido del dueño para identificar
+  // inventario en el taller a simple vista: seleccionás artículos en la tabla de
+  // Inventario y salen todas las etiquetas juntas, listas para recortar y pegar.
+  window.nxProdEtiquetasLote = function () {
+    const items = _prods.filter(p => _prodSel.has(String(p.id)));
+    if (!items.length) { toast('err', 'Selecciona al menos un artículo'); return; }
+    const w = window.open('', '_blank');
+    if (!w) { toast('err', 'El navegador bloqueó la ventana de impresión'); return; }
+    const tarjetas = items.map(p => `<div class="et"><div class="nom">${esc(p.nombre || '')}</div>${p.codigo ? `<div class="cod">${esc(p.codigo)}</div>` : ''}<div class="pre">${fmt(Number(p.precio || 0))}</div></div>`).join('');
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiquetas (${items.length})</title><style>
+      body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;margin:0;padding:14px}
+      .hoja{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .et{border:1px dashed #94a3b8;border-radius:8px;padding:12px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+      .nom{font-size:12px;font-weight:700;margin-bottom:6px;word-break:break-word}
+      .cod{font-family:Cascadia Code,Consolas,Courier New,monospace;font-size:15px;letter-spacing:3px;font-weight:700;margin:8px 0;padding:6px 0;border-top:1px dashed #cbd5e1;border-bottom:1px dashed #cbd5e1}
+      .pre{font-size:18px;font-weight:800;margin-top:6px}
+      @media print{.hoja{grid-template-columns:repeat(3,1fr)}}
+    </style></head><body onload="window.print()">
+      <div class="hoja">${tarjetas}</div>
     </body></html>`);
     w.document.close();
   };
@@ -27195,6 +27234,8 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxProdTw tbody tr.nxProdRowSel td{background:#dbeafe}',
       '.nxProdChk{width:36px;text-align:center;padding-left:12px!important;padding-right:4px!important}',
       '.nxProdChk input{width:16px;height:16px;accent-color:#2563eb;cursor:pointer}',
+      '.nxProdBulk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#1e3a8a}',
+      '.nxProdBulk b{font-weight:800}',
       '.nxProdFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:6px 2px 2px}',
       '.nxProdFootTxt{font-size:11px;color:#64748b}',
       '.nxProdPgWrap{display:flex;gap:4px;align-items:center}',
