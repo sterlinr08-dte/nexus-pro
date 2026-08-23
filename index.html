@@ -879,16 +879,46 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-fantitle h2 i{color:var(--sf-err);font-size:15px}
 .nxSf .sf-fancnt{font-size:11px;font-weight:700;color:var(--sf-tx3)}
 .nxSf .sf-fansub{margin:0 0 4px;font-size:10.5px;color:var(--sf-tx3)}
-.nxSf .sf-fanrow{display:flex;justify-content:center;align-items:flex-end;padding:26px 30px 34px;overflow-x:auto;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 22px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(to right,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
-.nxSf .sf-fanrow-scroll{justify-content:flex-start}
-.nxSf .sf-fancard{width:132px;min-width:132px;background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px 11px 12px;text-align:center;box-shadow:0 10px 24px rgba(15,23,42,.08);cursor:pointer;margin:0 3px;transform:rotate(var(--rot,0deg)) translateY(var(--ty,0px)) scale(var(--sc,1));transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s}
-.nxSf .sf-fancard:hover,.nxSf .sf-fancard:focus-visible{transform:rotate(var(--rot,0deg)) translateY(calc(var(--ty,0px) - 10px)) scale(calc(var(--sc,1) + .04));box-shadow:0 20px 40px rgba(15,23,42,.16);z-index:9!important}
-.nxSf .sf-fancard:focus-visible{outline:2px solid var(--sf-primary);outline-offset:3px}
-.nxSf .sf-fancard .av{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;background:linear-gradient(135deg,var(--sf-primary),var(--sf-primary-d))}
-.nxSf .sf-fancard .nm{font-weight:700;font-size:11.5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;color:var(--sf-tx);min-height:2.4em}
-.nxSf .sf-fancard .ars{font-size:9px;color:var(--sf-tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nxSf .sf-fancard .amt{display:inline-flex;margin-top:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
-@media(max-width:480px){.nxSf .sf-fanrow{padding:22px 26px 30px}.nxSf .sf-fancard{width:112px;min-width:112px}}
+/* Atención prioritaria v4 (2026-08-23, iterado en vivo con el usuario: v1 "corporativo"
+   -> v2 estilo Dashboard -> v3 movimiento/anillo -> v4 inclinación 3D real hacia el
+   cursor, que fue la que pidió). Reusa los tokens --sf-* ya existentes de este mismo
+   namespace — nada de fuente ni paleta nueva, esto vive dentro de Clientes/nxSf. */
+.nxSf .sf-fanrow{display:flex;gap:14px;align-items:flex-start;padding:14px 6px 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+.nxSf .sf-fancard{flex:0 0 auto;width:150px;position:relative;overflow:hidden;border-radius:18px;padding:15px 13px;text-align:left;cursor:pointer;isolation:isolate;transform-style:preserve-3d;will-change:transform;
+  background:radial-gradient(120% 90% at 100% 0%,var(--sf-err-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-err-l),transparent 65%),var(--sf-card);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(220,38,38,.32);
+  border:1px solid rgba(220,38,38,.14);opacity:0;transform:translateY(12px) scale(.97);animation:nxFanIn .45s cubic-bezier(.2,.8,.2,1) forwards}
+.nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,var(--sf-warn-l),transparent 55%),radial-gradient(120% 90% at 0% 100%,var(--sf-warn-l),transparent 65%),var(--sf-card);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.04),0 12px 22px -12px rgba(217,119,6,.3);border-color:rgba(217,119,6,.14)}
+.nxSf .sf-fancard.top{width:168px;padding:17px 15px}
+.nxSf .sf-fancard.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(220,38,38,.4)}
+.nxSf .sf-fancard.warn.tilting{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 1px 1px rgba(15,23,42,.05),0 28px 40px -16px rgba(217,119,6,.36)}
+.nxSf .sf-fancard::before{content:'';position:absolute;inset:-40% -60%;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.6) 48%,rgba(255,255,255,.05) 56%,transparent 65%);transition:opacity .25s ease}
+.nxSf .sf-fancard.tilting::before{opacity:1}
+.nxSf .sf-fancard:focus-visible{outline:2px solid var(--sf-primary);outline-offset:2px}
+.nxSf .sf-fancard>*{position:relative;z-index:2}
+.nxSf .sf-fancard:nth-child(1){animation-delay:.02s}.nxSf .sf-fancard:nth-child(2){animation-delay:.07s}.nxSf .sf-fancard:nth-child(3){animation-delay:.12s}.nxSf .sf-fancard:nth-child(4){animation-delay:.17s}.nxSf .sf-fancard:nth-child(5){animation-delay:.22s}
+@keyframes nxFanIn{to{opacity:1;transform:none}}
+.nxSf .fc-rank{position:absolute;top:12px;right:14px;font-size:9px;font-weight:800;color:var(--sf-tx3);transform:translateZ(16px)}
+.nxSf .fc-avwrap{position:relative;width:42px;height:42px;margin-bottom:11px;transform:translateZ(30px);filter:drop-shadow(0 7px 10px rgba(220,38,38,.32))}
+.nxSf .sf-fancard.warn .fc-avwrap{filter:drop-shadow(0 7px 10px rgba(217,119,6,.28))}
+.nxSf .fc-avring{position:absolute;inset:-3px;border-radius:14px;background:conic-gradient(from 200deg,#f87171,var(--sf-err),#f87171);opacity:.9;animation:nxFanRing 6s linear infinite}
+.nxSf .sf-fancard.warn .fc-avring{background:conic-gradient(from 200deg,#fbbf24,var(--sf-warn),#fbbf24)}
+@keyframes nxFanRing{to{transform:rotate(360deg)}}
+.nxSf .fc-av{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;background:linear-gradient(145deg,#f87171,var(--sf-err))}
+.nxSf .sf-fancard.warn .fc-av{background:linear-gradient(145deg,#fbbf24,var(--sf-warn))}
+.nxSf .fc-badge{position:absolute;bottom:-4px;right:-4px;width:19px;height:19px;border-radius:7px;background:var(--sf-card);border:2px solid var(--sf-card);box-shadow:0 2px 5px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;color:var(--sf-err)}
+.nxSf .fc-badge i{font-size:10px}
+.nxSf .sf-fancard.warn .fc-badge{color:var(--sf-warn)}
+.nxSf .fc-nm{font-weight:800;font-size:11.5px;line-height:1.25;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transform:translateZ(8px)}
+.nxSf .fc-ars{font-size:9px;color:var(--sf-tx3);margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxSf .fc-amt{font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--sf-err-d);font-variant-numeric:tabular-nums;line-height:1;transform:translateZ(22px)}
+.nxSf .sf-fancard.warn .fc-amt{color:var(--sf-warn-d);font-size:13px}
+.nxSf .fc-reason{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--sf-err-d);background:rgba(255,255,255,.65);padding:3px 8px;border-radius:20px;margin-top:8px;transform:translateZ(12px)}
+.nxSf .sf-fancard.warn .fc-reason{color:var(--sf-warn-d)}
+.nxSf .fc-reason i{font-size:9px}
+body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
+@media(prefers-reduced-motion:reduce){.nxSf .sf-fancard{opacity:1;transform:none;animation:none}.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
+@media(max-width:480px){.nxSf .sf-fancard{width:130px}.nxSf .sf-fancard.top{width:146px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -7317,6 +7347,32 @@ function pintarLupaCli(){
     onterm:function(v){const i=document.getElementById('cliQ');if(i)i.value=v;rCliBuscar();}
   });
 }
+// Inclinación 3D real hacia el cursor de las tarjetas de "Atención prioritaria" (v4,
+// pedida explícitamente tras iterar: v1 corporativo -> v2 estilo Dashboard -> v3
+// movimiento/anillo, ninguna convenció hasta esta). Se reconecta cada vez que rCli()
+// repinta la fila (las tarjetas son nodos nuevos cada vez, no hace falta desligar nada).
+function nxFanTiltInit(container){
+  if(!container)return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  container.querySelectorAll('.sf-fancard').forEach(card=>{
+    card.addEventListener('animationend',()=>{card.style.animation='none';});
+    card.addEventListener('mouseenter',()=>{
+      card.classList.add('tilting');
+      card.style.transition='transform .05s linear';
+    });
+    card.addEventListener('mousemove',e=>{
+      const r=card.getBoundingClientRect();
+      const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
+      const rx=((0.5-py)*14).toFixed(2),ry=((px-0.5)*14).toFixed(2);
+      card.style.transform=`perspective(700px) translateY(-5px) scale(1.02) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
+    card.addEventListener('mouseleave',()=>{
+      card.classList.remove('tilting');
+      card.style.transition='transform .5s cubic-bezier(.2,.8,.2,1)';
+      card.style.transform='';
+    });
+  });
+}
 function rCli(){
   llenarFiltroAgentes('fAgenteCli');
   pintarLupaCli();
@@ -7367,30 +7423,28 @@ function rCli(){
       }).slice(0,5);
       const fanWrap=document.getElementById('cliFanWrap');
       if(cand.length){
-        const n=cand.length,mid=(n-1)/2;
-        // El candidato de MAYOR prioridad (cand[0]) siempre va al slot CENTRAL
-        // (offset 0: sin rotar, escalado, visible sin depender de scroll). Los de
-        // menor prioridad se reparten hacia los extremos alternando lado — ahí es
-        // donde, en pantallas angostas, la rotación puede acercar el borde de la
-        // tarjeta al límite del contenedor.
-        const naturalOffs=[];
-        for(let k=0;k<n;k++)naturalOffs.push(k-mid);
-        naturalOffs.sort((a,b)=>Math.abs(a)-Math.abs(b)||a-b);
+        // v4: cand[0] (mayor prioridad) va primero y más grande (.top) — fila que
+        // se desliza en vez del abanico rotado de antes (ver nxFanTiltInit: ese
+        // rotaba máx ±4°, imperceptible en la práctica; esto se reemplaza por
+        // inclinación 3D real hacia el cursor, con avatar/monto en su propio plano Z).
         fanRow.innerHTML=cand.map((x,i)=>{
-          const off=naturalOffs[i],rot=(off*2).toFixed(1),ty=(-6+Math.abs(off)*6).toFixed(0),sc=off===0?'1.06':'1',z=10-Math.round(Math.abs(off));
-          const badge=x.pv>0?`<span class="amt" style="background:var(--sf-err-l);color:var(--sf-err)">${fmt(x.pv)}</span>`:`<span class="amt" style="background:var(--sf-warn-l);color:var(--sf-warn)">${x.dv===0?'Vence hoy':'Vence en '+x.dv+'d'}</span>`;
-          const nm=escHtml(x.c.nom),ars=x.c.ars?escHtml(x.c.ars):'';
-          return`<div class="sf-fancard" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" style="--rot:${rot}deg;--ty:${ty}px;--sc:${sc};order:${off};z-index:${z}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="av">${inits(x.c.nom)}</div><div class="nm">${nm}</div>${ars?`<div class="ars">${ars}</div>`:''}${badge}</div>`;
+          const esWarn=!(x.pv>0);
+          const nm=escHtml(x.c.nom),ars=x.c.ars?escHtml(x.c.ars):'Sin ARS registrada';
+          const monto=x.pv>0?fmt(x.pv):(x.dv===0?'Vence hoy':'Vence en '+x.dv+'d');
+          const motivo=x.pv>0?'Balance pendiente':'Próximo a renovar';
+          const icono=x.pv>0?'ti-wallet':'ti-calendar-event';
+          return`<div class="sf-fancard${esWarn?' warn':''}${i===0?' top':''}" tabindex="0" role="button" aria-label="Ver la ficha de ${nm}" onclick="verCliente('${x.c.id}')" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
+            <span class="fc-rank">#${i+1}</span>
+            <div class="fc-avwrap"><div class="fc-avring"></div><div class="fc-av">${inits(x.c.nom)}</div><div class="fc-badge"><i class="ti ${icono}"></i></div></div>
+            <div class="fc-nm">${nm}</div>
+            <div class="fc-ars">${ars}</div>
+            <div class="fc-amt">${monto}</div>
+            <div class="fc-reason"><i class="ti ${icono}"></i> ${motivo}</div>
+          </div>`;
         }).join('');
         const cnt=document.getElementById('cliFanCnt');if(cnt)cnt.textContent=`${cand.length} de ${candAll.length}`;
         if(fanWrap)fanWrap.style.display='';
-        // justify-content:center en una fila que se desborda deja contenido sin
-        // forma de alcanzarlo con scroll (comportamiento real de Chromium: con
-        // overflow, el centrado solo deja scroll hacia la derecha, nunca hacia la
-        // izquierda). Si el ancho real ya no alcanza, se cambia a alineado-al-inicio
-        // (scroll normal desde la primera tarjeta, por `order`) — con pocas
-        // tarjetas que sí caben, sigue centrado.
-        fanRow.classList.toggle('sf-fanrow-scroll', fanRow.scrollWidth>fanRow.clientWidth);
+        nxFanTiltInit(fanRow);
       }else{
         if(fanWrap)fanWrap.style.display='none';
       }
