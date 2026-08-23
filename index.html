@@ -37,7 +37,7 @@
 <!-- Plus Jakarta Sans: excepción deliberada, SOLO para el Splash (pedido explícito
      del dueño, 1-ago-2026) — cargada aquí en <head> porque el splash aparece antes
      de que nxPfEnsureCSS() (que ya carga esta misma fuente para el POS) corra. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 /* ── Barra de scroll visible (estilizada) ── */
@@ -390,12 +390,110 @@ tbody tr:hover td{background:#f8fafc}
 .ai-h{color:var(--tx3);font-size:8px;letter-spacing:.5px}
 .confirm-b{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #ef4444}
 .confirm-b p{font-size:11px;color:#475569;line-height:1.7}
-.qa-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-bottom:12px}
-.qa{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px 10px;cursor:pointer;transition:all .15s;text-align:center;box-shadow:var(--shadow)}
-.qa:hover{border-color:var(--c1);background:#eff6ff;transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.qa:hover .qa-i,.qa:hover .qa-l{color:#1d4ed8}
-.qa-i{font-size:18px;color:#8b5cf6;margin-bottom:6px;display:block;transition:color .13s}
-.qa-l{font-size:10px;color:#475569;font-weight:600;transition:color .13s}
+/* ════════ DASHBOARD — "Ciclo suave" v4 (aprobada tras iterar v2→v3→v4) ═════
+   Identidad propia del Dashboard: esquinas grandes, sombras difusas, azul
+   pastel sobre blanco, anillo circular del ciclo 20→20, y la tira de
+   comandos como pastilla de vidrio con aurora + animación líquida.
+   .kpi/.dhero-*/.kg/.cmd* no se usan en ninguna otra vista (verificado por
+   grep), así que se redefinen por completo sin afectar el resto del sistema.
+   Reusa Plus Jakarta Sans (ya cargada para el splash) — ninguna fuente nueva. */
+#v-dashboard{
+  --db-bg:#EEF2FC;--db-card:#FFFFFF;--db-line:#E7EBFA;
+  --db-ink:#1B1F3B;--db-soft:#6B7195;--db-faint:#9CA1C4;
+  --db-blue:#2F6FED;--db-blue-l:#E8F0FE;--db-ring-track:#E3E9FB;
+  --db-red:#F4574F;--db-red-l:#FDEBEA;
+  --db-gold:#F5A623;--db-gold-l:#FEF3DE;
+  --db-green:#28C094;--db-green-l:#E5F9F3;
+  --db-purple:#8B6CF0;--db-purple-l:#F0ECFE;
+  --ff-ui:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  --db-shadow:0 1px 2px rgba(27,31,59,.04),0 16px 32px -12px rgba(27,31,59,.12);
+  --db-shadow-sm:0 1px 2px rgba(27,31,59,.04),0 6px 14px -6px rgba(27,31,59,.10);
+  background:var(--db-bg);margin:-20px;padding:20px;color:var(--db-ink);font-family:var(--ff-ui);min-height:100%;
+}
+body.tema-premium #v-dashboard{
+  --db-bg:#101220;--db-card:#1A1D33;--db-line:#2A2E4D;
+  --db-ink:#EDEEFA;--db-soft:#A6ABCB;--db-faint:#6B7095;
+  --db-blue-l:#1B2540;--db-ring-track:#262A48;--db-red-l:#3A1E1D;--db-gold-l:#3A2C10;--db-green-l:#123529;--db-purple-l:#241E42;
+  --db-shadow:0 1px 2px rgba(0,0,0,.3),0 16px 32px -12px rgba(0,0,0,.5);--db-shadow-sm:0 1px 2px rgba(0,0,0,.3),0 6px 14px -6px rgba(0,0,0,.4);
+}
+#v-dashboard .nc{background:var(--db-card);border:1px solid var(--db-line);border-radius:20px;box-shadow:var(--db-shadow-sm)}
+#v-dashboard .ct{font-weight:800;color:var(--db-ink)}
+#v-dashboard .ct-s{color:var(--db-faint)}
+
+/* tira de comandos → pastilla de vidrio con aurora pastel + animación líquida
+   (reemplaza el grid de iconos de color que no existían: bug de c-azul/c-verde/...) */
+.cmdglass-wrap{position:relative;border-radius:22px;overflow:hidden;margin-bottom:12px;background:var(--db-card);box-shadow:var(--db-shadow-sm)}
+.cmdglass-aurora{position:absolute;inset:0;overflow:hidden}
+.cmdglass-aurora span{position:absolute;width:220px;height:120px;border-radius:50%;filter:blur(32px);opacity:.55}
+.cmdglass-aurora .a1{background:radial-gradient(circle,#8fb4ff,transparent 65%);top:-40px;left:-20px}
+.cmdglass-aurora .a2{background:radial-gradient(circle,#8ff0d6,transparent 65%);top:-30px;left:220px}
+.cmdglass-aurora .a3{background:radial-gradient(circle,#f0b3e0,transparent 65%);top:-40px;right:-30px}
+body.tema-premium .cmdglass-aurora span{opacity:.28}
+.cmdglass{position:relative;display:flex;gap:2px;padding:7px;overflow-x:auto}
+.cmdglass::-webkit-scrollbar{display:none}
+.cg-hl{position:absolute;top:7px;left:7px;height:calc(100% - 14px);border-radius:999px;background:rgba(255,255,255,.55);backdrop-filter:blur(10px) saturate(1.6);-webkit-backdrop-filter:blur(10px) saturate(1.6);box-shadow:0 6px 18px rgba(47,111,237,.16),inset 0 1px 0 rgba(255,255,255,.9);z-index:0;transition:left .12s cubic-bezier(.2,.8,.2,1),width .12s cubic-bezier(.2,.8,.2,1)}
+body.tema-premium .cg-hl{background:rgba(255,255,255,.10);box-shadow:0 6px 18px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15)}
+@media(prefers-reduced-motion:reduce){.cg-hl{transition:none!important}}
+.cg-btn{position:relative;z-index:1;display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;color:var(--db-soft);cursor:pointer;white-space:nowrap;background:none;border:none;font-family:inherit}
+.cg-btn.on{color:var(--db-ink)}
+.cg-btn i{font-size:14px}
+@media(max-width:620px){.cmdglass{overflow-x:auto}.cg-btn{padding:9px 12px;font-size:11px}}
+
+/* héroe + anillo del ciclo, en grid lado a lado (mismos ids que ya usa rDash()) */
+.db-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:12px}
+@media(max-width:680px){.db-grid{grid-template-columns:1fr}}
+.dhero{background:var(--db-card);border:1px solid var(--db-line);border-radius:24px;padding:22px;box-shadow:var(--db-shadow);position:relative}
+.dhero::before{content:none}
+.dhero-top{position:relative;cursor:pointer;border-radius:12px}
+.dhero-l{font-size:11px;font-weight:700;color:var(--db-soft);text-transform:uppercase;letter-spacing:.4px}
+.dhero-big{font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin:6px 0 3px;font-variant-numeric:tabular-nums}
+.dhero-sub{font-size:12px;color:var(--db-faint)}
+.dhero-row{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.dhero-m{cursor:pointer;border-radius:16px;background:var(--db-bg);padding:10px 12px}
+.dhero-k{font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--db-faint);display:flex;align-items:center;gap:4px}
+.dhero-n{font-size:15px;font-weight:800;letter-spacing:-.3px;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--db-ink)}
+.dhero-n.al{color:var(--db-red)}
+.dhero-s{font-size:9px;color:var(--db-faint);margin-top:2px}
+.dhero-top:focus-visible,.dhero-m:focus-visible{outline:2px solid var(--db-blue)!important;outline-offset:2px}
+/* la firma: anillo circular con el % real transcurrido del ciclo (calculado en rDash) */
+.ring-card{background:var(--db-card);border:1px solid var(--db-line);border-radius:24px;padding:20px;box-shadow:var(--db-shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.ring-card .ttl{font-size:11px;font-weight:700;color:var(--db-soft);text-transform:uppercase;letter-spacing:.4px}
+.ring-wrap{position:relative;width:132px;height:132px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-mid .n{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--db-ink)}
+.ring-mid .d{font-size:9.5px;color:var(--db-faint);font-weight:700;margin-top:1px}
+.ring-foot{font-size:10.5px;color:var(--db-soft);line-height:1.5}
+.ring-foot b{color:var(--db-ink)}
+
+/* KPI → tarjetas suaves (misma estructura .kpi/.kl/.kv/.ks/.ki que ya usa rDash(), solo re-skin) */
+.kg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+@media(max-width:620px){.kg{grid-template-columns:1fr 1fr}}
+.kpi{display:flex;flex-direction:column;background:var(--db-card);border:1px solid var(--db-line);border-radius:20px;padding:16px;box-shadow:var(--db-shadow-sm);position:relative;transition:transform .15s,box-shadow .15s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--db-shadow)}
+.kpi::after{content:none}
+.ki{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:16px;position:static;opacity:1}
+.kpi.k2 .ki{background:var(--db-blue-l);color:var(--db-blue)}.kpi.k5 .ki{background:var(--db-gold-l);color:var(--db-gold)}.kpi.k3 .ki{background:var(--db-purple-l);color:var(--db-purple)}
+.kl{font-size:10.5px;font-weight:700;color:var(--db-soft);letter-spacing:0;text-transform:none}
+.kv{font-size:19px!important;font-weight:800;color:var(--db-ink);margin-top:5px}
+.v2,.v5{color:var(--db-ink)}.v3{color:var(--db-ink)}
+.ks{font-size:9.5px;color:var(--db-faint);margin-top:3px}
+.kpi .admin{position:absolute;top:14px;right:14px;font-size:8px;font-weight:800;color:var(--db-purple);background:var(--db-purple-l);padding:2px 7px;border-radius:20px;letter-spacing:.3px}
+
+/* barras de plan/agentes — .g2/.br/.br-r se reusan en otras vistas (Config/Empresas/
+   Usuarios), así que el re-skin va SIEMPRE con el prefijo #v-dashboard para no filtrarse. */
+#v-dashboard .g2{gap:12px;margin-bottom:12px}
+#v-dashboard .br{gap:9px}
+#v-dashboard .br-r{grid-template-columns:70px 1fr 62px;gap:9px}
+#v-dashboard .br-l{font-size:10px;color:var(--db-soft);font-weight:600}
+#v-dashboard .br-t{height:4px;background:var(--db-line);border-radius:2px}
+#v-dashboard .br-f{border-radius:2px}
+#v-dashboard .br-v{font-size:9px;color:var(--db-faint);font-variant-numeric:tabular-nums}
+
+/* tablas (pólizas por vencer / saldos pendientes) */
+#v-dashboard .tw{border-color:var(--db-line);box-shadow:none;border-radius:16px}
+#v-dashboard .tw table{background:var(--db-card)}
+#v-dashboard .tw td{border-color:var(--db-line)}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
 .loading{display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--tx3);font-family:var(--mono);font-size:10px;gap:8px}
 .spin{width:14px;height:14px;border:2px solid rgba(0,229,199,.2);border-top-color:var(--c1);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
@@ -502,6 +600,7 @@ html body [tabindex="0"][role="button"]:focus-visible,html body tr[tabindex="0"]
   .pttl{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
   /* Content móvil */
   .content{padding:10px}
+  #v-dashboard{margin:-10px;padding:10px}
   /* Grids */
   .g2,.gf2{grid-template-columns:1fr}
   .kg{grid-template-columns:repeat(2,1fr);gap:6px}
@@ -985,6 +1084,17 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
   .nxSf table.sf-fact .solo-mb{display:inline}
 }
 .nxSf .solo-mb{display:none}
+/* Barra de filtros unificada del módulo Facturación (Facturas/Cobros/Pagos): un solo
+   estilo de <select>/<input> en vez de estilos inline repetidos por panel, y agrupación
+   por tipo en Pagos (antes 7 controles sueltos en una fila). Solo visual — cada control
+   conserva su id/onchange, ningún JS cambia. */
+.nxSf .nxFsel{height:34px;padding:0 12px;border-radius:9px;border:1.5px solid var(--sf-line);background:var(--sf-card);color:var(--sf-tx);font-size:11.5px;font-weight:600;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.nxSf .nxFsel:hover{border-color:var(--sf-primary)}
+.nxSf .nxFsel:focus-visible{outline:2px solid var(--sf-primary);outline-offset:1px}
+.nxSf .nxFclusters{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:14px;padding:12px 14px;background:var(--sf-bg);border:1px solid var(--sf-line);border-radius:12px}
+.nxSf .nxFcluster{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nxSf .nxFcluster-lb{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--sf-tx3)}
+.nxSf .nxFcluster-row{display:flex;gap:6px;flex-wrap:wrap}
 /* Menú "⋮" de cada factura: posición fija calculada en JS, nunca recortado por su contenedor */
 .factMenu{position:fixed;z-index:11000;background:#fff;border:1px solid var(--sf-line,#e2e8f0);border-radius:11px;box-shadow:0 14px 34px rgba(15,23,42,.22);padding:5px;min-width:200px}
 .factMenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:10px 11px;border-radius:8px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;text-align:left}
@@ -1566,15 +1676,54 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <!-- DASHBOARD -->
         <div class="view on" id="v-dashboard">
           <div id="alertasBanner"></div>
-          <div id="dashHero"></div>
-          <div class="qa-g">
-            <div class="qa" onclick="nav('facturas',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-invoice qa-ico c-azul"></i></span><div class="qa-l">Facturas</div></div>
-            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
-            <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-chart-pie qa-ico c-teal"></i></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-alert qa-ico c-ambar"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
-            <div class="qa" onclick="nav('dgii',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-receipt-tax qa-ico c-rojo"></i></span><div class="qa-l">Reporte DGII</div></div>
-            <div class="qa" onclick="exportarCSV()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-spreadsheet qa-ico c-esmeralda"></i></span><div class="qa-l">Exportar Excel</div></div>
+          <div class="db-grid">
+            <div id="dashHero"></div>
+            <div class="ring-card" id="dashRing"></div>
           </div>
+          <div class="cmdglass-wrap">
+            <div class="cmdglass-aurora"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+            <div class="cmdglass" id="cmdGlass">
+              <div class="cg-hl" id="cgHl"></div>
+              <button class="cg-btn on" onclick="nav('facturas',null)"><i class="ti ti-file-invoice"></i> Facturas</button>
+              <button class="cg-btn" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><i class="ti ti-users"></i> Clientes</button>
+              <button class="cg-btn" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><i class="ti ti-chart-pie"></i> Detalles de cobro</button>
+              <button class="cg-btn" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><i class="ti ti-file-alert"></i> Fact. pendientes</button>
+              <button class="cg-btn" onclick="nav('dgii',null)"><i class="ti ti-receipt-tax"></i> Reporte DGII</button>
+              <button class="cg-btn" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+            </div>
+          </div>
+          <script>
+          // Expuesta como función global (no IIFE) porque al parsear el HTML #app todavía
+          // está display:none (oculto hasta el login) — getBoundingClientRect() daría 0px
+          // en ese momento. rDash() la vuelve a llamar cada vez que pinta el dashboard, ya
+          // con la app visible y logueada, para recalcular la posición correcta.
+          var _cmdGlassWired=false;
+          function nxCmdGlassSetup(){
+            var wrap=document.getElementById('cmdGlass');
+            var hl=document.getElementById('cgHl');
+            if(!wrap||!hl)return;
+            var btns=[].slice.call(wrap.querySelectorAll('.cg-btn'));
+            var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            function rectOf(el){var pr=wrap.getBoundingClientRect(),br=el.getBoundingClientRect();return{left:br.left-pr.left+wrap.scrollLeft,width:br.width};}
+            function settle(t){hl.style.transition=reduced?'none':'left .30s cubic-bezier(.34,1.56,.64,1),width .30s cubic-bezier(.34,1.56,.64,1)';hl.style.left=t.left+'px';hl.style.width=t.width+'px';}
+            function moveTo(el){
+              var cur={left:hl.offsetLeft,width:hl.offsetWidth},target=rectOf(el);
+              if(reduced){settle(target);return;}
+              var u={left:Math.min(cur.left,target.left),width:Math.max(cur.left+cur.width,target.left+target.width)-Math.min(cur.left,target.left)};
+              hl.style.transition='left .12s cubic-bezier(.2,.8,.2,1),width .12s cubic-bezier(.2,.8,.2,1)';
+              hl.style.left=u.left+'px';hl.style.width=u.width+'px';
+              setTimeout(function(){settle(target);},120);
+            }
+            function initPos(){var a=wrap.querySelector('.cg-btn.on')||btns[0];if(!a)return;var r=rectOf(a);hl.style.transition='none';hl.style.left=r.left+'px';hl.style.width=r.width+'px';}
+            if(!_cmdGlassWired){
+              btns.forEach(function(b){b.addEventListener('click',function(){btns.forEach(function(x){x.classList.remove('on');});b.classList.add('on');moveTo(b);});});
+              window.addEventListener('resize',initPos);
+              _cmdGlassWired=true;
+            }
+            initPos();
+          }
+          nxCmdGlassSetup();
+          </script>
           <div class="kg" id="kpiG"></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 ciclos (del 20 al 20)</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Clientes en proceso</div><div class="ct-s">onboarding y seguimientos</div></div><button class="btn bsm bc1" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)">Ver</button></div><div id="wProceso"></div></div>
@@ -1687,8 +1836,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                  existiendo OCULTO para que rFact() lea el término igual que siempre. -->
             <div style="margin-bottom:6px"><span id="factQLupa"></span><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-              <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
-              <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
+              <select id="fMes" class="nxFsel"></select>
+              <select id="fAnio" class="nxFsel" style="width:80px"></select>
               <!-- Filtro flotante animado: el <select> real sigue siendo la única fuente de
                    verdad que lee rFact() — solo se oculta visualmente; pintarFiltroEstadoFact()
                    dibuja el pill+panel encima y escribe en este mismo select al elegir. -->
@@ -1706,7 +1855,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
               <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 12px 12px">
-                <select id="fAgenteFact" onchange="rFact()" style="height:32px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:11px"><option value="">Todos los agentes</option></select>
+                <select id="fAgenteFact" onchange="rFact()" class="nxFsel"><option value="">Todos los agentes</option></select>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
                 <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -1716,17 +1865,21 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </div>
           </div><!-- /panelFact -->
           <!-- Panel Cobros -->
-          <div id="panelCob" style="display:none">
+          <div id="panelCob" class="nxSf" style="display:none">
           <div class="nc">
-            <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
+            <div class="ch">
+              <div><div class="ct">Cobros y abonos</div><div class="ct-s">Deuda actual de cada cliente</div></div>
+              <button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            </div>
+            <div id="cobResumen"></div>
             <div class="frow" style="margin-bottom:6px">
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que rCob() lea el término igual que siempre. -->
               <span id="cobQLupa"></span><input id="cobQ" type="hidden" value="">
             </div>
             <div class="frow">
-              <select id="fAgenteCob" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
-              <select id="fCobEst" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
+              <select id="fAgenteCob" onchange="rCob()" class="nxFsel"><option value="">Todos los agentes</option></select>
+              <select id="fCobEst" onchange="rCob()" class="nxFsel"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
             <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
           </div>
@@ -1744,25 +1897,40 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div class="sf-kpi purple"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes que pagaron</div><div class="v" id="pgClientesPagaron">0</div><div class="sub">Este período</div></div></div>
               <div class="sf-kpi warn"><div class="ic"><i class="ti ti-chart-bar"></i></div><div><div class="lb">Promedio por pago</div><div class="v" id="pgPromedio">RD$ 0</div><div class="sub">Este período</div></div></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
-              <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#6d28d9"></select>
+            <div style="margin-bottom:10px"><span id="pgBuscarLupa"></span><input id="pgBuscar" type="hidden" value="">
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que aplicarFiltrosPagos() lea el término igual que siempre. -->
-              <span id="pgBuscarLupa"></span><input id="pgBuscar" type="hidden" value="">
-              <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-              <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-              <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
-              <select id="pgAgente" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los agentes</option></select>
-              <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los métodos</option></select>
-              <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los bancos</option></select>
-              <button class="btn bsm bghost" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
+            </div>
+            <div class="nxFclusters">
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Período</span>
+                <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" class="nxFsel" style="font-weight:700;color:#6d28d9"></select>
+              </div>
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Rango de fechas</span>
+                <div class="nxFcluster-row">
+                  <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" class="nxFsel"/>
+                  <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" class="nxFsel"/>
+                </div>
+              </div>
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Filtrar por</span>
+                <div class="nxFcluster-row">
+                  <select id="pgEmpresa" onchange="rPagos()" class="nxFsel"><option value="">Todas las empresas</option></select>
+                  <select id="pgAgente" onchange="rPagos()" class="nxFsel"><option value="">Todos los agentes</option></select>
+                  <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los métodos</option></select>
+                  <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los bancos</option></select>
+                </div>
+              </div>
+              <button class="btn bsm bghost" style="align-self:flex-end;margin-left:auto" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
             </div>
             <div id="tbPagos"></div>
           </div><!-- /nc -->
         </div><!-- /panelPagos -->
         <!-- Panel Avisos -->
-        <div id="panelAvisos" style="display:none">
+        <div id="panelAvisos" class="nxSf" style="display:none">
           <div class="ch" style="margin-bottom:10px"><div><div class="ct">Avisos</div><div class="ct-s">Quién necesita un recordatorio por WhatsApp — 1 toque para enviar</div></div></div>
+          <div id="avisosResumen"></div>
           <div id="tbAvisos"><div class="loading"><div class="spin"></div></div></div>
         </div><!-- /panelAvisos -->
         <div id="panelPend" style="display:none"><div id="nxPendInner"></div></div>
@@ -6851,6 +7019,26 @@ function rDash(){
   const _kb='tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="cursor:pointer"';
   const _kbh='tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"';
   const _mesTxt=MESES[_mc.mes-1].toLowerCase();   // el mes del CICLO, no el del calendario
+  // Anillo del ciclo: NO son 20 días fijos — el corte es el día 20, pero el ciclo abarca
+  // de un corte al siguiente (~28 a 31 días según el mes). Se calcula con fechas reales
+  // para que el % sea exacto en cualquier mes, no una aproximación visual.
+  const _cStart=new Date(_mc.anio,_mc.mes-2,20),_cEnd=new Date(_mc.anio,_mc.mes-1,20);
+  const _cTotal=Math.max(1,Math.round((_cEnd-_cStart)/86400000));
+  const _cElapsed=Math.min(_cTotal-1,Math.max(0,Math.floor((new Date()-_cStart)/86400000)));
+  const _cPct=Math.round(((_cElapsed+1)/_cTotal)*100);
+  const _cR=56,_cCirc=2*Math.PI*_cR,_cOffset=Math.round(_cCirc*(1-_cPct/100));
+  const _fCorta2=d=>d.toLocaleDateString('es-DO',{day:'2-digit',month:'short'}).replace('.','');
+  const _diasQuedan=_cTotal-_cElapsed-1;
+  document.getElementById('dashRing').innerHTML=`
+    <div class="ttl">Ciclo de corte</div>
+    <div class="ring-wrap">
+      <svg width="132" height="132" viewBox="0 0 132 132">
+        <circle cx="66" cy="66" r="${_cR}" fill="none" stroke="var(--db-ring-track)" stroke-width="14"/>
+        <circle cx="66" cy="66" r="${_cR}" fill="none" stroke="var(--db-blue)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${_cCirc.toFixed(1)}" stroke-dashoffset="${_cOffset}"/>
+      </svg>
+      <div class="ring-mid"><div class="n">${_cPct}%</div><div class="d">DÍA ${_cElapsed+1}/${_cTotal}</div></div>
+    </div>
+    <div class="ring-foot">Corte <b>${_fCorta2(_cEnd)}</b><br>${_diasQuedan<=0?'cierra hoy':`faltan ${_diasQuedan} día${_diasQuedan===1?'':'s'}`}</div>`;
   // Tarjeta principal: lo que decide el día. El resto de la cartera va abajo, tras los accesos.
   document.getElementById('dashHero').innerHTML=`
     <div class="dhero">
@@ -6876,7 +7064,7 @@ function rDash(){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
     const utilidad=prima-costoTotal;
     const margen=prima>0?Math.round(utilidad/prima*100):0;
-    document.getElementById('kpiG').innerHTML+=`<div class="kpi k3" style="border-top:none;border-left:3px solid #059669;position:relative"><div style="position:absolute;top:8px;right:8px;background:#ede9fe;color:#6d28d9;font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;letter-spacing:.3px">ADMIN</div><i class="ti ti-trending-up ki"></i><div class="kl">UTILIDAD BRUTA</div><div class="kv v3" style="font-size:13px">${fmt(utilidad)}</div><div class="ks">Margen ${margen}%</div></div>`;
+    document.getElementById('kpiG').innerHTML+=`<div class="kpi k3"><span class="admin">ADMIN</span><i class="ti ti-trending-up ki"></i><div class="kl">UTILIDAD BRUTA</div><div class="kv v3">${fmt(utilidad)}</div><div class="ks">Margen ${margen}%</div></div>`;
   }
   const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];
   const pMax=Math.max(...planes.map(p=>act.filter(c=>c.plan===p).reduce((s,c)=>s+getTot(c),0)),1);
@@ -6891,6 +7079,7 @@ function rDash(){
   document.getElementById('dashD').innerHTML=pends.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PLAN</th><th>PRIMA</th><th>PENDIENTE</th><th>ESTADO</th></tr></thead><tbody>${pends.map(c=>`<tr><td style="font-weight:700;font-size:11px">${c.nom}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3);font-weight:700">${fmt(pend(c))}</td><td>${estB(c)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><i class="ti ti-circle-check" style="font-size:22px;color:var(--c1);display:block;margin-bottom:6px"></i>TODOS AL DÍA</div>`;
   rChartCobros();
   rWidgetProceso();
+  if(typeof nxCmdGlassSetup==='function')nxCmdGlassSetup();
 }
 
 // Widget de dashboard: resumen de clientes en proceso
@@ -8216,6 +8405,18 @@ function rCob(){
   let activos=ST.clientes.filter(c=>c.activo);
   if(fa)activos=activos.filter(c=>String(c.agente_id)===fa);
   if(q)activos=activos.filter(c=>c.nom.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.referencia||'').toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
+  // Resumen KPI: refleja búsqueda+agente pero NO el filtro deuda/al día (para que las 3
+  // tarjetas sigan mostrando el panorama completo aunque el usuario esté filtrando una sola).
+  const rz=document.getElementById('cobResumen');
+  if(rz){
+    const conDeuda=activos.filter(c=>pendTot(c)>0);
+    const totalDeuda=conDeuda.reduce((s,c)=>s+pendTot(c),0);
+    rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="sf-kpi ${conDeuda.length?'err':'ok'}"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Con deuda pendiente</div><div class="v">${conDeuda.length}</div></div></div>
+      <div class="sf-kpi warn"><div class="ic"><i class="ti ti-wallet"></i></div><div><div class="lb">Deuda total</div><div class="v">${fmt(totalDeuda)}</div></div></div>
+      <div class="sf-kpi ok"><div class="ic"><i class="ti ti-check"></i></div><div><div class="lb">Al día</div><div class="v">${activos.length-conDeuda.length}</div></div></div>
+    </div>`;
+  }
   if(fest==='deuda')activos=activos.filter(c=>pendTot(c)>0);
   else if(fest==='aldia')activos=activos.filter(c=>pendTot(c)<=0);
   activos=_ordAplicar('cob',activos,_cobSortVal);
@@ -8472,6 +8673,15 @@ function rAvisos(){
       <button class="nxAvBtn wa" onclick="nxAgenteWARonda('${x.ag.id}')"><i class="ti ti-brand-whatsapp"></i> ${nxWa(x.ag.tel)?'Mandarle su lista':'Ponerle el WhatsApp'}</button>
     </div>`;
 
+  const _rz=document.getElementById('avisosResumen');
+  if(_rz){
+    const totalAtraso=atrasadosArr.reduce((s,o)=>s+o.total,0);
+    _rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="sf-kpi ${atrasadosArr.length?'err':'ok'}"><div class="ic"><i class="ti ti-file-alert"></i></div><div><div class="lb">Atrasados</div><div class="v">${atrasadosArr.length}</div><div class="sub">${fmt(totalAtraso)}</div></div></div>
+      <div class="sf-kpi ${vencerArr.length?'warn':'ok'}"><div class="ic"><i class="ti ti-calendar-exclamation"></i></div><div><div class="lb">Pólizas por vencer</div><div class="v">${vencerArr.length}</div></div></div>
+      <div class="sf-kpi purple"><div class="ic"><i class="ti ti-headset"></i></div><div><div class="lb">Rondas de cobro por agente</div><div class="v">${porAgente.length}</div></div></div>
+    </div>`;
+  }
   tb.innerHTML=`
     <div class="nc" style="margin-bottom:10px">
       <div class="ch"><span class="ct"><i class="ti ti-headset" style="color:#2563eb"></i> Seguimiento por agente</span><span class="badge bC2">${porAgente.length}</span></div>
