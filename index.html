@@ -390,6 +390,30 @@ tbody tr:hover td{background:#f8fafc}
 .ai-h{color:var(--tx3);font-size:8px;letter-spacing:.5px}
 .confirm-b{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #ef4444}
 .confirm-b p{font-size:11px;color:#475569;line-height:1.7}
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-bottom:12px}
+.kpi{background:#fff;border-radius:14px;border:1px solid var(--border-light);padding:14px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--border)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.k1::after{background:linear-gradient(90deg,#8b5cf6,#60a5fa)}.k2::after{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.k3::after{background:linear-gradient(90deg,#10b981,#34d399)}.k4::after{background:linear-gradient(90deg,#ef4444,#f87171)}.k5::after{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
+.kl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.kv{font-size:19px;font-weight:700;line-height:1;margin-bottom:4px;font-family:var(--ff)}
+.v1{color:#1d4ed8}.v2{color:#6d28d9}.v3{color:#059669}.v4{color:#dc2626}.v5{color:#d97706}
+.ks{font-size:10px;color:var(--tx3)}.ki{position:absolute;right:14px;top:14px;font-size:22px;opacity:.06}
+/* Tarjeta principal del Dashboard — el número que manda el día */
+.dhero{border-radius:18px;padding:18px 18px 14px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#1e3a6e 0%,#2563eb 62%,#0891b2 100%);box-shadow:0 14px 30px rgba(30,58,110,.28)}
+.dhero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:14px 14px;opacity:.5;-webkit-mask-image:linear-gradient(to bottom right,#000,transparent 70%);mask-image:linear-gradient(to bottom right,#000,transparent 70%);pointer-events:none}
+.dhero-top{position:relative;cursor:pointer;border-radius:12px}
+.dhero-l{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.78}
+.dhero-big{font-size:34px;font-weight:800;letter-spacing:-1.2px;line-height:1;margin:6px 0 3px;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.dhero-sub{font-size:11px;opacity:.8}
+.dhero-row{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)}
+.dhero-m{cursor:pointer;border-radius:10px;padding:2px 4px;margin:-2px -4px;min-width:0}
+.dhero-k{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;opacity:.72;display:flex;align-items:center;gap:3px}
+.dhero-n{font-size:14px;font-weight:800;letter-spacing:-.3px;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.dhero-n.al{color:#fcd34d}
+.dhero-s{font-size:9px;opacity:.62;margin-top:2px;line-height:1.25}
+.dhero-top:focus-visible,.dhero-m:focus-visible{outline:2px solid #fff!important;outline-offset:2px}
+@media(max-width:360px){.dhero-big{font-size:29px}.dhero-n{font-size:13px}}
 .qa-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-bottom:12px}
 .qa{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px 10px;cursor:pointer;transition:all .15s;text-align:center;box-shadow:var(--shadow)}
 .qa:hover{border-color:var(--c1);background:#eff6ff;transform:translateY(-2px);box-shadow:var(--shadow-md)}
@@ -985,6 +1009,17 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
   .nxSf table.sf-fact .solo-mb{display:inline}
 }
 .nxSf .solo-mb{display:none}
+/* Barra de filtros unificada del módulo Facturación (Facturas/Cobros/Pagos): un solo
+   estilo de <select>/<input> en vez de estilos inline repetidos por panel, y agrupación
+   por tipo en Pagos (antes 7 controles sueltos en una fila). Solo visual — cada control
+   conserva su id/onchange, ningún JS cambia. */
+.nxSf .nxFsel{height:34px;padding:0 12px;border-radius:9px;border:1.5px solid var(--sf-line);background:var(--sf-card);color:var(--sf-tx);font-size:11.5px;font-weight:600;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.nxSf .nxFsel:hover{border-color:var(--sf-primary)}
+.nxSf .nxFsel:focus-visible{outline:2px solid var(--sf-primary);outline-offset:1px}
+.nxSf .nxFclusters{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:14px;padding:12px 14px;background:var(--sf-bg);border:1px solid var(--sf-line);border-radius:12px}
+.nxSf .nxFcluster{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nxSf .nxFcluster-lb{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--sf-tx3)}
+.nxSf .nxFcluster-row{display:flex;gap:6px;flex-wrap:wrap}
 /* Menú "⋮" de cada factura: posición fija calculada en JS, nunca recortado por su contenedor */
 .factMenu{position:fixed;z-index:11000;background:#fff;border:1px solid var(--sf-line,#e2e8f0);border-radius:11px;box-shadow:0 14px 34px rgba(15,23,42,.22);padding:5px;min-width:200px}
 .factMenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:10px 11px;border-radius:8px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;text-align:left}
@@ -1629,10 +1664,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                    El input sigue existiendo OCULTO para que rCli()/rCliBuscar() lean el
                    término exactamente igual que antes (cero cambios en el filtrado). -->
               <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
-              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
-              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
-              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Agente</option></select>
-              <button id="btnLimpiarCli" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="height:30px;padding:0 10px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx2);font-size:10px;cursor:pointer;display:none;align-items:center;gap:4px"><i class="ti ti-eraser"></i> Limpiar</button>
+              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
+              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
+              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select>
+              <button id="btnLimpiarCli" class="btn bsm bghost" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="display:none"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
             <div class="tw"><table class="sf-tbl sf-cli">
               <thead><tr><th class="col-cli" style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
@@ -1658,9 +1693,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que rPolizas() lea el término igual que siempre. -->
               <span id="polQLupa"></span><input id="polQ" type="hidden" value="">
-              <select id="polEst" onchange="rPolizas()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
+              <select id="polEst" onchange="rPolizas()" class="nxFsel"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
             </div>
-            <div class="tw"><table>
+            <div class="tw"><table class="sf-tbl">
               <thead><tr><th style="width:12%">N° PÓLIZA</th><th style="width:20%">ASEGURADO</th><th style="width:9%">PLAN</th><th style="width:11%">INICIO</th><th style="width:11%">FIN</th><th style="width:8%">DÍAS</th><th style="width:9%">ESTADO POL.</th><th style="width:12%">NCF</th><th style="width:8%">PDF</th></tr></thead>
               <tbody id="tbPol"><tr><td colspan="9"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
@@ -1687,8 +1722,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                  existiendo OCULTO para que rFact() lea el término igual que siempre. -->
             <div style="margin-bottom:6px"><span id="factQLupa"></span><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-              <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
-              <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
+              <select id="fMes" class="nxFsel"></select>
+              <select id="fAnio" class="nxFsel" style="width:80px"></select>
               <!-- Filtro flotante animado: el <select> real sigue siendo la única fuente de
                    verdad que lee rFact() — solo se oculta visualmente; pintarFiltroEstadoFact()
                    dibuja el pill+panel encima y escribe en este mismo select al elegir. -->
@@ -1706,7 +1741,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
               <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 12px 12px">
-                <select id="fAgenteFact" onchange="rFact()" style="height:32px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:11px"><option value="">Todos los agentes</option></select>
+                <select id="fAgenteFact" onchange="rFact()" class="nxFsel"><option value="">Todos los agentes</option></select>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
                 <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -1716,17 +1751,21 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </div>
           </div><!-- /panelFact -->
           <!-- Panel Cobros -->
-          <div id="panelCob" style="display:none">
+          <div id="panelCob" class="nxSf" style="display:none">
           <div class="nc">
-            <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
+            <div class="ch">
+              <div><div class="ct">Cobros y abonos</div><div class="ct-s">Deuda actual de cada cliente</div></div>
+              <button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            </div>
+            <div id="cobResumen"></div>
             <div class="frow" style="margin-bottom:6px">
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que rCob() lea el término igual que siempre. -->
               <span id="cobQLupa"></span><input id="cobQ" type="hidden" value="">
             </div>
             <div class="frow">
-              <select id="fAgenteCob" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
-              <select id="fCobEst" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
+              <select id="fAgenteCob" onchange="rCob()" class="nxFsel"><option value="">Todos los agentes</option></select>
+              <select id="fCobEst" onchange="rCob()" class="nxFsel"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
             <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
           </div>
@@ -1744,25 +1783,40 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div class="sf-kpi purple"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes que pagaron</div><div class="v" id="pgClientesPagaron">0</div><div class="sub">Este período</div></div></div>
               <div class="sf-kpi warn"><div class="ic"><i class="ti ti-chart-bar"></i></div><div><div class="lb">Promedio por pago</div><div class="v" id="pgPromedio">RD$ 0</div><div class="sub">Este período</div></div></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
-              <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#6d28d9"></select>
+            <div style="margin-bottom:10px"><span id="pgBuscarLupa"></span><input id="pgBuscar" type="hidden" value="">
               <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
                    El input sigue existiendo OCULTO para que aplicarFiltrosPagos() lea el término igual que siempre. -->
-              <span id="pgBuscarLupa"></span><input id="pgBuscar" type="hidden" value="">
-              <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-              <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-              <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
-              <select id="pgAgente" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los agentes</option></select>
-              <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los métodos</option></select>
-              <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los bancos</option></select>
-              <button class="btn bsm bghost" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
+            </div>
+            <div class="nxFclusters">
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Período</span>
+                <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" class="nxFsel" style="font-weight:700;color:#6d28d9"></select>
+              </div>
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Rango de fechas</span>
+                <div class="nxFcluster-row">
+                  <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" class="nxFsel"/>
+                  <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" class="nxFsel"/>
+                </div>
+              </div>
+              <div class="nxFcluster">
+                <span class="nxFcluster-lb">Filtrar por</span>
+                <div class="nxFcluster-row">
+                  <select id="pgEmpresa" onchange="rPagos()" class="nxFsel"><option value="">Todas las empresas</option></select>
+                  <select id="pgAgente" onchange="rPagos()" class="nxFsel"><option value="">Todos los agentes</option></select>
+                  <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los métodos</option></select>
+                  <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los bancos</option></select>
+                </div>
+              </div>
+              <button class="btn bsm bghost" style="align-self:flex-end;margin-left:auto" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
             </div>
             <div id="tbPagos"></div>
           </div><!-- /nc -->
         </div><!-- /panelPagos -->
         <!-- Panel Avisos -->
-        <div id="panelAvisos" style="display:none">
+        <div id="panelAvisos" class="nxSf" style="display:none">
           <div class="ch" style="margin-bottom:10px"><div><div class="ct">Avisos</div><div class="ct-s">Quién necesita un recordatorio por WhatsApp — 1 toque para enviar</div></div></div>
+          <div id="avisosResumen"></div>
           <div id="tbAvisos"><div class="loading"><div class="spin"></div></div></div>
         </div><!-- /panelAvisos -->
         <div id="panelPend" style="display:none"><div id="nxPendInner"></div></div>
@@ -1804,10 +1858,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="ch">
               <div><div class="ct">Comisiones por agente</div><div class="ct-s">cálculo automático con retención ITBIS</div></div>
               <div style="display:flex;gap:6px">
-                <select id="comMes" style="height:30px;padding:0 8px;border:1px solid rgba(16,185,129,.2);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"></select>
-                <select id="comAnio" style="height:30px;padding:0 8px;border:1px solid rgba(16,185,129,.2);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px;width:68px"></select>
+                <select id="comMes" class="nxFsel"></select>
+                <select id="comAnio" class="nxFsel" style="width:68px"></select>
                 <button class="btn bsm bc5" onclick="calcularComisiones()"><i class="ti ti-calculator"></i> Calcular</button>
-                <button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button>
+                <button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
             </div>
             <div id="comContent"><div class="empty">Selecciona mes y año, luego presiona Calcular</div></div>
@@ -1832,6 +1886,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
         <!-- BALANCE -->
         <div class="view nxSf" id="v-balance">
+          <div id="balResumen"></div>
           <div class="g2">
             <div class="nc"><div class="ch"><div class="ct">Activos</div></div><div id="balA"></div></div>
             <div class="nc p3"><div class="ch"><div class="ct">Pasivos y Patrimonio</div></div><div id="balP"></div></div>
@@ -1887,8 +1942,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="ch">
               <div><div class="ct">Clientes nuevos del mes</div><div class="ct-s">por fecha de ingreso</div></div>
               <div style="display:flex;gap:6px">
-                <select id="repNuevosMes" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"></select>
-                <select id="repNuevosAnio" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px;width:68px"></select>
+                <select id="repNuevosMes" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:8px;background:var(--bg2);color:var(--tx1);font-size:10px"></select>
+                <select id="repNuevosAnio" style="height:34px;padding:0 8px;border:1px solid var(--sf-line);border-radius:8px;background:var(--bg2);color:var(--tx1);font-size:10px;width:68px"></select>
                 <button class="btn bsm bc1" onclick="rRepNuevos()"><i class="ti ti-search"></i> Ver</button>
                 <button class="btn bsm bc4" onclick="exportarNuevosCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -2410,7 +2465,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div id="reciboSinWA" style="display:none;font-size:10px;color:#92400e;margin-top:4px">Este cliente no tiene WhatsApp registrado — usa "Ver / compartir recibo" para imprimirlo o compartirlo por otra vía.</div>
     </div>
     <div style="margin-bottom:8px"><button class="btn bsm" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
-    <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cerrar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
+    <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
   </div>
 </div>
 
@@ -2463,7 +2518,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Monto Crédito (RD$)</label><input type="text" id="asiMntCr" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     </div>
     <div class="fr" id="asiMotivoWrap" style="display:none"><label>Motivo de la corrección *</label><input type="text" id="asiMotivo" placeholder="Por qué se corrige este asiento"/></div>
-    <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bc2" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
+    <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bxl" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
   </div>
 </div>
 
@@ -2627,9 +2682,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       💡 <strong>Recomendación:</strong> Guarda el backup en Google Drive, USB o envíatelo por email. Hazlo <strong>una vez por semana</strong>.
     </div>
 
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="closeM('mBackup')" style="flex:1">Cancelar</button>
-      <button class="btn bxl" onclick="ejecutarBackup()" style="flex:2;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 3px 10px rgba(16,185,129,.3)">
+    <div class="fe">
+      <button class="btn" onclick="closeM('mBackup')">Cancelar</button>
+      <button class="btn bc5" onclick="ejecutarBackup()">
         <i class="ti ti-database-export"></i> Descargar Backup Completo
       </button>
     </div>
@@ -4381,12 +4436,12 @@ function mostrarEstadoErrorCfg(n,msg){
 function renderEmpresasCfg(){
   const grid=document.getElementById('empGrdCfg');
   if(!grid)return;
-  const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
+  const hex='#6d28d9'; // acento del módulo (= --c1); antes cada tarjeta tomaba color por posición (decorativo, NPGS §11)
   if(!ST.empresas.length){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:12px">🏭 No hay empresas registradas todavía.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mEmp\')"><i class="ti ti-plus"></i> Crear primera empresa</button></div>';
     return;
   }
-  grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 
 // ── Agentes dentro de Configuración (render directo) ───────────────
@@ -4569,7 +4624,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.63';
+const APP_VERSION='56.72';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6803,9 +6858,10 @@ async function guardarNumeracion(){
   const numIni=parseInt(inp?.value);
   if(!numIni||numIni<=0){toast('err','Número inválido','Ingrese un número mayor a 0');return;}
   try{
-    // Guardamos numIni-1 porque la próxima factura suma 1
-    await guardarTexto('seq_poliza',String(numIni-1));
-    ST.config['seq_poliza']=String(numIni-1);
+    // Bloque 2C-2: reinicio vía RPC (candado + rol admin server-side +
+    // salvaguarda contra bajar del máximo número de póliza ya emitido).
+    const r=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:numIni,p_forzar:false});
+    ST.config['seq_poliza']=String(r.valor_interno);
     toast('ok','Numeración guardada',`La próxima factura será la #${numIni}`);
     refrescarContadorNum();
     inp.value='';
@@ -6826,29 +6882,12 @@ async function refrescarContadorNum(){
   }
 }
 async function generarNumPoliza(){
-  try{
-    const cfg=await API.get('configuracion',`clave=eq.seq_poliza&select=*`);
-    const actual=(cfg&&cfg[0]?parseInt(cfg[0].valor):0)+1;
-    // Guardar el nuevo número — usa la columna correcta 'actualizado'
-    if(cfg&&cfg[0]){
-      try{
-        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual),actualizado:new Date().toISOString()});
-      }catch(eCol){
-        // Si la columna 'actualizado' no existe, reintentar sin ella
-        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual)});
-      }
-    }else{
-      // Si no existe la fila seq_poliza, crearla
-      try{
-        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual),actualizado:new Date().toISOString()});
-      }catch(eCol){
-        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual)});
-      }
-    }
-    return `POL-${new Date().getFullYear()}-${String(actual).padStart(6,'0')}`;
-  }catch(e){
-    return `POL-${new Date().getFullYear()}-${String(Date.now()%1000000).padStart(6,'0')}`;
-  }
+  // Bloque 2C-2: el contador seq_poliza ahora se incrementa por RPC atómica
+  // (candado pg_advisory_xact_lock, org+sesión validadas server-side) — ya no
+  // se lee/escribe directo la tabla configuracion desde el navegador. El
+  // caller (guardarCli) envuelve esta llamada en su propio try/catch.
+  const r=await API.post('rpc/seguros_siguiente_numero_poliza',{});
+  return r.numero;
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -7398,15 +7437,15 @@ function rPolizas(){
     // Factura más reciente del cliente
     const ultimaFac=ST.facturas.filter(f=>f.cliente_id===c.id).sort((a,b)=>b.created_at?.localeCompare(a.created_at||'')||0)[0];
     return`<tr>
-      <td style="font-size:12px;color:#d97706;font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
-      <td><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
-      <td>${planB(c.plan)}</td>
-      <td style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
-      <td style="font-family:var(--mono);font-size:9px">${c.fecha_fin||'—'}</td>
-      <td style="font-family:var(--mono);font-size:9px;color:${dias!==null&&dias<0?'var(--c3)':dias!==null&&dias<=7?'var(--c4)':'var(--c1)'}">${dias!==null?dias+'d':'—'}</td>
-      <td><span class="badge ${ep.badge}">${ep.lbl.toUpperCase()}</span></td>
-      <td>${ultimaFac?`<span class="ncf-badge">${ultimaFac.ncf||'Sin NCF'}</span>`:'<span style="color:var(--tx3);font-size:9px">—</span>'}</td>
-      <td style="white-space:nowrap;display:flex;gap:2px">
+      <td data-lb="N° Póliza" style="font-size:12px;color:var(--c4);font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
+      <td data-lb="Asegurado"><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:var(--c1);font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
+      <td data-lb="Plan">${planB(c.plan)}</td>
+      <td data-lb="Inicio" style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
+      <td data-lb="Fin" style="font-family:var(--mono);font-size:9px">${c.fecha_fin||'—'}</td>
+      <td data-lb="Días" style="font-family:var(--mono);font-size:9px;color:${dias!==null&&dias<0?'var(--c3)':dias!==null&&dias<=7?'var(--c4)':'var(--c1)'}">${dias!==null?dias+'d':'—'}</td>
+      <td data-lb="Estado"><span class="badge ${ep.badge}">${ep.lbl.toUpperCase()}</span></td>
+      <td data-lb="NCF">${ultimaFac?`<span class="ncf-badge">${ultimaFac.ncf||'Sin NCF'}</span>`:'<span style="color:var(--tx3);font-size:9px">—</span>'}</td>
+      <td data-lb="PDF" style="white-space:nowrap;display:flex;gap:2px">
         <button class="btn bsm bc1" onclick="verCertificadoPDF('${c.id}')" title="Certificado de seguro"><i class="ti ti-file-certificate"></i> Cert.</button>
         <button class="btn bsm bwa" onclick="enviarWAPoliza('${c.id}')" title="WhatsApp vencimiento" aria-label="WhatsApp vencimiento"><i class="ti ti-brand-whatsapp"></i></button>
       </td>
@@ -8232,6 +8271,18 @@ function rCob(){
   let activos=ST.clientes.filter(c=>c.activo);
   if(fa)activos=activos.filter(c=>String(c.agente_id)===fa);
   if(q)activos=activos.filter(c=>c.nom.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.referencia||'').toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
+  // Resumen KPI: refleja búsqueda+agente pero NO el filtro deuda/al día (para que las 3
+  // tarjetas sigan mostrando el panorama completo aunque el usuario esté filtrando una sola).
+  const rz=document.getElementById('cobResumen');
+  if(rz){
+    const conDeuda=activos.filter(c=>pendTot(c)>0);
+    const totalDeuda=conDeuda.reduce((s,c)=>s+pendTot(c),0);
+    rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="sf-kpi ${conDeuda.length?'err':'ok'}"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Con deuda pendiente</div><div class="v">${conDeuda.length}</div></div></div>
+      <div class="sf-kpi warn"><div class="ic"><i class="ti ti-wallet"></i></div><div><div class="lb">Deuda total</div><div class="v">${fmt(totalDeuda)}</div></div></div>
+      <div class="sf-kpi ok"><div class="ic"><i class="ti ti-check"></i></div><div><div class="lb">Al día</div><div class="v">${activos.length-conDeuda.length}</div></div></div>
+    </div>`;
+  }
   if(fest==='deuda')activos=activos.filter(c=>pendTot(c)>0);
   else if(fest==='aldia')activos=activos.filter(c=>pendTot(c)<=0);
   activos=_ordAplicar('cob',activos,_cobSortVal);
@@ -8488,6 +8539,15 @@ function rAvisos(){
       <button class="nxAvBtn wa" onclick="nxAgenteWARonda('${x.ag.id}')"><i class="ti ti-brand-whatsapp"></i> ${nxWa(x.ag.tel)?'Mandarle su lista':'Ponerle el WhatsApp'}</button>
     </div>`;
 
+  const _rz=document.getElementById('avisosResumen');
+  if(_rz){
+    const totalAtraso=atrasadosArr.reduce((s,o)=>s+o.total,0);
+    _rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="sf-kpi ${atrasadosArr.length?'err':'ok'}"><div class="ic"><i class="ti ti-file-alert"></i></div><div><div class="lb">Atrasados</div><div class="v">${atrasadosArr.length}</div><div class="sub">${fmt(totalAtraso)}</div></div></div>
+      <div class="sf-kpi ${vencerArr.length?'warn':'ok'}"><div class="ic"><i class="ti ti-calendar-exclamation"></i></div><div><div class="lb">Pólizas por vencer</div><div class="v">${vencerArr.length}</div></div></div>
+      <div class="sf-kpi purple"><div class="ic"><i class="ti ti-headset"></i></div><div><div class="lb">Rondas de cobro por agente</div><div class="v">${porAgente.length}</div></div></div>
+    </div>`;
+  }
   tb.innerHTML=`
     <div class="nc" style="margin-bottom:10px">
       <div class="ch"><span class="ct"><i class="ti ti-headset" style="color:#2563eb"></i> Seguimiento por agente</span><span class="badge bC2">${porAgente.length}</span></div>
@@ -9129,7 +9189,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
 
 // ── EMPRESAS ─────────────────────────────────────────────────────────────────
 function rEmpGrd(){
-  const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
+  const hex='#6d28d9'; // acento del módulo (= --c1); antes cada tarjeta tomaba un color por posición, decorativo y sin significado (NPGS §11)
   const grid=document.getElementById('empGrd');
   if(document.getElementById('empKpiTotal')){
     const clisAct=ST.clientes.filter(c=>c.activo&&c.empresa_id);
@@ -9138,7 +9198,7 @@ function rEmpGrd(){
     document.getElementById('empKpiPrima').textContent=fmt(clisAct.reduce((s,c)=>s+getTot(c),0));
   }
   if(!ST.empresas.length){grid.innerHTML='<div class="empty">Sin empresas</div>';return;}
-  grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
 async function guardarEmp(){
@@ -9718,7 +9778,14 @@ async function guardarAsientoFn(){
   btn.disabled=false;
 }
 function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Corregir asiento" style="padding:4px 8px" aria-label="Corregir asiento"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
-function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
+function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;
+  const _brz=document.getElementById('balResumen');
+  if(_brz)_brz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+    <div class="sf-kpi blue"><div class="ic"><i class="ti ti-building-bank"></i></div><div><div class="lb">Total activos</div><div class="v">${fmt(tA)}</div></div></div>
+    <div class="sf-kpi warn"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Total pasivos + patrimonio</div><div class="v">${fmt(tP+util)}</div></div></div>
+    <div class="sf-kpi ${util>=0?'ok':'err'}"><div class="ic"><i class="ti ti-trending-up"></i></div><div><div class="lb">Utilidad del período</div><div class="v">${fmt(util)}</div></div></div>
+  </div>`;
+  document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
 // Devuelve el rango de fechas [desde, hasta] del período contable: MES CALENDARIO.
 // El período "Mayo 2026" va del 1 al 31 de mayo 2026.
 // (Mismo corte que el historial de pagos, para que todo sea consistente.)
@@ -9819,7 +9886,7 @@ function detalleAgente(a){
     </div>`;
 }
 function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
-function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e,i)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const hex=COLS[i%COLS.length];return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%;background:${hex}"></div></div></div>`;}).join('');}
+function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),hex='#6d28d9';const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%"></div></div></div>`;}).join('');}
 
 function rRepAging(){
   const cont=document.getElementById('rAging');
@@ -9961,10 +10028,6 @@ async function guardarDatosEmp(){
   const get=id=>document.getElementById(id)?.value?.trim()||'';
   const nom=get('cfgEmpNom');
   if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
-  // Helper: guarda un valor de TEXTO PLANO en la tabla configuracion
-  const guardarTexto2NoUsar=async(clave,valor)=>{
-    return await guardarTexto(clave,valor);
-  };
   try{
     const datos=[
       {clave:'empresa_nom',valor:nom},
@@ -9977,11 +10040,11 @@ async function guardarDatosEmp(){
       await guardarTexto(d.clave,d.valor);
       ST.config[d.clave]=d.valor;
     }
-    // Guardar la numeración inicial de facturas
+    // Guardar la numeración inicial de facturas — Bloque 2C-2: vía RPC
     const numIni=get('cfgNumIni');
     if(numIni&&parseInt(numIni)>0){
-      await guardarTexto('seq_poliza',String(parseInt(numIni)-1));
-      ST.config['seq_poliza']=String(parseInt(numIni)-1);
+      const r=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:parseInt(numIni),p_forzar:false});
+      ST.config['seq_poliza']=String(r.valor_interno);
       ST.config['numIni']=numIni;
     }
     actualizarCFG();
@@ -10102,7 +10165,6 @@ function poblarSelectArsCliente(){
 
 async function guardarTarifas(){
   const numIni=document.getElementById('cfgNumIni')?.value;
-  if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),actualizado:new Date().toISOString()});}
   // gv: lee el valor del campo quitando las comas de miles (guardar limpio)
   const gv=id=>{const v=document.getElementById(id)?.value||'';return window.nxMoney?window.nxMoney.strip(v):String(v).replace(/,/g,'');};
   const datos=[{clave:'prima_basico',valor:gv('cfgT1')},{clave:'prima_superior',valor:gv('cfgT2')},{clave:'prima_esencial',valor:gv('cfgT3')},{clave:'dep_basico',valor:gv('cfgD1')},{clave:'dep_superior',valor:gv('cfgD2')},{clave:'dep_esencial',valor:gv('cfgD3')},{clave:'comision_basico',valor:gv('cfgC1')},{clave:'comision_superior',valor:gv('cfgC2')},{clave:'comision_esencial',valor:gv('cfgC3')}];
@@ -10116,7 +10178,15 @@ async function guardarTarifas(){
   // Detalle con valores ANTES→DESPUÉS de las primas, para que un cambio de precio quede trazable
   // en la bitácora (antes solo decía "modificadas" y un precio mal puesto pasaba silencioso).
   const antes=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
+  try{
+    // Bloque 2C-2: antes esta escritura vivía FUERA del try (bug real — si
+    // fallaba, moría la función entera en silencio, sin tocar tarifas ni
+    // avisar). Ahora vive adentro, vía la RPC atómica de siempre.
+    if(numIni&&parseInt(numIni)>0){
+      const rNum=await API.post('rpc/seguros_resetear_seq_poliza',{p_proximo_numero:parseInt(numIni),p_forzar:false});
+      ST.config['seq_poliza']=String(rNum.valor_interno);
+    }
+    for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
     const ahora=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
     logAudit('TARIFAS_ACTUALIZADAS',`Primas titular/dep — ANTES ${antes} → AHORA ${ahora}`,'Configuración');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
 }

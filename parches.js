@@ -12959,10 +12959,12 @@
   // desmontar el host a mano.
   function renderFPDock() {
     let host = document.getElementById('nxFPDockHost');
-    if (!host) { host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host); }
+    if (!host) {
+      host = document.createElement('div'); host.id = 'nxFPDockHost'; document.body.appendChild(host);
+    }
     const nSol = _prSolicitudes.filter(s => s.estado === 'enviada').length;
-    const dockBtn = (key, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
-    const dockView = (v, lbl, ico) => `<button type="button" class="nxFP-dockBtn${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`;
+    const dockBtn = (key, lbl, ico) => { const on = _prView === 'prestamos' && _prFiltro === key; return `<button type="button" role="tab" aria-selected="${on}" class="nxFP-dockBtn${on ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`; };
+    const dockView = (v, lbl, ico) => { const on = _prView === v; return `<button type="button" role="tab" aria-selected="${on}" class="nxFP-dockBtn${on ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i><span>${lbl}</span></button>`; };
     const masOn = _prView === 'evaluacion' || _prView === 'solicitudes' || _prView === 'reportes' || (_prView === 'prestamos' && ['activos', 'pagados', 'credito'].includes(_prFiltro));
     const moreItem = (key, lbl, ico) => `<button type="button" class="nxFP-popItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     const moreView = (v, lbl, ico, badge) => `<button type="button" class="nxFP-popItem${_prView === v ? ' on' : ''}" onclick="window.nxPrView('${v}')"><i class="ti ${ico}"></i> ${lbl}${badge ? ` (${badge})` : ''}</button>`;
@@ -12983,16 +12985,30 @@
         <div class="nxFP-popDiv"></div>
         <button type="button" class="nxFP-popBack" onclick="document.getElementById('nxFPDockHost').classList.remove('dock-open');window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </div>
-      <nav class="nxFP-dock" aria-label="Navegación de Financiamiento">
+      <nav class="nxFP-dock" role="tablist" aria-label="Navegación de Financiamiento">
         ${dockBtn('todos', 'Dashboard', 'ti-layout-dashboard')}
         ${dockBtn('vencidos', 'Cobranza', 'ti-user-dollar')}
         ${dockBtn('cuotas', 'Cuotas', 'ti-calendar-dollar')}
         ${dockView('clientes', 'Clientes', 'ti-users-group')}
-        <button type="button" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
+        <button type="button" role="tab" aria-selected="${masOn}" class="nxFP-dockBtn nxFP-dockMore${masOn ? ' on' : ''}" onclick="window.nxFPToggleMore()" aria-label="Más opciones de Financiamiento"><i class="ti ti-dots"></i><span>Más</span>${nSol ? `<b class="nxFP-dockBadge">${nSol}</b>` : ''}</button>
       </nav>`;
     host.classList.remove('dock-open');
   }
   window.nxFPToggleMore = function () { const s = document.getElementById('nxFPDockHost'); if (s) s.classList.toggle('dock-open'); };
+
+  // ── Selección del dock — AURA, no cápsula (pedido del dueño, tras verla y
+  // aprobarla primero en la lista de préstamos): "ese mismo aura... en los
+  // íconos de la barra inferior... alrededor de los cuadros blancos, no
+  // encima". Reemplaza de raíz la cápsula de neón física con resortes
+  // amortiguados (v56.66-67, ~150 líneas de JS + un SVG que se
+  // medía/reconstruía en cada clic) por lo mismo que ya se ve en
+  // `.nxFP-tbl tbody tr:active` — un halo (box-shadow) alrededor del propio
+  // botón cuando está activo, 100% CSS, sin loop de animación, sin
+  // ResizeObserver, sin física. El botón activo lleva su PROPIO fondo
+  // blanco (`.nxFP-dockBtn.on`, el "cuadro blanco" pedido) y el aura se
+  // pinta AFUERA del borde vía box-shadow — nunca tapa el ícono/texto de
+  // adentro ("no encima"). Ver `.nxFP-dockBtn.on` en nxFPEnsureCSS.
+
 
   function ensureView() {
     let v = document.getElementById('v-prestamos');
@@ -19635,7 +19651,7 @@
     if (!_prodSel.size) return '';
     return `<div class="nxProdBulk">
       <span><b>${_prodSel.size}</b> artículo${_prodSel.size === 1 ? '' : 's'} seleccionado${_prodSel.size === 1 ? '' : 's'}</span>
-      <button type="button" class="btn bsm bc1" onclick="window.nxProdEtiquetasLote()"><i class="ti ti-printer"></i> Imprimir etiquetas</button>
+      <button type="button" class="btn bsm bc1" onclick="window.nxProdEtiquetasLote()"><i class="ti ti-printer"></i> Label de Almacén</button>
       <button type="button" class="btn bsm bghost" onclick="window.nxProdSelLimpiar()">Cancelar selección</button>
     </div>`;
   }
@@ -20903,7 +20919,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const w = window.open('', '_blank');
     if (!w) { toast('err', 'El navegador bloqueó la ventana de impresión'); return; }
     const tarjetas = items.map(p => `<div class="et"><div class="nom">${esc(p.nombre || '')}</div>${p.codigo ? `<div class="cod">${esc(p.codigo)}</div>` : ''}<div class="pre">${fmt(Number(p.precio || 0))}</div></div>`).join('');
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiquetas (${items.length})</title><style>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Label de Almacén (${items.length})</title><style>
       body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;margin:0;padding:14px}
       .hoja{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
       .et{border:1px dashed #94a3b8;border-radius:8px;padding:12px;text-align:center;break-inside:avoid;page-break-inside:avoid}
@@ -25447,6 +25463,19 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tbl thead th{text-align:left;font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;border-bottom:1px solid #eef0f5;white-space:nowrap;background:#faf9ff}' +
       '.nxFP-tbl tbody td{padding:11px 12px;border-bottom:1px solid #f4f5f9;color:#334155;vertical-align:middle}' +
       '.nxFP-tbl tbody tr{cursor:pointer}.nxFP-tbl tbody tr:hover{background:#faf9ff}.nxFP-tbl tbody tr:last-child td{border-bottom:0}' +
+      // Aura al seleccionar una fila/tarjeta (pedido del dueño, con captura de la
+      // "LISTA DE PRÉSTAMOS" en el celular): un halo con el color del módulo
+      // alrededor de la fila que se tocó/enfocó — un solo par de reglas cubre las
+      // DOS vistas (desktop <tr> normal y la tarjeta colapsada en móvil,
+      // display:grid vía la media query de abajo) porque es el MISMO elemento,
+      // solo cambia su layout, nunca su identidad. :active da el destello al
+      // tocar (la fila navega casi al instante a nxPrestamoVer, así que es la
+      // ventana real donde se ve "seleccionado"); :focus-visible deja el aura
+      // fija mientras se navega con teclado (Tab), útil también para verificarlo
+      // sin depender del timing táctil. z-index para que el resplandor no quede
+      // tapado por la fila de abajo. Compound .nxFP-tbl.nxFP-cobTbl (Cobranza)
+      // hereda esto gratis — comparte la misma regla base .nxFP-tbl tbody tr.
+      '.nxFP-tbl tbody tr:active,.nxFP-tbl tbody tr:focus-visible{outline:none;position:relative;z-index:1;background:#f3f1ff;border-radius:14px;box-shadow:0 0 0 2px rgba(79,70,229,.55),0 0 0 8px rgba(79,70,229,.16),0 0 26px 6px rgba(79,70,229,.4);transition:box-shadow .15s ease,background .15s ease}' +
       '.nxFP-tRef{font-family:"Plus Jakarta Sans",monospace;font-size:10.5px;color:#6d28d9;font-weight:800;white-space:nowrap}' +
       '.nxFP-tNom{font-weight:700;color:#0f172a}.nxFP-tSub{font-size:10px;color:#94a3b8}.nxFP-tMoney{font-variant-numeric:tabular-nums;white-space:nowrap}' +
       '.nxFP-tBadge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:999px;white-space:nowrap}' +
@@ -25910,13 +25939,50 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // dentro de #nxFPShell (nieto de .content{overflow-y:auto}) — renderFPDock() los cuelga
       // de #nxFPDockHost, hijo directo de <body>, mismo patrón que nxStickyBarSet del POS. Las
       // 3 clases .dock-open (antes en .nxFPShell) ahora van en #nxFPDockHost.
-      '.nxFP-dock{display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.55);box-shadow:0 20px 36px -10px rgba(30,27,51,.28),inset 0 1px 0 rgba(255,255,255,.55);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
-      '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;color:#8b85a8;cursor:pointer;position:relative;font-family:inherit;transition:color .15s ease}' +
-      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;transition:transform .22s cubic-bezier(.34,1.4,.64,1),color .15s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;transition:opacity .18s ease,transform .18s ease}' +
-      '.nxFP-dockBtn.on{color:#fff}' +
-      '.nxFP-dockBtn.on i{transform:translateY(-22px)}' +
-      '.nxFP-dockBtn.on span{opacity:0;transform:translateY(3px)}' +
-      '.nxFP-dockBtn.on::before{content:"";position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;z-index:-1;background:linear-gradient(150deg,#4f46e5,#6d28d9);box-shadow:0 10px 22px -5px rgba(76,29,149,.65),0 0 0 5px rgba(255,255,255,.72)}' +
+      // Nota sobre el "contenedor de vidrio/profundidad" de la spec v56.66: los valores dados
+      // (fondo oscuro rgba(20,22,30,.72), etc.) eran un EJEMPLO ilustrativo, igual que
+      // --accent:#E31E24 lo era para el color de acento — no una instrucción literal de
+      // recolorear el módulo. Este contenedor YA cumple la estructura pedida (blur real vía
+      // backdrop-filter, borde fino translúcido, sombra en 2 capas exterior+inset, forma de
+      // píldora, compacto no alto) pero con la paleta CLARA ya establecida para Financiamiento
+      // (rediseño "soft-glass" del propio dashboard/sidebar) — pintarlo oscuro chocaría con el
+      // resto del módulo que ya se ve así.
+      // v56.69 — pedido del dueño ("ese mismo aura... alrededor de los
+      // cuadros blancos, no encima"): reemplaza de raíz TODO el sistema de
+      // cápsula de neón (v56.60-v56.67, SVG + resortes amortiguados por
+      // frame) por el mismo aura de box-shadow ya aprobada y publicada en
+      // v56.68 para la lista de préstamos (.nxFP-tbl tbody tr:active) — un
+      // solo lenguaje visual para "esto es lo que elegiste" en TODO el
+      // módulo, en vez de dos mecanismos distintos. El botón activo lleva
+      // su propio fondo blanco (el "cuadro blanco" que el dueño señaló) y
+      // el halo se pinta AFUERA de su borde vía box-shadow — nunca tapa el
+      // ícono/texto de adentro. Cero JS: la clase .on ya la escribe
+      // renderFPDock() al armar el HTML, así que no hace falta ningún
+      // loop de animación, ResizeObserver ni medición de layout.
+      '.nxFP-dock{--nxfp-accent:#4f46e5;display:none;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2650;height:60px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:0;box-shadow:0 20px 36px -10px rgba(30,27,51,.28);grid-template-columns:repeat(5,1fr);align-items:center;padding:0 4px;touch-action:manipulation}' +
+      '.nxFP-dockBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:50px;border-radius:15px;border:0;background:transparent;color:#8b85a8;cursor:pointer;position:relative;font-family:inherit;transition:background .18s ease,box-shadow .18s ease,color .15s ease}' +
+      '.nxFP-dockBtn i{font-size:18px;pointer-events:none;color:inherit;transition:color .15s ease}.nxFP-dockBtn span{font-size:9px;font-weight:700;pointer-events:none;color:inherit;transition:color .15s ease}' +
+      // El halo — mismos 3 anillos/colores de .nxFP-tbl tbody tr:active
+      // (v56.68), acotados a un radio más chico: el dock es una rejilla de
+      // 5 columnas muy angosta (~70px por botón a 390px de ancho), y el
+      // tamaño completo del aura de una fila de tabla se encimaría con los
+      // botones vecinos. rgba(79,70,229,...) = #4f46e5 en RGB, el mismo
+      // acento de Financiamiento (var(--nxfp-accent)), no un color nuevo.
+      // BLINDAJE (v56.69 hotfix) — encontrado auditando por qué el aura NUNCA
+      // se veía en producción pese a estar bien escrita: el tema global
+      // "semi-glass" (ver nx-semi-glass-global-css, más arriba en este mismo
+      // archivo) le pone a CUALQUIER <button> del sistema
+      // `border:1px solid rgba(139,92,246,.20)!important;border-radius:14px
+      // !important;box-shadow:0 8px 18px rgba(15,23,42,.12),inset 0 1px 0
+      // rgba(255,255,255,.9)!important` — como los botones del dock SON
+      // <button> reales, ese !important les pisaba el borde/radio/box-shadow
+      // propios sin importar la especificidad (mismo patrón de "blindaje"
+      // que ya necesitan el sidebar del POS/Financiamiento y los inputs del
+      // login contra este mismo tema). Se repiten border/border-radius acá
+      // con !important para ganarle también en el estado inactivo.
+      '.nxFP-dockBtn{border:0!important;border-radius:15px!important}' +
+      '.nxFP-dockBtn.on{background:#fff!important;color:var(--nxfp-accent)!important;border:0!important;border-radius:15px!important;box-shadow:0 0 0 1.5px rgba(79,70,229,.55),0 0 0 5px rgba(79,70,229,.15),0 0 13px 3px rgba(79,70,229,.35)!important}' +
+      '@media(prefers-reduced-motion:reduce){.nxFP-dockBtn{transition:none}.nxFP-dockBtn i,.nxFP-dockBtn span{transition:none}}' +
       '.nxFP-dockBadge{position:absolute;top:-2px;right:16%;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#dc2626;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px rgba(255,255,255,.82);z-index:1}' +
       '#nxFPDockHost.dock-open .nxFP-dockMore i{transform:rotate(90deg)}' +
       '.nxFP-dockBackdrop{display:none;position:fixed;inset:0;z-index:2649;background:rgba(15,23,42,.35)}' +
@@ -25943,6 +26009,11 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // para esconder el FAB global mientras Financiamiento SÍ está activo (ver injectCSS()),
       // solo que a la inversa: aquí se esconde el dock salvo que #v-prestamos.on exista.
       'body:not(:has(#v-prestamos.on)) #nxFPDockHost{display:none!important}' +
+      // No hace falta ninguna regla de visibilidad aparte para la cápsula
+      // (a diferencia del #nxFPArcHost viejo, que vivía en un host separado
+      // y necesitaba 4 reglas calcadas) — el SVG ahora es HIJO REAL de
+      // .nxFP-dock, así que hereda gratis display:none/grid y los 2 :has()
+      // de arriba en cuanto su padre se oculta/muestra.
       '@media(prefers-reduced-motion:reduce){.nxFPShell *,#nxFPDockHost *{transition:none!important}}';
     document.head.appendChild(st);
   };

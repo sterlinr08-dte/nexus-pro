@@ -1,11 +1,56 @@
 {
-  "version": "56.63",
+  "version": "56.72",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "v": "56.63",
+      "v": "56.72",
       "fecha": "2026-08-23",
-      "texto": "NUEVO: en Punto de Venta → Inventario, ahora podés seleccionar varios artículos con las casillas de la tabla e imprimir todas sus etiquetas juntas (nombre, código y precio) en una sola hoja lista para recortar y pegar — útil para identificar rápido el inventario en el taller. Antes solo se podía imprimir una etiqueta a la vez, y solo desde la pantalla de editar cada artículo. AVISO: este cambio no se pudo probar en vivo por un bloqueo de seguridad de Windows en la PC (Smart App Control) que impidió usar la herramienta de pruebas — se revisó el código a mano con cuidado, pero avisame si algo no se ve bien."
+      "texto": "NUEVO: \"Label de Almacén\" en Punto de Venta → Inventario — ahora podés seleccionar varios artículos con las casillas de la tabla e imprimir todas sus etiquetas juntas (nombre, código y precio) en una sola hoja lista para recortar y pegar, para identificar rápido el inventario en el taller. Antes solo se podía imprimir una etiqueta a la vez, y solo desde la pantalla de editar cada artículo. AVISO: este cambio no se pudo probar en vivo por un bloqueo de seguridad de Windows en la PC (Smart App Control) que impidió usar la herramienta de pruebas — se revisó el código a mano con cuidado, pero avisame si algo no se ve bien."
+    },
+    {
+      "v": "56.71",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO (seguridad): el número de las pólizas nuevas (el contador que dice cuál es la próxima) ahora se genera y se reinicia con un candado seguro en el servidor, así que dos usuarios cobrando/creando pólizas al mismo tiempo nunca podrán terminar con el mismo número duplicado por accidente. De paso se corrigió un bug real en \"Tarifas y comisiones\": si guardar la numeración fallaba, antes la pantalla se quedaba pegada sin avisar nada y las tarifas no se guardaban — ahora siempre avisa con un mensaje claro."
+    },
+    {
+      "v": "56.70",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: el aura índigo del menú de abajo de Financiamiento (v56.69) no se veía en el teléfono — un estilo general de botones del sistema le ganaba en silencio al nuevo diseño. Ya se corrigió de raíz: ahora el botón activo del menú sí muestra el halo de luz alrededor, como se pidió."
+    },
+    {
+      "v": "56.69",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: en el menú de abajo de Financiamiento (celular), el botón que tocas ya no se marca con la cápsula de luz que viajaba entre botones — ahora se ve exactamente la misma aura índigo alrededor del botón (el mismo efecto ya aplicado a la lista de préstamos), un cuadro blanco con un halo de luz a su alrededor, más simple y más consistente en todo el sistema."
+    },
+    {
+      "v": "56.68",
+      "fecha": "2026-08-22",
+      "texto": "NUEVO: en la lista de préstamos de Financiamiento, al tocar una fila (o elegirla con el teclado) ahora se ve un aura de luz índigo alrededor de esa tarjeta, para confirmar de un vistazo cuál préstamo se está seleccionando antes de que se abra."
+    },
+    {
+      "v": "56.67",
+      "fecha": "2026-08-22",
+      "texto": "ARREGLADO: en el menú de abajo de Financiamiento (celular), se quitó la línea blanca que rodeaba el fondo del menú (el borde y el brillo de arriba) y ahora el centro de la cápsula de luz —el trazo que marca el botón que tocaste— es azul en vez de blanco, para que se note más la selección."
+    },
+    {
+      "v": "56.66",
+      "fecha": "2026-08-22",
+      "texto": "NUEVO: en Financiamiento (celular), el menú de abajo tiene ahora un rediseño completo de la selección — una sola cápsula de luz de neón que ENVUELVE el botón activo (ya no un círculo flotando arriba). Al cambiar de pestaña, la cápsula no salta ni se desliza a velocidad pareja: la punta sale primero y la cola se queda un poco atrás, estirándose como líquido, hasta que alcanza y se cierra de nuevo alrededor del nuevo botón con un pequeño rebote al llegar. El ícono y el texto del botón se van encendiendo/apagando poco a poco según la luz se acerca, no de golpe. Si tocas otro botón mientras la luz todavía va en camino, no se reinicia — sigue con el mismo impulso hacia el nuevo destino. Se apaga solo (salta directo, sin el efecto) si el teléfono tiene activado \"reducir movimiento\"."
+    },
+    {
+      "v": "56.65",
+      "fecha": "2026-08-21",
+      "texto": "ARREGLADO: la luz de neón de Financiamiento (celular) no era para el rayo del menú de abajo, sino para el círculo morado que \"flota\" arriba del botón seleccionado — ahora ese círculo tiene su propio halo brillante que pulsa despacio a su alrededor, para que la selección se sienta iluminada de verdad."
+    },
+    {
+      "v": "56.64",
+      "fecha": "2026-08-21",
+      "texto": "NUEVO: ese mismo rayo de luz morado del menú de abajo en Financiamiento (celular) ahora también \"respira\" como un tubo de neón — un brillo suave alrededor de la base que se enciende y apaga despacio, incluso mientras está quieto. Se apaga solo si el teléfono tiene activado \"reducir movimiento\"."
+    },
+    {
+      "v": "56.63",
+      "fecha": "2026-08-21",
+      "texto": "NUEVO: en Financiamiento (celular), el menú de abajo ahora tiene un pequeño rayo de luz morado que \"va a buscar\" el botón que tocas — se estira mientras viaja y se tensa al llegar, en vez de saltar de golpe. Es puramente decorativo (no cambia ningún botón ni función) y se apaga solo si el teléfono tiene activado \"reducir movimiento\"."
     },
     {
       "v": "56.62",
