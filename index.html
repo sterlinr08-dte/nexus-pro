@@ -2839,6 +2839,13 @@ function logError(tipo, titulo, detalle, modulo){
     window._errorLog.unshift(entry);
     if(window._errorLog.length>100)window._errorLog.pop();
   }catch(e){}
+  // Auditoría (2026-08-23): logError()/mostrarError() ya se llamaban en 20+ sitios reales
+  // del código (fallas de API, contexto de negocio como "Al eliminar cliente: X"), pero
+  // solo quedaban en window._errorLog — sin persistir y SIN NINGÚN visor que los mostrara.
+  // Se conecta aquí al registro unificado (badge/log filtrable/export) en vez de dejar dos
+  // sistemas de log paralelos. mostrarTarjeta=false: mostrarError() ya avisa con un toast;
+  // la tarjeta grande queda solo para errores realmente no controlados (window.onerror).
+  try{if(typeof registrarError==='function')registrarError(tipo,titulo+(detalle?': '+detalle:''),'',false);}catch(e){}
 }
 
 // Fase 8 (Auditoría Completa): etiqueta legible del dispositivo (Móvil/Escritorio + SO + navegador),
@@ -5034,7 +5041,7 @@ function rNotifs(){
   if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:null,tipo:'cobros',nav:{tipo:'facturas'}});
   // Errores del sistema → navega a auditoría
   if(window._errorLog&&window._errorLog.length>0){
-    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:null,tipo:'errores',nav:{tipo:'auditoria'}});
+    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:null,tipo:'errores',nav:{tipo:'errores'}});
   }
 
   const badge=document.getElementById('notifBadge');
@@ -5112,6 +5119,8 @@ function abrirNotif(n){
   }else if(nav.tipo==='auditoria'){
     window.nav('config',null);
     setTimeout(()=>switchCfgTab(8),300);
+  }else if(nav.tipo==='errores'){
+    if(typeof abrirLog==='function')abrirLog();
   }else{
     rNotifs();
   }
@@ -6596,8 +6605,11 @@ async function cargarTodo(){
       try{aplicarOrgSidebar();}catch(e){}
       try{window.dispatchEvent(new Event('nexus:reinit'));}catch(e){}
     },ms));
-    // Cargar log guardado
-    try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
+    // (El log de errores ya se restaura solo, desde localStorage['nx_error_log'], al
+    // cargar el script — ver _errLog junto a logError()/registrarError(). Este bloque
+    // intentaba lo mismo contra una clave 'nx_err_log' que nunca se escribía y una
+    // variable ERR_LOG que nunca se declaraba — no hacía nada, atrapado en su propio
+    // try/catch. Se retira en vez de dejar dos restauraciones redundantes.)
     // Restaurar la pantalla exacta donde estaba el usuario (sin parpadeo).
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     // nxRestaurarLugar cubre tanto las vistas de Seguros como los módulos de parches.js
