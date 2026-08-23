@@ -2088,6 +2088,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
                   💡 Solo genera facturas de <strong>clientes activos</strong> y evita duplicar el mismo período. La generación ocurre cuando el sistema está abierto en el día y hora configurados.
                 </div>
+                <div class="fr"><label>Próximos envíos</label><div id="proxE"></div></div>
                 <button class="btn bxl" onclick="guardarAuto()"><i class="ti ti-device-floppy"></i> Guardar</button>
                 <button class="btn bxl bc1" onclick="genFacturasConfirm()" style="margin-top:8px"><i class="ti ti-file-plus"></i> Generar facturas del mes ahora</button>
               </div>
@@ -10315,21 +10316,18 @@ async function guardarAutoConfig(){
   rAuto();
 }
 function guardarAuto(){guardarAutoConfig();}
-async function guardarPlantilla(){autoCfg.tpl=document.getElementById('waTpl').value;localStorage.setItem('nx_auto',JSON.stringify(autoCfg));try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Plantilla Supabase:',e.message);}toast('ok','Plantilla WA guardada');}
-
-// Función para el segundo botón de plantilla (textarea waPlantilla)
+// guardarPlantilla() y updWA() se retiran: apuntaban a #waTpl/#waP, ids de una migración
+// a #waPlantilla/#waPreviewBox que nunca se terminó de limpiar. guardarPlantilla() ya no
+// la llamaba nada (guardarPlantillaWa() es la real); updWA() nunca corría (sus ids no
+// existen) — la "vista previa" del mensaje simplemente nunca se pintaba, en silencio.
 async function guardarPlantillaWa(){
   const el=document.getElementById('waPlantilla');
   if(!el){toast('err','No se encontró la plantilla');return;}
   autoCfg.tpl=el.value;
-  // Sincronizar también el otro textarea si existe
-  const waTplEl=document.getElementById('waTpl');
-  if(waTplEl)waTplEl.value=el.value;
   localStorage.setItem('nx_auto',JSON.stringify(autoCfg));
   try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Plantilla Supabase:',e.message);}
   toast('ok','Plantilla WhatsApp guardada');
 }
-function updWA(){const t=document.getElementById('waTpl');if(!t)return;const tpl=t.value;const wp=document.getElementById('waP');if(!wp)return;wp.textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
 async function rAuto(){
   // Cargar config desde Supabase primero (persistente)
   try{
@@ -10342,11 +10340,8 @@ async function rAuto(){
   if(waEl)waEl.value=autoCfg.wa;
   const dcEl=document.getElementById('autoDiasCustom');
   if(dcEl)dcEl.value=autoCfg.diasCustom||'';
-  const tplEl=document.getElementById('waTpl');
-  if(tplEl)tplEl.value=autoCfg.tpl||'';
   const tplEl2=document.getElementById('waPlantilla');
   if(tplEl2)tplEl2.value=autoCfg.tpl||'';
-  if(typeof updWA==='function')updWA();
   setTimeout(rHistorialAuto,100);const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}const _proxEl=document.getElementById('proxE');if(_proxEl)_proxEl.innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
 
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
