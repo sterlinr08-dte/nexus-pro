@@ -937,6 +937,29 @@ body.tema-premium .nxSf .fc-ficha{background:rgba(255,255,255,.08)}
 body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 @media(prefers-reduced-motion:reduce){.nxSf .fc-avring{animation:none}.nxSf .sf-fancard::before{display:none}}
 @media(max-width:480px){.nxSf .sf-fancard{width:192px}.nxSf .sf-fancard.top{width:216px}}
+
+/* ════ Lista de Clientes activos: tarjetas en vez de tabla densa (2026-08-23) ════
+   Reusa las funciones/clases YA EXISTENTES para el contenido (planB()/estB() ya
+   devuelven <span class="badge ...">; .av/.cli-nom/.cli-sub/.cli-ref son del bloque
+   de identidad que ya usaba la tabla) — solo cambia el CONTENEDOR de <tr><td> a
+   tarjeta, y el ordenamiento de clic-en-columna a un <select> (ordenarCli(),
+   misma _cliSort/_cliSortVal/sortCli() de siempre). El menú de acciones
+   (accMenu_ID, toggleAccMenu) no se toca — sigue siendo el mismo con sus 6+
+   opciones (Cobros guardados/Certificado PDF/Documentos/WA coberturas/
+   Inhabilitar-Reactivar/Eliminar admin-only). */
+.nxSf .clilist{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;overflow:visible}
+.nxSf .clirow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--sf-line)}
+.nxSf .clirow:last-child{border-bottom:none}
+.nxSf .clirow .cli-main{display:flex;min-width:0}
+.nxSf .cr-id{flex:1 1 190px;min-width:150px;cursor:pointer}
+.nxSf .cr-mid{display:flex;flex-wrap:wrap;gap:16px;align-items:center;flex:2 1 320px}
+.nxSf .cr-field{flex:1 1 90px;min-width:78px}
+.nxSf .cr-field .lb{font-size:9px;font-weight:700;color:var(--sf-tx3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.nxSf .cr-field .v{font-size:11.5px;font-weight:700;color:var(--sf-tx)}
+.nxSf .cr-field .v.r{color:var(--sf-err-d)}
+.nxSf .cr-field .v.ok{color:var(--sf-ok-d)}
+.nxSf .cr-acts{display:flex;gap:5px;align-items:center;flex:0 0 auto;margin-left:auto}
+@media(max-width:720px){.nxSf .clirow{gap:10px}.nxSf .cr-mid{gap:10px}.nxSf .cr-field{flex:1 1 45%}.nxSf .cr-acts{flex:1 1 100%;justify-content:flex-end;margin-left:0;margin-top:6px}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -1715,12 +1738,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
               <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select>
+              <select id="cliOrden" onchange="ordenarCli(this.value)" class="nxFsel" title="Ordenar por">
+                <option value="">Ordenar: por defecto</option>
+                <option value="nom:asc">Nombre A-Z</option>
+                <option value="nom:desc">Nombre Z-A</option>
+                <option value="pendiente:desc">Mayor deuda</option>
+                <option value="pendiente:asc">Menor deuda</option>
+                <option value="prima:desc">Prima mayor</option>
+                <option value="vigencia:asc">Próximo a vencer</option>
+              </select>
               <button id="btnLimpiarCli" class="btn bsm bghost" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="display:none"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
-            <div class="tw"><table class="sf-tbl sf-cli">
-              <thead><tr><th class="col-cli" style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
-              <tbody id="tbCli"><tr><td colspan="9"><div class="loading"><div class="spin"></div>Cargando...</div></td></tr></tbody>
-            </table></div>
+            <div id="tbCli" class="clilist"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           </div>
         </div>
 
@@ -7324,6 +7353,16 @@ function sortCli(col){
   else{_cliSort.col=col;_cliSort.dir=1;}           // nuevo: ascendente
   rCli();
 }
+// Lista de clientes (2026-08-23): la tabla con encabezados clicables se cambió por
+// tarjetas + este selector de orden (mismo _cliSort/_cliSortVal/sortCli de siempre,
+// solo cambia CÓMO se dispara — antes clic en <th>, ahora una opción con dirección
+// fija en vez de alternar como sortCli() sola).
+function ordenarCli(val){
+  if(!val){_cliSort={col:'',dir:1};rCli();return;}
+  const [col,dir]=val.split(':');
+  _cliSort={col,dir:dir==='desc'?-1:1};
+  rCli();
+}
 function _cliSortVal(c,col){
   switch(col){
     case 'nom':return (c.nom||'').toLowerCase();
@@ -7338,10 +7377,8 @@ function _cliSortVal(c,col){
   return '';
 }
 function pintarFlechasCli(){
-  ['Nom','Agente','Plan','Empresa','Vigencia','Prima','Pendiente','Estado'].forEach(C=>{
-    const el=document.getElementById('sc'+C);
-    if(el)el.textContent=(_cliSort.col===C.toLowerCase())?(_cliSort.dir===1?'▲':'▼'):'';
-  });
+  const sel=document.getElementById('cliOrden');
+  if(sel)sel.value=_cliSort.col?`${_cliSort.col}:${_cliSort.dir===1?'asc':'desc'}`:'';
 }
 // Búsqueda con debounce: re-dibuja la lista solo ~220ms después de la última tecla
 // (antes re-renderizaba la tabla entera en CADA tecla → se sentía pesado en móvil).
@@ -7504,7 +7541,7 @@ function rCli(){
   if(_cliSort.col){const col=_cliSort.col,dir=_cliSort.dir;list.sort((a,b)=>{const va=_cliSortVal(a,col),vb=_cliSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   document.getElementById('cliCnt').textContent=`(${list.length})`;
   const tb=document.getElementById('tbCli');
-  if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin resultados</div></td></tr>';return;}
+  if(!list.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
   const PAGE=50,total=list.length;
   if(!_cliVerTodos)list=list.slice(0,PAGE);
   tb.innerHTML=list.map(c=>{
@@ -7542,16 +7579,19 @@ function rCli(){
         ${segTxt}
       </div>`;
     }
-    return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td class="cli-main col-cli" style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente" aria-label="Ver la ficha de ${escHtml(c.nom)}" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="cli-row"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div class="cli-txt"><div class="cli-nom">${c.nom}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div class="cli-sub">${c.referencia?`<span class="cli-ref">(${escHtml(c.referencia)})</span>`:''}${c.cedula?`<span>${c.cedula}</span>`:''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}${c.created_by_name?`<span title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</span>`:''}</div>${procInfo}</div></div></td>
-      <td data-lb="Agente" style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
-      <td data-lb="Plan">${planB(c.plan)}</td>
-      <td data-lb="Empresa" class="sf-tbl-hide-mb" style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
-      <td data-lb="Vigencia" class="sf-tbl-hide-mb"><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td>
-      <td data-lb="Prima" class="r cli-prima">${fmt(getTot(c))}</td>
-      <td data-lb="Pendiente" class="r cli-pend" style="color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td>
-      <td data-lb="Estado">${estB(c)}</td>
-      <td data-lb="Acciones" style="white-space:nowrap;display:flex;gap:3px;align-items:center">
+    const agTxt=(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style="color:#ef4444;font-size:9px">⚠ SIN AGENTE</span>';})();
+    return`<div class="clirow" style="${!c.activo?'opacity:.5':''}">
+      <div class="cli-main cr-id" onclick="verCliente('${c.id}')" title="Ver resumen del cliente" aria-label="Ver la ficha de ${escHtml(c.nom)}" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="cli-row"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div class="cli-txt"><div class="cli-nom">${c.nom}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div class="cli-sub">${c.referencia?`<span class="cli-ref">(${escHtml(c.referencia)})</span>`:''}${c.cedula?`<span>${c.cedula}</span>`:''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}${c.created_by_name?`<span title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</span>`:''}</div>${procInfo}</div></div></div>
+      <div class="cr-mid">
+        <div class="cr-field"><div class="lb">Agente</div><div class="v" style="color:#7c3aed">${agTxt}</div></div>
+        <div class="cr-field">${planB(c.plan)}</div>
+        <div class="cr-field"><div class="lb">Empresa</div><div class="v">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div></div>
+        <div class="cr-field"><div class="lb">Vigencia</div><span class="badge ${ep.badge}">${ep.lbl}</span></div>
+        <div class="cr-field"><div class="lb">Prima</div><div class="v">${fmt(getTot(c))}</div></div>
+        <div class="cr-field"><div class="lb">Pendiente</div><div class="v ${pd>0?'r':'ok'}">${fmt(pd)}</div></div>
+        <div class="cr-field">${estB(c)}</div>
+      </div>
+      <div class="cr-acts">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-wallet"></i></button>
         <button class="btn bsm bghost" style="color:#059669" onclick="nxWaElegir('${c.id}')" title="WhatsApp — al cliente o a su agente" aria-label="Enviar WhatsApp al cliente o a su agente"><i class="ti ti-brand-whatsapp"></i></button>
@@ -7570,16 +7610,17 @@ function rCli(){
             ${(!c.activo&&sesion?.rol==='admin')?`<button class="acc-i-red" onclick="eliminarClienteDef('${c.id}');cerrarAccMenus()" style="color:#dc2626"><i class="ti ti-minus"></i> Eliminar definitivamente</button>`:''}
           </div>
         </div>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
   }).join('');
   // Botón Ver todos / Ver menos
   if(total>PAGE){
-    const extra=document.createElement('tr');
+    const extra=document.createElement('div');
+    extra.style.cssText='text-align:center;padding:12px';
     if(!_cliVerTodos){
-      extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bc1" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button></td>`;
+      extra.innerHTML=`<button class="btn bsm bc1" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button>`;
     }else{
-      extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bghost" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-up"></i> Ver menos</button></td>`;
+      extra.innerHTML=`<button class="btn bsm bghost" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-up"></i> Ver menos</button>`;
     }
     tb.appendChild(extra);
   }
