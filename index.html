@@ -364,6 +364,16 @@ tbody tr:hover td{background:#f8fafc}
 .div{border:none;border-top:1px solid var(--border);margin:12px 0}
 .fe{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
 
+/* Vidrio líquido — piloto en el modal "Nuevo Cliente" (#mCli) únicamente.
+   El scrim de #mCli se aclara/ desatura menos que el genérico .overlay
+   para que el modal pueda tomar color real de lo que hay detrás (la
+   lista de clientes), en vez de negro plano. Si funciona bien en uso
+   real, se extiende a otros modales — por ahora queda aislado a este. */
+#mCli{background:rgba(15,23,42,.35);backdrop-filter:blur(6px)}
+#mCli .modal{background:rgba(255,255,255,.6);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);border:1px solid rgba(255,255,255,.5);box-shadow:0 24px 48px -20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+body.tema-premium #mCli{background:rgba(0,0,0,.45) !important}
+body.tema-premium #mCli .modal{background:rgba(18,24,38,.6) !important;border-color:rgba(255,255,255,.12) !important;box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);color:#E8EDF7 !important}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
