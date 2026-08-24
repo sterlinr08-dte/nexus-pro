@@ -344,6 +344,8 @@ tbody tr:hover td{background:#f8fafc}
 .bCg{background:#f1f5f9;color:#475569}
 .bCoff{background:#fee2e2;color:#dc2626}
 .bC5{background:#d1fae5;color:#059669}
+.bC6{background:#ccfbf1;color:#0d9488}
+.bC7{background:#fce7f0;color:#831843}
 
 /* ── FORMS ── */
 .fr{margin-bottom:9px}
@@ -873,11 +875,20 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf table.sf-fact tr.u-crit td.cli-cell{border-left:4px solid var(--sf-err)}
 .nxSf table.sf-fact tr.u-warn td.cli-cell{border-left:4px solid var(--sf-warn)}
 .nxSf table.sf-fact tr.u-ok td.cli-cell{border-left:4px solid var(--sf-ok)}
+.nxSf table.sf-fact tr.u-aldia td.cli-cell{border-left:4px solid #0d9488}
+.nxSf table.sf-fact tr.u-due td.cli-cell{border-left:4px solid var(--sf-primary)}
+.nxSf table.sf-fact tr.u-part td.cli-cell{border-left:4px solid #7c3aed}
+.nxSf table.sf-fact tr.u-grave td.cli-cell{border-left:4px solid #831843}
 @media(max-width:720px){
   .nxSf table.sf-fact tr.u-crit{border-left:4px solid var(--sf-err)}
   .nxSf table.sf-fact tr.u-warn{border-left:4px solid var(--sf-warn)}
   .nxSf table.sf-fact tr.u-ok{border-left:4px solid var(--sf-ok)}
-  .nxSf table.sf-fact tr.u-crit td.cli-cell,.nxSf table.sf-fact tr.u-warn td.cli-cell,.nxSf table.sf-fact tr.u-ok td.cli-cell{border-left:none}
+  .nxSf table.sf-fact tr.u-aldia{border-left:4px solid #0d9488}
+  .nxSf table.sf-fact tr.u-due{border-left:4px solid var(--sf-primary)}
+  .nxSf table.sf-fact tr.u-part{border-left:4px solid #7c3aed}
+  .nxSf table.sf-fact tr.u-grave{border-left:4px solid #831843}
+  .nxSf table.sf-fact tr.u-crit td.cli-cell,.nxSf table.sf-fact tr.u-warn td.cli-cell,.nxSf table.sf-fact tr.u-ok td.cli-cell,
+  .nxSf table.sf-fact tr.u-aldia td.cli-cell,.nxSf table.sf-fact tr.u-due td.cli-cell,.nxSf table.sf-fact tr.u-part td.cli-cell,.nxSf table.sf-fact tr.u-grave td.cli-cell{border-left:none}
 }
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
 @media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
@@ -5266,11 +5277,16 @@ document.addEventListener('keydown',e=>{
 // Tarjeta de UNA factura (reusa exactamente el markup/acciones de rFact(), solo sin el nombre del
 // cliente/agente porque ya estamos dentro de su ficha) — usada por verCliente() en "Historial de facturas".
 function sfFacturaCard(f){
-  const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
-  const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
-  const anul=f.estado==='Anulada';
   const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
-  const sal=(f.estado==='Pagado')?0:prima;// nxSf usa el saldo simple; el detalle exacto sigue disponible en Facturas
+  // Saldo real (no el simple "prima si no está Pagado" de antes) — mismo criterio
+  // que rFact()/clasificarFacturaUrgencia(), para no mostrar rojo/"Pendiente" en
+  // una factura que un pago suelto ya cubrió aunque el campo estado no lo diga.
+  const _sm=f.estado==='Pagado'?null:_saldoFacturasCliente(String(f.cliente_id));
+  const sal=f.estado==='Pagado'?0:(_sm[f.id]!=null?_sm[f.id]:prima);
+  const est=clasificarFacturaUrgencia(f,sal);
+  const ec=CLS_BADGE[est.cls];
+  const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
+  const anul=est.anul;
   const pg=prima-sal;
   return `<div class="sf-fcard${anul?' style="opacity:.55"':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -5278,7 +5294,7 @@ function sfFacturaCard(f){
           <div style="font-weight:800;font-size:12.5px">${MESES[(f.mes||1)-1]||''} ${f.anio||''}</div>
           <div style="font-size:10px;color:var(--sf-tx3)">${planB(f.plan)}</div>
         </div>
-        <span class="badge ${ec}" style="font-size:9px">${f.estado.toUpperCase()}</span>
+        <span class="badge ${ec}" style="font-size:9px">${est.pillTxt.toUpperCase()}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin:7px 0;padding:6px 0;border-top:1px solid var(--sf-line)">
         <div style="font-size:9px;color:var(--sf-tx3)">${pg>0.009?`Prima ${fmt(prima)} · abonado ${fmt(pg)}`:'Mes actual'}</div>
@@ -7706,6 +7722,30 @@ function nxDiasAtrasoPeriodo(periodo){
   const h=new Date();h.setHours(0,0,0,0);
   return Math.max(0,Math.round((h-corte)/86400000));
 }
+// Clasifica una factura por urgencia real (no solo el campo estado crudo):
+// Pagado/Anulada/Parcial respetan el estado tal cual; el resto se separa en
+// Al día (saldo real RD$0), Vence este mes/pronto (período activo) o
+// Atrasada/Muy atrasada (período ya pasó su corte). El saldo (sal) se recibe
+// como parámetro a propósito — cada pantalla lo calcula con la fuente que le
+// convenga (memoizada en listas largas, directa en la ficha de un cliente) —
+// así todas las pantallas (Facturas, Cobros-rueda, Ficha del cliente) quedan
+// de acuerdo en el mismo color/urgencia para la misma factura.
+function clasificarFacturaUrgencia(f,sal){
+  const anul=f.estado==='Anulada';
+  if(anul)return{cls:'anul',pillTxt:'Anulada',lbl:'Factura anulada',sal,anul};
+  if(f.estado==='Pagado')return{cls:'ok',pillTxt:'Pagado',lbl:'Mes actual',sal,anul};
+  if(f.estado==='Parcial')return{cls:'part',pillTxt:'Parcial',lbl:'Falta este mes',sal,anul};
+  if(sal<=0.009)return{cls:'aldia',pillTxt:'Al día',lbl:'Pendiente del mes',sal,anul};
+  const mc=mesCorte(),hoyKey=`${mc.anio}-${String(mc.mes).padStart(2,'0')}`;
+  if((f.periodo||'')<hoyKey){
+    const diasAtr=nxDiasAtrasoPeriodo(f.periodo);
+    return{cls:diasAtr>=60?'grave':'debt',pillTxt:diasAtr>=60?'Muy atrasada':'Atrasada',lbl:'Pendiente del mes',sal,anul};
+  }
+  const diasP=nxDiasParaCorte();
+  return{cls:diasP<=5?'pronto':'due',pillTxt:diasP<=5?'Vence pronto':'Vence este mes',lbl:'Pendiente del mes',sal,anul};
+}
+const CLS_BADGE={ok:'bC5',aldia:'bC6',due:'bC1',pronto:'bC4',part:'bC2',debt:'bC3',grave:'bC7',anul:'bCg'};
+const CLS_URG={ok:'u-ok',aldia:'u-aldia',due:'u-due',pronto:'u-warn',part:'u-part',debt:'u-crit',grave:'u-grave',anul:'u-anul'};
 // ── CICLO 20-AL-20 en hora de República Dominicana ───────────────────────────
 // RD es UTC-4 fijo (no cambia de hora), así que el desfase se aplica a mano en
 // vez de depender de toLocaleDateString: no todos los navegadores traen la base
@@ -8026,6 +8066,11 @@ function rFact(){
       <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por cobrar</div><div class="v">${fmt(porCobrar)}</div></div></div>
       <div class="sf-kpi ${atrasadasN?'err':'ok'} sf-kpi-wide" ${atrasadasN?`onclick="const s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}" style="cursor:pointer" tabindex="0" role="button" aria-label="Ver las facturas atrasadas" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"`:''}><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Atrasadas${atrasadasN?' · toca para ver':''}</div><div class="v">${atrasadasN}</div></div></div>
     </div>`;
+  // clasificarFactura() usa el saldo YA MEMOIZADO de esta lista (saldoDe) en vez
+  // de recalcularlo — clasificarFacturaUrgencia()/CLS_BADGE/CLS_URG son globales
+  // (ver junto a nxDiasAtrasoPeriodo), compartidos también con sfFacturaCard()
+  // en la Ficha del cliente, así ninguna pantalla se desincroniza de las demás.
+  const clasificarFactura=f=>clasificarFacturaUrgencia(f,saldoDe(f));
   // ══ RAMA VISTA RUEDA (solo admin + interruptor + celular) — reglamento aprobado ══
   // Mismos datos y mismas acciones que la tabla; solo cambia la presentación. TODAS las
   // tarjetas son tocables (regla #6). El orden es el mismo de la lista (no reordena).
@@ -8036,24 +8081,7 @@ function rFact(){
       const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
       const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
       const agTxt=ag?ag.nom:'⚠ Sin agente';
-      const anul=f.estado==='Anulada';
-      const sal=saldoDe(f);
-      // Color/estado por urgencia real, no solo "no pagado" (ver nota en CSS
-      // .sfr-cc.*): Pagado/Anulada/Parcial respetan el estado tal cual; el resto
-      // se separa en Al día (saldo real RD$0), Vence este mes/pronto (período
-      // activo) o Atrasada/Muy atrasada (período ya pasado su corte).
-      let cls,pillTxt,lbl;
-      if(anul){cls='anul';pillTxt='Anulada';lbl='Factura anulada';}
-      else if(f.estado==='Pagado'){cls='ok';pillTxt='Pagado';lbl='Mes actual';}
-      else if(f.estado==='Parcial'){cls='part';pillTxt='Parcial';lbl='Falta este mes';}
-      else if(sal<=0.009){cls='aldia';pillTxt='Al día';lbl='Pendiente del mes';}
-      else if((f.periodo||'')<_hoyKey){
-        const diasAtr=nxDiasAtrasoPeriodo(f.periodo);
-        cls=diasAtr>=60?'grave':'debt';pillTxt=diasAtr>=60?'Muy atrasada':'Atrasada';lbl='Pendiente del mes';
-      }else{
-        const diasP=nxDiasParaCorte();
-        cls=diasP<=5?'pronto':'due';pillTxt=diasP<=5?'Vence pronto':'Vence este mes';lbl='Pendiente del mes';
-      }
+      const{cls,pillTxt,lbl,sal,anul}=clasificarFactura(f);
       const cid2=String(f.cliente_id);if(!_saldoMemo[cid2])_saldoMemo[cid2]=_saldoFacturasCliente(cid2);
       let deudaPrev=cli?deudaAnt(cli):0;
       ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
@@ -8085,29 +8113,30 @@ function rFact(){
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th class="mesant-col">Meses ant.</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Cobro</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
     const emp=gEmp(f.empresa_id);
-    const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
+    const est=clasificarFactura(f);
+    const ec=CLS_BADGE[est.cls];
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
     const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
     const agTxt=ag?ag.nom:'⚠ Sin agente';
-    const anul=f.estado==='Anulada';
+    const anul=est.anul;
     const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
-    const sal=saldoDe(f);
+    const sal=est.sal;
     // Deuda de MESES ANTERIORES del cliente: saldo real de sus facturas de períodos previos
     // a esta + la deuda anterior al sistema. Se muestra a la izquierda si el cliente debe de antes.
     const cid2=String(f.cliente_id);if(!_saldoMemo[cid2])_saldoMemo[cid2]=_saldoFacturasCliente(cid2);
     let deudaPrev=cli?deudaAnt(cli):0;
     ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''}><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
-    const urg=anul?'':(f.estado==='Pagado'?'u-ok':f.estado==='Parcial'?'u-warn':'u-crit');
+    const urg=anul?'':CLS_URG[est.cls];
     return `<tr class="${urg}"${anul?' style="opacity:.55"':''}>
-      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${(est.cls==='debt'||est.cls==='grave')?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="MesAnt">${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Ver detalle de meses anteriores" aria-label="Ver detalle de meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
       <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
       <td data-lb="Balance" class="r"${anul?'':` role="button" tabindex="0" title="Registrar pago" aria-label="Registrar pago de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"`} style="font-weight:800;${anul?'':'cursor:pointer;'}color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
-      <td data-lb="Estado"><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
+      <td data-lb="Estado"><span class="badge ${ec}">${est.pillTxt.toUpperCase()}</span></td>
       <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}</td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
         ${anul?'':btn(`enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
