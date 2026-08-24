@@ -379,6 +379,83 @@ tbody tr:hover td{background:#f8fafc}
 .div{border:none;border-top:1px solid var(--border);margin:12px 0}
 .fe{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
 
+/* Piloto neumórfico — SOLO el modal "Registrar abono" (#mAbono), acotado a
+   propósito para probar el estilo en un lugar aislado antes de considerar
+   extenderlo. .modal aquí necesita !important porque parches.js inyecta el
+   tema "semi-glass" con !important sobre .modal en general (ver nota arriba
+   de MODALS) — #mAbono .modal gana por especificidad al ser más específico
+   que ese .modal simple, pero solo si igualamos el !important. */
+#mAbono .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mAbono .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  background:var(--nm-bg) !important;color:var(--nm-tx) !important;border:none !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+#mAbono .mt{color:var(--nm-tx)}
+#mAbono #abonoI{border-radius:14px;padding:10px 12px;margin-bottom:12px;
+  box-shadow:6px 6px 12px var(--nm-lo),-6px -6px 12px var(--nm-hi)}
+#mAbono .fr label{color:var(--nm-tx2) !important;font-family:inherit}
+#mAbono .fr input,#mAbono .fr select{
+  border:none;border-radius:12px;background:var(--nm-bg);color:var(--nm-tx);
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi);
+}
+#mAbono .fr input:focus,#mAbono .fr select:focus{
+  outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22);
+}
+/* body.tema-premium input/select tienen su propio fondo oscuro plano con
+   !important (más arriba en el archivo) — sin esto se comería el embossed. */
+body.tema-premium #mAbono .fr input,body.tema-premium #mAbono .fr select{
+  background:var(--nm-bg) !important;color:var(--nm-tx) !important;border-color:transparent !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+body.tema-premium #mAbono .fr input:focus,body.tema-premium #mAbono .fr select:focus{
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(91,157,255,.28) !important;
+}
+/* #aDirectoCuenta (cuenta de depósito, la inyecta parches.js) no vive dentro
+   de un .fr — mismo motivo que arriba, necesita su propio empate en oscuro. */
+body.tema-premium #mAbono #aDirectoCuenta{
+  background:var(--nm-bg) !important;color:var(--nm-tx) !important;border-color:transparent !important;
+}
+#mAbono #aMnt{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+#mAbono .nmSeg{display:flex;gap:6px;flex-wrap:wrap}
+#mAbono .nmPill{
+  position:relative;flex:1 1 auto;min-width:56px;text-align:center;font-size:10px;font-weight:700;padding:8px 6px;border-radius:11px;
+  color:var(--nm-tx2);cursor:pointer;border:2px solid transparent;
+  box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi);
+  transition:box-shadow .18s ease,color .18s ease,border-color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
+}
+#mAbono .nmPill:active{transform:translateY(1px) scale(.97)}
+#mAbono .nmPill.on{
+  color:var(--nm-accent);font-weight:800;border-color:var(--nm-accent);transform:translateY(1px) scale(.98);
+  animation:nmRingPulse .55s cubic-bezier(.25,.75,.35,1) both,nmNeonBreathe 2.2s ease-in-out .55s infinite;
+}
+@keyframes nmRingPulse{
+  0%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 0 rgba(53,104,224,.55)}
+  60%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 8px rgba(53,104,224,0)}
+  100%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.16),0 0 7px 1px rgba(91,157,255,.5),0 0 15px 2px rgba(53,104,224,.3)}
+}
+@keyframes nmNeonBreathe{
+  0%,100%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.16),0 0 7px 1px rgba(91,157,255,.5),0 0 15px 2px rgba(53,104,224,.3)}
+  50%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.3),0 0 13px 3px rgba(91,157,255,.95),0 0 28px 7px rgba(53,104,224,.65)}
+}
+@media(prefers-reduced-motion:reduce){
+  #mAbono .nmPill{transition:none}
+  #mAbono .nmPill.on{animation:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.2),0 0 8px 1px rgba(91,157,255,.6)}
+}
+#mAbono .fe .btn{
+  border:none;border-radius:13px;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi);
+}
+#mAbono .fe .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi)}
+#mAbono .fe .btn.bxl{
+  color:#fff;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent));
+  box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25);
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -2545,15 +2622,25 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
 <!-- Modal Abono -->
 <div class="overlay" id="mAbono">
-  <div class="modal" style="max-width:360px">
+  <div class="modal nm-abono" style="max-width:360px">
     <div class="mt"><span>// REGISTRAR ABONO</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
-    <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
+    <div id="abonoI"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
-    <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select></div>
-    <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
-    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
-    <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"/></div>
-    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="">Sin asignar</option></select></div>
+    <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select></div>
+    <div class="fr">
+      <label>Método</label>
+      <select id="aMet" style="display:none" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
+      <div class="nmSeg" id="aMetPills">
+        <div class="nmPill" data-v="Efectivo" tabindex="0" role="button" aria-label="Método: Efectivo" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Efectivo</div>
+        <div class="nmPill" data-v="Transferencia" tabindex="0" role="button" aria-label="Método: Transferencia" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Transf.</div>
+        <div class="nmPill" data-v="Cheque" tabindex="0" role="button" aria-label="Método: Cheque" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Cheque</div>
+        <div class="nmPill" data-v="Tarjeta" tabindex="0" role="button" aria-label="Método: Tarjeta" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Tarjeta</div>
+        <div class="nmPill" data-v="Depósito" tabindex="0" role="button" aria-label="Método: Depósito" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Depósito</div>
+      </div>
+    </div>
+    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
+    <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco"/></div>
+    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente"><option value="">Sin asignar</option></select></div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado — envía el recibo</span></div>
@@ -8917,6 +9004,21 @@ async function llenarSelectBancosCobros(){
   sel.innerHTML='<option value="">Seleccionar banco...</option>'+sinOtros.map(b=>`<option value="${b.nombre}">${b.nombre}</option>`).join('')+'<option value="Otros">Otros</option>';
   if(valActual&&Array.from(sel.options).some(o=>o.value===valActual))sel.value=valActual;
 }
+// Chips visuales del Método de pago (#mAbono): el <select id="aMet"> real
+// sigue siendo la fuente de verdad (oculto, no eliminado) — clickear un chip
+// solo cambia su .value y dispara 'change' a mano, así cambiarMetodoAbono()
+// y todo lo demás que ya depende de aMet.value sigue funcionando intacto.
+function nxAboMetodo(el){
+  const sel=document.getElementById('aMet');if(!sel)return;
+  sel.value=el.dataset.v;
+  document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  sel.dispatchEvent(new Event('change'));
+}
+function nxAboMetodoSync(){
+  const sel=document.getElementById('aMet');if(!sel)return;
+  document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.toggle('on',p.dataset.v===sel.value));
+}
 function cambiarMetodoAbono(){
   const met=document.getElementById('aMet')?.value||'';
   const cont=document.getElementById('aBancoCont');
@@ -8968,6 +9070,7 @@ function abrirAbono(cid){
   if(_optDA&&_da>0)_optDA.textContent='Deuda antes del sistema ('+fmt(_da)+')';
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
+  nxAboMetodoSync();
   openM('mAbono');
 }
 function nxDestinoCambio(){

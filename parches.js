@@ -5839,14 +5839,16 @@
 
     const wrap = document.createElement('div');
     wrap.id = 'aDirectoWrap';
-    wrap.style.cssText = 'display:none;margin:8px 0;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px';
+    // Colores por var(--nm-*) para heredar el look neumórfico de #mAbono (con
+    // fallback al azul de siempre por si esto se reutiliza fuera de ese modal).
+    wrap.style.cssText = 'display:none;margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--nm-bg,#eff6ff);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)';
     wrap.innerHTML = `
       <label style="display:block;font-size:11px;line-height:1.4">
-        <strong style="color:#1e3a6e;display:block;margin-bottom:5px">¿A qué cuenta se depositó?</strong>
-        <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:8px;border:1px solid #bfdbfe;border-radius:8px;background:#fff;color:#1e3a6e">
+        <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">¿A qué cuenta se depositó?</strong>
+        <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:9px 11px;border:none;border-radius:10px;background:var(--nm-bg,#fff);color:var(--nm-tx,#1e3a6e);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)">
           <option value="">— Elige la cuenta —</option>
         </select>
-        <span style="font-size:10px;color:#475569;display:block;margin-top:5px">
+        <span style="font-size:10px;color:var(--nm-tx2,#475569);display:block;margin-top:5px">
           El cliente depositó/transfirió a esta cuenta. Queda como PENDIENTE DE CONFIRMAR en Solicitudes
           hasta verificarlo — salvo que sea tu propia cuenta, que se confirma sola.
         </span>
