@@ -5342,6 +5342,12 @@ function verCliente(id,tab){
   const fCorta=(s)=>{if(!s)return '—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   const estado=getEst(c);
   const estBadgeCls=estado==='Al día'?'ok':estado==='Inhabilitado'?'err':'warn';
+  // Meses pagados por adelantado: lo que pagó de más sobre lo facturado
+  // (deuda_total ya incluye lo generado hasta hoy), convertido a meses de
+  // prima. pendTot() no lo muestra porque pend() se limita a 0 como mínimo.
+  const adelantoRD=Math.max(0,(c.pagado||0)-(c.deuda_total||0));
+  const primaMes=getTot(c);
+  const mesesAdelanto=primaMes>0?Math.floor(adelantoRD/primaMes):0;
   const estPol=getEstPol(c);
   const facturasCli=ST.facturas.filter(f=>String(f.cliente_id)===String(id)).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
   const facPend=facturasCli.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
@@ -5369,6 +5375,7 @@ function verCliente(id,tab){
           <span class="sf-hpill">Cliente desde ${fCorta(c.created_at)}</span>
           ${fav?'<span class="sf-hpill">★ VIP</span>':''}
           ${c.permitir_facturacion===false?'<span class="sf-hpill">🚫 Cortesía</span>':''}
+          ${mesesAdelanto>0?`<span class="sf-hpill ok">🎉 ${mesesAdelanto} mes${mesesAdelanto===1?'':'es'} adelantado</span>`:''}
         </div>
         <div class="sf-hero-stats">
           <div class="sf-hstat"><div class="lb">Prima mensual</div><div class="v">${fmt(getTot(c))}</div></div>

@@ -16388,7 +16388,20 @@
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
-    return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
+    // Meses cubiertos MÁS ALLÁ del período actual = adelanto real (no solo
+    // "pagó lo que tocaba este mes"), mismo corte 20-al-20 de mesCorte().
+    let adelantoTxt = '';
+    try {
+      const mc = mesCorte();
+      const keyActual = mc.anio * 12 + mc.mes;
+      const futuros = d.meses.filter(m => (m.anio * 12 + m.mes) > keyActual);
+      if (futuros.length) {
+        futuros.sort((a, b) => (a.anio * 12 + a.mes) - (b.anio * 12 + b.mes));
+        const ultimo = futuros[futuros.length - 1];
+        adelantoTxt = `\n🎉 *¡Gracias por su pago adelantado!* Quedó cubierto hasta *${MESES[ultimo.mes - 1]} ${ultimo.anio}* — ${futuros.length} mes${futuros.length === 1 ? '' : 'es'} por adelantado.\n`;
+      }
+    } catch (e) {}
+    return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses:*\n${mesesTxt}\n${adelantoTxt}\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
   }
 
   window.nxReciboWA = function () {
