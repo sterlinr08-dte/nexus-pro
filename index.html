@@ -352,6 +352,11 @@ tbody tr:hover td{background:#f8fafc}
 .fr input:focus,.fr select:focus,.fr textarea:focus{border-color:var(--c1);background:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
 .fr select option{background:#fff}
 .gf2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+/* Las etiquetas de .fr son grises y chicas (8px) — sobre el vidrio del
+   modal (fondo variable, no siempre blanco puro) pierden contraste.
+   var(--tx1) ya se redefine solo en body.tema-premium, cubre ambos temas.
+   Fuera de un modal (paneles normales, fondo sólido) se quedan igual. */
+.modal .fr label{color:var(--tx1)}
 .frow{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
 .frow select,.frow input{font-size:10px;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);outline:none}
 .frow input{padding-left:25px}
@@ -10912,9 +10917,9 @@ body.tema-premium .kpi.k5 .ki{background:linear-gradient(135deg,#8B5CF6,#A78BFA)
 body.tema-premium .kpi .kv{color:#E8EDF7 !important;font-size:20px !important}
 body.tema-premium .kpi .kl{color:#94A3B8 !important}
 body.tema-premium .kpi .ks{color:#64748B !important}
-/* Modales — vidrio líquido también en oscuro */
+/* Modales — vidrio líquido también en oscuro (subido a .75 desde .6 por legibilidad) */
 body.tema-premium .modal{
-  background:rgba(18,24,38,.6) !important;
+  background:rgba(18,24,38,.75) !important;
   border:1px solid rgba(255,255,255,.12) !important;
   color:#E8EDF7 !important;
   box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08) !important;

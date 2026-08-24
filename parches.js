@@ -3549,11 +3549,12 @@
       }
 
       /* Modal aparte del resto (tarjetas/kpis arriba): más transparente
-         para que se vea de verdad la pantalla con color detrás, en vez
-         del blanco casi opaco (.86/.68) que usan tarjetas y kpis. */
+         que el blanco casi opaco (.86/.68) que usan tarjetas y kpis, pero
+         sin bajar tanto que el texto pierda legibilidad (.74/.58 — se
+         subió desde .58/.4 por eso mismo). */
       .modal{
         background:
-          linear-gradient(145deg, rgba(255,255,255,.58), rgba(241,248,255,.4)) !important;
+          linear-gradient(145deg, rgba(255,255,255,.74), rgba(241,248,255,.58)) !important;
         backdrop-filter:blur(22px) saturate(165%) !important;
         -webkit-backdrop-filter:blur(22px) saturate(165%) !important;
         border:1px solid var(--nx-border) !important;
