@@ -473,6 +473,62 @@ body.tema-premium #mAbono #aDirectoCuenta{
 body.tema-premium #mAbono .btn.bwa{color:#2dd4bf !important}
 body.tema-premium #mAbono .btn.bc1{color:var(--nm-accent) !important}
 
+/* Piloto neumórfico #2 — #mCli (Nuevo/Editar cliente). Misma paleta y misma
+   pelea de !important contra parches.js que #mAbono (ver esa nota arriba):
+   una sola regla con !important + el #mCli de más ya gana en los dos temas
+   a la vez (el ID en la especificidad decide antes que "body.tema-premium",
+   así que no hace falta duplicar la regla para oscuro como en el piloto
+   anterior). No se tocan los checkboxes nativos ni las 3 cajitas de color
+   fijo (proceso/precio especial) que se resuelven aparte con var(--nm-*)
+   directo en su style= — no había ID para engancharlas por CSS. */
+#mCli .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mCli .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  color:var(--nm-tx) !important;
+}
+#mCli .mt{color:var(--nm-tx)}
+#mCli .fr label,#mCli>div>label{color:var(--nm-tx2) !important;font-family:inherit}
+#mCli input:not([type=checkbox]),#mCli select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mCli input:not([type=checkbox]):focus,#mCli select:focus{
+  outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+#mCli .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mCli .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mCli .btn.bxl{
+  color:#fff !important;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+/* Chips de "Empresa cotizante": mismo lenguaje de selección que los chips
+   de Método en #mAbono, reusando las mismas @keyframes (nmRingPulse/
+   nmNeonBreathe, definidas arriba). */
+#mCli .esel{background:var(--nm-bg) !important;border:none !important;border-radius:14px !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mCli .echip{
+  position:relative;border:2px solid transparent !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
+  box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,color .18s ease,border-color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
+}
+#mCli .echip:hover{color:var(--nm-accent) !important}
+#mCli .echip.sel{
+  color:var(--nm-accent) !important;font-weight:800;border-color:var(--nm-accent) !important;transform:translateY(1px) scale(.98);
+  animation:nmRingPulse .55s cubic-bezier(.25,.75,.35,1) both,nmNeonBreathe 2.2s ease-in-out .55s infinite;
+  z-index:1;
+}
+@media(prefers-reduced-motion:reduce){
+  #mCli .echip{transition:none}
+  #mCli .echip.sel{animation:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.2),0 0 8px 1px rgba(91,157,255,.6) !important}
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -2517,13 +2573,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label id="cDeudaLbl">Deuda anterior pendiente RD$ (la que el cliente ya tenía ANTES del sistema)</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper" style="flex:1;min-width:0"/>
-          <button type="button" id="cDeudaUnlock" onclick="nxDeudaUnlock()" style="display:none;flex:0 0 auto;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="ti ti-lock-open"></i> Ajustar</button>
+          <button type="button" id="cDeudaUnlock" onclick="nxDeudaUnlock()" style="display:none;flex:0 0 auto;background:var(--nm-bg,#f1f5f9);color:var(--nm-tx2,#475569);border:none;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:4px 4px 9px var(--nm-lo,transparent),-4px -4px 9px var(--nm-hi,transparent)"><i class="ti ti-lock-open"></i> Ajustar</button>
         </div>
         <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 Es la deuda que el cliente trajo de ANTES del sistema — va aparte, NO se mezcla con las facturas del mes. Está bloqueada para que al editar no se dañe. Toca <b>Ajustar</b> para bajarla cuando el cliente te pague esa deuda vieja.</div>
       </div>
     </div>
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin:8px 0">
-      <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:10px;font-family:var(--mono)">📋 ESTADO Y PROCESO DEL CLIENTE</div>
+    <div style="background:var(--nm-bg,#f8fafc);border-radius:12px;padding:12px;margin:8px 0;box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)">
+      <div style="font-size:10px;font-weight:700;color:var(--nm-tx2,#475569);margin-bottom:10px;font-family:var(--mono)">📋 ESTADO Y PROCESO DEL CLIENTE</div>
       <div class="frow">
         <div class="fr"><label>Estado del cliente</label>
           <select id="cEstadoCli" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
@@ -2542,9 +2598,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </select>
         </div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:#eff6ff;padding:8px;border-radius:8px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:var(--nm-bg,#eff6ff);padding:9px;border-radius:11px;box-shadow:4px 4px 9px var(--nm-lo,transparent),-4px -4px 9px var(--nm-hi,transparent)">
         <input type="checkbox" id="cPermFact" checked style="width:18px;height:18px"/>
-        <span><strong>Permitir facturación automática</strong><br><span style="font-size:9px;color:#475569">Si lo <b>APAGAS</b>, este cliente <b>NO genera factura</b> (cortesía / familiar). Si está activo, entra en la facturación automática según su día.</span></span>
+        <span><strong style="color:var(--nm-tx,inherit)">Permitir facturación automática</strong><br><span style="font-size:9px;color:var(--nm-tx2,#475569)">Si lo <b>APAGAS</b>, este cliente <b>NO genera factura</b> (cortesía / familiar). Si está activo, entra en la facturación automática según su día.</span></span>
       </label>
       <div style="font-size:9px;color:#475569;margin:8px 0 4px;font-family:var(--mono)">PENDIENTES DEL CLIENTE (marca los que tiene pendientes):</div>
       <div id="cPendientes" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px">
@@ -2587,7 +2643,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
     <div class="div"></div>
     <!-- PRECIO PERSONALIZADO (solo con permiso) -->
-    <div id="seccionPrecioCustom" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:12px">
+    <div id="seccionPrecioCustom" style="display:none;background:var(--nm-bg,#fffbeb);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:5px 5px 10px var(--nm-lo,transparent),-5px -5px 10px var(--nm-hi,transparent)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:10px;font-weight:700;color:#92400e">💲 PRECIO PERSONALIZADO</div>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer">
@@ -2601,7 +2657,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="fr"><label>Prima titular (RD$)</label><input type="text" id="cPrecioTitular" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
           <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
-        <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
+        <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:var(--nm-bg,#fef3c7);border-radius:8px;padding:6px 8px;box-shadow:inset 2px 2px 5px var(--nm-lo,transparent),inset -2px -2px 5px var(--nm-hi,transparent)"></div>
         <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Este precio es la plantilla para las PRÓXIMAS facturas (las que el sistema genere de aquí en adelante). NO cambia ninguna factura ya generada. Para corregir una factura que ya existe y está pendiente (del mes actual o atrasada), ve a Facturas y usa el botón "Precio" de esa factura — ahí mismo te pregunta si ese precio también debe quedar como la plantilla futura.</div>
       </div>
     </div>
