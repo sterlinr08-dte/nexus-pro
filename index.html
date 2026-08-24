@@ -357,22 +357,20 @@ tbody tr:hover td{background:#f8fafc}
 .frow input{padding-left:25px}
 
 /* ── MODALS ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;backdrop-filter:blur(3px)}
+/* El scrim se aclara y desenfoca para que el modal tome color real de
+   lo que hay detrás (la pantalla que ya estabas viendo) en vez de negro
+   plano. El fondo/blur del propio .modal NO se define aquí a propósito:
+   parches.js ya inyecta un tema "semi-glass" global con !important sobre
+   .modal (ver "NEXUS PRO - THEME GLOBAL SEMI-GLASS AZUL PREMIUM") que
+   siempre gana en pantallas claras — ajustamos la vivacidad ahí en vez
+   de duplicar la regla aquí. En body.tema-premium (oscuro), que ese tema
+   no cubre, sí definimos el vidrio directo más abajo. */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:100;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;backdrop-filter:blur(6px)}
 .overlay.open{display:flex}
 .modal{background:#fff;border-radius:18px;border:1px solid var(--border);padding:20px;width:100%;max-width:520px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
 .mt{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
 .div{border:none;border-top:1px solid var(--border);margin:12px 0}
 .fe{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
-
-/* Vidrio líquido — piloto en el modal "Nuevo Cliente" (#mCli) únicamente.
-   El scrim de #mCli se aclara/ desatura menos que el genérico .overlay
-   para que el modal pueda tomar color real de lo que hay detrás (la
-   lista de clientes), en vez de negro plano. Si funciona bien en uso
-   real, se extiende a otros modales — por ahora queda aislado a este. */
-#mCli{background:rgba(15,23,42,.35);backdrop-filter:blur(6px)}
-#mCli .modal{background:rgba(255,255,255,.6);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);border:1px solid rgba(255,255,255,.5);box-shadow:0 24px 48px -20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.6)}
-body.tema-premium #mCli{background:rgba(0,0,0,.45) !important}
-body.tema-premium #mCli .modal{background:rgba(18,24,38,.6) !important;border-color:rgba(255,255,255,.12) !important;box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);color:#E8EDF7 !important}
 
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
@@ -10914,13 +10912,17 @@ body.tema-premium .kpi.k5 .ki{background:linear-gradient(135deg,#8B5CF6,#A78BFA)
 body.tema-premium .kpi .kv{color:#E8EDF7 !important;font-size:20px !important}
 body.tema-premium .kpi .kl{color:#94A3B8 !important}
 body.tema-premium .kpi .ks{color:#64748B !important}
-/* Modales */
+/* Modales — vidrio líquido también en oscuro */
 body.tema-premium .modal{
-  background:#1E293B !important;
-  border:1px solid rgba(255,255,255,.08) !important;
+  background:rgba(18,24,38,.6) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
   color:#E8EDF7 !important;
+  box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08) !important;
 }
-body.tema-premium .overlay{background:rgba(5,8,16,.8) !important}
+body.tema-premium .overlay{background:rgba(0,0,0,.45) !important}
+/* .mt tiene su propio color explícito (no hereda de .modal) — en oscuro
+   quedaba texto #1e293b sobre fondo #1e293b/#1E293B, invisible. */
+body.tema-premium .mt{color:#E8EDF7 !important}
 /* Sidebar premium */
 body.tema-premium .sb,
 body.tema-premium nav.sb,

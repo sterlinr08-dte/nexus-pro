@@ -3532,7 +3532,6 @@
       .sm,
       .box,
       .panel,
-      .modal,
       .dropdown,
       .menu,
       .acc-menu,
@@ -3545,6 +3544,18 @@
           linear-gradient(145deg, rgba(255,255,255,.86), rgba(241,248,255,.68)) !important;
         backdrop-filter:blur(18px) saturate(145%) !important;
         -webkit-backdrop-filter:blur(18px) saturate(145%) !important;
+        border:1px solid var(--nx-border) !important;
+        box-shadow:var(--nx-shadow-soft) !important;
+      }
+
+      /* Modal aparte del resto (tarjetas/kpis arriba): más transparente
+         para que se vea de verdad la pantalla con color detrás, en vez
+         del blanco casi opaco (.86/.68) que usan tarjetas y kpis. */
+      .modal{
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.58), rgba(241,248,255,.4)) !important;
+        backdrop-filter:blur(22px) saturate(165%) !important;
+        -webkit-backdrop-filter:blur(22px) saturate(165%) !important;
         border:1px solid var(--nx-border) !important;
         box-shadow:var(--nx-shadow-soft) !important;
       }
@@ -6958,11 +6969,12 @@
       @media (max-width: 768px) {
         
         /* ─── 1. QUITAR BACKDROP-FILTER (cristal/blur) ─── */
-        /* Es el efecto MÁS pesado en Safari iPhone */
+        /* Es el efecto MÁS pesado en Safari iPhone. .modal/.overlay se
+           excluyen a propósito (piden vidrio real también en móvil pese
+           al riesgo de rendimiento) — si se siente lento/con tirones al
+           abrir un modal en iPhone, son los primeros a revertir aquí. */
         .btn,
         .btn::before,
-        .modal,
-        .overlay,
         .sb,
         .nc,
         .kpi,
@@ -7029,12 +7041,10 @@
           text-shadow: 0 1px 0 rgba(255,255,255,0.5) !important;
         }
         
-        /* ─── 7. MODALES - SIN BLUR DEL FONDO ─── */
-        .overlay {
-          background: rgba(15,23,42,0.7) !important;
-          backdrop-filter: none !important;
-        }
-        
+        /* ─── 7. (antes forzaba el modal opaco en móvil sin blur; ahora
+           se pidió vidrio real también ahí — .overlay ya no se toca en
+           este media query, usa el mismo scrim con blur del desktop) ─── */
+
         /* ─── 8. SIDEBAR - SOMBRA SIMPLE ─── */
         .sb {
           box-shadow: 2px 0 8px rgba(15,23,42,0.10) !important;
