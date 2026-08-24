@@ -10045,7 +10045,7 @@
     { key: 'cob',   antesDe: '#panelCob .tw',  cont: '#tbCob',   fila: ':scope > tr',  ph: 'Buscar cliente...' },
     { key: 'emp',   antesDe: '#empGrd',        cont: '#empGrd',  fila: ':scope > div', ph: 'Buscar empresa...' },
     { key: 'agt',   antesDe: '#v-agentes .tw', cont: '#tbAgt',   fila: ':scope > tr',  ph: 'Buscar agente...' },
-    { key: 'usu',   antesDe: '#v-usuarios .tw',cont: '#tbUsu',   fila: ':scope > tr',  ph: 'Buscar usuario...' },
+    { key: 'usu',   antesDe: '#cfgPanel6 .tw', cont: '#tbUsuCfg', fila: ':scope > tr',  ph: 'Buscar usuario...' },
     { key: 'asi',   antesDe: '#asientosC',     cont: '#asientosC', fila: ':scope > .ai', ph: 'Buscar asiento...' }
   ];
 

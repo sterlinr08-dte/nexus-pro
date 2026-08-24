@@ -2356,17 +2356,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
         </div>
 
-        <!-- <!-- USUARIOS -->
-        <div class="view nxSf" id="v-usuarios">
-          <div class="nc">
-            <div class="ch"><span class="ct">Usuarios del sistema</span><button class="btn bxl bsm" onclick="openM('mUsuario')"><i class="ti ti-plus"></i> Nuevo usuario</button></div>
-            <div class="tw"><table>
-              <thead><tr><th style="width:28%">NOMBRE</th><th style="width:18%">USUARIO</th><th style="width:14%">ROL</th><th style="width:18%">CARGO</th><th style="width:12%">ESTADO</th><th style="width:10%"></th></tr></thead>
-              <tbody id="tbUsu"><tr><td colspan="6"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
-            </table></div>
-          </div>
-        </div>
-
       </div><!-- /content -->
     </div><!-- /main -->
   </div><!-- /abody -->
@@ -4644,6 +4633,7 @@ function renderUsuariosCfg(){
     <td><select onchange="cambiarRol('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
       <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option>
       <option value="supervisor" ${u.rol==='supervisor'?'selected':''}>Supervisor</option>
+      <option value="cajero" ${u.rol==='cajero'?'selected':''}>Cajero</option>
       <option value="agente" ${u.rol==='agente'?'selected':''}>Agente</option>
       <option value="cobros" ${u.rol==='cobros'?'selected':''}>Cobros</option>
     </select></td>
@@ -4712,32 +4702,14 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_view_accounting']},
-  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria','can_view_accounting']},
-  cajero:{nom:'Cajero',color:'#f59e0b',perms:['ver_clientes','ver_facturas','cobrar']},
-  cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar','reportes']},
-  agente:{nom:'Agente',color:'#6d28d9',perms:['ver_clientes','crear_clientes','ver_facturas']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['editar_facturas','modificar_precio','can_view_accounting']},
+  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['can_view_accounting']},
+  cajero:{nom:'Cajero',color:'#f59e0b',perms:[]},
+  cobros:{nom:'Cobros',color:'#059669',perms:[]},
+  agente:{nom:'Agente',color:'#6d28d9',perms:[]},
 };
 
 const PERMS_LIST = [
-  {key:'ver_todo',lbl:'Ver todo el sistema'},
-  {key:'crear',lbl:'Crear registros'},
-  {key:'editar',lbl:'Editar registros'},
-  {key:'eliminar',lbl:'Eliminar registros'},
-  {key:'config',lbl:'Configuración'},
-  {key:'usuarios',lbl:'Gestionar usuarios'},
-  {key:'reportes',lbl:'Ver reportes'},
-  {key:'contabilidad',lbl:'Ver contabilidad'},
-  {key:'exportar',lbl:'Exportar datos'},
-  {key:'ver_clientes',lbl:'Ver clientes'},
-  {key:'crear_clientes',lbl:'Crear clientes'},
-  {key:'ver_facturas',lbl:'Ver facturas'},
-  {key:'cobrar',lbl:'Registrar cobros'},
-  {key:'eliminar_clientes',lbl:'Eliminar clientes'},
-  {key:'ver_utilidad',lbl:'Ver utilidad y márgenes'},
-  {key:'exportar_datos',lbl:'Exportar Excel/PDF'},
-  {key:'gestionar_backup',lbl:'Hacer copias de seguridad'},
-  {key:'ver_auditoria',lbl:'Ver registro de auditoría'},
   {key:'editar_facturas',lbl:'Editar facturas emitidas'},
   {key:'modificar_precio',lbl:'Modificar precio del plan'},
   {key:'can_view_accounting',lbl:'Ver módulo de Contabilidad'},
@@ -6928,7 +6900,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,'cliente360':rCliente360,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);}};
   if(fn[view])fn[view]();
   // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
   // terminen de bajar, los traemos y re-pintamos esa vista (sub-segundo).
@@ -10583,31 +10555,6 @@ function exportarAuditCSV(){
   descCSV(rows,'Auditoria_'+hoy()+'.csv');toast('ok','Auditoría exportada');
 }
 
-function rUsuarios(){const tb=document.getElementById('tbUsu');if(!ST.usuarios.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Sin usuarios</div></td></tr>';return;}const roles={admin:'bC2',supervisor:'bC1',agente:'bCg',cobros:'bC4'};tb.innerHTML=ST.usuarios.map(u=>`<tr>
-  <td style="font-weight:700">${u.nom}</td>
-  <td style="font-family:var(--mono);font-size:9px;color:#6d28d9">${u.login}</td>
-  <td>
-    <select onchange="cambiarRol('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;cursor:pointer">
-      <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option>
-      <option value="supervisor" ${u.rol==='supervisor'?'selected':''}>Supervisor</option>
-      <option value="agente" ${u.rol==='agente'?'selected':''}>Agente</option>
-      <option value="cobros" ${u.rol==='cobros'?'selected':''}>Cobros</option>
-    </select>
-  </td>
-  <td style="color:#475569">${u.cargo||'—'}</td>
-  <td>
-    <select onchange="cambiarEstado('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
-      <option value="true" ${u.activo?'selected':''}>Activo</option>
-      <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
-    </select>
-  </td>
-  <td style="white-space:nowrap;display:flex;gap:4px">
-    <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
-    <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
-    <button aria-label="Eliminar este usuario" class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-minus"></i></button>
-  </td>
-</tr>`).join('');}
-
 async function cambiarRol(id,rol){
   try{await API.patch('usuarios_sistema',`id=eq.${id}`,{rol});const u=ST.usuarios.find(x=>x.id===id);if(u)u.rol=rol;logAudit('ROL_CAMBIADO',`Usuario ${u?.login} → ${rol}`);toast('ok','Rol actualizado',rol);}
   catch(e){toast('err','Error',e.message);}
@@ -10626,7 +10573,8 @@ function abrirCambiarPwd(id, login){
 
 async function confirmarCambiarPwd(id, login, pwd){
   try{
-    await API.patch('usuarios_sistema', `id=eq.${id}`, {pwd});
+    const pwdHash=await sha256(pwd);
+    await API.patch('usuarios_sistema', `id=eq.${id}`, {pwd:pwdHash});
     logAudit('CONTRASEÑA_CAMBIADA', `Usuario: ${login}`);
     toast('ok', 'Contraseña actualizada', login);
   }catch(e){
@@ -10649,15 +10597,15 @@ async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
     if(u) u.login = nuevoLogin;
     logAudit('LOGIN_CAMBIADO', `${loginActual} → ${nuevoLogin}`);
     toast('ok', 'Usuario actualizado', `${loginActual} → ${nuevoLogin}`);
-    rUsuarios();
+    renderUsuariosCfg();
   }catch(e){
     if(e.message.includes('unique')) toast('err','Ese usuario ya existe','Elige otro nombre');
     else mostrarError(e.message, 'Al cambiar nombre de usuario');
   }
 }
 
-async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
-async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);rUsuarios();}catch(e){toast('err','Error',e.message);}}
+async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
+async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);renderUsuariosCfg();}catch(e){toast('err','Error',e.message);}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════
