@@ -508,25 +508,29 @@ body.tema-premium #mCli .modal{
   color:#fff !important;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent)) !important;
   box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
-/* Chips de "Empresa cotizante": mismo lenguaje de selección que los chips
-   de Método en #mAbono, reusando las mismas @keyframes (nmRingPulse/
-   nmNeonBreathe, definidas arriba). */
+/* Chips de "Empresa cotizante": el anillo respirante se reemplaza por un
+   FOCO VIAJERO — un solo trazo SVG (compartido por todos los chips, vive
+   dentro de #eChips como #eChipsSpot) que se desliza al chip seleccionado
+   y recorre su borde en vez de aparecer/desaparecer en cada chip. Sin
+   resplandor/blur — línea nítida, perímetro real calculado en JS
+   (nxEchipSpotMover(), junto a rEChips()/selEch()) para que ande igual en
+   cualquier navegador. */
 #mCli .esel{background:var(--nm-bg) !important;border:none !important;border-radius:14px !important;
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;position:relative}
 #mCli .echip{
-  position:relative;border:2px solid transparent !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
+  position:relative;z-index:2;border:2px solid transparent !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
   box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
-  transition:box-shadow .18s ease,color .18s ease,border-color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
+  transition:box-shadow .18s ease,color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
 }
 #mCli .echip:hover{color:var(--nm-accent) !important}
-#mCli .echip.sel{
-  color:var(--nm-accent) !important;font-weight:800;border-color:var(--nm-accent) !important;transform:translateY(1px) scale(.98);
-  animation:nmRingPulse .55s cubic-bezier(.25,.75,.35,1) both,nmNeonBreathe 2.2s ease-in-out .55s infinite;
-  z-index:1;
-}
+#mCli .echip.sel{color:var(--nm-accent) !important;font-weight:800;transform:translateY(1px) scale(.98)}
+#mCli .nmSpot{position:absolute;top:0;left:0;z-index:1;border-radius:8px;pointer-events:none;
+  transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
+#mCli .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#mCli .nmSpotRect{fill:none;stroke:var(--nm-accent);stroke-width:2.2;stroke-linecap:round}
 @media(prefers-reduced-motion:reduce){
   #mCli .echip{transition:none}
-  #mCli .echip.sel{animation:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.2),0 0 8px 1px rgba(91,157,255,.6) !important}
+  #mCli .nmSpot{transition:none}
 }
 
 /* ── MISC ── */
@@ -9765,6 +9769,7 @@ function abrirNuevoCli(){
   mostrarSeccionPrecioCustom();
   actualizarPreciosPlan();
   openM('mCli');
+  nxEchipSpotMover(); // rEChips() corrió con el modal aún oculto (0×0) — reubica ya visible
 }
 function editarCli(id){
   const c=ST.clientes.find(x=>x.id===id);if(!c)return;
@@ -9821,6 +9826,7 @@ function editarCli(id){
   const pcD=document.getElementById('cPrecioDep');if(pcD)pcD.value=c.precio_dep??'';
   actualizarPreciosPlan();
   openM('mCli');
+  nxEchipSpotMover(); // rEChips() corrió con el modal aún oculto (0×0) — reubica ya visible
 }
 // Calcula el % de progreso de onboarding y muestra/oculta el campo "Otro"
 const TOTAL_PENDIENTES_POSIBLES=12;
@@ -10055,8 +10061,40 @@ async function reactivar(id){
     toast('ok','Cliente reactivado',c.nom+(datos.fecha_fin?` · Póliza renovada hasta ${datos.fecha_fin}`:''));rCli();rDash();actualizarTicker();
   }catch(e){toast('err','Error',e.message);}
 }
-function rEChips(selId){const div=document.getElementById('eChips');div._sel=selId||'';div.innerHTML=`<div class="echip ${!selId?'sel':''}" onclick="selEch('')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user" style="font-size:11px"></i> Particular</div>`+ST.empresas.map(e=>`<div class="echip ${e.id===selId?'sel':''}" onclick="selEch('${e.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-building" style="font-size:11px"></i> ${e.nom.split(' ').slice(0,3).join(' ')}</div>`).join('');}
-function selEch(id){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('sel'));const chips=document.getElementById('eChips');chips._sel=id;chips.querySelectorAll('.echip').forEach(c=>{if(c.getAttribute('onclick')===`selEch('${id}')`)c.classList.add('sel');});}
+function rEChips(selId){const div=document.getElementById('eChips');div._sel=selId||'';div.innerHTML=`<div class="echip ${!selId?'sel':''}" onclick="selEch('')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user" style="font-size:11px"></i> Particular</div>`+ST.empresas.map(e=>`<div class="echip ${e.id===selId?'sel':''}" onclick="selEch('${e.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-building" style="font-size:11px"></i> ${e.nom.split(' ').slice(0,3).join(' ')}</div>`).join('')+'<div class="nmSpot" id="eChipsSpot"><svg class="nmSpotSvg"><rect class="nmSpotRect"/></svg></div>';nxEchipSpotMover();}
+function selEch(id){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('sel'));const chips=document.getElementById('eChips');chips._sel=id;chips.querySelectorAll('.echip').forEach(c=>{if(c.getAttribute('onclick')===`selEch('${id}')`)c.classList.add('sel');});nxEchipSpotMover();}
+// Desliza el foco de luz (#eChipsSpot) al chip de empresa seleccionado y
+// recorre su borde real (esquinas incluidas) — mismo mecanismo aprobado en
+// el mockup "Luz Neón Viajera": sin pathLength (poco soportado en <rect>),
+// perímetro calculado a mano y animado con la Web Animations API.
+let _echipSpotAnim=null;
+function nxEchipSpotMover(){
+  const cont=document.getElementById('eChips');
+  const spot=document.getElementById('eChipsSpot');
+  const sel=cont&&cont.querySelector('.echip.sel');
+  if(!cont||!spot||!sel)return;
+  const rect=spot.querySelector('.nmSpotRect');
+  const SW=2.2;
+  const contBox=cont.getBoundingClientRect();
+  const elBox=sel.getBoundingClientRect();
+  spot.style.width=elBox.width+'px';
+  spot.style.height=elBox.height+'px';
+  spot.style.transform=`translate(${elBox.left-contBox.left}px, ${elBox.top-contBox.top}px)`;
+  const rw=Math.max(0,elBox.width-SW),rh=Math.max(0,elBox.height-SW);
+  const rx=Math.min(7,rw/2,rh/2);
+  rect.setAttribute('x',SW/2);rect.setAttribute('y',SW/2);
+  rect.setAttribute('width',rw);rect.setAttribute('height',rh);rect.setAttribute('rx',rx);
+  const perim=2*(rw+rh)-8*rx+2*Math.PI*rx;
+  rect.setAttribute('stroke-dasharray',(perim*0.72).toFixed(1)+' '+(perim*0.28).toFixed(1));
+  if(_echipSpotAnim)_echipSpotAnim.cancel();
+  const reducido=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reducido&&perim>0){
+    _echipSpotAnim=rect.animate([{strokeDashoffset:0},{strokeDashoffset:-perim}],{duration:2600,iterations:Infinity,easing:'linear'});
+  }else{
+    rect.style.strokeDashoffset='0';
+  }
+}
+window.addEventListener('resize',nxEchipSpotMover);
 function rAgtSel(selId,val){document.getElementById(selId).innerHTML='<option value="">Sin asignar</option>'+ST.agentes.map(a=>`<option value="${a.id}"${a.id===val?' selected':''}>${a.nom}</option>`).join('');}
 // Agente del usuario en sesión (match por nombre); '' si no coincide con ninguno.
 function agenteDeSesion(){
