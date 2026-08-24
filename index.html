@@ -1121,9 +1121,17 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .sfr-wheel{max-width:460px;margin:0 auto;padding:6px 5px 72px}
 .sfr-cc{position:sticky;top:calc(6px + min(var(--i,0) * 5px, 26px));margin-bottom:14px;width:100%;border-radius:18px;padding:15px 17px;color:#fff;overflow:hidden;isolation:isolate;box-shadow:0 -3px 12px rgba(15,23,42,.20),0 14px 30px rgba(15,23,42,.26);backface-visibility:hidden;opacity:0;transform:translateY(22px) scale(.986);transition:transform .5s cubic-bezier(.2,.7,.15,1),opacity .42s ease}
 .sfr-cc.inview{opacity:1;transform:none}
-.sfr-cc.debt{background:linear-gradient(122deg,#ff8497 0%,#e0322f 22%,#8a1717 48%,#b81d1d 70%,#ff6d80 100%)}
-.sfr-cc.part{background:linear-gradient(122deg,#ffdf9c 0%,#e08e12 22%,#7c4a09 48%,#bd7407 70%,#ffca6a 100%)}
+/* Paleta por urgencia real (no solo "no pagado"): ok=pagado, aldia=saldo real
+   RD$0 aunque el estado no diga Pagado, due/pronto=período activo (a más o
+   menos de 5 días del corte), part=parcial, debt/grave=atrasada (grave = 60+
+   días desde que ese período pasó su corte), anul=anulada. */
 .sfr-cc.ok{background:linear-gradient(122deg,#7ceaa1 0%,#12a247 22%,#0b5028 48%,#149a44 70%,#63e084 100%)}
+.sfr-cc.aldia{background:linear-gradient(122deg,#7cf0e0 0%,#0ea5a8 22%,#075e5f 48%,#0d9488 70%,#5eead4 100%)}
+.sfr-cc.due{background:linear-gradient(122deg,#93c5fd 0%,#2563eb 22%,#173e91 48%,#1d4ed8 70%,#60a5fa 100%)}
+.sfr-cc.pronto{background:linear-gradient(122deg,#ffe58a 0%,#d97706 22%,#78350f 48%,#b45309 70%,#fcd34d 100%)}
+.sfr-cc.part{background:linear-gradient(122deg,#d8b4fe 0%,#7c3aed 22%,#4c1d95 48%,#6d28d9 70%,#c4b5fd 100%)}
+.sfr-cc.debt{background:linear-gradient(122deg,#ff8497 0%,#e0322f 22%,#8a1717 48%,#b81d1d 70%,#ff6d80 100%)}
+.sfr-cc.grave{background:linear-gradient(122deg,#d68a9a 0%,#7f1d3a 22%,#3f0d1d 48%,#6b1530 70%,#b8455f 100%)}
 .sfr-cc.anul{background:linear-gradient(122deg,#94a3b8 0%,#64748b 30%,#475569 55%,#64748b 78%,#94a3b8 100%)}
 .sfr-cc::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(118deg,transparent 26%,rgba(255,255,255,.16) 40%,rgba(255,255,255,.03) 46%,transparent 60%)}
 .sfr-cc::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(130% 100% at 106% -16%,rgba(255,255,255,.22),transparent 46%),radial-gradient(90% 80% at -12% 120%,rgba(0,0,0,.26),transparent 55%)}
@@ -1146,7 +1154,7 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .sfr-acts{display:flex;align-items:center;gap:8px}
 .sfr-ico{width:29px;height:29px;border-radius:50%;background:rgba(255,255,255,.2);border:0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);cursor:pointer}
 .sfr-cob{background:#fff;font-weight:800;font-size:11.5px;border:0;border-radius:9px;padding:8px 16px;letter-spacing:.4px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
-.sfr-cc.debt .sfr-cob{color:#b91c1c}.sfr-cc.part .sfr-cob{color:#b45309}.sfr-cc.ok .sfr-cob{color:#15803d}.sfr-cc.anul .sfr-cob{color:#334155}
+.sfr-cc.debt .sfr-cob{color:#b91c1c}.sfr-cc.grave .sfr-cob{color:#6b1530}.sfr-cc.part .sfr-cob{color:#6d28d9}.sfr-cc.ok .sfr-cob{color:#15803d}.sfr-cc.aldia .sfr-cob{color:#0d9488}.sfr-cc.due .sfr-cob{color:#1d4ed8}.sfr-cc.pronto .sfr-cob{color:#b45309}.sfr-cc.anul .sfr-cob{color:#334155}
 .sfr-cc .sfr-ico:focus-visible,.sfr-cc .sfr-cob:focus-visible,.sfr-nm:focus-visible,.sfr-amtwrap:focus-visible,.sfr-prev:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.sfr-cc{opacity:1!important;transform:none!important;transition:none!important}}
 
@@ -7673,6 +7681,24 @@ function mesCorte(){
   if(now.getDate()<20){mes--;if(mes<1){mes=12;anio--;}}
   return{mes,anio};
 }
+// Días desde hoy hasta el próximo corte (día 20) — para distinguir "vence este
+// mes" de "vence pronto" dentro del período que todavía está activo.
+function nxDiasParaCorte(){
+  const h=new Date();h.setHours(0,0,0,0);
+  let corte=new Date(h.getFullYear(),h.getMonth(),20);
+  if(h.getDate()>=20)corte=new Date(h.getFullYear(),h.getMonth()+1,20);
+  return Math.round((corte-h)/86400000);
+}
+// Días desde que un período (periodo="YYYY-MM") pasó SU corte y se volvió
+// atrasado (mismo criterio que mesCorte(): corta el día 20 del mes siguiente).
+function nxDiasAtrasoPeriodo(periodo){
+  const p=String(periodo||'').split('-');
+  if(p.length<2)return 0;
+  let anio=+p[0],mes=+p[1]+1;if(mes>12){mes=1;anio++;}
+  const corte=new Date(anio,mes-1,20);
+  const h=new Date();h.setHours(0,0,0,0);
+  return Math.max(0,Math.round((h-corte)/86400000));
+}
 // ── CICLO 20-AL-20 en hora de República Dominicana ───────────────────────────
 // RD es UTC-4 fijo (no cambia de hora), así que el desfase se aplica a mano en
 // vez de depender de toLocaleDateString: no todos los navegadores traen la base
@@ -8005,8 +8031,22 @@ function rFact(){
       const agTxt=ag?ag.nom:'⚠ Sin agente';
       const anul=f.estado==='Anulada';
       const sal=saldoDe(f);
-      const cls=f.estado==='Pagado'?'ok':f.estado==='Parcial'?'part':anul?'anul':'debt';
-      const lbl=f.estado==='Pagado'?'Mes actual':f.estado==='Parcial'?'Falta este mes':anul?'Factura anulada':'Pendiente del mes';
+      // Color/estado por urgencia real, no solo "no pagado" (ver nota en CSS
+      // .sfr-cc.*): Pagado/Anulada/Parcial respetan el estado tal cual; el resto
+      // se separa en Al día (saldo real RD$0), Vence este mes/pronto (período
+      // activo) o Atrasada/Muy atrasada (período ya pasado su corte).
+      let cls,pillTxt,lbl;
+      if(anul){cls='anul';pillTxt='Anulada';lbl='Factura anulada';}
+      else if(f.estado==='Pagado'){cls='ok';pillTxt='Pagado';lbl='Mes actual';}
+      else if(f.estado==='Parcial'){cls='part';pillTxt='Parcial';lbl='Falta este mes';}
+      else if(sal<=0.009){cls='aldia';pillTxt='Al día';lbl='Pendiente del mes';}
+      else if((f.periodo||'')<_hoyKey){
+        const diasAtr=nxDiasAtrasoPeriodo(f.periodo);
+        cls=diasAtr>=60?'grave':'debt';pillTxt=diasAtr>=60?'Muy atrasada':'Atrasada';lbl='Pendiente del mes';
+      }else{
+        const diasP=nxDiasParaCorte();
+        cls=diasP<=5?'pronto':'due';pillTxt=diasP<=5?'Vence pronto':'Vence este mes';lbl='Pendiente del mes';
+      }
       const cid2=String(f.cliente_id);if(!_saldoMemo[cid2])_saldoMemo[cid2]=_saldoFacturasCliente(cid2);
       let deudaPrev=cli?deudaAnt(cli):0;
       ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
@@ -8014,10 +8054,10 @@ function rFact(){
       const kd=(fn)=>`onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}}"`;
       const verCli=`verCliente('${f.cliente_id}')`;
       const nm=`${escHtml(f.cliente_nom)}${cli?.referencia?` <span class="ap">(${escHtml(cli.referencia)})</span>`:''}`;
-      const refLine=`${escHtml(agTxt)} · ${emp?escHtml(emp.nom.split(' ').slice(0,2).join(' ')):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}`;
+      const refLine=`${escHtml(agTxt)} · ${emp?escHtml(emp.nom.split(' ').slice(0,2).join(' ')):'Particular'}${(cls==='debt'||cls==='grave')?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}`;
       const prevChip=deudaPrev>0.009?`<div class="sfr-prev" role="button" tabindex="0" aria-label="Ver meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')" ${kd(`event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')`)}><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores · ${fmt(deudaPrev)} <b>›</b></div>`:'';
       return `<article class="sfr-cc ${cls}" style="--i:${ix}">
-        <div class="sfr-top">${arsBadge(cli?.ars)||'<span></span>'}<span class="sfr-pill">${escHtml(f.estado)}</span></div>
+        <div class="sfr-top">${arsBadge(cli?.ars)||'<span></span>'}<span class="sfr-pill">${escHtml(pillTxt)}</span></div>
         <div class="sfr-nm" role="button" tabindex="0" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onclick="${verCli}" ${kd(verCli)}>${nm}</div>
         <div class="sfr-ref">${refLine}</div>
         <div class="sfr-amtwrap" ${anul?'':`role="button" tabindex="0" aria-label="Registrar pago de ${escHtml(f.cliente_nom)}" onclick="${cobrar}" ${kd(cobrar)}`}><span class="sfr-amtlbl">${lbl}</span><span class="sfr-amt">${fmt(sal)}</span></div>
