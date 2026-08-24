@@ -10028,7 +10028,7 @@ function rPYG(){
   if(sel&&sel.value){const p=sel.value.split('-');anio=parseInt(p[0]);mes=parseInt(p[1]);}
   else{const h=new Date();mes=h.getMonth()+1;anio=h.getFullYear();}
   const {desde,hasta}=periodoContable(mes,anio);
-  // Sumar SOLO los asientos cuya fecha cae dentro del período 16→15
+  // Sumar SOLO los asientos cuya fecha cae dentro del período (mes calendario, ver periodoContable())
   const ingPorCta={},gastPorCta={};
   (ST.asientos||[]).forEach(a=>{
     if(!a.fecha)return;
