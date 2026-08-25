@@ -1,7 +1,12 @@
 {
-  "version": "56.73",
+  "version": "56.74",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.74",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, continuación): la ventana \"Inhabilitar cliente\" se suma al piloto de diseño (relieve suave + vidrio) que ya estaba en \"Registrar abono\" y \"Nuevo/Editar Cliente\" — con el color de acento en rojo (no azul) para que se siga leyendo como lo que es, una confirmación de baja del cliente, y con el botón \"Inhabilitar\" más marcado para que quede claro que es la acción que cancela la póliza ahora mismo."
+    },
     {
       "v": "56.73",
       "fecha": "2026-08-25",

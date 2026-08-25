@@ -533,6 +533,56 @@ body.tema-premium #mCli .modal{
   #mCli .nmSpot{transition:none}
 }
 
+/* Piloto neumórfico #3 — #mInhab (Inhabilitar cliente). Mismo relieve/vidrio
+   que #mAbono/#mCli, pero con --nm-accent en ROJO en vez de azul: esta
+   ventana es una confirmación destructiva (cancela la póliza del cliente),
+   no una acción neutra como guardar/cobrar — el acento tenía que seguir
+   leyéndose como "cuidado", no como "acción normal". Mismo motivo de
+   !important que los 2 pilotos anteriores (parches.js fuerza el tema
+   "semi-glass" con !important sobre input/select/button siempre, no solo
+   en oscuro) — el ID #mInhab ya gana en los dos temas con una sola regla
+   por botón (mismo patrón que se afinó en el piloto #mCli, no hace falta
+   duplicar para body.tema-premium salvo donde cambia el propio acento). */
+#mInhab .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#dc2626;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mInhab .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#f87171;
+}
+#mInhab .fr label{color:var(--nm-tx2) !important;font-family:inherit}
+/* La caja de advertencia (confirm-b) se queda roja a propósito — es
+   información de seguridad, no decoración — solo se le da el mismo
+   relieve hundido del resto del piloto para que no desentone al lado de
+   los campos de abajo. */
+#mInhab .confirm-b{
+  background:var(--nm-bg) !important;border:none !important;border-left:4px solid var(--nm-accent) !important;
+  border-radius:12px !important;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mInhab .confirm-b p{color:var(--nm-tx2)}
+#mInhab input,#mInhab select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mInhab input:focus,#mInhab select:focus{
+  outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(220,38,38,.22) !important;
+}
+#mInhab .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mInhab .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+/* .bdis (el botón "Inhabilitar") pasa de fantasma-rojo plano a un rojo
+   sólido con relieve — no solo cosmético: hace más evidente que es la
+   acción irreversible-a-medias de la ventana (se puede reactivar después,
+   pero la póliza se cancela YA), igual que .bxl ya resalta "Guardar" en
+   los otros 2 pilotos. */
+#mInhab .btn.bdis{
+  color:#fff !important;background:linear-gradient(145deg,#ef4444,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(220,38,38,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -4959,7 +5009,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.73';
+const APP_VERSION='56.74';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
