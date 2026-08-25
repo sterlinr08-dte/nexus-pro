@@ -1,7 +1,12 @@
 {
-  "version": "56.72",
+  "version": "56.73",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.73",
+      "fecha": "2026-08-25",
+      "texto": "ARREGLADO (importante): al resetear la contraseña de un usuario del sistema, quedaba guardada en texto plano en la base de datos — ahora se guarda protegida (encriptada), igual que ya pasaba al crear un usuario nuevo. De paso: la tabla de Usuarios en Ajustes ahora se actualiza sola después de crear, borrar o renombrar un usuario (antes había que salir y volver a entrar para verlo reflejado), apareció la opción de rol \"Cajero\" que faltaba en el selector, y se quitaron 18 casillas de permisos que se guardaban pero en realidad no controlaban nada (solo quedaron los 3 que sí funcionan de verdad: editar facturas, modificar precio, ver contabilidad).\nARREGLADO: el Visor de Errores (Ajustes) ya existía en pantalla pero no capturaba nada — ahora sí registra los errores reales del sistema para poder diagnosticarlos.\nNUEVO: en Clientes, la lista de \"Clientes activos\" ahora se ve en tarjetas en vez de una tabla apretada (más fácil de leer en el celular), y \"Atención prioritaria\" se rediseñó — cada tarjeta muestra los días reales de atraso, su estado y botones directos de WhatsApp, llamar y ver la ficha.\nNUEVO: en Cobros, el color de cada tarjeta ahora refleja qué tan urgente es cobrarle a ese cliente (no solo si pagó o no), y cuando un cliente paga adelantado le sale una insignia en su ficha y se le puede mandar directo un mensaje de WhatsApp felicitándolo.\nNUEVO (prueba piloto, solo en 2 ventanas por ahora): las ventanas \"Registrar abono\" y \"Nuevo/Editar Cliente\" estrenan un estilo visual nuevo (relieve suave tipo botón físico + vidrio) para probarlo antes de decidir si se extiende al resto del sistema."
+    },
     {
       "v": "56.72",
       "fecha": "2026-08-23",
