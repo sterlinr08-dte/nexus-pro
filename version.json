@@ -1,7 +1,12 @@
 {
-  "version": "56.80",
+  "version": "56.81",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.81",
+      "fecha": "2026-08-25",
+      "texto": "CORREGIDO: \"Recordarme\" en el login ahora sí se mantiene. Antes, el cierre automático de sesión por 30 minutos de inactividad borraba silenciosamente el usuario recordado (igual que un cierre de sesión manual), así que aunque marcaras \"Recordarme\" podías terminar viendo el login en blanco de todas formas. Ahora ese cierre automático solo cierra la sesión activa y deja el \"Recordarme\" intacto — y si la sesión guardada no logra renovarse sola al reabrir la app, al menos el usuario recordado queda pre-llenado y la casilla marcada."
+    },
     {
       "v": "56.80",
       "fecha": "2026-08-25",

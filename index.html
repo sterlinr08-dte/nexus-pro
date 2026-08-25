@@ -4761,6 +4761,19 @@ function nxTogglePwd(inputId,btnId){
     try{i.focus();}catch(e){}
   }catch(e){}
 }
+// Pre-llenar usuario recordado ("Recordarme") en la pantalla de login —
+// se llama tanto en el arranque normal (sin sesión persistente) como cuando
+// una sesión persistida no logra renovarse (ver el arranque más abajo).
+function nxPrellenarRecordado(){
+  try{
+    const savedUser=localStorage.getItem('nx_user_persist');
+    if(!savedUser)return;
+    const el=document.getElementById('loginUser');
+    const rm=document.getElementById('rememberMe');
+    if(el)el.value=savedUser;
+    if(rm)rm.checked=true;
+  }catch(e){}
+}
 function nxForgotPassword(){
   // No hay flujo de recuperación por correo (los logins usan un correo sintético
   // <usuario>@<org>.local, no una bandeja real) — en vez de fingir un enlace que
@@ -4893,8 +4906,13 @@ function logout(forzado){
     try{logAudit('LOGOUT',forzado?'Sesión cerrada automáticamente':'Sesión cerrada por el usuario','Seguridad');}catch(e){}
     sessionStorage.removeItem('nx_sesion');
     sessionStorage.removeItem('nx_sesion_actividad');
-    localStorage.removeItem('nx_sesion_persist');
-    localStorage.removeItem('nx_user_persist');
+    if(!forzado){
+      // Solo se borra "recordarme" en un cierre de sesión EXPLÍCITO del usuario.
+      // Un cierre forzado (30 min de inactividad) no debe borrar el recordado,
+      // porque el punto de "Recordarme" es volver a entrar solo al reabrir la app.
+      localStorage.removeItem('nx_sesion_persist');
+      localStorage.removeItem('nx_user_persist');
+    }
     try{nxClearAuth();}catch(e){}
     location.reload();
   }
@@ -5322,7 +5340,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.80';
+const APP_VERSION='56.81';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12086,7 +12104,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(nxAuthMode()){
         nxRefreshAuth().then(ok=>{
           if(ok){ nxScheduleRefresh(); cargarTodo(); }
-          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; try{nxUpdateAuthToggle();}catch(e){} }
+          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; try{nxUpdateAuthToggle();}catch(e){} nxPrellenarRecordado(); }
         });
         return;
       }
@@ -12098,13 +12116,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(url && key){
     document.getElementById('loginScreen').style.display = 'flex';
     try{nxUpdateAuthToggle();}catch(e){}
-    // Pre-llenar usuario recordado
-    const savedUser=localStorage.getItem('nx_user_persist');
-    if(savedUser){
-      const el=document.getElementById('loginUser');
-      const rm=document.getElementById('rememberMe');
-      if(el){el.value=savedUser;} if(rm){rm.checked=true;}
-    }
+    nxPrellenarRecordado();
     return;
   }
 
