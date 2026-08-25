@@ -662,6 +662,31 @@ body.tema-premium #mHistCobros tbody tr:hover td{background:rgba(91,157,255,.08)
 }
 #mHistCobros .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
 
+/* Piloto neumórfico #6 — #csPanel (Resumen del cliente, la ficha completa que se
+   abre desde Clientes). A diferencia de los 5 anteriores, esto NO es un modal
+   propio — es la carcasa (`.cs-panel`/`.cs-h`) de un panel que por dentro está
+   envuelto en `.nxSf`, el sistema "Enterprise Azul" ya terminado y compartido
+   con ~12 pantallas más (Facturas, Cobros, Pólizas, Agentes, Empresas,
+   Comisiones, Contabilidad, Reportes, Ajustes, Usuarios...), con su propio modo
+   oscuro ya resuelto. Repintar el INTERIOR aquí lo dejaría distinto a esas otras
+   12 pantallas — así que el piloto se aplica SOLO al marco: el fondo/sombra de
+   `.cs-panel` (tonos cercanos al --sf-bg de `.nxSf`, para que no choque con el
+   contenido azul de adentro). El encabezado degradado (`.cs-h`, azul→morado) y
+   su botón de cerrar semitransparente se dejan intactos a propósito — son la
+   identidad de esta ficha, no hace falta relieve ahí. En el modo pantalla
+   completa del celular (`@media(max-width:720px)`, `.cs-panel` pierde el radio
+   y ocupa toda la pantalla) la sombra ya no se nota — no hace falta anularla,
+   es inofensiva por debajo del contenido de scroll. */
+.cs-panel{
+  --nm-bg:#e8ecf3;--nm-hi:#ffffff;--nm-lo:#c9ced8;
+  background:var(--nm-bg) !important;
+  box-shadow:0 25px 60px rgba(15,23,42,.28),9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium .cs-panel{
+  --nm-bg:#0B0F19;--nm-hi:#171f2c;--nm-lo:#050710;
+  box-shadow:0 25px 60px rgba(0,0,0,.5),9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -5088,7 +5113,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.76';
+const APP_VERSION='56.77';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

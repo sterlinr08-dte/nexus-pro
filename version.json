@@ -1,7 +1,12 @@
 {
-  "version": "56.76",
+  "version": "56.77",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.77",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, continuación): la ficha completa del cliente (\"Resumen del cliente\", la ventana grande que se abre desde Clientes) estrena el mismo marco con relieve suave + vidrio. Aquí solo se tocó el marco de afuera — el contenido de adentro (KPIs, pestañas, tabla de facturas) es el mismo diseño azul \"Enterprise\" que ya comparten otras 12 pantallas del sistema (Facturas, Pólizas, Agentes, Contabilidad...) y se dejó intacto a propósito, para no verse distinto a esas. Ya son 8 ventanas con el piloto."
+    },
     {
       "v": "56.76",
       "fecha": "2026-08-25",
