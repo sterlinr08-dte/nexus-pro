@@ -1570,6 +1570,37 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .nxSf .nxFcluster{display:flex;flex-direction:column;gap:6px;min-width:0}
 .nxSf .nxFcluster-lb{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--sf-tx3)}
 .nxSf .nxFcluster-row{display:flex;gap:6px;flex-wrap:wrap}
+/* Piloto neumórfico #8 — sistema "Enterprise Azul" (.nxSf), las 12 pantallas que lo
+   comparten (Clientes/Facturas/Ficha del cliente/Historial de pagos/Pólizas/Agentes/
+   Empresas/Comisiones/Contabilidad/Reportes/Ajustes/Usuarios). A diferencia de los
+   modales del piloto, acá la tarjeta (--sf-card, blanca) YA es distinta del fondo de
+   la página (--sf-bg, gris muy claro) — no son la misma superficie, así que el
+   neumorfismo de doble sombra "hundido/realzado" de los modales no aplica igual (el
+   lado claro de esa fórmula sería invisible sobre una tarjeta blanca). En su lugar:
+   una ELEVACIÓN suave — sombra difusa con un toque del azul de marca — coherente con
+   el propio estilo "Enterprise" que ya tenía el sistema, sin repintar ningún fondo,
+   borde ni color semántico. 100% aditivo: ninguna de estas reglas pisa una propiedad
+   que ya existiera en las clases de abajo (verificado una por una), así que no hace
+   falta !important en ningún lado.
+   Deliberadamente NO se toca: .sf-hero (ya tiene su propio degradado+sombra), las
+   tarjetas .sf-fancard de "Atención prioritaria" (el carrusel 3D recién afinado en
+   vivo con el dueño, v1→v4 — tocar su sombra arriesgaría chocar con el brillo/
+   inclinación ya aprobados), los badges/pills/tabs (elementos chicos, no tarjetas),
+   las barras de urgencia border-left (tienen significado, no son decoración), .tw
+   (ya trae su propia sombra global, --shadow, agregarle otra encima solo la
+   reemplazaría sin ganar nada), y el bloque responsive de Facturas ya medido en
+   píxeles (v50.2/v50.8, jerarquía/orden/tamaño de cada campo) — ahí solo se le suma
+   sombra a la tarjeta que YA usa border+background en móvil (misma superficie, mismo
+   criterio de elevación), sin tocar ningún padding/orden ya afinado. */
+.nxSf{--sf-elev:0 1px 2px rgba(15,23,42,.05),0 10px 24px -8px rgba(37,99,235,.14);--sf-elev-sm:0 1px 2px rgba(15,23,42,.06),0 4px 10px rgba(15,23,42,.07)}
+body.tema-premium .nxSf{--sf-elev:0 1px 2px rgba(0,0,0,.4),0 14px 30px -10px rgba(0,0,0,.6);--sf-elev-sm:0 1px 2px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.5)}
+.nxSf .sf-head,.nxSf .sf-kpi,.nxSf .sf-panel,.nxSf .sf-fcard,.nxSf .clilist,.nxSf .sf-prow,.nxSf .nxFclusters{box-shadow:var(--sf-elev);transition:box-shadow .15s}
+.nxSf .sf-qa-tile{box-shadow:var(--sf-elev-sm);transition:box-shadow .15s,transform .1s}
+.nxSf .sf-qa-tile:hover{box-shadow:var(--sf-elev);transform:translateY(-1px)}
+.nxSf .sf-btn,.nxSf .sf-tbtn{box-shadow:var(--sf-elev-sm);transition:box-shadow .12s,transform .08s}
+.nxSf .sf-btn:active,.nxSf .sf-tbtn:active{box-shadow:0 1px 2px rgba(15,23,42,.1) !important;transform:translateY(1px)}
+body.tema-premium .nxSf .sf-btn:active,body.tema-premium .nxSf .sf-tbtn:active{box-shadow:0 1px 3px rgba(0,0,0,.55) !important}
+@media(max-width:720px){.nxSf table.sf-tbl tr{box-shadow:var(--sf-elev-sm)}}
 /* Menú "⋮" de cada factura: posición fija calculada en JS, nunca recortado por su contenedor */
 .factMenu{position:fixed;z-index:11000;background:#fff;border:1px solid var(--sf-line,#e2e8f0);border-radius:11px;box-shadow:0 14px 34px rgba(15,23,42,.22);padding:5px;min-width:200px}
 .factMenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:10px 11px;border-radius:8px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;text-align:left}
@@ -5260,7 +5291,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.78';
+const APP_VERSION='56.79';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

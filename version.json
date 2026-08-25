@@ -1,7 +1,12 @@
 {
-  "version": "56.78",
+  "version": "56.79",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.79",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, primera pieza de la segunda ronda): un toque de elevación suave (sombra difusa con el azul del sistema) en las tarjetas, KPIs y botones que comparten Clientes, Facturas, Ficha del cliente, Historial de pagos, Pólizas, Agentes, Empresas, Comisiones, Contabilidad, Reportes, Ajustes y Usuarios — las 12 pantallas del diseño azul \"Enterprise\" ya usan el mismo sistema de colores, así que este cambio se aplicó UNA sola vez y se sintió en las 12 a la vez. No se tocó ningún color con significado (los badges de estado, la portada del cliente, las barras rojas/ámbar/verdes de \"cuánto urge cobrar\", ni las tarjetas de \"Atención prioritaria\" que se afinaron hace poco) — solo se le agregó relieve a las tarjetas planas de siempre. Sigue por partes; lo que falta (afinar el interior de cada pantalla una por una) viene en las próximas entregas."
+    },
     {
       "v": "56.78",
       "fecha": "2026-08-25",
