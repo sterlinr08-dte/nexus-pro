@@ -1,7 +1,12 @@
 {
-  "version": "56.79",
+  "version": "56.80",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.80",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: los chips de \"Método de pago\" (al registrar un abono) y de \"Empresa cotizante\" (al crear/editar un cliente) ahora usan el estilo de botón tipo píldora acordado — cápsula con relieve, y el chip elegido se ve \"hundido\" en vez de solo cambiar de color. En Método de pago, como son solo 5 opciones fijas, quedaron en una sola barra continua con separadores finos. En Empresa cotizante se mantuvo la fila que se acomoda a varias líneas (esa lista crece con las empresas que agregues), pero con el mismo relieve. En los dos sigue la línea de luz que recorre el borde del chip elegido y se desliza al cambiar de selección."
+    },
     {
       "v": "56.79",
       "fecha": "2026-08-25",
