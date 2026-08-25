@@ -583,6 +583,46 @@ body.tema-premium #mInhab .modal{
   box-shadow:6px 6px 14px rgba(220,38,38,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
 
+/* Piloto neumórfico #4 — mEmp/mAgente/mAsiento/mUsuario (Nueva Empresa,
+   Nuevo Agente, Asiento Contable, Nuevo Usuario). Los 4 son formularios
+   simples (mt + campos en .gf2 + botones en .fe, sin chips/confirm-b/
+   checkboxes como #mAbono/#mCli/#mInhab), así que van en UN SOLO bloque con
+   selectores agrupados en vez de repetir las mismas 9 reglas 4 veces — no
+   hay ninguna diferencia real entre ellos que justifique separarlos. Acento
+   AZUL (mismo que #mAbono/#mCli): las 4 son acciones neutras de "Guardar/
+   Registrar", no confirmaciones destructivas como #mInhab.
+   #mAsiento tenía 2 <select> con borde en línea (teal/rojo, insinuando
+   Débito/Crédito) — se pierde bajo el !important del piloto, igual que
+   #mCli ya le ganaba a los checkboxes de color fijo; las etiquetas
+   ("Cuenta Débito"/"Cuenta Crédito") siguen diciendo cuál es cuál. */
+#mEmp .modal,#mAgente .modal,#mAsiento .modal,#mUsuario .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mEmp .modal,body.tema-premium #mAgente .modal,body.tema-premium #mAsiento .modal,body.tema-premium #mUsuario .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  color:var(--nm-tx) !important;
+}
+#mEmp .mt,#mAgente .mt,#mAsiento .mt,#mUsuario .mt{color:var(--nm-tx)}
+#mEmp .fr label,#mAgente .fr label,#mAsiento .fr label,#mUsuario .fr label{color:var(--nm-tx2) !important;font-family:inherit}
+#mEmp input,#mEmp select,#mAgente input,#mAgente select,#mAsiento input,#mAsiento select,#mUsuario input,#mUsuario select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mEmp input:focus,#mEmp select:focus,#mAgente input:focus,#mAgente select:focus,#mAsiento input:focus,#mAsiento select:focus,#mUsuario input:focus,#mUsuario select:focus{
+  outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+#mEmp .btn,#mAgente .btn,#mAsiento .btn,#mUsuario .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mEmp .btn:active,#mAgente .btn:active,#mAsiento .btn:active,#mUsuario .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mEmp .btn.bxl,#mAgente .btn.bxl,#mAsiento .btn.bxl,#mUsuario .btn.bxl{
+  color:#fff !important;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -5009,7 +5049,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.74';
+const APP_VERSION='56.75';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

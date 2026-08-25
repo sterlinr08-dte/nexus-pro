@@ -1,7 +1,12 @@
 {
-  "version": "56.74",
+  "version": "56.75",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.75",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, continuación): el mismo estilo visual (relieve suave + vidrio) llega a 4 ventanas más — \"Nueva Empresa\", \"Nuevo Agente\", \"Asiento Contable\" y \"Nuevo Usuario\" — con el mismo acento azul de \"Registrar abono\"/\"Nuevo Cliente\" (son ventanas de guardar, no de confirmar una baja). Ya son 6 ventanas con el piloto: 5 en azul y 1 en rojo (Inhabilitar cliente)."
+    },
     {
       "v": "56.74",
       "fecha": "2026-08-25",
