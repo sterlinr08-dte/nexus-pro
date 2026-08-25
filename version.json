@@ -1,7 +1,12 @@
 {
-  "version": "56.75",
+  "version": "56.76",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.76",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, continuación): la ventana \"Cobros del cliente\" (el historial que se abre desde la ficha) también estrena el mismo estilo — relieve suave + vidrio, acento azul. Ya son 7 ventanas con el piloto."
+    },
     {
       "v": "56.75",
       "fecha": "2026-08-25",
