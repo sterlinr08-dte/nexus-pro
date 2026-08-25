@@ -430,31 +430,46 @@ body.tema-premium #mAbono #aDirectoCuenta{
   background:var(--nm-bg) !important;color:var(--nm-tx) !important;border-color:transparent !important;
 }
 #mAbono #aMnt{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
-#mAbono .nmSeg{display:flex;gap:6px;flex-wrap:wrap}
+/* Chips de Método de pago = "Pill Premium" (regla guardada del proyecto):
+   barra CONTINUA (nada de huecos entre chips), degradado sutil, sombra de
+   volumen en el contenedor, y el chip activo se HUNDE con sombra de 4
+   direcciones — sin pintarlo de color, solo el texto cambia a var(--nm-
+   accent). color-mix() con fallback a var(--nm-bg) plano si el navegador
+   no lo soporta. Encima, el foco de luz viajero (mismo mecanismo que
+   #mCli): #aMetSpot recorre el borde real del chip activo y se desliza
+   al cambiar de selección (ver nxAboMetSpotMover()). */
+#mAbono .nmSeg{
+  position:relative;display:flex;align-items:stretch;
+  border:1px solid var(--nm-lo);border-radius:9999px;overflow:hidden;
+  background:var(--nm-bg);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-hi)) 0%,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-lo)) 50%,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-hi)) 100%);
+  box-shadow:inset 0 3px 5px var(--nm-lo),inset 0 -2px 4px var(--nm-hi),0 2px 4px rgba(0,0,0,.10);
+}
 #mAbono .nmPill{
-  position:relative;flex:1 1 auto;min-width:56px;text-align:center;font-size:10px;font-weight:700;padding:8px 6px;border-radius:11px;
-  color:var(--nm-tx2);cursor:pointer;border:2px solid transparent;
-  box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi);
-  transition:box-shadow .18s ease,color .18s ease,border-color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
+  position:relative;z-index:2;flex:1;min-width:0;text-align:center;font-size:10px;font-weight:700;padding:9px 4px;
+  color:var(--nm-tx2);cursor:pointer;background:transparent;border:none;border-right:1px solid var(--nm-lo);
+  transition:background .18s ease,box-shadow .18s ease,color .18s ease,transform .12s ease;
 }
-#mAbono .nmPill:active{transform:translateY(1px) scale(.97)}
+#mAbono .nmPill:first-child{border-top-left-radius:9999px;border-bottom-left-radius:9999px}
+#mAbono .nmPill:last-child{border-right:none;border-top-right-radius:9999px;border-bottom-right-radius:9999px}
+#mAbono .nmPill:active{transform:translateY(1px)}
 #mAbono .nmPill.on{
-  color:var(--nm-accent);font-weight:800;border-color:var(--nm-accent);transform:translateY(1px) scale(.98);
-  animation:nmRingPulse .55s cubic-bezier(.25,.75,.35,1) both,nmNeonBreathe 2.2s ease-in-out .55s infinite;
-  z-index:1;
+  color:var(--nm-accent);font-weight:800;
+  background:var(--nm-bg);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 0%,color-mix(in srgb,var(--nm-bg) 90%,var(--nm-hi)) 45%,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 100%);
+  box-shadow:
+    inset 4px 0 7px var(--nm-lo),
+    inset -4px 0 7px var(--nm-hi),
+    inset 0 4px 7px var(--nm-lo),
+    inset 0 -4px 7px var(--nm-hi);
 }
-@keyframes nmRingPulse{
-  0%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 0 rgba(53,104,224,.55)}
-  60%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 8px rgba(53,104,224,0)}
-  100%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.16),0 0 7px 1px rgba(91,157,255,.5),0 0 15px 2px rgba(53,104,224,.3)}
-}
-@keyframes nmNeonBreathe{
-  0%,100%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.16),0 0 7px 1px rgba(91,157,255,.5),0 0 15px 2px rgba(53,104,224,.3)}
-  50%{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.3),0 0 13px 3px rgba(91,157,255,.95),0 0 28px 7px rgba(53,104,224,.65)}
-}
+#mAbono .nmSpot{position:absolute;top:0;left:0;z-index:1;pointer-events:none;
+  transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
+#mAbono .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#mAbono .nmSpotRect{fill:none;stroke:var(--nm-accent);stroke-width:2.2;stroke-linecap:round;opacity:.85}
 @media(prefers-reduced-motion:reduce){
   #mAbono .nmPill{transition:none}
-  #mAbono .nmPill.on{animation:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 4px rgba(53,104,224,.2),0 0 8px 1px rgba(91,157,255,.6)}
+  #mAbono .nmSpot{transition:none}
 }
 /* Mismo motivo que arriba: parches.js fuerza ".btn,button,.bsm,.bxl{border/
    box-shadow...!important}" siempre (no solo en oscuro) — #mAbono .btn con
@@ -523,7 +538,22 @@ body.tema-premium #mCli .modal{
   transition:box-shadow .18s ease,color .18s ease,transform .18s cubic-bezier(.3,.6,.3,1);
 }
 #mCli .echip:hover{color:var(--nm-accent) !important}
-#mCli .echip.sel{color:var(--nm-accent) !important;font-weight:800;transform:translateY(1px) scale(.98)}
+/* Mismo lenguaje "Pill Premium" (regla guardada) que #mAbono, pero SIN
+   forzar una barra continua sin salto de línea: la lista de empresas
+   crece y necesita envolver a varias filas, así que cada chip conserva
+   su propia forma (no una sola cápsula con divisores). El "hundido" +
+   degradado sí es igual — el activo se pinta con sombra de 4 direcciones
+   en vez de solo cambiar de color. */
+#mCli .echip.sel{
+  color:var(--nm-accent) !important;font-weight:800;transform:translateY(1px) scale(.98);
+  background:var(--nm-bg) !important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 0%,color-mix(in srgb,var(--nm-bg) 90%,var(--nm-hi)) 45%,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 100%) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--nm-lo),
+    inset -3px -3px 6px var(--nm-hi),
+    inset 0 3px 5px var(--nm-lo),
+    inset 0 -3px 5px var(--nm-hi) !important;
+}
 #mCli .nmSpot{position:absolute;top:0;left:0;z-index:1;border-radius:8px;pointer-events:none;
   transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
 #mCli .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
@@ -3045,6 +3075,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="nmPill" data-v="Cheque" tabindex="0" role="button" aria-label="Método: Cheque" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Cheque</div>
         <div class="nmPill" data-v="Tarjeta" tabindex="0" role="button" aria-label="Método: Tarjeta" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Tarjeta</div>
         <div class="nmPill" data-v="Depósito" tabindex="0" role="button" aria-label="Método: Depósito" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Depósito</div>
+        <div class="nmSpot" id="aMetSpot"><svg class="nmSpotSvg"><rect class="nmSpotRect"/></svg></div>
       </div>
     </div>
     <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
@@ -9423,11 +9454,43 @@ function nxAboMetodo(el){
   document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.remove('on'));
   el.classList.add('on');
   sel.dispatchEvent(new Event('change'));
+  nxAboMetSpotMover();
 }
 function nxAboMetodoSync(){
   const sel=document.getElementById('aMet');if(!sel)return;
   document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.toggle('on',p.dataset.v===sel.value));
+  nxAboMetSpotMover();
 }
+// Desliza el foco de luz (#aMetSpot) al chip de método de pago seleccionado
+// y recorre su borde real — mismo mecanismo que nxEchipSpotMover() en #mCli.
+let _aMetSpotAnim=null;
+function nxAboMetSpotMover(){
+  const cont=document.getElementById('aMetPills');
+  const spot=document.getElementById('aMetSpot');
+  const sel=cont&&cont.querySelector('.nmPill.on');
+  if(!cont||!spot||!sel)return;
+  const rect=spot.querySelector('.nmSpotRect');
+  const SW=2.2;
+  const contBox=cont.getBoundingClientRect();
+  const elBox=sel.getBoundingClientRect();
+  spot.style.width=elBox.width+'px';
+  spot.style.height=elBox.height+'px';
+  spot.style.transform=`translate(${elBox.left-contBox.left}px, ${elBox.top-contBox.top}px)`;
+  const rw=Math.max(0,elBox.width-SW),rh=Math.max(0,elBox.height-SW);
+  const rx=Math.min(8,rw/2,rh/2);
+  rect.setAttribute('x',SW/2);rect.setAttribute('y',SW/2);
+  rect.setAttribute('width',rw);rect.setAttribute('height',rh);rect.setAttribute('rx',rx);
+  const perim=2*(rw+rh)-8*rx+2*Math.PI*rx;
+  rect.setAttribute('stroke-dasharray',(perim*0.72).toFixed(1)+' '+(perim*0.28).toFixed(1));
+  if(_aMetSpotAnim)_aMetSpotAnim.cancel();
+  const reducido=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reducido&&perim>0){
+    _aMetSpotAnim=rect.animate([{strokeDashoffset:0},{strokeDashoffset:-perim}],{duration:2600,iterations:Infinity,easing:'linear'});
+  }else{
+    rect.style.strokeDashoffset='0';
+  }
+}
+window.addEventListener('resize',nxAboMetSpotMover);
 function cambiarMetodoAbono(){
   const met=document.getElementById('aMet')?.value||'';
   const cont=document.getElementById('aBancoCont');
@@ -9481,6 +9544,7 @@ function abrirAbono(cid){
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   nxAboMetodoSync();
   openM('mAbono');
+  nxAboMetSpotMover(); // nxAboMetodoSync() corrió con el modal aún oculto (0×0) — reubica ya visible
 }
 function nxDestinoCambio(){
   const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
