@@ -687,6 +687,153 @@ body.tema-premium .cs-panel{
   box-shadow:0 25px 60px rgba(0,0,0,.5),9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
 
+/* Piloto neumórfico #7 — las 4 ventanas que quedaban ("requieren más cuidado" por
+   tener colores en línea con significado, no solo botones .bxl de siempre):
+   #mErrorLog (Registro de errores), #mDocs (Documentos del cliente), #mBackup
+   (Backup de seguridad) y #mWAMasivo (WhatsApp masivo). Van en un solo bloque
+   pero CADA UNA con su propio acento — no hay un solo "azul neutro" que sirva
+   para las 4: #mErrorLog/#mDocs son utilitarias (azul, igual que #mHistCobros);
+   #mBackup y #mWAMasivo YA tenían marca propia en el resto del sistema (verde
+   #059669 el botón de Backup en la barra superior; verde WhatsApp el botón
+   .bwa) — usar azul ahí habría sido inconsistente con su propio color de
+   siempre, así que las dos llevan --nm-accent verde.
+   Regla que se repite en las 4: el .btn del piloto aplana TODOS los botones a
+   gris (gana por especificidad sobre .bc1/.bc3/.bc4/.bc5, que son clases con
+   MENOS especificidad que "#id .btn") — así que donde el color blanco de esas
+   clases quedaría invisible sobre gris (bc1/bc3/bc5, texto blanco de fábrica)
+   se restaura SOLO el color de texto con un selector compuesto más específico
+   (mismo criterio ya usado con #mAbono .btn.bwa/.btn.bc1). Los recuadros de
+   AVISO con color real (el verde de "sin backup automático", el ámbar de
+   "recomendación", el verde de la vista previa de WhatsApp) se dejan
+   INTACTOS a propósito — son avisos con significado, no decoración. */
+#mErrorLog .modal,#mDocs .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mErrorLog .modal,body.tema-premium #mDocs .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  color:var(--nm-tx) !important;
+}
+#mErrorLog .mt,#mDocs .mt{color:var(--nm-tx)}
+#mErrorLog .btn,#mDocs .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mErrorLog .btn:active,#mDocs .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mErrorLog .btn.bc1{color:var(--nm-accent)}
+#mErrorLog .btn.bc3,#mDocs .btn.bc3{color:#dc2626}
+#mErrorLog .btn.bc4{color:#d97706}
+#mDocs .btn.bc4{color:#d97706}
+#mDocs .btn.bc5{color:#16a34a}
+body.tema-premium #mErrorLog .btn.bc1{color:var(--nm-accent) !important}
+body.tema-premium #mErrorLog .btn.bc3,body.tema-premium #mDocs .btn.bc3{color:#f87171 !important}
+body.tema-premium #mErrorLog .btn.bc4,body.tema-premium #mDocs .btn.bc4{color:#fbbf24 !important}
+body.tema-premium #mDocs .btn.bc5{color:#4ade80 !important}
+/* Log de eventos: cada fila ya trae su propio borde/color por severidad
+   (se arma en JS, en renderErrorLog) — solo se le da el "pozo" al contenedor,
+   las filas de adentro no se tocan. */
+#mErrorLog #logViewer{
+  background:var(--nm-bg) !important;border-radius:12px !important;padding:8px;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mErrorLog #logCount{color:var(--nm-tx2) !important}
+/* Documentos del cliente: la cajita de info del cliente y las filas de
+   "otros documentos" pasan al mismo relieve hundido que #histCobrosInfo. Las
+   tarjetas de tipo de documento (.doc-card) también, conservando un aro de
+   color fino para "subido"/"subiendo" — el aviso de estado no se pierde,
+   solo cambia de fondo-sólido a aro sobre el gris. */
+#mDocs #docsClienteInfo{
+  background:var(--nm-bg) !important;border:none !important;color:var(--nm-tx) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mDocs .doc-card{
+  background:var(--nm-bg) !important;border:none !important;border-radius:12px !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mDocs .doc-card.uploaded{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 1.5px rgba(16,185,129,.55) !important}
+#mDocs .doc-card.uploading{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 1.5px rgba(245,158,11,.55) !important}
+#mDocs .doc-lbl,#mDocs .doc-name{color:var(--nm-tx2) !important}
+#mDocs .doc-drop-zone{
+  border:2px dashed var(--nm-lo) !important;background:var(--nm-bg) !important;border-radius:12px !important;
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+}
+#mDocs #docsExtraList>div{
+  background:var(--nm-bg) !important;border:none !important;color:var(--nm-tx) !important;
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+}
+
+/* #mBackup — acento VERDE (coincide con el color que esta función ya tenía en
+   toda la app: el botón de la barra superior, el título en línea, el botón de
+   descargar). Los 2 recuadros de aviso quedan intactos. Las 5 filas de
+   checkbox pasan al relieve hundido; el checkbox nativo no se toca (mismo
+   criterio que #mCli). El botón "Descargar Backup Completo" pasa a degradado
+   sólido (como el .bxl de las demás ventanas) porque es la ÚNICA acción real
+   de esta pantalla — no un botón secundario más. */
+#mBackup .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#059669;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mBackup .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#34d399;
+  color:var(--nm-tx) !important;
+}
+body.tema-premium #mBackup .mt{color:#34d399 !important}
+#mBackup label{
+  background:var(--nm-bg) !important;border:none !important;border-radius:10px !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mBackup label span:first-of-type{color:var(--nm-tx) !important}
+#mBackup label span:last-child{color:var(--nm-tx2) !important}
+#mBackup .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mBackup .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mBackup .btn.bc5{
+  color:#fff !important;background:linear-gradient(145deg,#22c55e,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(5,150,105,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+
+/* #mWAMasivo — mismo acento verde, esta vez el de WhatsApp (.bwa). La vista
+   previa del mensaje (fondo verde claro) se deja intacta — es literalmente
+   cómo se ve el mensaje real. Las pestañas de tipo y la lista de clientes
+   pasan a pozo hundido, conservando el degradado de la pestaña activa. */
+#mWAMasivo .modal{
+  --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#059669;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
+}
+body.tema-premium #mWAMasivo .modal{
+  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#34d399;
+  color:var(--nm-tx) !important;
+}
+#mWAMasivo .mt{color:var(--nm-tx)}
+#mWAMasivo .nxft-tabs{
+  background:var(--nm-bg) !important;border:none !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mWAMasivo .nxft-tab{color:var(--nm-tx2)}
+#mWAMasivo #waClientesList{
+  background:var(--nm-bg) !important;border:none !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#mWAMasivo #waCountLbl{color:var(--nm-tx2) !important}
+#mWAMasivo .btn{
+  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
+  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
+}
+#mWAMasivo .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
+#mWAMasivo .btn.bc1{color:var(--nm-accent)}
+#mWAMasivo .btn.bc5{color:#16a34a}
+body.tema-premium #mWAMasivo .btn.bc1{color:var(--nm-accent) !important}
+body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
+#mWAMasivo .btn.bwa{
+  color:#fff !important;background:linear-gradient(145deg,#22c55e,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(5,150,105,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+
 /* ── MISC ── */
 .esel{background:#f8fafc;border-radius:10px;padding:8px;border:1.5px solid var(--border);margin-bottom:10px;min-height:44px;display:flex;flex-wrap:wrap;gap:5px}
 .echip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:10px;color:var(--tx2);transition:all .15s}
@@ -5113,7 +5260,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.77';
+const APP_VERSION='56.78';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

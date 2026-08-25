@@ -1,7 +1,12 @@
 {
-  "version": "56.77",
+  "version": "56.78",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.78",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO (prueba piloto, cierre de la primera ronda): las últimas 4 ventanas — \"Registro de errores\", \"Documentos del cliente\", \"Backup de seguridad\" y \"WhatsApp masivo\" — también estrenan el relieve suave + vidrio. \"Backup\" y \"WhatsApp masivo\" quedaron en VERDE (el color que ya tenían en el resto del sistema); las otras dos en azul. Los avisos con color real (el recuadro verde de \"sin backup automático\", el de \"recomendación\", la vista previa del mensaje de WhatsApp) se dejaron intactos a propósito, no son decoración. Con esta ya son 12 ventanas con el piloto — todas las que tenía marcadas."
+    },
     {
       "v": "56.77",
       "fecha": "2026-08-25",
