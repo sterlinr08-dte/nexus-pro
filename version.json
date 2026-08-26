@@ -1,7 +1,12 @@
 {
-  "version": "56.92",
+  "version": "56.93",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.93",
+      "fecha": "2026-08-26",
+      "texto": "AJUSTADO: en todos los modales con el relieve gris (Registrar pago, Nuevo/Editar Cliente, Inhabilitar, Empresa, Agente, Asiento contable, Usuario), los menús desplegables (Banco, Agente, Método, Plan, Rol, etc.) ahora se ven elevados en vez de hundidos — se hunden solo un instante al tocarlos. Los campos donde se escribe (nombre, referencia, notas) siguen hundidos igual que antes."
+    },
     {
       "v": "56.92",
       "fecha": "2026-08-26",

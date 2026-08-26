@@ -408,26 +408,37 @@ body.tema-premium #mAbono .modal{
    esta única regla ya gana en claro Y en oscuro (el bloque de abajo para
    body.tema-premium queda de más pero no estorba — no se quitó por no
    arriesgar lo ya verificado). */
-#mAbono .fr input,#mAbono .fr select,#mAbono #aDirectoCuenta{
+#mAbono .fr input{
   border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
-#mAbono .fr input:focus,#mAbono .fr select:focus,#mAbono #aDirectoCuenta:focus{
+#mAbono .fr input:focus{
   outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
 }
-/* body.tema-premium input/select tienen su propio fondo oscuro plano con
-   !important (más arriba en el archivo) — sin esto se comería el embossed. */
-body.tema-premium #mAbono .fr input,body.tema-premium #mAbono .fr select{
+/* body.tema-premium input tiene su propio fondo oscuro plano con !important
+   (más arriba en el archivo) — sin esto se comería el embossed. */
+body.tema-premium #mAbono .fr input{
   background:var(--nm-bg) !important;color:var(--nm-tx) !important;border-color:transparent !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
-body.tema-premium #mAbono .fr input:focus,body.tema-premium #mAbono .fr select:focus{
+body.tema-premium #mAbono .fr input:focus{
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(91,157,255,.28) !important;
 }
-/* #aDirectoCuenta (cuenta de depósito, la inyecta parches.js) no vive dentro
-   de un .fr — mismo motivo que arriba, necesita su propio empate en oscuro. */
-body.tema-premium #mAbono #aDirectoCuenta{
-  background:var(--nm-bg) !important;color:var(--nm-tx) !important;border-color:transparent !important;
+/* <select> = ELEVADO, no hundido (regla general revisada del piloto —
+   ver memoria del proyecto): se toca para ABRIR una lista de opciones,
+   no para escribir, así que usa el lenguaje "tócame" de los botones.
+   #aDirectoCuenta (cuenta de depósito, la inyecta parches.js) entra aquí
+   también — es un <select>, aunque no vive dentro de un .fr. */
+#mAbono .fr select,#mAbono #aDirectoCuenta{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease;
+}
+#mAbono .fr select:focus,#mAbono #aDirectoCuenta:focus{
+  outline:none;box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+#mAbono .fr select:active,#mAbono #aDirectoCuenta:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
 }
 #mAbono #aMnt{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
 /* Chips de Método de pago = "Pill Premium" (regla guardada del proyecto):
@@ -603,13 +614,23 @@ body.tema-premium #mCli .modal{
 }
 #mCli .mt{color:var(--nm-tx)}
 #mCli .fr label,#mCli>div>label{color:var(--nm-tx2) !important;font-family:inherit}
-#mCli input:not([type=checkbox]),#mCli select{
+#mCli input:not([type=checkbox]){
   border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
-#mCli input:not([type=checkbox]):focus,#mCli select:focus{
+#mCli input:not([type=checkbox]):focus{
   outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
 }
+/* <select> = elevado (ver nota en #mAbono / memoria del proyecto). */
+#mCli select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease;
+}
+#mCli select:focus{
+  outline:none;box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+#mCli select:active{box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important}
 #mCli .btn{
   border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
   box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
@@ -696,13 +717,23 @@ body.tema-premium #mInhab .modal{
   border-radius:12px !important;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
 #mInhab .confirm-b p{color:var(--nm-tx2)}
-#mInhab input,#mInhab select{
+#mInhab input{
   border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
-#mInhab input:focus,#mInhab select:focus{
+#mInhab input:focus{
   outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(220,38,38,.22) !important;
 }
+/* <select> = elevado (ver nota en #mAbono / memoria del proyecto). */
+#mInhab select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease;
+}
+#mInhab select:focus{
+  outline:none;box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi),0 0 0 3px rgba(220,38,38,.22) !important;
+}
+#mInhab select:active{box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important}
 #mInhab .btn{
   border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
   box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
@@ -741,12 +772,26 @@ body.tema-premium #mEmp .modal,body.tema-premium #mAgente .modal,body.tema-premi
 }
 #mEmp .mt,#mAgente .mt,#mAsiento .mt,#mUsuario .mt{color:var(--nm-tx)}
 #mEmp .fr label,#mAgente .fr label,#mAsiento .fr label,#mUsuario .fr label{color:var(--nm-tx2) !important;font-family:inherit}
-#mEmp input,#mEmp select,#mAgente input,#mAgente select,#mAsiento input,#mAsiento select,#mUsuario input,#mUsuario select{
+#mEmp input,#mAgente input,#mAsiento input,#mUsuario input{
   border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
-#mEmp input:focus,#mEmp select:focus,#mAgente input:focus,#mAgente select:focus,#mAsiento input:focus,#mAsiento select:focus,#mUsuario input:focus,#mUsuario select:focus{
+#mEmp input:focus,#mAgente input:focus,#mAsiento input:focus,#mUsuario input:focus{
   outline:none;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+/* <select> = elevado (ver nota #mAsiento arriba de este bloque / memoria del
+   proyecto): se toca para ABRIR una lista, no para escribir. Sigue en el
+   mismo bloque compartido — no hay diferencia real entre estos 4 modales. */
+#mEmp select,#mAgente select,#mAsiento select,#mUsuario select{
+  border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease;
+}
+#mEmp select:focus,#mAgente select:focus,#mAsiento select:focus,#mUsuario select:focus{
+  outline:none;box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi),0 0 0 3px rgba(53,104,224,.22) !important;
+}
+#mEmp select:active,#mAgente select:active,#mAsiento select:active,#mUsuario select:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
 }
 #mEmp .btn,#mAgente .btn,#mAsiento .btn,#mUsuario .btn{
   border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
@@ -5609,7 +5654,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.92';
+const APP_VERSION='56.93';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
