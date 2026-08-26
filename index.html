@@ -387,7 +387,7 @@ tbody tr:hover td{background:#f8fafc}
    que ese .modal simple, pero solo si igualamos el !important. */
 #mAbono .modal{
   --nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
-  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
+  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;overflow:hidden;
   box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
 body.tema-premium #mAbono .modal{
@@ -487,6 +487,102 @@ body.tema-premium #mAbono #aDirectoCuenta{
 #mAbono .btn.bc1{color:var(--nm-accent)}
 body.tema-premium #mAbono .btn.bwa{color:#2dd4bf !important}
 body.tema-premium #mAbono .btn.bc1{color:var(--nm-accent) !important}
+
+/* "Registrar pago" v2 — layout de la referencia que mandó el usuario, mezclado
+   con el relieve neumórfico ya aprobado (mockup: preview-registrar-pago.html).
+   El encabezado degradado es identidad de pantalla, no un botón — mismo
+   criterio que el header de la Ficha del cliente/Cliente 360, así que se deja
+   con su propio azul en vez de aplanarlo a gris. Sangra hasta el borde del
+   modal con márgenes negativos que cancelan el padding de 20px de .modal. */
+#mAbono .aboHead{
+  margin:-20px -20px 16px -20px;padding:20px 18px 22px;border-radius:22px 22px 0 0;
+  background:linear-gradient(160deg,#1d4ed8 0%,#2563eb 55%,#1e40af 100%);color:#fff;
+}
+#mAbono .aboHead-row{display:flex;align-items:center;justify-content:space-between}
+#mAbono .aboShield,#mAbono .aboX{
+  width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.16);border:none;
+  display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;font-size:15px;padding:0;
+}
+#mAbono .aboTitle{margin-top:14px;font-size:18px;font-weight:800;letter-spacing:-.2px}
+#mAbono .aboSub{font-size:11px;opacity:.85;margin-top:2px}
+
+/* Tarjeta del cliente (contenido de #abonoI) — antes una sola línea de texto,
+   ahora avatar + badge de estado (estB(), ya existente) + vigencia/plan/ARS/
+   pendiente en chips. Hundida como cualquier bloque informativo del piloto. */
+#mAbono #abonoI{border-radius:14px;padding:12px;margin-bottom:12px;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi)}
+#mAbono .aboCliTop{display:flex;align-items:flex-start;gap:9px}
+#mAbono .aboAv{width:30px;height:30px;border-radius:50%;background:var(--nm-bg);color:var(--nm-accent);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:13px;
+  box-shadow:2px 2px 5px var(--nm-lo),-2px -2px 5px var(--nm-hi)}
+#mAbono .aboCliInfo{flex:1;min-width:0}
+#mAbono .aboCliNom{font-size:11px;font-weight:800;color:var(--nm-tx);line-height:1.3}
+#mAbono .aboCliPol{font-size:9.5px;font-weight:700;color:var(--nm-accent);margin-top:2px}
+#mAbono .aboCliFacts{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+#mAbono .aboFact{background:var(--nm-bg);border-radius:8px;padding:5px 8px;font-size:8.7px;font-weight:700;
+  color:var(--nm-tx2);box-shadow:2px 2px 4px var(--nm-lo),-2px -2px 4px var(--nm-hi);white-space:nowrap}
+
+#mAbono .req{color:#dc2626}
+#mAbono .aboLblRow{display:flex;align-items:baseline;justify-content:space-between;margin:4px 0 6px}
+#mAbono .aboLbl{font-size:11px;font-weight:800;color:var(--nm-tx)}
+#mAbono .aboLnk{font-size:10px;font-weight:700;color:var(--nm-accent);display:flex;align-items:center;gap:3px;cursor:pointer}
+#mAbono .aboLnk i{font-size:12px}
+
+/* Montos rápidos: +suman al monto ya escrito (útil contando billetes en
+   efectivo); "Saldar pendiente" repone el balance completo (lo mismo que
+   abrirAbono() ya pre-llena al abrir, aquí solo por si el usuario lo cambió). */
+#mAbono .aboQuickRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+#mAbono .aboQbtn{
+  background:var(--nm-bg);border-radius:10px;padding:8px 3px;font-size:9.5px;font-weight:800;color:var(--nm-tx2);
+  text-align:center;cursor:pointer;box-shadow:3px 3px 6px var(--nm-lo),-3px -3px 6px var(--nm-hi);
+  transition:box-shadow .18s ease,transform .12s ease;
+}
+#mAbono .aboQbtn:active{box-shadow:inset 2px 2px 4px var(--nm-lo),inset -2px -2px 4px var(--nm-hi);transform:translateY(1px)}
+#mAbono .aboQbtn.hero{
+  background:linear-gradient(145deg,#4c7ef2,var(--nm-accent));color:#fff;line-height:1.25;font-size:8.3px;
+  box-shadow:4px 4px 10px rgba(53,104,224,.35),-3px -3px 8px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25);
+}
+#mAbono .aboQbtn.hero:active{box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.18)}
+
+#mAbono .aboNote{
+  background:var(--nm-bg);border-radius:10px;padding:8px 10px;display:flex;gap:7px;font-size:9.5px;
+  color:var(--nm-accent);line-height:1.5;margin:0 0 10px;
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi);
+}
+#mAbono .aboNote i{flex:0 0 auto;margin-top:1px;font-size:12px}
+
+/* "Pago adelantado": toggle + input de meses, oculto hasta activarlo.
+   Recalcula el monto con getTot(c) (la misma prima mensual de siempre) —
+   no cambia nada del lado del servidor, sigue siendo un cobro normal. */
+#mAbono .aboToggleCard{
+  background:var(--nm-bg);border-radius:14px;padding:12px;margin-bottom:12px;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi);
+}
+#mAbono .aboToggleRow{display:flex;align-items:center;gap:10px;cursor:pointer}
+#mAbono .aboToggleIc{width:30px;height:30px;border-radius:9px;background:var(--nm-bg);color:var(--nm-accent);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:14px;
+  box-shadow:2px 2px 5px var(--nm-lo),-2px -2px 5px var(--nm-hi)}
+#mAbono .aboToggleTxt{flex:1;min-width:0}
+#mAbono .aboToggleTxt b{display:block;font-size:11px;color:var(--nm-tx)}
+#mAbono .aboToggleTxt span{font-size:9.5px;color:var(--nm-tx2)}
+#mAbono .aboTgl{width:36px;height:20px;border-radius:999px;background:var(--nm-bg);position:relative;flex:0 0 auto;
+  box-shadow:inset 2px 2px 4px var(--nm-lo),inset -2px -2px 4px var(--nm-hi)}
+#mAbono .aboTgl::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--nm-bg);box-shadow:1px 1px 3px var(--nm-lo),-1px -1px 3px var(--nm-hi);transition:transform .18s ease}
+#mAbono .aboTgl.on::after{transform:translateX(16px);background:var(--nm-accent);box-shadow:1px 1px 3px rgba(0,0,0,.3)}
+
+/* Resumen final — solo lectura, se recalcula con nxAboActualizarResumen()
+   cada vez que cambia método/banco/agente/monto. */
+#mAbono .aboSummary{
+  background:var(--nm-bg);border-radius:13px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;
+  margin-bottom:12px;box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi);
+}
+#mAbono .aboSummaryIc{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:14px;
+  box-shadow:3px 3px 7px rgba(53,104,224,.35),-2px -2px 6px var(--nm-hi)}
+#mAbono .aboSummary b{display:block;font-size:11px;color:var(--nm-tx)}
+#mAbono .aboSummary span{font-size:9.3px;color:var(--nm-tx2);line-height:1.5}
+@media(prefers-reduced-motion:reduce){#mAbono .aboQbtn,#mAbono .aboTgl::after{transition:none}}
 
 /* Piloto neumórfico #2 — #mCli (Nuevo/Editar cliente). Misma paleta y misma
    pelea de !important contra parches.js que #mAbono (ver esa nota arriba):
@@ -3204,11 +3300,25 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
 <!-- Modal Abono -->
 <div class="overlay" id="mAbono">
-  <div class="modal nm-abono" style="max-width:360px">
-    <div class="mt"><span>// REGISTRAR ABONO</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
+  <div class="modal nm-abono" style="max-width:370px">
+    <div class="aboHead">
+      <div class="aboHead-row">
+        <div class="aboShield"><i class="ti ti-shield-check"></i></div>
+        <button aria-label="Cerrar ventana" class="aboX" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="aboTitle">Registrar pago</div>
+      <div class="aboSub">Registra el pago de esta póliza</div>
+    </div>
     <div id="abonoI"></div>
-    <div class="fr"><label>Monto (RD$) *</label><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select></div>
+    <div class="aboLblRow"><span class="aboLbl">Monto a recibir <span class="req">*</span></span><span class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Ver historial</span></div>
+    <div class="fr" style="margin-bottom:8px"><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" oninput="nxAboActualizarResumen()"/></div>
+    <div class="aboQuickRow">
+      <div class="aboQbtn" onclick="nxAboSumar(500)">+RD$500</div>
+      <div class="aboQbtn" onclick="nxAboSumar(1000)">+RD$1,000</div>
+      <div class="aboQbtn" onclick="nxAboSumar(2000)">+RD$2,000</div>
+      <div class="aboQbtn hero" onclick="nxAboSaldar()">SALDAR<br>PENDIENTE</div>
+    </div>
     <div class="fr">
       <label>Método</label>
       <select id="aMet" style="display:none" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
@@ -3223,8 +3333,24 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     </div>
     <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco"/></div>
-    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente"><option value="">Sin asignar</option></select></div>
+    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select></div>
+    <div class="aboNote"><i class="ti ti-info-circle"></i> El agente que registra será quien figura como responsable del cobro.</div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
+    <div class="aboToggleCard">
+      <div class="aboToggleRow" onclick="nxAboToggleAdelanto()">
+        <div class="aboToggleIc"><i class="ti ti-calendar-plus"></i></div>
+        <div class="aboToggleTxt"><b>Pago adelantado</b><span>Registra meses por adelantado (opcional)</span></div>
+        <div class="aboTgl" id="aAdelantoTgl"></div>
+      </div>
+      <div id="aAdelantoBody" style="display:none;margin-top:10px">
+        <div class="fr" style="margin-bottom:0"><label>¿Cuántos meses por adelantado?</label><input type="number" id="aAdelantoMeses" min="1" max="24" placeholder="Ej: 3" oninput="nxAboMesesAdelanto()"/></div>
+      </div>
+    </div>
+    <div id="mAboBaucheAnchor"></div>
+    <div class="aboSummary">
+      <div class="aboSummaryIc"><i class="ti ti-shield-check"></i></div>
+      <div><b>Resumen del pago</b><span id="aboResumenTxt">Método: — · Banco: — · Cuenta: — · Agente: —</span></div>
+    </div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado — envía el recibo</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -5483,7 +5609,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.91';
+const APP_VERSION='56.92';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9672,6 +9798,7 @@ function cambiarMetodoAbono(){
     if(sel)sel.value='';
     if(inp)inp.value='';
   }
+  try{nxAboActualizarResumen();}catch(e){}
 }
 function cambiarBancoAbono(){
   const sel=document.getElementById('aBanco')?.value||'';
@@ -9683,47 +9810,130 @@ function cambiarBancoAbono(){
     if(otrosCont)otrosCont.style.display='none';
     if(inp)inp.value='';
   }
+  try{nxAboActualizarResumen();}catch(e){}
 }
 // BLINDADO: nadie puede sobrescribir estas funciones
 try{Object.defineProperty(window,'cargarBancos',{value:cargarBancos,writable:false,configurable:false});}catch(e){}
 try{Object.defineProperty(window,'renderBancos',{value:renderBancos,writable:false,configurable:false});}catch(e){}
 try{Object.defineProperty(window,'llenarSelectBancosCobros',{value:llenarSelectBancosCobros,writable:false,configurable:false});}catch(e){}
 
+// Tarjeta del cliente arriba del formulario — reemplaza la línea de texto de
+// antes por el layout de la referencia (avatar, badge de estado, vigencia,
+// plan, ARS y lo pendiente). Lee el destino actual (facturas vs. deuda
+// anterior) para mostrar la cifra correcta — la usan abrirAbono() y
+// nxDestinoCambio() por igual, así no hay dos copias del mismo HTML.
+function nxAboPintarCliente(c){
+  const el=document.getElementById('abonoI');if(!el||!c)return;
+  const destino=document.getElementById('aDestino')?.value||'facturas';
+  const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
+  let pendLbl,pendVal,pendRojo;
+  if(destino==='deuda_anterior'){
+    pendLbl='Deuda anterior';pendVal=fmt(deudaAnt(c));pendRojo=true;
+  }else{
+    const p=pend(c);
+    pendLbl='Pendiente';pendVal=fmt(p);pendRojo=p>0;
+  }
+  el.innerHTML=`
+    <div class="aboCliTop">
+      <div class="aboAv"><i class="ti ti-user"></i></div>
+      <div class="aboCliInfo">
+        <div class="aboCliNom">${escHtml(c.nom)}</div>
+        <div class="aboCliPol">Póliza: ${escHtml(c.numero_poliza||'Sin póliza')}</div>
+      </div>
+      ${estB(c)}
+    </div>
+    <div class="aboCliFacts">
+      <div class="aboFact">📅 ${c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin vigencia'}</div>
+      <div class="aboFact">${escHtml(c.plan||'—')}</div>
+      <div class="aboFact">${escHtml(c.ars||'Sin ARS')}</div>
+      <div class="aboFact" style="color:${pendRojo?'#dc2626':'#16a34a'}"><b>${pendLbl}:</b> ${pendVal}</div>
+    </div>`;
+}
 function abrirAbono(cid){
   abonoCliId=cid;_cobroIdemKey=nxNuevaIdemKey();const c=ST.clientes.find(x=>x.id===cid);
   // BLINDADO: cargar bancos en el select cuando se abre el modal
   if(typeof window.llenarSelectBancosCobros==='function')window.llenarSelectBancosCobros();
-  document.getElementById('abonoI').innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(pend(c))}</span></div>`;
+  // Selector "¿A qué aplicar el pago?": solo aparece si el cliente trae deuda antes del sistema.
+  // Se resuelve ANTES de pintar la tarjeta porque nxAboPintarCliente() lee su valor.
+  const _da=deudaAnt(c);const _dc=document.getElementById('aDestinoCont');const _selD=document.getElementById('aDestino');const _optDA=document.getElementById('aDestinoDA');
+  if(_selD)_selD.value='facturas';
+  if(_dc)_dc.style.display=_da>0?'':'none';
+  if(_optDA&&_da>0)_optDA.textContent='Deuda antes del sistema ('+fmt(_da)+')';
+  nxAboPintarCliente(c);
   // Pre-llena el monto con lo que el cliente debe (cobro "todo" en 1 toque; editable para abonos parciales)
   const _pndAbo=pend(c);const _aMntEl=document.getElementById('aMnt');
   _aMntEl.value=_pndAbo>0?(window.nxMoney?window.nxMoney.format(String(_pndAbo)):_pndAbo):'';
   document.getElementById('aRef').value='';
   // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
   if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
-  // Selector "¿A qué aplicar el pago?": solo aparece si el cliente trae deuda antes del sistema.
-  const _da=deudaAnt(c);const _dc=document.getElementById('aDestinoCont');const _selD=document.getElementById('aDestino');const _optDA=document.getElementById('aDestinoDA');
-  if(_selD)_selD.value='facturas';
-  if(_dc)_dc.style.display=_da>0?'':'none';
-  if(_optDA&&_da>0)_optDA.textContent='Deuda antes del sistema ('+fmt(_da)+')';
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
+  // "Pago adelantado" siempre arranca apagado — evita arrastrar meses de un cliente anterior
+  const _tgl=document.getElementById('aAdelantoTgl');const _abody=document.getElementById('aAdelantoBody');
+  if(_tgl)_tgl.classList.remove('on');if(_abody)_abody.style.display='none';
+  const _ami=document.getElementById('aAdelantoMeses');if(_ami)_ami.value='';
   nxAboMetodoSync();
   openM('mAbono');
   nxAboMetSpotMover(); // nxAboMetodoSync() corrió con el modal aún oculto (0×0) — reubica ya visible
+  nxAboActualizarResumen();
+}
+// ── Montos rápidos / Saldar pendiente / Pago adelantado / Resumen en vivo —
+// todo sobre lo que YA existe (regAbono(), pend(), deudaAnt(), getTot()):
+// no hay ninguna escritura nueva al servidor, solo ayudas para llenar el
+// monto más rápido y ver de un vistazo qué se va a registrar. ──
+function nxAboSumar(monto){
+  const el=document.getElementById('aMnt');if(!el)return;
+  const actual=(window.nxMoney?window.nxMoney.parse(el.value):parseFloat(el.value))||0;
+  const nuevo=actual+monto;
+  el.value=window.nxMoney?window.nxMoney.format(String(nuevo)):String(nuevo);
+  nxAboActualizarResumen();
+}
+function nxAboSaldar(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
+  const destino=document.getElementById('aDestino')?.value||'facturas';
+  const monto=destino==='deuda_anterior'?deudaAnt(c):pend(c);
+  const el=document.getElementById('aMnt');if(el)el.value=monto>0?(window.nxMoney?window.nxMoney.format(String(monto)):monto):'';
+  nxAboActualizarResumen();
+}
+function nxAboToggleAdelanto(){
+  const tgl=document.getElementById('aAdelantoTgl');const body=document.getElementById('aAdelantoBody');
+  if(!tgl||!body)return;
+  const on=!tgl.classList.contains('on');
+  tgl.classList.toggle('on',on);
+  body.style.display=on?'':'none';
+  if(!on){const mi=document.getElementById('aAdelantoMeses');if(mi)mi.value='';}
+}
+// Calcula el monto para N meses por adelantado: lo pendiente hoy + N primas
+// mensuales del cliente (getTot(c), la misma prima que usa toda la app).
+function nxAboMesesAdelanto(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
+  const meses=parseInt(document.getElementById('aAdelantoMeses')?.value)||0;
+  if(meses<=0)return;
+  const total=pend(c)+meses*getTot(c);
+  const el=document.getElementById('aMnt');if(el)el.value=window.nxMoney?window.nxMoney.format(String(total)):String(total);
+  nxAboActualizarResumen();
+}
+function nxAboActualizarResumen(){
+  const txt=document.getElementById('aboResumenTxt');if(!txt)return;
+  const metodo=document.getElementById('aMet')?.value||'—';
+  const bancoSel=document.getElementById('aBanco')?.value||'';
+  const bancoOtros=document.getElementById('aBancoOtros')?.value||'';
+  const banco=bancoSel==='Otros'?(bancoOtros||'—'):(bancoSel||'—');
+  const cuentaSel=document.getElementById('aDirectoCuenta');
+  const cuenta=(cuentaSel&&cuentaSel.value)?(cuentaSel.options[cuentaSel.selectedIndex]?.textContent||'—'):'—';
+  const agSel=document.getElementById('aAgente');
+  const agente=(agSel&&agSel.value)?(agSel.options[agSel.selectedIndex]?.textContent||'—'):'Sin asignar';
+  const mostrarBanco=metodo==='Transferencia'||metodo==='Depósito';
+  txt.textContent=`Método: ${metodo} · Banco: ${mostrarBanco?banco:'—'} · Cuenta: ${mostrarBanco?cuenta:'—'} · Agente: ${agente}`;
 }
 function nxDestinoCambio(){
   const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
   const destino=document.getElementById('aDestino')?.value||'facturas';
-  const infoEl=document.getElementById('abonoI');const aMntEl=document.getElementById('aMnt');
-  if(destino==='deuda_anterior'){
-    const da=deudaAnt(c);
-    if(aMntEl)aMntEl.value=da>0?(window.nxMoney?window.nxMoney.format(String(da)):da):'';
-    if(infoEl)infoEl.innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Aplicando a <span style="color:#f43f5e;font-weight:700">DEUDA ANTES DEL SISTEMA</span> · Deuda: <span style="color:var(--c3);font-weight:700">${fmt(da)}</span></div>`;
-  }else{
-    const p=pend(c);
-    if(aMntEl)aMntEl.value=p>0?(window.nxMoney?window.nxMoney.format(String(p)):p):'';
-    if(infoEl)infoEl.innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(p)}</span></div>`;
-  }
+  const aMntEl=document.getElementById('aMnt');
+  const monto=destino==='deuda_anterior'?deudaAnt(c):pend(c);
+  if(aMntEl)aMntEl.value=monto>0?(window.nxMoney?window.nxMoney.format(String(monto)):monto):'';
+  nxAboPintarCliente(c);
+  nxAboActualizarResumen();
 }
 let _pagosCache=[];
 

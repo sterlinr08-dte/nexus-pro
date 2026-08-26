@@ -10272,29 +10272,35 @@
   };
 
   // ════ INYECTAR EL CARGADOR EN EL MODAL #mAbono ════
+  // Se ancla a #mAboBaucheAnchor (entre "Pago adelantado" y "Resumen del
+  // pago" en el layout v2 del modal) si existe; si el modal es más viejo y no
+  // lo trae, cae al comportamiento de siempre (justo antes del pie .fe).
   function inyectarCargador() {
     if (document.getElementById('nxBaucheWrap')) return true;
     const modal = document.getElementById('mAbono');
     if (!modal) return false;
+    const anchor = document.getElementById('mAboBaucheAnchor');
     const fe = modal.querySelector('.fe');
-    if (!fe || !fe.parentElement) return false;
+    const destino = anchor || fe;
+    if (!destino || !destino.parentElement) return false;
 
     const wrap = document.createElement('div');
     wrap.id = 'nxBaucheWrap';
     wrap.style.cssText = 'margin:10px 0';
     wrap.innerHTML = `
-      <label style="display:block;font-size:11px;font-weight:700;color:var(--nm-tx2,#475569);margin-bottom:5px">Bauche / comprobante (opcional)</label>
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--nm-tx2,#475569);margin-bottom:5px">Comprobante (opcional)</label>
       <div id="nxBaucheBox" style="border-radius:12px;padding:10px;background:var(--nm-bg,#f8fafc);box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)">
         <div style="display:flex;gap:8px">
-          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#eff6ff);color:#0d9488;font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Foto / archivo</button>
-          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#ecfdf5);color:#0d9488;font-weight:800" onclick="window.nxPegarBauche()"><i class="ti ti-clipboard"></i> Pegar</button>
+          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#eff6ff);color:var(--nm-accent,#0d9488);font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Foto / archivo</button>
+          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#ecfdf5);color:var(--nm-accent,#0d9488);font-weight:800" onclick="window.nxPegarBauche()"><i class="ti ti-clipboard"></i> Pegar</button>
         </div>
-        <div style="font-size:9.5px;color:var(--nm-tx2,#475569);margin-top:6px;text-align:center">Copia el bauche en WhatsApp y toca <strong>"Pegar"</strong></div>
+        <div style="font-size:9.5px;color:var(--nm-tx2,#475569);margin-top:6px;text-align:center">Copia el comprobante en WhatsApp y toca <strong>"Pegar"</strong></div>
       </div>
       <div id="nxBauchePreview" style="display:none;align-items:center;gap:10px;border-radius:10px;padding:8px;background:var(--nm-bg,#fff);box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)"></div>
       <input type="file" id="nxBaucheInput" accept="image/*,.pdf" style="display:none">
     `;
-    fe.parentElement.insertBefore(wrap, fe);
+    if (anchor) { anchor.parentElement.insertBefore(wrap, anchor.nextSibling); }
+    else { fe.parentElement.insertBefore(wrap, fe); }
 
     const inp = wrap.querySelector('#nxBaucheInput');
     inp.addEventListener('change', function () { if (this.files && this.files[0]) procesarArchivo(this.files[0]); });

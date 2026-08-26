@@ -1,7 +1,12 @@
 {
-  "version": "56.91",
+  "version": "56.92",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.92",
+      "fecha": "2026-08-26",
+      "texto": "REDISEÑO: el modal \"Registrar abono\" pasa a \"Registrar pago\", con encabezado propio y una tarjeta del cliente arriba (estado, vigencia, plan, ARS y lo pendiente). NUEVO: botones para sumar RD$500/1,000/2,000 al monto, \"Saldar pendiente\", acceso directo a \"Ver historial\", un interruptor de \"Pago adelantado\" que calcula el monto según los meses que elijas, y un resumen del pago antes de confirmar. El adjuntar comprobante ya existía — solo se movió a su nuevo lugar en el formulario. El método de pago (Efectivo/Transferencia/Cheque/Tarjeta/Depósito) no cambió."
+    },
     {
       "v": "56.91",
       "fecha": "2026-08-26",
