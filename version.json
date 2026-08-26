@@ -1,7 +1,12 @@
 {
-  "version": "56.94",
+  "version": "56.95",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.95",
+      "fecha": "2026-08-26",
+      "texto": "AJUSTADO: el blanco puro de los modales se cambió por un blanco con un toque de azul muy sutil (#F6F8FB — el mismo tono \"premium\" que ya usan Clientes/Facturas), en vez de un blanco plano. Se ve menos clínico y más acorde al resto del sistema."
+    },
     {
       "v": "56.94",
       "fecha": "2026-08-26",
