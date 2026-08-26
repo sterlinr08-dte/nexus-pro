@@ -1,7 +1,12 @@
 {
-  "version": "56.84",
+  "version": "56.85",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.85",
+      "fecha": "2026-08-25",
+      "texto": "CORREGIDO: en Clientes, las pestañas Activos/En proceso/VIP/Inhabilitados estaban al revés de la regla del piloto (la seleccionada se veía \"hacia afuera\" con un degradado morado, en vez de hundida). Ahora la barra es un pozo hundido, cada pestaña sin seleccionar sobresale un poco, y la seleccionada se hunde de verdad — mismo estilo \"Pill Premium\" ya usado en Método de pago y Empresa cotizante. El botón \"Nuevo\" no cambió, sigue siendo la acción verde de siempre."
+    },
     {
       "v": "56.84",
       "fecha": "2026-08-25",

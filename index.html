@@ -1565,7 +1565,38 @@ body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--
   transform:translateY(2px) scale(.98);
   box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.18) !important;
 }
-@media(prefers-reduced-motion:reduce){#v-clientes .btn.bsm,#v-clientes .nxft-tab.nxft-add{transition:none !important}}
+/* Pestañas de estado (Activos/En proceso/VIP/Inhabilitados) — quedaban
+   planas cuando inactivas y con un degradado morado "hacia afuera" cuando
+   activas (al revés de la regla del piloto: la seleccionada debe verse
+   HUNDIDA, no elevada). "Nuevo" no es parte de este grupo (es una acción,
+   no un estado) — se excluye con :not(.nxft-add). Misma receta "Pill
+   Premium" que ya usan los chips de #mAbono/#mCli: la barra es un pozo
+   hundido, cada pestaña inactiva sobresale un poco, y la activa se hunde
+   con sombra de 4 direcciones — el color queda solo en texto/ícono. */
+#v-clientes .nxft-tabs.nxft-flex{
+  background:var(--nm-bg) !important;border:none !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#v-clientes .nxft-tab:not(.nxft-add){
+  background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
+  box-shadow:3px 3px 6px var(--nm-lo),-3px -3px 6px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
+}
+#v-clientes .nxft-tab:not(.nxft-add):hover{color:var(--nm-accent) !important}
+#v-clientes .nxft-tab:not(.nxft-add):active{transform:translateY(1px)}
+#v-clientes .nxft-tab:not(.nxft-add) .nxft-cnt{background:rgba(120,130,148,.18) !important;color:inherit !important}
+#v-clientes .nxft-tab.is-active:not(.nxft-add){
+  color:var(--nm-accent) !important;font-weight:800;
+  background:var(--nm-bg) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--nm-lo),
+    inset -3px -3px 6px var(--nm-hi),
+    inset 0 3px 5px var(--nm-lo),
+    inset 0 -3px 5px var(--nm-hi) !important;
+}
+#v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(53,104,224,.16) !important;color:var(--nm-accent) !important}
+body.tema-premium #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(91,157,255,.18) !important}
+@media(prefers-reduced-motion:reduce){#v-clientes .btn.bsm,#v-clientes .nxft-tab{transition:none !important}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -5437,7 +5468,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.84';
+const APP_VERSION='56.85';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
