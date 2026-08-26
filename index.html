@@ -708,14 +708,41 @@ body.tema-premium #mHistCobros tbody tr:hover td{background:rgba(91,157,255,.08)
    y ocupa toda la pantalla) la sombra ya no se nota — no hace falta anularla,
    es inofensiva por debajo del contenido de scroll. */
 .cs-panel{
-  --nm-bg:#e8ecf3;--nm-hi:#ffffff;--nm-lo:#c9ced8;
+  --nm-bg:#e8ecf3;--nm-hi:#ffffff;--nm-lo:#c9ced8;--nm-tx2:#7a8494;--nm-accent:#3568e0;
   background:var(--nm-bg) !important;
   box-shadow:0 25px 60px rgba(15,23,42,.28),9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
 body.tema-premium .cs-panel{
-  --nm-bg:#0B0F19;--nm-hi:#171f2c;--nm-lo:#050710;
+  --nm-bg:#0B0F19;--nm-hi:#171f2c;--nm-lo:#050710;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
   box-shadow:0 25px 60px rgba(0,0,0,.5),9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
+/* Ampliación del piloto #6: en su momento se dejó SOLO el marco (ver nota de
+   arriba) porque no se había pedido tocar el interior. Ahora sí — los
+   botones de la Ficha (toolbar Documentos/Abonos/Certificado, y "Agregar
+   nota") pasan al mismo relieve elevado/hundido, heredando los tokens del
+   marco de arriba. El hero degradado (azul→morado) y sus botones de vidrio
+   (WhatsApp/Editar/★) se dejan intactos a propósito — son parte de la
+   identidad visual de esa cabecera, no del sistema de botones planos. */
+#csPanel .sf-tbtn{
+  border:none !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;border-radius:10px !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease,color .18s ease !important;
+}
+#csPanel .sf-tbtn:hover{color:var(--nm-accent) !important;box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important}
+#csPanel .sf-tbtn:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+#csPanel .btn.bc1{
+  border:none !important;background:var(--nm-bg) !important;color:var(--nm-accent) !important;border-radius:10px !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#csPanel .btn.bc1:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+@media(prefers-reduced-motion:reduce){#csPanel .sf-tbtn,#csPanel .btn.bc1{transition:none !important}}
 
 /* Piloto neumórfico #7 — las 4 ventanas que quedaban ("requieren más cuidado" por
    tener colores en línea con significado, no solo botones .bxl de siempre):
@@ -5374,7 +5401,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.82';
+const APP_VERSION='56.83';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -1,7 +1,12 @@
 {
-  "version": "56.82",
+  "version": "56.83",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.83",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: en la Ficha del cliente (el panel que se abre al tocar un cliente), los botones de Documentos, Abonos, Certificado PDF y \"Agregar nota\" pasan al mismo relieve elevado/hundido que ya tienen los botones de la lista de Clientes. El encabezado con el nombre del cliente (WhatsApp, Editar, ★) no se tocó — sigue con su estilo de vidrio sobre el degradado, que es aparte."
+    },
     {
       "v": "56.82",
       "fecha": "2026-08-25",
