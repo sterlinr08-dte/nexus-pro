@@ -523,6 +523,15 @@ body.tema-premium #mCli .modal{
   color:#fff !important;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent)) !important;
   box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
+/* Revisión del modal completo: "Ajustar" (desbloquear deuda anterior) ya
+   traía su propio relieve elevado en línea (usa los mismos var(--nm-*) del
+   modal), pero le faltaba transición y el hundimiento al presionar — era
+   el único botón de #mCli sin :active, porque no lleva class="btn". */
+#mCli #cDeudaUnlock{transition:box-shadow .18s ease,transform .12s ease !important}
+#mCli #cDeudaUnlock:active{
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
 /* Chips de "Empresa cotizante": el anillo respirante se reemplaza por un
    FOCO VIAJERO — un solo trazo SVG (compartido por todos los chips, vive
    dentro de #eChips como #eChipsSpot) que se desliza al chip seleccionado
@@ -5468,7 +5477,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.85';
+const APP_VERSION='56.86';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

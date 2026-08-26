@@ -1,7 +1,12 @@
 {
-  "version": "56.85",
+  "version": "56.86",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.86",
+      "fecha": "2026-08-25",
+      "texto": "REVISIÓN del modal Nuevo/Editar Cliente completo: todos los campos y botones ya tenían el relieve del piloto (venía de antes), excepto el botón \"Ajustar\" para desbloquear la deuda anterior, que no se hundía al presionarlo. Ya quedó igual que el resto."
+    },
     {
       "v": "56.85",
       "fecha": "2026-08-25",
