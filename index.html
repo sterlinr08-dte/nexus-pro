@@ -2794,7 +2794,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                   <div class="fr"><label>Superior</label><input type="number" id="cfgC2"/></div>
                   <div class="fr"><label>Esencial</label><input type="number" id="cfgC3"/></div>
                 </div>
-                <button class="btn bc5" onclick="guardarTarifas()"><i class="ti ti-device-floppy"></i> Guardar tarifas</button>
+                <button class="btn bc5" onclick="guardarTarifas()" id="btnTarifas"><i class="ti ti-device-floppy"></i> Guardar tarifas</button>
               </div>
             </div>
 
@@ -5483,7 +5483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.89';
+const APP_VERSION='56.90';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8738,7 +8738,7 @@ function rFact(){
   if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   const tb=document.getElementById('tbFact');
   const rz=document.getElementById('factResumen');
-  if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar"'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
+  if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas generadas todavía'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
   // Saldo real por factura (descuenta el pago del cliente no ligado a la factura)
   const _saldoMemo={};
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
@@ -11165,8 +11165,8 @@ async function eliminarArs(i){
   if(!nombre){toast('err','ARS no encontrada');return;}
   // NO eliminar si tiene clientes asociados
   const clientesConArs=ST.clientes.filter(c=>{
-    const plan=(c.plan||'').toUpperCase();
-    return plan.includes((nombre||'').toUpperCase());
+    const ars=(c.ars||'').toUpperCase();
+    return ars.includes((nombre||'').toUpperCase());
   });
   if(clientesConArs.length>0){
     toast('err','No se puede eliminar',`NO SE PUEDE ELIMINAR ESTA ARS PORQUE TIENE ${clientesConArs.length} CLIENTE(S) ASOCIADO(S).`);
@@ -11241,6 +11241,7 @@ async function guardarTarifas(){
   // Detalle con valores ANTES→DESPUÉS de las primas, para que un cambio de precio quede trazable
   // en la bitácora (antes solo decía "modificadas" y un precio mal puesto pasaba silencioso).
   const antes=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
+  const btn=document.getElementById('btnTarifas');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     // Bloque 2C-2: antes esta escritura vivía FUERA del try (bug real — si
     // fallaba, moría la función entera en silencio, sin tocar tarifas ni
@@ -11252,6 +11253,7 @@ async function guardarTarifas(){
     for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
     const ahora=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
     logAudit('TARIFAS_ACTUALIZADAS',`Primas titular/dep — ANTES ${antes} → AHORA ${ahora}`,'Configuración');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar tarifas';
 }
 
 // ── AUTOMATIZACIÓN ────────────────────────────────────────────────────────────

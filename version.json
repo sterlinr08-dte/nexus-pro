@@ -1,7 +1,12 @@
 {
-  "version": "56.89",
+  "version": "56.90",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.90",
+      "fecha": "2026-08-26",
+      "texto": "CORREGIDO (bug real de seguridad de datos): al eliminar una ARS en Ajustes, el sistema revisaba el PLAN del cliente (Básico/Superior/Esencial) en vez de su ARS real para decidir si tenía clientes asociados — como esos textos nunca coinciden, la validación nunca bloqueaba nada y se podía borrar una ARS con clientes activos sin ningún aviso. Ya compara el campo correcto. También: el botón \"Guardar tarifas\" ahora muestra el anillo de carga, y el mensaje de \"sin facturas\" ya no menciona un botón \"Generar\" que no existe en el sistema (la facturación es automática)."
+    },
     {
       "v": "56.89",
       "fecha": "2026-08-25",
