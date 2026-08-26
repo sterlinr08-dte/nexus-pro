@@ -1547,16 +1547,22 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
    formulario. Antes: borde plano + sombra solo al hover, sin animación real
    de presión. Ahora: elevados hacia afuera en reposo, se hunden al
    presionar — igual que la regla general del piloto neumórfico. */
-#v-clientes{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx2:#7a8494;--nm-accent:#3568e0}
-body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+/* El relieve se veía muy sutil/plano en el celular (reportado con captura):
+   la tarjeta detrás es BLANCA, y el "hi" blanco puro no aporta nada de
+   contraste contra ese blanco — solo se notaba el lado oscuro, y encima
+   con un gris (#c7ccd6) demasiado pálido. Se cambia --nm-lo a un gris-azul
+   con más presencia real y se agranda el desenfoque, para que el botón se
+   note claramente "levantado" incluso sobre fondo blanco. */
+#v-clientes{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0}
+body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
 #v-clientes .btn.bsm{
   border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
-  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
   transition:box-shadow .18s ease,transform .12s ease !important;
 }
-#v-clientes .btn.bsm:hover{box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important}
+#v-clientes .btn.bsm:hover{box-shadow:6px 6px 15px var(--nm-lo),-5px -5px 11px var(--nm-hi) !important}
 #v-clientes .btn.bsm:active{
-  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
   transform:translateY(1px);
 }
 /* El color ya no llena el botón — queda solo como acento del ícono, mismo
@@ -5477,7 +5483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.86';
+const APP_VERSION='56.87';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -1,7 +1,12 @@
 {
-  "version": "56.86",
+  "version": "56.87",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.87",
+      "fecha": "2026-08-25",
+      "texto": "AJUSTADO: en Clientes, el relieve de los botones (Editar/Cobro/WhatsApp/Más acciones, y las pestañas Activos/En proceso/VIP/Inhabilitados) se veía muy sutil en el celular — la sombra era muy pálida sobre el fondo blanco de la tarjeta. Ahora la sombra es más marcada y el botón se nota claramente elevado."
+    },
     {
       "v": "56.86",
       "fecha": "2026-08-25",
