@@ -1,7 +1,12 @@
 {
-  "version": "56.88",
+  "version": "56.89",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.89",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: el anillo de carga ahora también aparece en los botones de fila que antes no lo tenían — Eliminar (Empresa, Agente, Usuario), Reactivar cliente, Cambiar usuario/contraseña, Anular factura y Corregir precio de factura — se deshabilitan y muestran el anillo mientras esperan al servidor, y si algo falla, vuelven a su ícono normal. CORREGIDO de paso: si eliminabas o editabas una Empresa/Agente desde Ajustes (no desde la pantalla principal), la lista de Ajustes se quedaba desactualizada hasta que salías y volvías a entrar — ahora se refresca también ahí."
+    },
     {
       "v": "56.88",
       "fecha": "2026-08-25",

@@ -5320,7 +5320,7 @@ function renderEmpresasCfg(){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:12px">🏭 No hay empresas registradas todavía.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mEmp\')"><i class="ti ti-plus"></i> Crear primera empresa</button></div>';
     return;
   }
-  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}',this)"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 
 // ── Agentes dentro de Configuración (render directo) ───────────────
@@ -5335,7 +5335,7 @@ function renderAgentesCfg(){
     const vence=a.lic_vence?new Date(a.lic_vence):null;
     const hoyD=new Date();
     const licEst=!a.licencia?{badge:'bCg',lbl:'Sin licencia'}:!vence?{badge:'bC1',lbl:'Vigente'}:vence<hoyD?{badge:'bC3',lbl:'Vencida'}:Math.ceil((vence-hoyD)/86400000)<=30?{badge:'bC4',lbl:'Por vencer'}:{badge:'bC1',lbl:'Vigente'};
-    return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button aria-label="Editar este agente" class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este agente" class="btn bsm bc3" onclick="eliminarAgt('${a.id}')"><i class="ti ti-minus"></i></button></td></tr>`;
+    return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button aria-label="Editar este agente" class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este agente" class="btn bsm bc3" onclick="eliminarAgt('${a.id}',this)"><i class="ti ti-minus"></i></button></td></tr>`;
   }).join('');
 }
 
@@ -5363,9 +5363,9 @@ function renderUsuariosCfg(){
       <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
     </select></td>
     <td style="white-space:nowrap;display:flex;gap:4px">
-      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
-      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
-      <button aria-label="Eliminar este usuario" class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-minus"></i></button>
+      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}',this)" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
+      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}',this)" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
+      <button aria-label="Eliminar este usuario" class="btn bsm bc3" onclick="eliminarUsu('${u.id}',this)"><i class="ti ti-minus"></i></button>
     </td>
   </tr>`).join('');
 }
@@ -5483,7 +5483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.88';
+const APP_VERSION='56.89';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5992,8 +5992,8 @@ function sfFacturaCard(f){
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:4px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#6d28d9,#8b5cf6)">Factura</button>
         ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#1da851,#25d366)">WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#b45309,#f59e0b)">Precio</button>`:''}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#dc2626,#ef4444)">Anular</button>`:''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#b45309,#f59e0b)">Precio</button>`:''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#dc2626,#ef4444)">Anular</button>`:''}
       </div>
     </div>`;
 }
@@ -8251,7 +8251,7 @@ function rCli(){
   tb.innerHTML=list.map(c=>{
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
-    const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar" aria-label="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar" aria-label="Reactivar"><i class="ti ti-user-check"></i></button>`;
+    const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar" aria-label="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}',this)" title="Reactivar" aria-label="Reactivar"><i class="ti ti-user-check"></i></button>`;
     // Info de proceso (visible cuando el cliente está EN_PROCESO)
     let procInfo='';
     if(c.estado_cliente==='EN_PROCESO'){
@@ -8310,7 +8310,7 @@ function rCli(){
             <div class="acc-menu-hd">COMUNICACIÓN</div>
             <button class="acc-i-green" onclick="enviarCoberturasWA('${c.id}');cerrarAccMenus()"><i class="ti ti-list-check"></i> Enviar coberturas WhatsApp</button>
             <div class="am-sep"></div>
-            <button class="acc-i-gray" onclick="${c.activo?`abrirInhab('${c.id}')`:`reactivar('${c.id}')`};cerrarAccMenus()"><i class="ti ti-${c.activo?'user-off':'user-check'}"></i> ${c.activo?'Inhabilitar cliente':'Reactivar cliente'}</button>
+            <button class="acc-i-gray" onclick="${c.activo?`abrirInhab('${c.id}')`:`reactivar('${c.id}',this)`};cerrarAccMenus()"><i class="ti ti-${c.activo?'user-off':'user-check'}"></i> ${c.activo?'Inhabilitar cliente':'Reactivar cliente'}</button>
             ${(!c.activo&&sesion?.rol==='admin')?`<button class="acc-i-red" onclick="eliminarClienteDef('${c.id}');cerrarAccMenus()" style="color:#dc2626"><i class="ti ti-minus"></i> Eliminar definitivamente</button>`:''}
           </div>
         </div>
@@ -8845,7 +8845,7 @@ function rFact(){
 // sus facturas hermanas y deja la auditoría, todo server-side. El PATCH directo de
 // facturas.prima_base/prima_deps/total ya no es posible (columnas bloqueadas por ACL) —
 // esta RPC es el único camino, con mi_rol()='admin' verificado del lado del servidor.
-async function nxEditarPrecioFactura(fid){
+async function nxEditarPrecioFactura(fid,btn){
   if(!tienePermiso('modificar_precio')){
     toast('err','Acceso denegado','Solo el Administrador puede modificar el precio');
     logAudit('ACCESO_DENEGADO','Intento de corregir precio de factura sin permiso','Facturas');
@@ -8862,6 +8862,7 @@ async function nxEditarPrecioFactura(fid){
   if(!(nuevo>=0)){toast('err','Precio inválido','Escribe un monto válido');return;}
   if(nuevo===Math.round(primaAct)){toast('info','Sin cambios','El precio ya es ese');return;}
   const cli=ST.clientes.find(c=>String(c.id)===String(f.cliente_id));
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
     const r=await API.post('rpc/seguros_corregir_precio_factura',{p_factura_id:f.id,p_nuevo_monto_mes:nuevo});
     if(!r||!r.ok)throw new Error('La RPC no confirmó la corrección');
@@ -8889,6 +8890,7 @@ async function nxEditarPrecioFactura(fid){
       }
     }
   }catch(e){toast('err','No se pudo corregir',String(e&&e.message||e));}
+  if(btn){btn.disabled=false;btn.innerHTML=orig;}
 }
 let _factSort={col:'',dir:1};
 function sortFact(col){
@@ -8925,7 +8927,7 @@ function pintarFlechasFact(){
 // API.patch('clientes') ni API.post('asientos') aquí — antes, si el paso de
 // revertir la deuda o el asiento fallaba a mitad de camino (o el catch lo
 // silenciaba), la factura quedaba Anulada con la deuda/el asiento sin revertir.
-async function anularFactura(facturaId){
+async function anularFactura(facturaId,btn){
   const f=ST.facturas.find(x=>x.id===facturaId);
   if(!f){toast('err','Factura no encontrada');return;}
   if(f.estado==='Anulada'){toast('warn','Esta factura ya está anulada');return;}
@@ -8945,6 +8947,7 @@ async function anularFactura(facturaId){
   // Llave de idempotencia por factura (no hay un "modal" análogo a abrirAbono() para esta
   // acción) — se reusa si el mismo intento se reintenta, se borra tras un éxito real.
   const idemKey=_anulaIdemKeys[facturaId]||(_anulaIdemKeys[facturaId]=nxNuevaIdemKey());
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
     const r=await API.post('rpc/seguros_anular_factura',{p_factura_id:facturaId,p_motivo:motivo.trim(),p_idempotency_key:idemKey});
     if(!r||!r.ok)throw new Error('La RPC no confirmó la anulación');
@@ -8973,6 +8976,7 @@ async function anularFactura(facturaId){
   }catch(e){
     const msg=nxRpcErr(e);mostrarError(msg,'Al anular la factura');toast('err','Error al anular',msg);
   }
+  if(btn){btn.disabled=false;btn.innerHTML=orig;}
 }
 
 function cobrarDesdeFact(cid){
@@ -10222,7 +10226,7 @@ function rEmpGrd(){
     document.getElementById('empKpiPrima').textContent=fmt(clisAct.reduce((s,c)=>s+getTot(c),0));
   }
   if(!ST.empresas.length){grid.innerHTML='<div class="empty">Sin empresas</div>';return;}
-  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
+  grid.innerHTML=ST.empresas.map((e)=>{const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button aria-label="Editar esta empresa" class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta empresa" class="btn bsm bc3" onclick="eliminarEmp('${e.id}',this)"><i class="ti ti-minus"></i></button></div></div>`;}).join('');
 }
 function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
 async function guardarEmp(){
@@ -10240,8 +10244,10 @@ async function guardarEmp(){
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';
 }
-async function eliminarEmp(id){if(ST.clientes.find(c=>c.empresa_id===id)){toast('warn','No se puede eliminar','Hay clientes asociados');return;}
-  const ok=await swalConfirm('🏢','¿Eliminar empresa?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('empresas',`id=eq.${id}`);ST.empresas=ST.empresas.filter(e=>e.id!==id);rEmpGrd();}catch(e){toast('err','Error',e.message);}}
+async function eliminarEmp(id,btn){if(ST.clientes.find(c=>c.empresa_id===id)){toast('warn','No se puede eliminar','Hay clientes asociados');return;}
+  const ok=await swalConfirm('🏢','¿Eliminar empresa?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
+  try{await API.del('empresas',`id=eq.${id}`);ST.empresas=ST.empresas.filter(e=>e.id!==id);rEmpGrd();renderEmpresasCfg();}catch(e){toast('err','Error',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}}
 
 // ── AGENTES ──────────────────────────────────────────────────────────────────
 function rAgentes(){
@@ -10266,7 +10272,7 @@ function rAgentes(){
     const vence=a.lic_vence?new Date(a.lic_vence):null;
     const hoyD=new Date();
     const licEst=!a.licencia?{badge:'bCg',lbl:'Sin licencia'}:!vence?{badge:'bC1',lbl:'Vigente'}:vence<hoyD?{badge:'bC3',lbl:'Vencida'}:Math.ceil((vence-hoyD)/86400000)<=30?{badge:'bC4',lbl:'Por vencer'}:{badge:'bC1',lbl:'Vigente'};
-    return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button aria-label="Editar este agente" class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este agente" class="btn bsm bc3" onclick="eliminarAgt('${a.id}')"><i class="ti ti-minus"></i></button></td></tr>`;
+    return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button aria-label="Editar este agente" class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este agente" class="btn bsm bc3" onclick="eliminarAgt('${a.id}',this)"><i class="ti ti-minus"></i></button></td></tr>`;
   }).join('');
 }
 function editarAgt(id){const a=ST.agentes.find(x=>x.id===id);if(!a)return;editAgtId=id;document.getElementById('mAgtT').textContent='EDITAR AGENTE';document.getElementById('agtNom').value=a.nom;document.getElementById('agtCargo').value=a.cargo||'';document.getElementById('agtTel').value=a.tel||'';document.getElementById('agtEmail').value=a.email||'';document.getElementById('agtLic').value=a.licencia||'';document.getElementById('agtLicVence').value=a.lic_vence||'';openM('mAgente');}
@@ -10284,8 +10290,10 @@ async function guardarAgente(){
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';
 }
-async function eliminarAgt(id){if(ST.clientes.find(c=>c.agente_id===id)){toast('warn','No se puede eliminar','Hay clientes asignados');return;}
-  const ok=await swalConfirm('👤','¿Eliminar agente?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('agentes',`id=eq.${id}`);ST.agentes=ST.agentes.filter(a=>a.id!==id);rAgentes();}catch(e){toast('err','Error',e.message);}}
+async function eliminarAgt(id,btn){if(ST.clientes.find(c=>c.agente_id===id)){toast('warn','No se puede eliminar','Hay clientes asignados');return;}
+  const ok=await swalConfirm('👤','¿Eliminar agente?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
+  try{await API.del('agentes',`id=eq.${id}`);ST.agentes=ST.agentes.filter(a=>a.id!==id);rAgentes();renderAgentesCfg();}catch(e){toast('err','Error',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}}
 
 // ── CLIENTES (guardar/editar) ─────────────────────────────────────────────────
 function abrirNuevoCli(){
@@ -10608,15 +10616,16 @@ async function confirmarInhab(){
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-user-off"></i> Inhabilitar';
 }
-async function reactivar(id){
+async function reactivar(id,btn){
   const c=ST.clientes.find(x=>x.id===id);if(!c||!confirm(`¿Reactivar a ${c.nom}?`))return;
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
     // Renovar póliza si estaba vencida
     const datos={activo:true,estado_cliente:'ACTIVO',motivo_inhab:null,nota_inhab:null};
     if(c.fecha_fin&&new Date(c.fecha_fin)<new Date()){const fin=new Date();fin.setFullYear(fin.getFullYear()+1);datos.fecha_inicio=hoy();datos.fecha_fin=fin.toISOString().slice(0,10);}
     await API.patch('clientes',`id=eq.${id}`,datos);Object.assign(c,datos);
     toast('ok','Cliente reactivado',c.nom+(datos.fecha_fin?` · Póliza renovada hasta ${datos.fecha_fin}`:''));rCli();rDash();actualizarTicker();
-  }catch(e){toast('err','Error',e.message);}
+  }catch(e){toast('err','Error',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}
 }
 function rEChips(selId){const div=document.getElementById('eChips');div._sel=selId||'';div.innerHTML=`<div class="echip ${!selId?'sel':''}" onclick="selEch('')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user" style="font-size:11px"></i> Particular</div>`+ST.empresas.map(e=>`<div class="echip ${e.id===selId?'sel':''}" onclick="selEch('${e.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-building" style="font-size:11px"></i> ${e.nom.split(' ').slice(0,3).join(' ')}</div>`).join('')+'<div class="nmSpot" id="eChipsSpot"><svg class="nmSpotSvg"><rect class="nmSpotRect"/></svg></div>';nxEchipSpotMover();}
 function selEch(id){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('sel'));const chips=document.getElementById('eChips');chips._sel=id;chips.querySelectorAll('.echip').forEach(c=>{if(c.getAttribute('onclick')===`selEch('${id}')`)c.classList.add('sel');});nxEchipSpotMover();}
@@ -11420,14 +11429,15 @@ async function cambiarEstado(id,activo){
   try{await API.patch('usuarios_sistema',`id=eq.${id}`,{activo:v});const u=ST.usuarios.find(x=>x.id===id);if(u)u.activo=v;logAudit('ESTADO_USUARIO',`${u?.login} → ${v?'ACTIVO':'INACTIVO'}`);toast('ok','Estado actualizado',v?'Activo':'Inactivo');}
   catch(e){toast('err','Error',e.message);}
 }
-function abrirCambiarPwd(id, login){
+function abrirCambiarPwd(id, login, btn){
   const nuevaPwd = prompt(`Nueva contraseña para "${login}":\n(Mínimo 6 caracteres)`);
   if(!nuevaPwd) return;
   if(nuevaPwd.length < 6){ toast('err','Contraseña muy corta','Mínimo 6 caracteres'); return; }
-  confirmarCambiarPwd(id, login, nuevaPwd);
+  confirmarCambiarPwd(id, login, nuevaPwd, btn);
 }
 
-async function confirmarCambiarPwd(id, login, pwd){
+async function confirmarCambiarPwd(id, login, pwd, btn){
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
     const pwdHash=await sha256(pwd);
     await API.patch('usuarios_sistema', `id=eq.${id}`, {pwd:pwdHash});
@@ -11436,17 +11446,19 @@ async function confirmarCambiarPwd(id, login, pwd){
   }catch(e){
     mostrarError(e.message, 'Al cambiar contraseña de: ' + login);
   }
+  if(btn){btn.disabled=false;btn.innerHTML=orig;}
 }
 
-function abrirCambiarLogin(id, loginActual){
+function abrirCambiarLogin(id, loginActual, btn){
   const nuevoLogin = prompt(`Nuevo nombre de usuario para "${loginActual}":\n(Sin espacios, sin caracteres especiales)`);
   if(!nuevoLogin) return;
   if(nuevoLogin.length < 3){ toast('err','Nombre muy corto','Mínimo 3 caracteres'); return; }
   if(/\s/.test(nuevoLogin)){ toast('err','Sin espacios','El usuario no puede tener espacios'); return; }
-  confirmarCambiarLogin(id, loginActual, nuevoLogin.toLowerCase().trim());
+  confirmarCambiarLogin(id, loginActual, nuevoLogin.toLowerCase().trim(), btn);
 }
 
-async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
+async function confirmarCambiarLogin(id, loginActual, nuevoLogin, btn){
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
     await API.patch('usuarios_sistema', `id=eq.${id}`, {login: nuevoLogin});
     const u = ST.usuarios.find(x=>x.id===id);
@@ -11458,10 +11470,13 @@ async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
     if(e.message.includes('unique')) toast('err','Ese usuario ya existe','Elige otro nombre');
     else mostrarError(e.message, 'Al cambiar nombre de usuario');
   }
+  if(btn){btn.disabled=false;btn.innerHTML=orig;}
 }
 
 async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';}
-async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);renderUsuariosCfg();}catch(e){toast('err','Error',e.message);}}
+async function eliminarUsu(id,btn){if(!confirm('¿Eliminar usuario?'))return;
+  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
+  try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);renderUsuariosCfg();}catch(e){toast('err','Error',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════
