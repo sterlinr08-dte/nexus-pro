@@ -1,7 +1,12 @@
 {
-  "version": "56.90",
+  "version": "56.91",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.91",
+      "fecha": "2026-08-26",
+      "texto": "CORREGIDO (bug real en Comisiones): el selector de Mes/Año en \"Calcular comisiones\" no cambiaba nada del cálculo — siempre usaba el plan y precio ACTUAL de cada cliente, sin importar qué mes eligieras. Ahora calcula sobre las facturas REALES de ese mes (el plan y la prima que tenía la factura en ese momento), como corresponde. Las facturas anuladas ya no cuentan para comisión."
+    },
     {
       "v": "56.90",
       "fecha": "2026-08-26",

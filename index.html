@@ -5483,7 +5483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.90';
+const APP_VERSION='56.91';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10698,17 +10698,32 @@ async function calcularComisiones(){
   const ITBIS=0.18;
   const el=document.getElementById('comContent');
   el.innerHTML='<div class="loading"><div class="spin"></div>Calculando...</div>';
-  // Facturas del período
-  const facsPeriodo=ST.facturas.filter(f=>f.periodo===periodo&&f.estado!=='Pendiente');
+  // Facturas del período — la comisión es sobre lo que REALMENTE se facturó ese
+  // mes (estado histórico de cada factura: su propio f.plan y prima_base/deps),
+  // no sobre el plan/precio ACTUAL del cliente. Antes esta variable se calculaba
+  // y nunca se usaba: el selector de Mes/Año no cambiaba nada del cálculo (bug
+  // real, corregido 2026-08-26). Se excluyen Pendiente (aún no facturada/cobrada
+  // ese mes) y Anulada (reversada — no genera comisión).
+  const facsPeriodo=ST.facturas.filter(f=>f.periodo===periodo&&f.estado!=='Pendiente'&&f.estado!=='Anulada');
+  const pctPlan=plan=>plan==='Básico'?CFG.com1:plan==='Superior'?CFG.com2:CFG.com3;
+  const porAgente={};
+  facsPeriodo.forEach(f=>{
+    const cli=ST.clientes.find(c=>String(c.id)===String(f.cliente_id));
+    const agId=cli?.agente_id;
+    if(!agId)return; // sin agente asignado — no hay a quién comisionar
+    const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
+    if(!porAgente[agId])porAgente[agId]={clis:new Set(),primaTotal:0,comBruta:0};
+    porAgente[agId].clis.add(String(f.cliente_id));
+    porAgente[agId].primaTotal+=prima;
+    porAgente[agId].comBruta+=prima*(pctPlan(f.plan)/100);
+  });
   const resultados=ST.agentes.map(a=>{
-    const clis=ST.clientes.filter(c=>c.agente_id===a.id&&c.activo);
-    const primaTotal=clis.reduce((s,c)=>s+getTot(c),0);
-    const pct=c=>c.plan==='Básico'?CFG.com1:c.plan==='Superior'?CFG.com2:CFG.com3;
-    const comBruta=clis.reduce((s,c)=>s+(getTot(c)*(pct(c)/100)),0);
-    const itbis=comBruta*ITBIS;
-    const comNeta=comBruta-itbis;
-    return{agente:a,clis:clis.length,primaTotal,comBruta,itbis,comNeta};
-  }).filter(r=>r.clis>0);
+    const d=porAgente[a.id];
+    if(!d)return null;
+    const itbis=d.comBruta*ITBIS;
+    const comNeta=d.comBruta-itbis;
+    return{agente:a,clis:d.clis.size,primaTotal:d.primaTotal,comBruta:d.comBruta,itbis,comNeta};
+  }).filter(Boolean);
   const totalBruto=resultados.reduce((s,r)=>s+r.comBruta,0);
   const totalITBIS=resultados.reduce((s,r)=>s+r.itbis,0);
   const totalNeto=resultados.reduce((s,r)=>s+r.comNeta,0);
