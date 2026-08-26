@@ -1,7 +1,12 @@
 {
-  "version": "56.83",
+  "version": "56.84",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.84",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: en Cliente 360 (el expediente unificado con Seguros/Financiamiento/POS), los botones del encabezado — Registrar pago, Nueva factura, Nuevo préstamo, Nueva póliza, Imprimir, Compartir, WhatsApp, Llamar — y el botón \"Volver a la lista\" pasan al mismo relieve elevado/hundido que ya tienen Clientes y la Ficha del cliente. El buscador, la lista lateral y las pestañas del expediente no se tocaron."
+    },
     {
       "v": "56.83",
       "fecha": "2026-08-25",

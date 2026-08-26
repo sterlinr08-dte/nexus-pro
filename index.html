@@ -744,6 +744,42 @@ body.tema-premium .cs-panel{
 }
 @media(prefers-reduced-motion:reduce){#csPanel .sf-tbtn,#csPanel .btn.bc1{transition:none !important}}
 
+/* Cliente 360 (#v-cliente360) — mismo criterio de siempre: SOLO los botones
+   del encabezado del expediente (Registrar pago/Nueva factura/Nuevo
+   préstamo/Nueva póliza/Imprimir/Compartir/WhatsApp/Llamar) y "Volver a la
+   lista". El buscador, la lista lateral, los badges de estado y las tablas
+   de cada pestaña no se tocan — y las pestañas (Resumen/Financiamiento/
+   Pagos/...) se dejan con su estilo .nxft-tab de siempre, igual que las de
+   Clientes (Activos/En proceso/VIP/Inhabilitados). */
+#v-cliente360{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx2:#7a8494;--nm-accent:#3568e0}
+body.tema-premium #v-cliente360{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-cliente360 .sf-btn{
+  border:none !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#v-cliente360 .sf-btn:hover{box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important}
+#v-cliente360 .sf-btn:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+#v-cliente360 .sf-btn.ok{color:#059669 !important}
+#v-cliente360 .sf-btn.primary{
+  color:#fff !important;background:linear-gradient(145deg,#4c7ef2,var(--nm-accent)) !important;
+  box-shadow:6px 6px 14px rgba(53,104,224,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
+}
+#v-cliente360 .sf-btn.primary:active{box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.18) !important}
+#v-cliente360 .c360-back{
+  background:var(--nm-bg) !important;border:none !important;border-radius:9999px !important;padding:6px 14px !important;
+  color:var(--nm-accent) !important;box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#v-cliente360 .c360-back:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+@media(prefers-reduced-motion:reduce){#v-cliente360 .sf-btn,#v-cliente360 .c360-back{transition:none !important}}
+
 /* Piloto neumórfico #7 — las 4 ventanas que quedaban ("requieren más cuidado" por
    tener colores en línea con significado, no solo botones .bxl de siempre):
    #mErrorLog (Registro de errores), #mDocs (Documentos del cliente), #mBackup
@@ -5401,7 +5437,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.83';
+const APP_VERSION='56.84';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
