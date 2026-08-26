@@ -1,7 +1,12 @@
 {
-  "version": "56.81",
+  "version": "56.82",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.82",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: en Clientes (la lista, no el modal), los botones — Nuevo, Excel, Limpiar, y los de cada tarjeta (Editar, Registrar cobro, WhatsApp, Más acciones) — ahora se ven elevados hacia afuera y se hunden de verdad al presionarlos, en vez del borde plano de antes que solo cambiaba de color al pasar el mouse. El color de cada acción se conserva, ahora como acento del ícono. El resto de la pantalla (tarjetas de resumen, colores de estado) no se tocó."
+    },
     {
       "v": "56.81",
       "fecha": "2026-08-25",

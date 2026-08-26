@@ -1469,6 +1469,40 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .nxSf .cr-field .v.ok{color:var(--sf-ok-d)}
 .nxSf .cr-acts{display:flex;gap:5px;align-items:center;flex:0 0 auto;margin-left:auto}
 @media(max-width:720px){.nxSf .clirow{gap:8px 20px}.nxSf .cr-mid{gap:8px 20px}.nxSf .cr-field{flex:0 1 auto;min-width:0}.nxSf .cr-acts{flex:1 1 100%;justify-content:flex-end;margin-left:0;margin-top:6px}}
+/* #v-clientes — SOLO los botones (tarjetas, KPIs y colores de estado no se
+   tocan). Mismos tokens/receta que ya usa el modal #mCli (mismo azul de
+   acento) para que se sienta el mismo sistema al pasar de la lista al
+   formulario. Antes: borde plano + sombra solo al hover, sin animación real
+   de presión. Ahora: elevados hacia afuera en reposo, se hunden al
+   presionar — igual que la regla general del piloto neumórfico. */
+#v-clientes{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx2:#7a8494;--nm-accent:#3568e0}
+body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-clientes .btn.bsm{
+  border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
+  box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#v-clientes .btn.bsm:hover{box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important}
+#v-clientes .btn.bsm:active{
+  box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+/* El color ya no llena el botón — queda solo como acento del ícono, mismo
+   criterio que los chips "Pill Premium" (ver memoria del proyecto). */
+#v-clientes .btn.bsm.bghost i{color:var(--nm-tx2) !important}
+#v-clientes .btn.bsm.bghost[title*="Editar"] i,#v-clientes .btn.bsm.bghost[title*="editar"] i{color:var(--nm-accent) !important}
+#v-clientes .btn.bsm.bghost[title*="Cobro"] i,#v-clientes .btn.bsm.bghost[title*="cobro"] i,#v-clientes .btn.bsm.bghost[title*="WhatsApp"] i{color:#059669 !important}
+#v-clientes .btn.bsm.bc1,#v-clientes .btn.bsm.bc1 i{color:#059669 !important}
+#v-clientes .btn.bsm.bc4,#v-clientes .btn.bsm.bc4 i{color:#d97706 !important}
+#v-clientes #btnLimpiarCli i{color:var(--nm-tx2) !important}
+/* "Nuevo" conserva su degradado (es el CTA principal de la pantalla) — solo
+   gana la animación física de presión, que antes no existía. */
+#v-clientes .nxft-tab.nxft-add{transition:box-shadow .18s ease,transform .12s ease,filter .18s ease !important}
+#v-clientes .nxft-tab.nxft-add:active{
+  transform:translateY(2px) scale(.98);
+  box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.18) !important;
+}
+@media(prefers-reduced-motion:reduce){#v-clientes .btn.bsm,#v-clientes .nxft-tab.nxft-add{transition:none !important}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -5340,7 +5374,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.81';
+const APP_VERSION='56.82';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
