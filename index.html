@@ -2757,7 +2757,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                   <div class="fr"><label>Email</label><input type="email" id="cfgEmpEmail"/></div>
                   <div class="fr"><label>Dirección</label><input type="text" id="cfgEmpDir"/></div>
                 </div>
-                <button class="btn bxl" onclick="guardarDatosEmp()"><i class="ti ti-device-floppy"></i> Guardar datos</button>
+                <button class="btn bxl" onclick="guardarDatosEmp()" id="btnDatosEmp"><i class="ti ti-device-floppy"></i> Guardar datos</button>
               </div>
 
               <div class="nc">
@@ -5483,7 +5483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.87';
+const APP_VERSION='56.88';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10227,7 +10227,7 @@ function rEmpGrd(){
 function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
 async function guardarEmp(){
   const nom=document.getElementById('eNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
-  const btn=document.getElementById('btnEmp');btn.disabled=true;
+  const btn=document.getElementById('btnEmp');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   const datos={nom,rnc:document.getElementById('eRNC').value.trim(),sector:document.getElementById('eSec').value.trim(),tel:document.getElementById('eTel2').value.trim(),email:document.getElementById('eEmail').value.trim(),contacto:document.getElementById('eCon').value.trim()};
   // Normalizar texto a MAYÚSCULAS (email intacto)
   datos.nom=mayus(datos.nom);
@@ -10237,8 +10237,8 @@ async function guardarEmp(){
     if(editEmpId){await API.patch('empresas',`id=eq.${editEmpId}`,datos);const idx=ST.empresas.findIndex(x=>x.id===editEmpId);ST.empresas[idx]={...ST.empresas[idx],...datos};logAudit('EMPRESA_EDITADA','Empresa: '+nom,'Empresas');toast('ok','Empresa actualizada',nom);}
     else{const r=await API.post('empresas',datos);if(r&&r[0])ST.empresas.push(r[0]);logAudit('EMPRESA_CREADA','Empresa: '+nom,'Empresas');toast('ok','Empresa registrada',nom);}
     closeM('mEmp');rEmpGrd();editEmpId=null;document.getElementById('mEmpT').textContent='NUEVA EMPRESA';['eNom','eRNC','eSec','eTel2','eEmail','eCon'].forEach(id=>document.getElementById(id).value='');
-  }catch(e){mostrarError(e.message,'Al inhabilitar cliente ID: '+inhabCliId);toast('err','Error inhabilitando',e.message);}
-  btn.disabled=false;
+  }catch(e){toast('err','Error',e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';
 }
 async function eliminarEmp(id){if(ST.clientes.find(c=>c.empresa_id===id)){toast('warn','No se puede eliminar','Hay clientes asociados');return;}
   const ok=await swalConfirm('🏢','¿Eliminar empresa?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('empresas',`id=eq.${id}`);ST.empresas=ST.empresas.filter(e=>e.id!==id);rEmpGrd();}catch(e){toast('err','Error',e.message);}}
@@ -10272,7 +10272,7 @@ function rAgentes(){
 function editarAgt(id){const a=ST.agentes.find(x=>x.id===id);if(!a)return;editAgtId=id;document.getElementById('mAgtT').textContent='EDITAR AGENTE';document.getElementById('agtNom').value=a.nom;document.getElementById('agtCargo').value=a.cargo||'';document.getElementById('agtTel').value=a.tel||'';document.getElementById('agtEmail').value=a.email||'';document.getElementById('agtLic').value=a.licencia||'';document.getElementById('agtLicVence').value=a.lic_vence||'';openM('mAgente');}
 async function guardarAgente(){
   const nom=document.getElementById('agtNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
-  const btn=document.getElementById('btnAgt');btn.disabled=true;
+  const btn=document.getElementById('btnAgt');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   const datos={nom,cargo:document.getElementById('agtCargo').value.trim(),tel:document.getElementById('agtTel').value.trim(),email:document.getElementById('agtEmail').value.trim(),licencia:document.getElementById('agtLic').value.trim(),lic_vence:document.getElementById('agtLicVence').value||null};
   // Normalizar texto a MAYÚSCULAS (email intacto)
   datos.nom=mayus(datos.nom);
@@ -10282,7 +10282,7 @@ async function guardarAgente(){
     else{const r=await API.post('agentes',datos);if(r&&r[0])ST.agentes.push(r[0]);logAudit('AGENTE_CREADO','Agente: '+nom,'Agentes');toast('ok','Agente registrado',nom);}
     closeM('mAgente');rAgentes();editAgtId=null;document.getElementById('mAgtT').textContent='NUEVO AGENTE';['agtNom','agtCargo','agtTel','agtEmail','agtLic','agtLicVence'].forEach(id=>document.getElementById(id).value='');
   }catch(e){toast('err','Error',e.message);}
-  btn.disabled=false;
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';
 }
 async function eliminarAgt(id){if(ST.clientes.find(c=>c.agente_id===id)){toast('warn','No se puede eliminar','Hay clientes asignados');return;}
   const ok=await swalConfirm('👤','¿Eliminar agente?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('agentes',`id=eq.${id}`);ST.agentes=ST.agentes.filter(a=>a.id!==id);rAgentes();}catch(e){toast('err','Error',e.message);}}
@@ -10588,7 +10588,7 @@ async function confirmarInhab(){
     toast('err','Nota requerida','Cuando el motivo es "Otro" debes explicar en la nota');
     return;
   }
-  const btn=document.getElementById('btnInhab');btn.disabled=true;
+  const btn=document.getElementById('btnInhab');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     // Sincroniza también estado_cliente: guardarCli() re-deriva 'activo' desde este campo en
     // CADA guardado del formulario de editar cliente (línea ~8185) — si se queda desincronizado,
@@ -10606,7 +10606,7 @@ async function confirmarInhab(){
     c.activo=false;c.estado_cliente='SUSPENDIDO';logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes',c.id);
     closeM('mInhab');toast('warn','Cliente inhabilitado — póliza cancelada',c.nom);rCli();rDash();actualizarTicker();
   }catch(e){toast('err','Error',e.message);}
-  btn.disabled=false;
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-user-off"></i> Inhabilitar';
 }
 async function reactivar(id){
   const c=ST.clientes.find(x=>x.id===id);if(!c||!confirm(`¿Reactivar a ${c.nom}?`))return;
@@ -10798,7 +10798,7 @@ async function guardarAsientoFn(){
     if(!motivo){toast('err','Campo requerido','El motivo de la corrección es obligatorio');return;}
   }
   if(!_asiIdemKey)_asiIdemKey=nxNuevaIdemKey();
-  const btn=document.getElementById('btnAsi');btn.disabled=true;
+  const btn=document.getElementById('btnAsi');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     if(editAsiId){
       const r=await API.post('rpc/seguros_corregir_asiento_manual',{
@@ -10833,7 +10833,7 @@ async function guardarAsientoFn(){
   }catch(e){
     const msg=nxRpcErr(e);toast('err','Error',msg);
   }
-  btn.disabled=false;
+  btn.disabled=false;btn.innerHTML=editAsiId?'<i class="ti ti-arrow-back-up"></i> Guardar corrección':'<i class="ti ti-check"></i> Registrar';
 }
 function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Corregir asiento" style="padding:4px 8px" aria-label="Corregir asiento"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
 function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;
@@ -11086,6 +11086,7 @@ async function guardarDatosEmp(){
   const get=id=>document.getElementById(id)?.value?.trim()||'';
   const nom=get('cfgEmpNom');
   if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
+  const btn=document.getElementById('btnDatosEmp');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     const datos=[
       {clave:'empresa_nom',valor:nom},
@@ -11111,12 +11112,7 @@ async function guardarDatosEmp(){
   }catch(e){
     mostrarError(e.message,'Al guardar datos de la empresa');
   }
-}
-
-async function guardarConfig(){
-  const nom=document.getElementById('cfgEmpNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
-  const datos=[{clave:'empresa_nom',valor:nom},{clave:'empresa_rnc',valor:document.getElementById('cfgEmpRNC').value},{clave:'empresa_tel',valor:document.getElementById('cfgEmpTel').value},{clave:'empresa_email',valor:document.getElementById('cfgEmpEmail').value},{clave:'empresa_dir',valor:document.getElementById('cfgEmpDir').value}];
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('CONFIG_EMPRESA',`Empresa actualizada: ${nom}`);toast('ok','Datos de empresa guardados');}catch(e){mostrarError(e.message,'Al guardar configuración de empresa');toast('err','Error',e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar datos';
 }
 // ── Gestión de ARS ───────────────────────────────────────────────────────────
 let _arsList = ['ARS Humano','ARS Reservas','ARS Semma','ARS Universal','ARS Meta Salud','ARS CMD','ARS Yunen','ARS Futuro','ARS Asemap','ARS BHD'];
@@ -11464,7 +11460,7 @@ async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
   }
 }
 
-async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
+async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';}
 async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);renderUsuariosCfg();}catch(e){toast('err','Error',e.message);}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────

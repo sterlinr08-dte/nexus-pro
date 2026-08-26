@@ -1,7 +1,12 @@
 {
-  "version": "56.87",
+  "version": "56.88",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.88",
+      "fecha": "2026-08-25",
+      "texto": "NUEVO: el anillo giratorio de \"cargando\" ahora aparece en los botones de Guardar de Empresas, Agentes, Usuarios, Asientos contables, Inhabilitar cliente y Datos de la empresa (Ajustes) — antes se quedaban con el mismo texto todo el tiempo mientras guardaban, sin avisar que algo estaba pasando. CORREGIDO de paso: un error al guardar una Empresa mostraba por error un mensaje de \"inhabilitar cliente\" (copiado de otra función); ahora muestra el error correcto. Se eliminó además una función de Ajustes que nunca se usaba (duplicaba a la que sí guarda los datos de la empresa)."
+    },
     {
       "v": "56.87",
       "fecha": "2026-08-25",
