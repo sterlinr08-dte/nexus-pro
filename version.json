@@ -1,7 +1,12 @@
 {
-  "version": "56.93",
+  "version": "56.94",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.94",
+      "fecha": "2026-08-26",
+      "texto": "AJUSTADO: se quitó el fondo gris de todos los modales con relieve (Registrar pago, Nuevo/Editar Cliente, Inhabilitar, Empresa, Agente, Asiento, Usuario, Cobros del cliente, Log de errores, Documentos, Backup, WhatsApp masivo) — ahora son blancos, con el mismo relieve pero con sombra más marcada para que se siga notando sin el gris de fondo. Look más limpio y moderno."
+    },
     {
       "v": "56.93",
       "fecha": "2026-08-26",
