@@ -814,6 +814,14 @@ body.tema-premium #mEmp .modal,body.tema-premium #mAgente .modal,body.tema-premi
    .bwa/.bc1: el .btn del piloto solo fuerza FORMA (borde/relieve), nunca
    pisa un background puesto en línea (ver la regla de abajo, sin !important
    en background). */
+/* BUG real reportado: "Ver historial" (nuevo, dentro de #mAbono) abría este
+   modal pero no se veía — #mHistCobros vive ANTES que #mAbono en el HTML, y
+   con el mismo z-index:100 de .overlay, el que sale DESPUÉS en el DOM pinta
+   encima. #mAbono tapaba a #mHistCobros por completo, dando la impresión de
+   que el botón no hacía nada. Se le sube el z-index para que SIEMPRE quede
+   por encima de cualquier overlay normal, se abra solo o desde adentro de
+   otro modal — no afecta el caso de abrirlo solo (nada más compite ahí). */
+#mHistCobros{z-index:110}
 #mHistCobros .modal{
   --nm-bg:#f6f8fb;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.16);--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
   background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
@@ -5697,7 +5705,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.96';
+const APP_VERSION='56.97';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

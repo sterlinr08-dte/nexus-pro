@@ -1,7 +1,12 @@
 {
-  "version": "56.96",
+  "version": "56.97",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.97",
+      "fecha": "2026-08-26",
+      "texto": "CORREGIDO: \"Ver historial\" dentro de Registrar pago no hacía nada visible — la ventana del historial sí se abría, pero quedaba tapada por completo detrás del propio modal de Registrar pago. Ya se ve encima como corresponde."
+    },
     {
       "v": "56.96",
       "fecha": "2026-08-26",
