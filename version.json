@@ -1,7 +1,12 @@
 {
-  "version": "57.01",
+  "version": "57.02",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.02",
+      "fecha": "2026-08-27",
+      "texto": "Corregido: el buscador nuevo (Clientes, Pólizas, Facturas, Cobros, Historial de pagos, Usuarios) se encogía solo y perdía el teclado a mitad de escribir, porque la lista se repintaba completa con cada letra. Ahora, una vez abierto, ya no se reconstruye mientras escribes."
+    },
     {
       "v": "57.01",
       "fecha": "2026-08-27",

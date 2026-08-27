@@ -5734,7 +5734,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.01';
+const APP_VERSION='57.02';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8354,6 +8354,10 @@ function limpiarFiltrosCli(){
 function pintarLupaCli(){
   const box=document.getElementById('cliQLupa');
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  // Si ya está pintada, no reconstruir: rCli() la llama en cada repintado de la lista
+  // (incluido el que dispara la propia búsqueda al escribir) y reemplazar el nodo
+  // le quita el foco/cierra el teclado y la vuelve a encoger a mitad de escritura.
+  if(document.getElementById('nbiIn_cliQ'))return;
   box.innerHTML=nxBuscaInlineHTML({
     id:'cliQ',
     placeholder:'Nombre, apodo, cédula, póliza...',
@@ -8587,11 +8591,12 @@ function rCli(){
 function toggleCliVerTodos(){_cliVerTodos=!_cliVerTodos;rCli();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
-// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.
 // El input #polQ sigue existiendo (oculto) y es lo que lee rPolizas(), sin cambios de filtrado.
 function pintarLupaPol(){
   const box=document.getElementById('polQLupa');
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  if(document.getElementById('nbiIn_polQ'))return; // ver nota en pintarLupaCli()
   box.innerHTML=nxBuscaInlineHTML({
     id:'polQ',
     placeholder:'Póliza, cliente…',
@@ -8911,6 +8916,7 @@ function pintarLupaFact(){
     return;
   }
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  if(document.getElementById('nbiIn_factQ'))return; // ver nota en pintarLupaCli()
   box.innerHTML=nxBuscaInlineHTML({
     id:'factQ',
     placeholder:'Cliente, cédula o póliza…',
@@ -9482,11 +9488,12 @@ function _nxCobCSS(){
   @media(max-width:460px){.nxCobCard .cbActs{width:100%;margin-left:0;margin-top:6px}.nxCobCard .cbBtn{flex:1;justify-content:center}}`;
   document.head.appendChild(st);
 }
-// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.
 // El input #cobQ sigue existiendo (oculto) y es lo que lee rCob(), sin cambios de filtrado.
 function pintarLupaCob(){
   const box=document.getElementById('cobQLupa');
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  if(document.getElementById('nbiIn_cobQ'))return; // ver nota en pintarLupaCli()
   box.innerHTML=nxBuscaInlineHTML({
     id:'cobQ',
     placeholder:'Cliente, cédula o póliza…',
@@ -10108,7 +10115,7 @@ function aplicarPeriodoPagos(){
 }
 
 let _pagosPeriodoInit=false;
-// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.
 // El input #pgBuscar sigue existiendo (oculto); onterm llama aplicarFiltrosPagos() (filtro local
 // sobre _pagosCache) en vez de rPagos() — antes cada tecla disparaba un refetch al servidor por
 // el rango de fechas, igual que las demás casillas del panel (empresa/agente/método/banco) que
@@ -10116,6 +10123,7 @@ let _pagosPeriodoInit=false;
 function pintarLupaPagos(){
   const box=document.getElementById('pgBuscarLupa');
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  if(document.getElementById('nbiIn_pgBuscar'))return; // ver nota en pintarLupaCli()
   box.innerHTML=nxBuscaInlineHTML({
     id:'pgBuscar',
     placeholder:'Buscar cliente…',
@@ -11705,6 +11713,7 @@ function rAuditoria(){
 function pintarLupaAudit(){
   const box=document.getElementById('auditFiltroUsrLupa');
   if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  if(document.getElementById('nbiIn_auditFiltroUsr'))return; // ver nota en pintarLupaCli()
   box.innerHTML=nxBuscaInlineHTML({
     id:'auditFiltroUsr',
     placeholder:'Buscar usuario…',
