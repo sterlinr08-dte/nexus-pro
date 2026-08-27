@@ -1,7 +1,12 @@
 {
-  "version": "56.97",
+  "version": "56.98",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.98",
+      "fecha": "2026-08-27",
+      "texto": "LIMPIEZA INTERNA (no afecta Seguros): se eliminó el módulo \"Nexus AI Content\" (marketing con IA, apenas en Fase 1) del Panel del Dueño — no se usaba todavía. No cambia nada de Clientes, Facturas, Cobros ni el resto del sistema de seguros."
+    },
     {
       "v": "56.97",
       "fecha": "2026-08-26",

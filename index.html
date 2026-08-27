@@ -5705,7 +5705,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.97';
+const APP_VERSION='56.98';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7782,7 +7782,7 @@ window.nxPref=nxPref;window.nxPrefSet=nxPrefSet;window.nxPrefsCargar=nxPrefsCarg
 // ejecuta un nombre de función que venga del almacenamiento sin estar en esta lista.
 const NX_MODULOS_LUGAR={pos:'nxAbrirPOS',rifas:'nxAbrirRifas',consultorio:'nxAbrirConsultorio',
   multiempresa:'nxAbrirMultiempresa',financiamiento:'nxAbrirPrestamos',vehiculos:'nxAbrirVehiculos',
-  saas:'nxAbrirSaas',aicontent:'nxAbrirAIContent'};
+  saas:'nxAbrirSaas'};
 function nxGuardarLugar(clave,sub){
   try{nxPrefSet('lugar',{k:clave,s:sub||null});}catch(e){}
 }
