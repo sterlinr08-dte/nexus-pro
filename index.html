@@ -4728,6 +4728,35 @@ window.nxBuscaFiltroLimpiar=nxBuscaFiltroLimpiar;window.nxBuscaFiltroUsar=nxBusc
 window.nxBuscaFiltroFav=nxBuscaFiltroFav;window.nxBuscaFiltroChip=nxBuscaFiltroChip;
 window.nxBuscaFiltroCerrar=nxBuscaFiltroCerrar;
 
+// ── BUSCADOR INLINE QUE CRECE (metodología pedida por el dueño 2026-08-27: nada de
+// ventana flotante — la lupa se estira en el propio lugar con la animación de
+// nxBusca-c y ahí mismo se va filtrando la lista, sin tapar la pantalla). Mismo
+// propósito que nxBuscaFiltroHTML (filtrar una lista ya en pantalla) pero sin modal.
+// onterm es una FUNCIÓN (no un string), igual que en nxBuscaFiltroHTML: así funciona
+// con handlers que viven dentro de un IIFE y no están en window.
+// Uso: nxBuscaInlineHTML({id, placeholder, onterm:fn(term), value})
+window.__nbiReg=window.__nbiReg||{};
+function nxBuscaInlineHTML(o){
+  o=o||{};
+  const id=o.id||('nbi'+Math.random().toString(36).slice(2));
+  const prev=window.__nbiReg[id]||{};
+  window.__nbiReg[id]={onterm:typeof o.onterm==='function'?o.onterm:null,term:(o.value!=null?o.value:(prev.term||''))};
+  return nxBuscaHTML({
+    id:'nbiIn_'+id, compact:true, placeholder:o.placeholder,
+    value:window.__nbiReg[id].term,
+    oninput:"nxBuscaInlineEscribe('"+id+"',this.value)",
+    onenter:"nxBuscaInlineEscribe('"+id+"',this.value,true)"
+  });
+}
+function nxBuscaInlineEscribe(id,v,inmediato){
+  const c=window.__nbiReg[id];if(!c)return;
+  c.term=v;
+  clearTimeout(c._t);
+  const ir=function(){if(typeof c.onterm==='function'){try{c.onterm(v);}catch(e){}}};
+  if(inmediato)ir();else c._t=setTimeout(ir,200);
+}
+window.nxBuscaInlineHTML=nxBuscaInlineHTML;window.nxBuscaInlineEscribe=nxBuscaInlineEscribe;
+
 // ═══ Filtro flotante animado (pill compacto → panel flotante con checklist) ═══
 // Mismo criterio que nxBuscaFiltroHTML: el control REAL de la pantalla (un <select>,
 // una var de módulo…) sigue siendo la ÚNICA fuente de verdad — este componente solo
@@ -5705,7 +5734,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.00';
+const APP_VERSION='57.01';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8324,9 +8353,9 @@ function limpiarFiltrosCli(){
 // no cambió ni una línea: la ventana solo escribe ahí y vuelve a llamar rCliBuscar().
 function pintarLupaCli(){
   const box=document.getElementById('cliQLupa');
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'cliQ', label:'Buscar', titulo:'Buscar cliente', cont:'tbCli',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'cliQ',
     placeholder:'Nombre, apodo, cédula, póliza...',
     value:(document.getElementById('cliQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('cliQ');if(i)i.value=v;rCliBuscar();}
@@ -8562,9 +8591,9 @@ function toggleCliVerTodos(){_cliVerTodos=!_cliVerTodos;rCli();}
 // El input #polQ sigue existiendo (oculto) y es lo que lee rPolizas(), sin cambios de filtrado.
 function pintarLupaPol(){
   const box=document.getElementById('polQLupa');
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'polQ', label:'Buscar', titulo:'Buscar póliza', cont:'tbPol',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'polQ',
     placeholder:'Póliza, cliente…',
     value:(document.getElementById('polQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('polQ');if(i)i.value=v;rPolizas();}
@@ -8881,9 +8910,9 @@ function pintarLupaFact(){
     const inp=document.getElementById('factQ');if(inp&&typeof nxBuscaTog==='function')nxBuscaTog(inp);
     return;
   }
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'factQ', label:'Buscar', titulo:'Buscar factura', cont:'tbFact',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'factQ',
     placeholder:'Cliente, cédula o póliza…',
     value:(document.getElementById('factQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('factQ');if(i)i.value=v;rFact();}
@@ -9457,9 +9486,9 @@ function _nxCobCSS(){
 // El input #cobQ sigue existiendo (oculto) y es lo que lee rCob(), sin cambios de filtrado.
 function pintarLupaCob(){
   const box=document.getElementById('cobQLupa');
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'cobQ', label:'Buscar', titulo:'Buscar cliente', cont:'tbCob',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'cobQ',
     placeholder:'Cliente, cédula o póliza…',
     value:(document.getElementById('cobQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('cobQ');if(i)i.value=v;rCob();}
@@ -10086,9 +10115,9 @@ let _pagosPeriodoInit=false;
 // YA llamaban aplicarFiltrosPagos(); pgBuscar era la única inconsistente.
 function pintarLupaPagos(){
   const box=document.getElementById('pgBuscarLupa');
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'pgBuscar', label:'Buscar', titulo:'Buscar cliente', cont:'tbPagos',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'pgBuscar',
     placeholder:'Buscar cliente…',
     value:(document.getElementById('pgBuscar')||{}).value||'',
     onterm:function(v){const i=document.getElementById('pgBuscar');if(i)i.value=v;aplicarFiltrosPagos();}
@@ -11675,9 +11704,9 @@ function rAuditoria(){
 // no en rAuditRows() (que solo repinta resultados en cada tecla/filtro).
 function pintarLupaAudit(){
   const box=document.getElementById('auditFiltroUsrLupa');
-  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
-  box.innerHTML=nxBuscaFiltroHTML({
-    id:'auditFiltroUsr', label:'Buscar', titulo:'Buscar usuario', cont:'auditRows',
+  if(!box||typeof nxBuscaInlineHTML!=='function')return;
+  box.innerHTML=nxBuscaInlineHTML({
+    id:'auditFiltroUsr',
     placeholder:'Buscar usuario…',
     value:(document.getElementById('auditFiltroUsr')||{}).value||'',
     onterm:function(v){const i=document.getElementById('auditFiltroUsr');if(i)i.value=v;_auditPag=1;rAuditRows();}

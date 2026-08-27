@@ -1,7 +1,12 @@
 {
-  "version": "57.00",
+  "version": "57.01",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.01",
+      "fecha": "2026-08-27",
+      "texto": "Los buscadores de Clientes, Pólizas, Facturas, Cobros, Historial de pagos y Usuarios ya no abren una ventana encima de la pantalla: al tocar la lupa, el propio campo se estira ahí mismo y los resultados se filtran mientras escribes, sin taparte la lista."
+    },
     {
       "v": "57.00",
       "fecha": "2026-08-27",
