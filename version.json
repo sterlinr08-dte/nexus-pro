@@ -1,7 +1,12 @@
 {
-  "version": "56.99",
+  "version": "57.00",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.00",
+      "fecha": "2026-08-27",
+      "texto": "TÉCNICO (invisible para el usuario): se terminó de dividir el antiguo \"parches.js\" — ya no existe ese archivo genérico. Ahora cada negocio/módulo de la plataforma tiene el suyo (Seguros, Financiamiento, Vehículos, Punto de Venta, Rifas, Panel del Dueño). Verificado en vivo en el sitio real: login, Facturas, Panel del Dueño, Punto de Venta y Financiamiento cargan sin errores. No cambia nada de cómo funciona ni se ve el sistema."
+    },
     {
       "v": "56.99",
       "fecha": "2026-08-27",

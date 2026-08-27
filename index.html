@@ -5705,7 +5705,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.99';
+const APP_VERSION='57.00';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5824,19 +5824,19 @@ function compararVersiones(a,b){
 }
 
 // ── ACTUALIZACIÓN RÁPIDA ─────────────────────────────────────────────────────
-// parches.js (~511 KB comprimido) pesa 3 veces más que index.html (~174 KB), y antes se
-// empezaba a bajar SOLO después de que el HTML nuevo ya estaba pintado — o sea, en serie.
-// Esto lo dispara en paralelo con la MISMA URL que pedirá el HTML nuevo ('parches.js?v='+
-// versión, ver el cargador al final del archivo), así el navegador lo sirve de su caché.
+// Los 6 archivos de parches juntos pesan varias veces más que index.html, y antes se
+// empezaban a bajar SOLO después de que el HTML nuevo ya estaba pintado — o sea, en serie.
+// Esto lo dispara en paralelo con las MISMAS URLs que pedirá el HTML nuevo (ver el
+// cargador al final del archivo), así el navegador los sirve de su caché.
 // Sin await ni bloqueo: si falla, la actualización sigue igual que siempre.
 function nxPrecargarParche(versionNueva){
   try{
     if(!versionNueva||!location.origin||!location.origin.startsWith('http'))return;
-    // Bloque 2026-08-27: parches.js se dividió en dos (Seguros + Multiempresa) —
-    // se precargan los dos con la misma URL que pedirá el cargador al final del
+    // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
+    // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    fetch(location.origin+'/parches-seguros.js?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{});
-    fetch(location.origin+'/parches.js?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{});
+    ['parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
+      .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
 // Pantalla de actualización: un toast desaparece a los segundos y deja al usuario sin saber
@@ -12871,12 +12871,22 @@ setInterval(verificarAutoFacturacion, 60000);
 setTimeout(verificarAutoFacturacion, 5000);
 </script>
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══
-     Dividido el 2026-08-27: parches.js (Financiamiento/POS/Rifas/Vehículos/Panel
-     del Dueño/Consultorio — "Multiempresa") creció a 30,000+ líneas mezclado con
-     los parches propios de Seguros. Se separó la parte de Seguros a
-     parches-seguros.js — verificado con grep en todo el repo que ninguna de las
-     dos mitades referencia funciones/variables de la otra (son independientes),
-     así que se cargan en paralelo, sin depender de cuál termine primero. -->
+     Dividido el 2026-08-27: el "parches.js" único (30,000+ líneas) mezclaba los
+     parches de Seguros con TODA la plataforma Multiempresa. Se separó en 6
+     archivos por tema — el nombre genérico "parches.js" ya no existe, cada
+     negocio/módulo tiene el suyo:
+       parches-seguros.js         → Nexus Pro Seguros (los parches de siempre)
+       parches-financiamiento.js  → Préstamos/Cobranza (define window.nxMERegistrar,
+                                     del que dependen los 4 de abajo — va primero)
+       parches-vehiculos.js       → Compra y venta de vehículos
+       parches-pos.js             → Punto de Venta (el más grande, ~11,000 líneas)
+       parches-rifas.js           → Rifas
+       parches-panel-dueno.js     → Panel del Dueño (superadmin) + Consultorio + Clientes SaaS
+     Verificado con grep en todo el repo que ninguno de estos 6 archivos llama
+     funciones/variables definidas en otro (son independientes entre sí, salvo
+     el patrón nxMERegistrar ya mencionado, que tolera llegar tarde con
+     reintentos propios) — se cargan en paralelo, sin depender de cuál termine
+     primero, en el mismo orden relativo que tenían dentro del archivo único. -->
 <script>
   (function(){
     // Cachea por versión (no por Date.now): evita re-descargarlo en cada
@@ -12897,7 +12907,11 @@ setTimeout(verificarAutoFacturacion, 5000);
       cargar();
     }
     cargarConReintento('parches-seguros.js');
-    cargarConReintento('parches.js');
+    cargarConReintento('parches-financiamiento.js');
+    cargarConReintento('parches-vehiculos.js');
+    cargarConReintento('parches-pos.js');
+    cargarConReintento('parches-rifas.js');
+    cargarConReintento('parches-panel-dueno.js');
   })();
 </script>
 </body>

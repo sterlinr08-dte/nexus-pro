@@ -37,10 +37,10 @@ self.addEventListener('fetch', e => {
 
   const url = e.request.url;
 
-  // NUNCA interceptar: Supabase, parches*.js, index.html, ni JS dinámico
+  // NUNCA interceptar: Supabase, parches-*.js (los 6 archivos del sistema de
+  // parches, 2026-08-27: ya no existe un "parches.js" único), index.html, ni JS dinámico
   if (url.includes('supabase.co')) return;
-  if (url.includes('parches.js')) return;
-  if (url.includes('parches-seguros.js')) return;
+  if (url.includes('/parches-')) return;
   if (url.includes('.html')) return;
   if (url.includes('?')) return; // peticiones con query (datos) pasan directo
 
