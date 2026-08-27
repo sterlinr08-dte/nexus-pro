@@ -9941,9 +9941,10 @@
   // y el contador compartido excluye los <div> ocultos por display:none (offsetParent).
   function pintarLupaPend() {
     const box = document.getElementById('nxPendBuscarLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'nxPendBuscar', label: 'Buscar', titulo: 'Buscar cliente', cont: 'nxPendLista',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_nxPendBuscar')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'nxPendBuscar',
       placeholder: 'Nombre del cliente…',
       onterm: function (v) { window.nxFiltrarPend(v); }
     });

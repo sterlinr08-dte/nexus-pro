@@ -555,9 +555,10 @@
   // 1 wrapper, no las filas), mismo criterio ya usado en pintarLupaPr() para la lista general.
   function pintarLupaPrCob() {
     const box = document.getElementById('nxPrCobBuscarLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'nxPrCobBuscar', label: 'Buscar', titulo: 'Buscar en cobranza',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_nxPrCobBuscar')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'nxPrCobBuscar',
       placeholder: 'Nombre, cédula, teléfono o referencia…', value: _prCobQ,
       onterm: function (v) { window.nxPrCobBuscar(v); }
     });
@@ -1065,18 +1066,20 @@
   // no las filas) y además pagina de a 12, así que un conteo de página engañaría.
   function pintarLupaPr() {
     const box = document.getElementById('nxPrBuscarLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'nxPrBuscar', label: 'Buscar', titulo: 'Buscar préstamo',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_nxPrBuscar')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'nxPrBuscar',
       placeholder: 'Nombre o cédula…', value: _prQuery,
       onterm: function (v) { window.nxPrestamoFiltrar(v); }
     });
   }
   function pintarLupaPrCli() {
     const box = document.getElementById('nxPrCliBuscarLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'nxPrCliBuscar', label: 'Buscar', titulo: 'Buscar cliente',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_nxPrCliBuscar')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'nxPrCliBuscar',
       placeholder: 'Nombre, cédula o teléfono…', value: _prCliQuery,
       onterm: function (v) { window.nxPrClienteFiltrar(v); }
     });

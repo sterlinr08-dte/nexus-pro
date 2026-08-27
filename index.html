@@ -4742,7 +4742,7 @@ function nxBuscaInlineHTML(o){
   const prev=window.__nbiReg[id]||{};
   window.__nbiReg[id]={onterm:typeof o.onterm==='function'?o.onterm:null,term:(o.value!=null?o.value:(prev.term||''))};
   return nxBuscaHTML({
-    id:'nbiIn_'+id, compact:true, placeholder:o.placeholder,
+    id:'nbiIn_'+id, compact:true, placeholder:o.placeholder, inputmode:o.inputmode,
     value:window.__nbiReg[id].term,
     oninput:"nxBuscaInlineEscribe('"+id+"',this.value)",
     onenter:"nxBuscaInlineEscribe('"+id+"',this.value,true)"
@@ -5734,7 +5734,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.02';
+const APP_VERSION='57.03';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

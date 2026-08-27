@@ -253,9 +253,10 @@
   // (se reconstruyen por tecla); el estado vacío lleva data-nbf-ignorar.
   function pintarLupaMd() {
     var box = document.getElementById('mdQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'mdQ', label: 'Buscar', titulo: 'Buscar paciente', cont: 'mdPacLista',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_mdQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'mdQ',
       placeholder: 'Nombre, cédula o teléfono…', value: _mdQ,
       onterm: function (v) { window.nxMdBuscar(v); }
     });

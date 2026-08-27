@@ -139,9 +139,10 @@
   // #nxVhLista y el contador compartido excluye los <div> ocultos por display:none (offsetParent).
   function pintarLupaVh() {
     const box = document.getElementById('nxVhBuscarLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'nxVhBuscar', label: 'Buscar', titulo: 'Buscar vehículo', cont: 'nxVhLista',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_nxVhBuscar')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'nxVhBuscar',
       placeholder: 'Marca, placa, chasis o comprador…',
       onterm: function (v) { window.nxVehBuscar(v); }
     });

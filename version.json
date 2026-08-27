@@ -1,7 +1,12 @@
 {
-  "version": "57.02",
+  "version": "57.03",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.03",
+      "fecha": "2026-08-27",
+      "texto": "Se extendió el buscador que crece en su lugar (sin ventana flotante) a todo el resto del sistema: Punto de Venta (Inventario, Notas de crédito, Historial de ventas, Reparaciones, Financiamiento del POS, Prefacturas), Financiamiento/Préstamos y Cobranza, Compra y venta de Vehículos, Rifas (Pagos, Participantes, Tickets, Tablero), Consultorio Médico y Pendientes de Seguros."
+    },
     {
       "v": "57.02",
       "fecha": "2026-08-27",

@@ -623,9 +623,10 @@
   // filas viven dentro de #rfPagosBody sin marcado propio de "resultados" (mensaje ya honesto).
   function pintarLupaRfPagos() {
     var box = document.getElementById('rfPagosQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'rfPagosQ', label: 'Buscar', titulo: 'Buscar pago por revisar',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_rfPagosQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'rfPagosQ',
       placeholder: 'Comprador, número o teléfono…', value: _rfPagosQ || '',
       onterm: function (v) { window.nxRfPagosBuscar(v); }
     });
@@ -684,9 +685,10 @@
   window.nxRfPtBuscar = function (v) { _rfPtQ = v || ''; var b = document.getElementById('rfPtBody'); if (b) b.innerHTML = rfParticipantesRowsHTML(_rfPtQ); };
   function pintarLupaRfPt() {
     var box = document.getElementById('rfPtQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'rfPtQ', label: 'Buscar', titulo: 'Buscar participante',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_rfPtQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'rfPtQ',
       placeholder: 'Comprador, teléfono o cédula…', value: _rfPtQ || '',
       onterm: function (v) { window.nxRfPtBuscar(v); }
     });
@@ -774,9 +776,10 @@
   window.nxRfTkBuscar = function (v) { _rfTkQ = v || ''; var b = document.getElementById('rfTkBody'); if (b) b.innerHTML = tkRowsHTML(_rfTkQ); };
   function pintarLupaRfTk() {
     var box = document.getElementById('rfTkQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'rfTkQ', label: 'Buscar', titulo: 'Buscar ticket',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_rfTkQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'rfTkQ',
       placeholder: 'Número, comprador o teléfono…', value: _rfTkQ || '',
       onterm: function (v) { window.nxRfTkBuscar(v); }
     });
@@ -787,9 +790,10 @@
   // 120 celdas por página, un conteo de celdas visibles engañaría (no es "N boletos encontrados").
   function pintarLupaRfTab() {
     var box = document.getElementById('rfTabQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'rfTabQ', label: 'Buscar', titulo: 'Buscar número de boleto',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_rfTabQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'rfTabQ',
       placeholder: 'Número de boleto…', value: _tabQ || '', inputmode: 'numeric',
       onterm: function (v) { window.nxRifaBuscar(v); }
     });

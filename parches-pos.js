@@ -3197,9 +3197,10 @@
   // honesto que ya trae el componente en vez de un número falso.
   function pintarLupaProd() {
     const box = document.getElementById('prodQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'prodQ', label: 'Buscar', titulo: 'Buscar artículo',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_prodQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'prodQ',
       placeholder: 'Nombre, código o marca…',
       onterm: function (v) { window.nxProdTablaBuscar(v); }
     });
@@ -5087,9 +5088,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // exactamente lo que nxNCBuscar ya hacía — cero cambio de lógica de filtrado.
   function pintarLupaNC() {
     const box = document.getElementById('ncQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'ncQ', label: 'Buscar', titulo: 'Buscar nota de crédito', cont: 'ncBody',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_ncQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'ncQ',
       placeholder: 'No., NCF o cliente…', value: _ncQ,
       onterm: function (v) { window.nxNCBuscar(v); }
     });
@@ -5125,9 +5127,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // NPGS §5: mismo patrón que Notas de crédito — pintarHistorial() ya reconstruye SOLO #histBody.
   function pintarLupaHist() {
     const box = document.getElementById('histQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'histQ', label: 'Buscar', titulo: 'Buscar venta', cont: 'histBody',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_histQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'histQ',
       placeholder: 'No. de factura o cliente…', value: _histQ,
       onterm: function (v) { window.nxPosVentasBuscar(v); }
     });
@@ -8563,9 +8566,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // que Inventario/Productos) en vez de contar solo la primera columna.
   function pintarLupaRep() {
     const box = document.getElementById('repQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'repQ', label: 'Buscar', titulo: 'Buscar reparación',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_repQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'repQ',
       placeholder: 'Cliente, equipo, IMEI o número…',
       onterm: function (v) { window.nxRepBuscar(v); }
     });
@@ -9622,9 +9626,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // data-nbf-ignorar para que 0 resultados no cuente como "1 resultado".
   function pintarLupaFin() {
     const box = document.getElementById('finQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'finQ', label: 'Buscar', titulo: 'Buscar financiamiento', cont: 'finList',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_finQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'finQ',
       placeholder: 'Nombre, cédula, teléfono o referencia…', value: _finQ,
       onterm: function (v) { window.nxFinBuscar(v); }
     });
@@ -10155,9 +10160,10 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // reconstruye SOLO #phBody.
   function pintarLupaPH() {
     const box = document.getElementById('phQLupa');
-    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
-    box.innerHTML = nxBuscaFiltroHTML({
-      id: 'phQ', label: 'Buscar', titulo: 'Buscar prefactura', cont: 'phBody',
+    if (!box || typeof nxBuscaInlineHTML !== 'function') return;
+    if (document.getElementById('nbiIn_phQ')) return; // no reconstruir a mitad de escritura
+    box.innerHTML = nxBuscaInlineHTML({
+      id: 'phQ',
       placeholder: 'No. o cliente…', value: _phQ,
       onterm: function (v) { window.nxPHBuscar(v); }
     });
