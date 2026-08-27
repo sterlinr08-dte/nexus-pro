@@ -1753,6 +1753,49 @@ body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
 #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(53,104,224,.16) !important;color:var(--nm-accent) !important}
 body.tema-premium #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(91,157,255,.18) !important}
 @media(prefers-reduced-motion:reduce){#v-clientes .btn.bsm,#v-clientes .nxft-tab{transition:none !important}}
+/* #v-facturas — mismo criterio que #v-clientes: SOLO los botones (Generar,
+   WA masivo, Excel×3) y las 4 pestañas superiores (Facturas/Cobros/
+   Historial/Avisos) pasan a relieve elevado/hundido. Tarjetas, KPIs y
+   colores de estado de cada factura no se tocan. Mismos tokens que
+   #v-clientes (misma tarjeta blanca de fondo en los dos). */
+#v-facturas{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0}
+body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-facturas .btn.bsm{
+  border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
+  box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#v-facturas .btn.bsm:hover{box-shadow:6px 6px 15px var(--nm-lo),-5px -5px 11px var(--nm-hi) !important}
+#v-facturas .btn.bsm:active{
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+#v-facturas .btn.bsm.bc1,#v-facturas .btn.bsm.bc1 i{color:var(--nm-accent) !important}
+#v-facturas .btn.bsm.bc4,#v-facturas .btn.bsm.bc4 i{color:#d97706 !important}
+#v-facturas .btn.bsm.bwa,#v-facturas .btn.bsm.bwa i{color:#059669 !important}
+/* Pestañas Facturas/Cobros/Historial de pagos/Avisos — mismo "Pill Premium"
+   que las de Clientes (pozo hundido, inactivas elevadas, activa hundida). */
+#v-facturas .nxft-tabs{
+  background:var(--nm-bg) !important;border:none !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+#v-facturas .nxft-tab{
+  background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
+  box-shadow:3px 3px 6px var(--nm-lo),-3px -3px 6px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
+}
+#v-facturas .nxft-tab:hover{color:var(--nm-accent) !important}
+#v-facturas .nxft-tab:active{transform:translateY(1px)}
+#v-facturas .nxft-tab.is-active{
+  color:var(--nm-accent) !important;font-weight:800;
+  background:var(--nm-bg) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--nm-lo),
+    inset -3px -3px 6px var(--nm-hi),
+    inset 0 3px 5px var(--nm-lo),
+    inset 0 -3px 5px var(--nm-hi) !important;
+}
+@media(prefers-reduced-motion:reduce){#v-facturas .btn.bsm,#v-facturas .nxft-tab{transition:none !important}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -5654,7 +5697,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.95';
+const APP_VERSION='56.96';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

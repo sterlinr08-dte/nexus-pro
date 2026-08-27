@@ -1,7 +1,12 @@
 {
-  "version": "56.95",
+  "version": "56.96",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.96",
+      "fecha": "2026-08-26",
+      "texto": "NUEVO: en Facturas, los botones (Generar, WA masivo, Excel) y las pestañas de arriba (Facturas, Cobros, Historial de pagos, Avisos) pasan al mismo relieve elevado/hundido que ya tiene Clientes — antes eran planos, sin ninguna animación de presión. El resto de la pantalla (tarjetas de cada factura, colores de estado) no se tocó."
+    },
     {
       "v": "56.95",
       "fecha": "2026-08-26",
