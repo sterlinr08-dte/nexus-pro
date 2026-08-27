@@ -1,7 +1,12 @@
 {
-  "version": "56.98",
+  "version": "56.99",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.99",
+      "fecha": "2026-08-27",
+      "texto": "TÉCNICO (invisible para el usuario): parches.js había crecido a más de 30,000 líneas mezclando el código de Seguros con el de Financiamiento/POS/Rifas/Vehículos/Consultorio/Panel del Dueño. Se separó la parte de Seguros a un archivo propio (parches-seguros.js) para que sea más fácil de mantener. Verificado que las dos partes no dependen entre sí y que todo carga en el mismo orden de siempre — no cambia nada de cómo funciona ni se ve el sistema."
+    },
     {
       "v": "56.98",
       "fecha": "2026-08-27",

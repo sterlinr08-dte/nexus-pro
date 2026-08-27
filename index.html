@@ -5705,7 +5705,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.98';
+const APP_VERSION='56.99';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5832,6 +5832,10 @@ function compararVersiones(a,b){
 function nxPrecargarParche(versionNueva){
   try{
     if(!versionNueva||!location.origin||!location.origin.startsWith('http'))return;
+    // Bloque 2026-08-27: parches.js se dividió en dos (Seguros + Multiempresa) —
+    // se precargan los dos con la misma URL que pedirá el cargador al final del
+    // archivo, para que el navegador los sirva de su caché.
+    fetch(location.origin+'/parches-seguros.js?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{});
     fetch(location.origin+'/parches.js?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{});
   }catch(e){}
 }
@@ -12866,24 +12870,34 @@ setInterval(verificarAutoFacturacion, 60000);
 // También verificar al cargar por si se perdió el momento
 setTimeout(verificarAutoFacturacion, 5000);
 </script>
-<!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
+<!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══
+     Dividido el 2026-08-27: parches.js (Financiamiento/POS/Rifas/Vehículos/Panel
+     del Dueño/Consultorio — "Multiempresa") creció a 30,000+ líneas mezclado con
+     los parches propios de Seguros. Se separó la parte de Seguros a
+     parches-seguros.js — verificado con grep en todo el repo que ninguna de las
+     dos mitades referencia funciones/variables de la otra (son independientes),
+     así que se cargan en paralelo, sin depender de cuál termine primero. -->
 <script>
   (function(){
-    // Cachea parches.js por versión (no por Date.now): evita re-descargarlo en cada
+    // Cachea por versión (no por Date.now): evita re-descargarlo en cada
     // carga — clave en redes lentas (3G) para que los estilos apliquen rápido.
     var V = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
-    var intentos = 0;
-    function cargar(){
-      var s = document.createElement('script');
-      s.src = 'parches.js?v=' + V;
-      s.onerror = function(){
-        intentos++;
-        if (intentos <= 3) { setTimeout(cargar, 800 * intentos); } // reintenta en 3G inestable
-        else { console.log('parches.js no se pudo cargar tras varios intentos'); }
-      };
-      document.head.appendChild(s);
+    function cargarConReintento(src){
+      var intentos = 0;
+      function cargar(){
+        var s = document.createElement('script');
+        s.src = src + '?v=' + V;
+        s.onerror = function(){
+          intentos++;
+          if (intentos <= 3) { setTimeout(cargar, 800 * intentos); } // reintenta en 3G inestable
+          else { console.log(src + ' no se pudo cargar tras varios intentos'); }
+        };
+        document.head.appendChild(s);
+      }
+      cargar();
     }
-    cargar();
+    cargarConReintento('parches-seguros.js');
+    cargarConReintento('parches.js');
   })();
 </script>
 </body>
