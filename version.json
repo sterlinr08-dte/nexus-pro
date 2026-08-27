@@ -1,7 +1,12 @@
 {
-  "version": "57.04",
+  "version": "57.05",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.05",
+      "fecha": "2026-08-27",
+      "texto": "En \"Registrar pago\": los botones rápidos RD$500/1,000/2,000 ahora ESCRIBEN ese monto exacto en el campo (antes lo sumaban al monto ya escrito)."
+    },
     {
       "v": "57.04",
       "fecha": "2026-08-27",

@@ -3410,9 +3410,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="aboLblRow"><span class="aboLbl">Monto a recibir <span class="req">*</span></span><span class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Ver historial</span></div>
     <div class="fr" style="margin-bottom:8px"><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" oninput="nxAboActualizarResumen()"/></div>
     <div class="aboQuickRow">
-      <div class="aboQbtn" onclick="nxAboSumar(500)">+RD$500</div>
-      <div class="aboQbtn" onclick="nxAboSumar(1000)">+RD$1,000</div>
-      <div class="aboQbtn" onclick="nxAboSumar(2000)">+RD$2,000</div>
+      <div class="aboQbtn" onclick="nxAboFijarMonto(500)">RD$500</div>
+      <div class="aboQbtn" onclick="nxAboFijarMonto(1000)">RD$1,000</div>
+      <div class="aboQbtn" onclick="nxAboFijarMonto(2000)">RD$2,000</div>
       <div class="aboQbtn hero" onclick="nxAboSaldar()">SALDAR<br>PENDIENTE</div>
     </div>
     <div class="fr">
@@ -5734,7 +5734,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.04';
+const APP_VERSION='57.05';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10017,11 +10017,11 @@ function abrirAbono(cid){
 // todo sobre lo que YA existe (regAbono(), pend(), deudaAnt(), getTot()):
 // no hay ninguna escritura nueva al servidor, solo ayudas para llenar el
 // monto más rápido y ver de un vistazo qué se va a registrar. ──
-function nxAboSumar(monto){
+// Fija el monto exacto (no suma al ya escrito — pedido del dueño 2026-08-27: los chips
+// rápidos son atajos para escribir ESE monto, no para ir acumulando toques).
+function nxAboFijarMonto(monto){
   const el=document.getElementById('aMnt');if(!el)return;
-  const actual=(window.nxMoney?window.nxMoney.parse(el.value):parseFloat(el.value))||0;
-  const nuevo=actual+monto;
-  el.value=window.nxMoney?window.nxMoney.format(String(nuevo)):String(nuevo);
+  el.value=window.nxMoney?window.nxMoney.format(String(monto)):String(monto);
   nxAboActualizarResumen();
 }
 function nxAboSaldar(){
