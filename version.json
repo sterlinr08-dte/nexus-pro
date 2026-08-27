@@ -1,7 +1,12 @@
 {
-  "version": "57.03",
+  "version": "57.04",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.04",
+      "fecha": "2026-08-27",
+      "texto": "El buscador de artículos de Factura/Prefactura (\"Escanea o busca por nombre, código, IMEI o serial…\") ya no abre una ventana encima de la pantalla: se convierte ahí mismo en el campo de búsqueda y los resultados salen debajo, en el propio documento. El de \"Vender\" con catálogo en tarjetas se queda igual."
+    },
     {
       "v": "57.03",
       "fecha": "2026-08-27",
