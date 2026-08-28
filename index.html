@@ -1183,6 +1183,13 @@ body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
   .qa-g .qa:nth-child(1){animation-delay:.02s}.qa-g .qa:nth-child(2){animation-delay:.05s}
   .qa-g .qa:nth-child(3){animation-delay:.08s}.qa-g .qa:nth-child(4){animation-delay:.11s}
   .qa-g .qa:nth-child(5){animation-delay:.14s}.qa-g .qa:nth-child(6){animation-delay:.17s}
+  /* Filas de Clientes: entran con el mismo fundido hacia arriba al cambiar de página */
+  .clilist .clirow{animation:nxFadeUp .3s ease both}
+  .clilist .clirow:nth-child(1){animation-delay:.02s}.clilist .clirow:nth-child(2){animation-delay:.05s}
+  .clilist .clirow:nth-child(3){animation-delay:.08s}.clilist .clirow:nth-child(4){animation-delay:.11s}
+  .clilist .clirow:nth-child(5){animation-delay:.14s}.clilist .clirow:nth-child(6){animation-delay:.17s}
+  .clilist .clirow:nth-child(7){animation-delay:.20s}.clilist .clirow:nth-child(8){animation-delay:.23s}
+  .clilist .clirow:nth-child(9){animation-delay:.26s}.clilist .clirow:nth-child(10){animation-delay:.29s}
 }
 .ti-b{flex:1}.ti-t{font-weight:700;color:#1e293b}.ti-m{font-size:10px;color:#475569;margin-top:1px;font-family:var(--mono)}
 
@@ -5744,7 +5751,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.11';
+const APP_VERSION='57.12';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8618,7 +8625,15 @@ function cliPagHTML(pag,totalPag){
   html+=`<button class="btn bsm bghost" onclick="cliIrPag(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
   return html;
 }
-function cliIrPag(p){_cliPagina=p;rCli();}
+function cliIrPag(p){
+  _cliPagina=p;rCli();
+  // Que la página siguiente empiece arriba (el clic quedó abajo, junto a la paginación)
+  const cnt=document.getElementById('cnt');
+  if(cnt){
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    cnt.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+  }
+}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 // NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.

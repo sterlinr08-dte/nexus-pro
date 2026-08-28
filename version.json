@@ -1,7 +1,12 @@
 {
-  "version": "57.11",
+  "version": "57.12",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.12",
+      "fecha": "2026-08-28",
+      "texto": "Al cambiar de página en Clientes, las filas entran con una animación suave y la pantalla sube sola hasta arriba — antes te quedabas abajo, junto a los números de página, viendo el final de la lista nueva."
+    },
     {
       "v": "57.11",
       "fecha": "2026-08-28",
