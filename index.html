@@ -338,17 +338,20 @@ tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;color:var(--tx1);verti
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:#f8fafc}
 
-/* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap}
-.bC1{background:#dbeafe;color:#1d4ed8}
-.bC2{background:#ede9fe;color:#6d28d9}
-.bC3{background:#fee2e2;color:#dc2626}
-.bC4{background:#fef3c7;color:#d97706}
-.bCg{background:#f1f5f9;color:#475569}
-.bCoff{background:#fee2e2;color:#dc2626}
-.bC5{background:#d1fae5;color:#059669}
-.bC6{background:#ccfbf1;color:#0d9488}
-.bC7{background:#fce7f0;color:#831843}
+/* ── BADGES — mismo relieve hundido que "Método de pago": la superficie ya no
+   se tiñe de color, solo un punto + el texto llevan el color semántico. ── */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap;
+  background:#f6f8fb;box-shadow:inset 2px 2px 5px rgba(51,65,90,.16),inset -2px -2px 5px #fff}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.bC1{color:#1d4ed8}
+.bC2{color:#6d28d9}
+.bC3{color:#dc2626}
+.bC4{color:#d97706}
+.bCg{color:#475569}
+.bCoff{color:#dc2626}
+.bC5{color:#059669}
+.bC6{color:#0d9488}
+.bC7{color:#831843}
 
 /* ── FORMS ── */
 .fr{margin-bottom:9px}
@@ -5741,7 +5744,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.08';
+const APP_VERSION='57.09';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12223,7 +12226,7 @@ body.tema-premium .gs-input,body.tema-premium .search-box{
   background:#0B1220 !important;color:#E8EDF7 !important;
 }
 /* Badges */
-body.tema-premium .badge{background:rgba(255,255,255,.06)}
+body.tema-premium .badge{background:#1c2230;box-shadow:inset 2px 2px 5px #10131b,inset -2px -2px 5px #262e40}
 /* Barras de la cartera por plan - glow */
 body.tema-premium .br>div,body.tema-premium .bar-fill{
   box-shadow:0 0 12px rgba(15,23,42,.4);

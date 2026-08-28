@@ -1,7 +1,12 @@
 {
-  "version": "57.08",
+  "version": "57.09",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.09",
+      "fecha": "2026-08-28",
+      "texto": "Las etiquetas de estado (Al día, Pendiente, Inhabilitado, etc. en Clientes/Pólizas/y demás) llevan ahora el mismo relieve hundido que las notificaciones, con un puntito de color en vez del fondo pintado — se aplica solo en todo el sistema, sin tocar dónde se usan."
+    },
     {
       "v": "57.08",
       "fecha": "2026-08-28",
