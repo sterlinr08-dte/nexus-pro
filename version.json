@@ -1,7 +1,12 @@
 {
-  "version": "57.12",
+  "version": "57.13",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.13",
+      "fecha": "2026-08-28",
+      "texto": "La paginación numerada, la animación al cambiar de página y el scroll automático hacia arriba se extendieron a Pólizas, Facturas, Cobros, Historial de pagos y Auditoría — antes solo Clientes lo tenía."
+    },
     {
       "v": "57.12",
       "fecha": "2026-08-28",

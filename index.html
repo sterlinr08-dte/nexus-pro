@@ -1183,13 +1183,19 @@ body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
   .qa-g .qa:nth-child(1){animation-delay:.02s}.qa-g .qa:nth-child(2){animation-delay:.05s}
   .qa-g .qa:nth-child(3){animation-delay:.08s}.qa-g .qa:nth-child(4){animation-delay:.11s}
   .qa-g .qa:nth-child(5){animation-delay:.14s}.qa-g .qa:nth-child(6){animation-delay:.17s}
-  /* Filas de Clientes: entran con el mismo fundido hacia arriba al cambiar de página */
-  .clilist .clirow{animation:nxFadeUp .3s ease both}
-  .clilist .clirow:nth-child(1){animation-delay:.02s}.clilist .clirow:nth-child(2){animation-delay:.05s}
-  .clilist .clirow:nth-child(3){animation-delay:.08s}.clilist .clirow:nth-child(4){animation-delay:.11s}
-  .clilist .clirow:nth-child(5){animation-delay:.14s}.clilist .clirow:nth-child(6){animation-delay:.17s}
-  .clilist .clirow:nth-child(7){animation-delay:.20s}.clilist .clirow:nth-child(8){animation-delay:.23s}
-  .clilist .clirow:nth-child(9){animation-delay:.26s}.clilist .clirow:nth-child(10){animation-delay:.29s}
+  /* Filas de las pantallas con paginación (Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría):
+     entran con el mismo fundido hacia arriba al cambiar de página. */
+  .clilist .clirow,#tbPol tr,#tbFact table.sf-fact tbody tr,#tbCob .nxCobCard,#tbPagos table tbody tr,#auditRows table tbody tr{animation:nxFadeUp .3s ease both}
+  .clilist .clirow:nth-child(1),#tbPol tr:nth-child(1),#tbFact table.sf-fact tbody tr:nth-child(1),#tbCob .nxCobCard:nth-child(1),#tbPagos table tbody tr:nth-child(1),#auditRows table tbody tr:nth-child(1){animation-delay:.02s}
+  .clilist .clirow:nth-child(2),#tbPol tr:nth-child(2),#tbFact table.sf-fact tbody tr:nth-child(2),#tbCob .nxCobCard:nth-child(2),#tbPagos table tbody tr:nth-child(2),#auditRows table tbody tr:nth-child(2){animation-delay:.05s}
+  .clilist .clirow:nth-child(3),#tbPol tr:nth-child(3),#tbFact table.sf-fact tbody tr:nth-child(3),#tbCob .nxCobCard:nth-child(3),#tbPagos table tbody tr:nth-child(3),#auditRows table tbody tr:nth-child(3){animation-delay:.08s}
+  .clilist .clirow:nth-child(4),#tbPol tr:nth-child(4),#tbFact table.sf-fact tbody tr:nth-child(4),#tbCob .nxCobCard:nth-child(4),#tbPagos table tbody tr:nth-child(4),#auditRows table tbody tr:nth-child(4){animation-delay:.11s}
+  .clilist .clirow:nth-child(5),#tbPol tr:nth-child(5),#tbFact table.sf-fact tbody tr:nth-child(5),#tbCob .nxCobCard:nth-child(5),#tbPagos table tbody tr:nth-child(5),#auditRows table tbody tr:nth-child(5){animation-delay:.14s}
+  .clilist .clirow:nth-child(6),#tbPol tr:nth-child(6),#tbFact table.sf-fact tbody tr:nth-child(6),#tbCob .nxCobCard:nth-child(6),#tbPagos table tbody tr:nth-child(6),#auditRows table tbody tr:nth-child(6){animation-delay:.17s}
+  .clilist .clirow:nth-child(7),#tbPol tr:nth-child(7),#tbFact table.sf-fact tbody tr:nth-child(7),#tbCob .nxCobCard:nth-child(7),#tbPagos table tbody tr:nth-child(7),#auditRows table tbody tr:nth-child(7){animation-delay:.20s}
+  .clilist .clirow:nth-child(8),#tbPol tr:nth-child(8),#tbFact table.sf-fact tbody tr:nth-child(8),#tbCob .nxCobCard:nth-child(8),#tbPagos table tbody tr:nth-child(8),#auditRows table tbody tr:nth-child(8){animation-delay:.23s}
+  .clilist .clirow:nth-child(9),#tbPol tr:nth-child(9),#tbFact table.sf-fact tbody tr:nth-child(9),#tbCob .nxCobCard:nth-child(9),#tbPagos table tbody tr:nth-child(9),#auditRows table tbody tr:nth-child(9){animation-delay:.26s}
+  .clilist .clirow:nth-child(10),#tbPol tr:nth-child(10),#tbFact table.sf-fact tbody tr:nth-child(10),#tbCob .nxCobCard:nth-child(10),#tbPagos table tbody tr:nth-child(10),#auditRows table tbody tr:nth-child(10){animation-delay:.29s}
 }
 .ti-b{flex:1}.ti-t{font-weight:700;color:#1e293b}.ti-m{font-size:10px;color:#475569;margin-top:1px;font-family:var(--mono)}
 
@@ -2676,6 +2682,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <thead><tr><th style="width:12%">N° PÓLIZA</th><th style="width:20%">ASEGURADO</th><th style="width:9%">PLAN</th><th style="width:11%">INICIO</th><th style="width:11%">FIN</th><th style="width:8%">DÍAS</th><th style="width:9%">ESTADO POL.</th><th style="width:12%">NCF</th><th style="width:8%">PDF</th></tr></thead>
               <tbody id="tbPol"><tr><td colspan="9"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
+            <div id="polPagWrap" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap"></div>
           </div>
         </div>
 
@@ -5751,7 +5758,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.12';
+const APP_VERSION='57.13';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8610,30 +8617,32 @@ function rCli(){
     tb.appendChild(extra);
   }
 }
-// Ventana de páginas: 1 … (actual-1) actual (actual+1) … última — sin listar las 100
-// páginas si hay 1000 clientes. onclick llama cliIrPag(N), que solo cambia _cliPagina
-// y vuelve a pintar (misma fuente de datos, cero consulta nueva al servidor).
-function cliPagHTML(pag,totalPag){
+// ── Paginación numerada compartida (Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría) ──
+// Ventana: 1 … (actual-1) actual (actual+1) … última — sin listar las 100 páginas si
+// hay 1000 filas. `fn` es el nombre de la función "ir a la página N" de cada pantalla
+// (ej. 'cliIrPag'), embebido en el onclick — cada pantalla sigue dueña de su propio
+// estado de página, esto solo arma el HTML de los botones.
+function nxPagHTML(pag,totalPag,fn){
   const pages=[...new Set([1,totalPag,pag-1,pag,pag+1].filter(p=>p>=1&&p<=totalPag))].sort((a,b)=>a-b);
-  let html=`<button class="btn bsm bghost" onclick="cliIrPag(${pag-1})"${pag<=1?' disabled':''} aria-label="Página anterior"><i class="ti ti-chevron-left"></i></button>`;
+  let html=`<button class="btn bsm bghost" onclick="${fn}(${pag-1})"${pag<=1?' disabled':''} aria-label="Página anterior"><i class="ti ti-chevron-left"></i></button>`;
   let prev=0;
   pages.forEach(p=>{
     if(prev&&p-prev>1)html+='<span style="padding:0 5px;color:#94a3b8;font-size:11px">…</span>';
-    html+=`<button class="btn bsm ${p===pag?'bc1':'bghost'}" onclick="cliIrPag(${p})"${p===pag?' aria-current="page"':''}>${p}</button>`;
+    html+=`<button class="btn bsm ${p===pag?'bc1':'bghost'}" onclick="${fn}(${p})"${p===pag?' aria-current="page"':''}>${p}</button>`;
     prev=p;
   });
-  html+=`<button class="btn bsm bghost" onclick="cliIrPag(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
+  html+=`<button class="btn bsm bghost" onclick="${fn}(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
   return html;
 }
-function cliIrPag(p){
-  _cliPagina=p;rCli();
-  // Que la página siguiente empiece arriba (el clic quedó abajo, junto a la paginación)
+// Que la página siguiente empiece arriba — el clic en un número queda abajo, junto a la paginación.
+function nxPagScrollTop(){
   const cnt=document.getElementById('cnt');
-  if(cnt){
-    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    cnt.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
-  }
+  if(!cnt)return;
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  cnt.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
 }
+function cliPagHTML(pag,totalPag){return nxPagHTML(pag,totalPag,'cliIrPag');}
+function cliIrPag(p){_cliPagina=p;rCli();nxPagScrollTop();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 // NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.
@@ -8649,6 +8658,8 @@ function pintarLupaPol(){
     onterm:function(v){const i=document.getElementById('polQ');if(i)i.value=v;rPolizas();}
   });
 }
+let _polPagina=1;
+let _polFiltroFirma='';
 function rPolizas(){
   pintarLupaPol();
   const q=(document.getElementById('polQ')?.value||'').toLowerCase();
@@ -8663,9 +8674,16 @@ function rPolizas(){
   }
   if(q)list=list.filter(c=>c.nom.toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
   if(fe)list=list.filter(c=>getEstPol(c).est===fe);
+  const _polFirma=q+'|'+fe;
+  if(_polFirma!==_polFiltroFirma){_polFiltroFirma=_polFirma;_polPagina=1;}
   const tb=document.getElementById('tbPol');
-  if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin resultados</div></td></tr>';return;}
-  tb.innerHTML=list.map(c=>{
+  const pagWrap=document.getElementById('polPagWrap');
+  if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin resultados</div></td></tr>';if(pagWrap)pagWrap.innerHTML='';return;}
+  const PAGE=10,totalPag=Math.max(1,Math.ceil(list.length/PAGE));
+  if(_polPagina>totalPag)_polPagina=totalPag;
+  const listPag=q?list:list.slice((_polPagina-1)*PAGE,_polPagina*PAGE);
+  if(pagWrap)pagWrap.innerHTML=(totalPag>1&&!q)?nxPagHTML(_polPagina,totalPag,'polIrPag'):'';
+  tb.innerHTML=listPag.map(c=>{
     const ep=getEstPol(c);
     const fin=c.fecha_fin?new Date(c.fecha_fin):null;
     const dias=fin?Math.ceil((fin-new Date())/86400000):null;
@@ -8687,6 +8705,7 @@ function rPolizas(){
     </tr>`;
   }).join('');
 }
+function polIrPag(p){_polPagina=p;rPolizas();nxPagScrollTop();}
 
 // ── FACTURAS ─────────────────────────────────────────────────────────────────
 // Mes de CORTE (ciclo 20-al-20): la facturación del mes sale el día 20, así que hasta el
@@ -9016,6 +9035,8 @@ function nxUsarRueda(){
   try{return !!(sesion&&sesion.rol==='admin'&&nxPref('vista_rueda',false)&&window.matchMedia('(max-width:720px)').matches);}catch(e){return false;}
 }
 
+let _factPagina=1;
+let _factFiltroFirma='';
 function rFact(){
   nxRuedaScrollOff(); // limpiar el scroll de la rueda antes de repintar (evita listeners duplicados)
   llenarFiltroAgentes('fAgenteFact');
@@ -9042,6 +9063,8 @@ function rFact(){
   const q=(document.getElementById('factQ')?.value||'').toLowerCase().trim();
   if(q)lista=lista.filter(f=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));return (f.cliente_nom||'').toLowerCase().includes(q)||(cli?.cedula||'').includes(q)||(cli?.numero_poliza||'').toLowerCase().includes(q);});
   if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
+  const _factFirma=key+'|'+filtroEst+'|'+fa+'|'+q;
+  if(_factFirma!==_factFiltroFirma){_factFiltroFirma=_factFirma;_factPagina=1;}
   const tb=document.getElementById('tbFact');
   const rz=document.getElementById('factResumen');
   if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas generadas todavía'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
@@ -9065,6 +9088,11 @@ function rFact(){
   // (ver junto a nxDiasAtrasoPeriodo), compartidos también con sfFacturaCard()
   // en la Ficha del cliente, así ninguna pantalla se desincroniza de las demás.
   const clasificarFactura=f=>clasificarFacturaUrgencia(f,saldoDe(f));
+  // Paginación de 10 en 10 — SOLO para la tabla normal; la rueda sigue viendo `lista`
+  // completa (es swipe-through-all, no una lista paginada).
+  const _factPAGE=10,_factTotalPag=Math.max(1,Math.ceil(lista.length/_factPAGE));
+  if(_factPagina>_factTotalPag)_factPagina=_factTotalPag;
+  const listaPag=q?lista:lista.slice((_factPagina-1)*_factPAGE,_factPagina*_factPAGE);
   // ══ RAMA VISTA RUEDA (solo admin + interruptor + celular) — reglamento aprobado ══
   // Mismos datos y mismas acciones que la tabla; solo cambia la presentación. TODAS las
   // tarjetas son tocables (regla #6). El orden es el mismo de la lista (no reordena).
@@ -9105,7 +9133,7 @@ function rFact(){
     return;
   }
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
-  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th class="mesant-col">Meses ant.</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Cobro</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
+  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th class="mesant-col">Meses ant.</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Cobro</th><th class="r">Acciones</th></tr></thead><tbody>`+listaPag.map(f=>{
     const emp=gEmp(f.empresa_id);
     const est=clasificarFactura(f);
     const ec=CLS_BADGE[est.cls];
@@ -9138,8 +9166,15 @@ function rFact(){
       </div></td>
     </tr>`;
   }).join('')+'</tbody></table>';
+  if(_factTotalPag>1&&!q){
+    const extra=document.createElement('div');
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.innerHTML=nxPagHTML(_factPagina,_factTotalPag,'factIrPag');
+    tb.appendChild(extra);
+  }
   pintarFlechasFact();
 }
+function factIrPag(p){_factPagina=p;rFact();nxPagScrollTop();}
 // ── Corregir el precio de UNA factura pendiente en específico (montos distintos por mes) ──
 // Es el ÚNICO lugar donde se corrige una factura YA GENERADA (mes actual o atrasada) — cada una
 // con su propio monto si hace falta. Al terminar, pregunta si ese precio corregido también debe
@@ -9546,6 +9581,8 @@ function pintarLupaCob(){
     onterm:function(v){const i=document.getElementById('cobQ');if(i)i.value=v;rCob();}
   });
 }
+let _cobPagina=1;
+let _cobFiltroFirma='';
 function rCob(){
   pintarLupaCob();
   _nxCobCSS();
@@ -9574,6 +9611,12 @@ function rCob(){
   activos=_ordAplicar('cob',activos,_cobSortVal);
   nxRuedaScrollOff();
   if(!activos.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  // Paginación de 10 en 10 — SOLO para las tarjetas normales; la rueda sigue viendo
+  // `activos` completo (es swipe-through-all, no una lista paginada).
+  const _cobFirma=q+'|'+fa+'|'+fest;
+  if(_cobFirma!==_cobFiltroFirma){_cobFiltroFirma=_cobFirma;_cobPagina=1;}
+  const _cobPAGE=10,_cobTotalPag=Math.max(1,Math.ceil(activos.length/_cobPAGE));
+  if(_cobPagina>_cobTotalPag)_cobPagina=_cobTotalPag;
   // ══ RAMA VISTA RUEDA (solo admin + interruptor + celular) — mismas acciones que la tarjeta normal ══
   if(nxUsarRueda()){
     const arsBadge=(ars)=>{let u='';try{u=ars?arsLogoUrl(ars):'';}catch(e){u='';}return u?`<span class="sfr-ars"><img src="${u}" alt=""></span>`:(ars?`<span class="sfr-ars txt">${escHtml(String(ars).replace(/^ARS\s+/i,''))}</span>`:'');};
@@ -9606,7 +9649,8 @@ function rCob(){
     nxRuedaScrollOn();
     return;
   }
-  tb.innerHTML=activos.map(c=>{
+  const activosPag=q?activos:activos.slice((_cobPagina-1)*_cobPAGE,_cobPagina*_cobPAGE);
+  tb.innerHTML=activosPag.map(c=>{
     const da=deudaAnt(c);const pd=pend(c);
     const est=getEst(c);
     const estCls=est==='Al día'?'aldia':est==='Parcial'?'parcial':'pend';
@@ -9635,7 +9679,14 @@ function rCob(){
       </div>
     </div>`;
   }).join('');
+  if(_cobTotalPag>1&&!q){
+    const extra=document.createElement('div');
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.innerHTML=nxPagHTML(_cobPagina,_cobTotalPag,'cobIrPag');
+    tb.appendChild(extra);
+  }
 }
+function cobIrPag(p){_cobPagina=p;rCob();nxPagScrollTop();}
 // Recordatorio de cobro por WhatsApp DIRECTO al cliente (texto con lo que debe)
 function nxCobroWA(cid){
   const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
@@ -10240,6 +10291,8 @@ async function rPagos(){
   aplicarFiltrosPagos();
 }
 
+let _pagosPagina=1;
+let _pagosFiltroFirma='';
 function aplicarFiltrosPagos(){
   const tb=document.getElementById('tbPagos');
   if(!tb)return;
@@ -10250,6 +10303,8 @@ function aplicarFiltrosPagos(){
   const agt=document.getElementById('pgAgente')?.value||'';
   const met=document.getElementById('pgMetodo')?.value||'';
   const bco=document.getElementById('pgBanco')?.value||'';
+  const _pagosFirma=q+'|'+fd+'|'+fh+'|'+emp+'|'+agt+'|'+met+'|'+bco;
+  if(_pagosFirma!==_pagosFiltroFirma){_pagosFiltroFirma=_pagosFirma;_pagosPagina=1;}
 
   let list=_pagosCache.filter(p=>{
     if(q&&!(p.cliente_nom||'').toLowerCase().includes(q)&&!(p.referencia_cli||'').toLowerCase().includes(q)&&!(p.referencia||'').toLowerCase().includes(q))return false;
@@ -10281,9 +10336,12 @@ function aplicarFiltrosPagos(){
     tb.innerHTML='<div class="empty">No hay pagos que coincidan con los filtros</div>';
     return;
   }
+  const _pagosPAGE=10,_pagosTotalPag=Math.max(1,Math.ceil(list.length/_pagosPAGE));
+  if(_pagosPagina>_pagosTotalPag)_pagosPagina=_pagosTotalPag;
+  const listPag=q?list:list.slice((_pagosPagina-1)*_pagosPAGE,_pagosPagina*_pagosPAGE);
   const puedeDel=sesion?.rol==='admin'; // reversar es admin-only (RPC seguros_reversar_cobro)
   const fHora=s=>{if(!s)return'—';try{return new Date(s).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return'—';}};
-  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('fecha')}">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('cliente')}">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('metodo')}">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('monto')}">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
+  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('fecha')}">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('cliente')}">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('metodo')}">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('monto')}">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+listPag.map(p=>`<tr>
     <td data-lb="Fecha">${(p.fecha||'').slice(0,10)}</td>
     <td data-lb="Hora" class="sf-tbl-hide-mb">${fHora(p.fecha)}</td>
     <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(p.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${p.cliente_id}')}" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
@@ -10297,7 +10355,14 @@ function aplicarFiltrosPagos(){
       ${p.estado==='Reversado'?`<span class="btn bsm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Ya reversado">Reversado</span>`:(puedeDel?`<button class="btn bsm bc4" onclick="reversarAbono('${p.id}','${p.cliente_id}',this)" title="Reversar cobro" aria-label="Reversar cobro"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></button>`:'')}
     </div></td>
   </tr>`).join('')+'</tbody></table>';
+  if(_pagosTotalPag>1&&!q){
+    const extra=document.createElement('div');
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.innerHTML=nxPagHTML(_pagosPagina,_pagosTotalPag,'pagosIrPag');
+    tb.appendChild(extra);
+  }
 }
+function pagosIrPag(p){_pagosPagina=p;aplicarFiltrosPagos();nxPagScrollTop();}
 function _ordArrow(key,col){const s=_ordTablas[key];return (s&&s.col===col)?`<span style="color:#6d28d9">${s.dir===1?'▲':'▼'}</span>`:'';}
 
 function limpiarFiltrosPagos(){
@@ -11809,12 +11874,9 @@ function rAuditRows(){
         <td style="font-size:10px;color:#475569">${escHtml(a.detalle||'—')}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${totalPag>1?`<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
-      <button class="btn bsm bghost" onclick="_auditPag=Math.max(1,_auditPag-1);rAuditRows()" ${_auditPag<=1?'disabled':''} style="width:auto;padding:0 12px"><i class="ti ti-chevron-left"></i> Anterior</button>
-      <span style="font-size:11px;padding:8px 12px;font-weight:600">${_auditPag} / ${totalPag}</span>
-      <button class="btn bsm bghost" onclick="_auditPag=Math.min(${totalPag},_auditPag+1);rAuditRows()" ${_auditPag>=totalPag?'disabled':''} style="width:auto;padding:0 12px">Siguiente <i class="ti ti-chevron-right"></i></button>
-    </div>`:''}`;
+    ${totalPag>1?`<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap">${nxPagHTML(_auditPag,totalPag,'auditIrPag')}</div>`:''}`;
 }
+function auditIrPag(p){_auditPag=p;rAuditRows();nxPagScrollTop();}
 
 function limpiarFiltrosAudit(){
   ['auditFiltroMod','auditFiltroUsr','auditFiltroFecha'].forEach(id=>{
