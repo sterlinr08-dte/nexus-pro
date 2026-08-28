@@ -1,7 +1,12 @@
 {
-  "version": "57.05",
+  "version": "57.06",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.06",
+      "fecha": "2026-08-28",
+      "texto": "Íconos más nítidos en todo el sistema (se le agregó suavizado de fuente, sobre todo se notaba en los tamaños chiquitos). TÉCNICO: se fijó la versión de los íconos (antes se actualizaba sola sin avisar) y se corrigió un choque de nombres en el CSS que afectaba a todos los íconos sin que se notara a simple vista."
+    },
     {
       "v": "57.05",
       "fecha": "2026-08-27",
