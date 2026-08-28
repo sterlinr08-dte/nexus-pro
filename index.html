@@ -5744,7 +5744,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.09';
+const APP_VERSION='57.10';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8226,10 +8226,10 @@ async function rChartCobros(){
 
 // ── CLIENTES ─────────────────────────────────────────────────────────────────
 let _cliTab='activos';
-let _cliVerTodos=false;
+let _cliMostrando=10; // NPGS: carga de a 10 en vez de "ver todos" de un golpe (pedido del dueño 2026-08-28)
 function switchCliTab(tab){
   _cliTab=tab;
-  _cliVerTodos=false;
+  _cliMostrando=10;
   document.getElementById('cliTabAct')?.classList.toggle('is-active',tab==='activos');
   document.getElementById('cliTabInh')?.classList.toggle('is-active',tab==='inhabilitados');
   document.getElementById('cliTabVip')?.classList.toggle('is-active',tab==='vip');
@@ -8410,8 +8410,7 @@ function rCli(){
   const fa=document.getElementById('fAgenteCli')?.value||'';
   // Mostrar el botón "Limpiar" solo si hay algún filtro/búsqueda activo
   const _bl=document.getElementById('btnLimpiarCli');if(_bl)_bl.style.display=(q||fp||fe||fa)?'inline-flex':'none';
-  // Si hay búsqueda activa, mostrar todos los resultados (sin límite de 50)
-  if(q&&!_cliVerTodos)_cliVerTodos=true;
+  // Si hay búsqueda activa, mostrar todos los resultados (sin el límite de a 10)
   // Contar activos, inhabilitados y VIP
   const totalAct=ST.clientes.filter(c=>c.activo!==false).length;
   const totalInh=ST.clientes.filter(c=>c.activo===false).length;
@@ -8515,8 +8514,8 @@ function rCli(){
   document.getElementById('cliCnt').textContent=`(${list.length})`;
   const tb=document.getElementById('tbCli');
   if(!list.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
-  const PAGE=50,total=list.length;
-  if(!_cliVerTodos)list=list.slice(0,PAGE);
+  const PAGE=10,total=list.length;
+  if(!q)list=list.slice(0,_cliMostrando);
   tb.innerHTML=list.map(c=>{
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
@@ -8586,19 +8585,21 @@ function rCli(){
       </div>
     </div>`;
   }).join('');
-  // Botón Ver todos / Ver menos
-  if(total>PAGE){
+  // Botón Ver 10 más / Ver menos — carga incremental en vez de "ver todos" de un golpe
+  if(total>PAGE&&!q){
     const extra=document.createElement('div');
     extra.style.cssText='text-align:center;padding:12px';
-    if(!_cliVerTodos){
-      extra.innerHTML=`<button class="btn bsm bc1" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button>`;
+    if(_cliMostrando<total){
+      const restantes=Math.min(PAGE,total-_cliMostrando);
+      extra.innerHTML=`<button class="btn bsm bc1" onclick="cliVerMas()"><i class="ti ti-chevron-down"></i> Ver ${restantes} más (${_cliMostrando} de ${total})</button>`;
     }else{
-      extra.innerHTML=`<button class="btn bsm bghost" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-up"></i> Ver menos</button>`;
+      extra.innerHTML=`<button class="btn bsm bghost" onclick="cliVerMenos()"><i class="ti ti-chevron-up"></i> Ver menos</button>`;
     }
     tb.appendChild(extra);
   }
 }
-function toggleCliVerTodos(){_cliVerTodos=!_cliVerTodos;rCli();}
+function cliVerMas(){_cliMostrando+=10;rCli();}
+function cliVerMenos(){_cliMostrando=10;rCli();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 // NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.

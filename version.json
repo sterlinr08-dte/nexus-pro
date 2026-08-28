@@ -1,7 +1,12 @@
 {
-  "version": "57.09",
+  "version": "57.10",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.10",
+      "fecha": "2026-08-28",
+      "texto": "Clientes ya no carga la lista completa de un golpe al tocar \"Ver todos\" — ahora muestra de 10 en 10 cada vez que tocas \"Ver más\", hasta llegar a todos."
+    },
     {
       "v": "57.09",
       "fecha": "2026-08-28",
