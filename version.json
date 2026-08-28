@@ -1,7 +1,12 @@
 {
-  "version": "57.07",
+  "version": "57.08",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.08",
+      "fecha": "2026-08-28",
+      "texto": "Las notificaciones (\"Guardado\", \"Error\", etc.) ahora tienen el mismo relieve suave que \"Método de pago\" — el ícono va en un círculo hundido y se le agregó un botón para cerrarlas manualmente."
+    },
     {
       "v": "57.07",
       "fecha": "2026-08-28",

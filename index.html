@@ -1157,10 +1157,14 @@ body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
 .ncf-badge{font-family:var(--mono);font-size:9px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;font-weight:600}
 /* Policy status */
 .pol-vigente{color:var(--c1)}.pol-vencida{color:var(--c3)}.pol-gracia{color:var(--c4)}.pol-sin{color:var(--tx3)}
-/* Toasts */
-#toastS{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:100001;max-width:270px;pointer-events:none}
-.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .3s cubic-bezier(.34,1.56,.64,1);border-left:4px solid var(--c1);box-shadow:0 8px 24px rgba(0,0,0,.12);pointer-events:all}
-.toast.err{border-left-color:#dc2626}.toast.warn{border-left-color:#d97706}.toast.ok{border-left-color:#059669}
+/* Toasts — relieve suave (mismo lenguaje que "Método de pago"): ícono en un
+   círculo hundido en vez de un ícono suelto, sin la barra de color a la izquierda. */
+#toastS{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:9px;z-index:100001;max-width:300px;pointer-events:none}
+.toast{background:#fff;border-radius:16px;padding:12px 13px;font-size:11px;display:flex;align-items:flex-start;gap:11px;animation:tIn .3s cubic-bezier(.34,1.56,.64,1);box-shadow:6px 6px 14px rgba(51,65,90,.22),-4px -4px 10px #fff;pointer-events:all}
+.toast .ti-ic{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:#f6f8fb;box-shadow:inset 2px 2px 5px rgba(51,65,90,.16),inset -2px -2px 5px #fff;font-size:14px}
+.toast.ok .ti-ic{color:#059669}.toast.err .ti-ic{color:#dc2626}.toast.warn .ti-ic{color:#d97706}.toast:not(.ok):not(.err):not(.warn) .ti-ic{color:#3568e0}
+.toast .ti-x{color:#94a0b4;flex:0 0 auto;cursor:pointer;background:none;border:none;padding:2px;font-size:12px;line-height:1;font-family:inherit}
+.toast .ti-x:hover{color:#475569}
 @keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
 /* ── ANIMACIONES DEL SISTEMA (movimiento sutil, respeta accesibilidad) ── */
 @media (prefers-reduced-motion:no-preference){
@@ -4933,7 +4937,7 @@ function toast(tp,ttl,msg=''){
   const icons={ok:'ti-circle-check',err:'ti-alert-circle',warn:'ti-alert-triangle',info:'ti-info-circle'};
   const el=document.createElement('div');
   el.className='toast '+(tp==='err'?'err':tp==='warn'?'warn':tp==='ok'?'ok':'');
-  el.innerHTML=`<i class="ti ${icons[tp]||'ti-info-circle'}" style="font-size:14px;flex-shrink:0"></i><div class="ti-b"><div class="ti-t">${ttl}</div>${msg?`<div class="ti-m">${msg}</div>`:''}</div>`;
+  el.innerHTML=`<div class="ti-ic"><i class="ti ${icons[tp]||'ti-info-circle'}"></i></div><div class="ti-b"><div class="ti-t">${ttl}</div>${msg?`<div class="ti-m">${msg}</div>`:''}</div><button type="button" class="ti-x" aria-label="Cerrar aviso" onclick="this.closest('.toast').remove()"><i class="ti ti-x"></i></button>`;
   document.getElementById('toastS').appendChild(el);
   setTimeout(()=>el.remove(),4500);
 }
@@ -5737,7 +5741,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.07';
+const APP_VERSION='57.08';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
