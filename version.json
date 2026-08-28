@@ -1,7 +1,12 @@
 {
-  "version": "57.10",
+  "version": "57.11",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.11",
+      "fecha": "2026-08-28",
+      "texto": "Clientes cambia de \"Ver más\" a páginas numeradas (1, 2, 3…) para saltar directo a cualquier parte de la lista, en vez de ir cargando de 10 en 10."
+    },
     {
       "v": "57.10",
       "fecha": "2026-08-28",

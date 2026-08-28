@@ -5744,7 +5744,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.10';
+const APP_VERSION='57.11';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8226,10 +8226,14 @@ async function rChartCobros(){
 
 // ── CLIENTES ─────────────────────────────────────────────────────────────────
 let _cliTab='activos';
-let _cliMostrando=10; // NPGS: carga de a 10 en vez de "ver todos" de un golpe (pedido del dueño 2026-08-28)
+// NPGS: páginas numeradas de 10 en 10 (pedido del dueño 2026-08-28, reemplaza el
+// "Ver más" incremental del mismo día — _cliFiltroFirma detecta cuándo cambió el
+// filtro/búsqueda/pestaña para volver a la página 1 sola, sin tener que engancharse
+// a cada onchange por separado).
+let _cliPagina=1;
+let _cliFiltroFirma='';
 function switchCliTab(tab){
   _cliTab=tab;
-  _cliMostrando=10;
   document.getElementById('cliTabAct')?.classList.toggle('is-active',tab==='activos');
   document.getElementById('cliTabInh')?.classList.toggle('is-active',tab==='inhabilitados');
   document.getElementById('cliTabVip')?.classList.toggle('is-active',tab==='vip');
@@ -8410,7 +8414,11 @@ function rCli(){
   const fa=document.getElementById('fAgenteCli')?.value||'';
   // Mostrar el botón "Limpiar" solo si hay algún filtro/búsqueda activo
   const _bl=document.getElementById('btnLimpiarCli');if(_bl)_bl.style.display=(q||fp||fe||fa)?'inline-flex':'none';
-  // Si hay búsqueda activa, mostrar todos los resultados (sin el límite de a 10)
+  // Volver a la página 1 en cuanto cambia la pestaña/búsqueda/filtro (no en cada
+  // repintado — ej. tras editar un cliente la firma no cambia y no se pierde la página).
+  const _firma=_cliTab+'|'+q+'|'+fp+'|'+fe+'|'+fa;
+  if(_firma!==_cliFiltroFirma){_cliFiltroFirma=_firma;_cliPagina=1;}
+  // Si hay búsqueda activa, mostrar todos los resultados (sin paginar)
   // Contar activos, inhabilitados y VIP
   const totalAct=ST.clientes.filter(c=>c.activo!==false).length;
   const totalInh=ST.clientes.filter(c=>c.activo===false).length;
@@ -8515,7 +8523,9 @@ function rCli(){
   const tb=document.getElementById('tbCli');
   if(!list.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
   const PAGE=10,total=list.length;
-  if(!q)list=list.slice(0,_cliMostrando);
+  const totalPag=Math.max(1,Math.ceil(total/PAGE));
+  if(_cliPagina>totalPag)_cliPagina=totalPag;
+  if(!q)list=list.slice((_cliPagina-1)*PAGE,_cliPagina*PAGE);
   tb.innerHTML=list.map(c=>{
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
@@ -8585,21 +8595,30 @@ function rCli(){
       </div>
     </div>`;
   }).join('');
-  // Botón Ver 10 más / Ver menos — carga incremental en vez de "ver todos" de un golpe
-  if(total>PAGE&&!q){
+  // Páginas numeradas (10 por página) — reemplaza el "Ver más" incremental
+  if(totalPag>1&&!q){
     const extra=document.createElement('div');
-    extra.style.cssText='text-align:center;padding:12px';
-    if(_cliMostrando<total){
-      const restantes=Math.min(PAGE,total-_cliMostrando);
-      extra.innerHTML=`<button class="btn bsm bc1" onclick="cliVerMas()"><i class="ti ti-chevron-down"></i> Ver ${restantes} más (${_cliMostrando} de ${total})</button>`;
-    }else{
-      extra.innerHTML=`<button class="btn bsm bghost" onclick="cliVerMenos()"><i class="ti ti-chevron-up"></i> Ver menos</button>`;
-    }
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.innerHTML=cliPagHTML(_cliPagina,totalPag);
     tb.appendChild(extra);
   }
 }
-function cliVerMas(){_cliMostrando+=10;rCli();}
-function cliVerMenos(){_cliMostrando=10;rCli();}
+// Ventana de páginas: 1 … (actual-1) actual (actual+1) … última — sin listar las 100
+// páginas si hay 1000 clientes. onclick llama cliIrPag(N), que solo cambia _cliPagina
+// y vuelve a pintar (misma fuente de datos, cero consulta nueva al servidor).
+function cliPagHTML(pag,totalPag){
+  const pages=[...new Set([1,totalPag,pag-1,pag,pag+1].filter(p=>p>=1&&p<=totalPag))].sort((a,b)=>a-b);
+  let html=`<button class="btn bsm bghost" onclick="cliIrPag(${pag-1})"${pag<=1?' disabled':''} aria-label="Página anterior"><i class="ti ti-chevron-left"></i></button>`;
+  let prev=0;
+  pages.forEach(p=>{
+    if(prev&&p-prev>1)html+='<span style="padding:0 5px;color:#94a3b8;font-size:11px">…</span>';
+    html+=`<button class="btn bsm ${p===pag?'bc1':'bghost'}" onclick="cliIrPag(${p})"${p===pag?' aria-current="page"':''}>${p}</button>`;
+    prev=p;
+  });
+  html+=`<button class="btn bsm bghost" onclick="cliIrPag(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
+  return html;
+}
+function cliIrPag(p){_cliPagina=p;rCli();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 // NPGS §5: la barra fija de búsqueda se cambió por la lupa que crece en su lugar.
