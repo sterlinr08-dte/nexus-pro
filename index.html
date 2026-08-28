@@ -33,7 +33,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/tabler-icons.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"/>
 <!-- Plus Jakarta Sans: excepción deliberada, SOLO para el Splash (pedido explícito
      del dueño, 1-ago-2026) — cargada aquí en <head> porque el splash aparece antes
      de que nxPfEnsureCSS() (que ya carga esta misma fuente para el POS) corra. -->
@@ -5737,7 +5737,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.06';
+const APP_VERSION='57.07';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

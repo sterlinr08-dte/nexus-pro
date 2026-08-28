@@ -1,7 +1,12 @@
 {
-  "version": "57.06",
+  "version": "57.07",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.07",
+      "fecha": "2026-08-28",
+      "texto": "URGENTE: se corrige un error introducido en la actualización anterior que dejaba TODOS los íconos del sistema en blanco (cuadros vacíos) — la ruta del archivo de íconos apuntaba mal después de fijar la versión. Ya vuelven a verse."
+    },
     {
       "v": "57.06",
       "fecha": "2026-08-28",
