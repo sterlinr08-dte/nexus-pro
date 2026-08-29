@@ -1,7 +1,12 @@
 {
-  "version": "57.26",
+  "version": "57.27",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.27",
+      "fecha": "2026-08-29",
+      "texto": "El rectángulo al tocar una píldora seguía apareciendo (la 57.26 tampoco alcanzó): Safari no redondea el contorno de foco aunque se le pida, así que se quitó por completo en vez de intentar redondearlo. El cambio de color/relieve al activarse ya deja claro cuál está seleccionada."
+    },
     {
       "v": "57.26",
       "fecha": "2026-08-29",
