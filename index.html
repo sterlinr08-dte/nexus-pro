@@ -5838,7 +5838,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.24';
+const APP_VERSION='57.25';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12505,6 +12505,17 @@ body.tema-glass table thead th{background:rgba(255,255,255,.55) !important}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
   body.tema-glass .sb,body.tema-glass nav.sb{background:rgba(255,255,255,.95) !important;}
+}
+/* Reportado 2026-08-29 ("el efecto del aura se ve mal" — captura de la píldora CHEQUE
+   en Cobrar): no es del vidrio, es el resaltado táctil nativo de iOS/Android al tocar
+   un botón (-webkit-tap-highlight-color) — un rectángulo gris que no respeta el
+   border-radius y que antes quedaba disimulado sobre el fondo opaco; con el fondo
+   translúcido del vidrio se nota como un halo/doble borde feo. Se apaga en TODAS las
+   píldoras/pestañas del sistema (los 3 temas), no solo en Glass. */
+.nmPill,.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
+.nxPf .entTab,.nxPf .chip,.nxPf .vchip,.nxInvPill,.nxRepChip,.nxClaveTab,
+.ev-tab,.hc-tab,.nxFP-tab,.nxFP-perBtn{
+  -webkit-tap-highlight-color:transparent;
 }
 
 /* Transición suave al cambiar tema */

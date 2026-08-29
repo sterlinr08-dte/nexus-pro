@@ -1,7 +1,12 @@
 {
-  "version": "57.24",
+  "version": "57.25",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.25",
+      "fecha": "2026-08-29",
+      "texto": "Se apagó el rectángulo gris feo que aparecía al tocar una píldora/pestaña en el celular (era el resaltado táctil nativo del navegador, no un error del diseño) — afecta a todas las píldoras del sistema, en los 3 temas."
+    },
     {
       "v": "57.24",
       "fecha": "2026-08-29",
