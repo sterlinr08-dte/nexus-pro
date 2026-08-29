@@ -1,7 +1,12 @@
 {
-  "version": "57.15",
+  "version": "57.16",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.16",
+      "fecha": "2026-08-28",
+      "texto": "TÉCNICO: ajuste fino en \"Método de pago\" para que coincida al detalle con la referencia — línea divisoria sutil entre opciones en vez de cada una redondeada por separado."
+    },
     {
       "v": "57.15",
       "fecha": "2026-08-28",
