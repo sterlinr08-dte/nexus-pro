@@ -406,6 +406,12 @@ body.tema-premium #mAbono .modal{
   background:var(--nm-bg) !important;color:var(--nm-tx) !important;border:none !important;
   box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
+/* Tema LIQUID GLASS: la píldora hereda vidrio traslúcido en vez del gris opaco
+   (reportado 2026-08-29 — "no todos tienen el efecto de píldora cristal"). */
+body.tema-glass #mAbono .modal{
+  --pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488;
+}
+body.tema-glass #mAbono .nmSeg{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #mAbono .mt{color:var(--nm-tx)}
 #mAbono #abonoI{border-radius:14px;padding:10px 12px;margin-bottom:12px;
   box-shadow:6px 6px 12px var(--nm-lo),-6px -6px 12px var(--nm-hi)}
@@ -923,6 +929,8 @@ body.tema-premium .cs-panel{
   --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
 body.tema-premium #v-cliente360{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
   --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
+body.tema-glass #v-cliente360{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
+body.tema-glass #v-cliente360 .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-cliente360 .nxft-tabs{
   background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
   box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
@@ -1095,6 +1103,8 @@ body.tema-premium #mWAMasivo .modal{
   --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf;
   color:var(--nm-tx) !important;
 }
+body.tema-glass #mWAMasivo .modal{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
+body.tema-glass #mWAMasivo .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #mWAMasivo .mt{color:var(--nm-tx)}
 #mWAMasivo .nxft-tabs{
   background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
@@ -1772,6 +1782,8 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
   --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
 body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
   --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
+body.tema-glass #v-clientes{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
+body.tema-glass #v-clientes .nxft-tabs.nxft-flex{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-clientes .btn.bsm{
   border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
   box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
@@ -1838,6 +1850,8 @@ body.tema-premium #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{backg
   --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
 body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
   --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
+body.tema-glass #v-facturas{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
+body.tema-glass #v-facturas .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-facturas .btn.bsm{
   border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
   box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
@@ -5824,7 +5838,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.23';
+const APP_VERSION='57.24';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

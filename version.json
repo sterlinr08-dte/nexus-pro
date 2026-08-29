@@ -1,7 +1,12 @@
 {
-  "version": "57.23",
+  "version": "57.24",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.24",
+      "fecha": "2026-08-29",
+      "texto": "Tema LIQUID GLASS: todas las píldoras y pestañas del sistema (Método de pago, Clientes/Facturas/Cliente 360/WA masivo, y todo Punto de Venta) ahora sí se ven de vidrio traslúcido con ese tema activo, en vez de quedarse con el gris opaco de siempre."
+    },
     {
       "v": "57.23",
       "fecha": "2026-08-29",
