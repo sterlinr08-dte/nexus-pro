@@ -393,11 +393,16 @@ tbody tr:hover td{background:#f8fafc}
    que ese .modal simple, pero solo si igualamos el !important. */
 #mAbono .modal{
   --nm-bg:#f6f8fb;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.16);--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
+  /* Tokens SOLO del pill "Método de pago" (pedido del dueño 27-ago-2026, calcado de una
+     referencia que mandó): distintos de --nm-* para que el gris no le pegue también a los
+     botones del modal, que se quedan en su azul de siempre. */
+  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.20);--pill-accent:#1ca2a4;
   background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;overflow:hidden;
   box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
 body.tema-premium #mAbono .modal{
   --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf;
   background:var(--nm-bg) !important;color:var(--nm-tx) !important;border:none !important;
   box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
@@ -456,34 +461,30 @@ body.tema-premium #mAbono .fr input:focus{
    #mCli): #aMetSpot recorre el borde real del chip activo y se desliza
    al cambiar de selección (ver nxAboMetSpotMover()). */
 #mAbono .nmSeg{
-  position:relative;display:flex;align-items:stretch;
-  border:1px solid var(--nm-lo);border-radius:9999px;overflow:hidden;
-  background:var(--nm-bg);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-hi)) 0%,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-lo)) 50%,color-mix(in srgb,var(--nm-bg) 88%,var(--nm-hi)) 100%);
-  box-shadow:inset 0 3px 5px var(--nm-lo),inset 0 -2px 4px var(--nm-hi),0 2px 4px rgba(0,0,0,.10);
+  position:relative;display:flex;align-items:stretch;padding:6px;
+  border:1px solid var(--pill-lo);border-radius:9999px;overflow:hidden;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%);
+  box-shadow:inset 0 3px 5px var(--pill-lo),inset 0 -2px 4px var(--pill-hi),0 2px 4px rgba(0,0,0,.10);
 }
 #mAbono .nmPill{
   position:relative;z-index:2;flex:1;min-width:0;text-align:center;font-size:10px;font-weight:700;padding:9px 4px;
-  color:var(--nm-tx2);cursor:pointer;background:transparent;border:none;border-right:1px solid var(--nm-lo);
+  color:var(--nm-tx2);cursor:pointer;background:transparent;border:none;border-radius:9999px;
   transition:background .18s ease,box-shadow .18s ease,color .18s ease,transform .12s ease;
 }
-#mAbono .nmPill:first-child{border-top-left-radius:9999px;border-bottom-left-radius:9999px}
-#mAbono .nmPill:last-child{border-right:none;border-top-right-radius:9999px;border-bottom-right-radius:9999px}
 #mAbono .nmPill:active{transform:translateY(1px)}
 #mAbono .nmPill.on{
-  color:var(--nm-accent);font-weight:800;
-  background:var(--nm-bg);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 0%,color-mix(in srgb,var(--nm-bg) 90%,var(--nm-hi)) 45%,color-mix(in srgb,var(--nm-bg) 82%,var(--nm-lo)) 100%);
+  color:var(--pill-accent);font-weight:800;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%);
   box-shadow:
-    inset 4px 0 7px var(--nm-lo),
-    inset -4px 0 7px var(--nm-hi),
-    inset 0 4px 7px var(--nm-lo),
-    inset 0 -4px 7px var(--nm-hi);
+    inset 4px 0 7px var(--pill-lo),
+    inset -4px 0 7px var(--pill-hi),
+    inset 0 4px 7px var(--pill-lo),
+    inset 0 -4px 7px var(--pill-hi);
 }
 #mAbono .nmSpot{position:absolute;top:0;left:0;z-index:1;pointer-events:none;
   transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
 #mAbono .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#mAbono .nmSpotRect{fill:none;stroke:var(--nm-accent);stroke-width:2.2;stroke-linecap:round;opacity:.85}
+#mAbono .nmSpotRect{fill:none;stroke:var(--pill-accent);stroke-width:2.2;stroke-linecap:round;opacity:.85}
 @media(prefers-reduced-motion:reduce){
   #mAbono .nmPill{transition:none}
   #mAbono .nmSpot{transition:none}
@@ -1725,8 +1726,10 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
    con un gris (#c7ccd6) demasiado pálido. Se cambia --nm-lo a un gris-azul
    con más presencia real y se agranda el desenfoque, para que el botón se
    note claramente "levantado" incluso sobre fondo blanco. */
-#v-clientes{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0}
-body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-clientes{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0;
+  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
+body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
 #v-clientes .btn.bsm{
   border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
   box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
@@ -1761,36 +1764,38 @@ body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
    hundido, cada pestaña inactiva sobresale un poco, y la activa se hunde
    con sombra de 4 direcciones — el color queda solo en texto/ícono. */
 #v-clientes .nxft-tabs.nxft-flex{
-  background:var(--nm-bg) !important;border:none !important;
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
+  box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
 }
 #v-clientes .nxft-tab:not(.nxft-add){
-  background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
-  box-shadow:3px 3px 6px var(--nm-lo),-3px -3px 6px var(--nm-hi) !important;
+  background:transparent !important;color:var(--nm-tx2) !important;border-radius:9999px !important;
+  box-shadow:none !important;
   transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
 }
-#v-clientes .nxft-tab:not(.nxft-add):hover{color:var(--nm-accent) !important}
+#v-clientes .nxft-tab:not(.nxft-add):hover{color:var(--pill-accent) !important}
 #v-clientes .nxft-tab:not(.nxft-add):active{transform:translateY(1px)}
 #v-clientes .nxft-tab:not(.nxft-add) .nxft-cnt{background:rgba(120,130,148,.18) !important;color:inherit !important}
 #v-clientes .nxft-tab.is-active:not(.nxft-add){
-  color:var(--nm-accent) !important;font-weight:800;
-  background:var(--nm-bg) !important;
+  color:var(--pill-accent) !important;font-weight:800;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
   box-shadow:
-    inset 3px 3px 6px var(--nm-lo),
-    inset -3px -3px 6px var(--nm-hi),
-    inset 0 3px 5px var(--nm-lo),
-    inset 0 -3px 5px var(--nm-hi) !important;
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
 }
-#v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(53,104,224,.16) !important;color:var(--nm-accent) !important}
-body.tema-premium #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(91,157,255,.18) !important}
+#v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(28,162,164,.18) !important;color:var(--pill-accent) !important}
+body.tema-premium #v-clientes .nxft-tab.is-active:not(.nxft-add) .nxft-cnt{background:rgba(45,212,191,.2) !important}
 @media(prefers-reduced-motion:reduce){#v-clientes .btn.bsm,#v-clientes .nxft-tab{transition:none !important}}
 /* #v-facturas — mismo criterio que #v-clientes: SOLO los botones (Generar,
    WA masivo, Excel×3) y las 4 pestañas superiores (Facturas/Cobros/
    Historial/Avisos) pasan a relieve elevado/hundido. Tarjetas, KPIs y
    colores de estado de cada factura no se tocan. Mismos tokens que
    #v-clientes (misma tarjeta blanca de fondo en los dos). */
-#v-facturas{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0}
-body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-facturas{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0;
+  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
+body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
 #v-facturas .btn.bsm{
   border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
   box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
@@ -1807,24 +1812,24 @@ body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
 /* Pestañas Facturas/Cobros/Historial de pagos/Avisos — mismo "Pill Premium"
    que las de Clientes (pozo hundido, inactivas elevadas, activa hundida). */
 #v-facturas .nxft-tabs{
-  background:var(--nm-bg) !important;border:none !important;
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
+  box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
 }
 #v-facturas .nxft-tab{
-  background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
-  box-shadow:3px 3px 6px var(--nm-lo),-3px -3px 6px var(--nm-hi) !important;
+  background:transparent !important;color:var(--nm-tx2) !important;border-radius:9999px !important;
+  box-shadow:none !important;
   transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
 }
-#v-facturas .nxft-tab:hover{color:var(--nm-accent) !important}
+#v-facturas .nxft-tab:hover{color:var(--pill-accent) !important}
 #v-facturas .nxft-tab:active{transform:translateY(1px)}
 #v-facturas .nxft-tab.is-active{
-  color:var(--nm-accent) !important;font-weight:800;
-  background:var(--nm-bg) !important;
+  color:var(--pill-accent) !important;font-weight:800;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
   box-shadow:
-    inset 3px 3px 6px var(--nm-lo),
-    inset -3px -3px 6px var(--nm-hi),
-    inset 0 3px 5px var(--nm-lo),
-    inset 0 -3px 5px var(--nm-hi) !important;
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
 }
 @media(prefers-reduced-motion:reduce){#v-facturas .btn.bsm,#v-facturas .nxft-tab{transition:none !important}}
 /* #v-polizas y los 4 Reportes (v-rep-agente/plan/empresa/aging) — mismo criterio que
@@ -5777,7 +5782,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.14';
+const APP_VERSION='57.15';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

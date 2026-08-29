@@ -1,7 +1,12 @@
 {
-  "version": "57.14",
+  "version": "57.15",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.15",
+      "fecha": "2026-08-28",
+      "texto": "\"Método de pago\" y las pestañas de estado (Clientes/Facturas) ahora se ven igual a la referencia que mandaste: gris con acento verde azulado, más aire alrededor y sin líneas divisorias entre opciones. Los botones y el resto de cada pantalla se quedan en su azul de siempre — el cambio es solo en esas píldoras."
+    },
     {
       "v": "57.14",
       "fecha": "2026-08-28",
