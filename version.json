@@ -1,7 +1,12 @@
 {
-  "version": "57.21",
+  "version": "57.22",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.22",
+      "fecha": "2026-08-29",
+      "texto": "Terminado el barrido completo de Punto de Venta: se le puso el mismo relieve gris/verde azulado a TODOS los selectores y pestañas que faltaban del módulo — pagos en Cobrar, filtros de Inventario y Vender, pestañas de Entidades, chips de Reparaciones, PIN/Patrón de acceso, y las pestañas de Financiamiento/Citas/Historial clínico."
+    },
     {
       "v": "57.21",
       "fecha": "2026-08-29",
