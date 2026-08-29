@@ -1,7 +1,12 @@
 {
-  "version": "57.29",
+  "version": "57.30",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.30",
+      "fecha": "2026-08-29",
+      "texto": "COBRAR/WhatsApp/⋮ en Clientes y Facturas ya usan el mismo cristal gris+verde azulado de las pestañas de arriba (Facturas/Cobros/Historial/Avisos), en vez de fondo neutro con cada botón de su propio color."
+    },
     {
       "v": "57.29",
       "fecha": "2026-08-29",

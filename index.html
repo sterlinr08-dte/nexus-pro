@@ -1785,21 +1785,22 @@ body.tema-premium #v-clientes{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
 body.tema-glass #v-clientes{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
 body.tema-glass #v-clientes .nxft-tabs.nxft-flex{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-clientes .btn.bsm{
-  border:none !important;border-radius:9999px !important;background:var(--nm-bg) !important;
-  box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+  border:none !important;border-radius:9999px !important;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;
+  box-shadow:3px 3px 6px var(--pill-lo),-3px -3px 6px var(--pill-hi) !important;
   transition:box-shadow .18s ease,transform .12s ease !important;
 }
-#v-clientes .btn.bsm:hover{box-shadow:6px 6px 15px var(--nm-lo),-5px -5px 11px var(--nm-hi) !important}
+#v-clientes .btn.bsm:hover{box-shadow:4px 4px 8px var(--pill-lo),-4px -4px 8px var(--pill-hi) !important}
 #v-clientes .btn.bsm:active{
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  box-shadow:inset 3px 3px 6px var(--pill-lo),inset -3px -3px 6px var(--pill-hi) !important;
   transform:translateY(1px);
 }
 /* El color ya no llena el botón — queda solo como acento del ícono, mismo
    criterio que los chips "Pill Premium" (ver memoria del proyecto). */
 #v-clientes .btn.bsm.bghost i{color:var(--nm-tx2) !important}
 #v-clientes .btn.bsm.bghost[title*="Editar"] i,#v-clientes .btn.bsm.bghost[title*="editar"] i{color:var(--nm-accent) !important}
-#v-clientes .btn.bsm.bghost[title*="Cobro"] i,#v-clientes .btn.bsm.bghost[title*="cobro"] i,#v-clientes .btn.bsm.bghost[title*="WhatsApp"] i{color:#059669 !important}
-#v-clientes .btn.bsm.bc1,#v-clientes .btn.bsm.bc1 i{color:#059669 !important}
+#v-clientes .btn.bsm.bghost[title*="Cobro"] i,#v-clientes .btn.bsm.bghost[title*="cobro"] i,#v-clientes .btn.bsm.bghost[title*="WhatsApp"] i{color:var(--pill-accent) !important}
+#v-clientes .btn.bsm.bc1,#v-clientes .btn.bsm.bc1 i{color:var(--pill-accent) !important}
 #v-clientes .btn.bsm.bc4,#v-clientes .btn.bsm.bc4 i{color:#d97706 !important}
 #v-clientes #btnLimpiarCli i{color:var(--nm-tx2) !important}
 /* "Nuevo" conserva su degradado (es el CTA principal de la pantalla) — solo
@@ -1853,18 +1854,19 @@ body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
 body.tema-glass #v-facturas{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
 body.tema-glass #v-facturas .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-facturas .btn.bsm{
-  border:none !important;border-radius:9999px !important;background:var(--nm-bg) !important;
-  box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+  border:none !important;border-radius:9999px !important;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;
+  box-shadow:3px 3px 6px var(--pill-lo),-3px -3px 6px var(--pill-hi) !important;
   transition:box-shadow .18s ease,transform .12s ease !important;
 }
-#v-facturas .btn.bsm:hover{box-shadow:6px 6px 15px var(--nm-lo),-5px -5px 11px var(--nm-hi) !important}
+#v-facturas .btn.bsm:hover{box-shadow:4px 4px 8px var(--pill-lo),-4px -4px 8px var(--pill-hi) !important}
 #v-facturas .btn.bsm:active{
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  box-shadow:inset 3px 3px 6px var(--pill-lo),inset -3px -3px 6px var(--pill-hi) !important;
   transform:translateY(1px);
 }
-#v-facturas .btn.bsm.bc1,#v-facturas .btn.bsm.bc1 i{color:var(--nm-accent) !important}
+#v-facturas .btn.bsm.bc1,#v-facturas .btn.bsm.bc1 i{color:var(--pill-accent) !important}
 #v-facturas .btn.bsm.bc4,#v-facturas .btn.bsm.bc4 i{color:#d97706 !important}
-#v-facturas .btn.bsm.bwa,#v-facturas .btn.bsm.bwa i{color:#059669 !important}
+#v-facturas .btn.bsm.bwa,#v-facturas .btn.bsm.bwa i{color:var(--pill-accent) !important}
 /* Pestañas Facturas/Cobros/Historial de pagos/Avisos — mismo "Pill Premium"
    que las de Clientes (pozo hundido, inactivas elevadas, activa hundida). */
 #v-facturas .nxft-tabs{
@@ -5838,7 +5840,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.29';
+const APP_VERSION='57.30';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
