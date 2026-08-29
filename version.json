@@ -1,7 +1,12 @@
 {
-  "version": "57.35",
+  "version": "57.36",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.36",
+      "fecha": "2026-08-29",
+      "texto": "Pólizas y los 4 Reportes (Agente/Plan/Empresa/Aging): sus botones de acción ya combinan con el resto del sistema — pasan del acento azul al verde azulado. El relieve elevado y la forma de píldora no cambiaron."
+    },
     {
       "v": "57.35",
       "fecha": "2026-08-29",
