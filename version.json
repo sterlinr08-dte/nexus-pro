@@ -1,7 +1,12 @@
 {
-  "version": "57.17",
+  "version": "57.18",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.18",
+      "fecha": "2026-08-28",
+      "texto": "Las opciones de \"Método de pago\" ahora son más grandes, del tamaño de la referencia (antes se veían chiquitas)."
+    },
     {
       "v": "57.17",
       "fecha": "2026-08-28",
