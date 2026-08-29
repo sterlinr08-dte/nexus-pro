@@ -1,7 +1,12 @@
 {
-  "version": "57.16",
+  "version": "57.17",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.17",
+      "fecha": "2026-08-28",
+      "texto": "Corregido: la opción seleccionada de \"Método de pago\" se veía cuadrada. Ahora esa opción sí es redondeada (las demás siguen en línea recta con una división sutil entre ellas)."
+    },
     {
       "v": "57.16",
       "fecha": "2026-08-28",

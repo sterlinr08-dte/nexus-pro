@@ -474,7 +474,7 @@ body.tema-premium #mAbono .fr input:focus{
 #mAbono .nmPill:last-child{border-right:none}
 #mAbono .nmPill:active{transform:translateY(1px)}
 #mAbono .nmPill.on{
-  color:var(--pill-accent);font-weight:800;
+  color:var(--pill-accent);font-weight:800;border-radius:9999px;
   background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%);
   box-shadow:
     inset 4px 0 7px var(--pill-lo),
@@ -5783,7 +5783,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.16';
+const APP_VERSION='57.17';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
