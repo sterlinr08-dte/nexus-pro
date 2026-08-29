@@ -914,11 +914,36 @@ body.tema-premium .cs-panel{
    del encabezado del expediente (Registrar pago/Nueva factura/Nuevo
    préstamo/Nueva póliza/Imprimir/Compartir/WhatsApp/Llamar) y "Volver a la
    lista". El buscador, la lista lateral, los badges de estado y las tablas
-   de cada pestaña no se tocan — y las pestañas (Resumen/Financiamiento/
-   Pagos/...) se dejan con su estilo .nxft-tab de siempre, igual que las de
-   Clientes (Activos/En proceso/VIP/Inhabilitados). */
-#v-cliente360{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx2:#7a8494;--nm-accent:#3568e0}
-body.tema-premium #v-cliente360{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+   de cada pestaña no se tocan. Las 10 pestañas (Resumen/Financiamiento/
+   Pagos/Facturas/POS/Equipos/Seguros/Documentos/Actividad/Historial)
+   estaban sin ningún estilo propio (heredaban la barra plana de siempre) —
+   pasan a la misma paleta gris+verde azulado que "Método de pago" y las
+   pestañas de Clientes/Facturas (2026-08-28). */
+#v-cliente360{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:#c7ccd6;--nm-tx2:#7a8494;--nm-accent:#3568e0;
+  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.28);--pill-accent:#1ca2a4}
+body.tema-premium #v-cliente360{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx2:#8fa0bd;--nm-accent:#5b9dff;
+  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf}
+#v-cliente360 .nxft-tabs{
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
+  box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
+}
+#v-cliente360 .nxft-tab{
+  background:transparent !important;color:var(--nm-tx2) !important;
+  box-shadow:none !important;
+  transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
+}
+#v-cliente360 .nxft-tab:hover{color:var(--pill-accent) !important}
+#v-cliente360 .nxft-tab:active{transform:translateY(1px)}
+#v-cliente360 .nxft-tab.is-active{
+  color:var(--pill-accent) !important;font-weight:800;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
+}
+@media(prefers-reduced-motion:reduce){#v-cliente360 .nxft-tab{transition:none !important}}
 #v-cliente360 .sf-btn{
   border:none !important;background:var(--nm-bg) !important;color:var(--nm-tx2) !important;
   box-shadow:4px 4px 8px var(--nm-lo),-4px -4px 8px var(--nm-hi) !important;
@@ -1061,19 +1086,35 @@ body.tema-premium #mBackup .mt{color:#34d399 !important}
    pasan a pozo hundido, conservando el degradado de la pestaña activa. */
 #mWAMasivo .modal{
   --nm-bg:#f6f8fb;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.16);--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#059669;
+  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.20);--pill-accent:#1ca2a4;
   background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
   box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
 }
 body.tema-premium #mWAMasivo .modal{
   --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#34d399;
+  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf;
   color:var(--nm-tx) !important;
 }
 #mWAMasivo .mt{color:var(--nm-tx)}
 #mWAMasivo .nxft-tabs{
-  background:var(--nm-bg) !important;border:none !important;
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
+  box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
 }
-#mWAMasivo .nxft-tab{color:var(--nm-tx2)}
+#mWAMasivo .nxft-tab{
+  color:var(--nm-tx2);background:transparent !important;box-shadow:none !important;
+  transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
+}
+#mWAMasivo .nxft-tab:hover{color:var(--pill-accent) !important}
+#mWAMasivo .nxft-tab:active{transform:translateY(1px)}
+#mWAMasivo .nxft-tab.is-active{
+  color:var(--pill-accent) !important;font-weight:800;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
+}
 #mWAMasivo #waClientesList{
   background:var(--nm-bg) !important;border:none !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
@@ -5783,7 +5824,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.18';
+const APP_VERSION='57.19';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

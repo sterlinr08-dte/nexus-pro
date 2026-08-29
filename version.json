@@ -1,7 +1,12 @@
 {
-  "version": "57.18",
+  "version": "57.19",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.19",
+      "fecha": "2026-08-28",
+      "texto": "Se extendió la píldora gris/verde azulado (la misma de \"Método de pago\") a las pestañas de WhatsApp masivo, a las 10 pestañas de Cliente 360 (que antes no tenían ningún estilo especial), y a las pestañas de Contabilidad/Nómina del Punto de Venta (antes eran subrayadas, ahora son la misma píldora del resto del sistema)."
+    },
     {
       "v": "57.18",
       "fecha": "2026-08-28",
