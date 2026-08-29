@@ -1,7 +1,12 @@
 {
-  "version": "57.27",
+  "version": "57.28",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.28",
+      "fecha": "2026-08-29",
+      "texto": "Los botones COBRAR/WhatsApp/⋮ de cada fila en Clientes, Facturas, Pólizas y Reportes ya tienen forma de píldora/círculo completo (antes eran un rectángulo con esquinas apenas redondeadas) — conservan el mismo relieve elevado/hundido que ya tenían."
+    },
     {
       "v": "57.27",
       "fecha": "2026-08-29",
