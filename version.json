@@ -1,7 +1,12 @@
 {
-  "version": "57.30",
+  "version": "57.31",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.31",
+      "fecha": "2026-08-29",
+      "texto": "Rediseño del elemento SELECCIONADO en todas las píldoras/pestañas del sistema: pasa del relieve hundido/mate al \"cristal pulido\" (convexo, brillo blanco arriba, sombra hacia afuera, anillo lavanda fino) aprobado por el dueño — aplica a Método de pago, Clientes/Facturas/Cliente 360/WA masivo, COBRAR/WhatsApp, y todo Punto de Venta (Cobrar, Contabilidad/Nómina, Contado/Crédito, Entidades, Vender, Inventario, Reparaciones, PIN/Patrón, Financiamiento, Citas, Historial clínico) y Consultorio/Rifas. Las pestañas inactivas y los contenedores no cambian."
+    },
     {
       "v": "57.30",
       "fecha": "2026-08-29",

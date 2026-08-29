@@ -1697,7 +1697,7 @@
          para no filtrarle la línea divisoria ni el relieve a la lista lateral. */
       '.rfTabs .rfTab{border-right:1px solid rgba(0,0,0,.10);transition:box-shadow .18s ease,color .18s ease,transform .12s ease}' +
       '.rfTabs .rfTab:last-child{border-right:none}.rfTabs .rfTab:active{transform:translateY(1px)}.rfTabs .rfTab:hover{color:#1ca2a4}' +
-      '.rfTabs .rfTab.on{color:#1ca2a4;font-weight:800;border-radius:9999px;background:linear-gradient(180deg,rgba(30,41,59,.20) 0%,#f2f4f7 45%,rgba(30,41,59,.20) 100%);box-shadow:inset 3px 3px 6px rgba(30,41,59,.20),inset -3px -3px 6px #f2f4f7,inset 0 3px 5px rgba(30,41,59,.20),inset 0 -3px 5px #f2f4f7}' +
+      '.rfTabs .rfTab.on{color:#1ca2a4;font-weight:800;border-radius:9999px;border:1.5px solid rgba(148,130,216,.32);background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.1) 46%,transparent 47%),linear-gradient(180deg,#ffffff 0%,#f2f4f7 42%,#dde1e6 100%);box-shadow:0 6px 14px rgba(80,90,150,.18),0 1px 3px rgba(0,0,0,.08),inset 0 1px 1px rgba(255,255,255,.8)}' +
       '.rfTabBadge{background:#fef3c7;color:#b45309;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:20px}' +
       '.rfAttn{background:#fffbeb;border:1px solid #fde68a;border-radius:13px;padding:2px 10px;margin:10px 0}' +
       '.rfAttnT{font-size:10.5px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.3px;padding:8px 2px 2px;display:flex;align-items:center;gap:5px}.rfAttnT i{font-size:13px}' +
