@@ -1,7 +1,12 @@
 {
-  "version": "57.20",
+  "version": "57.21",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.21",
+      "fecha": "2026-08-29",
+      "texto": "Encontrado el que faltaba en POS: el selector \"Contado / A crédito\" de Factura ya tiene el mismo relieve gris/verde azulado del resto del sistema (antes era un rectángulo con relleno negro sólido)."
+    },
     {
       "v": "57.20",
       "fecha": "2026-08-28",
