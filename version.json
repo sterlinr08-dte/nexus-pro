@@ -1,7 +1,12 @@
 {
-  "version": "57.34",
+  "version": "57.35",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.35",
+      "fecha": "2026-08-29",
+      "texto": "Los botones circulares de la tarjeta de Clientes (Editar/Cobro/WhatsApp/⋮) vuelven a relieve elevado — el hundido de la 57.34 quedó bien para COBRAR en Facturas (junto a su pestaña), pero no para estos íconos de Clientes. Facturas se queda igual."
+    },
     {
       "v": "57.34",
       "fecha": "2026-08-29",
