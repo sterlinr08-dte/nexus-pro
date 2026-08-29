@@ -1,7 +1,12 @@
 {
-  "version": "57.31",
+  "version": "57.32",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.32",
+      "fecha": "2026-08-29",
+      "texto": "Ajuste fino del \"cristal pulido\": brillo, anillo lavanda y sombra más marcados en TODAS las píldoras seleccionadas del sistema, para acercarse más a la referencia exacta que mandó el dueño."
+    },
     {
       "v": "57.31",
       "fecha": "2026-08-29",
