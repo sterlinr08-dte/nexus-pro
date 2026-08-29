@@ -1,7 +1,12 @@
 {
-  "version": "57.25",
+  "version": "57.26",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.26",
+      "fecha": "2026-08-29",
+      "texto": "Corrección real del rectángulo al tocar una píldora (la 57.25 no era suficiente): era el contorno de foco por defecto del navegador, cuadrado, que no seguía la forma redonda de la píldora. Ahora cada píldora/pestaña del sistema tiene su propio contorno redondo."
+    },
     {
       "v": "57.25",
       "fecha": "2026-08-29",

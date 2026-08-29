@@ -5838,7 +5838,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.25';
+const APP_VERSION='57.26';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12506,16 +12506,30 @@ body.tema-glass table thead th{background:rgba(255,255,255,.55) !important}
   body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
   body.tema-glass .sb,body.tema-glass nav.sb{background:rgba(255,255,255,.95) !important;}
 }
-/* Reportado 2026-08-29 ("el efecto del aura se ve mal" — captura de la píldora CHEQUE
-   en Cobrar): no es del vidrio, es el resaltado táctil nativo de iOS/Android al tocar
-   un botón (-webkit-tap-highlight-color) — un rectángulo gris que no respeta el
-   border-radius y que antes quedaba disimulado sobre el fondo opaco; con el fondo
-   translúcido del vidrio se nota como un halo/doble borde feo. Se apaga en TODAS las
-   píldoras/pestañas del sistema (los 3 temas), no solo en Glass. */
+/* Reportado 2026-08-29 (captura de la píldora CHEQUE en Cobrar, dos veces — "el aura
+   que hicimos es cuadrado y la píldora es redonda"): -webkit-tap-highlight-color no
+   era suficiente. El verdadero causante es el outline de foco por defecto del
+   navegador — sin un outline-color explícito, el valor inicial es currentColor (por
+   eso salía del mismo verde azulado del texto activo) y sin border-radius el
+   navegador lo dibuja como rectángulo con esquinas casi rectas, aunque la píldora de
+   abajo sea 100% redonda. Se apaga el outline por defecto en TODAS las píldoras/
+   pestañas del sistema y se reemplaza por uno propio, redondo y hacia adentro
+   (outline-offset negativo) para que siga siendo accesible con teclado sin romper
+   la forma. */
 .nmPill,.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
 .nxPf .entTab,.nxPf .chip,.nxPf .vchip,.nxInvPill,.nxRepChip,.nxClaveTab,
 .ev-tab,.hc-tab,.nxFP-tab,.nxFP-perBtn{
   -webkit-tap-highlight-color:transparent;
+  outline:none;
+}
+.nmPill:focus-visible,.nxft-tab:focus-visible,.nxPgTab:focus-visible,.nxFacSubTab:focus-visible,
+.nxMdTab:focus-visible,.rfTab:focus-visible,.nxDoc .seg button:focus-visible,
+.nxPf .entTab:focus-visible,.nxPf .chip:focus-visible,.nxPf .vchip:focus-visible,
+.nxInvPill:focus-visible,.nxRepChip:focus-visible,.nxClaveTab:focus-visible,
+.ev-tab:focus-visible,.hc-tab:focus-visible,.nxFP-tab:focus-visible,.nxFP-perBtn:focus-visible{
+  outline:2px solid currentColor;
+  outline-offset:-2px;
+  border-radius:9999px;
 }
 
 /* Transición suave al cambiar tema */
