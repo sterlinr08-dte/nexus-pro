@@ -1,7 +1,12 @@
 {
-  "version": "57.19",
+  "version": "57.20",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.20",
+      "fecha": "2026-08-28",
+      "texto": "Se encontraron 2 pestañas más que sí tenían efecto de píldora (con relleno sólido, no el relieve gris) y se pasaron al mismo estilo: las 4 pestañas de Consultorio Médico (Inicio/Agenda/Pacientes/Consultas) y las 5 de una rifa (Resumen/Números/Pagos/Participantes/Tickets) en el celular. Confirmado que Vehículos no tiene ninguna."
+    },
     {
       "v": "57.19",
       "fecha": "2026-08-28",

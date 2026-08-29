@@ -1690,9 +1690,14 @@
       // ── RIFAS V3 (panel administrativo) — tabs internas, atención requerida, bandeja de pagos
       // y panel lateral (drawer) para gestBoleto. .rfCtl gana flex-wrap para el select nuevo.
       '.rfCtl{flex-wrap:wrap}#rfBoardEstSel,#rfTkEstSel{height:38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;padding:0 8px;flex:0 0 auto;background:#fff;color:#334155}' +
-      '.rfTabs{display:flex;gap:4px;overflow-x:auto;margin:12px 0 10px;border-bottom:1px solid #e8edf3}' +
-      '.rfTab{border:0;background:transparent;padding:9px 12px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
-      '.rfTab.on{color:#4338ca;border-bottom-color:#4f46e5}' +
+      '.rfTabs{display:flex;gap:0;overflow-x:auto;margin:12px 0 10px;padding:6px;border-radius:9999px;background:linear-gradient(180deg,#f2f4f7 0%,#dde1e6 50%,#f2f4f7 100%);box-shadow:inset 3px 3px 7px rgba(30,41,59,.20),inset -3px -3px 7px #f2f4f7}' +
+      '.rfTab{border:0;background:transparent;padding:9px 12px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
+      /* Scoped a .rfTabs (la barra horizontal, no la .rfSide vertical de escritorio — misma
+         clase .rfTab reciclada para las dos, ver comentario "MISMA clase .rfTab" más arriba)
+         para no filtrarle la línea divisoria ni el relieve a la lista lateral. */
+      '.rfTabs .rfTab{border-right:1px solid rgba(0,0,0,.10);transition:box-shadow .18s ease,color .18s ease,transform .12s ease}' +
+      '.rfTabs .rfTab:last-child{border-right:none}.rfTabs .rfTab:active{transform:translateY(1px)}.rfTabs .rfTab:hover{color:#1ca2a4}' +
+      '.rfTabs .rfTab.on{color:#1ca2a4;font-weight:800;border-radius:9999px;background:linear-gradient(180deg,rgba(30,41,59,.20) 0%,#f2f4f7 45%,rgba(30,41,59,.20) 100%);box-shadow:inset 3px 3px 6px rgba(30,41,59,.20),inset -3px -3px 6px #f2f4f7,inset 0 3px 5px rgba(30,41,59,.20),inset 0 -3px 5px #f2f4f7}' +
       '.rfTabBadge{background:#fef3c7;color:#b45309;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:20px}' +
       '.rfAttn{background:#fffbeb;border:1px solid #fde68a;border-radius:13px;padding:2px 10px;margin:10px 0}' +
       '.rfAttnT{font-size:10.5px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.3px;padding:8px 2px 2px;display:flex;align-items:center;gap:5px}.rfAttnT i{font-size:13px}' +
