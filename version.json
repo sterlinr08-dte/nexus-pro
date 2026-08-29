@@ -1,7 +1,12 @@
 {
-  "version": "57.13",
+  "version": "57.14",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.14",
+      "fecha": "2026-08-28",
+      "texto": "Botones con relieve en Pólizas y los 4 Reportes (por agente, por plan, por empresa, aging de cartera) — el mismo estilo que ya tenían los botones de Clientes y Facturas."
+    },
     {
       "v": "57.13",
       "fecha": "2026-08-28",

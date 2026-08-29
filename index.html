@@ -1827,6 +1827,25 @@ body.tema-premium #v-facturas{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0
     inset 0 -3px 5px var(--nm-hi) !important;
 }
 @media(prefers-reduced-motion:reduce){#v-facturas .btn.bsm,#v-facturas .nxft-tab{transition:none !important}}
+/* #v-polizas y los 4 Reportes (v-rep-agente/plan/empresa/aging) — mismo criterio que
+   #v-clientes/#v-facturas: solo los botones pasan a relieve elevado/hundido, ninguna
+   de estas 5 pantallas tiene pestañas .nxft-tabs propias que convertir. */
+#v-polizas,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging{--nm-bg:#e9edf3;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.35);--nm-tx2:#7a8494;--nm-accent:#3568e0}
+body.tema-premium #v-polizas,body.tema-premium #v-rep-agente,body.tema-premium #v-rep-plan,body.tema-premium #v-rep-empresa,body.tema-premium #v-rep-aging{--nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:rgba(0,0,0,.55);--nm-tx2:#8fa0bd;--nm-accent:#5b9dff}
+#v-polizas .btn.bsm,#v-rep-agente .btn.bsm,#v-rep-plan .btn.bsm,#v-rep-empresa .btn.bsm,#v-rep-aging .btn.bsm{
+  border:none !important;border-radius:10px !important;background:var(--nm-bg) !important;
+  box-shadow:5px 5px 12px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+  transition:box-shadow .18s ease,transform .12s ease !important;
+}
+#v-polizas .btn.bsm:hover,#v-rep-agente .btn.bsm:hover,#v-rep-plan .btn.bsm:hover,#v-rep-empresa .btn.bsm:hover,#v-rep-aging .btn.bsm:hover{box-shadow:6px 6px 15px var(--nm-lo),-5px -5px 11px var(--nm-hi) !important}
+#v-polizas .btn.bsm:active,#v-rep-agente .btn.bsm:active,#v-rep-plan .btn.bsm:active,#v-rep-empresa .btn.bsm:active,#v-rep-aging .btn.bsm:active{
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
+  transform:translateY(1px);
+}
+#v-polizas .btn.bsm.bc1,#v-polizas .btn.bsm.bc1 i{color:var(--nm-accent) !important}
+#v-polizas .btn.bsm.bc4,#v-polizas .btn.bsm.bc4 i,#v-rep-agente .btn.bsm.bc4 i,#v-rep-plan .btn.bsm.bc4 i,#v-rep-empresa .btn.bsm.bc4 i{color:#d97706 !important}
+#v-polizas .btn.bsm.bwa,#v-polizas .btn.bsm.bwa i{color:#059669 !important}
+@media(prefers-reduced-motion:reduce){#v-polizas .btn.bsm,#v-rep-agente .btn.bsm,#v-rep-plan .btn.bsm,#v-rep-empresa .btn.bsm,#v-rep-aging .btn.bsm{transition:none !important}}
 /* Ficha del cliente — hero en degradado + pestañas (Resumen/Facturas/Pagos/Notas), aditivo:
    NO se tocan .sf-head/.sf-kpis/.sf-grid/.sf-qa (las sigue usando Cliente 360° y los KPI de
    Clientes/Pólizas/Pagos/Empresas/Agentes/Comisiones) — son namespaces nuevos, mismo azul
@@ -5758,7 +5777,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.13';
+const APP_VERSION='57.14';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
