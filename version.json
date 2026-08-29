@@ -1,7 +1,12 @@
 {
-  "version": "57.22",
+  "version": "57.23",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.23",
+      "fecha": "2026-08-29",
+      "texto": "Las pestañas de Financiamiento en el panel premium (tema oscuro) ya usan el mismo verde azulado del resto del sistema en vez de morado."
+    },
     {
       "v": "57.22",
       "fecha": "2026-08-29",

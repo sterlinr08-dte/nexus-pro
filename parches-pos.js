@@ -9494,8 +9494,8 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFPShell .nxFP-qico.primary{box-shadow:4px 4px 10px rgba(76,29,149,.35),-3px -3px 8px var(--nf-shl)}' +
       // Pestañas de filtro: el estado activo pasa de píldora rellena a hundido
       '.nxFPShell .nxFP-tab{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex-sm);color:var(--nf-ink2)}' +
-      '.nxFPShell .nxFP-tab.on{background:var(--nf-bg);box-shadow:var(--nf-concave);color:var(--nf-ac1);border:0}' +
-      '.nxFPShell .nxFP-tab.on .nxFP-tabN{background:rgba(79,70,229,.14);color:var(--nf-ac1)}' +
+      '.nxFPShell .nxFP-tab.on{background:var(--nf-bg);box-shadow:var(--nf-concave);color:#2dd4bf;border:0}' +
+      '.nxFPShell .nxFP-tab.on .nxFP-tabN{background:rgba(45,212,191,.16);color:#2dd4bf}' +
       // Tarjeta de préstamo, estados vacíos, menú flotante de acciones
       '.nxFPShell .nxFP-card{background:var(--nf-bg);border:0;box-shadow:var(--nf-convex)}' +
       '.nxFPShell .nxFP-empty{background:var(--nf-bg);border:0;box-shadow:var(--nf-concave)}' +
