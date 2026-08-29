@@ -1,7 +1,12 @@
 {
-  "version": "57.28",
+  "version": "57.29",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.29",
+      "fecha": "2026-08-29",
+      "texto": "El botón COBRAR seguía cuadrado en la \"vista rueda\" (el carrusel de tarjetas para admin en celular) — es un componente aparte del que se corrigió en 57.28 y no se había tocado. Ya tiene forma de píldora completa también ahí."
+    },
     {
       "v": "57.28",
       "fecha": "2026-08-29",
