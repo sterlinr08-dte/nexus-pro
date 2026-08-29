@@ -1786,11 +1786,14 @@ body.tema-glass #v-clientes{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,2
 body.tema-glass #v-clientes .nxft-tabs.nxft-flex{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-clientes .btn.bsm{
   border:none !important;border-radius:9999px !important;
-  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;
-  box-shadow:3px 3px 6px var(--pill-lo),-3px -3px 6px var(--pill-hi) !important;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
   transition:box-shadow .18s ease,transform .12s ease !important;
 }
-#v-clientes .btn.bsm:hover{box-shadow:4px 4px 8px var(--pill-lo),-4px -4px 8px var(--pill-hi) !important}
 #v-clientes .btn.bsm:active{
   box-shadow:inset 3px 3px 6px var(--pill-lo),inset -3px -3px 6px var(--pill-hi) !important;
   transform:translateY(1px);
@@ -1855,11 +1858,14 @@ body.tema-glass #v-facturas{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,2
 body.tema-glass #v-facturas .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #v-facturas .btn.bsm{
   border:none !important;border-radius:9999px !important;
-  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;
-  box-shadow:3px 3px 6px var(--pill-lo),-3px -3px 6px var(--pill-hi) !important;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
+  box-shadow:
+    inset 3px 3px 6px var(--pill-lo),
+    inset -3px -3px 6px var(--pill-hi),
+    inset 0 3px 5px var(--pill-lo),
+    inset 0 -3px 5px var(--pill-hi) !important;
   transition:box-shadow .18s ease,transform .12s ease !important;
 }
-#v-facturas .btn.bsm:hover{box-shadow:4px 4px 8px var(--pill-lo),-4px -4px 8px var(--pill-hi) !important}
 #v-facturas .btn.bsm:active{
   box-shadow:inset 3px 3px 6px var(--pill-lo),inset -3px -3px 6px var(--pill-hi) !important;
   transform:translateY(1px);
@@ -5840,7 +5846,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.33';
+const APP_VERSION='57.34';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

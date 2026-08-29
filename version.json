@@ -1,7 +1,12 @@
 {
-  "version": "57.33",
+  "version": "57.34",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.34",
+      "fecha": "2026-08-29",
+      "texto": "COBRAR (Clientes y Facturas) se veía distinto a la pestaña FACTURAS de arriba — COBRAR estaba \"elevado\" (relieve hacia afuera) y la pestaña \"hundida\" (relieve hacia adentro), aunque usaran el mismo gris+verde azulado. Ahora COBRAR usa el mismo hundido que la pestaña activa."
+    },
     {
       "v": "57.33",
       "fecha": "2026-08-29",
