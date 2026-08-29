@@ -1,7 +1,12 @@
 {
-  "version": "57.32",
+  "version": "57.33",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.33",
+      "fecha": "2026-08-29",
+      "texto": "El dueño pidió volver el relieve de las píldoras seleccionadas a como estaba en la 57.30 (antes del \"cristal pulido\" convexo de la 57.31/57.32) — vuelve al hundido/mate gris+verde azulado."
+    },
     {
       "v": "57.32",
       "fecha": "2026-08-29",
