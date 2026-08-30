@@ -10022,9 +10022,20 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         const doc = await registrarDocumento('prefactura', numero, 'pos_prefacturas', r[0].id, { padreId: padreId, clienteId: cli ? cli.id : null, monto: t.total });
         if (doc) _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id };
       }
+      const nItemsPref = _cart.length;
       _cart = []; _facNota = ''; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
-      if (imprimir && r && r[0]) { try { window.nxPHImprimir(r[0].id); } catch (e) {} }
+      if (r && r[0] && window.nxReciboAnimado) {
+        const prefId = r[0].id;
+        window.nxReciboAnimado({
+          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
+          filas: [{ label: 'Artículos', valor: nItemsPref }, { label: 'Válida hasta', valor: 'Facturar cuando toque' }],
+          folio: numero
+        }, [
+          { label: 'Imprimir', icon: 'ti-printer', onclick: () => window.nxPHImprimir(prefId) },
+          { label: 'Ver prefactura', icon: 'ti-eye', onclick: () => window.nxPHVer(prefId) }
+        ]);
+      } else if (imprimir && r && r[0]) { try { window.nxPHImprimir(r[0].id); } catch (e) {} }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   // ══════════════ COTIZACIÓN desde el mismo carrito (NEXUS PRO 2.5 Fase 2) ══════════════

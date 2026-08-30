@@ -1,7 +1,12 @@
 {
-  "version": "57.50",
+  "version": "57.51",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.51",
+      "fecha": "2026-08-30",
+      "texto": "POS — Prefacturas: \"Guardar\" y \"Guardar e imprimir\" ahora también muestran el recibo animado (título \"Prefactura guardada\", sin decir \"pago\" porque todavía no se cobra nada), con botones para Imprimir o Ver la prefactura. Antes \"Guardar e imprimir\" abría la impresión de inmediato; ahora el imprimir queda como una opción dentro de la animación, igual que en los demás lugares."
+    },
     {
       "v": "57.50",
       "fecha": "2026-08-30",
