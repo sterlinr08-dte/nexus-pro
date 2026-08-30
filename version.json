@@ -1,7 +1,12 @@
 {
-  "version": "57.44",
+  "version": "57.45",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.45",
+      "fecha": "2026-08-30",
+      "texto": "POS — Carrito: la cantidad de cada artículo ya se puede escribir a mano (antes solo se podía sumar/restar de uno en uno con los botones −/+), con el mismo control de stock disponible. El control de cantidad pasa a una píldora con botones circulares en degradado, siguiendo la referencia \"Premium Quantity Ui\" que mandó el dueño."
+    },
     {
       "v": "57.44",
       "fecha": "2026-08-30",

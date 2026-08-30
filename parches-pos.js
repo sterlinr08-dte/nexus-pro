@@ -967,6 +967,17 @@
     return true;
   };
   window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
+  // Cantidad escrita a mano en el carrito (además de los botones −/+). Mismo control de stock
+  // que nxPosQty: valida el DELTA contra puedeAgregar antes de aceptar el número escrito.
+  window.nxPosQtySet = function (idx, val) {
+    const it = _cart[idx]; if (!it) return;
+    let n = Math.floor(Number(val));
+    if (!Number.isFinite(n) || n < 1) n = it.cantidad;
+    const delta = n - it.cantidad;
+    if (delta > 0 && !puedeAgregar(it.producto_id, delta)) { pintarCarrito(); return; }
+    it.cantidad = n;
+    pintarCarrito();
+  };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
 
@@ -977,7 +988,7 @@
     const filas = _cart.length ? _cart.map((it, i) => `<div class="cartitem">
         <div class="citthumb"><i class="ti ti-shopping-bag"></i></div>
         <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div></div>
-        <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
+        <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
       </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>Carrito vacío.<br>Toca un producto para agregarlo.</div>';
@@ -3676,10 +3687,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .citinfo{flex:1;min-width:0}
 .nxPf .citnom{font-size:12px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxPf .citsub{font-size:10px;color:var(--pf-txt3);margin-top:1px}
-.nxPf .citqty{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-.nxPf .citqty button{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--pf-line);background:var(--pf-bg);color:var(--pf-txt2);font-size:14px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit}
-.nxPf .citqty button:first-child{color:var(--pf-red)}.nxPf .citqty button:last-child{color:var(--pf-green)}
-.nxPf .citqty span{min-width:16px;text-align:center;font-size:12px;font-weight:800;color:var(--pf-txt)}
+.nxPf .citqty{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding:3px;border-radius:999px;
+  background:linear-gradient(180deg,var(--pf-pill-hi) 0%,var(--pf-pill-bg) 100%);
+  box-shadow:inset 1px 1px 3px var(--pf-pill-lo),inset -1px -1px 3px var(--pf-pill-hi)}
+.nxPf .citqty button{width:23px;height:23px;border-radius:50%;border:none;color:#fff;font-size:13px;font-weight:800;
+  cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit;flex:none;
+  transition:box-shadow .15s ease,transform .12s ease}
+.nxPf .citqty button:first-child{background:linear-gradient(135deg,var(--pf-red),#ef4444)}
+.nxPf .citqty button:last-child{background:linear-gradient(135deg,var(--pf-pill-accent),#0d9488)}
+.nxPf .citqty button:active{transform:translateY(1px)}
+/* Cantidad editable a mano (pedido del dueño, referencia "Premium Quantity Ui", 30-ago-2026):
+   antes era un <span> de solo lectura, ahora un <input> validado igual que el botón "+" (stock). */
+.nxPf .citqty-in{width:26px;min-width:0;text-align:center;font-size:12px;font-weight:800;color:var(--pf-txt);
+  background:none;border:none;padding:0;font-family:inherit;-moz-appearance:textfield}
+.nxPf .citqty-in::-webkit-outer-spin-button,.nxPf .citqty-in::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.nxPf .citqty-in:focus{outline:none;color:var(--pf-pill-accent)}
+@media(prefers-reduced-motion:reduce){.nxPf .citqty button{transition:none !important}}
 .nxPf .cittotal{width:64px;text-align:right;font-weight:800;font-size:11.5px;color:var(--pf-txt);flex:0 0 auto}
 .nxPf .citdel{width:26px;height:26px;border-radius:8px;border:0;background:#fee2e2;color:#dc2626;font-size:17px;cursor:pointer;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
 .nxPf .citdel:hover{color:var(--pf-red)}
