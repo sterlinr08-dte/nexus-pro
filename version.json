@@ -1,7 +1,12 @@
 {
-  "version": "57.54",
+  "version": "57.55",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.55",
+      "fecha": "2026-08-30",
+      "texto": "El fondo celeste de 57.54 era casi imperceptible (las tarjetas blancas tapan casi toda la pantalla, quedaba muy poco fondo a la vista). Se sube bastante la intensidad: manchas más grandes, más opacas y con más color (blanco Y azul, no solo blanco), y la base pasa de pastel casi blanco a un celeste bastante más notorio."
+    },
     {
       "v": "57.54",
       "fecha": "2026-08-30",
