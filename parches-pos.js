@@ -2281,7 +2281,6 @@
       <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
       <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
       <div class="acc">
-        <button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacVistaPrevia()" title="Vista previa" aria-label="Vista previa del documento"><i class="ti ti-eye"></i></button>
         ${pre ? `<button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar(true)" title="Guardar e imprimir" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>` : ''}
         ${pre
           ? `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} style="background:#6d28d9" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>`
@@ -2320,12 +2319,10 @@
     var pre = esPreTab(), dis = _cart.length ? '' : 'disabled';
     var html = pre
       ? '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar prefactura"><i class="ti ti-x"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxFacVistaPrevia()" aria-label="Vista previa"><i class="ti ti-eye"></i></button>'
         + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar(true)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
         + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>'
       : '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar factura"><i class="ti ti-x"></i></button>'
         + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar()" aria-label="Guardar borrador (prefactura)"><i class="ti ti-device-floppy"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxFacVistaPrevia()" aria-label="Vista previa"><i class="ti ti-eye"></i></button>'
         + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>';
     nxStickyBarSet('nxFacBar', html);
   }

@@ -2372,7 +2372,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* ═══ Pestañas Facturas/Cobros/Pendientes/Historial — control segmentado armónico ═══ */
 .nxft-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;padding:4px;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)}
 @media(min-width:620px){.nxft-tabs{grid-template-columns:repeat(4,1fr)}}
-.nxft-tab{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 8px;border:none;border-radius:9px;background:transparent;color:#475569;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
+.nxft-tab{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 8px;border:none;border-radius:9px;background:transparent;color:#475569;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
+/* Indicador "glide" (referencia del dueño, 30-ago-2026): un solo elemento compartido por cada
+   grupo de pestañas .nxft-tabs que se DESLIZA de la pestaña vieja a la nueva en vez de aparecer
+   de golpe. Copia el color/sombra ya calculados de la pestaña activa (getComputedStyle) en vez
+   de duplicar cada variante (azul/rojo/verde, clara/oscura/glass) — así funciona igual en
+   cualquier pantalla sin tocar esas reglas. Ver nxft-glide-init más abajo.
 .nxft-tab i{font-size:13px;flex-shrink:0}
 .nxft-tab:hover{background:rgba(255,255,255,.75);color:#334155}
 .nxft-tab:active{opacity:.72}
@@ -2397,6 +2402,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* Contadores dentro de las pestañas */
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
+.nxft-glide{position:absolute;top:0;left:0;z-index:0;pointer-events:none;opacity:0;will-change:transform,width,height}
+@media(prefers-reduced-motion:reduce){.nxft-glide{transition:none !important}}
 
 /* Paginación (nxPagHTML, compartida por Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría):
    botones cuadrados con esquina redondeada en una sola fila, la página activa en degradado
@@ -5995,7 +6002,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.51';
+const APP_VERSION='57.52';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13177,6 +13184,82 @@ function switchTab(tab){
     rAvisos();
   }
 }
+
+// ── Pestañas .nxft-tab: indicador "glide" que se desliza en vez de aparecer de golpe ──
+// (referencia "Navigation Tabs Animation" del dueño, 30-ago-2026). Un solo listener
+// delegado para TODO el sistema — funciona en cualquier .nxft-tabs (POS, Cliente 360,
+// Clientes, Facturas, WA Masivo, etc.) sin tener que tocar cada switchXxxTab() por
+// separado. Si algo falla, el try/catch lo deja todo exactamente como estaba: el
+// cambio de pestaña real (is-active) nunca depende de esto.
+(function(){
+  let _glideCap=null;
+  // Captura ANTES de que el onclick de la pestaña mueva is-active (fase de captura).
+  document.addEventListener('click',function(e){
+    const tab=e.target&&e.target.closest&&e.target.closest('.nxft-tab');
+    if(!tab)return;
+    const wrap=tab.closest('.nxft-tabs');
+    if(!wrap)return;
+    const active=wrap.querySelector('.nxft-tab.is-active');
+    _glideCap=active?{wrap:wrap,rect:active.getBoundingClientRect()}:null;
+  },true);
+  // Anima DESPUÉS (fase normal): para entonces el switchXxxTab() ya corrió y movió is-active.
+  document.addEventListener('click',function(e){
+    const tab=e.target&&e.target.closest&&e.target.closest('.nxft-tab');
+    if(!tab)return;
+    const wrap=tab.closest('.nxft-tabs');
+    if(!wrap)return;
+    const prev=_glideCap;_glideCap=null;
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    requestAnimationFrame(function(){
+      try{
+        const nowActive=wrap.querySelector('.nxft-tab.is-active');
+        if(!nowActive)return;
+        const newRect=nowActive.getBoundingClientRect();
+        const fromRect=(prev&&prev.wrap===wrap)?prev.rect:newRect;
+        if(Math.round(fromRect.left)===Math.round(newRect.left)&&Math.round(fromRect.width)===Math.round(newRect.width)&&Math.round(fromRect.top)===Math.round(newRect.top))return;
+        let glide=wrap.querySelector(':scope > .nxft-glide');
+        if(!glide){
+          glide=document.createElement('span');
+          glide.className='nxft-glide';
+          if(getComputedStyle(wrap).position==='static')wrap.style.position='relative';
+          wrap.insertBefore(glide,wrap.firstChild);
+        }
+        if(glide._suppressed&&glide._suppressed!==nowActive){
+          glide._suppressed.style.removeProperty('background');
+          glide._suppressed.style.removeProperty('box-shadow');
+        }
+        const cs=getComputedStyle(nowActive);
+        glide.style.background=(cs.backgroundImage&&cs.backgroundImage!=='none')?cs.backgroundImage:cs.backgroundColor;
+        glide.style.boxShadow=cs.boxShadow;
+        glide.style.borderRadius=cs.borderRadius;
+        const wrapRect=wrap.getBoundingClientRect();
+        glide.style.transition='none';
+        glide.style.opacity='1';
+        glide.style.width=fromRect.width+'px';
+        glide.style.height=fromRect.height+'px';
+        glide.style.transform='translate('+(fromRect.left-wrapRect.left)+'px,'+(fromRect.top-wrapRect.top)+'px)';
+        nowActive.style.setProperty('background','none','important');
+        nowActive.style.setProperty('box-shadow','none','important');
+        glide._suppressed=nowActive;
+        requestAnimationFrame(function(){
+          glide.style.transition='transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1),height .3s cubic-bezier(.22,.8,.24,1)';
+          glide.style.width=newRect.width+'px';
+          glide.style.height=newRect.height+'px';
+          glide.style.transform='translate('+(newRect.left-wrapRect.left)+'px,'+(newRect.top-wrapRect.top)+'px)';
+          clearTimeout(glide._t);
+          glide._t=setTimeout(function(){
+            if(glide._suppressed===nowActive){
+              nowActive.style.removeProperty('background');
+              nowActive.style.removeProperty('box-shadow');
+              glide._suppressed=null;
+            }
+            glide.style.opacity='0';
+          },320);
+        });
+      }catch(err){}
+    });
+  },false);
+})();
 
 // ── WA Masivo mejorado ────────────────────────────────────────────────────────
 let _waTipo='factura';

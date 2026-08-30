@@ -1,7 +1,12 @@
 {
-  "version": "57.51",
+  "version": "57.52",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.52",
+      "fecha": "2026-08-30",
+      "texto": "Facturación/Prefactura: se quitó el botón del ojito (Vista previa) de la barra de acciones, como pidió el dueño. Además, TODAS las pestañas del sistema (.nxft-tab — POS, Cliente 360, Clientes, Facturas, WA Masivo, etc.) ahora tienen un indicador que se desliza suavemente de una pestaña a otra en vez de aparecer de golpe, siguiendo la referencia \"Navigation Tabs Animation\" que mandó."
+    },
     {
       "v": "57.51",
       "fecha": "2026-08-30",
