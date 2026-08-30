@@ -1,7 +1,12 @@
 {
-  "version": "57.52",
+  "version": "57.53",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.53",
+      "fecha": "2026-08-30",
+      "texto": "Corregido: el deslizamiento entre pestañas no se veía en Clientes/Facturas/Cliente 360 (Seguros) porque ahí la pestaña activa es un hundido gris sutil (Pill Premium) y copiarlo se notaba casi invisible. Ahora, en vez de copiar el fondo de la pestaña, es una barrita de acento sólida (con brillo) que se desliza por debajo — se ve igual de bien en todas las pantallas, tengan color de fondo o el estilo hundido."
+    },
     {
       "v": "57.52",
       "fecha": "2026-08-30",

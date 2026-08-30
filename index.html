@@ -2402,7 +2402,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* Contadores dentro de las pestañas */
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
-.nxft-glide{position:absolute;top:0;left:0;z-index:0;pointer-events:none;opacity:0;will-change:transform,width,height}
+/* Barra deslizante (no copia el fondo de la pestaña — en Clientes/Facturas/Cliente 360 el estado
+   activo es un hundido gris sutil de Pill Premium, casi del mismo color que el carril, y copiarlo
+   se veía casi invisible al deslizar; una barra de acento sólida se ve igual de bien ahí como en
+   las pestañas con color de fondo, sin tocar el estilo "hundido" ya establecido). */
+.nxft-glide{position:absolute;bottom:2px;left:0;height:3px;border-radius:3px;z-index:0;pointer-events:none;
+  opacity:0;background:var(--pill-accent,#1ca2a4);box-shadow:0 0 6px var(--pill-accent,#1ca2a4);
+  will-change:transform,width}
 @media(prefers-reduced-motion:reduce){.nxft-glide{transition:none !important}}
 
 /* Paginación (nxPagHTML, compartida por Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría):
@@ -6002,7 +6008,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.52';
+const APP_VERSION='57.53';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13216,45 +13222,25 @@ function switchTab(tab){
         if(!nowActive)return;
         const newRect=nowActive.getBoundingClientRect();
         const fromRect=(prev&&prev.wrap===wrap)?prev.rect:newRect;
-        if(Math.round(fromRect.left)===Math.round(newRect.left)&&Math.round(fromRect.width)===Math.round(newRect.width)&&Math.round(fromRect.top)===Math.round(newRect.top))return;
+        if(Math.round(fromRect.left)===Math.round(newRect.left)&&Math.round(fromRect.width)===Math.round(newRect.width))return;
         let glide=wrap.querySelector(':scope > .nxft-glide');
         if(!glide){
           glide=document.createElement('span');
           glide.className='nxft-glide';
           if(getComputedStyle(wrap).position==='static')wrap.style.position='relative';
-          wrap.insertBefore(glide,wrap.firstChild);
+          wrap.appendChild(glide);
         }
-        if(glide._suppressed&&glide._suppressed!==nowActive){
-          glide._suppressed.style.removeProperty('background');
-          glide._suppressed.style.removeProperty('box-shadow');
-        }
-        const cs=getComputedStyle(nowActive);
-        glide.style.background=(cs.backgroundImage&&cs.backgroundImage!=='none')?cs.backgroundImage:cs.backgroundColor;
-        glide.style.boxShadow=cs.boxShadow;
-        glide.style.borderRadius=cs.borderRadius;
         const wrapRect=wrap.getBoundingClientRect();
         glide.style.transition='none';
         glide.style.opacity='1';
         glide.style.width=fromRect.width+'px';
-        glide.style.height=fromRect.height+'px';
-        glide.style.transform='translate('+(fromRect.left-wrapRect.left)+'px,'+(fromRect.top-wrapRect.top)+'px)';
-        nowActive.style.setProperty('background','none','important');
-        nowActive.style.setProperty('box-shadow','none','important');
-        glide._suppressed=nowActive;
+        glide.style.transform='translateX('+(fromRect.left-wrapRect.left)+'px)';
         requestAnimationFrame(function(){
-          glide.style.transition='transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1),height .3s cubic-bezier(.22,.8,.24,1)';
+          glide.style.transition='transform .32s cubic-bezier(.22,.8,.24,1),width .32s cubic-bezier(.22,.8,.24,1)';
           glide.style.width=newRect.width+'px';
-          glide.style.height=newRect.height+'px';
-          glide.style.transform='translate('+(newRect.left-wrapRect.left)+'px,'+(newRect.top-wrapRect.top)+'px)';
+          glide.style.transform='translateX('+(newRect.left-wrapRect.left)+'px)';
           clearTimeout(glide._t);
-          glide._t=setTimeout(function(){
-            if(glide._suppressed===nowActive){
-              nowActive.style.removeProperty('background');
-              nowActive.style.removeProperty('box-shadow');
-              glide._suppressed=null;
-            }
-            glide.style.opacity='0';
-          },320);
+          glide._t=setTimeout(function(){glide.style.opacity='0';},420);
         });
       }catch(err){}
     });
