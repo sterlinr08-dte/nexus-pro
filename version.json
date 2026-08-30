@@ -1,7 +1,12 @@
 {
-  "version": "57.49",
+  "version": "57.50",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.50",
+      "fecha": "2026-08-30",
+      "texto": "Retoques a la animación de recibo para que se parezca más a la referencia: la ranura de la impresora ahora es una píldora completa (no un rectángulo redondeado) con una línea de brillo, el papel tiene las esquinas superiores redondeadas y un ícono de recibo arriba, y sale con un ligero deslizamiento además del efecto de \"revelado\"."
+    },
     {
       "v": "57.49",
       "fecha": "2026-08-30",

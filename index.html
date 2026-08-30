@@ -5995,7 +5995,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.49';
+const APP_VERSION='57.50';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13346,21 +13346,27 @@ function nxReciboAnimEnsureCSS(){
   opacity:0;transition:opacity .25s ease}
 .nxRA-ov.on{opacity:1}
 .nxRA-wrap{position:relative;width:min(320px,90vw);display:flex;flex-direction:column;align-items:center}
-.nxRA-slot{width:100%;height:26px;border-radius:14px;background:linear-gradient(145deg,#2a3342,#111722);
-  box-shadow:0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);position:relative;z-index:2;flex:none}
-.nxRA-slotDot{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:6px;height:6px;
-  border-radius:50%;background:#2dd4bf;box-shadow:0 0 6px #2dd4bf}
-.nxRA-paperClip{width:92%;overflow:hidden;clip-path:inset(0 0 100% 0);transition:clip-path .7s cubic-bezier(.16,1,.3,1)}
-.nxRA-ov.on .nxRA-paperClip{clip-path:inset(0 0 0% 0)}
-.nxRA-ov.noanim .nxRA-paperClip{transition:none}
-.nxRA-paper{background:#fff;padding:18px 18px 24px;box-shadow:0 14px 30px rgba(0,0,0,.28);position:relative;margin-top:-2px}
+.nxRA-slot{width:100%;height:30px;border-radius:999px;background:linear-gradient(165deg,#3a4456,#1a2130 55%,#0d1119);
+  box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -6px 10px rgba(0,0,0,.35);
+  position:relative;z-index:2;flex:none;overflow:hidden}
+.nxRA-slot::after{content:'';position:absolute;left:8%;right:8%;bottom:6px;height:1px;background:rgba(255,255,255,.14)}
+.nxRA-slotDot{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:6px;height:6px;
+  border-radius:50%;background:#2dd4bf;box-shadow:0 0 7px #2dd4bf}
+.nxRA-paperClip{width:90%;overflow:hidden;clip-path:inset(0 0 100% 0);
+  transition:clip-path .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);transform:translateY(-10px)}
+.nxRA-ov.on .nxRA-paperClip{clip-path:inset(0 0 0% 0);transform:translateY(0)}
+.nxRA-ov.noanim .nxRA-paperClip{transition:none;transform:none}
+.nxRA-paper{background:#fff;border-radius:0 0 18px 18px;padding:20px 18px 26px;box-shadow:0 16px 34px rgba(0,0,0,.3);
+  position:relative;margin-top:-4px}
 .nxRA-paper::after{content:'';position:absolute;left:0;right:0;bottom:-9px;height:14px;
   background:linear-gradient(-45deg,transparent 8px,#fff 8px),linear-gradient(45deg,transparent 8px,#fff 8px);
   background-size:16px 16px;background-position:bottom left;background-repeat:repeat-x}
+.nxRA-ic{width:38px;height:38px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;
+  background:rgba(28,162,164,.12);color:var(--pill-accent,#1ca2a4);font-size:17px}
 .nxRA-emp{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;text-align:center}
 .nxRA-tit{font-size:15px;font-weight:800;color:#0f172a;text-align:center;margin-top:2px}
 .nxRA-cli{font-size:11.5px;color:#475569;text-align:center;margin-top:2px}
-.nxRA-div{border-top:1.5px dashed #cbd5e1;margin:12px 0}
+.nxRA-div{border-top:2px dashed #dde3ea;margin:16px 0}
 .nxRA-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .nxRA-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#475569}
 .nxRA-row b{color:#0f172a;font-weight:700;text-align:right}
@@ -13400,6 +13406,7 @@ window.nxReciboAnimado=function(datos,acciones){
   ov.innerHTML=`<div class="nxRA-wrap">
       <div class="nxRA-slot"><span class="nxRA-slotDot"></span></div>
       <div class="nxRA-paperClip"><div class="nxRA-paper">
+        <div class="nxRA-ic"><i class="ti ti-receipt-2"></i></div>
         <div class="nxRA-emp">${_nxRAEsc(datos.empresa||'')}</div>
         <div class="nxRA-tit">${_nxRAEsc(datos.titulo||'Pago recibido')}</div>
         ${datos.cliente?`<div class="nxRA-cli">${_nxRAEsc(datos.cliente)}</div>`:''}
