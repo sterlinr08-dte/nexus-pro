@@ -2379,13 +2379,22 @@
     };
     if (pr && pr.modo === 'credito') body.tipo = _tipoPago || 'capital';
     try {
-      await getAPI().post('prestamo_pagos', body);
+      const rows = await getAPI().post('prestamo_pagos', body);
+      const pagoId = rows && rows[0] && rows[0].id;
       toast('ok', 'Pago registrado', fmt(monto) + (body.tipo ? ' · ' + (body.tipo === 'capital' ? 'a capital' : 'a interés') : ''));
       await cargarPrestamos();
       const p = _prestamos.find(x => String(x.id) === String(id));
       if (p && estadoDe(p) === 'pagado' && p.estado !== 'pagado') { try { await getAPI().patch('prestamos', 'id=eq.' + id, { estado: 'pagado' }); p.estado = 'pagado'; } catch (e) {} }
       window.nxPrestamoVer(id);
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+      if (pagoId && p && window.nxReciboAnimado) {
+        const cli = (p.cliente_id && _prClientes.find(x => String(x.id) === String(p.cliente_id))) || null;
+        window.nxReciboAnimado({
+          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Pago registrado', cliente: cli ? cli.nombre : '', monto: monto,
+          filas: [{ label: 'Método', valor: body.metodo }, { label: 'Préstamo', valor: 'PR-' + String(id).slice(-6).toUpperCase() }],
+          folio: 'PAG-' + String(pagoId).slice(-8).toUpperCase()
+        }, [{ label: 'Ver recibo / compartir', icon: 'ti-receipt', onclick: () => window.nxPrestamoComprobante(pagoId, id) }]);
+      }
     } catch (e) { toast('err', 'Error al registrar el pago', String(e && e.message || e)); }
   };
 

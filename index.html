@@ -5995,7 +5995,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.48';
+const APP_VERSION='57.49';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10960,6 +10960,11 @@ async function regAbono(){
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+    nxReciboAnimado({empresa:CFG.empNom,titulo:'Abono registrado',cliente:c.nom,monto,
+      filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
+      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
+      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
+       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
@@ -10998,6 +11003,11 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+    nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago a deuda anterior',cliente:c.nom,monto,
+      filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
+      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
+      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
+       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
@@ -13318,6 +13328,97 @@ _${CFG.empNom}_`;
   logAudit('RECIBO_WA',`Recibo enviado a ${c.nom} · RD$ ${fmtN(monto)}`);
   toast('ok','Recibo enviado por WhatsApp',c.nom);
 }
+
+// ── Animación "imprimiendo recibo" (referencia del dueño, 30-ago-2026) ──────
+// Componente COMPARTIDO: lo usan Seguros (regAbono), Financiamiento (nxPrestamoPagar)
+// y POS (_posVentaExito) — un solo lugar para mantener el efecto visual, cada módulo
+// solo manda sus propios datos + sus propios botones (reutiliza el WhatsApp/imprimir
+// que YA existe en cada uno; esta función no duplica esa lógica, solo la envuelve
+// con la animación antes de mostrarla). Se agrega ENCIMA de lo que ya pasa en cada
+// flujo — no reemplaza ni cambia el comportamiento existente si algo sale mal.
+function _nxRAEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function nxReciboAnimEnsureCSS(){
+  if(document.getElementById('nxRACSS'))return;
+  const st=document.createElement('style');st.id='nxRACSS';
+  st.textContent=`
+.nxRA-ov{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.6);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:20px;
+  opacity:0;transition:opacity .25s ease}
+.nxRA-ov.on{opacity:1}
+.nxRA-wrap{position:relative;width:min(320px,90vw);display:flex;flex-direction:column;align-items:center}
+.nxRA-slot{width:100%;height:26px;border-radius:14px;background:linear-gradient(145deg,#2a3342,#111722);
+  box-shadow:0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);position:relative;z-index:2;flex:none}
+.nxRA-slotDot{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:6px;height:6px;
+  border-radius:50%;background:#2dd4bf;box-shadow:0 0 6px #2dd4bf}
+.nxRA-paperClip{width:92%;overflow:hidden;clip-path:inset(0 0 100% 0);transition:clip-path .7s cubic-bezier(.16,1,.3,1)}
+.nxRA-ov.on .nxRA-paperClip{clip-path:inset(0 0 0% 0)}
+.nxRA-ov.noanim .nxRA-paperClip{transition:none}
+.nxRA-paper{background:#fff;padding:18px 18px 24px;box-shadow:0 14px 30px rgba(0,0,0,.28);position:relative;margin-top:-2px}
+.nxRA-paper::after{content:'';position:absolute;left:0;right:0;bottom:-9px;height:14px;
+  background:linear-gradient(-45deg,transparent 8px,#fff 8px),linear-gradient(45deg,transparent 8px,#fff 8px);
+  background-size:16px 16px;background-position:bottom left;background-repeat:repeat-x}
+.nxRA-emp{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;text-align:center}
+.nxRA-tit{font-size:15px;font-weight:800;color:#0f172a;text-align:center;margin-top:2px}
+.nxRA-cli{font-size:11.5px;color:#475569;text-align:center;margin-top:2px}
+.nxRA-div{border-top:1.5px dashed #cbd5e1;margin:12px 0}
+.nxRA-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.nxRA-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#475569}
+.nxRA-row b{color:#0f172a;font-weight:700;text-align:right}
+.nxRA-monto{font-size:26px;font-weight:900;color:#0f172a;text-align:center;font-variant-numeric:tabular-nums;
+  margin:6px 0 14px;font-family:ui-monospace,monospace}
+.nxRA-barcode{height:34px;margin:0 auto 6px;width:82%;
+  background:repeating-linear-gradient(90deg,#0f172a 0 2px,transparent 2px 4px,#0f172a 4px 5px,transparent 5px 9px);
+  opacity:.85}
+.nxRA-folio{font-size:9.5px;color:#94a3b8;text-align:center;font-family:ui-monospace,monospace;letter-spacing:1px}
+.nxRA-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:min(360px,92vw);
+  opacity:0;transform:translateY(6px);transition:opacity .3s ease .55s,transform .3s ease .55s;pointer-events:none}
+.nxRA-ov.on .nxRA-acts{opacity:1;transform:none;pointer-events:auto}
+.nxRA-ov.noanim .nxRA-acts{transition:none}
+.nxRA-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:11px;border:none;
+  background:#fff;color:#1e293b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 3px 10px rgba(0,0,0,.18);transition:transform .12s ease}
+.nxRA-btn:active{transform:translateY(1px)}
+.nxRA-btn.wa{background:linear-gradient(135deg,#25d366,#128c4a);color:#fff}
+.nxRA-btn.ghost{background:rgba(255,255,255,.14);color:#fff;box-shadow:none}
+.nxRA-btn:disabled{opacity:.45;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){.nxRA-ov,.nxRA-paperClip,.nxRA-acts{transition:none !important}}
+`;
+  document.head.appendChild(st);
+}
+// datos: {empresa, titulo, cliente, monto, montoTxt, filas:[{label,valor}], folio}
+// acciones: [{label, icon:'ti-xxx', cls:'wa'|'ghost'|'', disabled:bool, onclick():void}] — cada módulo
+// pasa sus PROPIAS funciones ya existentes (WhatsApp/imprimir/factura), esto NUNCA las reimplementa.
+window.nxReciboAnimado=function(datos,acciones){
+  datos=datos||{};
+  nxReciboAnimEnsureCSS();
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const filasHTML=(datos.filas||[]).map(f=>`<div class="nxRA-row"><span>${_nxRAEsc(f.label)}</span><b>${_nxRAEsc(f.valor)}</b></div>`).join('');
+  const accHTML=(acciones||[]).map((a,i)=>`<button type="button" class="nxRA-btn${a.cls?(' '+a.cls):''}" data-i="${i}"${a.disabled?' disabled':''}><i class="ti ${a.icon||'ti-check'}"></i> ${_nxRAEsc(a.label)}</button>`).join('');
+  const montoTxt=datos.montoTxt||(typeof datos.monto==='number'?fmt(datos.monto):_nxRAEsc(datos.monto));
+  const ov=document.createElement('div');
+  ov.className='nxRA-ov'+(reduce?' noanim':'');
+  ov.innerHTML=`<div class="nxRA-wrap">
+      <div class="nxRA-slot"><span class="nxRA-slotDot"></span></div>
+      <div class="nxRA-paperClip"><div class="nxRA-paper">
+        <div class="nxRA-emp">${_nxRAEsc(datos.empresa||'')}</div>
+        <div class="nxRA-tit">${_nxRAEsc(datos.titulo||'Pago recibido')}</div>
+        ${datos.cliente?`<div class="nxRA-cli">${_nxRAEsc(datos.cliente)}</div>`:''}
+        <div class="nxRA-div"></div>
+        <div class="nxRA-rows">${filasHTML}</div>
+        <div class="nxRA-monto">${montoTxt}</div>
+        <div class="nxRA-barcode"></div>
+        ${datos.folio?`<div class="nxRA-folio">${_nxRAEsc(datos.folio)}</div>`:''}
+      </div></div>
+    </div>
+    <div class="nxRA-acts">${accHTML}<button type="button" class="nxRA-btn ghost" data-close="1"><i class="ti ti-x"></i> Cerrar</button></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll('.nxRA-btn[data-i]').forEach(btn=>{
+    btn.onclick=function(){const i=Number(btn.getAttribute('data-i'));const a=(acciones||[])[i];if(a&&typeof a.onclick==='function')a.onclick();};
+  });
+  const btnClose=ov.querySelector('[data-close="1"]');if(btnClose)btnClose.onclick=()=>ov.remove();
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('on')));
+};
 
 // ── Auto-facturación mejorada ───────────────────────────────────────────────
 let _autoFactLock=false;

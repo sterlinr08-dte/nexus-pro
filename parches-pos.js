@@ -2563,6 +2563,17 @@
     const cliObj = v.cliente_id ? _clientes.find(x => String(x.id) === String(v.cliente_id)) : null;
     const tieneWA = cliObj ? !!waNum(cliObj.telefono) : false;
     const nItems = (v._items || []).length;
+    if (window.nxReciboAnimado) {
+      window.nxReciboAnimado({
+        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
+        filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }],
+        folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
+      }, [
+        { label: 'Imprimir ticket', icon: 'ti-printer', onclick: () => window.nxPosVentaTicketVer() },
+        { label: 'Factura completa', icon: 'ti-file-invoice', onclick: () => window.nxFacDocVenta(v.id) },
+        { label: 'WhatsApp', icon: 'ti-brand-whatsapp', cls: 'wa', disabled: !tieneWA, onclick: () => window.nxPosVentaWA() }
+      ]);
+    }
     modal.innerHTML = `
       <div class="nxPgOkHd"><div class="nxPgOkIc"><i class="ti ti-circle-check"></i></div><div class="nxPgOkTit">Vendido</div><div class="nxPgOkNum">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</div></div>
       <div class="nxPgBody">

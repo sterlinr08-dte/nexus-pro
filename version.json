@@ -1,7 +1,12 @@
 {
-  "version": "57.48",
+  "version": "57.49",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.49",
+      "fecha": "2026-08-30",
+      "texto": "Nueva animación de \"recibo imprimiéndose\" al aplicar un pago (referencia del dueño: recibo saliendo de una ranura con corte perforado) — en Registrar abono (Seguros), Registrar pago (Financiamiento) y Cobrar (POS). Al terminar la animación aparecen los botones de siempre (WhatsApp/Imprimir/Recibo) — no se creó ningún sistema de recibos nuevo, solo se le puso esta animación delante a los que ya existían en cada módulo."
+    },
     {
       "v": "57.48",
       "fecha": "2026-08-30",
