@@ -1,7 +1,12 @@
 {
-  "version": "57.41",
+  "version": "57.42",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.42",
+      "fecha": "2026-08-30",
+      "texto": "Rediseño de la paginación (Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría): números y flechas ahora son botones cuadrados con esquina redondeada, en una sola fila, con la página activa en degradado verde azulado — mismo lenguaje visual del resto del sistema."
+    },
     {
       "v": "57.41",
       "fecha": "2026-08-30",

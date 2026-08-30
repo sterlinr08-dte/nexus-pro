@@ -2368,6 +2368,26 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
 
+/* Paginación (nxPagHTML, compartida por Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría):
+   botones cuadrados con esquina redondeada en una sola fila, la página activa en degradado
+   con el mismo acento verde azulado del resto del sistema (pedido del dueño 30-ago-2026). */
+.nxpag-btn{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:32px;height:32px;
+  padding:0 4px;border-radius:9px;border:1px solid #e2e8f0;background:#fff;color:#475569;
+  font-size:12px;font-weight:700;font-family:var(--ff);cursor:pointer;transition:all .15s ease}
+.nxpag-btn:hover:not(:disabled):not(.nxpag-on){background:#f1f5f9;border-color:#cbd5e1;color:#1e293b}
+.nxpag-btn:active:not(:disabled){transform:translateY(1px)}
+.nxpag-btn:disabled{opacity:.35;cursor:not-allowed}
+.nxpag-btn.nxpag-nav{color:#94a3b8}
+.nxpag-btn.nxpag-nav i{font-size:14px}
+.nxpag-btn.nxpag-on{background:linear-gradient(135deg,var(--pill-accent,#2dd4bf),var(--pill-accent,#1ca2a4));
+  border-color:var(--pill-accent,#1ca2a4);color:#fff;box-shadow:0 3px 8px rgba(28,162,164,.35)}
+.nxpag-dots{display:inline-flex;align-items:center;padding:0 3px;color:#94a3b8;font-size:11px}
+@media(prefers-reduced-motion:reduce){.nxpag-btn{transition:none !important}}
+body.tema-premium .nxpag-btn{background:var(--nm-bg,#1c2230);border-color:rgba(255,255,255,.08);color:var(--nm-tx2,#8fa0bd)}
+body.tema-premium .nxpag-btn:hover:not(:disabled):not(.nxpag-on){background:var(--nm-hi,#262e40);color:var(--nm-tx,#e7ebf3)}
+body.tema-premium .nxpag-btn.nxpag-nav{color:var(--nm-tx2,#8fa0bd)}
+body.tema-premium .nxpag-btn.nxpag-on{background:linear-gradient(135deg,#2dd4bf,#1ca2a4);border-color:#1ca2a4;color:#0b1220}
+
 /* ════════════════════════════════════════════════════════════════════════════
    REDUCIR MOVIMIENTO — una sola regla para TODO el sistema.
    Medido: de las 56 animaciones del sistema, solo 9 estaban dentro de un guardia
@@ -5945,7 +5965,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.41';
+const APP_VERSION='57.42';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8890,14 +8910,14 @@ function cliBulkWA(){
 // estado de página, esto solo arma el HTML de los botones.
 function nxPagHTML(pag,totalPag,fn){
   const pages=[...new Set([1,totalPag,pag-1,pag,pag+1].filter(p=>p>=1&&p<=totalPag))].sort((a,b)=>a-b);
-  let html=`<button class="btn bsm bghost" onclick="${fn}(${pag-1})"${pag<=1?' disabled':''} aria-label="Página anterior"><i class="ti ti-chevron-left"></i></button>`;
+  let html=`<button class="nxpag-btn nxpag-nav" onclick="${fn}(${pag-1})"${pag<=1?' disabled':''} aria-label="Página anterior"><i class="ti ti-chevron-left"></i></button>`;
   let prev=0;
   pages.forEach(p=>{
-    if(prev&&p-prev>1)html+='<span style="padding:0 5px;color:#94a3b8;font-size:11px">…</span>';
-    html+=`<button class="btn bsm ${p===pag?'bc1':'bghost'}" onclick="${fn}(${p})"${p===pag?' aria-current="page"':''}>${p}</button>`;
+    if(prev&&p-prev>1)html+='<span class="nxpag-dots">…</span>';
+    html+=`<button class="nxpag-btn${p===pag?' nxpag-on':''}" onclick="${fn}(${p})"${p===pag?' aria-current="page"':''}>${p}</button>`;
     prev=p;
   });
-  html+=`<button class="btn bsm bghost" onclick="${fn}(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
+  html+=`<button class="nxpag-btn nxpag-nav" onclick="${fn}(${pag+1})"${pag>=totalPag?' disabled':''} aria-label="Página siguiente"><i class="ti ti-chevron-right"></i></button>`;
   return html;
 }
 // Que la página siguiente empiece arriba — el clic en un número queda abajo, junto a la paginación.
