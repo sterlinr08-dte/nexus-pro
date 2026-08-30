@@ -284,7 +284,17 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
 .tn-b-primary kbd{background:rgba(255,255,255,.22) !important;border-color:rgba(255,255,255,.4) !important;color:#fff !important}
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;background:var(--bg0)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;
+  background:
+    radial-gradient(circle at 12% 6%,rgba(255,255,255,.6) 0%,rgba(255,255,255,0) 22%),
+    radial-gradient(circle at 90% 14%,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 20%),
+    radial-gradient(circle at 80% 85%,rgba(255,255,255,.42) 0%,rgba(255,255,255,0) 24%),
+    radial-gradient(circle at 6% 80%,rgba(255,255,255,.38) 0%,rgba(255,255,255,0) 20%),
+    linear-gradient(160deg,#dbeeff 0%,#e9f3ff 45%,#f3f8ff 100%);
+  background-size:cover}
+/* Fondo "claymorphism" (referencia del dueño, 30-ago-2026): degradado celeste suave con manchas
+   translúcidas simulando las burbujas del ejemplo — solo tema claro; oscuro sigue con --bg0 sólido. */
+body.tema-premium .content{background:var(--bg0)}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(139,92,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -6008,7 +6018,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.53';
+const APP_VERSION='57.54';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

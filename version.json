@@ -1,7 +1,12 @@
 {
-  "version": "57.53",
+  "version": "57.54",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.54",
+      "fecha": "2026-08-30",
+      "texto": "Fondo general de la app (detrás de Dashboard, Clientes, Facturas, etc.) cambia del gris claro de siempre a un degradado celeste con manchas suaves tipo \"claymorphism\", como pidió el dueño. Solo aplica en tema claro — el tema oscuro sigue exactamente igual."
+    },
     {
       "v": "57.53",
       "fecha": "2026-08-30",
