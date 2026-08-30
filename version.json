@@ -1,7 +1,12 @@
 {
-  "version": "57.43",
+  "version": "57.44",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.44",
+      "fecha": "2026-08-30",
+      "texto": "Casilla de selección de la Cuadrícula de Clientes: le faltaba el visto animado que ya tiene WhatsApp masivo — ahora dibuja el check igual en los dos lugares. Además, la barra superior de todo el sistema (menú, notificaciones, modo oscuro, búsqueda, config) pasa a botones cuadrados con relieve suave, y \"Búsqueda global\" queda como acción destacada con degradado y brillo al pasar el mouse."
+    },
     {
       "v": "57.43",
       "fecha": "2026-08-30",

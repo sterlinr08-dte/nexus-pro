@@ -260,13 +260,28 @@ body.spring-nav .ni.on{background:transparent;box-shadow:none}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.tnav{height:52px;background:#fff;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0;box-shadow:0 1px 0 var(--border-light),0 2px 8px rgba(0,0,0,.04)}
-.tn-tog{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:15px;transition:all .15s;flex-shrink:0}
-.tn-tog:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
+.tnav{height:52px;background:#fff;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0;box-shadow:0 1px 0 var(--border-light),0 2px 8px rgba(0,0,0,.04);
+  --tnb-bg:#eef1f6;--tnb-hi:#ffffff;--tnb-lo:rgba(51,65,90,.18);--tnb-tx2:#64748b;--tnb-accent:#6d28d9;--tnb-accent2:#7c3aed}
+body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb-tx2:#8fa0bd;--tnb-accent:#7c3aed;--tnb-accent2:#8b5cf6}
+/* "Dashboard Header UI Upgrade" (referencia del dueño, 30-ago-2026): botones cuadrados
+   con esquina redondeada y relieve suave (mismo lenguaje "Pill Premium" del resto del
+   sistema), y el botón de búsqueda global como acción destacada con degradado + brillo. */
+.tn-tog,.tn-b{border-radius:11px;border:none;
+  background:linear-gradient(180deg,var(--tnb-hi) 0%,var(--tnb-bg) 100%);
+  box-shadow:3px 3px 7px var(--tnb-lo),-3px -3px 7px var(--tnb-hi);
+  color:var(--tnb-tx2);transition:box-shadow .18s ease,transform .12s ease,color .18s ease}
+.tn-tog{width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.tn-tog:hover,.tn-b:hover{color:var(--tnb-accent)}
+.tn-tog:active,.tn-b:active{transform:translateY(1px);box-shadow:inset 2px 2px 5px var(--tnb-lo),inset -2px -2px 5px var(--tnb-hi)}
+@media(prefers-reduced-motion:reduce){.tn-tog,.tn-b{transition:none !important}}
 .pttl{font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
 .tn-r{margin-left:auto;display:flex;align-items:center;gap:6px}
-.tn-b{height:34px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:12px;transition:all .15s;padding:0 12px;gap:5px;white-space:nowrap;font-family:var(--ff);position:relative;font-weight:500}
-.tn-b:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
+.tn-b{height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;padding:0 12px;gap:5px;white-space:nowrap;font-family:var(--ff);position:relative;font-weight:500}
+.tn-b-primary{background:linear-gradient(135deg,var(--tnb-accent),var(--tnb-accent2)) !important;color:#fff !important;
+  box-shadow:0 3px 10px rgba(109,40,217,.32) !important}
+.tn-b-primary:hover{box-shadow:0 6px 16px rgba(109,40,217,.42) !important;filter:brightness(1.06);color:#fff !important}
+.tn-b-primary:active{box-shadow:0 2px 6px rgba(109,40,217,.32) !important}
+.tn-b-primary kbd{background:rgba(255,255,255,.22) !important;border-color:rgba(255,255,255,.4) !important;color:#fff !important}
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;background:var(--bg0)}
@@ -1834,7 +1849,10 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
   transition:box-shadow .18s ease,transform .12s ease}
 .cliCard-chk:active{transform:translateY(1px)}
 .cliCard-chk:checked{background:var(--pill-accent,#1ca2a4);box-shadow:inset 2px 2px 4px rgba(0,0,0,.22),inset -1px -1px 3px rgba(255,255,255,.25)}
-.cliCard-chk:checked::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;line-height:1}
+.cliCard-chk:checked::after{content:'';position:absolute;left:7px;top:3px;width:6px;height:11px;
+  border-bottom:2px solid #fff;border-right:2px solid #fff;transform:rotate(45deg);
+  animation:waCheckDraw 200ms ease forwards}
+@media(prefers-reduced-motion:reduce){.cliCard-chk:checked::after{animation:none}}
 .cliCard-star{width:26px;height:26px;border-radius:50%;border:none;flex:none;
   background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 100%);
   box-shadow:2px 2px 5px var(--pill-lo),-2px -2px 5px var(--pill-hi);
@@ -2769,7 +2787,7 @@ body.tema-premium .nxpag-btn.nxpag-on{background:linear-gradient(135deg,#2dd4bf,
           <button class="tn-b" onclick="toggleDarkMode()" title="Modo oscuro" id="btnDarkMode" aria-label="Modo oscuro">
             <i class="ti ti-moon" id="iconDarkMode"></i>
           </button>
-          <button class="tn-b" onclick="abrirGlobalSearch()" title="Búsqueda global (Ctrl+K)" aria-label="Búsqueda global" style="display:flex;align-items:center;gap:5px">
+          <button class="tn-b tn-b-primary" onclick="abrirGlobalSearch()" title="Búsqueda global (Ctrl+K)" aria-label="Búsqueda global" style="display:flex;align-items:center;gap:5px">
             <i class="ti ti-search"></i>
             <kbd style="font-size:8px;background:#f1f5f9;padding:1px 5px;border-radius:4px;border:1px solid #e2e8f0">⌘K</kbd>
           </button>
@@ -5973,7 +5991,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.43';
+const APP_VERSION='57.44';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
