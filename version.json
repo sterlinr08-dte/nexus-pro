@@ -1,7 +1,12 @@
 {
-  "version": "57.38",
+  "version": "57.39",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.39",
+      "fecha": "2026-08-30",
+      "texto": "Últimos retoques a la Cuadrícula de Clientes: la casilla de selección, la estrella de favorito y el botón \"···\" ahora son círculos con relieve (mismo estilo del resto del sistema) en vez de íconos sueltos, y el avatar tiene un aro blanco que lo separa de la tarjeta."
+    },
     {
       "v": "57.38",
       "fecha": "2026-08-30",
