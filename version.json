@@ -1,7 +1,12 @@
 {
-  "version": "57.39",
+  "version": "57.40",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.40",
+      "fecha": "2026-08-30",
+      "texto": "Corregida la fila de paginación (1, 2, ..., última) en Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría: el botón \"siguiente\" se quedaba solo, centrado en una segunda fila, cuando no cabían todos los números — ahora la fila no se parte, se desliza de lado si hace falta."
+    },
     {
       "v": "57.39",
       "fecha": "2026-08-30",

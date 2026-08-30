@@ -2845,7 +2845,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <thead><tr><th style="width:12%">N° PÓLIZA</th><th style="width:20%">ASEGURADO</th><th style="width:9%">PLAN</th><th style="width:11%">INICIO</th><th style="width:11%">FIN</th><th style="width:8%">DÍAS</th><th style="width:9%">ESTADO POL.</th><th style="width:12%">NCF</th><th style="width:8%">PDF</th></tr></thead>
               <tbody id="tbPol"><tr><td colspan="9"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
-            <div id="polPagWrap" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap"></div>
+            <div id="polPagWrap" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
           </div>
         </div>
 
@@ -5921,7 +5921,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.39';
+const APP_VERSION='57.40';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8825,7 +8825,7 @@ function rCli(){
   // Páginas numeradas (10 por página) — reemplaza el "Ver más" incremental
   if(totalPag>1&&!q){
     const extra=document.createElement('div');
-    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch';
     extra.innerHTML=cliPagHTML(_cliPagina,totalPag);
     tb.appendChild(extra);
   }
@@ -9410,7 +9410,7 @@ function rFact(){
   }).join('')+'</tbody></table>';
   if(_factTotalPag>1&&!q){
     const extra=document.createElement('div');
-    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch';
     extra.innerHTML=nxPagHTML(_factPagina,_factTotalPag,'factIrPag');
     tb.appendChild(extra);
   }
@@ -9923,7 +9923,7 @@ function rCob(){
   }).join('');
   if(_cobTotalPag>1&&!q){
     const extra=document.createElement('div');
-    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch';
     extra.innerHTML=nxPagHTML(_cobPagina,_cobTotalPag,'cobIrPag');
     tb.appendChild(extra);
   }
@@ -10599,7 +10599,7 @@ function aplicarFiltrosPagos(){
   </tr>`).join('')+'</tbody></table>';
   if(_pagosTotalPag>1&&!q){
     const extra=document.createElement('div');
-    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap';
+    extra.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch';
     extra.innerHTML=nxPagHTML(_pagosPagina,_pagosTotalPag,'pagosIrPag');
     tb.appendChild(extra);
   }
@@ -12116,7 +12116,7 @@ function rAuditRows(){
         <td style="font-size:10px;color:#475569">${escHtml(a.detalle||'—')}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${totalPag>1?`<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:wrap">${nxPagHTML(_auditPag,totalPag,'auditIrPag')}</div>`:''}`;
+    ${totalPag>1?`<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch">${nxPagHTML(_auditPag,totalPag,'auditIrPag')}</div>`:''}`;
 }
 function auditIrPag(p){_auditPag=p;rAuditRows();nxPagScrollTop();}
 
