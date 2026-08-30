@@ -605,11 +605,15 @@ body.tema-premium #mAbono .btn.bc1{color:var(--nm-accent) !important}
 #mAbono .aboToggleTxt{flex:1;min-width:0}
 #mAbono .aboToggleTxt b{display:block;font-size:11px;color:var(--nm-tx)}
 #mAbono .aboToggleTxt span{font-size:9.5px;color:var(--nm-tx2)}
-#mAbono .aboTgl{width:36px;height:20px;border-radius:999px;background:var(--nm-bg);position:relative;flex:0 0 auto;
-  box-shadow:inset 2px 2px 4px var(--nm-lo),inset -2px -2px 4px var(--nm-hi)}
-#mAbono .aboTgl::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
-  background:var(--nm-bg);box-shadow:1px 1px 3px var(--nm-lo),-1px -1px 3px var(--nm-hi);transition:transform .18s ease}
-#mAbono .aboTgl.on::after{transform:translateX(16px);background:var(--nm-accent);box-shadow:1px 1px 3px rgba(0,0,0,.3)}
+#mAbono .aboTgl{width:40px;height:22px;border-radius:999px;position:relative;flex:0 0 auto;cursor:pointer;
+  background:linear-gradient(135deg,#94a3b8,#64748b);
+  box-shadow:0 2px 6px rgba(15,23,42,.18),inset 0 1px 2px rgba(255,255,255,.15);
+  transition:background .2s ease,box-shadow .2s ease}
+#mAbono .aboTgl.on{background:linear-gradient(135deg,var(--pill-accent,#1ca2a4),#0d9488);
+  box-shadow:0 2px 8px rgba(28,162,164,.4),inset 0 1px 2px rgba(255,255,255,.25)}
+#mAbono .aboTgl::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s ease}
+#mAbono .aboTgl.on::after{transform:translateX(18px)}
 
 /* Resumen final — solo lectura, se recalcula con nxAboActualizarResumen()
    cada vez que cambia método/banco/agente/monto. */
@@ -622,7 +626,7 @@ body.tema-premium #mAbono .btn.bc1{color:var(--nm-accent) !important}
   box-shadow:3px 3px 7px rgba(53,104,224,.35),-2px -2px 6px var(--nm-hi)}
 #mAbono .aboSummary b{display:block;font-size:11px;color:var(--nm-tx)}
 #mAbono .aboSummary span{font-size:9.3px;color:var(--nm-tx2);line-height:1.5}
-@media(prefers-reduced-motion:reduce){#mAbono .aboQbtn,#mAbono .aboTgl::after{transition:none}}
+@media(prefers-reduced-motion:reduce){#mAbono .aboQbtn,#mAbono .aboTgl,#mAbono .aboTgl::after{transition:none}}
 
 /* Piloto neumórfico #2 — #mCli (Nuevo/Editar cliente). Misma paleta y misma
    pelea de !important contra parches.js que #mAbono (ver esa nota arriba):
@@ -5991,7 +5995,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.47';
+const APP_VERSION='57.48';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

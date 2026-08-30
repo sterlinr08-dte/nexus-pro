@@ -1,7 +1,12 @@
 {
-  "version": "57.47",
+  "version": "57.48",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.48",
+      "fecha": "2026-08-30",
+      "texto": "Interruptor \"Pago adelantado\" (modal Registrar abono): pasó de un punto gris casi invisible a una píldora en degradado (gris oscuro apagado, verde azulado encendido), siguiendo la referencia \"Premium Switch\" que mandó el dueño."
+    },
     {
       "v": "57.47",
       "fecha": "2026-08-30",
