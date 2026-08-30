@@ -1786,16 +1786,21 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .cliBulkBar .sp{flex:1}
 
 .cliGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.cliCard{position:relative;background:var(--sf-card,#fff);border-radius:var(--r14,14px);border:1px solid var(--sf-line,#e2e8f0);
+.cliCard{position:relative;overflow:hidden;
+  background:linear-gradient(160deg,rgba(28,162,164,.10) 0%,var(--sf-card,#fff) 50%);
+  border-radius:var(--r14,14px);border:1px solid var(--sf-line,#e2e8f0);
   box-shadow:var(--shadow,0 1px 3px rgba(15,23,42,.06));padding:14px 10px 10px;display:flex;flex-direction:column;
-  align-items:center;text-align:center;opacity:0;transform:translateY(10px);animation:nxFadeUp .3s ease both}
-.cliCard.inactivo{opacity:.55}
+  align-items:center;text-align:center;opacity:0;transform:translateY(10px);animation:nxFadeUp .3s ease both;
+  transition:box-shadow .18s ease,transform .12s ease}
+.cliCard:hover{box-shadow:0 8px 20px rgba(15,23,42,.10);transform:translateY(-2px)}
+.cliCard.inactivo{background:linear-gradient(160deg,rgba(244,63,94,.09) 0%,var(--sf-card,#fff) 50%);opacity:.72}
 .cliCard-top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;z-index:2}
 .cliCard-chk{width:16px;height:16px;cursor:pointer;accent-color:var(--pill-accent,#1ca2a4)}
 .cliCard-star{border:none;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;padding:2px;display:flex;line-height:1}
 .cliCard-star.on{color:#f59e0b}
 .cliCard-body{width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:18px;cursor:pointer}
-.cliCard-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none}
+.cliCard-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;
+  font-size:15px;flex:none;color:#fff;box-shadow:0 4px 10px rgba(15,23,42,.16),inset 0 1px 0 rgba(255,255,255,.35)}
 .cliCard-nom{font-size:12px;font-weight:800;color:var(--sf-tx,#1e293b);line-height:1.25;overflow:hidden;text-overflow:ellipsis;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%}
 .cliCard-sub{font-size:10px;color:var(--sf-tx3,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -5900,7 +5905,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.37';
+const APP_VERSION='57.38';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8757,7 +8762,7 @@ function rCli(){
           <button type="button" class="cliCard-star${esFavorito(c.id)?' on':''}" onclick="event.stopPropagation();toggleFav('${c.id}')" aria-label="${esFavorito(c.id)?'Quitar de favoritos':'Marcar como favorito'}"><i class="ti ti-star${esFavorito(c.id)?'-filled':''}"></i></button>
         </div>
         <div class="cliCard-body" onclick="verCliente('${c.id}')" tabindex="0" role="button" aria-label="Ver la ficha de ${nomEsc}" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
-          <div class="av cliCard-av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div>
+          <div class="av cliCard-av" style="background:${c.activo?'linear-gradient(135deg,#5eead4,#0d9488)':'linear-gradient(135deg,#fca5a5,#dc2626)'}">${inits(c.nom)}</div>
           <div class="cliCard-nom">${nomEsc}</div>
           <div class="cliCard-sub">${c.referencia?escHtml(c.referencia):(c.cedula||'—')}</div>
           ${estB(c)}

@@ -1,7 +1,12 @@
 {
-  "version": "57.37",
+  "version": "57.38",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.38",
+      "fecha": "2026-08-30",
+      "texto": "Vista de Cuadrícula de Clientes con mejor aspecto: tarjetas con un degradado suave de color (verde azulado para activos, rojo para inhabilitados) y las iniciales del cliente en un círculo con degradado vivo, en vez del fondo plano de antes."
+    },
     {
       "v": "57.37",
       "fecha": "2026-08-30",
