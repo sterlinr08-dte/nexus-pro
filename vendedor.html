@@ -42,6 +42,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .qty button{width:54px;height:54px;border-radius:14px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:26px;font-weight:800;color:var(--c);cursor:pointer;line-height:1}
 .qty button:disabled{opacity:.4}
 .qty .qn{text-align:center;min-width:80px}.qty .qn b{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1}.qty .qn small{font-size:12px;color:#94a3b8;font-weight:700}
+.qty .qn input{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;width:100%;text-align:center;border:none;background:none;padding:0;color:inherit;-moz-appearance:textfield}
+.qty .qn input::-webkit-outer-spin-button,.qty .qn input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.qty .qn input:focus{outline:none}
 .srch{position:relative;margin-bottom:9px}
 .srch i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:17px}
 .srch input{width:100%;height:44px;padding:0 12px 0 36px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff}
@@ -184,7 +187,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var pago=ctas.length?'<label class="fl">Cuenta donde pagó <span class="opt">(opcional)</span></label><select id="vCta" class="in" onchange="window.__cta(this.value)"><option value="">— Ninguna / efectivo —</option>'+ctas.map(function(c){return '<option value="'+c.id+'"'+(ctaSel===c.id?' selected':'')+'>'+esc(c.banco||"Cuenta")+' '+esc(c.numero_cuenta||"")+'</option>';}).join('')+'</select>':'';
     var numSec = RB.ocultar_numeros ?
       '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets?</h3><small>Números al azar</small></div></div>'+
-        '<div class="qty"><button onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="qn"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'ticket':'tickets')+'</small></div><button onclick="window.__qty(1)">+</button></div>'+
+        '<div class="qty"><button onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="qn"><input type="number" inputmode="numeric" min="1" id="qtyN" value="'+qty+'" aria-label="Cantidad de tickets" onclick="event.stopPropagation()" onchange="window.__qty(Math.max(1,Math.floor(Number(this.value))||1),1)"><small>'+(qty===1?'ticket':'tickets')+'</small></div><button onclick="window.__qty(1)">+</button></div>'+
         '<div class="qrow" style="margin-top:12px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(RB.precio||0))+'</small></button>';}).join('')+'</div></div>'
       :
       '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Números</h3><small>Toca uno o varios</small></div></div>'+
@@ -239,7 +242,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
   window.__toggle=function(n){if(sold[n])return;var i=cart.indexOf(n);if(i>=0)cart.splice(i,1);else cart.push(n);cart.sort();boardInto();refreshCart();};
   window.__luck=function(k){var totalN=RB.cantidad||10000,av=[],sm={};cart.forEach(function(n){sm[n]=1;});for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s]&&!sm[s])av.push(s);}if(!av.length){alert("No quedan números.");return;}for(var j=0;j<k&&av.length;j++){var x=Math.floor(Math.random()*av.length);cart.push(av[x]);av.splice(x,1);}cart.sort();boardInto();refreshCart();};
-  window.__qty=function(d,abs){qty=abs?d:Math.max(1,qty+d);if(qty>200)qty=200;var n=document.getElementById("qtyN");if(n)n.textContent=qty;var box=document.querySelector(".qty");if(box){var mn=box.querySelector("button");if(mn)mn.disabled=qty<=1;var sm=box.querySelector(".qn small");if(sm)sm.textContent=qty===1?'ticket':'tickets';}refreshCart();};
+  window.__qty=function(d,abs){qty=abs?d:Math.max(1,qty+d);if(qty>200)qty=200;var n=document.getElementById("qtyN");if(n)n.value=qty;var box=document.querySelector(".qty");if(box){var mn=box.querySelector("button");if(mn)mn.disabled=qty<=1;var sm=box.querySelector(".qn small");if(sm)sm.textContent=qty===1?'ticket':'tickets';}refreshCart();};
   window.__vou=function(input){var f=input.files&&input.files[0];if(!f)return;if(f.size>12*1024*1024){alert("Imagen muy grande.");return;}var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1100,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.72);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">';};img.src=ev.target.result;};rd.readAsDataURL(f);};
 
   window.__vender=function(){

@@ -91,6 +91,10 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .stp button:active{transform:scale(.9);filter:brightness(.94)}
 .stp .mid{text-align:center;min-width:90px}
 .stp .mid b{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a}
+.stp .mid input{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a;
+  width:100%;text-align:center;border:none;background:none;padding:0;-moz-appearance:textfield}
+.stp .mid input::-webkit-outer-spin-button,.stp .mid input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp .mid input:focus{outline:none}
 .stp .mid small{font-size:12px;color:#94a3b8;font-weight:800;letter-spacing:1px}
 .bigtot{text-align:center;font-size:27px;font-weight:800;color:#334155;margin:14px 0 6px}
 .bigtot b{color:var(--c)}
@@ -484,7 +488,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><input type="number" inputmode="numeric" min="1" id="qtyN" class="mg-digits" value="'+qty+'" aria-label="Cantidad de boletos" onclick="event.stopPropagation()" onchange="window.__qty(Math.max(1,Math.floor(Number(this.value))||1),1)"><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           (ATA.length?'<div class="qrow" style="margin-top:6px">'+ATA.map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
           paqsHTML()+'<div class="hint sm1"><i class="ti ti-wand"></i> Te asignamos <b id="qtyTxt">'+qty+'</b> número(s) al azar.</div></div>'
@@ -605,7 +609,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
     go.disabled=!canSubmit(); }
   window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200; if(limMax()&&qty>limMax()){qty=limMax();}
     if(pkgSel){pkgSel=null;render();return;}
-    var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
+    var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.value=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
     refreshCart();
   };
