@@ -1,7 +1,12 @@
 {
-  "version": "57.42",
+  "version": "57.43",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.43",
+      "fecha": "2026-08-30",
+      "texto": "Ficha del cliente (360°), pestañas Actividad e Historial: la línea de tiempo pasa de texto plano a tarjetas — cada evento con su ícono de color, una etiqueta a la derecha (Pago/Factura/Venta/Préstamo/Auditoría/Registro) y un efecto de elevación al pasar el mouse."
+    },
     {
       "v": "57.42",
       "fecha": "2026-08-30",

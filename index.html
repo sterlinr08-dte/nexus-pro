@@ -1642,14 +1642,22 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-grid>*{min-width:0}
 .nxSf .sf-panel{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px}
 .nxSf .sf-panel h3{font-size:12.5px;font-weight:800;margin:0 0 10px}
-.nxSf .sf-tl-item{display:flex;gap:9px;position:relative;padding-bottom:16px}
+.nxSf .sf-tl-item{display:flex;gap:12px;position:relative;padding-bottom:14px}
 .nxSf .sf-tl-item:last-child{padding-bottom:0}
-.nxSf .sf-tl-item::before{content:'';position:absolute;left:12px;top:24px;bottom:0;width:1.5px;background:var(--sf-line)}
+.nxSf .sf-tl-item::before{content:'';position:absolute;left:15px;top:32px;bottom:-2px;width:2px;background:var(--sf-line)}
 .nxSf .sf-tl-item:last-child::before{display:none}
-.nxSf .sf-tl-dot{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:#fff;z-index:1}
-.nxSf .sf-tl-b b{display:block;font-size:11.5px;font-weight:700}
-.nxSf .sf-tl-b .when{font-size:9.5px;color:var(--sf-tx3);margin:1px 0 1px}
+.nxSf .sf-tl-dot{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:#fff;z-index:1;box-shadow:0 3px 7px rgba(15,23,42,.22),0 0 0 3px var(--sf-card)}
+.nxSf .sf-tl-b{flex:1;min-width:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  background:var(--sf-card);border:1px solid var(--sf-line);border-radius:12px;padding:10px 12px;
+  box-shadow:var(--sf-elev-sm);transition:box-shadow .15s ease,transform .15s ease}
+.nxSf .sf-tl-item:hover .sf-tl-b{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.10)}
+.nxSf .sf-tl-main{min-width:0}
+.nxSf .sf-tl-b b{display:block;font-size:11.5px;font-weight:700;color:var(--sf-tx)}
+.nxSf .sf-tl-b .when{font-size:9.5px;color:var(--sf-tx3);margin:2px 0 3px;display:flex;align-items:center;gap:5px}
+.nxSf .sf-tl-b .when::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;flex:none}
 .nxSf .sf-tl-b .desc{font-size:10.5px;color:var(--sf-tx2)}
+.nxSf .sf-tl-tag{flex:none;font-size:9px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.2px;margin-top:1px}
+@media(prefers-reduced-motion:reduce){.nxSf .sf-tl-b{transition:none !important}}
 .nxSf .sf-qa{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .nxSf .sf-qa-tile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:11px;
   border:1px solid var(--sf-line);background:var(--sf-bg);cursor:pointer;text-align:center}
@@ -5965,7 +5973,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.42';
+const APP_VERSION='57.43';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7042,32 +7050,47 @@ function c360TabDocumentos(c,cache){
   return html;
 }
 
+// Etiqueta + colores del "chip" de la derecha en la línea de tiempo (Actividad/Historial de Cliente 360),
+// reutiliza la misma clave `cls` que ya coloreaba el punto — sin campos nuevos.
+function c360TlTag(cls,label){
+  const map={
+    primary:{bg:'var(--sf-primary-l)',fg:'var(--sf-primary-d)'},
+    ok:{bg:'var(--sf-ok-l)',fg:'var(--sf-ok-d)'},
+    warn:{bg:'var(--sf-warn-l)',fg:'var(--sf-warn-d)'},
+    err:{bg:'var(--sf-err-l)',fg:'var(--sf-err-d)'},
+    purple:{bg:'rgba(139,92,246,.14)',fg:'#8b5cf6'}
+  };
+  const c=map[cls]||map.primary;
+  return '<span class="sf-tl-tag" style="background:'+c.bg+';color:'+c.fg+'">'+escHtml(label)+'</span>';
+}
+function c360TlItem(cls,ic,tit,ts,desc,tagLabel){
+  const colorMap={primary:'var(--sf-primary,#2563eb)',ok:'var(--sf-ok,#16a34a)',warn:'var(--sf-warn,#d97706)',err:'var(--sf-err,#dc2626)',purple:'#8b5cf6'};
+  const dotColor=colorMap[cls]||colorMap.primary;
+  return `<div class="sf-tl-item"><div class="sf-tl-dot" style="background:${dotColor}"><i class="ti ${ic}" style="font-size:13px"></i></div>
+    <div class="sf-tl-b"><div class="sf-tl-main"><b>${escHtml(tit)}</b><div class="when">${String(ts||'').slice(0,16).replace('T',' ')}</div>${desc?`<div class="desc">${escHtml(desc)}</div>`:''}</div>${c360TlTag(cls,tagLabel)}</div></div>`;
+}
+
 function c360TabActividad(c,cache){
   if(cache.auditoria===undefined)return c360Empty('Cargando…');
   const rows=cache.auditoria||[];
   if(!rows.length)return c360Empty('Sin eventos de auditoría registrados para este cliente.');
-  return `<div class="sf-panel">${rows.slice(0,40).map(a=>`
-    <div class="sf-tl-item"><div class="sf-tl-dot" style="background:var(--sf-primary,#2563eb)"><i class="ti ti-activity" style="font-size:12px"></i></div>
-    <div class="sf-tl-b"><b>${escHtml(a.accion||'Evento')}</b><div class="when">${String(a.ts||a.created_at||'').slice(0,16).replace('T',' ')}</div><div class="desc">${escHtml(a.detalle||'')}</div></div></div>`).join('')}</div>`;
+  return `<div class="sf-panel">${rows.slice(0,40).map(a=>c360TlItem('primary','ti-activity',a.accion||'Evento',a.ts||a.created_at,a.detalle,a.modulo||detectarModulo(a.accion))).join('')}</div>`;
 }
 
 function c360TabHistorial(c,cache){
-  const colorVar=cls=>({primary:'var(--sf-primary,#2563eb)',ok:'var(--sf-ok,#16a34a)',warn:'var(--sf-warn,#d97706)',err:'var(--sf-err,#dc2626)',purple:'#7c3aed'}[cls]||'var(--sf-primary,#2563eb)');
   const eventos=[];
-  if(c.created_at)eventos.push({ts:c.created_at,ic:'ti-user-plus',cls:'primary',tit:'Cliente registrado (Seguros)',desc:''});
+  if(c.created_at)eventos.push({ts:c.created_at,ic:'ti-user-plus',cls:'primary',tit:'Cliente registrado (Seguros)',desc:'',tag:'Registro'});
   (ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).forEach(f=>{
-    if(f.created_at)eventos.push({ts:f.created_at,ic:'ti-file-invoice',cls:'primary',tit:'Factura emitida',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''} · ${fmt(f.total)}`});
+    if(f.created_at)eventos.push({ts:f.created_at,ic:'ti-file-invoice',cls:'primary',tit:'Factura emitida',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''} · ${fmt(f.total)}`,tag:'Factura'});
   });
-  (cache.abonos||[]).forEach(a=>eventos.push({ts:a.created_at||a.fecha,ic:'ti-cash',cls:'ok',tit:'Pago (Seguros)',desc:`${fmt(a.monto)} · ${a.metodo||''}`}));
-  (cache.prestamos||[]).forEach(p=>{if(p.created_at)eventos.push({ts:p.created_at,ic:'ti-credit-card',cls:'purple',tit:'Préstamo creado',desc:fmt(p.capital)});});
-  (cache.prestamoPagos||[]).forEach(pp=>eventos.push({ts:pp.created_at||pp.fecha,ic:'ti-cash-banknote',cls:'ok',tit:'Pago (Financiamiento)',desc:fmt(pp.monto)}));
-  (cache.posVentas||[]).forEach(v=>eventos.push({ts:v.created_at||v.fecha,ic:'ti-shopping-cart',cls:'warn',tit:'Venta (POS)',desc:`#${v.numero} · ${fmt(v.total)}`}));
-  (cache.auditoria||[]).forEach(a=>eventos.push({ts:a.ts||a.created_at,ic:'ti-activity',cls:'err',tit:a.accion||'Evento',desc:a.detalle||''}));
+  (cache.abonos||[]).forEach(a=>eventos.push({ts:a.created_at||a.fecha,ic:'ti-cash',cls:'ok',tit:'Pago (Seguros)',desc:`${fmt(a.monto)} · ${a.metodo||''}`,tag:'Pago'}));
+  (cache.prestamos||[]).forEach(p=>{if(p.created_at)eventos.push({ts:p.created_at,ic:'ti-credit-card',cls:'purple',tit:'Préstamo creado',desc:fmt(p.capital),tag:'Préstamo'});});
+  (cache.prestamoPagos||[]).forEach(pp=>eventos.push({ts:pp.created_at||pp.fecha,ic:'ti-cash-banknote',cls:'ok',tit:'Pago (Financiamiento)',desc:fmt(pp.monto),tag:'Pago'}));
+  (cache.posVentas||[]).forEach(v=>eventos.push({ts:v.created_at||v.fecha,ic:'ti-shopping-cart',cls:'warn',tit:'Venta (POS)',desc:`#${v.numero} · ${fmt(v.total)}`,tag:'Venta'}));
+  (cache.auditoria||[]).forEach(a=>eventos.push({ts:a.ts||a.created_at,ic:'ti-activity',cls:'err',tit:a.accion||'Evento',desc:a.detalle||'',tag:'Auditoría'}));
   if(!eventos.length)return c360Empty('Sin eventos todavía.');
   eventos.sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0));
-  return `<div class="sf-panel">${eventos.slice(0,60).map(e=>`
-    <div class="sf-tl-item"><div class="sf-tl-dot" style="background:${colorVar(e.cls)}"><i class="ti ${e.ic}" style="font-size:12px"></i></div>
-    <div class="sf-tl-b"><b>${escHtml(e.tit)}</b><div class="when">${String(e.ts||'').slice(0,16).replace('T',' ')}</div><div class="desc">${escHtml(e.desc||'')}</div></div></div>`).join('')}</div>`;
+  return `<div class="sf-panel">${eventos.slice(0,60).map(e=>c360TlItem(e.cls,e.ic,e.tit,e.ts,e.desc,e.tag)).join('')}</div>`;
 }
 
 // ── Acciones rápidas ─────────────────────────────────────────────────────
