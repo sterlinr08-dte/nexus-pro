@@ -1,7 +1,12 @@
 {
-  "version": "57.45",
+  "version": "57.46",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.46",
+      "fecha": "2026-08-30",
+      "texto": "POS — Facturación/Prefactura: la columna Cant. tenía su PROPIO control de cantidad (separado del Carrito de Vender) que aún era de solo lectura entre los botones −/+ — ahora también se puede escribir a mano, con el mismo control de stock, y con la misma píldora en degradado de Vender."
+    },
     {
       "v": "57.45",
       "fecha": "2026-08-30",
