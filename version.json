@@ -1,7 +1,12 @@
 {
-  "version": "57.40",
+  "version": "57.41",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.41",
+      "fecha": "2026-08-30",
+      "texto": "WhatsApp masivo: casilla \"Seleccionar todos\" con contador en vivo (0 de N seleccionados) y estado intermedio cuando hay una selección parcial; cada cliente de la lista tiene su fila resaltada al marcarse y una casilla cuadrada con el visto animado, con el mismo aspecto premium del resto del sistema."
+    },
     {
       "v": "57.40",
       "fecha": "2026-08-30",
