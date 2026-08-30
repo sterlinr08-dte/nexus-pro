@@ -1,7 +1,12 @@
 {
-  "version": "57.36",
+  "version": "57.37",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.37",
+      "fecha": "2026-08-30",
+      "texto": "Clientes: nueva vista de Cuadrícula (tarjetas con foto/nombre/estado) además de la Lista de siempre — con estrella de favorito (VIP), casilla de selección múltiple y botón para mandar WhatsApp masivo solo a los clientes marcados. Los datos completos (agente, prima, pendiente, vigencia) se siguen viendo al tocar la tarjeta, igual que antes."
+    },
     {
       "v": "57.36",
       "fecha": "2026-08-29",

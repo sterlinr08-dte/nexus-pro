@@ -1766,6 +1766,50 @@ body.tema-premium .nxSf .fc-reason{background:rgba(255,255,255,.08)}
 .nxSf .cr-field .v.ok{color:var(--sf-ok-d)}
 .nxSf .cr-acts{display:flex;gap:5px;align-items:center;flex:0 0 auto;margin-left:auto}
 @media(max-width:720px){.nxSf .clirow{gap:8px 20px}.nxSf .cr-mid{gap:8px 20px}.nxSf .cr-field{flex:0 1 auto;min-width:0}.nxSf .cr-acts{flex:1 1 100%;justify-content:flex-end;margin-left:0;margin-top:6px}}
+/* Vista Cuadrícula de Clientes (pedido del dueño 2026-08-30, inspirado en una referencia
+   de tarjetas) — toggle Lista/Cuadrícula con el mismo "Pill Premium" del resto del
+   sistema (usa los tokens --pill-* que ya existen en #v-clientes). */
+#v-clientes .nxVistaTog{display:inline-flex;padding:4px;border-radius:9999px;flex:none;
+  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%);
+  box-shadow:inset 0 2px 4px var(--pill-lo),inset 0 -1px 3px var(--pill-hi);}
+#v-clientes .nxVistaOpt{border:none;background:transparent;padding:7px 12px;font-size:11px;font-weight:700;
+  color:var(--nm-tx2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;
+  border-right:1px solid rgba(0,0,0,.08);transition:box-shadow .18s ease,color .18s ease}
+#v-clientes .nxVistaOpt:last-child{border-right:none}
+#v-clientes .nxVistaOpt:active{transform:translateY(1px)}
+#v-clientes .nxVistaOpt.on{color:var(--pill-accent);font-weight:800;border-radius:9999px;
+  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%);
+  box-shadow:inset 2px 2px 4px var(--pill-lo),inset -2px -2px 4px var(--pill-hi)}
+
+.cliBulkBar{display:none;align-items:center;gap:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;font-weight:700;color:#1d4ed8;flex-wrap:wrap}
+.cliBulkBar.show{display:flex}
+.cliBulkBar .sp{flex:1}
+
+.cliGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.cliCard{position:relative;background:var(--sf-card,#fff);border-radius:var(--r14,14px);border:1px solid var(--sf-line,#e2e8f0);
+  box-shadow:var(--shadow,0 1px 3px rgba(15,23,42,.06));padding:14px 10px 10px;display:flex;flex-direction:column;
+  align-items:center;text-align:center;opacity:0;transform:translateY(10px);animation:nxFadeUp .3s ease both}
+.cliCard.inactivo{opacity:.55}
+.cliCard-top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.cliCard-chk{width:16px;height:16px;cursor:pointer;accent-color:var(--pill-accent,#1ca2a4)}
+.cliCard-star{border:none;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;padding:2px;display:flex;line-height:1}
+.cliCard-star.on{color:#f59e0b}
+.cliCard-body{width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:18px;cursor:pointer}
+.cliCard-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none}
+.cliCard-nom{font-size:12px;font-weight:800;color:var(--sf-tx,#1e293b);line-height:1.25;overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%}
+.cliCard-sub{font-size:10px;color:var(--sf-tx3,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cliCard-menuWrap{position:absolute;bottom:6px;right:6px}
+.cliCard-more{border:none;background:transparent;color:var(--sf-tx3,#94a3b8);cursor:pointer;font-size:15px;padding:4px;display:flex;border-radius:8px}
+.cliCard-more:hover{background:var(--sf-bg,#f1f5f9)}
+@media(prefers-reduced-motion:no-preference){
+  .cliGrid .cliCard:nth-child(1){animation-delay:.02s}.cliGrid .cliCard:nth-child(2){animation-delay:.04s}
+  .cliGrid .cliCard:nth-child(3){animation-delay:.06s}.cliGrid .cliCard:nth-child(4){animation-delay:.08s}
+  .cliGrid .cliCard:nth-child(5){animation-delay:.10s}.cliGrid .cliCard:nth-child(6){animation-delay:.12s}
+  .cliGrid .cliCard:nth-child(7){animation-delay:.14s}.cliGrid .cliCard:nth-child(8){animation-delay:.16s}
+  .cliGrid .cliCard:nth-child(9){animation-delay:.18s}.cliGrid .cliCard:nth-child(10){animation-delay:.20s}
+}
+@media(prefers-reduced-motion:reduce){.cliCard{opacity:1;transform:none;animation:none}}
 /* #v-clientes — SOLO los botones (tarjetas, KPIs y colores de estado no se
    tocan). Mismos tokens/receta que ya usa el modal #mCli (mismo azul de
    acento) para que se sienta el mismo sistema al pasar de la lista al
@@ -2742,6 +2786,16 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <option value="vigencia:asc">Próximo a vencer</option>
               </select>
               <button id="btnLimpiarCli" class="btn bsm bghost" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="display:none"><i class="ti ti-eraser"></i> Limpiar</button>
+              <div class="nxVistaTog" role="tablist" aria-label="Tipo de vista">
+                <button type="button" id="cliVistaBtnLista" class="nxVistaOpt" onclick="cliVista('lista')" aria-label="Vista de lista"><i class="ti ti-list"></i> Lista</button>
+                <button type="button" id="cliVistaBtnGrid" class="nxVistaOpt" onclick="cliVista('cuadricula')" aria-label="Vista de cuadrícula"><i class="ti ti-layout-grid"></i> Cuadrícula</button>
+              </div>
+            </div>
+            <div id="cliBulkBar" class="cliBulkBar">
+              <span id="cliBulkCnt">0 seleccionados</span>
+              <span class="sp"></span>
+              <button type="button" class="btn bsm bghost" onclick="cliSelNone()"><i class="ti ti-x"></i> Quitar selección</button>
+              <button type="button" class="btn bsm bc1" onclick="cliBulkWA()"><i class="ti ti-brand-whatsapp"></i> WhatsApp masivo</button>
             </div>
             <div id="tbCli" class="clilist"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           </div>
@@ -5846,7 +5900,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.36';
+const APP_VERSION='57.37';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8334,6 +8388,16 @@ let _cliTab='activos';
 // a cada onchange por separado).
 let _cliPagina=1;
 let _cliFiltroFirma='';
+// Vista Lista/Cuadrícula (pedido del dueño 2026-08-30, inspirado en una referencia de
+// tarjetas) — persistida por usuario con el mismo nxPref que ya usan otras pantallas.
+// OJO: no se puede leer nxPref() aquí arriba (este código corre al analizar el script,
+// mucho antes de que nxPrefsCargar() termine de traer las preferencias reales) — se lee
+// una sola vez, perezosamente, la primera vez que rCli() pinta la pantalla.
+let _cliVista='lista';
+let _cliVistaLista=false;
+// _cliSeleccion es solo de la sesión actual (selección múltiple para WhatsApp masivo),
+// no se guarda — se pierde al salir de la pantalla, que es el comportamiento esperado.
+let _cliSeleccion=[];
 function switchCliTab(tab){
   _cliTab=tab;
   document.getElementById('cliTabAct')?.classList.toggle('is-active',tab==='activos');
@@ -8508,6 +8572,7 @@ function nxFanTiltInit(container){
   });
 }
 function rCli(){
+  if(!_cliVistaLista){_cliVista=nxPref('cli_vista','lista');_cliVistaLista=true;}
   llenarFiltroAgentes('fAgenteCli');
   pintarLupaCli();
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
@@ -8623,6 +8688,11 @@ function rCli(){
   if(_cliSort.col){const col=_cliSort.col,dir=_cliSort.dir;list.sort((a,b)=>{const va=_cliSortVal(a,col),vb=_cliSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   document.getElementById('cliCnt').textContent=`(${list.length})`;
   const tb=document.getElementById('tbCli');
+  tb.classList.toggle('cliGrid',_cliVista==='cuadricula');
+  const _btnL=document.getElementById('cliVistaBtnLista'),_btnG=document.getElementById('cliVistaBtnGrid');
+  if(_btnL)_btnL.classList.toggle('on',_cliVista!=='cuadricula');
+  if(_btnG)_btnG.classList.toggle('on',_cliVista==='cuadricula');
+  pintarCliBulkBar();
   if(!list.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
   const PAGE=10,total=list.length;
   const totalPag=Math.max(1,Math.ceil(total/PAGE));
@@ -8664,6 +8734,40 @@ function rCli(){
       </div>`;
     }
     const agTxt=(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style="color:#ef4444;font-size:9px">⚠ SIN AGENTE</span>';})();
+    const accMenuHTML=`<div class="acc-menu-hd">ACCIONES RÁPIDAS</div>
+            <button class="acc-i-blue" onclick="editarCli('${c.id}');cerrarAccMenus()"><i class="ti ti-edit"></i> Editar</button>
+            <button class="acc-i-green" onclick="abrirAbono('${c.id}');cerrarAccMenus()"><i class="ti ti-wallet"></i> Registrar cobro</button>
+            <button class="acc-i-green" onclick="nxWaElegir('${c.id}');cerrarAccMenus()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
+            <div class="am-sep"></div>
+            <div class="acc-menu-hd">GESTIÓN</div>
+            <button class="acc-i-purple" onclick="abrirHistorialCobros('${c.id}');cerrarAccMenus()"><i class="ti ti-receipt"></i> Cobros guardados</button>
+            <button class="acc-i-blue" onclick="verFacturaPDF('${c.id}');cerrarAccMenus()"><i class="ti ti-file-certificate"></i> Certificado PDF</button>
+            <button class="acc-i-amber" onclick="abrirDocs('${c.id}');cerrarAccMenus()"><i class="ti ti-folder-open"></i> Documentos</button>
+            <div class="am-sep"></div>
+            <div class="acc-menu-hd">COMUNICACIÓN</div>
+            <button class="acc-i-green" onclick="enviarCoberturasWA('${c.id}');cerrarAccMenus()"><i class="ti ti-list-check"></i> Enviar coberturas WhatsApp</button>
+            <div class="am-sep"></div>
+            <button class="acc-i-gray" onclick="${c.activo?`abrirInhab('${c.id}')`:`reactivar('${c.id}',this)`};cerrarAccMenus()"><i class="ti ti-${c.activo?'user-off':'user-check'}"></i> ${c.activo?'Inhabilitar cliente':'Reactivar cliente'}</button>
+            ${(!c.activo&&sesion?.rol==='admin')?`<button class="acc-i-red" onclick="eliminarClienteDef('${c.id}');cerrarAccMenus()" style="color:#dc2626"><i class="ti ti-minus"></i> Eliminar definitivamente</button>`:''}`;
+    if(_cliVista==='cuadricula'){
+      const nomEsc=escHtml(c.nom);
+      return`<div class="cliCard${!c.activo?' inactivo':''}">
+        <div class="cliCard-top">
+          <input type="checkbox" class="cliCard-chk" onclick="event.stopPropagation()" onchange="cliToggleSel('${c.id}',this.checked)" ${_cliSeleccion.includes(c.id)?'checked':''} aria-label="Seleccionar ${nomEsc}">
+          <button type="button" class="cliCard-star${esFavorito(c.id)?' on':''}" onclick="event.stopPropagation();toggleFav('${c.id}')" aria-label="${esFavorito(c.id)?'Quitar de favoritos':'Marcar como favorito'}"><i class="ti ti-star${esFavorito(c.id)?'-filled':''}"></i></button>
+        </div>
+        <div class="cliCard-body" onclick="verCliente('${c.id}')" tabindex="0" role="button" aria-label="Ver la ficha de ${nomEsc}" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
+          <div class="av cliCard-av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div>
+          <div class="cliCard-nom">${nomEsc}</div>
+          <div class="cliCard-sub">${c.referencia?escHtml(c.referencia):(c.cedula||'—')}</div>
+          ${estB(c)}
+        </div>
+        <div class="cliCard-menuWrap">
+          <button type="button" class="cliCard-more" onclick="event.stopPropagation();toggleAccMenu(event,'${c.id}')" aria-label="Más acciones"><i class="ti ti-dots-vertical"></i></button>
+          <div id="accMenu_${c.id}" class="acc-menu" style="display:none">${accMenuHTML}</div>
+        </div>
+      </div>`;
+    }
     return`<div class="clirow" style="${!c.activo?'opacity:.5':''}">
       <div class="cli-main cr-id" onclick="verCliente('${c.id}')" title="Ver resumen del cliente" aria-label="Ver la ficha de ${escHtml(c.nom)}" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="cli-row"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div class="cli-txt"><div class="cli-nom">${c.nom}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div class="cli-sub">${c.referencia?`<span class="cli-ref">(${escHtml(c.referencia)})</span>`:''}${c.cedula?`<span>${c.cedula}</span>`:''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}${c.created_by_name?`<span title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</span>`:''}</div>${procInfo}</div></div></div>
       <div class="cr-mid">
@@ -8705,6 +8809,35 @@ function rCli(){
     tb.appendChild(extra);
   }
 }
+// ── Vista Lista/Cuadrícula + selección múltiple de Clientes ──────────────────
+function cliVista(v){
+  _cliVista=v;
+  nxPrefSet('cli_vista',v);
+  _cliSeleccion=[]; // cambiar de vista limpia la selección (evita seleccionados "invisibles" en Lista)
+  rCli();
+}
+function cliToggleSel(id,checked){
+  if(checked){if(!_cliSeleccion.includes(id))_cliSeleccion.push(id);}
+  else _cliSeleccion=_cliSeleccion.filter(x=>x!==id);
+  pintarCliBulkBar();
+}
+function cliSelNone(){
+  _cliSeleccion=[];
+  document.querySelectorAll('#tbCli .cliCard-chk').forEach(chk=>chk.checked=false);
+  pintarCliBulkBar();
+}
+function pintarCliBulkBar(){
+  const bar=document.getElementById('cliBulkBar');if(!bar)return;
+  const n=_cliSeleccion.length;
+  bar.classList.toggle('show',_cliVista==='cuadricula'&&n>0);
+  const cnt=document.getElementById('cliBulkCnt');
+  if(cnt)cnt.textContent=`${n} cliente${n!==1?'s':''} seleccionado${n!==1?'s':''}`;
+}
+function cliBulkWA(){
+  if(!_cliSeleccion.length)return;
+  abrirWAMasivo(_cliSeleccion.slice());
+}
+
 // ── Paginación numerada compartida (Clientes/Pólizas/Facturas/Cobros/Pagos/Auditoría) ──
 // Ventana: 1 … (actual-1) actual (actual+1) … última — sin listar las 100 páginas si
 // hay 1000 filas. `fn` es el nombre de la función "ir a la página N" de cada pantalla
@@ -12929,9 +13062,9 @@ function switchTab(tab){
 let _waTipo='factura';
 let _ultimoAbono={cliente:null,monto:0};
 
-function abrirWAMasivo(){
+function abrirWAMasivo(preseleccion){
   selWATipo('factura');
-  renderWAClientes();
+  renderWAClientes(Array.isArray(preseleccion)?preseleccion:null);
   openM('mWAMasivo');
 }
 
@@ -12976,12 +13109,13 @@ _${CFG.empNom}_`;
   }
 }
 
-function renderWAClientes(){
+function renderWAClientes(preseleccion){
   const act=ST.clientes.filter(c=>c.activo&&c.wa);
   const el=document.getElementById('waClientesList');
   if(!act.length){el.innerHTML='<div style="padding:14px;text-align:center;color:#475569;font-size:11px">No hay clientes con WhatsApp registrado</div>';return;}
+  const pre=Array.isArray(preseleccion)?preseleccion.map(String):null;
   el.innerHTML=act.map((c,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="toggleWACli('wachk_${i}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
-    <input type="checkbox" id="wachk_${i}" data-cid="${c.id}" onchange="updWACount()" style="width:15px;height:15px;cursor:pointer;accent-color:#8b5cf6"/>
+    <input type="checkbox" id="wachk_${i}" data-cid="${c.id}" ${pre&&pre.includes(String(c.id))?'checked':''} onchange="updWACount()" style="width:15px;height:15px;cursor:pointer;accent-color:#8b5cf6"/>
     <div class="av" style="background:#eff6ff;color:#1d4ed8;flex-shrink:0">${inits(c.nom)}</div>
     <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1e293b">${c.nom}</div><div style="font-size:10px;color:#475569">${c.wa} · ${c.plan}${pendTot(c)>0?` · <span style="color:#dc2626">Debe ${fmt(pendTot(c))}</span>`:''}</div></div>
   </div>`).join('');
