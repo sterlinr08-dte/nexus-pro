@@ -1,7 +1,11 @@
 {
-  "version": "57.74",
+  "version": "57.75",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.75",
+      "txt": "NUEVO — Los desplegables de las ventanas de Cobro, Cliente e Inhabilitar se cambiaron por los mismos botones con icono y animacion de seleccion que ya tenia el banco: Metodo de pago, Agente que cobro, A que aplicar el pago, Plan, Agente, Comprobante, Estado del cliente, Prioridad, Responsable del seguimiento, ARS y Motivo de inhabilitacion. Se toca la opcion y se marca con un visto y un pequeno rebote, sin abrir la lista gris del iPhone. La ARS sale con su logo real. El texto largo se acomoda en dos lineas en vez de cortarse, asi un monto o el nombre de un plan siempre se lee completo."
+    },
     {
       "v": "57.74",
       "txt": "NUEVO — Al cobrar por transferencia o depósito, cada banco ahora sale con SU LOGO REAL (Banreservas, BHD y Popular) en vez de un iconito genérico igual para todos. El borde verde/azul que marca el banco elegido también usa el color de esa marca. Un banco que no tenga logo (Otros, o uno que agregues después en Ajustes) sigue saliendo con el icono de siempre, sin romperse."

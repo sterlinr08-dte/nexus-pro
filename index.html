@@ -438,7 +438,6 @@ body.tema-premium #mAbono .modal{
 body.tema-glass #mAbono .modal{
   --pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488;
 }
-body.tema-glass #mAbono .nmSeg{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
 #mAbono .mt{color:var(--nm-tx)}
 #mAbono #abonoI{border-radius:14px;padding:10px 12px;margin-bottom:12px;
   box-shadow:6px 6px 12px var(--nm-lo),-6px -6px 12px var(--nm-hi)}
@@ -485,90 +484,65 @@ body.tema-premium #mAbono .fr input:focus{
   box-shadow:inset 2px 2px 5px var(--nm-lo),inset -2px -2px 5px var(--nm-hi) !important;
 }
 #mAbono #aMnt{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
-/* Chips de Método de pago = "Pill Premium" (regla guardada del proyecto):
-   barra CONTINUA (nada de huecos entre chips), degradado sutil, sombra de
-   volumen en el contenedor, y el chip activo se HUNDE con sombra de 4
-   direcciones — sin pintarlo de color, solo el texto cambia a var(--nm-
-   accent). color-mix() con fallback a var(--nm-bg) plano si el navegador
-   no lo soporta. Encima, el foco de luz viajero (mismo mecanismo que
-   #mCli): #aMetSpot recorre el borde real del chip activo y se desliza
-   al cambiar de selección (ver nxAboMetSpotMover()). */
-#mAbono .nmSeg{
-  position:relative;display:flex;align-items:stretch;padding:6px;
-  border:1px solid var(--pill-lo);border-radius:9999px;overflow:hidden;
-  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%);
-  box-shadow:inset 0 3px 5px var(--pill-lo),inset 0 -2px 4px var(--pill-hi),0 2px 4px rgba(0,0,0,.10);
-}
-#mAbono .nmPill{
-  position:relative;z-index:2;flex:1;min-width:0;text-align:center;font-size:12px;font-weight:700;padding:12px 6px;
-  color:var(--nm-tx2);cursor:pointer;background:transparent;border:none;border-right:1px solid rgba(0,0,0,.10);
-  transition:background .18s ease,box-shadow .18s ease,color .18s ease,transform .12s ease;
-}
-#mAbono .nmPill:last-child{border-right:none}
-#mAbono .nmPill:active{transform:translateY(1px)}
-#mAbono .nmPill.on{
-  color:var(--pill-accent);font-weight:800;border-radius:9999px;
-  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%);
-  box-shadow:
-    inset 4px 0 7px var(--pill-lo),
-    inset -4px 0 7px var(--pill-hi),
-    inset 0 4px 7px var(--pill-lo),
-    inset 0 -4px 7px var(--pill-hi);
-}
-/* Chips de opción con icono (Banco / cuenta de depósito) — reemplazan el
-   desplegable nativo del iPhone por botones visibles. Mismo criterio que
-   #aMetPills: el <select> real NO se elimina, queda oculto como fuente de
+/* Chips de opción con icono — reemplazan el desplegable nativo del iPhone por
+   botones visibles. El <select> real NO se elimina: queda oculto como fuente de
    verdad, así todo lo que ya lee su .value sigue funcionando igual. */
-#mAbono .nxOptGrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
-#mAbono .nxOptChip{
+.nxOptGrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.nxOptChip{
   position:relative;flex:1 1 calc(50% - 4px);min-width:0;display:flex;align-items:center;gap:9px;
   padding:10px 11px;border-radius:14px;border:none;cursor:pointer;text-align:left;
-  background:var(--nm-bg);color:var(--nm-tx2);font-family:inherit;font-size:12px;font-weight:700;
+  background:var(--nm-bg,#f6f8fb);color:var(--nm-tx2,#8791a3);font-family:inherit;font-size:12px;font-weight:700;
   box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi);
   transition:box-shadow .18s ease,color .18s ease,transform .12s ease;
 }
-#mAbono .nxOptChip:active{transform:translateY(1px)}
+.nxOptChip:active{transform:translateY(1px)}
+/* compacto: el chip mide lo que su texto, no media fila — para listas de
+   varias opciones cortas (prioridad, estado, tipo de comprobante, ARS). */
+.nxOptGrid.compacto .nxOptChip{flex:0 1 auto;padding:9px 13px}
+.nxOptGrid.ancho .nxOptChip{flex:1 1 100%}
+.nxOptGrid.compacto .nxOptOk{top:5px;right:6px;width:15px;height:15px}
+.nxOptGrid.compacto .nxOptOk::after{left:4.5px;top:2.5px;width:4px;height:7px}
 /* BLINDAJE — parches-seguros.js inyecta un tema global con
    ".btn,button,.bsm,.bxl{border:...;box-shadow:... !important}" sobre el TAG
    <button>. Sin igualar el !important aqui, ese estilo se comia el aro del chip
    elegido: se seleccionaba de verdad (la clase .on si entraba) pero NO SE VEIA,
    asi que parecia que el boton no respondia. Mismo choque ya cerrado en el
    login (#loginScreen .lbtn) y en los campos de este mismo modal. */
-#mAbono .nxOptGrid .nxOptChip{
+.nxOptGrid .nxOptChip{
   border:2px solid transparent !important;border-radius:14px !important;
   box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
 }
-#mAbono .nxOptGrid .nxOptChip.on{
+.nxOptGrid .nxOptChip.on{
   color:var(--nm-tx);border-color:var(--chip-c,var(--nm-accent)) !important;
   box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
 }
 /* palomita del chip elegido (dibujada en CSS, no depende de la fuente de iconos) */
-#mAbono .nxOptOk{
+.nxOptOk{
   position:absolute;top:7px;right:8px;width:17px;height:17px;border-radius:50%;
   background:var(--chip-c,var(--nm-accent));opacity:0;transform:scale(.3);
   transition:opacity .16s ease,transform .28s cubic-bezier(.34,1.56,.64,1);
 }
-#mAbono .nxOptOk::after{
+.nxOptOk::after{
   content:"";position:absolute;left:5.5px;top:3px;width:4px;height:8px;
   border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
 }
-#mAbono .nxOptChip.on .nxOptOk{opacity:1;transform:scale(1)}
+.nxOptChip.on .nxOptOk{opacity:1;transform:scale(1)}
 /* animacion al ELEGIR (clase .pick, se pone y se quita en nxOptChipPick) —
    no va en .on para que no se repita sola cada vez que la lista se repinta */
-#mAbono .nxOptChip.pick{animation:nxChipPop .34s cubic-bezier(.34,1.56,.64,1)}
-#mAbono .nxOptChip.pick::after{
+.nxOptChip.pick{animation:nxChipPop .34s cubic-bezier(.34,1.56,.64,1)}
+.nxOptChip.pick::after{
   content:"";position:absolute;inset:-3px;border-radius:17px;pointer-events:none;
   border:2px solid var(--chip-c,var(--nm-accent));animation:nxChipRing .5s ease-out;
 }
 @keyframes nxChipPop{0%{transform:scale(1)}45%{transform:scale(1.05)}100%{transform:scale(1)}}
 @keyframes nxChipRing{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}
 @media(prefers-reduced-motion:reduce){
-  #mAbono .nxOptChip.pick{animation:none}
-  #mAbono .nxOptChip.pick::after{animation:none;opacity:0}
-  #mAbono .nxOptOk{transition:none}
+  .nxOptChip.pick{animation:none}
+  .nxOptChip.pick::after{animation:none;opacity:0}
+  .nxOptOk{transition:none}
 }
-#mAbono .nxOptChip:focus-visible{outline:2px solid var(--chip-c,var(--nm-accent));outline-offset:2px}
-#mAbono .nxOptIco{
+.nxOptChip:focus-visible{outline:2px solid var(--chip-c,var(--nm-accent));outline-offset:2px}
+.nxOptIco{
   flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:13px;font-weight:800;color:#fff;
   background:var(--chip-c,var(--nm-accent));line-height:1;
@@ -576,26 +550,19 @@ body.tema-premium #mAbono .fr input:focus{
 /* el sistema global de iconos le pinta a cada <i class="ti"> suelto una esfera
    de color propia — aquí el circulo ya lo pone .nxOptIco, asi que se anula
    (mismo patron que .lfi .ti / .nxPf .inw .ti). */
-#mAbono .nxOptIco .ti{background:none!important;box-shadow:none!important;border-radius:0!important;
+.nxOptIco .ti{background:none!important;box-shadow:none!important;border-radius:0!important;
   width:auto!important;height:auto!important;color:#fff!important;font-size:15px!important}
-#mAbono .nxOptIco .ti::after{content:none!important}
+.nxOptIco .ti::after{content:none!important}
 /* Banco con logo real: el circulo deja de ser un disco de color y pasa a ser
    el logo mismo (los tres traen su propio fondo de marca, ya recortados 1:1,
    asi que 'cover' no recorta nada — solo redondea las esquinas). El aro tenue
    va por dentro (inset) para que el logo de Banreservas, que es sobre blanco,
    se distinga del fondo del chip sin encoger la imagen. */
-#mAbono .nxOptIco.logo{background:#fff;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(15,23,42,.16)}
-#mAbono .nxOptImg{width:100%;height:100%;object-fit:cover;display:block}
-#mAbono .nxOptTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(prefers-reduced-motion:reduce){#mAbono .nxOptChip{transition:none}}
-#mAbono .nmSpot{position:absolute;top:0;left:0;z-index:1;pointer-events:none;
-  transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
-#mAbono .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-#mAbono .nmSpotRect{fill:none;stroke:var(--pill-accent);stroke-width:2.2;stroke-linecap:round;opacity:.85}
-@media(prefers-reduced-motion:reduce){
-  #mAbono .nmPill{transition:none}
-  #mAbono .nmSpot{transition:none}
-}
+.nxOptIco.logo{background:#fff;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(15,23,42,.16)}
+.nxOptImg{width:100%;height:100%;object-fit:cover;display:block}
+.nxOptTxt{flex:1;min-width:0;overflow:hidden;line-height:1.22;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.nxOptChip{transition:none}}
 /* Mismo motivo que arriba: parches.js fuerza ".btn,button,.bsm,.bxl{border/
    box-shadow...!important}" siempre (no solo en oscuro) — #mAbono .btn con
    !important le gana por especificidad en los dos temas con una sola regla. */
@@ -2812,12 +2779,11 @@ body.tema-glass table thead th{background:rgba(255,255,255,.55) !important}
    no algo que se pueda arreglar con más CSS de outline. Única solución real: no usar
    outline en absoluto en estas píldoras — el propio cambio de color/sombra al
    activarse ya es suficientemente visible como indicador. */
-.nmPill,.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
+.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
 .nxPf .entTab,.nxPf .chip,.nxPf .vchip,.nxInvPill,.nxRepChip,.nxClaveTab,
 .ev-tab,.hc-tab,.nxFP-tab,.nxFP-perBtn{
   -webkit-tap-highlight-color:transparent;
 }
-.nmPill,.nmPill:focus,.nmPill:focus-visible,
 .nxft-tab,.nxft-tab:focus,.nxft-tab:focus-visible,
 .nxPgTab,.nxPgTab:focus,.nxPgTab:focus-visible,
 .nxFacSubTab,.nxFacSubTab:focus,.nxFacSubTab:focus-visible,
@@ -3935,9 +3901,9 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       <div class="fr" style="grid-column:1/-1"><div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:6px;letter-spacing:.3px">REFERENCIA DEL CLIENTE</div></div>
       <div class="fr"><label>Referencia / Apodo <span style="color:#475569;font-weight:400">(opcional)</span></label><input type="text" id="cRef" placeholder="Ej: Taller Santiago, Doña Ana..."/></div>
       <div class="fr"><label>WhatsApp de referencia <span style="color:#475569;font-weight:400">(opcional)</span></label><input type="text" id="cRefWa" placeholder="Ej: 8290000000"/></div>
-      <div class="fr"><label>Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select></div>
-      <div class="fr"><label>Agente</label><select id="cAgt"></select></div>
-      <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select></div>
+      <div class="fr"><label>Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select><div id="cPlanChips"></div></div>
+      <div class="fr"><label>Agente</label><select id="cAgt"></select><div id="cAgtChips"></div></div>
+      <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select><div id="cNCFChips"></div></div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">// PÓLIZA Y ARS</div>
     <div class="gf2">
@@ -3961,7 +3927,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
             <option value="EN_PROCESO">🟡 En proceso</option>
             <option value="SUSPENDIDO">🟠 Suspendido</option>
             <option value="CANCELADO">🔴 Cancelado</option>
-          </select>
+          </select><div id="cEstadoCliChips"></div>
         </div>
         <div class="fr"><label>Prioridad</label>
           <select id="cPrioridad" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
@@ -3969,7 +3935,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
             <option value="MEDIA" selected>Media</option>
             <option value="ALTA">Alta</option>
             <option value="URGENTE">Urgente</option>
-          </select>
+          </select><div id="cPrioridadChips"></div>
         </div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:var(--nm-bg,#eff6ff);padding:9px;border-radius:11px;box-shadow:4px 4px 9px var(--nm-lo,transparent),-4px -4px 9px var(--nm-hi,transparent)">
@@ -3999,7 +3965,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       <div class="fr" style="margin-top:8px"><label>Nota del proceso</label><input type="text" id="cNotaProc" placeholder="Ej: Cliente enviará cédula mañana" class="no-upper"/></div>
       <div class="frow">
         <div class="fr"><label>Fecha de seguimiento</label><input type="date" id="cFechaSeg"/></div>
-        <div class="fr"><label>Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select></div>
+        <div class="fr"><label>Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select><div id="cRespSegChips"></div></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:8px">
         <input type="checkbox" id="cVip" style="width:16px;height:16px"/> ⭐ Cliente VIP
@@ -4012,7 +3978,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
         <option>ARS Universal</option><option>ARS Meta Salud</option><option>ARS CMD</option>
         <option>ARS Yunen</option><option>ARS Futuro</option><option>ARS Asemap</option>
         <option>ARS Grupo Médico</option><option>ARS BHD</option><option>Otra ARS</option>
-      </select>
+      </select><div id="cARSChips"></div>
     </div>
     <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
     <div class="div"></div>
@@ -4060,7 +4026,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
     <div class="fr"><label>Motivo</label>
       <select id="inhabMot" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(244,63,94,.2);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)">
         <option>Falta de pago</option><option>Solicitud del cliente</option><option>Vencimiento de contrato</option><option>Fallecimiento</option><option>Otro</option>
-      </select>
+      </select><div id="inhabMotChips"></div>
     </div>
     <div class="fr"><label>Nota interna</label><input type="text" id="inhabNota" placeholder="Opcional..."/></div>
     <div class="fe"><button class="btn" onclick="closeM('mInhab')">Cancelar</button><button class="btn bdis" onclick="confirmarInhab()" id="btnInhab"><i class="ti ti-user-off"></i> Inhabilitar</button></div>
@@ -4079,7 +4045,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       <div class="aboSub">Registra el pago de esta póliza</div>
     </div>
     <div id="abonoI"></div>
-    <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select></div>
+    <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select><div id="aDestinoChips"></div></div>
     <div class="aboLblRow"><span class="aboLbl">Monto a recibir <span class="req">*</span></span><span class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Ver historial</span></div>
     <div class="fr" style="margin-bottom:8px"><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" oninput="nxAboActualizarResumen()"/></div>
     <div class="aboQuickRow">
@@ -4091,18 +4057,11 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
     <div class="fr">
       <label>Método</label>
       <select id="aMet" style="display:none" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
-      <div class="nmSeg" id="aMetPills">
-        <div class="nmPill" data-v="Efectivo" tabindex="0" role="button" aria-label="Método: Efectivo" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Efectivo</div>
-        <div class="nmPill" data-v="Transferencia" tabindex="0" role="button" aria-label="Método: Transferencia" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Transf.</div>
-        <div class="nmPill" data-v="Cheque" tabindex="0" role="button" aria-label="Método: Cheque" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Cheque</div>
-        <div class="nmPill" data-v="Tarjeta" tabindex="0" role="button" aria-label="Método: Tarjeta" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Tarjeta</div>
-        <div class="nmPill" data-v="Depósito" tabindex="0" role="button" aria-label="Método: Depósito" onclick="nxAboMetodo(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxAboMetodo(this)}">Depósito</div>
-        <div class="nmSpot" id="aMetSpot"><svg class="nmSpotSvg"><rect class="nmSpotRect"/></svg></div>
-      </div>
+      <div id="aMetChips"></div>
     </div>
     <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select><div id="aBancoChips"></div></div>
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco"/></div>
-    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select></div>
+    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select><div id="aAgenteChips"></div></div>
     <div class="aboNote"><i class="ti ti-info-circle"></i> El agente que registra será quien figura como responsable del cobro.</div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
     <div class="aboToggleCard">
@@ -6451,7 +6410,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.74';
+const APP_VERSION='57.75';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10755,12 +10714,8 @@ async function llenarSelectBancosCobros(){
   if(valActual&&Array.from(sel.options).some(o=>o.value===valActual))sel.value=valActual;
   try{nxOptChips('aBanco','aBancoChips',{icono:'ti-building-bank',logo:bancoLogo});}catch(e){}
 }
-// Chips visuales del Método de pago (#mAbono): el <select id="aMet"> real
-// sigue siendo la fuente de verdad (oculto, no eliminado) — clickear un chip
-// solo cambia su .value y dispara 'change' a mano, así cambiarMetodoAbono()
-// y todo lo demás que ya depende de aMet.value sigue funcionando intacto.
 // Chips con icono para los <select> de #mAbono (Banco, cuenta de deposito).
-// Mismo criterio que nxAboMetodo(): el <select> real NO se elimina — queda
+// El <select> real NO se elimina — queda
 // oculto y sigue siendo la fuente de verdad, asi que cambiarBancoAbono(),
 // nxAboActualizarResumen(), la validacion al guardar y la RPC leen su .value
 // exactamente igual que antes. Los chips se generan desde sus PROPIAS <option>,
@@ -10792,10 +10747,13 @@ function nxOptChips(selId,contId,opts){
   const sel=document.getElementById(selId),cont=document.getElementById(contId);
   if(!sel||!cont)return;
   const o=opts||{};
-  const items=Array.from(sel.options).filter(op=>op.value!=='');
+  // La opcion vacia solo entra como chip si la config le da un texto (o.vacio):
+  // en "Agente" o "ARS" el vacio ES una eleccion valida (Sin asignar / Sin ARS),
+  // pero en "Banco" el vacio es solo el placeholder de un campo obligatorio.
+  const items=Array.from(sel.options).filter(op=>op.value!==''||!!o.vacio);
   if(!items.length){cont.innerHTML='';sel.style.display='';return;}
   sel.style.display='none';
-  cont.className='nxOptGrid';
+  cont.className='nxOptGrid'+(o.compacto?' compacto':'')+(o.ancho?' ancho':'');
   // El color sale del nombre (estable: el mismo banco siempre del mismo color),
   // pero si dos nombres caen en el mismo se corre al siguiente libre — con 4
   // bancos el hash puro repetia color y dos chips se veian iguales.
@@ -10808,14 +10766,65 @@ function nxOptChips(selId,contId,opts){
     // Si el banco tiene logo real: se pinta el logo y el color del chip pasa a
     // ser el de SU marca (no el del hash), asi el borde de seleccion calza.
     const lg=o.logo?o.logo(txt):null;
+    const etq=(v===''&&o.vacio)?o.vacio:txt;
+    // el icono sale, por orden: logo real > iniciales > icono propio de ESA
+    // opcion (mapa o.iconos por valor) > icono general del selector.
     const ico=lg?'<img class="nxOptImg" src="'+escHtml(lg.url)+'" alt="">'
-      :(o.iniciales?escHtml(inits(txt)||'?'):'<i class="ti '+(o.icono||'ti-circle')+'"></i>');
-    return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+(lg?lg.color:colorDe(txt))+'"'
-      +' data-v="'+escHtml(v)+'" aria-pressed="'+on+'" aria-label="'+escHtml(txt)+'"'
+      :(o.iniciales?escHtml(inits(etq)||'?')
+      :'<i class="ti '+((o.iconos&&o.iconos[v])||o.icono||'ti-circle')+'"></i>');
+    // el color: el de la marca del logo > el fijado para ESA opcion > el del hash
+    const col=lg?lg.color:((o.colores&&o.colores[v])||colorDe(etq));
+    return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+col+'"'
+      +' data-v="'+escHtml(v)+'" aria-pressed="'+on+'" aria-label="'+escHtml(etq)+'"'
       +' onclick="nxOptChipPick(\''+selId+'\',\''+contId+'\',this)">'
-      +'<span class="nxOptIco'+(lg?' logo':'')+'">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span>'
+      +(o.sinIcono?'':'<span class="nxOptIco'+(lg?' logo':'')+'">'+ico+'</span>')
+      +'<span class="nxOptTxt">'+escHtml(etq)+'</span>'
       +'<span class="nxOptOk"></span></button>';
   }).join('');
+}
+// ── REGISTRO de selectores con chips ──────────────────────────────────────
+// Alcance: los 3 modales que ya tienen el diseño neumorfico (#mAbono cobro,
+// #mCli cliente, #mInhab inhabilitar). En cada uno el <select> real NO se
+// elimina — queda oculto y sigue siendo la fuente de verdad, asi que todo lo
+// que ya leia su .value (validaciones, guardado, la RPC de cobro) funciona
+// exactamente igual. Para sumar un selector nuevo basta una linea aqui.
+// NO se tocan las barras de filtro ni los reportes: ahi las listas son de mes/
+// anio/agente y una rejilla de chips seria mas larga que el desplegable.
+const NX_CHIPS_CFG=[
+  {sel:'aDestino',cont:'aDestinoChips',modal:'mAbono',ancho:true,
+    iconos:{facturas:'ti-calendar-month',deuda_anterior:'ti-history'}},
+  {sel:'aMet',cont:'aMetChips',modal:'mAbono',compacto:true,
+    iconos:{'Efectivo':'ti-cash','Transferencia':'ti-arrows-exchange','Cheque':'ti-writing','Tarjeta':'ti-credit-card','Depósito':'ti-building-bank'}},
+  {sel:'aAgente',cont:'aAgenteChips',modal:'mAbono',iniciales:true,vacio:'Sin asignar'},
+  {sel:'cPlan',cont:'cPlanChips',modal:'mCli',
+    iconos:{'Básico':'ti-shield','Superior':'ti-shield-half-filled','Esencial Plus':'ti-shield-star'}},
+  {sel:'cAgt',cont:'cAgtChips',modal:'mCli',iniciales:true,vacio:'Sin agente'},
+  {sel:'cNCF',cont:'cNCFChips',modal:'mCli',compacto:true,
+    iconos:{B02:'ti-user',B01:'ti-building',B14:'ti-star'}},
+  {sel:'cEstadoCli',cont:'cEstadoCliChips',modal:'mCli',compacto:true,sinIcono:true,
+    colores:{ACTIVO:'#16a34a',EN_PROCESO:'#ca8a04',SUSPENDIDO:'#ea580c',CANCELADO:'#dc2626'}},
+  {sel:'cPrioridad',cont:'cPrioridadChips',modal:'mCli',compacto:true,sinIcono:true,
+    colores:{BAJA:'#0d9488',MEDIA:'#3568e0',ALTA:'#ea580c',URGENTE:'#dc2626'}},
+  {sel:'cRespSeg',cont:'cRespSegChips',modal:'mCli',iniciales:true,vacio:'Sin asignar'},
+  {sel:'cARS',cont:'cARSChips',modal:'mCli',compacto:true,icono:'ti-heart-plus',
+    vacio:'Sin ARS',logo:nxArsLogoChip},
+  {sel:'inhabMot',cont:'inhabMotChips',modal:'mInhab',compacto:true,
+    iconos:{'Falta de pago':'ti-cash-off','Solicitud del cliente':'ti-user-x','Vencimiento de contrato':'ti-calendar-x','Fallecimiento':'ti-flower','Otro':'ti-dots'}}
+];
+// Reusa el mapa ARS_LOGOS que ya existia (v48.59) — las ARS sin logo caen al
+// icono generico, no se inventa una imagen que no tenemos.
+function nxArsLogoChip(nombre){
+  const u=(typeof arsLogoUrl==='function')?arsLogoUrl(nombre):null;
+  return u?{url:u,color:'#0d9488'}:null;
+}
+// Repinta los chips de UN modal desde el estado real de sus <select>. Se llama
+// al abrir cada modal, DESPUES de que todos los llenados corrieron — asi no
+// hay que acordarse de tocar cada punto donde se llena o se preselecciona.
+function nxChipsSync(modalId){
+  NX_CHIPS_CFG.forEach(c=>{
+    if(modalId&&c.modal!==modalId)return;
+    try{nxOptChips(c.sel,c.cont,c);}catch(e){}
+  });
 }
 function nxOptChipPick(selId,contId,el){
   const sel=document.getElementById(selId);if(!sel)return;
@@ -10827,49 +10836,6 @@ function nxOptChipPick(selId,contId,el){
   el.addEventListener('animationend',function q(){el.classList.remove('pick');el.removeEventListener('animationend',q);});
   sel.dispatchEvent(new Event('change'));
 }
-function nxAboMetodo(el){
-  const sel=document.getElementById('aMet');if(!sel)return;
-  sel.value=el.dataset.v;
-  document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.remove('on'));
-  el.classList.add('on');
-  sel.dispatchEvent(new Event('change'));
-  nxAboMetSpotMover();
-}
-function nxAboMetodoSync(){
-  const sel=document.getElementById('aMet');if(!sel)return;
-  document.querySelectorAll('#aMetPills .nmPill').forEach(p=>p.classList.toggle('on',p.dataset.v===sel.value));
-  nxAboMetSpotMover();
-}
-// Desliza el foco de luz (#aMetSpot) al chip de método de pago seleccionado
-// y recorre su borde real — mismo mecanismo que nxEchipSpotMover() en #mCli.
-let _aMetSpotAnim=null;
-function nxAboMetSpotMover(){
-  const cont=document.getElementById('aMetPills');
-  const spot=document.getElementById('aMetSpot');
-  const sel=cont&&cont.querySelector('.nmPill.on');
-  if(!cont||!spot||!sel)return;
-  const rect=spot.querySelector('.nmSpotRect');
-  const SW=2.2;
-  const contBox=cont.getBoundingClientRect();
-  const elBox=sel.getBoundingClientRect();
-  spot.style.width=elBox.width+'px';
-  spot.style.height=elBox.height+'px';
-  spot.style.transform=`translate(${elBox.left-contBox.left}px, ${elBox.top-contBox.top}px)`;
-  const rw=Math.max(0,elBox.width-SW),rh=Math.max(0,elBox.height-SW);
-  const rx=Math.min(8,rw/2,rh/2);
-  rect.setAttribute('x',SW/2);rect.setAttribute('y',SW/2);
-  rect.setAttribute('width',rw);rect.setAttribute('height',rh);rect.setAttribute('rx',rx);
-  const perim=2*(rw+rh)-8*rx+2*Math.PI*rx;
-  rect.setAttribute('stroke-dasharray',(perim*0.72).toFixed(1)+' '+(perim*0.28).toFixed(1));
-  if(_aMetSpotAnim)_aMetSpotAnim.cancel();
-  const reducido=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!reducido&&perim>0){
-    _aMetSpotAnim=rect.animate([{strokeDashoffset:0},{strokeDashoffset:-perim}],{duration:2600,iterations:Infinity,easing:'linear'});
-  }else{
-    rect.style.strokeDashoffset='0';
-  }
-}
-window.addEventListener('resize',nxAboMetSpotMover);
 function cambiarMetodoAbono(){
   const met=document.getElementById('aMet')?.value||'';
   const cont=document.getElementById('aBancoCont');
@@ -10960,9 +10926,8 @@ function abrirAbono(cid){
   const _tgl=document.getElementById('aAdelantoTgl');const _abody=document.getElementById('aAdelantoBody');
   if(_tgl)_tgl.classList.remove('on');if(_abody)_abody.style.display='none';
   const _ami=document.getElementById('aAdelantoMeses');if(_ami)_ami.value='';
-  nxAboMetodoSync();
   openM('mAbono');
-  nxAboMetSpotMover(); // nxAboMetodoSync() corrió con el modal aún oculto (0×0) — reubica ya visible
+  nxChipsSync('mAbono'); // repinta los chips ya con el modal visible
   nxAboActualizarResumen();
 }
 // ── Montos rápidos / Saldar pendiente / Pago adelantado / Resumen en vivo —
@@ -11656,7 +11621,7 @@ function abrirNuevoCli(){
   const pcCampos=document.getElementById('camposPrecioCustom');if(pcCampos)pcCampos.style.display='none';
   mostrarSeccionPrecioCustom();
   actualizarPreciosPlan();
-  openM('mCli');
+  openM('mCli');nxChipsSync('mCli');
   nxEchipSpotMover(); // rEChips() corrió con el modal aún oculto (0×0) — reubica ya visible
 }
 function editarCli(id){
@@ -11713,7 +11678,7 @@ function editarCli(id){
   const pcT=document.getElementById('cPrecioTitular');if(pcT)pcT.value=c.precio_titular??'';
   const pcD=document.getElementById('cPrecioDep');if(pcD)pcD.value=c.precio_dep??'';
   actualizarPreciosPlan();
-  openM('mCli');
+  openM('mCli');nxChipsSync('mCli');
   nxEchipSpotMover(); // rEChips() corrió con el modal aún oculto (0×0) — reubica ya visible
 }
 // Calcula el % de progreso de onboarding y muestra/oculta el campo "Otro"
@@ -11909,7 +11874,7 @@ async function guardarCli(){
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
 }
 
-function abrirInhab(id){inhabCliId=id;const c=ST.clientes.find(x=>x.id===id);document.getElementById('inhabNom').textContent=`${c.nom} · ${c.numero_poliza||'Sin póliza'}`;document.getElementById('inhabNota').value='';openM('mInhab');}
+function abrirInhab(id){inhabCliId=id;const c=ST.clientes.find(x=>x.id===id);document.getElementById('inhabNom').textContent=`${c.nom} · ${c.numero_poliza||'Sin póliza'}`;document.getElementById('inhabNota').value='';openM('mInhab');nxChipsSync('mInhab');}
 async function confirmarInhab(){
   const c=ST.clientes.find(x=>x.id===inhabCliId);if(!c)return;
   const motivo=document.getElementById('inhabMot').value;
