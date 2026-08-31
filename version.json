@@ -1,7 +1,12 @@
 {
-  "version": "57.61",
+  "version": "57.62",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.62",
+      "fecha": "2026-08-30",
+      "texto": "Encontrada la causa real de por qué la foto de fondo casi no se notaba: estaba puesta en .content (el área con scroll), y \"cover\" se calculaba contra el LARGO TOTAL de la pantalla con scroll, no contra lo que se ve en el celular — así que solo se asomaba una tira mínima y sin color de la foto (la pared blanca de arriba, nunca la ola azul de abajo). Ahora la foto vive en un fondo fijo del tamaño de la pantalla, siempre encuadrada completa, sin importar cuánto se scrollee."
+    },
     {
       "v": "57.61",
       "fecha": "2026-08-30",

@@ -284,15 +284,11 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
 .tn-b-primary kbd{background:rgba(255,255,255,.22) !important;border-color:rgba(255,255,255,.4) !important;color:#fff !important}
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;
-  background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center top;background-repeat:no-repeat}
-@media(min-width:900px){
-  .content{background-image:url(/bg-office-desktop.jpg);background-position:center}
-}
-/* Fondo real (foto de oficina que mandó el dueño, 30-ago-2026, reemplaza el degradado
-   "claymorphism" anterior): mobile-first, cambia a la versión horizontal en pantallas
-   anchas — solo tema claro; oscuro sigue con --bg0 sólido. */
-body.tema-premium .content{background:var(--bg0)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;background:transparent}
+#nxBgPhoto{position:fixed;inset:0;z-index:-1;
+  background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center;background-repeat:no-repeat}
+@media(min-width:900px){#nxBgPhoto{background-image:url(/bg-office-desktop.jpg)}}
+body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(139,92,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -2483,6 +2479,13 @@ body.tema-premium .nxpag-btn.nxpag-on{background:linear-gradient(135deg,#2dd4bf,
 </style>
 </head>
 <body>
+
+<!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
+     dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
+     de pantalla, sin importar qué tan larga sea la pantalla que se esté viendo (antes, con el
+     fondo puesto en .content y background-size:cover, "cover" se calculaba contra el alto TOTAL
+     del contenido con scroll, así que solo se veía una tira minúscula y sin color de la foto). -->
+<div id="nxBgPhoto" aria-hidden="true"></div>
 
 <!-- ═══════════════ SPLASH · CARGA ═══════════════ -->
 <div id="nxSplash" aria-hidden="true">
@@ -6035,7 +6038,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.61';
+const APP_VERSION='57.62';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
