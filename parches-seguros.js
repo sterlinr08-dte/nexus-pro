@@ -3800,10 +3800,16 @@
     style.id = "nx-sidebar-v3-css";
     style.textContent = `
       /* ═══ SIDEBAR nav.sb — fondo blanco/glass ═══ */
+      /* El panel es TRANSLÚCIDO a propósito (31-ago-2026): antes el degradado era
+         100% opaco (#ffffff → #f1f5f9), así que el backdrop-filter de abajo no tenía
+         nada que desenfocar — el menú tapaba la foto de fondo por completo y se veía
+         blanco sólido. Con .72/.66 de opacidad el desenfoque sí trabaja y la foto se
+         insinúa detrás sin robarle legibilidad al texto del menú (a esa opacidad el
+         fondo efectivo detrás de cada letra queda por encima del 85% de blanco). */
       nav.sb {
         background:
-          radial-gradient(circle at top left, rgba(96,165,250,.18), transparent 45%),
-          linear-gradient(180deg, #ffffff, #f1f5f9) !important;
+          radial-gradient(circle at top left, rgba(96,165,250,.20), transparent 45%),
+          linear-gradient(180deg, rgba(255,255,255,.72), rgba(241,245,249,.66)) !important;
         backdrop-filter: blur(24px) saturate(160%);
         -webkit-backdrop-filter: blur(24px) saturate(160%);
         border-right: 1px solid rgba(139,92,246,.18) !important;
@@ -3867,9 +3873,13 @@
       nav.sb .ss { color: #475569 !important; }
 
       /* ═══ ITEMS DEL MENÚ — estilo card flotante ═══ */
+      /* Translúcidos también (31-ago-2026), si no las 9 tarjetas blancas anulaban el
+         cristal del panel aunque el panel sí fuera translúcido. NO llevan su propio
+         backdrop-filter a propósito: se apoyan sobre el panel que YA está desenfocado,
+         así que se ven de vidrio sin costar 9 desenfoques más en el iPhone. */
       nav.sb .ni {
         color: #475569;
-        background: #ffffff;
+        background: rgba(255,255,255,.62);
         border: 1px solid rgba(139,92,246,.08);
         box-shadow:
           0 1px 3px rgba(15,23,42,.04),
@@ -7011,10 +7021,15 @@
         /* Es el efecto MÁS pesado en Safari iPhone. .modal/.overlay se
            excluyen a propósito (piden vidrio real también en móvil pese
            al riesgo de rendimiento) — si se siente lento/con tirones al
-           abrir un modal en iPhone, son los primeros a revertir aquí. */
+           abrir un modal en iPhone, son los primeros a revertir aquí.
+           .sb (menú lateral) se sacó de esta lista el 31-ago-2026, a pedido
+           del dueño ("un poquito de efecto cristal"), con el MISMO criterio
+           que .modal/.overlay: es UN solo elemento y solo se ve mientras el
+           cajón está abierto, no las decenas de botones/tarjetas que sí
+           siguen aquí. Si el menú se siente lento al deslizar en el iPhone,
+           basta con devolver ".sb," a esta lista y vuelve a quedar plano. */
         .btn,
         .btn::before,
-        .sb,
         .nc,
         .kpi,
         .qa,

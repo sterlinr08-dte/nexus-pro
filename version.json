@@ -1,7 +1,12 @@
 {
-  "version": "57.68",
+  "version": "57.69",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.69",
+      "fecha": "2026-08-31",
+      "texto": "NUEVO: el menú lateral ahora tiene un toque de vidrio esmerilado y deja ver la foto de fondo suavemente por detrás. Antes tapaba la foto por completo con blanco sólido. Fueron dos cosas a la vez: el panel ya pedía el efecto cristal pero su fondo era 100% opaco, así que no había nada que desenfocar; y en el celular el efecto estaba apagado a propósito por rendimiento junto con decenas de botones y tarjetas. El menú se sacó de esa lista con el mismo criterio que ya se usa para las ventanas: es un solo elemento y solo se ve mientras el menú está abierto. Los botones del menú también quedaron traslúcidos, si no las tarjetas blancas anulaban el cristal del panel. Verificado con capturas reales del menú abierto en celular (320px y 390px), en escritorio y con el tema Liquid Glass: el texto del menú se lee bien en los cuatro casos y nada se sale de la pantalla. Si en el iPhone se llegara a sentir lento al deslizar el menú, se revierte en un solo renglón. La pantalla de inicio de sesión no se tocó."
+    },
     {
       "v": "57.68",
       "fecha": "2026-08-31",
