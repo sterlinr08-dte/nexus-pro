@@ -1,7 +1,12 @@
 {
-  "version": "57.57",
+  "version": "57.58",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.58",
+      "fecha": "2026-08-30",
+      "texto": "Las tarjetas KPI blancas (Clientes totales, Al día, Con balance, Renuevan este mes, y las mismas en Pólizas/Pagos/Empresas) pasan a vidrio esmerilado sobre el fondo celeste, como pidió el dueño (\"un poco cristalizado\") — mismo look del tema Liquid Glass, aplicado solo a estas tarjetas y solo en tema claro."
+    },
     {
       "v": "57.57",
       "fecha": "2026-08-30",

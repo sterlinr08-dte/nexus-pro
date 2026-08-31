@@ -1655,6 +1655,16 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-btn.ok{background:var(--sf-ok-l);border-color:transparent;color:var(--sf-ok-d)}
 .nxSf .sf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
 .nxSf .sf-kpi{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start;min-width:0}
+/* "Cristalizado" (pedido del dueño, 30-ago-2026): las tarjetas KPI blancas pasan a vidrio
+   esmerilado sobre el fondo celeste — mismo recorrido que el tema "Liquid Glass" ya
+   existente, pero solo en estas tarjetas y solo en tema claro (oscuro no tiene el fondo
+   celeste, así que se queda con su tarjeta sólida de siempre). */
+body:not(.tema-premium) .nxSf .sf-kpi{
+  background:rgba(255,255,255,.6) !important;
+  backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
+  border:1px solid rgba(255,255,255,.7) !important;
+  box-shadow:0 8px 24px rgba(31,38,135,.12) !important;
+}
 .nxSf .sf-kpi>*{min-width:0}
 .nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nxSf .sf-kpi .v{overflow-wrap:break-word;word-break:break-word}
@@ -6018,7 +6028,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.57';
+const APP_VERSION='57.58';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
