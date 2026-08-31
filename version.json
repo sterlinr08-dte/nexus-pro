@@ -1,7 +1,12 @@
 {
-  "version": "57.70",
+  "version": "57.71",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.71",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO: el tema oscuro volvió a funcionar. Todo el bloque de estilos de los temas (Premium Dark y Liquid Glass) vivía por error DENTRO del texto de la ventana de \"Expediente del cliente\": estaba escrito como si fuera parte de un mensaje de JavaScript, así que el navegador nunca lo leía como hoja de estilos. El resultado era que al elegir el tema oscuro la app se marcaba como oscura pero el fondo se quedaba blanco. Se movió el bloque a su lugar correcto, sin cambiar ni una sola línea de estilo: pasó de 14 reglas vivas a 76, y el Liquid Glass (7 reglas) volvió a existir. El tema Clásico no cambió en nada, y la pantalla de entrada tampoco se tocó."
+    },
     {
       "v": "57.70",
       "fecha": "2026-08-31",

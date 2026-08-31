@@ -2484,6 +2484,293 @@ body.tema-premium .nxpag-btn.nxpag-on{background:linear-gradient(135deg,#2dd4bf,
     scroll-behavior:auto!important;
   }
 }
+/* ═══ RESTAURADO 31-ago-2026 ═══════════════════════════════════════════════
+   Este bloque de temas vivía por error DENTRO del template literal de la
+   ventana de "Expediente del cliente" (w.document.write, más abajo en el
+   archivo). Como estaba dentro de un texto de JavaScript, el navegador nunca
+   lo leía como hoja de estilos: la clase body.tema-premium se aplicaba pero
+   no existía ninguna regla que la definiera, así que el tema oscuro dejaba el
+   fondo en blanco (--bg0 medido en #ffffff con el tema puesto).
+   Se movió aquí, al <style> real, sin cambiar una sola declaración. */
+/* ═══════════ SISTEMA DE TEMAS ═══════════ */
+/* ═══════ TEMA PREMIUM DARK (kit de diseño) ═══════ */
+body.tema-premium{
+  --bg0:#0B1220;--bg1:#0F172A;--bg2:#1E293B;--bg3:#0F172A;--bg4:#1E293B;
+  --tx1:#E8EDF7;--tx2:#94A3B8;--tx3:#64748B;
+  --border:rgba(255,255,255,.06);--border-light:rgba(255,255,255,.05);
+  --c1:#6D28D9;--c2:#8B5CF6;--c3:#EF4444;--c4:#F59E0B;--c5:#10B981;
+  background:#0B1220 !important;
+  color:#E8EDF7 !important;
+}
+/* Cards / contenedores */
+body.tema-premium .nc,
+body.tema-premium .cfg-panel .nc,
+body.tema-premium .kg>div{
+  background:#0F172A !important;
+  border:1px solid rgba(255,255,255,.06) !important;
+  border-radius:14px !important;
+  box-shadow:0 8px 28px rgba(0,0,0,.5) !important;
+  color:#E8EDF7 !important;
+}
+body.tema-premium .nc:hover{
+  border-color:rgba(109,40,217,.4) !important;
+  box-shadow:0 10px 36px rgba(0,0,0,.6),0 0 24px rgba(15,23,42,.15) !important;
+}
+/* KPIs con ícono en cuadro de color y glow */
+body.tema-premium .kpi{
+  background:#1E293B !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+  border-radius:14px !important;
+  box-shadow:0 8px 28px rgba(0,0,0,.5) !important;
+  color:#E8EDF7 !important;
+  padding-top:56px !important;position:relative;
+}
+body.tema-premium .kpi:hover{
+  transform:translateY(-3px);
+  border-color:rgba(109,40,217,.45) !important;
+  box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 28px rgba(15,23,42,.2) !important;
+}
+body.tema-premium .kpi .ki{
+  position:absolute !important;left:16px !important;top:16px !important;
+  width:42px;height:42px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:21px !important;opacity:1 !important;
+}
+body.tema-premium .kpi.k1 .ki{background:linear-gradient(135deg,#6D28D9,#3B82F6);color:#fff;box-shadow:0 0 20px rgba(15,23,42,.5)}
+body.tema-premium .kpi.k2 .ki{background:linear-gradient(135deg,#10B981,#34D399);color:#fff;box-shadow:0 0 20px rgba(16,185,129,.5)}
+body.tema-premium .kpi.k3 .ki{background:linear-gradient(135deg,#10B981,#34D399);color:#fff;box-shadow:0 0 20px rgba(16,185,129,.5)}
+body.tema-premium .kpi.k4 .ki{background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;box-shadow:0 0 20px rgba(245,158,11,.5)}
+body.tema-premium .kpi.k5 .ki{background:linear-gradient(135deg,#8B5CF6,#A78BFA);color:#fff;box-shadow:0 0 20px rgba(15,23,42,.5)}
+body.tema-premium .kpi .kv{color:#E8EDF7 !important;font-size:20px !important}
+body.tema-premium .kpi .kl{color:#94A3B8 !important}
+body.tema-premium .kpi .ks{color:#64748B !important}
+/* Modales — vidrio líquido también en oscuro (subido a .75 desde .6 por legibilidad) */
+body.tema-premium .modal{
+  background:rgba(18,24,38,.75) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:#E8EDF7 !important;
+  box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+body.tema-premium .overlay{background:rgba(0,0,0,.45) !important}
+/* .mt tiene su propio color explícito (no hereda de .modal) — en oscuro
+   quedaba texto #1e293b sobre fondo #1e293b/#1E293B, invisible. */
+body.tema-premium .mt{color:#E8EDF7 !important}
+/* Sidebar premium */
+body.tema-premium .sb,
+body.tema-premium nav.sb,
+body.tema-premium #sbEl{
+  background:#0B1220 !important;
+  border-right:1px solid rgba(255,255,255,.06) !important;
+}
+body.tema-premium .ni{color:#94A3B8 !important}
+body.tema-premium .ni:hover{background:rgba(109,40,217,.12) !important;color:#E8EDF7 !important}
+body.tema-premium .ni.on{
+  background:linear-gradient(135deg,#6D28D9,#1E40AF) !important;
+  color:#fff !important;
+  box-shadow:0 4px 14px rgba(15,23,42,.4) !important;
+}
+body.tema-premium .ni-l{color:inherit !important}
+body.tema-premium .ss{color:#64748B !important}
+/* Topbar / ticker */
+body.tema-premium .ticker,
+body.tema-premium .tbar,
+body.tema-premium .topbar{
+  background:#0F172A !important;
+  border-color:rgba(255,255,255,.06) !important;
+}
+/* Tablas oscuras */
+body.tema-premium table thead th{
+  background:#0B1220 !important;color:#94A3B8 !important;
+  border-color:rgba(255,255,255,.06) !important;
+}
+body.tema-premium tbody tr{border-color:rgba(255,255,255,.05) !important}
+body.tema-premium tbody tr:hover{background:rgba(109,40,217,.08) !important}
+body.tema-premium td{color:#CBD5E1 !important;border-color:rgba(255,255,255,.05) !important}
+body.tema-premium .tw{background:transparent !important}
+/* Inputs */
+body.tema-premium input,
+body.tema-premium select,
+body.tema-premium textarea{
+  background:#0B1220 !important;
+  border-color:rgba(255,255,255,.1) !important;
+  color:#E8EDF7 !important;
+}
+body.tema-premium input::placeholder,body.tema-premium textarea::placeholder{color:#64748B !important}
+body.tema-premium input:focus,body.tema-premium select:focus,body.tema-premium textarea:focus{
+  border-color:#6D28D9 !important;
+  box-shadow:0 0 0 3px rgba(15,23,42,.2) !important;
+}
+/* Textos */
+body.tema-premium .ct,body.tema-premium h1,body.tema-premium h2,body.tema-premium h3{color:#E8EDF7 !important}
+body.tema-premium .ct-s,body.tema-premium .kp-l{color:#94A3B8 !important}
+/* Botones */
+body.tema-premium .btn{box-shadow:0 2px 10px rgba(0,0,0,.4)}
+body.tema-premium .btn.bghost{
+  background:rgba(255,255,255,.04) !important;
+  border-color:rgba(255,255,255,.1) !important;
+}
+body.tema-premium .btn.bghost i{color:#94A3B8}
+/* Tabs de configuración */
+body.tema-premium .cfg-tab{background:#0F172A !important;color:#94A3B8 !important}
+body.tema-premium .cfg-tab.active-tab{
+  background:linear-gradient(135deg,#6D28D9,#1E40AF) !important;color:#fff !important;
+}
+/* Búsqueda */
+body.tema-premium .gs-input,body.tema-premium .search-box{
+  background:#0B1220 !important;color:#E8EDF7 !important;
+}
+/* Badges */
+body.tema-premium .badge{background:#1c2230;box-shadow:inset 2px 2px 5px #10131b,inset -2px -2px 5px #262e40}
+/* Barras de la cartera por plan - glow */
+body.tema-premium .br>div,body.tema-premium .bar-fill{
+  box-shadow:0 0 12px rgba(15,23,42,.4);
+}
+/* Gráfico con glow azul */
+body.tema-premium svg path[fill]{filter:drop-shadow(0 0 10px rgba(109,40,217,.4))}
+body.tema-premium svg path[stroke]{filter:drop-shadow(0 0 6px rgba(109,40,217,.5))}
+body.tema-premium canvas{filter:brightness(1.08)}
+/* Scrollbar oscuro */
+body.tema-premium ::-webkit-scrollbar-track{background:#0B1220}
+body.tema-premium ::-webkit-scrollbar-thumb{background:#1E293B}
+body.tema-premium ::-webkit-scrollbar-thumb:hover{background:#6D28D9}
+
+/* ── Refuerzo: cubrir TODOS los elementos con fondo/texto fijo ── */
+body.tema-premium .tnav,
+body.tema-premium .tn-b,
+body.tema-premium .modal-box,
+body.tema-premium .mbox,
+body.tema-premium .cfg-panel,
+body.tema-premium .cfg-tabs,
+body.tema-premium table,
+body.tema-premium thead,
+body.tema-premium tbody,
+body.tema-premium .notif-panel,
+body.tema-premium .gs-panel,
+body.tema-premium .menu,
+body.tema-premium .dropdown,
+body.tema-premium .card,
+body.tema-premium .box,
+body.tema-premium .panel{
+  background:#1E293B !important;
+  color:#E8EDF7 !important;
+  border-color:rgba(255,255,255,.08) !important;
+}
+body.tema-premium input,
+body.tema-premium select,
+body.tema-premium textarea{
+  background:#0F172A !important;
+  color:#E8EDF7 !important;
+  border-color:rgba(255,255,255,.1) !important;
+}
+body.tema-premium input::placeholder,
+body.tema-premium textarea::placeholder{color:#64748B !important;}
+body.tema-premium th{background:#0F172A !important;color:#94A3B8 !important;}
+body.tema-premium td{border-color:rgba(255,255,255,.05) !important;color:#E8EDF7 !important;}
+body.tema-premium tr:hover td{background:rgba(109,40,217,.08) !important;}
+/* Textos oscuros fijos -> claros */
+body.tema-premium h1,body.tema-premium h2,body.tema-premium h3,
+body.tema-premium .ct,body.tema-premium label,body.tema-premium p,
+body.tema-premium span,body.tema-premium div{color:inherit;}
+body.tema-premium [style*="color:#1e293b"],
+body.tema-premium [style*="color:#0f172a"],
+body.tema-premium [style*="color:#1E293B"]{color:#E8EDF7 !important;}
+/* Fondos blancos en estilos en línea */
+body.tema-premium [style*="background:#fff"],
+body.tema-premium [style*="background:#FFF"],
+body.tema-premium [style*="background:white"]{background:#1E293B !important;}
+/* Vista de clientes: pestañas, filtros, subtabs */
+body.tema-premium .cli-subtab{background:#0F172A !important;color:#94A3B8 !important;}
+body.tema-premium .cli-subtab.active-subtab{background:#6D28D9 !important;color:#fff !important;}
+body.tema-premium [style*="background:#f1f5f9"],
+body.tema-premium [style*="background:#f8fafc"],
+body.tema-premium [style*="background:#f8f9fa"],
+body.tema-premium [style*="background:#fafbfc"],
+body.tema-premium [style*="background:#eff6ff"]{background:#0F172A !important;}
+body.tema-premium [style*="color:#475569"],
+body.tema-premium [style*="color:#1e293b"]{color:#E8EDF7 !important;}
+body.tema-premium .tw,body.tema-premium .tw table{background:transparent !important;}
+body.tema-premium .badge{filter:brightness(1.1);}
+
+/* ═══════ TEMA LIQUID GLASS ═══════ */
+/* El dueño confirmó (30-ago-2026) que este es el tema que tiene activo — por eso no se
+   veía la foto de fondo nueva ni el vidrio esmerilado con los tonos que se fueron afinando:
+   este bloque, por estar más abajo en el archivo, le ganaba (misma especificidad) a las
+   reglas nuevas de .kpi, y el body forzado a blanco sólido tapaba #nxBgPhoto por completo.
+   Antes (ver CLAUDE.md v39.1) este blanco sólido era el arreglo de un bug de gradiente
+   morado — ya no hace falta taparlo todo, ahora #nxBgPhoto es la foto real y este tema
+   es justo el que está pensado para mostrar algo interesante detrás del vidrio. */
+body.tema-glass{
+  background:transparent !important;
+  background-attachment:fixed !important;
+}
+body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
+body.tema-glass .cfg-panel .nc,body.tema-glass .kg>div{
+  background:rgba(255,255,255,.62) !important;
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid rgba(255,255,255,.75) !important;
+  box-shadow:0 8px 32px rgba(31,38,135,.13) !important;
+}
+body.tema-glass .nc:hover,body.tema-glass .kpi:hover{
+  background:rgba(255,255,255,.78) !important;
+  box-shadow:0 12px 40px rgba(31,38,135,.2) !important;
+}
+body.tema-glass .sb,body.tema-glass nav.sb,body.tema-glass #sbEl{
+  background:rgba(255,255,255,.5) !important;
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+}
+body.tema-glass .ticker,body.tema-glass .tbar{
+  background:rgba(255,255,255,.55) !important;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+body.tema-glass table thead th{background:rgba(255,255,255,.55) !important}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
+  body.tema-glass .sb,body.tema-glass nav.sb{background:rgba(255,255,255,.95) !important;}
+}
+/* Reportado 2026-08-29 (captura de la píldora CHEQUE en Cobrar, tres veces — "el aura
+   que hicimos es cuadrado y la píldora es redonda" / "sigue igual"): dos intentos
+   fallaron. El primero (-webkit-tap-highlight-color) no era la causa. El segundo
+   (outline:2px solid currentColor + border-radius:9999px en :focus-visible) tampoco
+   sirvió porque Safari/WebKit NO redondea el outline según el border-radius del
+   elemento — lo dibuja recto pase lo que pase, es una limitación conocida del motor,
+   no algo que se pueda arreglar con más CSS de outline. Única solución real: no usar
+   outline en absoluto en estas píldoras — el propio cambio de color/sombra al
+   activarse ya es suficientemente visible como indicador. */
+.nmPill,.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
+.nxPf .entTab,.nxPf .chip,.nxPf .vchip,.nxInvPill,.nxRepChip,.nxClaveTab,
+.ev-tab,.hc-tab,.nxFP-tab,.nxFP-perBtn{
+  -webkit-tap-highlight-color:transparent;
+}
+.nmPill,.nmPill:focus,.nmPill:focus-visible,
+.nxft-tab,.nxft-tab:focus,.nxft-tab:focus-visible,
+.nxPgTab,.nxPgTab:focus,.nxPgTab:focus-visible,
+.nxFacSubTab,.nxFacSubTab:focus,.nxFacSubTab:focus-visible,
+.nxMdTab,.nxMdTab:focus,.nxMdTab:focus-visible,
+.rfTab,.rfTab:focus,.rfTab:focus-visible,
+.nxDoc .seg button,.nxDoc .seg button:focus,.nxDoc .seg button:focus-visible,
+.nxPf .entTab,.nxPf .entTab:focus,.nxPf .entTab:focus-visible,
+.nxPf .chip,.nxPf .chip:focus,.nxPf .chip:focus-visible,
+.nxPf .vchip,.nxPf .vchip:focus,.nxPf .vchip:focus-visible,
+.nxInvPill,.nxInvPill:focus,.nxInvPill:focus-visible,
+.nxRepChip,.nxRepChip:focus,.nxRepChip:focus-visible,
+.nxClaveTab,.nxClaveTab:focus,.nxClaveTab:focus-visible,
+.ev-tab,.ev-tab:focus,.ev-tab:focus-visible,
+.hc-tab,.hc-tab:focus,.hc-tab:focus-visible,
+.nxFP-tab,.nxFP-tab:focus,.nxFP-tab:focus-visible,
+.nxFP-perBtn,.nxFP-perBtn:focus,.nxFP-perBtn:focus-visible{
+  outline:none !important;
+}
+
+/* Transición suave al cambiar tema */
+body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
+  transition:background .35s ease,border-color .35s ease,box-shadow .35s ease,color .35s ease;
+}
+/* Opción seleccionada en panel de temas */
+.tema-opcion.tema-sel{border-color:var(--c1) !important;box-shadow:0 4px 16px rgba(15,23,42,.25)}
+.tema-opcion:hover{transform:translateY(-2px)}
 </style>
 </head>
 <body>
@@ -6091,7 +6378,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.70';
+const APP_VERSION='57.71';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12632,285 +12919,6 @@ async function exportarDocsPDF(){
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expediente ${c?.nom}</title><style>@media print{body{margin:0}}
-/* ═══════════ SISTEMA DE TEMAS ═══════════ */
-/* ═══════ TEMA PREMIUM DARK (kit de diseño) ═══════ */
-body.tema-premium{
-  --bg0:#0B1220;--bg1:#0F172A;--bg2:#1E293B;--bg3:#0F172A;--bg4:#1E293B;
-  --tx1:#E8EDF7;--tx2:#94A3B8;--tx3:#64748B;
-  --border:rgba(255,255,255,.06);--border-light:rgba(255,255,255,.05);
-  --c1:#6D28D9;--c2:#8B5CF6;--c3:#EF4444;--c4:#F59E0B;--c5:#10B981;
-  background:#0B1220 !important;
-  color:#E8EDF7 !important;
-}
-/* Cards / contenedores */
-body.tema-premium .nc,
-body.tema-premium .cfg-panel .nc,
-body.tema-premium .kg>div{
-  background:#0F172A !important;
-  border:1px solid rgba(255,255,255,.06) !important;
-  border-radius:14px !important;
-  box-shadow:0 8px 28px rgba(0,0,0,.5) !important;
-  color:#E8EDF7 !important;
-}
-body.tema-premium .nc:hover{
-  border-color:rgba(109,40,217,.4) !important;
-  box-shadow:0 10px 36px rgba(0,0,0,.6),0 0 24px rgba(15,23,42,.15) !important;
-}
-/* KPIs con ícono en cuadro de color y glow */
-body.tema-premium .kpi{
-  background:#1E293B !important;
-  border:1px solid rgba(255,255,255,.07) !important;
-  border-radius:14px !important;
-  box-shadow:0 8px 28px rgba(0,0,0,.5) !important;
-  color:#E8EDF7 !important;
-  padding-top:56px !important;position:relative;
-}
-body.tema-premium .kpi:hover{
-  transform:translateY(-3px);
-  border-color:rgba(109,40,217,.45) !important;
-  box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 28px rgba(15,23,42,.2) !important;
-}
-body.tema-premium .kpi .ki{
-  position:absolute !important;left:16px !important;top:16px !important;
-  width:42px;height:42px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:21px !important;opacity:1 !important;
-}
-body.tema-premium .kpi.k1 .ki{background:linear-gradient(135deg,#6D28D9,#3B82F6);color:#fff;box-shadow:0 0 20px rgba(15,23,42,.5)}
-body.tema-premium .kpi.k2 .ki{background:linear-gradient(135deg,#10B981,#34D399);color:#fff;box-shadow:0 0 20px rgba(16,185,129,.5)}
-body.tema-premium .kpi.k3 .ki{background:linear-gradient(135deg,#10B981,#34D399);color:#fff;box-shadow:0 0 20px rgba(16,185,129,.5)}
-body.tema-premium .kpi.k4 .ki{background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff;box-shadow:0 0 20px rgba(245,158,11,.5)}
-body.tema-premium .kpi.k5 .ki{background:linear-gradient(135deg,#8B5CF6,#A78BFA);color:#fff;box-shadow:0 0 20px rgba(15,23,42,.5)}
-body.tema-premium .kpi .kv{color:#E8EDF7 !important;font-size:20px !important}
-body.tema-premium .kpi .kl{color:#94A3B8 !important}
-body.tema-premium .kpi .ks{color:#64748B !important}
-/* Modales — vidrio líquido también en oscuro (subido a .75 desde .6 por legibilidad) */
-body.tema-premium .modal{
-  background:rgba(18,24,38,.75) !important;
-  border:1px solid rgba(255,255,255,.12) !important;
-  color:#E8EDF7 !important;
-  box-shadow:0 24px 48px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-body.tema-premium .overlay{background:rgba(0,0,0,.45) !important}
-/* .mt tiene su propio color explícito (no hereda de .modal) — en oscuro
-   quedaba texto #1e293b sobre fondo #1e293b/#1E293B, invisible. */
-body.tema-premium .mt{color:#E8EDF7 !important}
-/* Sidebar premium */
-body.tema-premium .sb,
-body.tema-premium nav.sb,
-body.tema-premium #sbEl{
-  background:#0B1220 !important;
-  border-right:1px solid rgba(255,255,255,.06) !important;
-}
-body.tema-premium .ni{color:#94A3B8 !important}
-body.tema-premium .ni:hover{background:rgba(109,40,217,.12) !important;color:#E8EDF7 !important}
-body.tema-premium .ni.on{
-  background:linear-gradient(135deg,#6D28D9,#1E40AF) !important;
-  color:#fff !important;
-  box-shadow:0 4px 14px rgba(15,23,42,.4) !important;
-}
-body.tema-premium .ni-l{color:inherit !important}
-body.tema-premium .ss{color:#64748B !important}
-/* Topbar / ticker */
-body.tema-premium .ticker,
-body.tema-premium .tbar,
-body.tema-premium .topbar{
-  background:#0F172A !important;
-  border-color:rgba(255,255,255,.06) !important;
-}
-/* Tablas oscuras */
-body.tema-premium table thead th{
-  background:#0B1220 !important;color:#94A3B8 !important;
-  border-color:rgba(255,255,255,.06) !important;
-}
-body.tema-premium tbody tr{border-color:rgba(255,255,255,.05) !important}
-body.tema-premium tbody tr:hover{background:rgba(109,40,217,.08) !important}
-body.tema-premium td{color:#CBD5E1 !important;border-color:rgba(255,255,255,.05) !important}
-body.tema-premium .tw{background:transparent !important}
-/* Inputs */
-body.tema-premium input,
-body.tema-premium select,
-body.tema-premium textarea{
-  background:#0B1220 !important;
-  border-color:rgba(255,255,255,.1) !important;
-  color:#E8EDF7 !important;
-}
-body.tema-premium input::placeholder,body.tema-premium textarea::placeholder{color:#64748B !important}
-body.tema-premium input:focus,body.tema-premium select:focus,body.tema-premium textarea:focus{
-  border-color:#6D28D9 !important;
-  box-shadow:0 0 0 3px rgba(15,23,42,.2) !important;
-}
-/* Textos */
-body.tema-premium .ct,body.tema-premium h1,body.tema-premium h2,body.tema-premium h3{color:#E8EDF7 !important}
-body.tema-premium .ct-s,body.tema-premium .kp-l{color:#94A3B8 !important}
-/* Botones */
-body.tema-premium .btn{box-shadow:0 2px 10px rgba(0,0,0,.4)}
-body.tema-premium .btn.bghost{
-  background:rgba(255,255,255,.04) !important;
-  border-color:rgba(255,255,255,.1) !important;
-}
-body.tema-premium .btn.bghost i{color:#94A3B8}
-/* Tabs de configuración */
-body.tema-premium .cfg-tab{background:#0F172A !important;color:#94A3B8 !important}
-body.tema-premium .cfg-tab.active-tab{
-  background:linear-gradient(135deg,#6D28D9,#1E40AF) !important;color:#fff !important;
-}
-/* Búsqueda */
-body.tema-premium .gs-input,body.tema-premium .search-box{
-  background:#0B1220 !important;color:#E8EDF7 !important;
-}
-/* Badges */
-body.tema-premium .badge{background:#1c2230;box-shadow:inset 2px 2px 5px #10131b,inset -2px -2px 5px #262e40}
-/* Barras de la cartera por plan - glow */
-body.tema-premium .br>div,body.tema-premium .bar-fill{
-  box-shadow:0 0 12px rgba(15,23,42,.4);
-}
-/* Gráfico con glow azul */
-body.tema-premium svg path[fill]{filter:drop-shadow(0 0 10px rgba(109,40,217,.4))}
-body.tema-premium svg path[stroke]{filter:drop-shadow(0 0 6px rgba(109,40,217,.5))}
-body.tema-premium canvas{filter:brightness(1.08)}
-/* Scrollbar oscuro */
-body.tema-premium ::-webkit-scrollbar-track{background:#0B1220}
-body.tema-premium ::-webkit-scrollbar-thumb{background:#1E293B}
-body.tema-premium ::-webkit-scrollbar-thumb:hover{background:#6D28D9}
-
-/* ── Refuerzo: cubrir TODOS los elementos con fondo/texto fijo ── */
-body.tema-premium .tnav,
-body.tema-premium .tn-b,
-body.tema-premium .modal-box,
-body.tema-premium .mbox,
-body.tema-premium .cfg-panel,
-body.tema-premium .cfg-tabs,
-body.tema-premium table,
-body.tema-premium thead,
-body.tema-premium tbody,
-body.tema-premium .notif-panel,
-body.tema-premium .gs-panel,
-body.tema-premium .menu,
-body.tema-premium .dropdown,
-body.tema-premium .card,
-body.tema-premium .box,
-body.tema-premium .panel{
-  background:#1E293B !important;
-  color:#E8EDF7 !important;
-  border-color:rgba(255,255,255,.08) !important;
-}
-body.tema-premium input,
-body.tema-premium select,
-body.tema-premium textarea{
-  background:#0F172A !important;
-  color:#E8EDF7 !important;
-  border-color:rgba(255,255,255,.1) !important;
-}
-body.tema-premium input::placeholder,
-body.tema-premium textarea::placeholder{color:#64748B !important;}
-body.tema-premium th{background:#0F172A !important;color:#94A3B8 !important;}
-body.tema-premium td{border-color:rgba(255,255,255,.05) !important;color:#E8EDF7 !important;}
-body.tema-premium tr:hover td{background:rgba(109,40,217,.08) !important;}
-/* Textos oscuros fijos -> claros */
-body.tema-premium h1,body.tema-premium h2,body.tema-premium h3,
-body.tema-premium .ct,body.tema-premium label,body.tema-premium p,
-body.tema-premium span,body.tema-premium div{color:inherit;}
-body.tema-premium [style*="color:#1e293b"],
-body.tema-premium [style*="color:#0f172a"],
-body.tema-premium [style*="color:#1E293B"]{color:#E8EDF7 !important;}
-/* Fondos blancos en estilos en línea */
-body.tema-premium [style*="background:#fff"],
-body.tema-premium [style*="background:#FFF"],
-body.tema-premium [style*="background:white"]{background:#1E293B !important;}
-/* Vista de clientes: pestañas, filtros, subtabs */
-body.tema-premium .cli-subtab{background:#0F172A !important;color:#94A3B8 !important;}
-body.tema-premium .cli-subtab.active-subtab{background:#6D28D9 !important;color:#fff !important;}
-body.tema-premium [style*="background:#f1f5f9"],
-body.tema-premium [style*="background:#f8fafc"],
-body.tema-premium [style*="background:#f8f9fa"],
-body.tema-premium [style*="background:#fafbfc"],
-body.tema-premium [style*="background:#eff6ff"]{background:#0F172A !important;}
-body.tema-premium [style*="color:#475569"],
-body.tema-premium [style*="color:#1e293b"]{color:#E8EDF7 !important;}
-body.tema-premium .tw,body.tema-premium .tw table{background:transparent !important;}
-body.tema-premium .badge{filter:brightness(1.1);}
-
-/* ═══════ TEMA LIQUID GLASS ═══════ */
-/* El dueño confirmó (30-ago-2026) que este es el tema que tiene activo — por eso no se
-   veía la foto de fondo nueva ni el vidrio esmerilado con los tonos que se fueron afinando:
-   este bloque, por estar más abajo en el archivo, le ganaba (misma especificidad) a las
-   reglas nuevas de .kpi, y el body forzado a blanco sólido tapaba #nxBgPhoto por completo.
-   Antes (ver CLAUDE.md v39.1) este blanco sólido era el arreglo de un bug de gradiente
-   morado — ya no hace falta taparlo todo, ahora #nxBgPhoto es la foto real y este tema
-   es justo el que está pensado para mostrar algo interesante detrás del vidrio. */
-body.tema-glass{
-  background:transparent !important;
-  background-attachment:fixed !important;
-}
-body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
-body.tema-glass .cfg-panel .nc,body.tema-glass .kg>div{
-  background:rgba(255,255,255,.62) !important;
-  backdrop-filter:blur(20px) saturate(160%);
-  -webkit-backdrop-filter:blur(20px) saturate(160%);
-  border:1px solid rgba(255,255,255,.75) !important;
-  box-shadow:0 8px 32px rgba(31,38,135,.13) !important;
-}
-body.tema-glass .nc:hover,body.tema-glass .kpi:hover{
-  background:rgba(255,255,255,.78) !important;
-  box-shadow:0 12px 40px rgba(31,38,135,.2) !important;
-}
-body.tema-glass .sb,body.tema-glass nav.sb,body.tema-glass #sbEl{
-  background:rgba(255,255,255,.5) !important;
-  backdrop-filter:blur(20px) saturate(160%);
-  -webkit-backdrop-filter:blur(20px) saturate(160%);
-}
-body.tema-glass .ticker,body.tema-glass .tbar{
-  background:rgba(255,255,255,.55) !important;
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-}
-body.tema-glass table thead th{background:rgba(255,255,255,.55) !important}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
-  body.tema-glass .sb,body.tema-glass nav.sb{background:rgba(255,255,255,.95) !important;}
-}
-/* Reportado 2026-08-29 (captura de la píldora CHEQUE en Cobrar, tres veces — "el aura
-   que hicimos es cuadrado y la píldora es redonda" / "sigue igual"): dos intentos
-   fallaron. El primero (-webkit-tap-highlight-color) no era la causa. El segundo
-   (outline:2px solid currentColor + border-radius:9999px en :focus-visible) tampoco
-   sirvió porque Safari/WebKit NO redondea el outline según el border-radius del
-   elemento — lo dibuja recto pase lo que pase, es una limitación conocida del motor,
-   no algo que se pueda arreglar con más CSS de outline. Única solución real: no usar
-   outline en absoluto en estas píldoras — el propio cambio de color/sombra al
-   activarse ya es suficientemente visible como indicador. */
-.nmPill,.nxft-tab,.nxPgTab,.nxFacSubTab,.nxMdTab,.rfTab,.nxDoc .seg button,
-.nxPf .entTab,.nxPf .chip,.nxPf .vchip,.nxInvPill,.nxRepChip,.nxClaveTab,
-.ev-tab,.hc-tab,.nxFP-tab,.nxFP-perBtn{
-  -webkit-tap-highlight-color:transparent;
-}
-.nmPill,.nmPill:focus,.nmPill:focus-visible,
-.nxft-tab,.nxft-tab:focus,.nxft-tab:focus-visible,
-.nxPgTab,.nxPgTab:focus,.nxPgTab:focus-visible,
-.nxFacSubTab,.nxFacSubTab:focus,.nxFacSubTab:focus-visible,
-.nxMdTab,.nxMdTab:focus,.nxMdTab:focus-visible,
-.rfTab,.rfTab:focus,.rfTab:focus-visible,
-.nxDoc .seg button,.nxDoc .seg button:focus,.nxDoc .seg button:focus-visible,
-.nxPf .entTab,.nxPf .entTab:focus,.nxPf .entTab:focus-visible,
-.nxPf .chip,.nxPf .chip:focus,.nxPf .chip:focus-visible,
-.nxPf .vchip,.nxPf .vchip:focus,.nxPf .vchip:focus-visible,
-.nxInvPill,.nxInvPill:focus,.nxInvPill:focus-visible,
-.nxRepChip,.nxRepChip:focus,.nxRepChip:focus-visible,
-.nxClaveTab,.nxClaveTab:focus,.nxClaveTab:focus-visible,
-.ev-tab,.ev-tab:focus,.ev-tab:focus-visible,
-.hc-tab,.hc-tab:focus,.hc-tab:focus-visible,
-.nxFP-tab,.nxFP-tab:focus,.nxFP-tab:focus-visible,
-.nxFP-perBtn,.nxFP-perBtn:focus,.nxFP-perBtn:focus-visible{
-  outline:none !important;
-}
-
-/* Transición suave al cambiar tema */
-body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
-  transition:background .35s ease,border-color .35s ease,box-shadow .35s ease,color .35s ease;
-}
-/* Opción seleccionada en panel de temas */
-.tema-opcion.tema-sel{border-color:var(--c1) !important;box-shadow:0 4px 16px rgba(15,23,42,.25)}
-.tema-opcion:hover{transform:translateY(-2px)}
 </style></head><body>${contenido}</body></html>`);
   w.document.close();
   setTimeout(()=>{ w.print(); btn.disabled=false; btn.innerHTML='<i class="ti ti-file-type-pdf"></i> Exportar PDF'; }, 1000);
