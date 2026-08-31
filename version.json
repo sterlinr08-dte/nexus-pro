@@ -1,7 +1,12 @@
 {
-  "version": "57.59",
+  "version": "57.60",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.60",
+      "fecha": "2026-08-30",
+      "texto": "El fondo pasa del degradado \"claymorphism\" a una foto real de oficina que mandó el dueño — versión vertical en celular, versión horizontal en pantallas anchas (≥900px). El vidrio esmerilado de las tarjetas KPI queda igual, ahora mostrando esta foto desenfocada detrás en vez del degradado."
+    },
     {
       "v": "57.59",
       "fecha": "2026-08-30",
