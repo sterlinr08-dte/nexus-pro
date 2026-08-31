@@ -3475,11 +3475,23 @@
         --nx-shadow-soft:0 10px 28px rgba(109,40,217,.12),0 3px 10px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.88);
       }
 
-      html,body{
+      /* CAUSA RAÍZ del "no se ve la foto de fondo" (31-ago-2026): esta regla ponía el MISMO
+         degradado opaco (con !important) en <html> Y en <body> a la vez. <body> es un elemento
+         normal (sin position), así que su propio fondo se pinta DESPUÉS del z-index:-1 de
+         #nxBgPhoto (nivel de apilamiento "0" vs "-1") — lo tapaba por completo, sin importar
+         qué tan transparentes quedaran .nc/.sf-kpi/.kpi. <html> no tiene ese problema (su fondo
+         es el "canvas", se pinta ANTES que el z-index:-1), así que se deja como estaba: sirve de
+         respaldo bonito si la foto llega a fallar. <body> ahora NO fija su propio fondo aquí —
+         cae al body{background:transparent} de index.html (más abajo en la cascada global,
+         sin !important, pero ya no compite contra nada) y así la foto de #nxBgPhoto por fin se
+         ve en los huecos entre tarjetas. */
+      html{
         background:
           radial-gradient(circle at 18% 8%, rgba(96,165,250,.34), transparent 32%),
           radial-gradient(circle at 85% 18%, rgba(109,40,217,.18), transparent 34%),
           linear-gradient(135deg,var(--nx-bg1),var(--nx-bg2)) !important;
+      }
+      html,body{
         color:var(--nx-text) !important;
       }
 
@@ -3747,11 +3759,9 @@
           box-shadow:0 10px 24px rgba(15,23,42,.12),0 3px 8px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.88) !important;
         }
 
-        body{
-          background:
-            radial-gradient(circle at 20% 0%, rgba(96,165,250,.32), transparent 36%),
-            linear-gradient(135deg,#f2f8ff,#dbeafe) !important;
-        }
+        /* body{background:...!important} de esta media query se QUITÓ (31-ago-2026) — repetía,
+           solo en móvil, el mismo bug de raíz de arriba: tapaba #nxBgPhoto por completo en
+           cualquier pantalla angosta, la mayoría de las veces que se abre la app. */
       }
     `;
 

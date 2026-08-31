@@ -1,7 +1,12 @@
 {
-  "version": "57.66",
+  "version": "57.67",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.67",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO DE VERDAD (la 57.66 no bastaba): el dueño mandó una captura real de su iPhone en Facturas — seguía sin verse ni un rastro de la foto, pese al arreglo anterior. Investigado con el código REAL servido en un navegador (no con la vista previa aislada que se había usado para \"confirmar\" la 57.66 — esa vista previa no cargaba parches-seguros.js, así que el problema real quedó invisible ahí). La causa de fondo: un tema viejo (\"vidrio semi-transparente azul\", de antes de que existiera la foto de fondo) le seguía poniendo a <body> su propio degradado sólido con !important, en dos sitios distintos (uno para pantallas anchas, otro solo para el celular) — con más fuerza que cualquier ajuste de transparencia que se le hiciera a las tarjetas, tapaba la foto por completo sin importar nada más. Se dejó ese fondo SOLO en <html> (sirve de respaldo si la foto llegara a fallar) y se quitó de <body> en los dos sitios — confirmado con capturas reales que la foto ahora se ve en el Dashboard, Facturas y a cualquier ancho de pantalla, con y sin el tema Liquid Glass. La pantalla de inicio de sesión no se tocó — sigue exactamente igual."
+    },
     {
       "v": "57.66",
       "fecha": "2026-08-31",
