@@ -285,9 +285,18 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;background:transparent}
-#nxBgPhoto{position:fixed;inset:0;z-index:-1;background-color:#ff0000 !important;background-image:none !important}
+#nxBgPhoto{position:fixed;inset:0;z-index:-1;
+  background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center;background-repeat:no-repeat}
 @media(min-width:900px){#nxBgPhoto{background-image:url(/bg-office-desktop.jpg)}}
 body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
+/* html,body{background:var(--bg0)} (arriba) le pone a <html> un fondo EXPLÍCITO — eso
+   desactiva la propagación del fondo de <body> al "canvas" del navegador (solo pasa si
+   html queda transparente), así que <body> pinta su propio fondo sólido como caja normal
+   DESPUÉS del z-index:-1 de #nxBgPhoto y lo tapa por completo, aunque la foto cargue bien.
+   Confirmado con una reproducción mínima aislada (mismo CSS, sin el resto del archivo).
+   #loginScreen/#nxSplash/#nxLoader ya son overlays 100% opacos que cubren toda la pantalla
+   por su cuenta, así que dejar <body> transparente no les cambia nada. */
+body{background:transparent}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(139,92,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -6037,7 +6046,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.65';
+const APP_VERSION='57.66';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

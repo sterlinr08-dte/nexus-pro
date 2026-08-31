@@ -1,7 +1,12 @@
 {
-  "version": "57.65",
+  "version": "57.66",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.66",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO (cierra la saga del fondo): la prueba en rojo de la 57.65 confirmó justo lo que hacía falta ver — con el tema Liquid Glass ya arreglado (57.64) la foto SEGUÍA sin verse. La causa real era el propio <body>: pinta su fondo sólido de siempre por encima de #nxBgPhoto (que está fijo detrás, z-index:-1) sin importar el tema activo, porque <html> ya tiene un color explícito puesto y eso le corta a <body> la propagación de su fondo hacia el 'lienzo' del navegador — así que <body> lo pinta como una caja normal, tapando la foto aunque cargue perfecto. Se deja <body> transparente y la foto vuelve a mostrarse — probado en las 3 pantallas (Dashboard/Clientes/Facturas), móvil y escritorio, con Liquid Glass y sin él. De paso: las dos fotos (la de escritorio y la del celular) traían un logo/texto falso pegado por la IA que las generó ('SEGUROS DE SALUD' + un ícono de corazón con cruz, en la pared y en un letrero del escritorio) — se reconstruyeron esas zonas a mano, pixel por pixel, tomando el color real de los alrededores de la propia foto (nada de IA generativa en la limpieza), así que ya no queda ningún rastro de texto ni de logo inventado en ninguna de las dos."
+    },
     {
       "v": "57.65",
       "fecha": "2026-08-30",
