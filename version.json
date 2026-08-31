@@ -1,7 +1,12 @@
 {
-  "version": "57.58",
+  "version": "57.59",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.59",
+      "fecha": "2026-08-30",
+      "texto": "El vidrio esmerilado de las tarjetas KPI (57.58) se notaba casi sólido — se baja la opacidad del blanco de 60% a 32% y sube el desenfoque, para que el celeste de fondo se vea claramente a través, como en la referencia \"Glassmorphism\" que mandó el dueño."
+    },
     {
       "v": "57.58",
       "fecha": "2026-08-30",
