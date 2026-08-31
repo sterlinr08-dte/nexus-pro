@@ -515,6 +515,37 @@ body.tema-premium #mAbono .fr input:focus{
     inset 0 4px 7px var(--pill-lo),
     inset 0 -4px 7px var(--pill-hi);
 }
+/* Chips de opción con icono (Banco / cuenta de depósito) — reemplazan el
+   desplegable nativo del iPhone por botones visibles. Mismo criterio que
+   #aMetPills: el <select> real NO se elimina, queda oculto como fuente de
+   verdad, así todo lo que ya lee su .value sigue funcionando igual. */
+#mAbono .nxOptGrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+#mAbono .nxOptChip{
+  flex:1 1 calc(50% - 4px);min-width:0;display:flex;align-items:center;gap:9px;
+  padding:10px 11px;border-radius:14px;border:none;cursor:pointer;text-align:left;
+  background:var(--nm-bg);color:var(--nm-tx2);font-family:inherit;font-size:12px;font-weight:700;
+  box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi);
+  transition:box-shadow .18s ease,color .18s ease,transform .12s ease;
+}
+#mAbono .nxOptChip:active{transform:translateY(1px)}
+#mAbono .nxOptChip.on{
+  color:var(--nm-tx);
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 2px var(--chip-c,var(--nm-accent));
+}
+#mAbono .nxOptChip:focus-visible{outline:2px solid var(--chip-c,var(--nm-accent));outline-offset:2px}
+#mAbono .nxOptIco{
+  flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:800;color:#fff;
+  background:var(--chip-c,var(--nm-accent));line-height:1;
+}
+/* el sistema global de iconos le pinta a cada <i class="ti"> suelto una esfera
+   de color propia — aquí el circulo ya lo pone .nxOptIco, asi que se anula
+   (mismo patron que .lfi .ti / .nxPf .inw .ti). */
+#mAbono .nxOptIco .ti{background:none!important;box-shadow:none!important;border-radius:0!important;
+  width:auto!important;height:auto!important;color:#fff!important;font-size:15px!important}
+#mAbono .nxOptIco .ti::after{content:none!important}
+#mAbono .nxOptTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(prefers-reduced-motion:reduce){#mAbono .nxOptChip{transition:none}}
 #mAbono .nmSpot{position:absolute;top:0;left:0;z-index:1;pointer-events:none;
   transition:transform .42s cubic-bezier(.22,.9,.28,1),width .42s cubic-bezier(.22,.9,.28,1),height .42s cubic-bezier(.22,.9,.28,1)}
 #mAbono .nmSpotSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
@@ -4027,7 +4058,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
         <div class="nmSpot" id="aMetSpot"><svg class="nmSpotSvg"><rect class="nmSpotRect"/></svg></div>
       </div>
     </div>
-    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
+    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select><div id="aBancoChips"></div></div>
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco"/></div>
     <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select></div>
     <div class="aboNote"><i class="ti ti-info-circle"></i> El agente que registra será quien figura como responsable del cobro.</div>
@@ -6378,7 +6409,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.71';
+const APP_VERSION='57.72';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10680,11 +10711,52 @@ async function llenarSelectBancosCobros(){
   const sinOtros=activos.filter(b=>_normBco(b.nombre)!=='otros');
   sel.innerHTML='<option value="">Seleccionar banco...</option>'+sinOtros.map(b=>`<option value="${b.nombre}">${b.nombre}</option>`).join('')+'<option value="Otros">Otros</option>';
   if(valActual&&Array.from(sel.options).some(o=>o.value===valActual))sel.value=valActual;
+  try{nxOptChips('aBanco','aBancoChips',{icono:'ti-building-bank'});}catch(e){}
 }
 // Chips visuales del Método de pago (#mAbono): el <select id="aMet"> real
 // sigue siendo la fuente de verdad (oculto, no eliminado) — clickear un chip
 // solo cambia su .value y dispara 'change' a mano, así cambiarMetodoAbono()
 // y todo lo demás que ya depende de aMet.value sigue funcionando intacto.
+// Chips con icono para los <select> de #mAbono (Banco, cuenta de deposito).
+// Mismo criterio que nxAboMetodo(): el <select> real NO se elimina — queda
+// oculto y sigue siendo la fuente de verdad, asi que cambiarBancoAbono(),
+// nxAboActualizarResumen(), la validacion al guardar y la RPC leen su .value
+// exactamente igual que antes. Los chips se generan desde sus PROPIAS <option>,
+// asi que se mantienen solos al dia con quien sea que llene el select.
+// Si el contenedor no existe, no se toca nada y el <select> se queda visible.
+const NX_CHIP_COLORES=['#3568e0','#0d9488','#7c3aed','#b45309','#0369a1','#be123c','#15803d','#4338ca'];
+function nxChipColor(t){let h=0;const s=String(t||'');for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return NX_CHIP_COLORES[h%NX_CHIP_COLORES.length];}
+function nxOptChips(selId,contId,opts){
+  const sel=document.getElementById(selId),cont=document.getElementById(contId);
+  if(!sel||!cont)return;
+  const o=opts||{};
+  const items=Array.from(sel.options).filter(op=>op.value!=='');
+  if(!items.length){cont.innerHTML='';sel.style.display='';return;}
+  sel.style.display='none';
+  cont.className='nxOptGrid';
+  // El color sale del nombre (estable: el mismo banco siempre del mismo color),
+  // pero si dos nombres caen en el mismo se corre al siguiente libre — con 4
+  // bancos el hash puro repetia color y dos chips se veian iguales.
+  const usados=new Set();
+  const colorDe=t=>{let c=nxChipColor(t);let i=NX_CHIP_COLORES.indexOf(c);let n=0;
+    while(usados.has(c)&&n<NX_CHIP_COLORES.length){i=(i+1)%NX_CHIP_COLORES.length;c=NX_CHIP_COLORES[i];n++;}
+    usados.add(c);return c;};
+  cont.innerHTML=items.map(op=>{
+    const v=op.value,txt=op.textContent||'',on=String(sel.value)===String(v);
+    const ico=o.iniciales?escHtml(inits(txt)||'?'):'<i class="ti '+(o.icono||'ti-circle')+'"></i>';
+    return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+colorDe(txt)+'"'
+      +' data-v="'+escHtml(v)+'" aria-pressed="'+on+'" aria-label="'+escHtml(txt)+'"'
+      +' onclick="nxOptChipPick(\''+selId+'\',\''+contId+'\',this)">'
+      +'<span class="nxOptIco">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span></button>';
+  }).join('');
+}
+function nxOptChipPick(selId,contId,el){
+  const sel=document.getElementById(selId);if(!sel)return;
+  sel.value=el.dataset.v;
+  const cont=document.getElementById(contId);
+  if(cont)cont.querySelectorAll('.nxOptChip').forEach(c=>{const on=c===el;c.classList.toggle('on',on);c.setAttribute('aria-pressed',on);});
+  sel.dispatchEvent(new Event('change'));
+}
 function nxAboMetodo(el){
   const sel=document.getElementById('aMet');if(!sel)return;
   sel.value=el.dataset.v;

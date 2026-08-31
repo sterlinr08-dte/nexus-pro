@@ -5864,6 +5864,10 @@
     sel.innerHTML = '<option value="">— Elige la cuenta —</option>' +
       ags.filter(a => a && a.activo !== false).map(a => `<option value="${a.id}">${esc(a.nom || '')}</option>`).join('');
     if (prev && ags.some(a => String(a.id) === String(prev))) sel.value = prev;
+    // Chips con icono en vez del desplegable nativo. nxOptChips vive en
+    // index.html; si no esta disponible no se toca nada y el <select> se
+    // queda visible tal cual estaba (respaldo, mismo criterio que agBuscador).
+    try { if (typeof window.nxOptChips === 'function') window.nxOptChips('aDirectoCuenta','aDirectoChips',{iniciales:true}); } catch(e) {}
   }
 
   function actualizarVisibilidad() {
@@ -5889,21 +5893,29 @@
     // fallback al azul de siempre por si esto se reutiliza fuera de ese modal).
     wrap.style.cssText = 'display:none;margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--nm-bg,#eff6ff);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)';
     wrap.innerHTML = `
-      <label style="display:block;font-size:11px;line-height:1.4">
+      <div style="display:block;font-size:11px;line-height:1.4">
         <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">¿A qué cuenta se depositó?</strong>
         <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:9px 11px;border:none;border-radius:10px;background:var(--nm-bg,#fff);color:var(--nm-tx,#1e3a6e);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)">
           <option value="">— Elige la cuenta —</option>
         </select>
+        <div id="aDirectoChips"></div>
         <span style="font-size:10px;color:var(--nm-tx2,#475569);display:block;margin-top:5px">
           El cliente depositó/transfirió a esta cuenta. Queda como PENDIENTE DE CONFIRMAR en Solicitudes
           hasta verificarlo — salvo que sea tu propia cuenta, que se confirma sola.
         </span>
-      </label>
+      </div>
     `;
     refField.parentElement.insertBefore(wrap, refField.nextSibling);
 
     const aMet = document.getElementById('aMet');
     if (aMet) aMet.addEventListener('change', actualizarVisibilidad);
+    // El <select> de cuenta nunca avisaba a nadie al cambiar, asi que la linea
+    // "RESUMEN DEL PAGO" siempre mostraba "Cuenta: —" aunque hubiera una elegida.
+    // Fallo preexistente (no lo trajeron los chips) — se cierra aqui.
+    const aCta = document.getElementById('aDirectoCuenta');
+    if (aCta) aCta.addEventListener('change', function(){
+      try { if (typeof window.nxAboActualizarResumen === 'function') window.nxAboActualizarResumen(); } catch(e) {}
+    });
 
     actualizarVisibilidad();
     return true;

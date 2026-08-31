@@ -1,7 +1,12 @@
 {
-  "version": "57.71",
+  "version": "57.72",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.72",
+      "fecha": "2026-08-31",
+      "texto": "NUEVO: al registrar un pago, \"Banco\" y \"¿A qué cuenta se depositó?\" ya no abren la lista gris del iPhone. Ahora los ves como botones con icono, todos a la vista, igual que los de Efectivo/Transferencia/Cheque: tocas el banco y listo, sin desplegar nada. Cada banco lleva su propio color y cada cuenta la inicial del agente, para distinguirlos de un vistazo. Por dentro no cambió nada de cómo se guarda el pago — es solo la forma de elegir. ARREGLADO de paso: la línea \"RESUMEN DEL PAGO\" de abajo seguía diciendo \"Cuenta: —\" aunque ya hubieras elegido una; ahora muestra la cuenta correcta."
+    },
     {
       "v": "57.71",
       "fecha": "2026-08-31",
