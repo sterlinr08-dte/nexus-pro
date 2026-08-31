@@ -1,7 +1,12 @@
 {
-  "version": "57.55",
+  "version": "57.56",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.56",
+      "fecha": "2026-08-30",
+      "texto": "PRUEBA TEMPORAL: fondo detrás de las pantallas en rosa/magenta bien fuerte, solo para confirmar si la regla se está aplicando o no. Se revierte al celeste en cuanto el dueño confirme qué ve."
+    },
     {
       "v": "57.55",
       "fecha": "2026-08-30",
