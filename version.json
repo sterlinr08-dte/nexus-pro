@@ -1,7 +1,12 @@
 {
-  "version": "57.64",
+  "version": "57.65",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.65",
+      "fecha": "2026-08-30",
+      "texto": "PRUEBA TEMPORAL: #nxBgPhoto en rojo sólido (sin foto) para confirmar si el elemento se pinta detrás de las tarjetas o si algo más lo está tapando. Se revierte a la foto en cuanto el dueño confirme qué ve."
+    },
     {
       "v": "57.64",
       "fecha": "2026-08-30",
