@@ -12288,3 +12288,55 @@ sintéticos exactos.
 - **Recordatorio para cualquier sesión futura:** como la instalación vive en el scratchpad (efímera),
   cada sesión nueva probablemente tiene que volver a instalar `agent-browser` y volver a apuntarlo al
   Chromium de Playwright — seguir la receta de arriba en vez de re-descubrirla desde cero.
+
+### Fondo real de la app: por qué vive en `#nxBgPhoto`, SEPARADO de `.content` (30-ago-2026, v57.54→v57.65)
+Pedido del dueño: fondo "claymorphism" → tarjetas "cristalizadas" (vidrio esmerilado) → una foto
+real de oficina que mandó él mismo (`bg-office-mobile.jpg`/`bg-office-desktop.jpg`, comprimidas de
+PNG ~2.6MB a JPG ~115-135KB con .NET `System.Drawing` vía PowerShell — no había ImageMagick/Pillow
+en el entorno). Varias rondas de "no se ve"/"nada"/"igual" antes de encontrar las DOS causas reales
+— dejar esto documentado para no volver a perder el tiempo si algo parecido pasa de nuevo:
+
+1. **La foto vivía en `.content` (el contenedor CON SCROLL) — causa real de "casi no se nota".**
+   `background-size:cover` en un elemento con scroll se mide contra el ALTO TOTAL del contenido
+   (que puede ser varias pantallas de largo), no contra lo que cabe en la ventana. Con
+   `background-position:top`, eso dejaba visible solo una tira mínima de la parte de ARRIBA de la
+   foto (la pared blanca, sin nada de color) — nunca se llegaba a ver la parte con color de abajo,
+   sin importar cuánto se ajustara el tono o la intensidad del degradado/foto.
+   - **Arreglo:** `#nxBgPhoto` — un `<div>` NUEVO, hermano de `.content`, insertado justo después de
+     `<body>` (antes del splash), con `position:fixed;inset:0;z-index:-1` y la imagen ahí. Al ser
+     `position:fixed` (no `background-attachment:fixed` DENTRO de un contenedor con scroll — eso es
+     conocido por ser poco confiable en Safari/iOS), siempre se ve encuadrada al tamaño real de la
+     pantalla, sin importar cuánto scroll tenga la página. `.content` pasa a `background:transparent`
+     — el sidebar/header ya son opacos, así que la foto solo se asoma donde corresponde.
+   - **Para cualquier cambio futuro de fondo:** tocar `#nxBgPhoto`, **NUNCA** volver a poner un
+     `background-image`/gradiente directo en `.content` — se vuelve a caer en el mismo bug.
+2. **El tema Liquid Glass (`body.tema-glass`) forzaba el body a blanco sólido — tapaba TODO.**
+   Desde v39.1 (ver más arriba en este archivo, "la raíz del morado"), `body.tema-glass{
+   background:#ffffff !important}` existe para arreglar un bug viejo de gradiente morado — nada que
+   ver con esto, pero por estar escrito MÁS ABAJO en el archivo (misma especificidad, gana el que
+   aparece después en la cascada) tapaba `#nxBgPhoto` por completo, sin importar qué tan intenso se
+   pusiera el color/opacidad del vidrio esmerilado. El dueño tiene este tema activo — por eso NINGÚN
+   ajuste de color/opacidad hacía diferencia hasta que se encontró esto.
+   - **Arreglo:** `body.tema-glass{background:transparent !important}` — el resto del tema (vidrio
+     esmerilado en `.kpi`/`.nc`/`.modal`/`.sb` a 62% opacidad, ya tuneado desde antes) no se tocó.
+   - **Para cualquier tema NUEVO que se agregue:** recordar que existe `#nxBgPhoto` — si el tema nuevo
+     fuerza `background` sólido en `body` con `!important`, lo va a tapar igual que le pasó a
+     `tema-glass`. `body.tema-premium` (oscuro) lo apaga a propósito con
+     `body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}` — cualquier
+     tema nuevo que NO deba mostrar la foto necesita una regla equivalente.
+- **Vidrio esmerilado también dividido en dos componentes que NO son el mismo:** `.sf-kpi` (Clientes/
+  Pólizas/Pagos/Empresas — dentro de `.nxSf`) y `.kpi` (SOLO el Dashboard — Prima mensual/En proceso/
+  Utilidad). Son dos clases CSS distintas con el mismo propósito visual; un ajuste a una NO alcanza a
+  la otra — pasó una ronda completa de confusión por esto. Si se toca el vidrio esmerilado de nuevo,
+  tocar los DOS: `body:not(.tema-premium) .sf-kpi{...}` y `body:not(.tema-premium) .kpi{...}`.
+- **Auditoría en vivo posible sin `agent-browser`:** `curl -sI https://nexusprord.com/<archivo>` para
+  confirmar 200/Content-Type de assets nuevos, y `curl -sL https://nexusprord.com/?_=$(date +%s)` (el
+  `?_=` evita cualquier caché) para bajar el HTML real desplegado y comparar línea por línea contra
+  lo que se subió — así se confirmó, sin depender de que el dueño describiera lo que veía, que el
+  despliegue SIEMPRE estuvo correcto y el problema era 100% CSS/cascada, no caché ni build.
+- **PENDIENTE al cerrar esta sesión (revisar si sigue así en la próxima):** v57.65 tiene `#nxBgPhoto`
+  puesto en ROJO SÓLIDO a propósito (`background-color:#ff0000 !important;background-image:none
+  !important`), como prueba final para confirmar si la técnica pinta o si sigue habiendo algo más
+  tapándolo. **Si una sesión nueva encuentra el rojo todavía puesto, es porque quedó sin resolver —
+  hay que volver a poner la foto real (`url(/bg-office-mobile.jpg)` /
+  `url(/bg-office-desktop.jpg)` en `@media(min-width:900px)`) en cuanto se confirme qué se veía.**
