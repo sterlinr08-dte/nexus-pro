@@ -1,7 +1,12 @@
 {
-  "version": "57.67",
+  "version": "57.68",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.68",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO: los nombres debajo de los iconos del Inicio ahora se leen sobre cualquier parte de la foto de fondo. Antes eran letras grises muy pequeñas (8.5px) puestas directamente encima de la foto: sobre el piso claro se leían, pero sobre la butaca azul oscura (FACTURAS y FACTURAS PENDIENTES) quedaban turbias. Ahora cada nombre va sobre una pastillita de vidrio esmerilado — el mismo acabado que ya usan las tarjetas del sistema — y la letra subió a 9.5px con más grosor. Se probó primero un halo blanco alrededor del texto, más discreto, pero medido contra la foto real seguía sin leerse bien sobre la butaca azul, así que se descartó. Verificado con capturas reales del sistema en celular (320px y 390px), en escritorio y con el tema oscuro: los 9 nombres se leen y ninguno se sale de su recuadro. La pantalla de inicio de sesión no se tocó."
+    },
     {
       "v": "57.67",
       "fecha": "2026-08-31",

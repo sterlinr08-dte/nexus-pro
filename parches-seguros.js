@@ -4298,15 +4298,41 @@
         #v-dashboard .qa-g .qa i.qa-ico::after{ animation: none !important; }
         .nx-smoke{ display:none !important; }
       }
+      /* Rótulo de cada acceso: tiene que leerse sobre CUALQUIER parte de la foto de
+         fondo. Antes era texto gris de 8.5px suelto encima de la foto — sobre el piso
+         claro se leía, pero sobre la butaca azul oscura (FACTURAS / FACTURAS
+         PENDIENTES) quedaba turbio. Ahora va sobre una pastilla de vidrio esmerilado
+         — el mismo lenguaje que ya usan las tarjetas .nc/.kpi — que se ajusta al ancho
+         del texto y garantiza contraste pase lo que pase con la foto (si el dueño la
+         cambia por otra, los rótulos siguen legibles sin tocar nada). Se probó primero
+         un halo blanco alrededor del texto: más discreto, pero sobre la butaca azul
+         seguía sin leerse bien, así que se descartó. */
       #v-dashboard .qa-g .qa-l {
         text-align: center !important;
-        font-size: 8.5px !important;
-        line-height: 1.2 !important;
+        font-size: 9.5px !important;
+        line-height: 1.25 !important;
         white-space: normal !important;
-        width: 100% !important;
+        width: auto !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 3px 7px !important;
         letter-spacing: .2px !important;
-        color: var(--tx1, #1e293b) !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        background: rgba(255,255,255,.8) !important;
+        backdrop-filter: blur(7px) saturate(150%);
+        -webkit-backdrop-filter: blur(7px) saturate(150%);
+        border-radius: 9px !important;
+        box-shadow: 0 2px 7px rgba(15,23,42,.13), inset 0 0 0 1px rgba(255,255,255,.55) !important;
       }
+      /* A propósito NO hay una variante para el tema oscuro. Se probó una (pastilla
+         apenas tintada + texto claro) y se descartó al medirla: en tema-premium la
+         variable --bg0 nunca se redefine, así que #nxBgPhoto pinta BLANCO y el fondo
+         real queda claro, no oscuro — verificado también contra el código de antes de
+         que existiera la foto, o sea es un defecto anterior, no de este cambio. Con
+         texto claro los rótulos quedaban invisibles. La pastilla blanca con texto
+         oscuro se lee bien sobre cualquier fondo (claro u oscuro), así que sirve para
+         los dos temas sin suponer nada. */
       @media(max-width:768px){
         #v-dashboard .qa-g .qa i.qa-ico { width: 56px !important; height: 56px !important; min-width: 56px !important; font-size: 25px !important; }
       }
