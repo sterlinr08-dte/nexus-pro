@@ -1,7 +1,12 @@
 {
-  "version": "57.63",
+  "version": "57.64",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.64",
+      "fecha": "2026-08-30",
+      "texto": "Encontrada la causa real de toda esta saga: el dueño tiene activo el tema \"Liquid Glass\", que desde antes forzaba el fondo del body a blanco sólido con !important (arreglo viejo de un bug de gradiente morado, documentado en CLAUDE.md v39.1) — eso tapaba la foto nueva por completo, sin importar cuánto se ajustara el color o la opacidad. Ya se deja transparente para que la foto se vea detrás del vidrio esmerilado, que es justo para lo que existe ese tema."
+    },
     {
       "v": "57.63",
       "fecha": "2026-08-30",

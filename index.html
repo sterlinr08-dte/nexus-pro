@@ -6038,7 +6038,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.63';
+const APP_VERSION='57.64';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12779,8 +12779,15 @@ body.tema-premium .tw,body.tema-premium .tw table{background:transparent !import
 body.tema-premium .badge{filter:brightness(1.1);}
 
 /* ═══════ TEMA LIQUID GLASS ═══════ */
+/* El dueño confirmó (30-ago-2026) que este es el tema que tiene activo — por eso no se
+   veía la foto de fondo nueva ni el vidrio esmerilado con los tonos que se fueron afinando:
+   este bloque, por estar más abajo en el archivo, le ganaba (misma especificidad) a las
+   reglas nuevas de .kpi, y el body forzado a blanco sólido tapaba #nxBgPhoto por completo.
+   Antes (ver CLAUDE.md v39.1) este blanco sólido era el arreglo de un bug de gradiente
+   morado — ya no hace falta taparlo todo, ahora #nxBgPhoto es la foto real y este tema
+   es justo el que está pensado para mostrar algo interesante detrás del vidrio. */
 body.tema-glass{
-  background:#ffffff !important;
+  background:transparent !important;
   background-attachment:fixed !important;
 }
 body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,
