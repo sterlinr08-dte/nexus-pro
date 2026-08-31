@@ -285,9 +285,9 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;
-  background-image:url(/bg-office-mobile.png);background-size:cover;background-position:center top;background-repeat:no-repeat}
+  background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center top;background-repeat:no-repeat}
 @media(min-width:900px){
-  .content{background-image:url(/bg-office-desktop.png);background-position:center}
+  .content{background-image:url(/bg-office-desktop.jpg);background-position:center}
 }
 /* Fondo real (foto de oficina que mandó el dueño, 30-ago-2026, reemplaza el degradado
    "claymorphism" anterior): mobile-first, cambia a la versión horizontal en pantallas
@@ -1225,6 +1225,15 @@ body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
 .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-bottom:12px}
 .kpi{background:#fff;border-radius:14px;border:1px solid var(--border-light);padding:14px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:all .2s cubic-bezier(.4,0,.2,1)}
 .kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--border)}
+/* Cristalizado (mismo tratamiento que .sf-kpi, 30-ago-2026): estas son las tarjetas KPI
+   PROPIAS del Dashboard (Prima mensual/En proceso/Utilidad) — un componente distinto a
+   .sf-kpi (el de Clientes/Pólizas/Pagos), se había quedado fuera del cambio anterior. */
+body:not(.tema-premium) .kpi{
+  background:rgba(255,255,255,.32) !important;
+  backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.55) !important;
+  box-shadow:0 8px 26px rgba(31,38,135,.16),inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
 .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
 .k1::after{background:linear-gradient(90deg,#8b5cf6,#60a5fa)}.k2::after{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.k3::after{background:linear-gradient(90deg,#10b981,#34d399)}.k4::after{background:linear-gradient(90deg,#ef4444,#f87171)}.k5::after{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
 .kl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
@@ -6026,7 +6035,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.60';
+const APP_VERSION='57.61';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

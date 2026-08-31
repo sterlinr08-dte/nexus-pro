@@ -1,7 +1,12 @@
 {
-  "version": "57.60",
+  "version": "57.61",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.61",
+      "fecha": "2026-08-30",
+      "texto": "Encontrado: el Dashboard (pantalla de inicio) usa sus PROPIAS tarjetas KPI (Prima mensual/En proceso/Utilidad, clase .kpi) — un componente distinto al .sf-kpi de Clientes/Pólizas/Pagos, por eso no se veía el vidrio esmerilado ahí. Ya se le agrega el mismo tratamiento. Además, las fotos de fondo se comprimieron de PNG (~2.6MB) a JPG (~115-135KB) sin perder calidad visible — 95% más livianas."
+    },
     {
       "v": "57.60",
       "fecha": "2026-08-30",
