@@ -1,7 +1,12 @@
 {
-  "version": "57.69",
+  "version": "57.70",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.70",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO: el cartel rojo de \"Algo salió mal\" ya no salta por errores que no son del sistema. Cuando falla algo dentro de un archivo servido por otro dominio (el servicio de correo, los iconos), el navegador oculta el detalle por seguridad y solo entrega el texto \"Script error.\", sin archivo ni línea. Eso abría el cartel rojo a pantalla completa: una falsa alarma, porque no es un fallo de NEXUS PRO, no hay nada que el usuario pueda hacer, y el \"detalle técnico\" que ofrecía copiar a soporte venía vacío. Ahora ese caso queda registrado como AVISO — se ve en el registro de errores bajo el filtro de avisos y sale en la exportación a Excel, con el texto literal del navegador — pero no interrumpe. Los errores REALES del sistema no cambian en nada: siguen abriendo el cartel rojo y encendiendo el globo de la barra superior. Además, si un bloqueador de contenido dispara el aviso en bucle, se guarda una sola entrada y se le va actualizando el conteo, para que no llene los 200 espacios del registro y borre los errores de verdad. Verificado con 27 comprobaciones en el navegador, incluyendo errores lanzados de verdad por el motor y tres casos parecidos que SÍ deben seguir alertando. La pantalla de inicio de sesión no se tocó."
+    },
     {
       "v": "57.69",
       "fecha": "2026-08-31",

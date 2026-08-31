@@ -5328,7 +5328,52 @@ function limpiarLog(){
   _errLog=[];_errGuardar();_errBadgeActualizar();renderErrorLog();
   toast('ok','Registro borrado');
 }
-window.addEventListener('error',ev=>registrarError('error',ev?.message||'Error de script',ev?.error?.stack||'',true));
+// ── Errores OPACOS de scripts de otro dominio (31-ago-2026) ──────────────────
+// Cuando algo falla DENTRO de un script servido por otro dominio (el CDN del
+// servicio de correo, el webfont de iconos), el navegador oculta el detalle por
+// seguridad y entrega un evento vacío: message === "Script error." literal (en
+// inglés, lo genera el navegador, no nuestro código), sin archivo, sin línea,
+// sin objeto de error. Es la firma que el propio estándar HTML define para este
+// caso, así que se reconoce sin ambigüedad: un error REAL del sistema siempre
+// trae archivo, línea y stack, porque es del mismo dominio.
+// Antes esto abría la tarjeta roja "Algo salió mal" a pantalla completa — falsa
+// alarma: no es un fallo del sistema, el usuario no puede hacer nada al respecto,
+// y el "detalle técnico" que ofrecía copiar a soporte venía vacío. Ahora queda
+// registrado como AVISO (visible y exportable en el registro de errores) pero
+// no interrumpe al usuario. Se registra UNA sola entrada por sesión y se le
+// actualiza el conteo, para que un bloqueador de contenido disparándose en bucle
+// no llene los 200 espacios del registro y borre los errores de verdad.
+// NOTA: se evaluó ponerle crossorigin="anonymous" al <script> del CDN, que haría
+// que el navegador SÍ entregue el detalle real. Se descartó por ahora: si ese
+// dominio no devolviera la cabecera CORS correcta, el script quedaría bloqueado
+// y el envío de correo dejaría de funcionar — y desde este entorno no hay forma
+// de comprobarlo contra el CDN real. Queda como mejora a evaluar con la red
+// disponible, no como algo que se cambie a ciegas sobre una función en vivo.
+let _errOpacoRef=null,_errOpacoN=0;
+function _errEsOpaco(ev){
+  return !!ev && !ev.error && !ev.filename && !ev.lineno
+    && /^script error\.?$/i.test(String(ev.message||''));
+}
+function _errOpacoTexto(n){
+  return 'Falló un recurso externo al sistema (por ejemplo el servicio de correo o los iconos). '
+    +'El navegador no da el detalle por seguridad, porque el archivo viene de otro dominio. '
+    +'Suele ser un bloqueador de contenido, una extensión del navegador o una caída puntual del proveedor. '
+    +'No es un error de NEXUS PRO y no afecta nada de lo ya guardado.'
+    +(n>1?` — ocurrió ${n} veces en esta sesión.`:'');
+}
+function _errOpacoRegistrar(){
+  _errOpacoN++;
+  // Si la entrada anterior sigue en el registro, solo se le actualiza el conteo.
+  if(_errOpacoRef&&_errLog.indexOf(_errOpacoRef)>=0){
+    _errOpacoRef.msg=_errOpacoTexto(_errOpacoN);_errGuardar();return;
+  }
+  registrarError('warn',_errOpacoTexto(_errOpacoN),'Detalle literal del navegador: "Script error." (sin archivo ni línea por ser de otro dominio)',false);
+  _errOpacoRef=_errLog[_errLog.length-1]||null;
+}
+window.addEventListener('error',ev=>{
+  if(_errEsOpaco(ev)){_errOpacoRegistrar();return;}
+  registrarError('error',ev?.message||'Error de script',ev?.error?.stack||'',true);
+});
 window.addEventListener('unhandledrejection',ev=>{const r=ev?.reason;registrarError('error',(r&&r.message)||String(r||'Promesa rechazada sin capturar'),(r&&r.stack)||'',true);});
 _errBadgeActualizar();
 
@@ -6046,7 +6091,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.69';
+const APP_VERSION='57.70';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
