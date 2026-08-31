@@ -1,7 +1,11 @@
 {
-  "version": "57.73",
+  "version": "57.74",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.74",
+      "txt": "NUEVO — Al cobrar por transferencia o depósito, cada banco ahora sale con SU LOGO REAL (Banreservas, BHD y Popular) en vez de un iconito genérico igual para todos. El borde verde/azul que marca el banco elegido también usa el color de esa marca. Un banco que no tenga logo (Otros, o uno que agregues después en Ajustes) sigue saliendo con el icono de siempre, sin romperse."
+    },
     {
       "v": "57.73",
       "fecha": "2026-08-31",

@@ -579,6 +579,13 @@ body.tema-premium #mAbono .fr input:focus{
 #mAbono .nxOptIco .ti{background:none!important;box-shadow:none!important;border-radius:0!important;
   width:auto!important;height:auto!important;color:#fff!important;font-size:15px!important}
 #mAbono .nxOptIco .ti::after{content:none!important}
+/* Banco con logo real: el circulo deja de ser un disco de color y pasa a ser
+   el logo mismo (los tres traen su propio fondo de marca, ya recortados 1:1,
+   asi que 'cover' no recorta nada — solo redondea las esquinas). El aro tenue
+   va por dentro (inset) para que el logo de Banreservas, que es sobre blanco,
+   se distinga del fondo del chip sin encoger la imagen. */
+#mAbono .nxOptIco.logo{background:#fff;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(15,23,42,.16)}
+#mAbono .nxOptImg{width:100%;height:100%;object-fit:cover;display:block}
 #mAbono .nxOptTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(prefers-reduced-motion:reduce){#mAbono .nxOptChip{transition:none}}
 #mAbono .nmSpot{position:absolute;top:0;left:0;z-index:1;pointer-events:none;
@@ -6444,7 +6451,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.73';
+const APP_VERSION='57.74';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10746,7 +10753,7 @@ async function llenarSelectBancosCobros(){
   const sinOtros=activos.filter(b=>_normBco(b.nombre)!=='otros');
   sel.innerHTML='<option value="">Seleccionar banco...</option>'+sinOtros.map(b=>`<option value="${b.nombre}">${b.nombre}</option>`).join('')+'<option value="Otros">Otros</option>';
   if(valActual&&Array.from(sel.options).some(o=>o.value===valActual))sel.value=valActual;
-  try{nxOptChips('aBanco','aBancoChips',{icono:'ti-building-bank'});}catch(e){}
+  try{nxOptChips('aBanco','aBancoChips',{icono:'ti-building-bank',logo:bancoLogo});}catch(e){}
 }
 // Chips visuales del Método de pago (#mAbono): el <select id="aMet"> real
 // sigue siendo la fuente de verdad (oculto, no eliminado) — clickear un chip
@@ -10759,6 +10766,26 @@ async function llenarSelectBancosCobros(){
 // exactamente igual que antes. Los chips se generan desde sus PROPIAS <option>,
 // asi que se mantienen solos al dia con quien sea que llene el select.
 // Si el contenedor no existe, no se toca nada y el <select> se queda visible.
+// Logos reales de los bancos (los mando el dueno, 31-ago-2026). Se recorto el
+// SIMBOLO de cada marca — no el letrero completo, que no se lee en un circulo
+// de 30px — y se dejo sobre su propio fondo de marca. Mismo patron que
+// ARS_LOGOS: archivos en el repo, mapa fijo nombre->archivo, URL absoluta con
+// location.origin, y si un banco no esta en el mapa cae al icono generico.
+// La clave se compara CONTENIDA en el nombre normalizado, asi "BHD Leon" o
+// "Banco Popular" tambien encuentran su logo.
+const BANCO_LOGOS={
+  banreservas:{img:'banreservas.png',color:'#204870'},
+  popular:{img:'popular.png',color:'#004088'},
+  bhd:{img:'bhd.png',color:'#50b840'}
+};
+function bancoLogo(nombre){
+  const n=_normBco(nombre);if(!n)return null;
+  for(const k in BANCO_LOGOS){
+    if(n.indexOf(k)>=0){const b=BANCO_LOGOS[k];
+      return {url:location.origin+'/bancos-logos/'+b.img,color:b.color};}
+  }
+  return null;
+}
 const NX_CHIP_COLORES=['#3568e0','#0d9488','#7c3aed','#b45309','#0369a1','#be123c','#15803d','#4338ca'];
 function nxChipColor(t){let h=0;const s=String(t||'');for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return NX_CHIP_COLORES[h%NX_CHIP_COLORES.length];}
 function nxOptChips(selId,contId,opts){
@@ -10778,11 +10805,15 @@ function nxOptChips(selId,contId,opts){
     usados.add(c);return c;};
   cont.innerHTML=items.map(op=>{
     const v=op.value,txt=op.textContent||'',on=String(sel.value)===String(v);
-    const ico=o.iniciales?escHtml(inits(txt)||'?'):'<i class="ti '+(o.icono||'ti-circle')+'"></i>';
-    return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+colorDe(txt)+'"'
+    // Si el banco tiene logo real: se pinta el logo y el color del chip pasa a
+    // ser el de SU marca (no el del hash), asi el borde de seleccion calza.
+    const lg=o.logo?o.logo(txt):null;
+    const ico=lg?'<img class="nxOptImg" src="'+escHtml(lg.url)+'" alt="">'
+      :(o.iniciales?escHtml(inits(txt)||'?'):'<i class="ti '+(o.icono||'ti-circle')+'"></i>');
+    return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+(lg?lg.color:colorDe(txt))+'"'
       +' data-v="'+escHtml(v)+'" aria-pressed="'+on+'" aria-label="'+escHtml(txt)+'"'
       +' onclick="nxOptChipPick(\''+selId+'\',\''+contId+'\',this)">'
-      +'<span class="nxOptIco">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span>'
+      +'<span class="nxOptIco'+(lg?' logo':'')+'">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span>'
       +'<span class="nxOptOk"></span></button>';
   }).join('');
 }
