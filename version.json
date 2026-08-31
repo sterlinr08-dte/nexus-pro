@@ -1,7 +1,12 @@
 {
-  "version": "57.56",
+  "version": "57.57",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.57",
+      "fecha": "2026-08-30",
+      "texto": "Se revierte la prueba de magenta — el screenshot que mandó el dueño mostraba el celeste (de la 57.55), confirmando que la regla del fondo SÍ se aplica y SÍ se ve (visible detrás de la campanita, alrededor de las tarjetas de Atención prioritaria y en la fila de pestañas). El problema era solo de percepción/refresco, no del código. Vuelve el degradado celeste con manchas."
+    },
     {
       "v": "57.56",
       "fecha": "2026-08-30",
