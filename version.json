@@ -1,7 +1,12 @@
 {
-  "version": "57.62",
+  "version": "57.63",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.63",
+      "fecha": "2026-08-30",
+      "texto": "Fix: la pantalla \"Buscar actualizaciones\" mostraba \"[object Object]\" en cada línea de Novedades en vez del texto — leía cada entrada de cambios como si fuera un simple texto, cuando en realidad es un objeto {v, fecha, texto}. Ya muestra el texto real."
+    },
     {
       "v": "57.62",
       "fecha": "2026-08-30",
