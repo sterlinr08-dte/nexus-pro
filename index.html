@@ -3248,7 +3248,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
               <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
               <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
-              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select>
+              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select><span id="fAgenteCliChip"></span>
               <select id="cliOrden" onchange="ordenarCli(this.value)" class="nxFsel" title="Ordenar por">
                 <option value="">Ordenar: por defecto</option>
                 <option value="nom:asc">Nombre A-Z</option>
@@ -3321,8 +3321,8 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
                  existiendo OCULTO para que rFact() lea el término igual que siempre. -->
             <div style="margin-bottom:6px"><span id="factQLupa"></span><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-              <select id="fMes" class="nxFsel"></select>
-              <select id="fAnio" class="nxFsel" style="width:80px"></select>
+              <select id="fMes" class="nxFsel" onchange="rFact()"></select><span id="fMesChip"></span>
+              <select id="fAnio" class="nxFsel" style="width:80px" onchange="rFact()"></select><span id="fAnioChip"></span>
               <!-- Filtro flotante animado: el <select> real sigue siendo la única fuente de
                    verdad que lee rFact() — solo se oculta visualmente; pintarFiltroEstadoFact()
                    dibuja el pill+panel encima y escribe en este mismo select al elegir. -->
@@ -3340,7 +3340,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
             <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
               <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 12px 12px">
-                <select id="fAgenteFact" onchange="rFact()" class="nxFsel"><option value="">Todos los agentes</option></select>
+                <select id="fAgenteFact" onchange="rFact()" class="nxFsel"><option value="">Todos los agentes</option></select><span id="fAgenteFactChip"></span>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
                 <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -3363,7 +3363,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
               <span id="cobQLupa"></span><input id="cobQ" type="hidden" value="">
             </div>
             <div class="frow">
-              <select id="fAgenteCob" onchange="rCob()" class="nxFsel"><option value="">Todos los agentes</option></select>
+              <select id="fAgenteCob" onchange="rCob()" class="nxFsel"><option value="">Todos los agentes</option></select><span id="fAgenteCobChip"></span>
               <select id="fCobEst" onchange="rCob()" class="nxFsel"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
             <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
@@ -3402,7 +3402,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
                 <span class="nxFcluster-lb">Filtrar por</span>
                 <div class="nxFcluster-row">
                   <select id="pgEmpresa" onchange="rPagos()" class="nxFsel"><option value="">Todas las empresas</option></select>
-                  <select id="pgAgente" onchange="rPagos()" class="nxFsel"><option value="">Todos los agentes</option></select>
+                  <select id="pgAgente" onchange="rPagos()" class="nxFsel"><option value="">Todos los agentes</option></select><span id="pgAgenteChip"></span>
                   <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los métodos</option></select>
                   <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" class="nxFsel"><option value="">Todos los bancos</option></select>
                 </div>
@@ -3457,8 +3457,8 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
             <div class="ch">
               <div><div class="ct">Comisiones por agente</div><div class="ct-s">cálculo automático con retención ITBIS</div></div>
               <div style="display:flex;gap:6px">
-                <select id="comMes" class="nxFsel"></select>
-                <select id="comAnio" class="nxFsel" style="width:68px"></select>
+                <select id="comMes" class="nxFsel"></select><span id="comMesChip"></span>
+                <select id="comAnio" class="nxFsel" style="width:68px"></select><span id="comAnioChip"></span>
                 <button class="btn bsm bc5" onclick="calcularComisiones()"><i class="ti ti-calculator"></i> Calcular</button>
                 <button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
@@ -5405,8 +5405,8 @@ function nxFiltroChipHTML(o){
   const actual=opciones.find(x=>String(x.v)===String(valor))||opciones[0]||{t:'—'};
   return '<div class="nfcWrap" id="nfcW_'+id+'">'
     +'<button type="button" class="nfcBtn" id="nfcBtn_'+id+'" aria-haspopup="listbox" aria-expanded="false" aria-controls="nfcPanel_'+id+'" onclick="nxFiltroChipAbrir(\''+id+'\')">'
-    +'<i class="ti ti-filter" aria-hidden="true"></i><span class="nfcDiv"></span>'
-    +(actual.ico?'<i class="ti '+actual.ico+'" style="font-size:14px;color:'+(actual.color||'inherit')+'" aria-hidden="true"></i>':'')
+    +'<i class="ti '+(o.ico||'ti-filter')+'" aria-hidden="true"></i><span class="nfcDiv"></span>'
+    +(actual.ico?'<i class="ti '+actual.ico+' nfcOico" style="font-size:14px;color:'+(actual.color||'inherit')+'" aria-hidden="true"></i>':'')
     +'<span class="nfcLbl">'+escHtml(actual.t)+'</span>'
     +'<i class="ti ti-chevron-down nfcChev" aria-hidden="true"></i>'
     +'</button></div>';
@@ -5425,7 +5425,7 @@ function nxFiltroChipCSS(){
     +'.nfcDiv{width:1px;align-self:stretch;background:#e2e8f0;margin:0 1px}'
     +'body.tema-premium .nfcDiv{background:#232B3D}'
     +'.nfcLbl{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
-    +'.nfcPanel{position:fixed;z-index:10600;background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e2e8f0);border-radius:12px;box-shadow:0 16px 40px rgba(15,23,42,.22);padding:6px;min-width:220px;max-width:min(300px,92vw);opacity:0;transform:translateY(-6px);pointer-events:none}'
+    +'.nfcPanel{position:fixed;z-index:10600;background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e2e8f0);border-radius:12px;box-shadow:0 16px 40px rgba(15,23,42,.22);padding:6px;min-width:220px;max-width:min(300px,92vw);max-height:min(62vh,420px);overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;transform:translateY(-6px);pointer-events:none}'
     +'.nfcPanel.open{opacity:1;transform:none;pointer-events:auto}'
     +'@media(prefers-reduced-motion:no-preference){.nfcPanel{transition:opacity .26s cubic-bezier(.34,1.56,.64,1),transform .26s cubic-bezier(.34,1.56,.64,1)}'
     +'.nfcPanel.open .nfcOpt{animation:nxFadeUp .3s ease both}}'
@@ -5439,7 +5439,7 @@ function nxFiltroChipCSS(){
     +'.nfcOpt.on .nfcChk{border-color:var(--sf-primary,#2563eb);background:var(--sf-primary,#2563eb);color:#fff}'
     +'.nfcOpt.on .nfcTxt{color:var(--sf-primary-d,#1d4ed8)}'
     +'.nfcOpt:focus-visible{outline:2px solid var(--sf-primary,#2563eb);outline-offset:-2px}'
-    +'@media(max-width:640px){.nfcPanel{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto;max-width:none;transform:translateY(16px);border-radius:16px;padding:10px 6px calc(10px + env(safe-area-inset-bottom))}'
+    +'@media(max-width:640px){.nfcPanel{left:10px!important;right:10px!important;bottom:10px!important;top:auto!important;width:auto;max-width:none;max-height:70vh;transform:translateY(16px);border-radius:16px;padding:10px 6px calc(10px + env(safe-area-inset-bottom))}'
     +'.nfcPanel.open{transform:none}'
     +'.nfcPanel::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--sf-line,#e2e8f0);margin:2px auto 8px}}';
   document.head.appendChild(st);
@@ -5513,17 +5513,80 @@ function nxFiltroChipCerrar(id){
   p.classList.remove('open');
   setTimeout(function(){if(p&&p.parentNode)p.parentNode.removeChild(p);},280);
 }
+// Pone en el boton la etiqueta y el icono de la opcion activa.
+function nxFiltroChipRefrescar(id){
+  const c=window.__nfcReg[id];if(!c)return;
+  const btn=document.getElementById('nfcBtn_'+id);if(!btn)return;
+  const op=c.opciones.find(function(x){return String(x.v)===String(c.valor);})||c.opciones[0]||{t:'—'};
+  const lbl=btn.querySelector('.nfcLbl');if(lbl)lbl.textContent=op.t||'—';
+  let ico=btn.querySelector('.nfcOico');
+  if(op.ico){
+    if(!ico){ico=document.createElement('i');ico.className='ti nfcOico';ico.setAttribute('aria-hidden','true');
+      ico.style.fontSize='14px';if(lbl)btn.insertBefore(ico,lbl);}
+    ico.className='ti '+op.ico+' nfcOico';
+    ico.style.fontSize='14px';ico.style.color=op.color||'inherit';
+  }else if(ico&&ico.parentNode){ico.parentNode.removeChild(ico);}
+}
 function nxFiltroChipElegir(id,btnEl){
   const c=window.__nfcReg[id];if(!c)return;
   const v=btnEl.getAttribute('data-v');
   c.valor=v;
   const p=btnEl.closest('.nfcPanel');
   if(p)p.querySelectorAll('.nfcOpt').forEach(function(b){const on=(b===btnEl);b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  nxFiltroChipRefrescar(id);
   if(typeof c.onelegir==='function'){try{c.onelegir(v);}catch(e){}}
   setTimeout(function(){nxFiltroChipCerrar(id);},150);
 }
 window.nxFiltroChipHTML=nxFiltroChipHTML;window.nxFiltroChipAbrir=nxFiltroChipAbrir;
 window.nxFiltroChipElegir=nxFiltroChipElegir;window.nxFiltroChipCerrar=nxFiltroChipCerrar;
+
+// Convierte un <select> de filtro (mes, año, agente) en el chip flotante de arriba.
+// El <select> real NO se elimina: queda oculto y sigue siendo la ÚNICA fuente de
+// verdad, así que rFact()/rCob()/rCli()/rPagos() leen su .value exactamente igual
+// que antes — cero cambios en el filtrado. Las opciones del chip se generan desde
+// las PROPIAS <option> del select, así se mantienen al día solas con quien sea que
+// lo llene (llenarFiltroAgentes, initMesSel, la consulta de Pagos...).
+function nxFiltroSel(selId,contId,o){
+  o=o||{};
+  const sel=document.getElementById(selId),cont=document.getElementById(contId);
+  if(!sel||!cont||typeof nxFiltroChipHTML!=='function')return;
+  const ops=Array.from(sel.options).map(op=>{
+    const v=op.value,txt=(op.textContent||'').trim();
+    return {v:v,t:(v===''&&o.todos)?o.todos:txt,
+      ico:(o.iconos&&o.iconos[v])||(v===''?(o.icoTodos||o.icono):o.icono),
+      color:(o.colores&&o.colores[v])||o.color};
+  });
+  if(!ops.length){sel.style.display='';cont.innerHTML='';return;}
+  sel.style.display='none';
+  cont.innerHTML=nxFiltroChipHTML({
+    id:contId, titulo:o.titulo||'Filtro', ico:o.ico, value:sel.value, opciones:ops,
+    onelegir:function(v){
+      const s=document.getElementById(selId);if(!s)return;
+      s.value=v;
+      s.dispatchEvent(new Event('change')); // dispara el onchange que ya tenía
+    }
+  });
+}
+window.nxFiltroSel=nxFiltroSel;
+
+// Los filtros de MES / AÑO / AGENTE de cada pantalla, como chip flotante.
+// Se llaman al final del render de su pantalla, DESPUES de que el select ya
+// quedo lleno (initMesSel / llenarFiltroAgentes / la consulta de Pagos).
+const FILTRO_MES={ico:'ti-calendar-month',titulo:'Mes'};
+const FILTRO_ANIO={ico:'ti-calendar',titulo:'Ano'};
+const FILTRO_AGT={ico:'ti-user-check',titulo:'Agente',icono:'ti-user',icoTodos:'ti-users'};
+function pintarFiltrosFact(){
+  try{nxFiltroSel('fMes','fMesChip',FILTRO_MES);
+      nxFiltroSel('fAnio','fAnioChip',FILTRO_ANIO);
+      nxFiltroSel('fAgenteFact','fAgenteFactChip',FILTRO_AGT);}catch(e){console.error(e);}
+}
+function pintarFiltrosCob(){try{nxFiltroSel('fAgenteCob','fAgenteCobChip',FILTRO_AGT);}catch(e){console.error(e);}}
+function pintarFiltrosCli(){try{nxFiltroSel('fAgenteCli','fAgenteCliChip',FILTRO_AGT);}catch(e){console.error(e);}}
+function pintarFiltrosPagos(){try{nxFiltroSel('pgAgente','pgAgenteChip',FILTRO_AGT);}catch(e){console.error(e);}}
+function pintarFiltrosCom(){
+  try{nxFiltroSel('comMes','comMesChip',FILTRO_MES);
+      nxFiltroSel('comAnio','comAnioChip',FILTRO_ANIO);}catch(e){console.error(e);}
+}
 
 // Recalcula los saldos contables desde los asientos REALES guardados.
 // Los saldos NO son números fijos: se construyen sumando cada asiento.
@@ -6410,7 +6473,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.75';
+const APP_VERSION='57.76';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9100,6 +9163,7 @@ function rCli(){
   if(!_cliVistaLista){_cliVista=nxPref('cli_vista','lista');_cliVistaLista=true;}
   llenarFiltroAgentes('fAgenteCli');
   pintarLupaCli();
+  pintarFiltrosCli();
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
@@ -9788,6 +9852,7 @@ function rFact(){
   llenarFiltroAgentes('fAgenteFact');
   pintarLupaFact();
   pintarFiltroEstadoFact();
+  pintarFiltrosFact();
   const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
   const anio=parseInt(document.getElementById('fAnio')?.value||mesCorte().anio);
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
@@ -10333,6 +10398,7 @@ function rCob(){
   pintarLupaCob();
   _nxCobCSS();
   llenarFiltroAgentes('fAgenteCob');
+  pintarFiltrosCob();
   const tb=document.getElementById('tbCob');
   const q=(document.getElementById('cobQ')?.value||'').toLowerCase();
   const fa=document.getElementById('fAgenteCob')?.value||'';
@@ -11105,6 +11171,7 @@ async function rPagos(){
   if(selAgt&&selAgt.options.length<=1){
     ST.agentes.forEach(a=>{selAgt.innerHTML+=`<option value="${a.id}">${a.nom}</option>`;});
   }
+  pintarFiltrosPagos();
   // Método/Banco: opciones reales según lo que trajo esta consulta (no una lista inventada)
   const selMet=document.getElementById('pgMetodo'),selBco=document.getElementById('pgBanco');
   if(selMet){const cur=selMet.value;const metodos=[...new Set(_pagosCache.map(p=>p.metodo).filter(Boolean))].sort();selMet.innerHTML='<option value="">Todos los métodos</option>'+metodos.map(m=>`<option value="${m}">${m}</option>`).join('');selMet.value=cur;}
@@ -11977,6 +12044,7 @@ function initComSel(){
   if(!sm||!sa)return;
   const now=new Date();
   if(!sm.children.length){sm.innerHTML=MESES.map((m,i)=>`<option value="${i+1}"${i===now.getMonth()?' selected':''}>${m}</option>`).join('');[now.getFullYear()-1,now.getFullYear()].forEach(a=>{sa.innerHTML+=`<option value="${a}"${a===now.getFullYear()?' selected':''}>${a}</option>`;});}
+  pintarFiltrosCom();
 }
 
 async function calcularComisiones(){
