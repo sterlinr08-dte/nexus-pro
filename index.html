@@ -521,16 +521,51 @@ body.tema-premium #mAbono .fr input:focus{
    verdad, así todo lo que ya lee su .value sigue funcionando igual. */
 #mAbono .nxOptGrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
 #mAbono .nxOptChip{
-  flex:1 1 calc(50% - 4px);min-width:0;display:flex;align-items:center;gap:9px;
+  position:relative;flex:1 1 calc(50% - 4px);min-width:0;display:flex;align-items:center;gap:9px;
   padding:10px 11px;border-radius:14px;border:none;cursor:pointer;text-align:left;
   background:var(--nm-bg);color:var(--nm-tx2);font-family:inherit;font-size:12px;font-weight:700;
   box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi);
   transition:box-shadow .18s ease,color .18s ease,transform .12s ease;
 }
 #mAbono .nxOptChip:active{transform:translateY(1px)}
-#mAbono .nxOptChip.on{
-  color:var(--nm-tx);
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi),0 0 0 2px var(--chip-c,var(--nm-accent));
+/* BLINDAJE — parches-seguros.js inyecta un tema global con
+   ".btn,button,.bsm,.bxl{border:...;box-shadow:... !important}" sobre el TAG
+   <button>. Sin igualar el !important aqui, ese estilo se comia el aro del chip
+   elegido: se seleccionaba de verdad (la clase .on si entraba) pero NO SE VEIA,
+   asi que parecia que el boton no respondia. Mismo choque ya cerrado en el
+   login (#loginScreen .lbtn) y en los campos de este mismo modal. */
+#mAbono .nxOptGrid .nxOptChip{
+  border:2px solid transparent !important;border-radius:14px !important;
+  box-shadow:4px 4px 9px var(--nm-lo),-4px -4px 9px var(--nm-hi) !important;
+}
+#mAbono .nxOptGrid .nxOptChip.on{
+  color:var(--nm-tx);border-color:var(--chip-c,var(--nm-accent)) !important;
+  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
+}
+/* palomita del chip elegido (dibujada en CSS, no depende de la fuente de iconos) */
+#mAbono .nxOptOk{
+  position:absolute;top:7px;right:8px;width:17px;height:17px;border-radius:50%;
+  background:var(--chip-c,var(--nm-accent));opacity:0;transform:scale(.3);
+  transition:opacity .16s ease,transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+#mAbono .nxOptOk::after{
+  content:"";position:absolute;left:5.5px;top:3px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+}
+#mAbono .nxOptChip.on .nxOptOk{opacity:1;transform:scale(1)}
+/* animacion al ELEGIR (clase .pick, se pone y se quita en nxOptChipPick) —
+   no va en .on para que no se repita sola cada vez que la lista se repinta */
+#mAbono .nxOptChip.pick{animation:nxChipPop .34s cubic-bezier(.34,1.56,.64,1)}
+#mAbono .nxOptChip.pick::after{
+  content:"";position:absolute;inset:-3px;border-radius:17px;pointer-events:none;
+  border:2px solid var(--chip-c,var(--nm-accent));animation:nxChipRing .5s ease-out;
+}
+@keyframes nxChipPop{0%{transform:scale(1)}45%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes nxChipRing{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}
+@media(prefers-reduced-motion:reduce){
+  #mAbono .nxOptChip.pick{animation:none}
+  #mAbono .nxOptChip.pick::after{animation:none;opacity:0}
+  #mAbono .nxOptOk{transition:none}
 }
 #mAbono .nxOptChip:focus-visible{outline:2px solid var(--chip-c,var(--nm-accent));outline-offset:2px}
 #mAbono .nxOptIco{
@@ -6409,7 +6444,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.72';
+const APP_VERSION='57.73';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10747,14 +10782,18 @@ function nxOptChips(selId,contId,opts){
     return '<button type="button" class="nxOptChip'+(on?' on':'')+'" style="--chip-c:'+colorDe(txt)+'"'
       +' data-v="'+escHtml(v)+'" aria-pressed="'+on+'" aria-label="'+escHtml(txt)+'"'
       +' onclick="nxOptChipPick(\''+selId+'\',\''+contId+'\',this)">'
-      +'<span class="nxOptIco">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span></button>';
+      +'<span class="nxOptIco">'+ico+'</span><span class="nxOptTxt">'+escHtml(txt)+'</span>'
+      +'<span class="nxOptOk"></span></button>';
   }).join('');
 }
 function nxOptChipPick(selId,contId,el){
   const sel=document.getElementById(selId);if(!sel)return;
   sel.value=el.dataset.v;
   const cont=document.getElementById(contId);
-  if(cont)cont.querySelectorAll('.nxOptChip').forEach(c=>{const on=c===el;c.classList.toggle('on',on);c.setAttribute('aria-pressed',on);});
+  if(cont)cont.querySelectorAll('.nxOptChip').forEach(c=>{const on=c===el;c.classList.toggle('on',on);c.setAttribute('aria-pressed',on);if(!on)c.classList.remove('pick');});
+  // animacion de seleccion: solo al elegir a mano, nunca al repintar la lista
+  el.classList.remove('pick');void el.offsetWidth;el.classList.add('pick');
+  el.addEventListener('animationend',function q(){el.classList.remove('pick');el.removeEventListener('animationend',q);});
   sel.dispatchEvent(new Event('change'));
 }
 function nxAboMetodo(el){

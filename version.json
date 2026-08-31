@@ -1,7 +1,12 @@
 {
-  "version": "57.72",
+  "version": "57.73",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.73",
+      "fecha": "2026-08-31",
+      "texto": "ARREGLADO: los botones de Banco y de cuenta SÍ se estaban seleccionando, pero no se notaba — un estilo general del sistema que se aplica a todos los botones estaba borrando el aro del elegido, así que parecía que no respondían. Ahora el elegido se ve claro: borde de su color, se hunde como un botón pulsado y le sale una palomita ✓ en la esquina. NUEVO: al tocarlo hace una animación de selección (un salto corto y un aro que se expande). La animación solo corre cuando TÚ eliges, no cuando la lista se vuelve a dibujar sola, y se apaga si tienes activado \"reducir movimiento\" en el teléfono."
+    },
     {
       "v": "57.72",
       "fecha": "2026-08-31",
