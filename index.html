@@ -6521,7 +6521,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.79';
+const APP_VERSION='57.80';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13822,7 +13822,12 @@ window.nxReciboAnimado=function(datos,acciones){
     <div class="nxRA-acts">${accHTML}<button type="button" class="nxRA-btn ghost" data-close="1"><i class="ti ti-x"></i> Cerrar</button></div>`;
   document.body.appendChild(ov);
   ov.querySelectorAll('.nxRA-btn[data-i]').forEach(btn=>{
-    btn.onclick=function(){const i=Number(btn.getAttribute('data-i'));const a=(acciones||[])[i];if(a&&typeof a.onclick==='function')a.onclick();};
+    // La tarjeta se retira ANTES de correr la accion: su overlay es z-index 99999 y
+    // varias acciones abren un modal normal (.overlay, z-index 100) — sin esto el
+    // recibo/prefactura se abria DETRAS de la tarjeta y para el usuario "no pasaba nada".
+    // El remove() es sincrono dentro del mismo handler de clic, asi que las acciones que
+    // usan window.open siguen contando como gesto del usuario (no las bloquea el navegador).
+    btn.onclick=function(){const i=Number(btn.getAttribute('data-i'));const a=(acciones||[])[i];ov.remove();if(a&&typeof a.onclick==='function')a.onclick();};
   });
   const btnClose=ov.querySelector('[data-close="1"]');if(btnClose)btnClose.onclick=()=>ov.remove();
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});

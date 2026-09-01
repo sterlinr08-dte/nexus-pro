@@ -1,7 +1,12 @@
 {
-  "version": "57.79",
+  "version": "57.80",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.80",
+      "t": "ARREGLADO: tocar \"Ver / compartir recibo\" no hacia nada",
+      "d": "Despues de registrar un cobro sale la tarjeta con el comprobante (ABONO REGISTRADO, con su codigo de barras). Al tocar \"Ver / compartir recibo\" el recibo SI se abria, pero quedaba DEBAJO de esa tarjeta y no se veia — para ti era como si el boton no respondiera. Ahora la tarjeta se retira sola al tocar cualquiera de sus botones, y el recibo aparece de una. El mismo arreglo cubre los otros lugares donde sale esa tarjeta: el pago a deuda anterior en Seguros, el pago de un prestamo en Financiamiento, y en el POS al cobrar una venta o guardar una prefactura (ahi \"Ver prefactura\" tenia exactamente el mismo problema)."
+    },
     {
       "v": "57.79",
       "t": "NUEVO: los botones de filtro ahora se ven en relieve, como una tecla que se puede tocar",
