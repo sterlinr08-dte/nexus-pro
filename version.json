@@ -1,7 +1,12 @@
 {
-  "version": "57.76",
+  "version": "57.77",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.77",
+      "t": "ARREGLADO: en la computadora, los filtros de Clientes se veian disparejos",
+      "d": "En Clientes, PLAN y ESTADO seguian siendo listas desplegables viejas: se estiraban casi 300px cada una (quedaban enormes y medio vacias) al lado de AGENTE, que ya era una pastilla chiquita, y las tres tenian alturas distintas. Ahora los tres filtros son la misma pastilla, del mismo alto y del ancho de su propio texto, asi la fila se ve pareja. En Facturas la lupa de buscar estaba sola en su propio renglon, como un circulo suelto; ahora va en la misma fila que MES, ANO y el estado. Solo cambio como se ven: filtran exactamente igual que antes."
+    },
     {
       "v": "57.76",
       "txt": "NUEVO — Los filtros de MES, ANO y AGENTE ya no son el desplegable gris del iPhone: ahora son un boton compacto que dice lo que esta filtrado (\"Agosto\", \"Robinson Garcia\") y al tocarlo abre una lista comoda desde abajo, con un visto en la opcion activa. Aplicado en Facturas (mes, ano y agente), Cobros, Clientes, Historial de pagos y Comisiones (mes y ano). ARREGLADO (importante) — En Facturas, cambiar el MES o el ANO no refrescaba la lista: habia que tocar otro filtro para que se actualizara. Ahora la lista se actualiza sola al elegir el mes."

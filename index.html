@@ -3246,8 +3246,8 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
                    El input sigue existiendo OCULTO para que rCli()/rCliBuscar() lean el
                    término exactamente igual que antes (cero cambios en el filtrado). -->
               <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
-              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
-              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
+              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select><span id="fPlanChip"></span>
+              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select><span id="fEstChip"></span>
               <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0"><option value="">Agente</option></select><span id="fAgenteCliChip"></span>
               <select id="cliOrden" onchange="ordenarCli(this.value)" class="nxFsel" title="Ordenar por">
                 <option value="">Ordenar: por defecto</option>
@@ -3319,8 +3319,9 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
             </div>
             <!-- NPGS §5: solo la lupa; la ventana la arma nxBuscaFiltroHTML. El input sigue
                  existiendo OCULTO para que rFact() lea el término igual que siempre. -->
-            <div style="margin-bottom:6px"><span id="factQLupa"></span><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
+            <div style="margin-bottom:6px"><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+              <span id="factQLupa"></span>
               <select id="fMes" class="nxFsel" onchange="rFact()"></select><span id="fMesChip"></span>
               <select id="fAnio" class="nxFsel" style="width:80px" onchange="rFact()"></select><span id="fAnioChip"></span>
               <!-- Filtro flotante animado: el <select> real sigue siendo la única fuente de
@@ -5575,13 +5576,22 @@ window.nxFiltroSel=nxFiltroSel;
 const FILTRO_MES={ico:'ti-calendar-month',titulo:'Mes'};
 const FILTRO_ANIO={ico:'ti-calendar',titulo:'Ano'};
 const FILTRO_AGT={ico:'ti-user-check',titulo:'Agente',icono:'ti-user',icoTodos:'ti-users'};
+const FILTRO_PLAN={ico:'ti-shield-check',titulo:'Plan',icoTodos:'ti-shield',
+  iconos:{'Básico':'ti-shield','Superior':'ti-shield-half-filled','Esencial Plus':'ti-shield-star'}};
+const FILTRO_ESTCLI={ico:'ti-circle-dot',titulo:'Estado',icoTodos:'ti-list',
+  iconos:{'Al día':'ti-circle-check','Pendiente':'ti-clock','Inhabilitado':'ti-user-off'},
+  colores:{'Al día':'#16a34a','Pendiente':'#ea580c','Inhabilitado':'#dc2626'}};
 function pintarFiltrosFact(){
   try{nxFiltroSel('fMes','fMesChip',FILTRO_MES);
       nxFiltroSel('fAnio','fAnioChip',FILTRO_ANIO);
       nxFiltroSel('fAgenteFact','fAgenteFactChip',FILTRO_AGT);}catch(e){console.error(e);}
 }
 function pintarFiltrosCob(){try{nxFiltroSel('fAgenteCob','fAgenteCobChip',FILTRO_AGT);}catch(e){console.error(e);}}
-function pintarFiltrosCli(){try{nxFiltroSel('fAgenteCli','fAgenteCliChip',FILTRO_AGT);}catch(e){console.error(e);}}
+function pintarFiltrosCli(){
+  try{nxFiltroSel('fPlan','fPlanChip',FILTRO_PLAN);
+      nxFiltroSel('fEst','fEstChip',FILTRO_ESTCLI);
+      nxFiltroSel('fAgenteCli','fAgenteCliChip',FILTRO_AGT);}catch(e){console.error(e);}
+}
 function pintarFiltrosPagos(){try{nxFiltroSel('pgAgente','pgAgenteChip',FILTRO_AGT);}catch(e){console.error(e);}}
 function pintarFiltrosCom(){
   try{nxFiltroSel('comMes','comMesChip',FILTRO_MES);
@@ -6473,7 +6483,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.76';
+const APP_VERSION='57.77';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
