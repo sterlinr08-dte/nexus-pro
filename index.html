@@ -5431,10 +5431,14 @@ function nxFiltroChipCSS(){
   if(document.getElementById('nfcCSS'))return;
   const st=document.createElement('style');st.id='nfcCSS';
   st.textContent='.nfcWrap{display:inline-flex;position:relative}'
-    +'.nfcBtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:box-shadow .15s,border-color .15s}'
-    +'body.tema-premium .nfcBtn{background:#121826;border-color:#232B3D;color:#F1F5F9}'
-    +'.nfcBtn:hover{border-color:#cbd5e1}'
-    +'.nfcBtn[aria-expanded="true"]{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.16)}'
+    +'.nfcBtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border:1.5px solid #334155;border-radius:10px;background:linear-gradient(180deg,#ffffff,#f1f5f9);color:#1e293b;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 1px 0 rgba(15,23,42,.05),0 2px 5px rgba(15,23,42,.10);transition:box-shadow .16s,border-color .16s,background .16s}'
+    +'body.tema-premium .nfcBtn{background:linear-gradient(180deg,#1a2233,#121826);border-color:#0B0F19;color:#F1F5F9;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 0 rgba(0,0,0,.5),0 3px 7px rgba(0,0,0,.45)}'
+    +'.nfcBtn:hover{border-color:#1e293b;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 2px 0 rgba(15,23,42,.05),0 5px 11px rgba(15,23,42,.15)}'
+    +'body.tema-premium .nfcBtn:hover{border-color:#000;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 0 rgba(0,0,0,.5),0 6px 13px rgba(0,0,0,.55)}'
+    +'.nfcBtn:active{background:linear-gradient(180deg,#e8edf4,#f1f5f9);box-shadow:inset 0 2px 4px rgba(15,23,42,.16)}'
+    +'body.tema-premium .nfcBtn:active{background:linear-gradient(180deg,#0F1420,#151c2c);box-shadow:inset 0 2px 5px rgba(0,0,0,.55)}'
+    +'.nfcBtn[aria-expanded="true"]{border-color:#8b5cf6;background:linear-gradient(180deg,#f4f1ff,#faf9ff);box-shadow:inset 0 2px 5px rgba(15,23,42,.12),0 0 0 3px rgba(139,92,246,.18)}'
+    +'body.tema-premium .nfcBtn[aria-expanded="true"]{border-color:#8b5cf6;background:linear-gradient(180deg,#171429,#12101f);box-shadow:inset 0 2px 5px rgba(0,0,0,.5),0 0 0 3px rgba(139,92,246,.22)}'
     +'.nfcBtn>i{font-size:14px;color:#64748b;flex-shrink:0}'
     +'.nfcBtn .nfcChev{font-size:11px;margin-left:1px;transition:transform .18s}'
     +'.nfcBtn[aria-expanded="true"] .nfcChev{transform:rotate(180deg)}'
@@ -6517,7 +6521,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.78';
+const APP_VERSION='57.79';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -1,7 +1,12 @@
 {
-  "version": "57.78",
+  "version": "57.79",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.79",
+      "t": "NUEVO: los botones de filtro ahora se ven en relieve, como una tecla que se puede tocar",
+      "d": "Los filtros de Clientes, Facturas, Cobros, Pagos y Comisiones (Plan, Estado, Agente, Mes, Ano) tomaron el efecto de la imagen que mandaste: el boton queda levantado del fondo, con un contorno oscuro que lo marca bien y una sombra suave por debajo, en vez de verse plano. Al tocarlo se hunde, y mientras la lista esta abierta se queda hundido con su borde morado, asi se ve de un vistazo cual filtro estas usando. Funciona igual en tema claro y en tema oscuro. Es solo la apariencia del boton: los filtros siguen filtrando exactamente igual que antes."
+    },
     {
       "v": "57.78",
       "t": "ARREGLADO (importante): el sistema te sacaba y tenias que volver a escribir la contrasena",
