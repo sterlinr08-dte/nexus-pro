@@ -1,7 +1,12 @@
 {
-  "version": "57.77",
+  "version": "57.78",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "57.78",
+      "t": "ARREGLADO (importante): el sistema te sacaba y tenias que volver a escribir la contrasena",
+      "d": "Se encontro la causa real: el sistema se cerraba solo a los 30 minutos sin tocar la pantalla y, al hacerlo, borraba la llave que sirve justo para volver a entrar sin contrasena. O sea, la casilla \"Recordarme\" quedaba anulada por el propio cierre automatico. Solo en agosto eso paso 33 veces. Tres cambios: (1) si marcas \"Recordarme\", el sistema YA NO se cierra solo por inactividad, que es exactamente lo que esa casilla promete; sin marcarla sigue cerrandose a los 30 minutos, para equipos compartidos. (2) Deslizar y tocar la pantalla ahora cuentan como que estas usando el sistema: antes solo contaba un clic o el teclado, asi que en el celular podias estar leyendo una lista de clientes 30 minutos y te sacaba igual. (3) Si al abrir la app no hay internet o el servidor esta caido, ya NO te saca: reintenta 3 veces y te deja adentro, en vez de cobrarte la contrasena por un bache de senal. Solo te pide la contrasena cuando la sesion de verdad ya vencio. IMPORTANTE: marca la casilla \"Recordarme\" una sola vez al entrar y no tendras que volver a escribirla."
+    },
     {
       "v": "57.77",
       "t": "ARREGLADO: en la computadora, los filtros de Clientes se veian disparejos",

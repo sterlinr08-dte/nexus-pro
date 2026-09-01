@@ -4667,9 +4667,24 @@ async function cargarAuditoriaSupabase(){
 }
 
 // ── Timeout de sesión (30 min inactividad) ───────────────────────────────────
-let _idleT;
-function resetIdle(){clearTimeout(_idleT);_idleT=setTimeout(()=>{if(sesion){try{logAudit('SESION_EXPIRADA','Sesión cerrada por 30 min de inactividad','Seguridad');}catch(e){}toast('warn','Sesión expirada','Inactividad de 30 minutos');setTimeout(()=>logout(true),3000);}},30*60*1000);}
-document.addEventListener('click',resetIdle);document.addEventListener('keydown',resetIdle);
+let _idleT,_idleLast=0;
+// "Recordarme" activo = el dueño pidió expresamente NO tener que volver a entrar.
+// Cerrarle la sesión sola a los 30 minutos contradice eso, así que el cierre por
+// inactividad queda SOLO para cuando NO se marcó "Recordarme" (equipo compartido).
+function nxRecordado(){try{return !!localStorage.getItem('nx_sesion_persist');}catch(e){return false;}}
+function resetIdle(){
+  const t=Date.now();if(t-_idleLast<5000)return;_idleLast=t; // no hace falta reiniciar el contador 60 veces por segundo al deslizar
+  clearTimeout(_idleT);
+  if(nxRecordado())return;
+  _idleT=setTimeout(()=>{if(sesion){try{logAudit('SESION_EXPIRADA','Sesión cerrada por 30 min de inactividad','Seguridad');}catch(e){}toast('warn','Sesión expirada','Inactividad de 30 minutos');setTimeout(()=>logout(true),3000);}},30*60*1000);
+}
+// El contador se reinicia con CUALQUIER señal de uso real, no solo click/teclado:
+// en el celular, leer una lista larga es 'scroll'/'touchstart' y NUNCA un click —
+// antes eso no contaba como actividad y la sesión se cerraba a media lectura.
+['click','keydown','touchstart','pointerdown','scroll','wheel'].forEach(function(ev){
+  document.addEventListener(ev,resetIdle,{passive:true,capture:true});
+});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)resetIdle();});
 
 // ── Limpieza global del "pop-in" de modales (.overlay.open .modal, nxPopIn) ──
 // La animación termina en transform:none, pero con fill-mode "both" el navegador
@@ -5780,14 +5795,29 @@ function nxUpdateAuthToggle(){try{const a=document.getElementById('authToggleLin
 
 // Persistencia + renovación del token (para que la sesión sobreviva recargas y no caduque)
 function nxStoreAuth(data){try{const exp=Date.now()+(((data&&data.expires_in)||3600)*1000);localStorage.setItem('nx_auth_session',JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_at:exp}));API.token=data.access_token;}catch(e){}}
-async function nxRefreshAuth(){
-  try{
-    const raw=localStorage.getItem('nx_auth_session');if(!raw)return false;
-    const sess=JSON.parse(raw);if(!sess.refresh_token)return false;
-    const r=await fetch(API.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':API.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sess.refresh_token})});
-    if(!r.ok)return false;
-    nxStoreAuth(await r.json());return true;
-  }catch(e){return false;}
+// Devuelve TRES resultados distintos, no un sí/no:
+//   true   = renovada
+//   'auth' = el token ya no sirve de verdad (hay que volver a entrar)
+//   'red'  = no se pudo por RED (sin señal, servidor caído, límite de peticiones)
+// La diferencia importa: antes CUALQUIER fallo se trataba como "cerrar sesión",
+// así que un bache de señal en el celular costaba escribir la contraseña otra vez.
+async function nxRefreshAuth(intentos){
+  let raw,sess;
+  try{raw=localStorage.getItem('nx_auth_session');}catch(e){return 'auth';}
+  if(!raw)return 'auth';
+  try{sess=JSON.parse(raw);}catch(e){return 'auth';}
+  if(!sess||!sess.refresh_token)return 'auth';
+  const max=(typeof intentos==='number'&&intentos>0)?intentos:3;
+  for(let i=0;i<max;i++){
+    try{
+      const r=await fetch(API.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':API.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sess.refresh_token})});
+      if(r.ok){nxStoreAuth(await r.json());return true;}
+      if(r.status===400||r.status===401||r.status===403)return 'auth'; // rechazo real del token
+      // 429 / 5xx: el servidor está ocupado o caído — se reintenta
+    }catch(e){/* sin conexión — se reintenta */}
+    if(i<max-1)await new Promise(function(res){setTimeout(res,800*(i+1));});
+  }
+  return 'red';
 }
 let _nxRefreshTimer=null;
 function nxScheduleRefresh(){try{if(_nxRefreshTimer)clearInterval(_nxRefreshTimer);_nxRefreshTimer=setInterval(()=>{nxRefreshAuth();},45*60*1000);}catch(e){}}
@@ -6056,7 +6086,11 @@ function logout(forzado){
       localStorage.removeItem('nx_sesion_persist');
       localStorage.removeItem('nx_user_persist');
     }
-    try{nxClearAuth();}catch(e){}
+    // En un cierre FORZADO con "Recordarme" activo NO se borra el token de
+    // renovación: sin él, la sesión recordada que la rama de arriba acaba de
+    // conservar no se puede renovar al reabrir la app, y el sistema termina
+    // pidiendo la contraseña igual — justo lo que se quería evitar.
+    try{if(forzado&&nxRecordado()){if(_nxRefreshTimer)clearInterval(_nxRefreshTimer);}else{nxClearAuth();}}catch(e){}
     location.reload();
   }
 }
@@ -6483,7 +6517,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.77';
+const APP_VERSION='57.78';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13398,9 +13432,21 @@ window.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('sbRol').textContent = (sesion.rol||'agente').toUpperCase()+'::'+((CFG.empNom||'NEXUS').split(' ')[0].toUpperCase());
       try{activarMayusculasGlobales();}catch(e){}
       if(nxAuthMode()){
-        nxRefreshAuth().then(ok=>{
-          if(ok){ nxScheduleRefresh(); cargarTodo(); }
-          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; try{nxUpdateAuthToggle();}catch(e){} nxPrellenarRecordado(); }
+        nxRefreshAuth().then(res=>{
+          if(res===true){ nxScheduleRefresh(); cargarTodo(); return; }
+          if(res==='red'){
+            // No se pudo renovar por RED, no porque la sesión sea inválida: se
+            // mantiene la sesión abierta y se sigue reintentando en segundo plano.
+            // Cerrarla aquí sería cobrarle la contraseña por un bache de internet.
+            try{toast('warn','Sin conexión','No se pudo renovar la sesión. Reintentando…');}catch(e){}
+            nxScheduleRefresh(); cargarTodo(); return;
+          }
+          // res==='auth': el token de verdad ya no sirve — aquí sí toca volver a entrar.
+          sessionStorage.removeItem('nx_sesion');
+          try{localStorage.removeItem('nx_sesion_persist');}catch(e){}
+          const a=document.getElementById('app'); if(a)a.style.display='none';
+          const l=document.getElementById('loginScreen'); if(l)l.style.display='flex';
+          try{nxUpdateAuthToggle();}catch(e){} nxPrellenarRecordado();
         });
         return;
       }
