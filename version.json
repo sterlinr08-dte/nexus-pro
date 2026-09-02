@@ -1,7 +1,15 @@
 {
-  "version": "57.80",
+  "version": "57.81",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.81",
+      "fecha": "2026-09-02",
+      "notas": [
+        "NUEVO: los filtros de las pantallas de Seguros (plan, estado, mes, agente) ahora se ven como pastillas de cristal: forma ovalada completa, borde oscuro marcado y un brillo alrededor que las hace verse levantadas, con el fondo translucido dejando pasar lo que hay detras. Se ve en tema claro y en tema oscuro.",
+        "ARREGLADO: el diseño anterior de esas mismas pastillas (version 57.79) NO se estaba viendo en la app — el tema general del sistema le pisaba el borde, las esquinas y la sombra. Ya quedo corregido para que el diseño de los filtros mande sobre el tema."
+      ]
+    },
     {
       "v": "57.80",
       "t": "ARREGLADO: tocar \"Ver / compartir recibo\" no hacia nada",
