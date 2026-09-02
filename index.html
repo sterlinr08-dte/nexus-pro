@@ -5431,10 +5431,15 @@ function nxFiltroChipCSS(){
   if(document.getElementById('nfcCSS'))return;
   const st=document.createElement('style');st.id='nfcCSS';
   st.textContent='.nfcWrap{display:inline-flex;position:relative}'
-    +'.nfcBtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 15px;border:1px solid rgba(255,255,255,.60)!important;border-radius:999px!important;background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.16) 42%,rgba(255,255,255,.06) 60%,rgba(255,255,255,.28) 100%)!important;backdrop-filter:blur(18px) saturate(210%);-webkit-backdrop-filter:blur(18px) saturate(210%);color:#0f172a;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -2px 3px rgba(255,255,255,.45),inset 0 0 12px rgba(255,255,255,.25),0 6px 18px rgba(15,23,42,.20)!important;transition:box-shadow .18s,border-color .18s,background .18s}'
-    +'body.tema-premium .nfcBtn{border-color:rgba(255,255,255,.14)!important;background:linear-gradient(180deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.04) 42%,rgba(0,0,0,.10) 60%,rgba(255,255,255,.07) 100%)!important;color:#F1F5F9;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.35),inset 0 -2px 3px rgba(255,255,255,.10),inset 0 0 12px rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.55)!important}'
-    +'.nfcBtn:hover{border-color:rgba(255,255,255,.85)!important;box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -2px 4px rgba(255,255,255,.55),inset 0 0 16px rgba(255,255,255,.35),0 10px 26px rgba(15,23,42,.24)!important}'
-    +'body.tema-premium .nfcBtn:hover{border-color:rgba(255,255,255,.28)!important;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -2px 4px rgba(255,255,255,.14),inset 0 0 16px rgba(255,255,255,.10),0 10px 26px rgba(0,0,0,.62)!important}'
+    // B - franja de color detras de la fila de filtros: le da al cristal algo que dejar
+    // pasar. La clase la pone nxFiltroSel/pintarFiltroEstadoFact sobre el padre REAL del
+    // chip; no se usa :has() para no depender del soporte del navegador.
+    +'.nfcRow{padding:7px 9px;border-radius:13px;background:linear-gradient(110deg,rgba(99,102,241,.26),rgba(56,189,248,.20) 45%,rgba(167,139,250,.24));box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}'
+    +'body.tema-premium .nfcRow{background:linear-gradient(110deg,rgba(99,102,241,.20),rgba(56,189,248,.13) 45%,rgba(167,139,250,.18));box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}'
+    +'.nfcBtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 15px;border:1px solid rgba(255,255,255,.90)!important;border-radius:999px!important;background:linear-gradient(180deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.30) 38%,rgba(226,238,255,.20) 58%,rgba(255,255,255,.58) 100%)!important;backdrop-filter:blur(18px) saturate(210%);-webkit-backdrop-filter:blur(18px) saturate(210%);color:#0f172a;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,1),inset 0 -3px 5px rgba(140,170,220,.35),inset 2px 0 6px rgba(255,255,255,.85),inset -2px 0 6px rgba(255,255,255,.85),0 4px 10px rgba(15,23,42,.16),0 10px 26px rgba(15,23,42,.14)!important;transition:box-shadow .18s,border-color .18s,background .18s}'
+    +'body.tema-premium .nfcBtn{border-color:rgba(255,255,255,.30)!important;background:linear-gradient(180deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.05) 38%,rgba(0,0,0,.12) 58%,rgba(255,255,255,.10) 100%)!important;color:#F1F5F9;box-shadow:inset 0 2px 0 rgba(255,255,255,.45),inset 0 -3px 5px rgba(0,0,0,.35),inset 2px 0 6px rgba(255,255,255,.14),inset -2px 0 6px rgba(255,255,255,.14),0 4px 10px rgba(0,0,0,.45),0 10px 26px rgba(0,0,0,.50)!important}'
+    +'.nfcBtn:hover{border-color:#fff!important;box-shadow:inset 0 2px 0 rgba(255,255,255,1),inset 0 -3px 6px rgba(140,170,220,.45),inset 2px 0 8px rgba(255,255,255,1),inset -2px 0 8px rgba(255,255,255,1),0 6px 14px rgba(15,23,42,.20),0 14px 32px rgba(15,23,42,.18)!important}'
+    +'body.tema-premium .nfcBtn:hover{border-color:rgba(255,255,255,.45)!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.40),inset 2px 0 8px rgba(255,255,255,.20),inset -2px 0 8px rgba(255,255,255,.20),0 6px 14px rgba(0,0,0,.50),0 14px 32px rgba(0,0,0,.58)!important}'
     +'.nfcBtn:active{background:linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.20) 100%)!important;box-shadow:inset 0 2px 6px rgba(15,23,42,.18),inset 0 1px 0 rgba(255,255,255,.50)!important}'
     +'body.tema-premium .nfcBtn:active{background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,.16) 50%,rgba(255,255,255,.05) 100%)!important;box-shadow:inset 0 2px 7px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.14)!important}'
     +'.nfcBtn[aria-expanded="true"]{border-color:rgba(139,92,246,.75)!important;background:linear-gradient(180deg,rgba(245,243,255,.72) 0%,rgba(237,233,254,.22) 45%,rgba(243,240,255,.34) 100%)!important;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 14px rgba(139,92,246,.14),0 0 0 3px rgba(139,92,246,.20),0 8px 20px rgba(109,40,217,.20)!important}'
@@ -5578,6 +5583,7 @@ function nxFiltroSel(selId,contId,o){
   });
   if(!ops.length){sel.style.display='';cont.innerHTML='';return;}
   sel.style.display='none';
+  if(cont.parentElement)cont.parentElement.classList.add('nfcRow');
   cont.innerHTML=nxFiltroChipHTML({
     id:contId, titulo:o.titulo||'Filtro', ico:o.ico, value:sel.value, opciones:ops,
     onelegir:function(v){
@@ -6521,7 +6527,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.82';
+const APP_VERSION='57.83';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9852,6 +9858,7 @@ function pintarFiltroEstadoFact(){
   const box=document.getElementById('fFactEstadoChip');
   if(!box||typeof nxFiltroChipHTML!=='function')return;
   const sel=document.getElementById('fFactEstado');
+  if(box.parentElement)box.parentElement.classList.add('nfcRow');
   box.innerHTML=nxFiltroChipHTML({
     id:'fFactEstadoChip', titulo:'Filtrar facturas',
     value:sel?sel.value:'activas',

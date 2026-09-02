@@ -1,7 +1,14 @@
 {
-  "version": "57.82",
+  "version": "57.83",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.83",
+      "fecha": "2026-09-02",
+      "notas": [
+        "NUEVO: ahora SI se ve el cristal en los filtros de Seguros. Se le puso una franja de color suave detras de la fila de filtros (para que el vidrio tenga algo que dejar pasar) y las pastillas quedaron con brillo mas marcado arriba, abajo y a los lados, como vidrio pulido. Aplica en Facturas, Cobros, Clientes, Historial de pagos y Comisiones, en tema claro y en tema oscuro."
+      ]
+    },
     {
       "version": "57.82",
       "fecha": "2026-09-02",
