@@ -1,7 +1,14 @@
 {
-  "version": "57.81",
+  "version": "57.82",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.82",
+      "fecha": "2026-09-02",
+      "notas": [
+        "NUEVO: los filtros de Seguros ahora son pastillas de cristal liquido — se ve un brillo arriba y abajo como el vidrio, el fondo deja pasar lo que hay detras y el desenfoque es mas fuerte. Antes el cristal estaba puesto pero el fondo quedaba casi opaco y no se notaba. Se ve igual de bien en tema claro y en tema oscuro."
+      ]
+    },
     {
       "version": "57.81",
       "fecha": "2026-09-02",
