@@ -20,7 +20,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .rfBolBanner img{width:100%;display:block}
 .rfBolPrem{font-weight:800;font-size:16px;color:#fff;margin-bottom:10px;line-height:1.2}
 .rfBolEst{font-weight:800;font-size:14px;margin-bottom:10px}
-.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}
+.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}.rfBolEst.anu{color:#f87171}
+.rfVer{margin:0 16px 16px;border-radius:11px;padding:11px 13px;text-align:center;font-weight:800;font-size:14px;line-height:1.35}
+.rfVer.ok{background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.5);color:#a7f3d0}
+.rfVer.pend{background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.45);color:#fde68a}
+.rfVer.anu{background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.5);color:#fecaca}
+.rfVer small{display:block;font-weight:600;font-size:11.5px;opacity:.85;margin-top:5px}
+.rfCod{margin:0 16px 16px;text-align:center;font-size:11.5px;color:#cfe3ee}
+.rfCod b{display:block;font-family:ui-monospace,monospace;font-size:17px;letter-spacing:2px;color:#fff;margin-top:3px}
 .rfBolLn{font-size:13.5px;margin:5px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}
 .rfBolFecha{text-align:center;font-weight:800;font-size:14px;color:#cfe3ee;padding:10px;border-top:1px dashed rgba(255,255,255,.35)}
 .rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 16px 16px;border-radius:11px;padding:13px;font-size:34px;font-weight:800;letter-spacing:5px;font-family:ui-monospace,monospace;border:2px dashed #94a3b8}
@@ -41,23 +48,35 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   fetch(FUNC + "?id=" + encodeURIComponent(id))
     .then(function(r){ return r.ok ? r.text() : Promise.reject(); })
     .then(function(t){ var d; try{ d = JSON.parse(t); }catch(e){ throw e; } render(d); })
-    .catch(function(){ app.innerHTML = '<div class="msg">No se pudo cargar el boleto.<br>Verifica el enlace.</div>'; });
+    .catch(function(){ app.innerHTML = '<div class="msg"><b style="color:#dc2626;font-size:17px">Este boleto no existe</b><br><br>No se encontró ningún boleto con este código en el sistema. Si te lo entregaron como válido, no lo es.</div>'; });
   function render(d){
     document.title = "Boleto N° " + d.numero + (d.premio ? " — " + d.premio : "");
     var conf = !!d.conf;
+    var anul = d.estado === 'anulado';
+    // Veredicto claro para quien escanea el QR. Un boleto RECHAZADO tiene que
+    // decirlo: antes salia como "por confirmar", que se lee como algo inocente.
+    var ver = anul
+      ? '<div class="rfVer anu">✕ BOLETO ANULADO<small>Este boleto fue rechazado y no participa en el sorteo.</small></div>'
+      : (conf
+        ? '<div class="rfVer ok">✓ BOLETO VÁLIDO<small>Verificado ahora mismo contra el sistema.</small></div>'
+        : '<div class="rfVer pend">⏳ PAGO POR CONFIRMAR<small>El boleto existe en el sistema, pero el pago todavía no se ha verificado.</small></div>');
+    var cod = String(id).replace(/-/g, '').slice(0, 8).toUpperCase();
+    if (cod.length === 8) cod = cod.slice(0, 4) + '-' + cod.slice(4);
     var banner = d.hasImg ? '<div class="rfBolBanner"><img src="' + FUNC + '?id=' + encodeURIComponent(id) + '&img=1" alt=""></div>' : '';
     app.innerHTML =
       '<div class="rfBol" style="--bc:' + esc(d.color || '#1f4b63') + '">' +
       '<div class="rfBolHd">' + esc(d.biz) + '</div>' +
       '<div class="rfBolBody">' + banner +
       (d.premio ? '<div class="rfBolPrem">' + esc(String(d.premio).toUpperCase()) + '</div>' : '') +
-      '<div class="rfBolEst ' + (conf ? 'ok' : 'pend') + '">' + (conf ? '✓ Pago Verificado' : '• Por confirmar') + '</div>' +
+      '<div class="rfBolEst ' + (anul ? 'anu' : (conf ? 'ok' : 'pend')) + '">' + (anul ? '✕ Anulado' : (conf ? '✓ Pago Verificado' : '• Por confirmar')) + '</div>' +
       '<div class="rfBolLn"><b>Comprador:</b> ' + esc(d.comprador || '—') + '</div>' +
       (d.tel ? '<div class="rfBolLn"><b>WhatsApp:</b> ' + esc(d.tel) + '</div>' : '') +
       '<div class="rfBolLn"><b>Compra:</b> ' + esc(d.fcompra) + '</div>' +
       '</div>' +
       (d.fsorteo ? '<div class="rfBolFecha">' + esc(d.fsorteo) + '</div>' : '') +
       '<div class="rfBolNum">' + esc(d.numero) + '</div>' +
+      ver +
+      '<div class="rfCod">Código de verificación<b>' + esc(cod) + '</b>Debe ser igual al que aparece impreso en el boleto.</div>' +
       '</div>';
   }
 })();

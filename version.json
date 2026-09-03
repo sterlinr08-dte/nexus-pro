@@ -1,7 +1,17 @@
 {
-  "version": "57.83",
+  "version": "57.84",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.84",
+      "fecha": "2026-09-03",
+      "notas": [
+        "NUEVO: los boletos de rifa ahora traen un codigo QR. Quien lo escanea cae en la pagina del boleto y ve, en el momento, si es VALIDO, si esta POR CONFIRMAR o si esta ANULADO. El QR sale en los tres lados: la ventana del boleto, el boleto que se imprime y la imagen que se manda por WhatsApp.",
+        "NUEVO: debajo del QR va un codigo corto (ejemplo 3F9A-1C22) que tambien aparece en la pagina al escanear. Si los dos codigos no son iguales, ese boleto no es el que dice ser.",
+        "ARREGLADO (importante): un boleto RECHAZADO se mostraba como 'Por confirmar', que se lee como algo inocente. Ahora dice ANULADO - no valido, en rojo, tanto en el boleto como en la pagina de verificacion.",
+        "Nota honesta: el QR por si solo no impide que alguien invente un boleto. Lo que lo impide es que el QR apunta al sistema: si el boleto es inventado, la pagina dice 'Este boleto no existe'; y si alguien copia el QR de otro, la pagina muestra el nombre y el numero del comprador REAL."
+      ]
+    },
     {
       "version": "57.83",
       "fecha": "2026-09-02",

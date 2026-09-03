@@ -1545,13 +1545,55 @@
 
   // ── BOLETO-TARJETA (ver / imagen PNG / imprimir / WhatsApp) ──
   var _bolActual = null;
-  var BOL_CSS = '.rfBol{max-width:300px;margin:0 auto;border-radius:16px;overflow:hidden;background:var(--bc,#1f4b63);box-shadow:0 10px 26px rgba(15,23,42,.25)}.rfBolHd{background:#fff;color:#0f172a;text-align:center;font-weight:800;font-size:14px;padding:11px 10px;letter-spacing:.3px}.rfBolBody{padding:12px 14px;color:#eaf2f7}.rfBolBanner{border-radius:10px;overflow:hidden;margin-bottom:10px}.rfBolBanner img{width:100%;display:block}.rfBolPrem{font-weight:800;font-size:14px;color:#fff;margin-bottom:9px;line-height:1.2}.rfBolEst{font-weight:800;font-size:13px;margin-bottom:9px}.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}.rfBolLn{font-size:12.5px;margin:4px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}.rfBolFecha{text-align:center;font-weight:800;font-size:13px;color:#cfe3ee;padding:9px;border-top:1px dashed rgba(255,255,255,.35)}.rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 14px 14px;border-radius:10px;padding:11px;font-size:30px;font-weight:800;letter-spacing:4px;font-family:var(--mono);border:2px dashed #94a3b8}';
+  var BOL_CSS = '.rfBol{max-width:300px;margin:0 auto;border-radius:16px;overflow:hidden;background:var(--bc,#1f4b63);box-shadow:0 10px 26px rgba(15,23,42,.25)}.rfBolHd{background:#fff;color:#0f172a;text-align:center;font-weight:800;font-size:14px;padding:11px 10px;letter-spacing:.3px}.rfBolBody{padding:12px 14px;color:#eaf2f7}.rfBolBanner{border-radius:10px;overflow:hidden;margin-bottom:10px}.rfBolBanner img{width:100%;display:block}.rfBolPrem{font-weight:800;font-size:14px;color:#fff;margin-bottom:9px;line-height:1.2}.rfBolEst{font-weight:800;font-size:13px;margin-bottom:9px}.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}.rfBolEst.anu{color:#f87171}.rfBolLn{font-size:12.5px;margin:4px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}.rfBolFecha{text-align:center;font-weight:800;font-size:13px;color:#cfe3ee;padding:9px;border-top:1px dashed rgba(255,255,255,.35)}.rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 14px 14px;border-radius:10px;padding:11px;font-size:30px;font-weight:800;letter-spacing:4px;font-family:var(--mono);border:2px dashed #94a3b8}.rfBolQR{display:flex;align-items:center;gap:11px;margin:0 14px 14px;padding:10px;border-radius:10px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22)}.rfBolQR img{width:84px;height:84px;display:block;border-radius:6px;background:#fff;padding:5px;flex-shrink:0}.rfBolQRt{font-size:11.5px;color:#dbe9f1;line-height:1.45;min-width:0}.rfBolQRt b{display:block;color:#fff;font-weight:800;font-size:13px;letter-spacing:1.2px;font-family:var(--mono);margin-top:3px;word-break:break-all}';
   function empNomRf() { try { return (window.CFG && (CFG.empNom || CFG.empresa_nom)) || 'Mi negocio'; } catch (e) { return 'Mi negocio'; } }
+  // ── QR de verificacion del boleto (anti-falsificacion) ────────────────────
+  // El QR lleva a la pagina publica del boleto (boleto.html?id=...), que lee el
+  // registro REAL del servidor. Un boleto inventado (con IA o a mano) no existe
+  // en la base: al escanearlo, la pagina dice que no se encontro. Y si le copian
+  // el QR a un boleto real, sale el nombre y el numero del comprador REAL, no el
+  // del falsificador. La seguridad no la da el dibujo del QR: la da el servidor.
+  // La libreria se baja SOLO la primera vez que se abre un boleto (no la carga
+  // quien nunca entra a Rifas).
+  var _qrLibCola = null;
+  function qrEnsureLib(cb) {
+    if (typeof window.QRCode === 'function') { cb(true); return; }
+    if (_qrLibCola) { _qrLibCola.push(cb); return; }
+    _qrLibCola = [cb];
+    var s = document.createElement('script');
+    s.src = 'qrcode.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
+    var fin = function (ok) { var q = _qrLibCola || []; _qrLibCola = null; q.forEach(function (f) { try { f(ok); } catch (e) {} }); };
+    s.onload = function () { fin(typeof window.QRCode === 'function'); };
+    s.onerror = function () { fin(false); };
+    document.head.appendChild(s);
+  }
+  function qrDataURL(texto, size, cb) {
+    qrEnsureLib(function (ok) {
+      if (!ok) { cb(''); return; }
+      var box = null;
+      try {
+        box = document.createElement('div');
+        box.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden';
+        document.body.appendChild(box);
+        new window.QRCode(box, { text: texto, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
+        var cv = box.querySelector('canvas');
+        cb(cv ? cv.toDataURL('image/png') : '');
+      } catch (e) { cb(''); }
+      finally { if (box && box.parentNode) box.parentNode.removeChild(box); }
+    });
+  }
+  // Codigo corto derivado del id del boleto. NO se guarda en la base: se calcula
+  // igual aqui y en boleto.html, asi el que recibe el boleto puede comparar a
+  // simple vista que el codigo impreso es el mismo que muestra la pagina.
+  function bolCodigo(id) {
+    var h = String(id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
+    return h.length === 8 ? h.slice(0, 4) + '-' + h.slice(4) : h;
+  }
   function bolData(b, r) {
     var ses = curSes(); var org = (ses && ses.org) || {};
     var fcompra = ''; try { fcompra = new Date(b.created_at).toLocaleString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) {}
     var fsorteo = ''; if (r.mostrar_fecha !== false && r.fecha_sorteo) { try { fsorteo = new Date(r.fecha_sorteo).toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) {} }
-    return { biz: org.nombre || empNomRf(), premio: r.premio || r.nombre || '', banner: r.imagen || '', conf: b.estado === 'confirmado', comprador: b.comprador_nombre || '', tel: b.comprador_telefono || '', fcompra: fcompra, fsorteo: fsorteo, numero: String(b.numero), color: org.color || '#1f4b63' };
+    return { id: b.id, biz: org.nombre || empNomRf(), premio: r.premio || r.nombre || '', banner: r.imagen || '', conf: b.estado === 'confirmado', anulado: b.estado === 'anulado', comprador: b.comprador_nombre || '', tel: b.comprador_telefono || '', fcompra: fcompra, fsorteo: fsorteo, numero: String(b.numero), color: org.color || '#1f4b63', codigo: bolCodigo(b.id), qr: '' };
   }
   function bolTexto(b, r) {
     var prem = (r && (r.premio || r.nombre)) || 'la rifa';
@@ -1569,19 +1611,29 @@
       '<div class="rfBolBody">' +
       (d.banner ? '<div class="rfBolBanner"><img src="' + esc(d.banner) + '" alt="Imagen de la rifa"></div>' : '') +
       (d.premio ? '<div class="rfBolPrem">' + esc(d.premio.toUpperCase()) + '</div>' : '') +
-      '<div class="rfBolEst ' + (d.conf ? 'ok' : 'pend') + '">' + (d.conf ? '✓ Pago Verificado' : '• Por confirmar') + '</div>' +
+      '<div class="rfBolEst ' + (d.anulado ? 'anu' : (d.conf ? 'ok' : 'pend')) + '">' + (d.anulado ? '✕ ANULADO — no válido' : (d.conf ? '✓ Pago Verificado' : '• Por confirmar')) + '</div>' +
       '<div class="rfBolLn"><b>Comprador:</b> ' + esc(d.comprador || '—') + '</div>' +
       (d.tel ? '<div class="rfBolLn"><b>WhatsApp:</b> ' + esc(d.tel) + '</div>' : '') +
       '<div class="rfBolLn"><b>Compra:</b> ' + esc(d.fcompra) + '</div>' +
       '</div>' +
       (d.fsorteo ? '<div class="rfBolFecha">' + esc(d.fsorteo) + '</div>' : '') +
       '<div class="rfBolNum">' + esc(d.numero) + '</div>' +
+      (d.qr ? '<div class="rfBolQR"><img src="' + d.qr + '" alt="Código QR para verificar este boleto"><div class="rfBolQRt">Escanea este código para verificar el boleto en el sistema.<b>' + esc(d.codigo) + '</b></div></div>' : '') +
       '</div>';
   }
   window.nxRifaBoleto = function (id) {
     var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
     var r = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }); if (!r) return;
     _bolActual = bolData(b, r); _bolTexto = bolTexto(b, r);
+    // El QR se arma ANTES de pintar la tarjeta: asi la misma imagen sirve para
+    // el modal, la impresion y el PNG de WhatsApp, sin recalcularla 3 veces.
+    // Si la libreria no carga, d.qr queda vacio y el boleto sale como siempre.
+    qrDataURL(BOL_PAGE + '?id=' + b.id, 296, function (du) {
+      _bolActual.qr = du || '';
+      nxBolAbrirModal(b, r);
+    });
+  };
+  function nxBolAbrirModal(b, r) {
     var waHref = boletoWaHref(b, r);
     cerrarModal('nxBolView');
     var ov = document.createElement('div'); ov.id = 'nxBolView'; ov.className = 'overlay open';
@@ -1593,7 +1645,7 @@
       '</div>';
     document.body.appendChild(ov);
     prepararBolFile();
-  };
+  }
   window.nxRifaBoletoImprimir = function () {
     var d = _bolActual; if (!d) return;
     var w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; }
@@ -1605,12 +1657,13 @@
   function bolFit(ctx, text, x, y, maxW) { var fs = 26; ctx.font = '800 ' + fs + 'px Arial'; while (ctx.measureText(text).width > maxW && fs > 12) { fs -= 1; ctx.font = '800 ' + fs + 'px Arial'; } ctx.fillText(text, x, y); }
   function bolCover(ctx, img, x, y, w, h) { var ir = img.width / img.height, tr = w / h, sw, sh, sx, sy; if (ir > tr) { sh = img.height; sw = sh * tr; sx = (img.width - sw) / 2; sy = 0; } else { sw = img.width; sh = sw / tr; sx = 0; sy = (img.height - sh) / 2; } ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h); }
   function bolCanvas(d, cb) {
+    var qrImg = null;
     var build = function (banner) {
       try {
         var W = 560, m = 18;
         var tmp = document.createElement('canvas').getContext('2d'); tmp.font = '800 24px Arial';
         var pLines = d.premio ? bolWrap(tmp, d.premio.toUpperCase(), W - 2 * m - 44) : [];
-        var H = m + 16 + 64 + 24 + pLines.length * 30 + (d.premio ? 10 : 0) + (banner ? 206 : 0) + 36 + 30 + (d.tel ? 30 : 0) + 14 + (d.fsorteo ? 38 : 0) + 22 + 20 + 72 + 18 + m;
+        var H = m + 16 + 64 + 24 + pLines.length * 30 + (d.premio ? 10 : 0) + (banner ? 206 : 0) + 36 + 30 + (d.tel ? 30 : 0) + 14 + (d.fsorteo ? 38 : 0) + 22 + 20 + 72 + (d.qr ? 118 : 0) + 18 + m;
         var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
         var ctx = cv.getContext('2d');
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
@@ -1636,6 +1689,22 @@
         bolRR(ctx, nbx, y, nbW, nbH, 12); ctx.fillStyle = '#fff'; ctx.fill();
         ctx.fillStyle = '#0f172a'; ctx.font = '800 50px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(d.numero, W / 2, y + nbH / 2);
+        // Bloque de verificacion: QR + codigo corto. El QR se dibuja sobre una caja
+        // BLANCA con margen (zona de silencio) — sin eso, un QR sobre el color oscuro
+        // de la tarjeta no lo lee ningun telefono.
+        if (d.qr && qrImg) {
+          y += nbH + 16;
+          var qs = 92, qpad = 7, qbx = nbx, qby = y;
+          bolRR(ctx, qbx, qby, qs + qpad * 2, qs + qpad * 2, 10); ctx.fillStyle = '#fff'; ctx.fill();
+          ctx.drawImage(qrImg, qbx + qpad, qby + qpad, qs, qs);
+          var tx = qbx + qs + qpad * 2 + 16;
+          ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+          ctx.fillStyle = '#cfe3ee'; ctx.font = '600 16px Arial';
+          bolWrap(ctx, 'Escanea este codigo para verificar el boleto.', W - m - 26 - tx).slice(0, 3)
+            .forEach(function (ln, i) { ctx.fillText(ln, tx, qby + 24 + i * 21); });
+          ctx.fillStyle = '#ffffff'; ctx.font = '800 21px monospace';
+          ctx.fillText(d.codigo || '', tx, qby + 24 + 3 * 21 + 6);
+        }
         // Componer con margen para que WhatsApp muestre el boleto COMPLETO (no lo recorta en la vista previa)
         var padV = 28;
         var outH = H + padV * 2;
@@ -1647,8 +1716,14 @@
         cb(out);
       } catch (e) { cb(null); }
     };
-    if (d.banner) { var im = new Image(); try { im.crossOrigin = 'anonymous'; } catch (e) {} im.onload = function () { build(im); }; im.onerror = function () { build(null); }; im.src = d.banner; }
-    else build(null);
+    // Primero el QR (es un dataURL local, carga al instante y nunca mancha el
+    // canvas), despues el banner. Si alguno falla, el boleto se arma igual sin el.
+    var seguir = function () {
+      if (d.banner) { var im = new Image(); try { im.crossOrigin = 'anonymous'; } catch (e) {} im.onload = function () { build(im); }; im.onerror = function () { build(null); }; im.src = d.banner; }
+      else build(null);
+    };
+    if (d.qr) { var qi = new Image(); qi.onload = function () { qrImg = qi; seguir(); }; qi.onerror = function () { qrImg = null; seguir(); }; qi.src = d.qr; }
+    else seguir();
   }
   // Pre-genera la imagen al abrir el boleto, para que "Compartir" la envíe AL INSTANTE
   // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
