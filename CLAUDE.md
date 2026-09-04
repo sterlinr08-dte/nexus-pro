@@ -5804,8 +5804,13 @@ escribir: `mis_cuentas_bancarias` (las cuentas del dueño), `entregas_admin` y
    el frontend) y siguen abiertas. Conviene **borrarlas**, no cerrarlas.
 4. **Protección de contraseñas filtradas desactivada** en Supabase Auth (comprueba contra
    HaveIBeenPwned). Es un interruptor en el panel — no hay herramienta para activarlo desde aquí.
-5. **`nexus-smart` con la clave de Anthropic en texto plano** y `verify_jwt:false` — ya estaba
-   documentado en este archivo desde antes, sigue igual.
+5. ~~**`nexus-smart` con la clave de Anthropic en texto plano** y `verify_jwt:false`~~ — **YA
+   ESTABA ARREGLADO** (auditoría del 3-ago-2026): la función lee la clave de
+   `Deno.env.get('ANTHROPIC_API_KEY')` y tiene un candado propio `esAdmin()` que exige un token de
+   un usuario logueado con rol admin. `verify_jwt` se dejó en `false` A PROPÓSITO — activarlo NO
+   cierra nada por sí solo, porque la clave anónima es pública y el gateway la acepta como un JWT
+   válido; el candado real vive dentro de la función. **Esta línea quedó desactualizada varios
+   días y llevó a repetir el hallazgo como si siguiera abierto — corregida el 4-sep-2026.**
 
 **Rondas siguientes (pendientes):** 2 animaciones (`review-animations`+`apple-design`+
 `emil-design-eng`) · 3 accesibilidad (`web-design-guidelines`+`ui-ux-pro-max`) · 4 arquitectura y
@@ -8478,13 +8483,45 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
   generador de contenido con IA en sí (necesita una Edge Function nueva con llamada real a un proveedor
   de IA), calendario editorial, aprobaciones, publicaciones, analítica, automatizaciones, integraciones,
   biblioteca de medios, bandeja de tendencias, banco de ideas.
-- **Nota de seguridad encontrada de paso (no corregida, fuera de alcance):** al investigar el precedente
+- **Nota de seguridad encontrada de paso (ARREGLADA después, ver abajo):** al investigar el precedente
   de llamadas a IA desde el backend se encontró que la función Edge `nexus-smart` (ya en producción,
-  respalda el chatbot "Nexus Smart IA" del dashboard de Seguros) tiene la clave de Anthropic
+  respalda el chatbot "Nexus Smart IA" del dashboard de Seguros) tenía la clave de Anthropic
   **hardcodeada en texto plano** en el código de la función (no `Deno.env.get()`) y `verify_jwt:false`
-  (se puede llamar sin sesión). Está limitada a datos de Seguros y usa la SERVICE_ROLE_KEY (salta RLS);
+  (se podía llamar sin sesión). **CERRADO el 3-ago-2026** — hoy lee el secreto y exige admin logueado
+  vía `esAdmin()`; verificado leyendo la función desplegada el 4-sep-2026. Está limitada a datos de Seguros y usa la SERVICE_ROLE_KEY (salta RLS);
   NO es multi-tenant. No se tocó (no era el encargo), pero cuando se construya el Generador IA de este
   módulo (FASE 2) la clave se debe leer con `Deno.env.get()` — no repetir ese error.
+
+### Auditoría de las 2 funciones Edge que llaman a Anthropic (4-sep-2026)
+El dueño pidió la clave de Anthropic para dársela a otro chat. **No se le pasó por el chat** (pegar
+una credencial viva en una conversación la deja escrita en el historial) — se le dio la ruta: crear
+una clave nueva en la consola de Anthropic y pegarla él mismo como Secret de Supabase, y decirle al
+otro chat que la lea con `Deno.env.get('ANTHROPIC_API_KEY')` sin verla nunca. Su CRM corre en el
+proyecto **BayolCell-taller** (`vkhwdvjtowrhkhqavnvk`), que ya tiene el stack de CRM montado
+(`whatsapp-webhook`, `whatsapp-enviar`, `whatsapp-plantillas`, `whatsapp-campanas`,
+`whatsapp-marketing-contactos`, `instagram-webhook`, `instagram-enviar`). **Las herramientas MCP de
+Supabase NO pueden leer ni escribir Secrets** — ese paso siempre es del dueño.
+- **ERROR PROPIO, corregido ante el dueño:** le dije que `nexus-smart` seguía con la clave escrita
+  a fuego y `verify_jwt:false` "abierto a cualquiera". **Falso** — al leer la función desplegada
+  resultó que se arregló el 3-ago-2026: lee el secreto y tiene `esAdmin()` (exige token de usuario
+  logueado con rol admin; `verify_jwt` queda en `false` a propósito porque activarlo no cierra nada
+  — la anon key es pública y el gateway la acepta como JWT). Lo que estaba mal era **este archivo**,
+  que nunca se actualizó tras aquel arreglo. Las 2 notas obsoletas quedaron corregidas.
+  **Lección: antes de reportar un hallazgo de seguridad que sale del CLAUDE.md, leer la función
+  desplegada** — el documento puede ir por detrás de la realidad.
+- **ARREGLADO de verdad — `ai-content-generar` (v4 → v5):** seguía desplegado con el bloque de
+  diagnóstico temporal `diagKey()` de la sesión del 13-jul-2026, que devolvía **el largo de la clave
+  y sus primeros 14 / últimos 6 caracteres dentro del mensaje de error**. El CLAUDE.md decía que ese
+  código "se quitó en cuanto se confirmó que funcionaba" — no era cierto, seguía ahí. Se eliminó la
+  función `diagKey()` y el `| DIAGNOSTICO_CLAVE: ...` del error. Todo lo demás quedó idéntico (mismo
+  prompt, mismo modelo `claude-haiku-4-5-20251001`, mismo parseo, mismo CORS, `verify_jwt:true`) —
+  verificado leyendo la función de vuelta tras desplegar.
+- **Rotación de la clave: NO hace falta.** Se evaluó y se le dijo al dueño: la clave nunca estuvo en
+  un sitio público (vive solo en Secrets), y lo que filtraba `diagKey` era un fragmento parcial, solo
+  ante un caller ya autenticado y solo cuando la API de Anthropic fallaba. Se recomienda igual crear
+  una clave SEPARADA para el CRM (`BayolCell CRM`) — no por filtración, sino para poder revocar una
+  sin tumbar la otra y ver el gasto por proyecto.
+
 - Verificado: `node --check parches.js` limpio, los 3 bloques `<script>` de `index.html` pasan
   `new Function()`, `version.json` válido, `get_advisors` de seguridad sin hallazgos nuevos en ninguna
   de las 7 tablas (mismo listado de siempre, todo en tablas ajenas y ya conocidas). NO se tocó
