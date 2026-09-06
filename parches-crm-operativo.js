@@ -81,6 +81,28 @@ window.nxCrmNuevaActividadCliente=()=>{
  const A=api();A.post('crm_actividades',{cliente_id:id,tipo:'nota',titulo:title.trim()}).then(()=>cargarSeguimientoCliente(id)).then(()=>{try{toast('ok','Nota agregada')}catch(e){}}).catch(e=>{try{toast('err','No se pudo guardar',e.message)}catch(x){}});
 };
 
-function start(){css();patchFicha();ensure();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
+
+function abrirClienteDesdeOps(id){try{window.nxCrmAbrirCliente(id)}catch(e){}}
+function filaAtencion(c,reason,tag){
+ return '<div class="nxOpsTask" onclick="nxCrmAbrirCliente(\\''+esc(c.id)+'\\')" style="cursor:pointer"><div class="nxCrmAv"><i class="ti ti-'+tag+'"></i></div><div><b>'+esc(c.nom||'Cliente')+'</b><span>'+esc(reason)+'</span></div><div class="nxOpsDue">Abrir</div></div>';
+}
+function controlOperativo(){
+ const host=$('#nxCrmControl');if(!host)return;
+ const all=clientes(),act=all.filter(c=>c.activo!==false),today=new Date().toISOString().slice(0,10);
+ const proceso=all.filter(c=>c.estado_cliente==='EN_PROCESO').sort((a,b)=>String(a.fecha_seguimiento||'9999').localeCompare(String(b.fecha_seguimiento||'9999')));
+ const sinArs=act.filter(c=>!String(c.ars||'').trim());
+ const sinRen=act.filter(c=>!c.fecha_fin);
+ const vencidos=tareas.filter(t=>t.vence_en&&String(t.vence_en).slice(0,10)<today);
+ const block=(title,count,rows,empty)=>'<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>'+title+'</h3><div class="nxOpsFilter">'+count+' requiere'+(count===1?'':'n')+' atención</div></div></div><div class="nxOpsRows">'+(rows.length?rows.slice(0,5).join(''):'<div class="nxOpsEmpty">'+empty+'</div>')+'</div></section>';
+ const taskRows=vencidos.map(taskHtml);
+ host.innerHTML='<div class="nxCrmCols"><div>'+block('Seguimientos vencidos',vencidos.length,taskRows,'No hay tareas vencidas.')+block('Clientes en proceso',proceso.length,proceso.map(c=>filaAtencion(c,(c.motivo_proceso||'Proceso pendiente')+(c.fecha_seguimiento?' · '+String(c.fecha_seguimiento).slice(0,10):''),'progress-check')),'No hay clientes en proceso.')+'</div><div>'+block('Datos por completar',sinArs.length,sinArs.map(c=>filaAtencion(c,'Falta asignar ARS','building-hospital')),'Todos tienen ARS asignada.')+block('Renovación por registrar',sinRen.length,sinRen.map(c=>filaAtencion(c,'Falta fecha de renovación','calendar-x')),'Todas las renovaciones tienen fecha.')+'</div></div>';
+}
+function ensureControl(){
+ const ops=$('#nxCrmOps');if(!ops)return;
+ if(!$('#nxCrmControl')){const h=document.createElement('div');h.id='nxCrmControl';ops.parentNode.insertBefore(h,ops.nextSibling);}
+ controlOperativo();
+}
+
+function start(){css();patchFicha();ensure();ensureControl();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
