@@ -9,7 +9,7 @@ const api=()=>{try{return window.API||API}catch(e){return null}};
 const clientes=()=>{try{return (window.ST||ST||{}).clientes||[]}catch(e){return[]}};
 const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.activo!==false)}catch(e){return[]}};
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
-let tareas=[];
+let agendaTareas=[], fichaTareas=[];
 let cargaAgenda=null, fichaPeticion=0;
 
 function css(){
@@ -29,14 +29,14 @@ async function cargar(){
  const A=api();if(!A?.get)return;
  if(cargaAgenda)return cargaAgenda;
  cargaAgenda=(async()=>{
-  try{tareas=await A.get('crm_tareas','estado=eq.pendiente&order=vence_en.asc.nullslast,created_at.asc&limit=8&select=*')||[];pintar();ensureControl();await cargarEquipo();}
+  try{agendaTareas=await A.get('crm_tareas','estado=eq.pendiente&order=vence_en.asc.nullslast,created_at.asc&limit=8&select=*')||[];pintar();ensureControl();await cargarEquipo();}
   catch(e){console.error('[CRM] tareas',e);pintar('No se pudieron cargar las tareas.');}
  })();
  try{await cargaAgenda;}finally{cargaAgenda=null;}
 }
 function pintar(err){
  const host=$('#nxCrmOps');if(!host)return;
- host.innerHTML='<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>Agenda de seguimiento</h3><div class="nxOpsFilter">Tareas pendientes de toda la cartera</div></div><button class="nxCrmLink" onclick="nxCrmNuevaTarea()">+ Nueva tarea</button></div><div class="nxOpsRows">'+(err?'<div class="nxOpsEmpty">'+esc(err)+'</div>':tareas.length?tareas.map(taskHtml).join(''):'<div class="nxOpsEmpty">No hay seguimientos pendientes. La cartera está al día.</div>')+'</div></section>';
+ host.innerHTML='<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>Agenda de seguimiento</h3><div class="nxOpsFilter">Tareas pendientes de toda la cartera</div></div><button class="nxCrmLink" onclick="nxCrmNuevaTarea()">+ Nueva tarea</button></div><div class="nxOpsRows">'+(err?'<div class="nxOpsEmpty">'+esc(err)+'</div>':agendaTareas.length?agendaTareas.map(taskHtml).join(''):'<div class="nxOpsEmpty">No hay seguimientos pendientes. La cartera está al día.</div>')+'</div></section>';
 }
 function ensure(){
  css();const cols=$('#v-crm .nxCrmCols');if(!cols)return false;
@@ -58,12 +58,13 @@ window.nxCrmGuardarTarea=async()=>{
  try{
   const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,asignado_agente_id,vence_en:vence?new Date(vence).toISOString():null});
   await A.post('crm_actividades',{cliente_id,tipo:'nota',titulo:'Tarea creada: '+titulo,detalle:nota||null,proxima_accion_en:vence?new Date(vence).toISOString():null});
-  window.nxCrmCerrarTarea();await cargar();try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
+  window.nxCrmCerrarTarea();await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(cliente_id)}catch(e){}
+  try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
  }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar tarea';}
 };
 window.nxCrmCompletarTarea=async id=>{
- const A=api(),t=tareas.find(x=>String(x.id)===String(id));if(!t)return;
- try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:'Tarea completada: '+t.titulo});await cargar();try{toast('ok','Tarea completada')}catch(e){}}
+ const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t)return;
+ try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:'Tarea completada: '+t.titulo});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
  catch(e){try{toast('err','No se pudo completar',e.message)}catch(x){}}
 };
 
@@ -77,7 +78,7 @@ async function cargarSeguimientoCliente(id){
  const request=++fichaPeticion;
  const vigente=()=>request===fichaPeticion&&typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad'&&$('#c360TabBody')===body;
  body.innerHTML='<div class="nxCrmEmpty">Cargando seguimiento…</div>';
- try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);if(!vigente())return;tareas=rs[1]||[];body.innerHTML=seguimientoHtml(rs[0]||[],tareas);}
+ try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);if(!vigente())return;fichaTareas=rs[1]||[];body.innerHTML=seguimientoHtml(rs[0]||[],fichaTareas);}
  catch(e){if(vigente())body.innerHTML='<div class="nxCrmEmpty">No se pudo cargar el seguimiento.</div>';console.error('[CRM] seguimiento',e)}
 }
 function patchFicha(){
@@ -87,16 +88,16 @@ window.nxCrmNuevaTareaCliente=()=>{try{modal();const id=typeof _c360Sel!=='undef
 function modalActividadCliente(){
  const id=typeof _c360Sel!=='undefined'?_c360Sel:'';if(!id)return;
  const c=clientes().find(x=>String(x.id)===String(id));$('#nxOpsModal')?.remove();
- const m=document.createElement('div');m.id='nxOpsModal';m.className='nxOpsModal';
+ const m=document.createElement('div');m.id='nxOpsModal';m.className='nxOpsModal';m.dataset.clienteId=String(id);
  m.innerHTML='<div class="nxOpsDialog" role="dialog" aria-modal="true" aria-labelledby="nxActTitle"><h2 id="nxActTitle">Registrar seguimiento</h2><p>'+esc(c?.nom||'Cliente')+' · queda guardado en su historial.</p><div class="nxOpsGrid"><div class="nxOpsField"><label>Canal</label><select id="nxActTipo"><option value="llamada">Llamada</option><option value="whatsapp">WhatsApp</option><option value="nota">Nota</option><option value="renovacion">Renovación</option><option value="documento">Documento</option><option value="cotizacion">Cotización</option></select></div><div class="nxOpsField"><label>Próximo seguimiento</label><input id="nxActProxima" type="datetime-local"></div><div class="nxOpsField full"><label>Resumen</label><input id="nxActTitulo" maxlength="160" placeholder="Ej.: Cliente confirmó envío de documentos"></div><div class="nxOpsField full"><label>Resultado / detalle</label><textarea id="nxActDetalle" maxlength="1500" placeholder="Qué se conversó, qué falta y qué se acordó"></textarea></div><div class="nxOpsField full"><label style="display:flex;gap:7px;align-items:center;font-size:9px"><input id="nxActCrearTarea" type="checkbox" style="width:auto"> Crear una tarea para el próximo seguimiento</label></div></div><div class="nxOpsFoot"><button onclick="nxCrmCerrarTarea()">Cancelar</button><button class="primary" id="nxActGuardar" onclick="nxCrmGuardarActividadCliente()">Guardar seguimiento</button></div></div>';
  m.addEventListener('click',e=>{if(e.target===m)window.nxCrmCerrarTarea()});document.body.appendChild(m);setTimeout(()=>$('#nxActTitulo')?.focus(),0);
 }
 window.nxCrmNuevaActividadCliente=modalActividadCliente;
 window.nxCrmGuardarActividadCliente=async()=>{
- const id=typeof _c360Sel!=='undefined'?_c360Sel:'',A=api(),tipo=$('#nxActTipo')?.value,titulo=$('#nxActTitulo')?.value.trim(),detalle=$('#nxActDetalle')?.value.trim(),proxima=$('#nxActProxima')?.value,crear=$('#nxActCrearTarea')?.checked;
+ const id=$('#nxOpsModal')?.dataset?.clienteId||(typeof _c360Sel!=='undefined'?_c360Sel:''),A=api(),tipo=$('#nxActTipo')?.value,titulo=$('#nxActTitulo')?.value.trim(),detalle=$('#nxActDetalle')?.value.trim(),proxima=$('#nxActProxima')?.value,crear=$('#nxActCrearTarea')?.checked;
  if(!id||!titulo){try{toast('warn','Escribe el resumen del seguimiento')}catch(e){};return}
  const b=$('#nxActGuardar');b.disabled=true;b.textContent='Guardando…';
- try{const when=proxima?new Date(proxima).toISOString():null;const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});if(crear&&when)await A.post('crm_tareas',{cliente_id:id,actividad_id:a?.[0]?.id||null,titulo:'Seguimiento: '+titulo,tipo:'seguimiento',prioridad:'media',vence_en:when});window.nxCrmCerrarTarea();await cargarSeguimientoCliente(id);try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
+ try{const when=proxima?new Date(proxima).toISOString():null;const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});if(crear&&when)await A.post('crm_tareas',{cliente_id:id,actividad_id:a?.[0]?.id||null,titulo:('Seguimiento: '+titulo).slice(0,160),tipo:'seguimiento',prioridad:'media',vence_en:when});window.nxCrmCerrarTarea();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(id)}catch(e){}await cargar();try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
  catch(e){try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar seguimiento';}
 };
 
@@ -111,7 +112,7 @@ function controlOperativo(){
  const proceso=all.filter(c=>c.estado_cliente==='EN_PROCESO').sort((a,b)=>String(a.fecha_seguimiento||'9999').localeCompare(String(b.fecha_seguimiento||'9999')));
  const sinArs=act.filter(c=>!String(c.ars||'').trim());
  const sinRen=act.filter(c=>!c.fecha_fin);
- const vencidos=tareas.filter(t=>t.vence_en&&String(t.vence_en).slice(0,10)<today);
+ const vencidos=agendaTareas.filter(t=>t.vence_en&&String(t.vence_en).slice(0,10)<today);
  const block=(title,count,rows,empty)=>'<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>'+title+'</h3><div class="nxOpsFilter">'+count+' requiere'+(count===1?'':'n')+' atención</div></div></div><div class="nxOpsRows">'+(rows.length?rows.slice(0,5).join(''):'<div class="nxOpsEmpty">'+empty+'</div>')+'</div></section>';
  const taskRows=vencidos.map(taskHtml);
  host.innerHTML='<div class="nxCrmCols"><div>'+block('Seguimientos vencidos',vencidos.length,taskRows,'No hay tareas vencidas.')+block('Clientes en proceso',proceso.length,proceso.map(c=>filaAtencion(c,(c.motivo_proceso||'Proceso pendiente')+(c.fecha_seguimiento?' · '+String(c.fecha_seguimiento).slice(0,10):''),'progress-check')),'No hay clientes en proceso.')+'</div><div>'+block('Datos por completar',sinArs.length,sinArs.map(c=>filaAtencion(c,'Falta asignar ARS','building-hospital')),'Todos tienen ARS asignada.')+block('Renovación por registrar',sinRen.length,sinRen.map(c=>filaAtencion(c,'Falta fecha de renovación','calendar-x')),'Todas las renovaciones tienen fecha.')+'</div></div>';
@@ -126,9 +127,9 @@ function ensureControl(){
 function pintarEquipo(rows){
  const host=$('#nxCrmEquipo');if(!host)return;
  const hoy=new Date().toISOString().slice(0,10),ags=agentes(),map=new Map();
- rows.forEach(t=>{const k=t.asignado_agente_id||'_sin';if(!map.has(k),!map.get(k))map.set(k,{pendientes:0,vencidas:0});const x=map.get(k);x.pendientes++;if(t.vence_en&&String(t.vence_en).slice(0,10)<hoy)x.vencidas++;});
+ rows.forEach(t=>{const k=t.asignado_agente_id||'_sin';if(!map.has(k))map.set(k,{pendientes:0,vencidas:0});const x=map.get(k);x.pendientes++;if(t.vence_en&&String(t.vence_en).slice(0,10)<hoy)x.vencidas++;});
  const items=[...map.entries()].sort((a,b)=>b[1].vencidas-a[1].vencidas||b[1].pendientes-a[1].pendientes);
- const cards=items.length?items.map(([id,x])=>{const a=ags.find(v=>String(v.id)===String(id));return '<div class="nxOpsTask"><div class="nxCrmAv">'+esc(a?.nom?.split(/\\s+/).map(z=>z[0]).slice(0,2).join('').toUpperCase()||'—')+'</div><div><b>'+esc(a?.nom||'Sin asignar')+'</b><span>'+x.pendientes+' pendiente'+(x.pendientes===1?'':'s')+(x.vencidas?' · '+x.vencidas+' vencida'+(x.vencidas===1?'':'s'):'')+'</span></div><div class="nxOpsDue '+(x.vencidas?'bad':'')+'">'+(x.vencidas?'Atender':'Al día')+'</div></div>';}).join(''):'<div class="nxOpsEmpty">Aún no hay tareas asignadas.</div>';
+ const cards=items.length?items.map(([id,x])=>{const a=ags.find(v=>String(v.id)===String(id));return '<div class="nxOpsTask"><div class="nxCrmAv">'+esc(a?.nom?.split(/\s+/).map(z=>z[0]).slice(0,2).join('').toUpperCase()||'—')+'</div><div><b>'+esc(a?.nom||'Sin asignar')+'</b><span>'+x.pendientes+' pendiente'+(x.pendientes===1?'':'s')+(x.vencidas?' · '+x.vencidas+' vencida'+(x.vencidas===1?'':'s'):'')+'</span></div><div class="nxOpsDue '+(x.vencidas?'bad':'')+'">'+(x.vencidas?'Atender':'Al día')+'</div></div>';}).join(''):'<div class="nxOpsEmpty">Aún no hay tareas asignadas.</div>';
  host.innerHTML='<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>Seguimiento por agente</h3><div class="nxOpsFilter">Carga pendiente de cada responsable</div></div></div><div class="nxOpsRows">'+cards+'</div></section>';
 }
 async function cargarEquipo(){
