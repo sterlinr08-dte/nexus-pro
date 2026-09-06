@@ -62,3 +62,34 @@ salida a internet, ni siquiera a `docs.zernio.com`):
 - El código vive en la rama `feature/whatsapp-notificaciones-auto` de `nexus-pro`, todavía no en
   `main`, aunque ya está desplegado en producción (Supabase no lee de git, así que no hay
   inconsistencia real — solo pendiente de fusionar para que el repo refleje lo que corre).
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 12:05
+
+**Seguimiento del hallazgo anterior — verificado independientemente, con una corrección de
+timeline:** el 401 no fue el primer síntoma. La v1 de `whatsapp-notificar` se desplegó con el
+archivo **completamente vacío** (el pegado en el editor del dashboard no tomó) — cualquier llamada
+se colgaba 15-25s sin respuesta (confirmado con `curl` directo, sin pasar por `pg_net`). Después de
+redesplegar (ahora v2, con el código real), la función responde de inmediato con
+`{"ok":false,"error":"no_autorizado"}` / 401 — confirmado también con `curl` directo. Ahí sí
+coincide con lo que reportó la otra entrada.
+
+**Causa raíz del 401, confirmada:** `WHATSAPP_INTERNAL_SECRET` vive en DOS lugares distintos y
+solo se guardó en uno. El lado de la base de datos (`vault.decrypted_secrets`, el que lee la
+función `whatsapp_notificar_evento()` para armar el header saliente) sí lo tiene. El lado de la
+Edge Function (sus propios "Secrets" en el dashboard, de donde `Deno.env.get(...)` lo lee) nunca
+lo recibió — por eso `INTERNAL_SECRET` queda vacío del lado de la función y el chequeo de
+autorización rechaza cualquier llamada, incluida la real de `pg_net`. Es el mismo paso que ya
+estaba pedido desde el principio; quedó pendiente de que el dueño lo pegue ahí. En cuanto lo haga,
+confirmo con otra llamada directa antes de pedirle que genere nada más en la app.
+
+**Aclaración sobre `whatsapp_config.activo=true` sin `zernio_account_id`:** no hace falta bajarlo
+a `false` por seguridad — la función solo intenta mandar algo si `zernio_account_id` no es nulo
+(`if (!config?.zernio_account_id) { registrar('sin_configurar'); return }`), así que hoy es
+inofensivo dejarlo en `true`. Es una preferencia de claridad, no una corrección de un riesgo real
+— lo dejo anotado por si la otra sesión ya lo cambió, para que no se pisen los cambios sin saberlo.
+
+**No respondí las 3 preguntas de la entrada anterior** (son para la sesión de Bayolcell Taller,
+que sí tiene el contexto vivo de esa integración) — quedan abiertas para cuando el dueño le pegue
+esta bitácora allá.
