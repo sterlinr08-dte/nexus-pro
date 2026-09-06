@@ -10,6 +10,7 @@ const clientes=()=>{try{return (window.ST||ST||{}).clientes||[]}catch(e){return[
 const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.activo!==false)}catch(e){return[]}};
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
 let tareas=[];
+let cargaAgenda=null, fichaPeticion=0;
 
 function css(){
  if($('#nxCrmOpsCss'))return;
@@ -26,8 +27,12 @@ function taskHtml(t){
 }
 async function cargar(){
  const A=api();if(!A?.get)return;
- try{tareas=await A.get('crm_tareas','estado=eq.pendiente&order=vence_en.asc.nullslast,created_at.asc&limit=8&select=*')||[];pintar();}
- catch(e){console.error('[CRM] tareas',e);pintar('No se pudieron cargar las tareas.');}
+ if(cargaAgenda)return cargaAgenda;
+ cargaAgenda=(async()=>{
+  try{tareas=await A.get('crm_tareas','estado=eq.pendiente&order=vence_en.asc.nullslast,created_at.asc&limit=8&select=*')||[];pintar();ensureControl();await cargarEquipo();}
+  catch(e){console.error('[CRM] tareas',e);pintar('No se pudieron cargar las tareas.');}
+ })();
+ try{await cargaAgenda;}finally{cargaAgenda=null;}
 }
 function pintar(err){
  const host=$('#nxCrmOps');if(!host)return;
@@ -69,9 +74,11 @@ function seguimientoHtml(acts,ts){
 }
 async function cargarSeguimientoCliente(id){
  const body=$('#c360TabBody'),A=api();if(!body||!A?.get)return;
+ const request=++fichaPeticion;
+ const vigente=()=>request===fichaPeticion&&typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad'&&$('#c360TabBody')===body;
  body.innerHTML='<div class="nxCrmEmpty">Cargando seguimiento…</div>';
- try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);tareas=rs[1]||[];body.innerHTML=seguimientoHtml(rs[0]||[],tareas);}
- catch(e){body.innerHTML='<div class="nxCrmEmpty">No se pudo cargar el seguimiento.</div>';console.error('[CRM] seguimiento',e)}
+ try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);if(!vigente())return;tareas=rs[1]||[];body.innerHTML=seguimientoHtml(rs[0]||[],tareas);}
+ catch(e){if(vigente())body.innerHTML='<div class="nxCrmEmpty">No se pudo cargar el seguimiento.</div>';console.error('[CRM] seguimiento',e)}
 }
 function patchFicha(){
  try{if(typeof pintarC360Tab==='function'&&!pintarC360Tab.__crmOps){const o=pintarC360Tab,n=function(){try{if(window.__nxCrmCtx&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad'&&typeof _c360Sel!=='undefined'&&_c360Sel){cargarSeguimientoCliente(_c360Sel);return;}}catch(e){}return o.apply(this,arguments)};n.__crmOps=1;pintarC360Tab=window.pintarC360Tab=n}}catch(e){console.error('[CRM] ficha',e)}
@@ -130,6 +137,7 @@ async function cargarEquipo(){
  try{pintarEquipo(await A.get('crm_tareas','estado=eq.pendiente&select=asignado_agente_id,vence_en')||[])}catch(e){console.error('[CRM] equipo',e)}
 }
 
-function start(){css();patchFicha();ensure();ensureControl();cargarEquipo();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
+window.nxCrmActualizarAgenda=ensure;
+function start(){css();patchFicha();if($('#v-crm.on'))ensure();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
