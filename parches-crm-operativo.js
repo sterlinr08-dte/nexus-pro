@@ -80,6 +80,7 @@ window.nxCrmNuevaActividadCliente=()=>{
  const title=prompt('Escribe la nota o resultado del seguimiento:');if(!title?.trim())return;
  const A=api();A.post('crm_actividades',{cliente_id:id,tipo:'nota',titulo:title.trim()}).then(()=>cargarSeguimientoCliente(id)).then(()=>{try{toast('ok','Nota agregada')}catch(e){}}).catch(e=>{try{toast('err','No se pudo guardar',e.message)}catch(x){}});
 };
-\nfunction start(){css();patchFicha();ensure();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
+
+function start(){css();patchFicha();ensure();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
