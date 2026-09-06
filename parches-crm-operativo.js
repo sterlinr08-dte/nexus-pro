@@ -12,7 +12,22 @@ const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTim
 const title=v=>String(v??'').trim().slice(0,160);
 const isoLocal=v=>{if(!v)return null;const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null};
 const firstRow=r=>Array.isArray(r)?r[0]:r;
+const canRpc=A=>!!A?.post;
 async function patchSafe(A,table,id,data){try{if(id&&A?.patch)await A.patch(table,'id=eq.'+encodeURIComponent(id),data)}catch(e){console.warn('[CRM] compensación fallida',e)}}
+async function registrarActividad(A,p){
+ if(canRpc(A)){
+  try{return await A.post('rpc/crm_registrar_actividad',{
+   p_cliente_id:p.cliente_id,p_tipo:p.tipo,p_titulo:p.titulo,p_detalle:p.detalle||null,p_resultado:p.resultado||null,
+   p_proxima_accion_en:p.proxima_accion_en||null,p_crear_tarea:!!p.crear_tarea,p_tarea_titulo:p.tarea_titulo||null,
+   p_tarea_tipo:p.tarea_tipo||'seguimiento',p_prioridad:p.prioridad||'media',p_asignado_agente_id:p.asignado_agente_id||null
+  })}
+  catch(e){console.warn('[CRM] RPC no disponible, usando fallback',e)}
+ }
+ const a=await A.post('crm_actividades',{cliente_id:p.cliente_id,tipo:p.tipo,titulo:p.titulo,detalle:p.detalle||null,resultado:p.resultado||null,proxima_accion_en:p.proxima_accion_en||null});
+ const actId=firstRow(a)?.id;
+ if(p.crear_tarea)await A.post('crm_tareas',{cliente_id:p.cliente_id,actividad_id:actId||null,titulo:p.tarea_titulo||title('Seguimiento: '+p.titulo),tipo:p.tarea_tipo||'seguimiento',prioridad:p.prioridad||'media',vence_en:p.proxima_accion_en,asignado_agente_id:p.asignado_agente_id||null});
+ return a;
+}
 let agendaTareas=[], fichaTareas=[];
 let cargaAgenda=null, fichaPeticion=0, guardandoTarea=false, guardandoActividad=false;
 const completandoTareas=new Set();
@@ -64,10 +79,7 @@ window.nxCrmGuardarTarea=async()=>{
  const venceIso=isoLocal(vence);if(vence&&!venceIso){try{toast('warn','Fecha de seguimiento inválida')}catch(e){};return}
  guardandoTarea=true;const b=$('#nxOpsGuardar');if(b){b.disabled=true;b.textContent='Guardando…';}
  try{
-  const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,asignado_agente_id,vence_en:venceIso});
-  const tareaId=firstRow(r)?.id;
-  try{await A.post('crm_actividades',{cliente_id,tipo:'nota',titulo:title('Tarea creada: '+titulo),detalle:nota||null,proxima_accion_en:venceIso})}
-  catch(e){await patchSafe(A,'crm_tareas',tareaId,{estado:'cancelada',updated_at:new Date().toISOString()});throw new Error('La tarea se compensó porque no pudo registrarse la actividad. Intenta de nuevo.')}
+  await registrarActividad(A,{cliente_id,tipo:'nota',titulo:title('Tarea creada: '+titulo),detalle:nota||null,proxima_accion_en:venceIso,crear_tarea:true,tarea_titulo:titulo,tarea_tipo:tipo,prioridad,asignado_agente_id});
   guardandoTarea=false;window.nxCrmCerrarTarea();await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(cliente_id)}catch(e){}
   try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
  }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoTarea=false;if(b){b.disabled=false;b.textContent='Guardar tarea';}}
@@ -114,7 +126,7 @@ window.nxCrmGuardarActividadCliente=async()=>{
  const when=isoLocal(proxima);if(proxima&&!when){try{toast('warn','Próximo seguimiento inválido')}catch(e){};return}
  if(crear&&!when){try{toast('warn','Elige la fecha para crear la tarea')}catch(e){};return}
  guardandoActividad=true;const b=$('#nxActGuardar');if(b){b.disabled=true;b.textContent='Guardando…';}
- try{const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});const actId=firstRow(a)?.id;if(crear&&when){try{await A.post('crm_tareas',{cliente_id:id,actividad_id:actId||null,titulo:title('Seguimiento: '+titulo),tipo:'seguimiento',prioridad:'media',vence_en:when})}catch(e){await patchSafe(A,'crm_actividades',actId,{resultado:'Pendiente de crear tarea: '+String(e.message||e).slice(0,120),updated_at:new Date().toISOString()});throw new Error('El seguimiento se guardó, pero la tarea no se creó. Revísalo en la ficha antes de repetir.')}}guardandoActividad=false;window.nxCrmCerrarTarea();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(id)}catch(e){}await cargar();try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
+ try{await registrarActividad(A,{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when,crear_tarea:crear&&!!when,tarea_titulo:title('Seguimiento: '+titulo),tarea_tipo:'seguimiento',prioridad:'media'});guardandoActividad=false;window.nxCrmCerrarTarea();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(id)}catch(e){}await cargar();try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
  catch(e){try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoActividad=false;if(b){b.disabled=false;b.textContent='Guardar seguimiento';}}
 };
 
