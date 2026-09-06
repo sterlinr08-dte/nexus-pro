@@ -90,7 +90,7 @@
   // ── Datos ──────────────────────────────────────────────────────────────
   async function cargar() {
     const A = api(); if (!A?.get) return;
-    try { hilos = await A.get('whatsapp_hilos', 'order=ultimo_mensaje_at.desc.nullslast&select=*') || []; } catch (e) { hilos = []; }
+    try { hilos = await A.get('whatsapp_hilos', 'order=ultimo_mensaje_at.desc.nullslast&limit=100&select=*') || []; } catch (e) { hilos = []; }
     if (hiloAbiertoId) await cargarMensajes(hiloAbiertoId);
     pintar();
   }
@@ -113,7 +113,7 @@
   async function cargarMensajes(hiloId) {
     const A = api(); if (!A?.get) return;
     try {
-      mensajes = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.asc&select=*`) || [];
+      mensajes = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.asc&limit=200&select=*`) || [];
       for (const m of mensajes) { if (m.media_path) m._url = await urlFirmada(m.media_path); }
     } catch (e) { mensajes = []; }
   }
@@ -155,7 +155,7 @@
   async function cargarPendientes() {
     const A = api(); if (!A?.get) return;
     let filas = [];
-    try { filas = await A.get('whatsapp_hilo_mensajes', "revision_pago_estado=eq.pendiente&order=created_at.asc&select=*") || []; } catch (e) { filas = []; }
+    try { filas = await A.get('whatsapp_hilo_mensajes', "revision_pago_estado=eq.pendiente&order=created_at.asc&limit=50&select=*") || []; } catch (e) { filas = []; }
     mensajesPendientesCache = filas;
     const list = $('#nxWaPendList'); if (!list) return;
     if (!filas.length) { list.innerHTML = '<div class="nxCrmEmpty">No hay bauches pendientes. Todo revisado.</div>'; return; }

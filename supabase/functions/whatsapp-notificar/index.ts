@@ -126,6 +126,16 @@ async function registrar(clienteId: string, tipo: string, referenciaId: string |
   });
 }
 
+async function marcarAtrasoNotificado(tipo: string, referenciaId: string | null | undefined) {
+  if (tipo !== "atrasado" || !referenciaId) return;
+  const { error } = await db
+    .from("facturas")
+    .update({ notificado_atraso_en: new Date().toISOString() })
+    .eq("id", referenciaId)
+    .is("notificado_atraso_en", null);
+  if (error) console.error("marcar atraso notificado error:", error.message);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
 
@@ -169,6 +179,7 @@ Deno.serve(async (req: Request) => {
     const resultado = await mandarConReintento(telefono, config.zernio_account_id, plantilla.nombre, plantilla.variables);
     if (resultado.ok) {
       await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "enviado", resultado.data?.data?.messageId ?? null);
+      await marcarAtrasoNotificado(tipo, referencia_id);
       return json({ ok: true, estado: "enviado" });
     }
     await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "error", null, JSON.stringify(resultado.data));
