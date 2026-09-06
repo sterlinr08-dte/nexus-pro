@@ -126,6 +126,9 @@ async function registrar(clienteId: string, tipo: string, referenciaId: string |
   });
 }
 
+// Se queda como estaba: marca la PRIMERA vez que ESA factura en particular entró en un aviso --
+// ya no decide si se avisa (eso lo hace whatsapp_detectar_atrasados con la cadencia por cliente,
+// ver marcarClienteAvisadoAtraso), es solo rastro histórico por si sirve para auditoría.
 async function marcarAtrasoNotificado(tipo: string, referenciaId: string | null | undefined) {
   if (tipo !== "atrasado" || !referenciaId) return;
   const { error } = await db
@@ -134,6 +137,20 @@ async function marcarAtrasoNotificado(tipo: string, referenciaId: string | null 
     .eq("id", referenciaId)
     .is("notificado_atraso_en", null);
   if (error) console.error("marcar atraso notificado error:", error.message);
+}
+
+// Cadencia real del recordatorio (decisión del dueño, auditoría 2026-09-06): un aviso de atraso
+// se repite cada N días MIENTRAS el cliente siga debiendo -- whatsapp_detectar_atrasados() lee
+// este campo para decidir si ya toca volver a avisarle. Se marca SOLO en éxito confirmado, nunca
+// en error/timeout/sin_configurar, para que un intento fallido se reintente en la próxima corrida
+// del cron en vez de darse por hecho.
+async function marcarClienteAvisadoAtraso(tipo: string, clienteId: string) {
+  if (tipo !== "atrasado") return;
+  const { error } = await db
+    .from("clientes")
+    .update({ ultimo_aviso_atraso_en: new Date().toISOString() })
+    .eq("id", clienteId);
+  if (error) console.error("marcar cliente avisado atraso error:", error.message);
 }
 
 Deno.serve(async (req: Request) => {
@@ -180,6 +197,7 @@ Deno.serve(async (req: Request) => {
     if (resultado.ok) {
       await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "enviado", resultado.data?.data?.messageId ?? null);
       await marcarAtrasoNotificado(tipo, referencia_id);
+      await marcarClienteAvisadoAtraso(tipo, cliente_id);
       return json({ ok: true, estado: "enviado" });
     }
     await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "error", null, JSON.stringify(resultado.data));
