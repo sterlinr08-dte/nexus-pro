@@ -216,7 +216,7 @@
   window.nxWaAbrirHilo = async function (id) {
     hiloAbiertoId = id;
     const h = hilos.find(x => x.id === id);
-    if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().patch('whatsapp_hilos', `id=eq.${id}`, { no_leidos_count: 0 }); } catch (e) {} }
+    if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().post('rpc/whatsapp_marcar_hilo_leido', { p_hilo_id: id }); } catch (e) {} }
     await cargarMensajes(id);
     pintarLista(); pintarDetalle();
   };
