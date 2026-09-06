@@ -216,7 +216,9 @@
   window.nxWaAbrirHilo = async function (id) {
     hiloAbiertoId = id;
     const h = hilos.find(x => x.id === id);
-    if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().patch('whatsapp_hilos', `id=eq.${id}`, { no_leidos_count: 0 }); } catch (e) {} }
+    // whatsapp_hilos no tiene policy de UPDATE para authenticated a proposito (todo escribe via
+    // RPC/service role) -- un PATCH directo aqui lo bloquearia RLS en silencio.
+    if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().post('rpc/whatsapp_marcar_hilo_leido', { p_hilo_id: id }); } catch (e) {} }
     await cargarMensajes(id);
     pintarLista(); pintarDetalle();
   };
