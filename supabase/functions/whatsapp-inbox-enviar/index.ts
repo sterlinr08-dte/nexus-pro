@@ -44,14 +44,27 @@ function subDelJWT(req: Request): string | null {
 // El cliente de DB usa service_role (ignora RLS) -- esto repone del lado del servidor exactamente
 // lo que la policy de mi_rol()/mi_organizacion() haría, ya que esta función escribe con ese
 // cliente. Nunca confiar en que el llamador ya pasó por RLS solo porque mandó un JWT válido.
-async function esUsuarioDeNexusPro(sub: string | null): Promise<boolean> {
-  if (!sub) return false;
+//
+// De paso resuelve el agente (agentes.id) que va en enviado_por_agente_id -- por nombre, mismo
+// patrón ya usado en el POS (_posVendAuto): no hay FK real de usuarios_sistema a agentes, así que
+// se empareja por nom (case-insensitive). Sin match, agenteId queda null -- no bloquea el envío,
+// solo no queda registrado quién lo mandó (mismo criterio "safe no-op fallback" del resto del sistema).
+async function resolverAcceso(sub: string | null): Promise<{ autorizado: boolean; agenteId: string | null }> {
+  const sinAcceso = { autorizado: false, agenteId: null };
+  if (!sub) return sinAcceso;
   const { data: profile } = await db.from("profiles").select("rol, usuario_sistema_id").eq("id", sub).maybeSingle();
-  if (!profile?.rol || !profile.usuario_sistema_id) return false;
-  const { data: us } = await db.from("usuarios_sistema").select("organizacion_id").eq("id", profile.usuario_sistema_id).maybeSingle();
-  if (!us?.organizacion_id) return false;
+  if (!profile?.rol || !profile.usuario_sistema_id) return sinAcceso;
+  const { data: us } = await db.from("usuarios_sistema").select("organizacion_id, nom").eq("id", profile.usuario_sistema_id).maybeSingle();
+  if (!us?.organizacion_id) return sinAcceso;
   const { data: org } = await db.from("organizaciones").select("id").eq("slug", "nexus-pro").maybeSingle();
-  return !!org && org.id === us.organizacion_id;
+  if (!org || org.id !== us.organizacion_id) return sinAcceso;
+
+  let agenteId: string | null = null;
+  if (us.nom) {
+    const { data: agente } = await db.from("agentes").select("id").eq("activo", true).ilike("nom", us.nom).maybeSingle();
+    agenteId = agente?.id ?? null;
+  }
+  return { autorizado: true, agenteId };
 }
 
 type ResultadoZernio = { ok: boolean; data: any; status: number };
@@ -93,7 +106,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ ok: false, error: "metodo_no_permitido" }, 405);
 
   const sub = subDelJWT(req);
-  if (!(await esUsuarioDeNexusPro(sub))) return json({ ok: false, error: "no_autorizado" }, 403);
+  const acceso = await resolverAcceso(sub);
+  if (!acceso.autorizado) return json({ ok: false, error: "no_autorizado" }, 403);
 
   let body: { hilo_id?: string; mensaje?: string };
   try {
@@ -143,7 +157,7 @@ Deno.serve(async (req: Request) => {
     cuerpo: mensaje,
     wa_message_id: resultado.data?.data?.messageId ?? null,
     estado: "enviado",
-    enviado_por_agente_id: null,
+    enviado_por_agente_id: acceso.agenteId,
   });
   await db.from("whatsapp_hilos").update({
     ultimo_mensaje_at: ahora,

@@ -175,7 +175,14 @@
 
   window.nxWaAplicarBauche = function (mensajeId, clienteId) {
     const m = mensajesPendientesCache.find(x => x.id === mensajeId); if (!m) return;
+    // Si ya había otro bauche esperando resolverse (el agente no terminó ese cobro), avisar --
+    // este nuevo click lo reemplaza, así que si el primer pago se completa más tarde ya no
+    // se va a auto-resolver solo (queda pendiente, se puede aplicar/descartar a mano).
+    if (window.__nxWaRevisionPendiente && window.__nxWaRevisionPendiente !== mensajeId) {
+      toast('info', 'Aviso', 'Había otro bauche esperando cobro -- quedó pendiente, revísalo aparte.');
+    }
     window.__nxWaRevisionPendiente = mensajeId;
+    window.__nxWaRevisionPendienteCliente = clienteId != null ? String(clienteId) : null;
     try { abrirAbono(clienteId); } catch (e) { toast('err', 'No se pudo abrir el registro de pago'); return; }
     urlFirmada(m.media_path).then(url => {
       setTimeout(() => { if (window.nxBaucheAsignarExterno) window.nxBaucheAsignarExterno('wa-media:' + m.media_path, url); }, 180);
@@ -188,9 +195,19 @@
 
   // Se dispara despues de que regAbono() completa exitosamente, para cerrar la revision
   // pendiente que quedo marcada en nxWaAplicarBauche. Ver parches-seguros-base.js.
-  window.nxWaResolverTrasAbono = async function (abonoId) {
+  // clienteId es del abono que de verdad se acaba de registrar -- si no coincide con el cliente
+  // del bauche pendiente (dos "Aplicar como pago" abiertos sin terminar el primero, o cualquier
+  // otro cobro registrado mientras la bandera seguía puesta), NO se resuelve: mejor dejarlo
+  // pendiente para revisar a mano que marcar el bauche equivocado como ya cobrado.
+  window.nxWaResolverTrasAbono = async function (abonoId, clienteId) {
     const mensajeId = window.__nxWaRevisionPendiente; if (!mensajeId) return;
+    const esperado = window.__nxWaRevisionPendienteCliente;
+    if (esperado != null && clienteId != null && String(clienteId) !== esperado) {
+      console.warn('[WA Inbox] abono de otro cliente mientras había un bauche pendiente -- no se resuelve solo', { mensajeId, esperado, clienteId });
+      return;
+    }
     window.__nxWaRevisionPendiente = null;
+    window.__nxWaRevisionPendienteCliente = null;
     const A = api(); if (!A?.post) return;
     try { await A.post('rpc/whatsapp_resolver_revision_pago', { p_mensaje_id: mensajeId, p_estado: 'aplicado', p_abono_id: abonoId }); cargarPendientes(); } catch (e) {}
   };
@@ -309,7 +326,7 @@
       const r = await orig.apply(this, arguments);
       const after = window._ultimoAbono;
       if (after && after !== before && after.abonoId && window.__nxWaRevisionPendiente) {
-        try { await window.nxWaResolverTrasAbono(after.abonoId); } catch (e) {}
+        try { await window.nxWaResolverTrasAbono(after.abonoId, after.cliente); } catch (e) {}
       }
       return r;
     };
