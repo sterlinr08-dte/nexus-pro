@@ -11,22 +11,21 @@ const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.acti
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
 const title=v=>String(v??'').trim().slice(0,160);
 const isoLocal=v=>{if(!v)return null;const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null};
-const firstRow=r=>Array.isArray(r)?r[0]:r;
-const canRpc=A=>!!A?.post;
-async function patchSafe(A,table,id,data){try{if(id&&A?.patch)await A.patch(table,'id=eq.'+encodeURIComponent(id),data)}catch(e){console.warn('[CRM] compensación fallida',e)}}
+// Sin fallback de inserts sueltos a proposito: la RPC crm_registrar_actividad
+// ya esta confirmada en produccion (mismo wrapper API.post('rpc/...') que usa
+// facturacion/POS/NCF desde hace semanas) y es la UNICA que valida y guarda
+// actividad+tarea en una sola transaccion. El fallback anterior (2 inserts
+// sueltos sin compensacion) podia dejar una actividad huerfana sin su tarea
+// si el segundo insert fallaba, y ademas se saltaba las validaciones de la
+// RPC (cliente/titulo requeridos). Si la RPC falla, el error real se propaga
+// tal cual al llamador (que ya lo muestra con toast) en vez de degradar en
+// silencio a un guardado parcial.
 async function registrarActividad(A,p){
- if(canRpc(A)){
-  try{return await A.post('rpc/crm_registrar_actividad',{
-   p_cliente_id:p.cliente_id,p_tipo:p.tipo,p_titulo:p.titulo,p_detalle:p.detalle||null,p_resultado:p.resultado||null,
-   p_proxima_accion_en:p.proxima_accion_en||null,p_crear_tarea:!!p.crear_tarea,p_tarea_titulo:p.tarea_titulo||null,
-   p_tarea_tipo:p.tarea_tipo||'seguimiento',p_prioridad:p.prioridad||'media',p_asignado_agente_id:p.asignado_agente_id||null
-  })}
-  catch(e){console.warn('[CRM] RPC no disponible, usando fallback',e)}
- }
- const a=await A.post('crm_actividades',{cliente_id:p.cliente_id,tipo:p.tipo,titulo:p.titulo,detalle:p.detalle||null,resultado:p.resultado||null,proxima_accion_en:p.proxima_accion_en||null});
- const actId=firstRow(a)?.id;
- if(p.crear_tarea)await A.post('crm_tareas',{cliente_id:p.cliente_id,actividad_id:actId||null,titulo:p.tarea_titulo||title('Seguimiento: '+p.titulo),tipo:p.tarea_tipo||'seguimiento',prioridad:p.prioridad||'media',vence_en:p.proxima_accion_en,asignado_agente_id:p.asignado_agente_id||null});
- return a;
+ return await A.post('rpc/crm_registrar_actividad',{
+  p_cliente_id:p.cliente_id,p_tipo:p.tipo,p_titulo:p.titulo,p_detalle:p.detalle||null,p_resultado:p.resultado||null,
+  p_proxima_accion_en:p.proxima_accion_en||null,p_crear_tarea:!!p.crear_tarea,p_tarea_titulo:p.tarea_titulo||null,
+  p_tarea_tipo:p.tarea_tipo||'seguimiento',p_prioridad:p.prioridad||'media',p_asignado_agente_id:p.asignado_agente_id||null
+ });
 }
 let agendaTareas=[], fichaTareas=[];
 let cargaAgenda=null, fichaPeticion=0, guardandoTarea=false, guardandoActividad=false;
@@ -84,11 +83,18 @@ window.nxCrmGuardarTarea=async()=>{
   try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
  }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoTarea=false;if(b){b.disabled=false;b.textContent='Guardar tarea';}}
 };
+// Mismo principio que registrarActividad: una sola RPC atomica en vez de
+// patch+post sueltos. Antes, si el patch (marcar completada) tenia exito
+// pero el post (nota de auditoria) fallaba, el catch cortaba ANTES de
+// llamar cargar() -- la tarea quedaba completada en la base de datos pero
+// la UI la seguia mostrando como pendiente, y encima mostraba "No se pudo
+// completar" (falso negativo, porque la parte que si importaba ya habia
+// pasado).
 window.nxCrmCompletarTarea=async id=>{
  if(completandoTareas.has(String(id)))return;
- const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t||!A?.patch||!A?.post)return;
+ const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t||!A?.post)return;
  completandoTareas.add(String(id));
- try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:title('Tarea completada: '+t.titulo)});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
+ try{await A.post('rpc/crm_completar_tarea',{p_tarea_id:id});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
  catch(e){try{toast('err','No se pudo completar',e.message)}catch(x){}}
  finally{completandoTareas.delete(String(id))}
 };
