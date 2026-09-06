@@ -68,7 +68,7 @@ function seguimientoHtml(acts,ts){
 async function cargarSeguimientoCliente(id){
  const body=$('#c360TabBody'),A=api();if(!body||!A?.get)return;
  body.innerHTML='<div class="nxCrmEmpty">Cargando seguimiento…</div>';
- try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);body.innerHTML=seguimientoHtml(rs[0]||[],rs[1]||[]);}
+ try{const rs=await Promise.all([A.get('crm_actividades','cliente_id=eq.'+encodeURIComponent(id)+'&order=created_at.desc&limit=25&select=*'),A.get('crm_tareas','cliente_id=eq.'+encodeURIComponent(id)+'&estado=eq.pendiente&order=vence_en.asc.nullslast&select=*')]);tareas=rs[1]||[];body.innerHTML=seguimientoHtml(rs[0]||[],tareas);}
  catch(e){body.innerHTML='<div class="nxCrmEmpty">No se pudo cargar el seguimiento.</div>';console.error('[CRM] seguimiento',e)}
 }
 function patchFicha(){
