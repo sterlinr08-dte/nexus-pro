@@ -293,3 +293,67 @@ dueño.
 ningún UPDATE/INSERT esperado desde el frontend en el código que audité — solo se lee — así que no
 hacía falta una RPC equivalente para ella; si alguna función nueva necesita escribir ahí desde el
 navegador, avisar aquí antes de asumir que el mismo patrón de "solo SELECT" es un descuido.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 22:10
+
+**Auditoría completa del módulo de WhatsApp (fase 1 + fase 2), pedida por el dueño.** Código
+desplegado real, permisos/RLS en la base y frontend, línea por línea. Resultado: 1 bug funcional
+real, 2 hallazgos chicos ya cerrados, y el resto (lo más sensible) confirmado sano.
+
+**🔴 Sin cerrar, pendiente de que el dueño decida la cadencia (no lo toqué, es decisión de
+negocio):** `whatsapp_detectar_atrasados()` marca cada factura como "ya avisada" una sola vez
+(`notificado_atraso_en`), y el disparo del aviso depende de `array_length(v_nuevas,1) > 0` —
+pero `array_length` de un array VACÍO en Postgres da **NULL**, no 0, y `if NULL` es falso. Rastreé
+el caso real: un cliente con N facturas atrasadas sin marcar recibe una ráfaga de N días
+(una por día, marcando una factura a la vez) y **después silencio total para siempre**, aunque
+siga debiendo lo mismo — salvo que se le genere una factura nueva. Le di 3 opciones al dueño
+(recordar mientras deba / recordar cada X días / dejarlo como ráfaga+silencio a propósito) y
+quedó esperando su respuesta. **Ojo:** el hotfix de las 17:36-17:40 de hoy (PR #295, "cerrar
+ejecucion directa de triggers") arregló OTRO bug relacionado (antes se marcaba de forma optimista
+sin esperar confirmación de Zernio) — buen arreglo, pero no toca este.
+
+**🟠 2 hallazgos chicos, YA arreglados y desplegados (commit `14a6735`):**
+1. `whatsapp-inbox-enviar` mandaba `enviado_por_agente_id: null` a fuego pese a que ya deriva
+   `sub` del JWT para autorizar — nunca quedaba registrado quién de los agentes mandó cada
+   mensaje. Arreglado: se resuelve `agentes.id` por nombre (mismo patrón `_posVendAuto` del POS —
+   no hay FK real de `usuarios_sistema` a `agentes`). Verificado contra los datos reales:
+   ROBINSON resuelve a su fila de `agentes`; el admin (sin fila en `agentes`) cae al fallback
+   seguro sin bloquear el envío. Desplegado como v2.
+2. El flujo de "bauche pendiente → Aplicar como pago" guardaba el mensajeId a resolver en una
+   sola variable global (`window.__nxWaRevisionPendiente`), sin verificar de quién era el pago
+   que de verdad se registró. Si un agente abría "Aplicar" en un bauche, no terminaba el cobro, y
+   completaba CUALQUIER OTRO cobro en la app mientras la bandera seguía puesta, el sistema
+   marcaba el bauche equivocado como "aplicado" con el abono ajeno. Arreglado: ahora se compara
+   el `cliente_id` del abono real contra el cliente esperado del bauche pendiente antes de
+   resolver — si no coincide, no resuelve nada (queda pendiente para revisar a mano) en vez de
+   marcar mal.
+
+**🟡 Observaciones menores, sin tocar (bajo riesgo, no bloquean nada):**
+- `mi_organizacion() <> (...)` en las 2 RPC nuevas falla ABIERTO si algún día un `profiles` con rol
+  quedara sin `usuarios_sistema` vinculado (NULL en un `if` es falso, no lanza la excepción) —
+  hoy 0 de 5 perfiles están en ese estado, no explotable, pero conviene sumar
+  `or mi_organizacion() is null` como blindaje.
+- El SDK `@supabase/supabase-js` se carga del CDN fijado solo a `@2` (no versión exacta) —
+  recomendable pinear.
+- El cliente de Realtime del inbox se autentica una sola vez al abrir la pestaña y no se refresca
+  si el token de sesión rota mientras queda abierta muchas horas — solo afecta que el badge de
+  no-leídos se quede pegado, no la seguridad (cada `fetch` real sigue protegido por RLS).
+
+**✅ Confirmado sano (para que quede constancia, no hace falta releerlo):** firma HMAC del
+webhook falla cerrado; el filtro de cuenta descarta en silencio el tráfico de las 5 líneas de
+BayolCell Taller sin tocar la base; teléfono ambiguo no vincula al azar (ya arreglado, v5);
+idempotencia del webhook por `wa_message_id` (ya arreglada, v5); todo lo que manda el cliente por
+WhatsApp pasa por `esc()`/`escHtml` antes de pintarse (revisado línea por línea, sin XSS);
+rutas de media generadas por el propio código (`crypto.randomUUID()`), nunca por el remitente;
+bucket privado con MIME/tamaño exigido por Storage mismo y RLS de solo-lectura acotada a
+nexus-pro; `whatsapp_hilos`/`whatsapp_hilo_mensajes`/`whatsapp_mensajes` siguen solo-SELECT para
+`authenticated`; `whatsapp_config` con GRANT amplio pero RLS angosto (mismo patrón del resto del
+sistema); `whatsapp-inbox-enviar` re-deriva la organización del lado del servidor y exige la
+ventana de 24h también ahí, no solo en el frontend; `whatsapp-notificar` no intenta enviar si
+falta configurar la cuenta, y solo marca "ya avisada" una factura de atraso cuando Zernio confirma
+el envío (nunca en error/timeout).
+
+**Pendiente real:** la decisión de cadencia del aviso de atraso (🔴 arriba) — el resto de la
+auditoría queda cerrado.
