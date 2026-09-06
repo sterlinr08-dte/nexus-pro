@@ -180,3 +180,50 @@ la nueva línea de Seguros, esa es la prueba real pendiente.
   `pago_confirmado`).
 - ⬜ Fusionar `feature/whatsapp-notificaciones-auto` a `main` (código ya corre en producción vía
   Supabase; el merge es solo para que el repo lo refleje).
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 13:10
+
+**Fase 2 arrancada: inbox de WhatsApp de dos vías** (el dueño quiere que el cliente pueda
+escribirle de vuelta y mandar fotos de bauches, además de recibir avisos). Rama nueva
+`feature/whatsapp-inbox-fase2` (no confundir con `feature/whatsapp-notificaciones-auto`, que es
+la fase 1 de arriba). Migración ya aplicada en producción (`whatsapp_hilos`,
+`whatsapp_hilo_mensajes`, bucket privado `whatsapp-inbox-media`, RPC
+`whatsapp_resolver_revision_pago`). 2 Edge Functions nuevas escritas
+(`whatsapp-webhook`, `whatsapp-inbox-enviar`) pendientes de que el dueño las despliegue — mismo
+bloqueo del clasificador de seguridad que en la fase 1.
+
+**Hallazgo crítico para la sesión de Bayolcell Taller, confirmado en docs.zernio.com (no en
+ningún repo) — por favor léanlo con atención:** los **webhooks de Zernio son a nivel de EQUIPO
+(hasta 10 URLs por equipo), no por número/`accountId`**. Como la cuenta de Zernio ya se confirmó
+compartida (ver 12:40), esto significa:
+1. El webhook nuevo de nexus-pro (`whatsapp-webhook`, filtra por `accountId` contra
+   `whatsapp_config`) se va a registrar como una URL ADICIONAL en el mismo equipo — no reemplaza
+   el de ustedes.
+2. **El webhook de Bayolcell Taller (`whatsapp-webhook` en `bayolcell-taller`) va a empezar a
+   recibir también los eventos de la nueva línea de Seguros.** Revisé su código real:
+   - Para `message.received`/`message.sent`: `buscarLineaPorCuenta` ya devuelve `null` si el
+     `accountId` no coincide con ninguna de sus 5 líneas, y `procesarMensaje` corta sin escribir
+     nada — **ya es seguro hoy, no hace falta ningún cambio**.
+   - Para `message.delivered`/`message.read`/`message.failed`: `procesarEstadoMensaje` busca por
+     `wa_message_id` SIN filtrar por cuenta — también es seguro en la práctica (un id de Seguros
+     nunca va a existir en su tabla `whatsapp_mensajes`), pero van a ver más líneas de log tipo
+     "no se encontro mensaje con wa_message_id" de lo normal una vez que esto esté activo. No es
+     un bug nuevo — avisado para que no se pierda tiempo investigándolo si aparece.
+3. **Necesito el valor de `ZERNIO_WEBHOOK_SECRET`** (el mismo que ya usan
+   `whatsapp-webhook`/`instagram-webhook` en Bayolcell Taller) para pegarlo también en este
+   proyecto — la firma HMAC es a nivel de equipo, igual que el `ZERNIO_API_KEY` de la entrada de
+   las 12:40. Mismo procedimiento: el dueño lo copia de donde ya esté guardado y lo pega aquí
+   (Project Settings → Edge Functions → Secrets, nombre exacto `ZERNIO_WEBHOOK_SECRET`) — nadie
+   puede leerlo de vuelta una vez guardado, ni siquiera con acceso al proyecto.
+
+**Corrección a mi propia entrada de las 12:40:** dije que esta sesión "no tiene acceso al
+proyecto Supabase de Bayolcell Taller" — eso era incorrecto, sí tengo acceso de lectura a ese
+proyecto (confirmado con `list_projects`). Lo que sigue siendo cierto, y es lo que realmente
+importa, es que ningún acceso de proyecto permite leer de vuelta el VALOR de un secret ya
+guardado — por eso igual hizo falta que el dueño lo copiara a mano.
+
+**Fuera de alcance de esta fase 2, a propósito** (por si la otra sesión lo tenía distinto):
+sugerencias de respuesta con IA, envío masivo/campañas, que el agente mande adjuntos/notas de voz
+desde el inbox (solo recibir fotos del cliente, no mandar).
