@@ -16,35 +16,58 @@
   function css() {
     if ($('#nxWaInboxCss')) return;
     const s = document.createElement('style'); s.id = 'nxWaInboxCss'; s.textContent = `
-#v-waInbox{font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif}
-#v-waInbox .nxWaShell{display:grid;grid-template-columns:300px 1fr;gap:12px;height:calc(100vh - 140px);min-height:480px}
-#v-waInbox .nxWaCol{background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e5eaf2);border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
+#v-waInbox{--wa-b:#2563eb;--wa-b2:#7c3aed;--wa-line:rgba(226,232,240,.86);font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;min-height:100%;padding:0 0 18px;background:linear-gradient(180deg,rgba(248,251,255,.94),rgba(246,248,251,.82))}
+#v-waInbox .nxCrmHomeHead{position:relative;margin:0 0 12px;padding:16px 16px 18px;border:1px solid rgba(255,255,255,.82);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(239,246,255,.9));box-shadow:0 18px 48px -38px rgba(15,23,42,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden}
+#v-waInbox .nxCrmHomeHead:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:999px;background:linear-gradient(90deg,#25d366,var(--wa-b),var(--wa-b2));opacity:.9}
+#v-waInbox .nxCrmHomeHead h1{font-size:25px;line-height:1.06;margin:4px 0 5px;font-weight:900;letter-spacing:0;color:#0f172a}
+#v-waInbox .nxCrmHomeHead p{max-width:560px;margin:0;font-size:10.5px;line-height:1.35;color:#475569}
+#v-waInbox .nxCrmHomeBadge{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;padding:6px 10px;border-radius:999px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.22);color:#047857;font-size:8.5px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+#v-waInbox .nxWaShell{display:grid;grid-template-columns:minmax(280px,330px) minmax(0,1fr);gap:12px;height:calc(100vh - 170px);min-height:500px}
+#v-waInbox .nxWaCol{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.82);border-radius:17px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 46px -36px rgba(15,23,42,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 #v-waInbox .nxWaListScroll{overflow-y:auto;flex:1}
-#v-waInbox .nxWaRow{display:flex;gap:9px;padding:11px;border-bottom:1px solid var(--sf-line,#eef2f7);cursor:pointer}
-#v-waInbox .nxWaRow:hover{background:#f8fafc}
-#v-waInbox .nxWaRow.on{background:#eaf1ff}
-#v-waInbox .nxWaAv{width:34px;height:34px;border-radius:50%;background:#eaf1ff;color:#1d4ed8;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none}
+#v-waInbox .nxWaRow{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--wa-line);cursor:pointer;transition:background .16s ease,transform .16s ease}
+#v-waInbox .nxWaRow:hover{background:#f8fafc;transform:translateX(2px)}
+#v-waInbox .nxWaRow.on{background:linear-gradient(90deg,rgba(37,99,235,.12),rgba(124,58,237,.08))}
+#v-waInbox .nxWaAv{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;display:grid;place-items:center;font-size:11px;font-weight:900;flex:none}
 #v-waInbox .nxWaWho{min-width:0;flex:1}
-#v-waInbox .nxWaWho b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#v-waInbox .nxWaWho span{display:block;font-size:9.5px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#v-waInbox .nxWaBadge{background:#dc2626;color:#fff;border-radius:999px;font-size:8.5px;font-weight:800;padding:1px 6px;flex:none}
+#v-waInbox .nxWaWho b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0f172a}
+#v-waInbox .nxWaWho span{display:block;font-size:9.5px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#v-waInbox .nxWaBadge{background:#dc2626;color:#fff;border-radius:999px;font-size:8.5px;font-weight:900;padding:2px 6px;flex:none}
 #v-waInbox .nxWaDetalle{display:flex;flex-direction:column;height:100%}
-#v-waInbox .nxWaHead{padding:11px;border-bottom:1px solid var(--sf-line,#eef2f7);font-size:11px;font-weight:800}
-#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:7px;background:#f6f8fb}
-#v-waInbox .nxWaBub{max-width:70%;padding:8px 10px;border-radius:10px;font-size:11.5px;line-height:1.4}
-#v-waInbox .nxWaBub.in{align-self:flex-start;background:#fff;border:1px solid #e5eaf2}
-#v-waInbox .nxWaBub.out{align-self:flex-end;background:#dcf8c6}
-#v-waInbox .nxWaBub img{max-width:220px;border-radius:8px;display:block;cursor:pointer}
-#v-waInbox .nxWaComposer{display:flex;gap:7px;padding:10px;border-top:1px solid var(--sf-line,#eef2f7)}
-#v-waInbox .nxWaComposer input{flex:1;border:1px solid #dbe3ee;border-radius:9px;padding:9px;font:inherit;font-size:11.5px}
-#v-waInbox .nxWaComposer button{border:0;background:#2563eb;color:#fff;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer}
+#v-waInbox .nxWaHead{padding:12px;border-bottom:1px solid var(--wa-line);font-size:11px;font-weight:900;background:rgba(255,255,255,.88);color:#0f172a}
+#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(180deg,#f8fafc,#eef4ff)}
+#v-waInbox .nxWaBub{max-width:76%;padding:9px 11px;border-radius:14px;font-size:11.5px;line-height:1.4;box-shadow:0 10px 22px -20px rgba(15,23,42,.55)}
+#v-waInbox .nxWaBub.in{align-self:flex-start;background:#fff;border:1px solid #e5eaf2;border-top-left-radius:6px}
+#v-waInbox .nxWaBub.out{align-self:flex-end;background:#dcf8c6;border-top-right-radius:6px}
+#v-waInbox .nxWaBub img{max-width:220px;border-radius:10px;display:block;cursor:pointer}
+#v-waInbox .nxWaComposer{display:flex;gap:7px;padding:10px;border-top:1px solid var(--wa-line);background:rgba(255,255,255,.92)}
+#v-waInbox .nxWaComposer input{flex:1;min-width:0;border:1px solid #dbe3ee;border-radius:999px;padding:10px 12px;font:inherit;font-size:11.5px;outline:none}
+#v-waInbox .nxWaComposer input:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
+#v-waInbox .nxWaComposer button{width:40px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:14px;font-weight:900;cursor:pointer;display:grid;place-items:center}
 #v-waInbox .nxWaCerrada{padding:10px;text-align:center;font-size:10.5px;color:#92400e;background:#fff7ed;border-top:1px solid #fed7aa}
-#v-waInbox .nxWaEmpty{padding:24px;text-align:center;color:#64748b;font-size:10.5px}
-#v-waInbox .nxWaPend{border:1px solid #e5eaf2;border-radius:11px;padding:9px;display:flex;gap:9px;align-items:center;margin-bottom:7px}
-#v-waInbox .nxWaPend img{width:44px;height:44px;object-fit:cover;border-radius:8px;flex:none}
-#v-waInbox .nxWaPend .acts{display:flex;gap:6px;margin-left:auto}
-#v-waInbox .nxWaPend button{border:1px solid #dbe3ee;border-radius:8px;background:#fff;font-size:9.5px;font-weight:800;padding:6px 9px;cursor:pointer}
+#v-waInbox .nxWaEmpty{padding:24px;text-align:center;color:#64748b;font-size:10.5px;line-height:1.35}
+#v-waInbox .nxWaPend{border:1px solid #e5eaf2;border-radius:13px;padding:9px;display:flex;gap:9px;align-items:center;margin-bottom:7px;background:rgba(255,255,255,.74)}
+#v-waInbox .nxWaPend img{width:44px;height:44px;object-fit:cover;border-radius:10px;flex:none;background:#f1f5f9}
+#v-waInbox .nxWaPend .acts{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+#v-waInbox .nxWaPend button{border:1px solid #dbe3ee;border-radius:999px;background:#fff;font-size:9.5px;font-weight:900;padding:7px 10px;cursor:pointer}
 #v-waInbox .nxWaPend button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+@media(max-width:760px){
+  #v-waInbox{padding:0 10px 16px;background:linear-gradient(180deg,rgba(248,251,255,.97),rgba(246,248,251,.92))}
+  #v-waInbox .nxCrmHomeHead{padding:13px 13px 16px;border-radius:16px;margin-bottom:10px}
+  #v-waInbox .nxCrmHomeHead h1{font-size:24px}
+  #v-waInbox .nxCrmHomeHead p{font-size:10px;max-width:270px}
+  #v-waInbox #nxWaPendPanel{margin-bottom:10px}
+  #v-waInbox .nxWaShell{display:flex;flex-direction:column;height:auto;min-height:0;gap:10px}
+  #v-waInbox .nxWaCol{border-radius:16px;min-height:220px;max-height:none}
+  #v-waInbox .nxWaListCol{min-height:280px;max-height:44vh}
+  #v-waInbox .nxWaDetailCol{min-height:58vh}
+  #v-waInbox .nxWaDetailCol:not(.has-open){display:none}
+  #v-waInbox .nxWaRow{padding:12px 10px}
+  #v-waInbox .nxWaBub{max-width:88%;font-size:12px}
+  #v-waInbox .nxWaBub img,#v-waInbox .nxWaBub audio,#v-waInbox .nxWaBub video{max-width:100%;width:100%}
+  #v-waInbox .nxWaPend{align-items:flex-start;flex-wrap:wrap}
+  #v-waInbox .nxWaPend .acts{width:100%;margin-left:0;justify-content:flex-start}
+}
     `; document.head.appendChild(s);
   }
 
@@ -128,11 +151,11 @@
 
   function render() {
     const v = ensureView();
-    v.innerHTML = `<div class="nxCrmHomeHead"><div><span class="nxCrmHomeBadge"><i class="ti ti-brand-whatsapp"></i> WhatsApp</span><h1>Inbox</h1><p>Conversaciones con clientes — preguntas y comprobantes de pago.</p></div></div>
+    v.innerHTML = `<div class="nxCrmHomeHead"><div><span class="nxCrmHomeBadge"><i class="ti ti-brand-whatsapp"></i> WhatsApp</span><h1>Inbox</h1><p>Conversaciones con clientes, preguntas y comprobantes de pago.</p></div></div>
       <div id="nxWaPendPanel" style="margin-bottom:12px"></div>
       <div class="nxWaShell">
-        <div class="nxWaCol"><div class="nxWaListScroll" id="nxWaLista"></div></div>
-        <div class="nxWaCol"><div class="nxWaDetalle" id="nxWaDetalle"></div></div>
+        <div class="nxWaCol nxWaListCol"><div class="nxWaListScroll" id="nxWaLista"></div></div>
+        <div class="nxWaCol nxWaDetailCol"><div class="nxWaDetalle" id="nxWaDetalle"></div></div>
       </div>`;
     pintar();
   }
@@ -251,6 +274,8 @@
 
   function pintarDetalle() {
     const cont = $('#nxWaDetalle'); if (!cont) return;
+    const detailCol = cont.closest('.nxWaDetailCol');
+    if (detailCol) detailCol.classList.toggle('has-open', !!hiloAbiertoId);
     if (!hiloAbiertoId) { cont.innerHTML = '<div class="nxWaEmpty">Selecciona una conversación.</div>'; return; }
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
