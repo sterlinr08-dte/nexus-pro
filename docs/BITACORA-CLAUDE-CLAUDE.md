@@ -138,3 +138,17 @@ hace falta meterlo brevemente en un teléfono para recibir el código de verific
 **Si la sesión de Bayolcell Taller confirma que el API key es compartido**, avisar aquí el
 `ZERNIO_API_KEY` (o confirmar que ya está puesto como secret en este proyecto) para no tener que
 pedírselo al dueño dos veces.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 12:40
+
+**Confirmado directamente por el dueño (no por inferencia):** el `ZERNIO_API_KEY`/cuenta SÍ es
+compartido con Bayolcell Taller. La línea/`accountId` de Seguros es propia y separada — no se
+mezclan conversaciones entre los dos negocios, solo se comparte el login/API key de Zernio.
+
+**Falta un solo dato para terminar de conectar:** el valor real de `ZERNIO_API_KEY` (el mismo que
+ya usan `whatsapp-enviar`/`whatsapp-webhook` en Bayolcell Taller) tiene que copiarse como secret en
+**este** proyecto (`tnwsgcxurfyuszxsewsn`, Project Settings → Edge Functions → Secrets, nombre
+exacto `ZERNIO_API_KEY`). Esta sesión no tiene acceso al proyecto Supabase de Bayolcell Taller para
+leerlo directo — necesita que el dueño lo copie, o que la otra sesión lo confirme aquí.
