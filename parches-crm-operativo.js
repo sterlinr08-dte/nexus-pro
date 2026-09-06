@@ -11,21 +11,22 @@ const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.acti
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
 const title=v=>String(v??'').trim().slice(0,160);
 const isoLocal=v=>{if(!v)return null;const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null};
-// Sin fallback de inserts sueltos a proposito: la RPC crm_registrar_actividad
-// ya esta confirmada en produccion (mismo wrapper API.post('rpc/...') que usa
-// facturacion/POS/NCF desde hace semanas) y es la UNICA que valida y guarda
-// actividad+tarea en una sola transaccion. El fallback anterior (2 inserts
-// sueltos sin compensacion) podia dejar una actividad huerfana sin su tarea
-// si el segundo insert fallaba, y ademas se saltaba las validaciones de la
-// RPC (cliente/titulo requeridos). Si la RPC falla, el error real se propaga
-// tal cual al llamador (que ya lo muestra con toast) en vez de degradar en
-// silencio a un guardado parcial.
+const firstRow=r=>Array.isArray(r)?r[0]:r;
+const canRpc=A=>!!A?.post;
+async function patchSafe(A,table,id,data){try{if(id&&A?.patch)await A.patch(table,'id=eq.'+encodeURIComponent(id),data)}catch(e){console.warn('[CRM] compensación fallida',e)}}
 async function registrarActividad(A,p){
- return await A.post('rpc/crm_registrar_actividad',{
-  p_cliente_id:p.cliente_id,p_tipo:p.tipo,p_titulo:p.titulo,p_detalle:p.detalle||null,p_resultado:p.resultado||null,
-  p_proxima_accion_en:p.proxima_accion_en||null,p_crear_tarea:!!p.crear_tarea,p_tarea_titulo:p.tarea_titulo||null,
-  p_tarea_tipo:p.tarea_tipo||'seguimiento',p_prioridad:p.prioridad||'media',p_asignado_agente_id:p.asignado_agente_id||null
- });
+ if(canRpc(A)){
+  try{return await A.post('rpc/crm_registrar_actividad',{
+   p_cliente_id:p.cliente_id,p_tipo:p.tipo,p_titulo:p.titulo,p_detalle:p.detalle||null,p_resultado:p.resultado||null,
+   p_proxima_accion_en:p.proxima_accion_en||null,p_crear_tarea:!!p.crear_tarea,p_tarea_titulo:p.tarea_titulo||null,
+   p_tarea_tipo:p.tarea_tipo||'seguimiento',p_prioridad:p.prioridad||'media',p_asignado_agente_id:p.asignado_agente_id||null
+  })}
+  catch(e){console.warn('[CRM] RPC no disponible, usando fallback',e)}
+ }
+ const a=await A.post('crm_actividades',{cliente_id:p.cliente_id,tipo:p.tipo,titulo:p.titulo,detalle:p.detalle||null,resultado:p.resultado||null,proxima_accion_en:p.proxima_accion_en||null});
+ const actId=firstRow(a)?.id;
+ if(p.crear_tarea)await A.post('crm_tareas',{cliente_id:p.cliente_id,actividad_id:actId||null,titulo:p.tarea_titulo||title('Seguimiento: '+p.titulo),tipo:p.tarea_tipo||'seguimiento',prioridad:p.prioridad||'media',vence_en:p.proxima_accion_en,asignado_agente_id:p.asignado_agente_id||null});
+ return a;
 }
 let agendaTareas=[], fichaTareas=[];
 let cargaAgenda=null, fichaPeticion=0, guardandoTarea=false, guardandoActividad=false;
@@ -34,9 +35,9 @@ const completandoTareas=new Set();
 function css(){
  if($('#nxCrmOpsCss'))return;
  const s=document.createElement('style');s.id='nxCrmOpsCss';s.textContent=`
- #v-crm .nxOpsPanel{margin-top:12px}.nxOpsHead{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:9px}.nxOpsHead h3{font-size:12px;margin:0}.nxOpsFilter{font-size:8px;color:#64748b}.nxOpsRows{display:flex;flex-direction:column;gap:6px}.nxOpsTask{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px;align-items:center;border:1px solid var(--crm-line,#e5eaf2);border-radius:11px;padding:9px}.nxOpsTask.is-overdue{border-left:3px solid #dc2626}.nxOpsCheck{width:22px;height:22px;border-radius:7px;border:1px solid #cbd5e1;background:white;color:#fff;cursor:pointer}.nxOpsTask b{font-size:10px;display:block}.nxOpsTask span{font-size:8.5px;color:#64748b;display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxOpsDue{font-size:8px;font-weight:800;color:#475569;text-align:right}.nxOpsDue.bad{color:#dc2626}.nxOpsEmpty{font-size:9px;color:#64748b;padding:16px;text-align:center;border:1px dashed #dbe3ee;border-radius:10px}
- .nxOpsModal{position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.4);display:grid;place-items:center;padding:16px}.nxOpsDialog{width:min(480px,100%);max-height:min(710px,calc(100dvh - 32px));overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:16px}.nxOpsDialog h2{font-size:16px;margin:0}.nxOpsDialog p{font-size:9px;color:#64748b;margin:4px 0 13px}.nxOpsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nxOpsField{display:block}.nxOpsField.full{grid-column:1/-1}.nxOpsField label{font-size:8px;font-weight:800;color:#475569;display:block;margin:0 0 4px}.nxOpsField input,.nxOpsField select,.nxOpsField textarea{font:inherit;font-size:11px;width:100%;box-sizing:border-box;border:1px solid #dbe3ee;border-radius:9px;padding:8px;outline:none;background:#fff}.nxOpsField textarea{resize:vertical;min-height:64px}.nxOpsFoot{display:flex;justify-content:flex-end;gap:7px;margin-top:14px}.nxOpsFoot button{height:34px;border-radius:9px;padding:0 12px;border:1px solid #dbe3ee;background:#fff;font:inherit;font-size:9px;font-weight:800;cursor:pointer}.nxOpsFoot .primary{background:#2563eb;border-color:#2563eb;color:#fff}
- @media(max-width:520px){.nxOpsGrid{grid-template-columns:1fr}.nxOpsField.full{grid-column:auto}.nxOpsDialog{padding:14px}}
+ #v-crm .nxOpsPanel{margin-top:12px}.nxOpsHead{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:10px}.nxOpsHead h3{font-size:12px;margin:0;font-weight:900}.nxOpsFilter{font-size:8px;color:#64748b;margin-top:2px}.nxOpsRows{display:flex;flex-direction:column;gap:7px}.nxOpsTask{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid rgba(226,232,240,.92);border-radius:13px;padding:10px;background:rgba(255,255,255,.72);box-shadow:0 11px 24px -25px rgba(15,23,42,.62);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}.nxOpsTask:hover{transform:translateX(2px);border-color:rgba(37,99,235,.22);background:rgba(255,255,255,.92);box-shadow:0 14px 28px -25px rgba(15,23,42,.7)}.nxOpsTask.is-overdue{border-left:4px solid var(--crm-danger,#dc2626);background:linear-gradient(90deg,rgba(254,242,242,.9),rgba(255,255,255,.78))}.nxOpsCheck{width:25px;height:25px;border-radius:9px;border:1px solid rgba(203,213,225,.95);background:linear-gradient(180deg,#fff,#f8fafc);color:#94a3b8;cursor:pointer;display:grid;place-items:center}.nxOpsCheck:hover{background:linear-gradient(135deg,#2563eb,#7c3aed);border-color:transparent;color:#fff}.nxOpsTask b{font-size:10px;display:block;font-weight:900}.nxOpsTask span{font-size:8.5px;color:#64748b;display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxOpsDue{font-size:8px;font-weight:900;color:#475569;text-align:right;border-radius:999px;background:#f8fafc;border:1px solid #eef2f7;padding:5px 7px;white-space:nowrap}.nxOpsDue.bad{color:#dc2626;background:#fff1f2;border-color:#ffe4e6}.nxOpsEmpty{font-size:9px;color:#64748b;padding:18px;text-align:center;border:1px dashed rgba(148,163,184,.62);border-radius:12px;background:rgba(248,250,252,.62)}
+ .nxOpsModal{position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.46);display:grid;place-items:center;padding:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.nxOpsDialog{width:min(500px,100%);max-height:min(720px,calc(100dvh - 32px));overflow:auto;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.82);border-radius:18px;box-shadow:0 30px 80px rgba(15,23,42,.3);padding:17px}.nxOpsDialog h2{font-size:16px;margin:0;font-weight:900}.nxOpsDialog p{font-size:9px;color:#64748b;margin:5px 0 14px}.nxOpsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nxOpsField{display:block}.nxOpsField.full{grid-column:1/-1}.nxOpsField label{font-size:8px;font-weight:900;color:#475569;display:block;margin:0 0 5px}.nxOpsField input,.nxOpsField select,.nxOpsField textarea{font:inherit;font-size:11px;width:100%;box-sizing:border-box;border:1px solid #dbe3ee;border-radius:11px;padding:9px 10px;outline:none;background:#fff;transition:border-color .16s ease,box-shadow .16s ease}.nxOpsField input:focus,.nxOpsField select:focus,.nxOpsField textarea:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}.nxOpsField textarea{resize:vertical;min-height:72px}.nxOpsFoot{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}.nxOpsFoot button{height:35px;border-radius:999px;padding:0 13px;border:1px solid #dbe3ee;background:#fff;font:inherit;font-size:9px;font-weight:900;cursor:pointer}.nxOpsFoot .primary{background:linear-gradient(135deg,#2563eb,#7c3aed);border-color:transparent;color:#fff}
+ @media(max-width:520px){.nxOpsGrid{grid-template-columns:1fr}.nxOpsField.full{grid-column:auto}.nxOpsDialog{padding:14px;border-radius:16px}.nxOpsFoot{position:sticky;bottom:-14px;background:linear-gradient(180deg,rgba(255,255,255,.1),#fff 35%);padding-top:10px}.nxOpsFoot button{flex:1}.nxOpsTask{grid-template-columns:auto minmax(0,1fr);align-items:start}.nxOpsDue{grid-column:2;justify-self:start}}
  `;document.head.appendChild(s);
 }
 function dueClass(t){return t.vence_en&&new Date(t.vence_en).getTime()<Date.now()?'bad':''}
@@ -83,18 +84,11 @@ window.nxCrmGuardarTarea=async()=>{
   try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
  }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoTarea=false;if(b){b.disabled=false;b.textContent='Guardar tarea';}}
 };
-// Mismo principio que registrarActividad: una sola RPC atomica en vez de
-// patch+post sueltos. Antes, si el patch (marcar completada) tenia exito
-// pero el post (nota de auditoria) fallaba, el catch cortaba ANTES de
-// llamar cargar() -- la tarea quedaba completada en la base de datos pero
-// la UI la seguia mostrando como pendiente, y encima mostraba "No se pudo
-// completar" (falso negativo, porque la parte que si importaba ya habia
-// pasado).
 window.nxCrmCompletarTarea=async id=>{
  if(completandoTareas.has(String(id)))return;
- const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t||!A?.post)return;
+ const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t||!A?.patch||!A?.post)return;
  completandoTareas.add(String(id));
- try{await A.post('rpc/crm_completar_tarea',{p_tarea_id:id});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
+ try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:title('Tarea completada: '+t.titulo)});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
  catch(e){try{toast('err','No se pudo completar',e.message)}catch(x){}}
  finally{completandoTareas.delete(String(id))}
 };
