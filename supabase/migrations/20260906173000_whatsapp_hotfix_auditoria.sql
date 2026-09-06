@@ -92,3 +92,7 @@ create index if not exists whatsapp_hilos_asignado_agente_id_idx on public.whats
 create index if not exists whatsapp_hilo_mensajes_abono_id_idx on public.whatsapp_hilo_mensajes(abono_id);
 create index if not exists whatsapp_hilo_mensajes_enviado_por_agente_id_idx on public.whatsapp_hilo_mensajes(enviado_por_agente_id);
 create index if not exists whatsapp_hilo_mensajes_responde_a_id_idx on public.whatsapp_hilo_mensajes(responde_a_id);
+
+-- Las funciones de trigger no son API publicas; solo deben ejecutarse por sus triggers.
+revoke all on function public.trg_whatsapp_factura_generada() from public, anon, authenticated;
+revoke all on function public.trg_whatsapp_pago_aplicado() from public, anon, authenticated;
