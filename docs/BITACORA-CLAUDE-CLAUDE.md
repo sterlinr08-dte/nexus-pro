@@ -227,3 +227,45 @@ guardado — por eso igual hizo falta que el dueño lo copiara a mano.
 **Fuera de alcance de esta fase 2, a propósito** (por si la otra sesión lo tenía distinto):
 sugerencias de respuesta con IA, envío masivo/campañas, que el agente mande adjuntos/notas de voz
 desde el inbox (solo recibir fotos del cliente, no mandar).
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 16:41
+
+**Desplegadas las 2 funciones de la fase 2 (inbox de dos vías), rama
+`feature/whatsapp-inbox-fase2`:**
+- `whatsapp-webhook` v4, `verify_jwt:false` (autentica por firma HMAC propia, header
+  `X-Zernio-Signature` contra `ZERNIO_WEBHOOK_SECRET`). **OJO — este slug YA EXISTÍA** desde la
+  Fase 3 de Meta (handshake GET + log, ver entradas viejas de `CLAUDE.md`) — quedó REEMPLAZADO por
+  completo con el código de Zernio. No se pierde nada real: esa integración de Meta nunca llegó a
+  activarse (bloqueada en verificación de negocio). Probado con `pg_net` sin firma → `401 Invalid
+  signature`, correcto (falla cerrado si el secreto no está puesto, no en silencio).
+- `whatsapp-inbox-enviar` v1 (nueva), `verify_jwt:true` — **crítico dejarla así**: el código hace
+  `subDelJWT()` (decodifica el `sub` del JWT SIN re-verificar firma) y confía en que el gateway de
+  Supabase ya validó la firma antes de llegar aquí. Con `verify_jwt:false` cualquiera podría mandar
+  un JWT fabricado con un `sub` de un usuario real de `nexus-pro` y pasar `esUsuarioDeNexusPro()`
+  sin autenticarse de verdad — sería un bypass de auth completo. Confirmado que quedó en `true`.
+
+**HALLAZGO REAL, sin arreglar (auditoría, no lo pedí yo, no lo toqué sin confirmar):** la
+migración `20260906030000_whatsapp_inbox_fase2.sql` (ya aplicada) le da a `authenticated` SOLO
+`SELECT` sobre `whatsapp_hilos` y `whatsapp_hilo_mensajes` — ni INSERT ni UPDATE, ni por GRANT ni
+por policy. `parches-whatsapp-inbox.js` (línea ~219) hace
+`api().patch('whatsapp_hilos', 'id=eq.'+id, {no_leidos_count:0})` para marcar un hilo como leído —
+esa llamada va a fallar (bloqueada por falta de permiso) y el error queda tragado en un
+`catch(e){}` vacío. **Efecto real:** el contador de no-leídos nunca baja a cero cuando un agente
+abre la conversación — queda pegado. Verificado con SQL directo (`information_schema.
+role_table_grants`), no es una suposición.
+
+No lo arreglé porque toca esquema/permisos más allá de lo que se me pidió (desplegar las 2
+funciones + el secret) y esta sesión no sabe si ya hay un plan distinto (ej. una RPC dedicada, como
+ya se hizo con `whatsapp_resolver_revision_pago`, en vez de abrir un GRANT de UPDATE crudo sobre
+toda la tabla). Si nadie lo toma, la opción más chica y segura es una RPC
+`whatsapp_marcar_hilo_leido(p_hilo_id uuid)` (security definer, mismo patrón que la ya existente)
+en vez de un GRANT UPDATE amplio — evita que un agente pueda reescribir `cliente_id`/
+`telefono_e164`/etc. de un hilo ajeno a través de un PATCH de PostgREST sin restricción de columna.
+
+**Pendiente — decisión del dueño:** falta pegar `ZERNIO_WEBHOOK_SECRET` (Project Settings → Edge
+Functions → Secrets, este proyecto) — el valor ya existe del lado de BayolCell Taller
+(`whatsapp-webhook`/`instagram-webhook` allá), solo falta copiarlo. Ninguna sesión de Claude puede
+leer secrets ya guardados de vuelta, en este proyecto ni en el otro — es siempre paso manual del
+dueño.
