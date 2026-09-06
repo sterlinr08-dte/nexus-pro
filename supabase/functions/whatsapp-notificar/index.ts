@@ -10,12 +10,17 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // Bayolcell Taller (ese lo verifica con una firma HMAC de Zernio porque lo llama Zernio; este lo
 // verifica con un secreto propio porque lo llama nuestra propia base de datos).
 //
-// Los 3 tipos de evento (factura_generada, atrasado, pago_aplicado) son SIEMPRE mensajes
-// iniciados por el negocio (el cliente no escribió primero), así que caen fuera de la ventana de
-// 24h de Meta — se mandan como plantilla, nunca como texto libre. Contrato de plantilla
-// verificado en vivo contra docs.zernio.com en la integración de Bayolcell Taller: POST
-// .../messages con { messageType:"template", template:{ name, language,
+// Los 4 tipos de evento (factura_generada, atrasado, pago_aplicado, entrega_confirmada) son
+// SIEMPRE mensajes iniciados por el negocio (el destinatario no escribió primero), así que caen
+// fuera de la ventana de 24h de Meta — se mandan como plantilla, nunca como texto libre.
+// Contrato de plantilla verificado en vivo contra docs.zernio.com en la integración de Bayolcell
+// Taller: POST .../messages con { messageType:"template", template:{ name, language,
 // variableMapping:{ body_text:[[...]] } } }.
+//
+// Destinatario: cliente (clientes.wa) O agente (agentes.tel) — el body trae cliente_id o
+// agente_id, nunca los dos. entrega_confirmada (v3) es el único evento con destino agente:
+// avisa cuánto tiene acumulado cuando cobra y deposita a SU PROPIA cuenta (trg_whatsapp_entrega_confirmada
+// en Postgres, migración whatsapp_entrega_agente) — los otros 3 siguen siendo solo para clientes.
 //
 // Si `whatsapp_config` no existe o está inactiva (activo=false — el estado por defecto hasta que
 // exista una cuenta real de Zernio), se registra el intento en whatsapp_mensajes con
@@ -99,23 +104,34 @@ async function mandarConReintento(telefono: string, accountId: string, nombre: s
 
 type Plantilla = { nombre: string; variables: string[] };
 
-function armarPlantilla(tipo: string, nombreCliente: string, datos: Record<string, unknown>): Plantilla | null {
+// nombreDestino es del cliente o del agente, según cuál de los dos venga en la llamada — la
+// plantilla no necesita saber cuál es, solo el texto que va en la variable {{1}}.
+function armarPlantilla(tipo: string, nombreDestino: string, datos: Record<string, unknown>): Plantilla | null {
   if (tipo === "factura_generada") {
-    return { nombre: "factura_generada", variables: [nombreCliente, fmtMonto(datos.monto), periodoLegible(datos.periodo as string)] };
+    return { nombre: "factura_generada", variables: [nombreDestino, fmtMonto(datos.monto), periodoLegible(datos.periodo as string)] };
   }
   if (tipo === "atrasado") {
     const meses = Number(datos.meses) || 1;
-    return { nombre: "recordatorio_atraso", variables: [nombreCliente, fmtMonto(datos.monto), `${meses} mes${meses === 1 ? "" : "es"}`] };
+    return { nombre: "recordatorio_atraso", variables: [nombreDestino, fmtMonto(datos.monto), `${meses} mes${meses === 1 ? "" : "es"}`] };
   }
   if (tipo === "pago_aplicado") {
-    return { nombre: "pago_confirmado", variables: [nombreCliente, fmtMonto(datos.monto), fmtMonto(datos.saldo_actual)] };
+    return { nombre: "pago_confirmado", variables: [nombreDestino, fmtMonto(datos.monto), fmtMonto(datos.saldo_actual)] };
+  }
+  // Entrega confirmada (destino agente): monto = lo que acaba de depositar en este cobro,
+  // acumulado = transferencias_saldo_disponible_agente() -- lo que el agente tiene en su poder
+  // en total en este momento, no solo lo de este cobro.
+  if (tipo === "entrega_confirmada") {
+    return { nombre: "entrega_confirmada", variables: [nombreDestino, fmtMonto(datos.monto), fmtMonto(datos.acumulado)] };
   }
   return null;
 }
 
-async function registrar(clienteId: string, tipo: string, referenciaId: string | null, plantilla: Plantilla | null, estado: string, zernioMessageId?: string | null, errorDetalle?: string | null) {
+// clienteId/agenteId: exactamente uno de los dos, nunca los dos a la vez ni ninguno (ya se validó
+// antes de llamar aquí) — whatsapp_mensajes tiene un CHECK que lo exige también del lado de la base.
+async function registrar(clienteId: string | null, agenteId: string | null, tipo: string, referenciaId: string | null, plantilla: Plantilla | null, estado: string, zernioMessageId?: string | null, errorDetalle?: string | null) {
   await db.from("whatsapp_mensajes").insert({
     cliente_id: clienteId,
+    agente_id: agenteId,
     tipo,
     referencia_id: referenciaId,
     plantilla_nombre: plantilla?.nombre ?? null,
@@ -160,51 +176,65 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "no_autorizado" }, 401);
   }
 
-  let body: { tipo?: string; cliente_id?: string; referencia_id?: string; datos?: Record<string, unknown> };
+  let body: { tipo?: string; cliente_id?: string; agente_id?: string; referencia_id?: string; datos?: Record<string, unknown> };
   try {
     body = await req.json();
   } catch {
     return json({ ok: false, error: "body_invalido" }, 400);
   }
 
-  const { tipo, cliente_id, referencia_id, datos } = body;
-  if (!tipo || !cliente_id) return json({ ok: false, error: "tipo_y_cliente_id_requeridos" }, 400);
+  const { tipo, cliente_id, agente_id, referencia_id, datos } = body;
+  if (!tipo || (!cliente_id && !agente_id)) return json({ ok: false, error: "tipo_y_destino_requeridos" }, 400);
 
-  const { data: cliente } = await db.from("clientes").select("nom, wa").eq("id", cliente_id).maybeSingle();
-  if (!cliente) return json({ ok: false, error: "cliente_no_encontrado" }, 404);
+  // Destinatario: cliente (clientes.wa) o agente (agentes.tel) -- nunca los dos, el llamador
+  // (trigger de Postgres) siempre manda uno solo.
+  let nombreDestino: string;
+  let telCrudo: string | null | undefined;
+  if (agente_id) {
+    const { data: agente } = await db.from("agentes").select("nom, tel").eq("id", agente_id).maybeSingle();
+    if (!agente) return json({ ok: false, error: "agente_no_encontrado" }, 404);
+    nombreDestino = agente.nom ?? "agente";
+    telCrudo = agente.tel;
+  } else {
+    const { data: cliente } = await db.from("clientes").select("nom, wa").eq("id", cliente_id!).maybeSingle();
+    if (!cliente) return json({ ok: false, error: "cliente_no_encontrado" }, 404);
+    nombreDestino = cliente.nom ?? "cliente";
+    telCrudo = cliente.wa;
+  }
 
   const { data: config } = await db.from("whatsapp_config").select("zernio_account_id, activo").eq("activo", true).limit(1).maybeSingle();
 
   if (!config?.zernio_account_id) {
-    await registrar(cliente_id, tipo, referencia_id ?? null, null, "sin_configurar");
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, null, "sin_configurar");
     return json({ ok: true, estado: "sin_configurar" });
   }
 
-  const plantilla = armarPlantilla(tipo, cliente.nom ?? "cliente", datos ?? {});
+  const plantilla = armarPlantilla(tipo, nombreDestino, datos ?? {});
   if (!plantilla) {
-    await registrar(cliente_id, tipo, referencia_id ?? null, null, "error", null, "tipo de evento desconocido: " + tipo);
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, null, "error", null, "tipo de evento desconocido: " + tipo);
     return json({ ok: false, error: "tipo_desconocido" }, 400);
   }
 
-  const telefono = formatearTelefono(cliente.wa);
+  const telefono = formatearTelefono(telCrudo);
   if (!telefono) {
-    await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "error", null, "cliente sin WhatsApp registrado");
+    const motivo = agente_id ? "agente sin WhatsApp registrado" : "cliente sin WhatsApp registrado";
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, plantilla, "error", null, motivo);
     return json({ ok: true, estado: "error", motivo: "sin_whatsapp" });
   }
 
   try {
     const resultado = await mandarConReintento(telefono, config.zernio_account_id, plantilla.nombre, plantilla.variables);
     if (resultado.ok) {
-      await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "enviado", resultado.data?.data?.messageId ?? null);
+      await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, plantilla, "enviado", resultado.data?.data?.messageId ?? null);
       await marcarAtrasoNotificado(tipo, referencia_id);
-      await marcarClienteAvisadoAtraso(tipo, cliente_id);
+      if (cliente_id) await marcarClienteAvisadoAtraso(tipo, cliente_id);
       return json({ ok: true, estado: "enviado" });
     }
-    await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "error", null, JSON.stringify(resultado.data));
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, plantilla, "error", null, JSON.stringify(resultado.data));
     return json({ ok: false, estado: "error", detalle: resultado.data }, 502);
   } catch (e) {
     const detalle = esTimeout(e) ? "timeout llamando a Zernio" : String(e);
-    await registrar(cliente_id, tipo, referencia_id ?? null, plantilla, "error", null, detalle);
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, plantilla, "error", null, detalle);
     return json({ ok: false, estado: "error", detalle }, 502);
   }
 });

@@ -387,3 +387,58 @@ mientras el cliente siga debiendo" → X = 3.
 (commit `23434d4`) ya están en `main` y desplegados. Las observaciones 🟡 de la entrada anterior
 (NULL-fail-open en las 2 RPC, versión flotante del SDK, Realtime sin refresco) quedan como
 pendientes de bajo riesgo, sin fecha — avisar si alguna se vuelve relevante.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 22:38
+
+**Nuevo evento de WhatsApp, pedido por el dueño: avisar al AGENTE cuánto tiene acumulado cuando
+cobra y deposita a SU PROPIA cuenta.** Extiende el mismo pipeline de "notificaciones automáticas"
+que ya se auditó hoy (entradas de las 22:10/22:15) — no es un sistema aparte.
+
+**El caso real ya existía en el código desde el Bloque 4 (Detalles de cobro/transferencias entre
+agentes), solo faltaba el aviso.** `seguros_registrar_cobro_con_entrega()` inserta en
+`entregas_admin` con `confirmado=true` SOLO cuando quien registra el cobro (su sesión, vía
+`mi_agente_efectivo()`) es el MISMO agente dueño de la cuenta donde se depositó
+(`p_cuenta_destino_id`) — eso ES "cobrar y depositar a la cuenta de él". Cualquier otro caso
+(depositar a la cuenta de OTRO agente, o una entrega física manual) entra con `confirmado=false`.
+Verificado con una simulación real (rollback, sesión de ROBINSON) antes de construir nada: el
+patrón se confirma exacto — `confirmado=true, es_directo=true` únicamente en el auto-depósito.
+
+**Construido (migración `whatsapp_entrega_agente`, aplicada; edge function `whatsapp-notificar`
+v7):**
+- `whatsapp_mensajes` pasa de "solo clientes" a "clientes O agentes" — `cliente_id` ahora nullable,
+  columna nueva `agente_id` (FK a `agentes`), CHECK que exige uno de los dos. Se reusa la MISMA
+  tabla de historial en vez de duplicar una paralela.
+- `whatsapp_notificar_evento_agente(tipo, agente_id, referencia_id, datos)` — mismo mecanismo que
+  `whatsapp_notificar_evento` (net.http_post + secreto de Vault), el body lleva `agente_id` en vez
+  de `cliente_id`.
+- Trigger nuevo `trg_whatsapp_entrega_confirmada` AFTER INSERT en `entregas_admin`, `WHEN
+  (NEW.confirmado AND NEW.es_directo)` — dispara EXACTA y SOLO en el auto-depósito (no hace falta
+  repetir la comparación de agentes, ya la resolvió la RPC). Mismo patrón exception-safe que los
+  otros 2 triggers de WhatsApp — un fallo aquí nunca puede tumbar el cobro/entrega real.
+- "Cuánto tiene acumulado" = `transferencias_saldo_disponible_agente(agente_id)` — la MISMA
+  función que el sistema YA usa para decirle a un agente cuánto puede entregar físicamente. No se
+  inventó ningún cálculo nuevo.
+- Edge function extendida: acepta `agente_id` además de `cliente_id` (nunca los dos), busca en
+  `agentes.nom/tel` en vez de `clientes.nom/wa`, nuevo tipo de plantilla `entrega_confirmada`
+  (variables: nombre, monto del depósito, acumulado total).
+
+**Verificado en dos mitades, sin tocar datos reales:**
+1. Pipeline completo con un agente real (ROBINSON): llamé `whatsapp_notificar_evento_agente(...)`
+   directo → confirmé el `net.http_post` llegó al edge function v7 desplegado → confirmé que
+   insertó `whatsapp_mensajes` con `agente_id` poblado y `estado='sin_configurar'` (Zernio sigue
+   sin cuenta conectada, mismo estado que todo lo demás del sistema) → fila de prueba borrada.
+2. El disparador real: simulé el RPC completo (`seguros_registrar_cobro_con_entrega`) como sesión
+   de ROBINSON depositando a su propia cuenta, en una transacción con `rollback` — confirmé
+   `confirmado=true, es_directo=true` (exactamente la condición del trigger) y que
+   `transferencias_saldo_disponible_agente` da un número real (274,190, el saldo actual real de
+   ROBINSON). Nada quedó comprometido.
+
+**Pendiente (del dueño, no de código, mismo tipo de bloqueo que el resto del sistema):** crear y
+que Meta apruebe la plantilla `entrega_confirmada` en la cuenta de Zernio (igual que las otras 3
+plantillas del sistema, ninguna existe todavía en Meta) — hasta entonces, cada disparo real queda
+registrado como `sin_configurar`, sin enviar nada, exactamente igual que factura_generada/
+atrasado/pago_aplicado hoy.
+
+`get_advisors(security)` corrido después de aplicar — sin hallazgos nuevos.

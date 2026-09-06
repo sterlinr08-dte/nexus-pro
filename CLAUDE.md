@@ -12405,3 +12405,44 @@ que usa la app, no con INSERTs a mano.
   cron de auto-facturación **le va a generar factura solo cada día 20**. Si la prueba termina, apagar
   "Permitir facturación automática" en su ficha. Y el **NCF 711 quedó consumido** — un comprobante
   fiscal no se devuelve.
+
+### WhatsApp — notificaciones automáticas Zernio (fase 1/2) + aviso al agente de su acumulado (6-sep-2026)
+**Vacío de documentación cerrado con esta entrada:** el sistema de notificaciones de WhatsApp vía
+**Zernio** (proveedor compartido con BayolCell Taller) — `whatsapp_config`/`whatsapp_mensajes` +
+Edge Functions `whatsapp-notificar`/`whatsapp-webhook`/`whatsapp-inbox-enviar` + tablas
+`whatsapp_hilos`/`whatsapp_hilo_mensajes` — se construyó en una sesión anterior y **nunca quedó
+registrado aquí** (la sección "FASE 3 — WhatsApp Business API directo con Meta", más arriba, es un
+plan viejo de Twilio/Meta que se pausó ANTES de que este sistema existiera — quedó desactualizada,
+no la borro por honestidad del registro, pero el sistema real hoy es este). El detalle completo de
+cada pieza vive en `docs/BITACORA-CLAUDE-CLAUDE.md` (entradas del 6-sep-2026); aquí solo el resumen
+para quien no lea esa bitácora:
+- **Fase 1 (saliente automático):** 3 eventos — factura generada, cliente atrasado (con recordatorio
+  cada 3 días MIENTRAS el cliente siga debiendo, no una ráfaga que se apaga sola —
+  `whatsapp_detectar_atrasados()`/`clientes.ultimo_aviso_atraso_en`), pago aplicado. Disparados por
+  triggers de Postgres (`trg_whatsapp_factura_generada`/`trg_whatsapp_pago_aplicado`, exception-safe:
+  un fallo del aviso nunca tumba la operación real) que llaman `whatsapp_notificar_evento(...)` →
+  `net.http_post` → Edge Function `whatsapp-notificar`, que arma la plantilla y llama a Zernio.
+- **Fase 2 (bandeja de dos vías):** `whatsapp-webhook` recibe mensajes entrantes (firma HMAC
+  verificada); `whatsapp-inbox-enviar` responde con texto libre SOLO si el cliente escribió en las
+  últimas 24h (regla de Meta); frontend en `parches-whatsapp-inbox.js` (pantalla completa, no
+  documentada aún en detalle aquí).
+- **Todo el sistema está construido y probado pero SIN enviar nada real todavía** — la cuenta de
+  Zernio (`whatsapp_config.zernio_account_id`) sigue sin conectar (paso del dueño, no de código);
+  cada intento se registra igual en `whatsapp_mensajes` con `estado:'sin_configurar'`.
+- **NUEVO (6-sep-2026) — 4to evento, destino AGENTE no cliente:** cuando un agente cobra y
+  **deposita a su propia cuenta** (el auto-depósito que ya existía desde el Bloque 4 —
+  `seguros_registrar_cobro_con_entrega()` marca `entregas_admin.confirmado=true` únicamente en ese
+  caso), se le manda un WhatsApp con cuánto tiene **acumulado** en total —
+  `transferencias_saldo_disponible_agente(agente_id)`, la MISMA función que ya usa el sistema para
+  decirle a un agente cuánto puede entregar físicamente, no un cálculo inventado. Trigger nuevo
+  `trg_whatsapp_entrega_confirmada` (AFTER INSERT en `entregas_admin`, `WHEN (confirmado AND
+  es_directo)` — dispara exacta y solo en el auto-depósito). `whatsapp_mensajes` pasó de
+  "solo clientes" a "clientes O agentes" (`cliente_id` ahora nullable + `agente_id` nuevo, CHECK que
+  exige uno de los dos — se reusa la misma tabla de historial, no una paralela). `agentes.tel` es el
+  número que se usa (mismo campo que ya mostraba `nxAgenteWA` desde v49.65); hoy solo ROBINSON lo
+  tiene cargado, ESTERLIN (admin) no — no recibe este aviso hasta que se lo agregue.
+  Verificado en 2 mitades sin tocar datos reales: (1) el pipeline completo contra ROBINSON de
+  verdad (fila de prueba en `whatsapp_mensajes` borrada después); (2) el disparador real, simulando
+  el auto-depósito en una transacción con rollback — confirmó `confirmado=true, es_directo=true`
+  y un acumulado real (RD$274,190). **Pendiente del dueño:** crear/aprobar en Meta la plantilla
+  `entrega_confirmada`, igual que las otras 3 — hasta entonces sigue registrando `sin_configurar`.
