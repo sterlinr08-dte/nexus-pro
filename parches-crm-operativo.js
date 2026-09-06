@@ -9,8 +9,11 @@ const api=()=>{try{return window.API||API}catch(e){return null}};
 const clientes=()=>{try{return (window.ST||ST||{}).clientes||[]}catch(e){return[]}};
 const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.activo!==false)}catch(e){return[]}};
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
+const title=v=>String(v??'').trim().slice(0,160);
+const isoLocal=v=>{if(!v)return null;const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null};
 let agendaTareas=[], fichaTareas=[];
-let cargaAgenda=null, fichaPeticion=0;
+let cargaAgenda=null, fichaPeticion=0, guardandoTarea=false, guardandoActividad=false;
+const completandoTareas=new Set();
 
 function css(){
  if($('#nxCrmOpsCss'))return;
@@ -52,20 +55,26 @@ function modal(){
 window.nxCrmNuevaTarea=modal;
 window.nxCrmCerrarTarea=()=>$('#nxOpsModal')?.remove();
 window.nxCrmGuardarTarea=async()=>{
- const A=api(),cliente_id=$('#nxOpsCliente')?.value,titulo=$('#nxOpsTitulo')?.value.trim(),tipo=$('#nxOpsTipo')?.value,prioridad=$('#nxOpsPrioridad')?.value,asignado_agente_id=$('#nxOpsAgente')?.value||null,vence=$('#nxOpsVence')?.value,nota=$('#nxOpsNota')?.value.trim();
- if(!cliente_id||!titulo){try{toast('warn','Completa cliente y tarea')}catch(e){};return}
- const b=$('#nxOpsGuardar');b.disabled=true;b.textContent='Guardando…';
+ if(guardandoTarea)return;
+ const A=api(),cliente_id=$('#nxOpsCliente')?.value,titulo=title($('#nxOpsTitulo')?.value),tipo=$('#nxOpsTipo')?.value,prioridad=$('#nxOpsPrioridad')?.value,asignado_agente_id=$('#nxOpsAgente')?.value||null,vence=$('#nxOpsVence')?.value,nota=$('#nxOpsNota')?.value.trim();
+ if(!A?.post){try{toast('err','API no disponible')}catch(e){};return}
+ if(!cliente_id||titulo.length<2){try{toast('warn','Completa cliente y tarea')}catch(e){};return}
+ const venceIso=isoLocal(vence);if(vence&&!venceIso){try{toast('warn','Fecha de seguimiento inválida')}catch(e){};return}
+ guardandoTarea=true;const b=$('#nxOpsGuardar');if(b){b.disabled=true;b.textContent='Guardando…';}
  try{
-  const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,asignado_agente_id,vence_en:vence?new Date(vence).toISOString():null});
-  await A.post('crm_actividades',{cliente_id,tipo:'nota',titulo:'Tarea creada: '+titulo,detalle:nota||null,proxima_accion_en:vence?new Date(vence).toISOString():null});
-  window.nxCrmCerrarTarea();await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(cliente_id)}catch(e){}
+  const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,asignado_agente_id,vence_en:venceIso});
+  await A.post('crm_actividades',{cliente_id,tipo:'nota',titulo:title('Tarea creada: '+titulo),detalle:nota||null,proxima_accion_en:venceIso});
+  guardandoTarea=false;window.nxCrmCerrarTarea();await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(cliente_id)}catch(e){}
   try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
- }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar tarea';}
+ }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoTarea=false;if(b){b.disabled=false;b.textContent='Guardar tarea';}}
 };
 window.nxCrmCompletarTarea=async id=>{
- const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t)return;
- try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:'Tarea completada: '+t.titulo});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
+ if(completandoTareas.has(String(id)))return;
+ const A=api(),t=[...fichaTareas,...agendaTareas].find(x=>String(x.id)===String(id));if(!t||!A?.patch||!A?.post)return;
+ completandoTareas.add(String(id));
+ try{await A.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'completada',completada_en:new Date().toISOString(),updated_at:new Date().toISOString()});await A.post('crm_actividades',{cliente_id:t.cliente_id,tipo:'nota',titulo:title('Tarea completada: '+t.titulo)});await cargar();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(t.cliente_id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(t.cliente_id)}catch(e){}try{toast('ok','Tarea completada')}catch(e){}}
  catch(e){try{toast('err','No se pudo completar',e.message)}catch(x){}}
+ finally{completandoTareas.delete(String(id))}
 };
 
 function seguimientoHtml(acts,ts){
@@ -94,11 +103,15 @@ function modalActividadCliente(){
 }
 window.nxCrmNuevaActividadCliente=modalActividadCliente;
 window.nxCrmGuardarActividadCliente=async()=>{
- const id=$('#nxOpsModal')?.dataset?.clienteId||(typeof _c360Sel!=='undefined'?_c360Sel:''),A=api(),tipo=$('#nxActTipo')?.value,titulo=$('#nxActTitulo')?.value.trim(),detalle=$('#nxActDetalle')?.value.trim(),proxima=$('#nxActProxima')?.value,crear=$('#nxActCrearTarea')?.checked;
- if(!id||!titulo){try{toast('warn','Escribe el resumen del seguimiento')}catch(e){};return}
- const b=$('#nxActGuardar');b.disabled=true;b.textContent='Guardando…';
- try{const when=proxima?new Date(proxima).toISOString():null;const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});if(crear&&when)await A.post('crm_tareas',{cliente_id:id,actividad_id:a?.[0]?.id||null,titulo:('Seguimiento: '+titulo).slice(0,160),tipo:'seguimiento',prioridad:'media',vence_en:when});window.nxCrmCerrarTarea();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(id)}catch(e){}await cargar();try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
- catch(e){try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar seguimiento';}
+ if(guardandoActividad)return;
+ const id=$('#nxOpsModal')?.dataset?.clienteId||(typeof _c360Sel!=='undefined'?_c360Sel:''),A=api(),tipo=$('#nxActTipo')?.value,titulo=title($('#nxActTitulo')?.value),detalle=$('#nxActDetalle')?.value.trim(),proxima=$('#nxActProxima')?.value,crear=$('#nxActCrearTarea')?.checked;
+ if(!A?.post){try{toast('err','API no disponible')}catch(e){};return}
+ if(!id||titulo.length<2){try{toast('warn','Escribe el resumen del seguimiento')}catch(e){};return}
+ const when=isoLocal(proxima);if(proxima&&!when){try{toast('warn','Próximo seguimiento inválido')}catch(e){};return}
+ if(crear&&!when){try{toast('warn','Elige la fecha para crear la tarea')}catch(e){};return}
+ guardandoActividad=true;const b=$('#nxActGuardar');if(b){b.disabled=true;b.textContent='Guardando…';}
+ try{const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});if(crear&&when)await A.post('crm_tareas',{cliente_id:id,actividad_id:a?.[0]?.id||null,titulo:title('Seguimiento: '+titulo),tipo:'seguimiento',prioridad:'media',vence_en:when});guardandoActividad=false;window.nxCrmCerrarTarea();try{if(typeof _c360Sel!=='undefined'&&String(_c360Sel)===String(id)&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad')await cargarSeguimientoCliente(id)}catch(e){}await cargar();try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
+ catch(e){try{toast('err','No se pudo guardar',e.message)}catch(x){};guardandoActividad=false;if(b){b.disabled=false;b.textContent='Guardar seguimiento';}}
 };
 
 
