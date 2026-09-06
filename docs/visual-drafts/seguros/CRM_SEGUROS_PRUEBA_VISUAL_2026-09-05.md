@@ -5,7 +5,7 @@ PR: #291
 
 ## Pruebas ejecutadas
 
-Se ejecutó la misma composición que queda en la rama (`parches-crm-seguros.js` + `parches-crm-seguros-v2.css`) en Chromium con un harness aislado del módulo Seguros, usando los tamaños 320×700, 390×844 y 1440×1000.
+Se ejecutó el parche `parches-crm-seguros.js` en Chromium con un harness aislado del módulo Seguros, usando los tamaños 320×700, 390×844 y 1440×1000.
 
 Resultados:
 - Sin errores de JavaScript durante render de lista o ficha.
@@ -15,7 +15,10 @@ Resultados:
 - En 390 px, los datos de seguro se compactaron a dos columnas: la tarjeta principal bajó de ~554 px a ~329 px de alto.
 - En 320 px, se conserva una sola columna para priorizar legibilidad.
 - El encabezado móvil mantiene las 3 métricas rápidas en una fila; no se produce el patrón 2+1.
-- `Seguros` se presenta como `Póliza` y `Pagos` como `Cobros` dentro del contexto CRM; las demás pestañas conservan la nomenclatura del Cliente 360 existente.
+- Las etiquetas de pestañas se normalizaron con mayúscula inicial.
+- Auditoría final del loader: carga secuencial `parches-seguros-base.js` → `parches-crm-seguros.js` → `parches-crm-seguros-v2.css`.
+- El diff no incorpora cambios en POS, Caja, Facturación ni Financiamiento.
+- GitHub no reporta checks automáticos asociados al commit de revisión; la validación de esta rama es manual/estática.
 
 ## Alcance de la prueba
 
@@ -23,4 +26,4 @@ Esto es una prueba visual/DOM aislada y reproducible. No sustituye la prueba man
 
 ## Producción
 
-No se modificaron `APP_VERSION` ni `version.json` y no se fusionó a `main`.
+No se modificaron `APP_VERSION` ni `version.json` y no se fusionó a `main`. El bump de versión se reserva para el despliegue real, para no anunciar una actualización que todavía no está publicada.
