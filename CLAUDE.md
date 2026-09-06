@@ -12377,3 +12377,31 @@ en el entorno). Varias rondas de "no se ve"/"nada"/"igual" antes de encontrar la
   tapándolo. **Si una sesión nueva encuentra el rojo todavía puesto, es porque quedó sin resolver —
   hay que volver a poner la foto real (`url(/bg-office-mobile.jpg)` /
   `url(/bg-office-desktop.jpg)` en `@media(min-width:900px)`) en cuanto se confirme qué se veía.**
+### Seguros · ESTERLIN ESPINAL reactivado como prueba + factura de agosto (6-sep-2026, solo DATOS)
+Pedido del dueño: *"Habilita al cliente ESTERLIN espinal como prueba y [genera] una factura"*. **Cero
+cambios de código** — es una operación de datos en producción, hecha por SQL pero por el MISMO camino
+que usa la app, no con INSERTs a mano.
+- **Confirmado antes de tocar nada que es su cuenta de prueba:** sus 2 únicas facturas (ene y may-2026)
+  estaban **anuladas con motivo "PRUEBA"/"ERA PRUEBA"**, deuda 0, pagado 0, sin agente ni empresa.
+- **Reactivación** (`activo=true`, `estado_cliente='ACTIVO'`, `motivo_inhab`/`nota_inhab` a null): los DOS
+  campos de estado juntos, como exige el arreglo de la v55.3 — si solo se toca `activo`, el próximo
+  guardado del formulario lo vuelve a inhabilitar solo, porque `guardarCli()` re-deriva `activo` desde
+  `estado_cliente`. Además `permitir_facturacion` false→**true** (sin eso la RPC rechaza la factura) y
+  `dia_facturacion` 1→**20** (todos los demás clientes son 20; con 1 el cron lo habría facturado fuera
+  de ciclo). `fecha_fin` era null, así que no hubo póliza vencida que renovar.
+- **La factura NO se insertó a mano** — se llamó a la RPC real **`seguros_generar_factura_manual`**
+  (la misma que usa `_genFacturasInterno` desde el Bloque 3B), simulando la sesión del admin con
+  `set_config('request.jwt.claims',...)` + `set local role authenticated` — así corrieron TODAS sus
+  validaciones (rol admin de nexus-pro, anti-duplicado con FOR UPDATE, NCF atómico, asiento balanceado,
+  auditoría), no un atajo que las saltara.
+- **Prueba en seco primero:** la operación completa se corrió dentro de una transacción con `rollback`
+  para ver el resultado exacto ANTES de comprometer nada; recién con los números confirmados se repitió
+  con `commit`.
+- **Resultado:** factura `6f0a27e3` · período **2026-08** (el mes de corte vigente — hoy es día 6, así
+  que `mesCorte()` da agosto) · **NCF B0200000711** · prima Básico **RD$ 4,500** (de `prima_basico` de
+  Ajustes; el cliente no tiene precio especial) · sin dependientes · sin deuda anterior · estado
+  Pendiente · origen MANUAL. Asiento 1201/4101 por 4,500, Debe=Haber. Secuencia B02 710→711.
+- **Consecuencia real, avisada al dueño:** con `permitir_facturacion=true` y `dia_facturacion=20`, el
+  cron de auto-facturación **le va a generar factura solo cada día 20**. Si la prueba termina, apagar
+  "Permitir facturación automática" en su ficha. Y el **NCF 711 quedó consumido** — un comprobante
+  fiscal no se devuelve.
