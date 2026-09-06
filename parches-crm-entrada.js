@@ -69,6 +69,8 @@ function render(){
 }
 
 function open(el){
+  // La agenda se carga desde la apertura explícita, nunca observando su propio DOM.
+  queueMicrotask(()=>{if(typeof window.nxCrmActualizarAgenda==='function')window.nxCrmActualizarAgenda();});
   ensureCss();ensureMenu();const v=ensureView();document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));v.classList.add('on');document.querySelectorAll('#sbNav .ni').forEach(x=>x.classList.remove('on'));(el&&el.classList?el:$('#nxCrmNav'))?.classList.add('on');render();try{if(window.innerWidth<=900&&typeof closeMobSB==='function')closeMobSB()}catch(e){};try{window.scrollTo({top:0,behavior:'instant'})}catch(e){window.scrollTo(0,0)};return false;
 }
 window.nxAbrirCrm=open;
