@@ -269,3 +269,27 @@ Functions → Secrets, este proyecto) — el valor ya existe del lado de BayolCe
 (`whatsapp-webhook`/`instagram-webhook` allá), solo falta copiarlo. Ninguna sesión de Claude puede
 leer secrets ya guardados de vuelta, en este proyecto ni en el otro — es siempre paso manual del
 dueño.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 16:45
+
+**Cerrado el hallazgo de la entrada anterior.** El dueño confirmó la RPC (no el GRANT amplio).
+
+- Migración aplicada en vivo: `whatsapp_marcar_hilo_leido(p_hilo_id uuid)` — `security definer`,
+  mismo candado que `whatsapp_resolver_revision_pago` (`mi_rol() is not null and mi_organizacion()
+  = id de 'nexus-pro'`, si no `raise exception 'no autorizado'`). Revoca de `public`/`anon`,
+  `grant execute` solo a `authenticated`. Simplemente pone `no_leidos_count=0`; no valida que el
+  hilo exista (un `UPDATE` sobre un id que no existe solo afecta 0 filas, inofensivo).
+- **Probada en los 2 sentidos, con una fila de prueba insertada y luego `rollback` (no quedó nada
+  en la base):** sesión simulada del admin real de `nexus-pro` → resetea a 0 ✅; sesión con un
+  `sub` que no existe en `usuarios_sistema` → `rechazado: no autorizado` ✅.
+- **Frontend corregido en la rama `feature/whatsapp-inbox-fase2`** (cambio de una sola línea,
+  `parches-whatsapp-inbox.js` línea 219): `api().patch('whatsapp_hilos', ...)` →
+  `api().post('rpc/whatsapp_marcar_hilo_leido', {p_hilo_id:id})`. `node --check` limpio. Publicado
+  en esa misma rama (no en `main` — el resto del código de fase 2 tampoco está fusionado todavía).
+
+**Estado del hallazgo: CERRADO.** `whatsapp_hilo_mensajes` (la otra tabla que señalé) no tenía
+ningún UPDATE/INSERT esperado desde el frontend en el código que audité — solo se lee — así que no
+hacía falta una RPC equivalente para ella; si alguna función nueva necesita escribir ahí desde el
+navegador, avisar aquí antes de asumir que el mismo patrón de "solo SELECT" es un descuido.
