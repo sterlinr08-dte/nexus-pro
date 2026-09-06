@@ -75,10 +75,20 @@ function patchFicha(){
  try{if(typeof pintarC360Tab==='function'&&!pintarC360Tab.__crmOps){const o=pintarC360Tab,n=function(){try{if(window.__nxCrmCtx&&typeof _c360Tab!=='undefined'&&_c360Tab==='actividad'&&typeof _c360Sel!=='undefined'&&_c360Sel){cargarSeguimientoCliente(_c360Sel);return;}}catch(e){}return o.apply(this,arguments)};n.__crmOps=1;pintarC360Tab=window.pintarC360Tab=n}}catch(e){console.error('[CRM] ficha',e)}
 }
 window.nxCrmNuevaTareaCliente=()=>{try{modal();const id=typeof _c360Sel!=='undefined'?_c360Sel:'';const f=$('#nxOpsCliente');if(f&&id)f.value=String(id)}catch(e){modal()}};
-window.nxCrmNuevaActividadCliente=()=>{
+function modalActividadCliente(){
  const id=typeof _c360Sel!=='undefined'?_c360Sel:'';if(!id)return;
- const title=prompt('Escribe la nota o resultado del seguimiento:');if(!title?.trim())return;
- const A=api();A.post('crm_actividades',{cliente_id:id,tipo:'nota',titulo:title.trim()}).then(()=>cargarSeguimientoCliente(id)).then(()=>{try{toast('ok','Nota agregada')}catch(e){}}).catch(e=>{try{toast('err','No se pudo guardar',e.message)}catch(x){}});
+ const c=clientes().find(x=>String(x.id)===String(id));$('#nxOpsModal')?.remove();
+ const m=document.createElement('div');m.id='nxOpsModal';m.className='nxOpsModal';
+ m.innerHTML='<div class="nxOpsDialog" role="dialog" aria-modal="true" aria-labelledby="nxActTitle"><h2 id="nxActTitle">Registrar seguimiento</h2><p>'+esc(c?.nom||'Cliente')+' · queda guardado en su historial.</p><div class="nxOpsGrid"><div class="nxOpsField"><label>Canal</label><select id="nxActTipo"><option value="llamada">Llamada</option><option value="whatsapp">WhatsApp</option><option value="nota">Nota</option><option value="renovacion">Renovación</option><option value="documento">Documento</option><option value="cotizacion">Cotización</option></select></div><div class="nxOpsField"><label>Próximo seguimiento</label><input id="nxActProxima" type="datetime-local"></div><div class="nxOpsField full"><label>Resumen</label><input id="nxActTitulo" maxlength="160" placeholder="Ej.: Cliente confirmó envío de documentos"></div><div class="nxOpsField full"><label>Resultado / detalle</label><textarea id="nxActDetalle" maxlength="1500" placeholder="Qué se conversó, qué falta y qué se acordó"></textarea></div><div class="nxOpsField full"><label style="display:flex;gap:7px;align-items:center;font-size:9px"><input id="nxActCrearTarea" type="checkbox" style="width:auto"> Crear una tarea para el próximo seguimiento</label></div></div><div class="nxOpsFoot"><button onclick="nxCrmCerrarTarea()">Cancelar</button><button class="primary" id="nxActGuardar" onclick="nxCrmGuardarActividadCliente()">Guardar seguimiento</button></div></div>';
+ m.addEventListener('click',e=>{if(e.target===m)window.nxCrmCerrarTarea()});document.body.appendChild(m);setTimeout(()=>$('#nxActTitulo')?.focus(),0);
+}
+window.nxCrmNuevaActividadCliente=modalActividadCliente;
+window.nxCrmGuardarActividadCliente=async()=>{
+ const id=typeof _c360Sel!=='undefined'?_c360Sel:'',A=api(),tipo=$('#nxActTipo')?.value,titulo=$('#nxActTitulo')?.value.trim(),detalle=$('#nxActDetalle')?.value.trim(),proxima=$('#nxActProxima')?.value,crear=$('#nxActCrearTarea')?.checked;
+ if(!id||!titulo){try{toast('warn','Escribe el resumen del seguimiento')}catch(e){};return}
+ const b=$('#nxActGuardar');b.disabled=true;b.textContent='Guardando…';
+ try{const when=proxima?new Date(proxima).toISOString():null;const a=await A.post('crm_actividades',{cliente_id:id,tipo,titulo,detalle:detalle||null,proxima_accion_en:when});if(crear&&when)await A.post('crm_tareas',{cliente_id:id,actividad_id:a?.[0]?.id||null,titulo:'Seguimiento: '+titulo,tipo:'seguimiento',prioridad:'media',vence_en:when});window.nxCrmCerrarTarea();await cargarSeguimientoCliente(id);try{logAudit('CRM_SEGUIMIENTO_REGISTRADO',titulo,'CRM',id);toast('ok','Seguimiento registrado')}catch(e){}}
+ catch(e){try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar seguimiento';}
 };
 
 
