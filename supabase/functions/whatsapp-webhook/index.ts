@@ -79,8 +79,10 @@ async function buscarClientePorTelefono(telefonoE164: string): Promise<string | 
   if (telefonoE164.startsWith("bsid:")) return null;
   const digitos = telefonoE164.replace(/\D/g, "");
   const { data } = await db.from("clientes").select("id, wa").not("wa", "is", null);
-  const match = (data ?? []).find((c: any) => normalizarTelefono(String(c.wa)) === digitos);
-  return match?.id ?? null;
+  const matches = (data ?? []).filter((c: any) => normalizarTelefono(String(c.wa)) === digitos);
+  if (matches.length === 1) return matches[0].id ?? null;
+  if (matches.length > 1) console.error("Telefono duplicado en clientes; requiere vinculacion manual:", telefonoE164);
+  return null;
 }
 
 function tipoDeAdjunto(tipo: string | undefined): string {
@@ -134,6 +136,9 @@ async function procesarMensaje(payload: any) {
     console.error("Mensaje sin telefono ni id de contacto identificable, se descarta");
     return;
   }
+
+  const waMessageId = idMensaje(msg);
+  if (waMessageId && await buscarMensajeLocalPorWaId(waMessageId)) return;
 
   const esEntrante = msg.direction === "incoming";
   const nombrePerfil = esEntrante ? (msg.sender?.name || null) : null;
@@ -216,7 +221,7 @@ async function procesarMensaje(payload: any) {
         tipo_contenido: tipoContenido,
         cuerpo,
         media_path: mediaPath,
-        wa_message_id: idMensaje(msg),
+        wa_message_id: waMessageId,
         responde_a_id: respondeAId,
         estado: esEntrante ? "recibido" : "enviado",
         revision_pago_estado: revisionPagoEstado,
