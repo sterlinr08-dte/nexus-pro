@@ -10218,8 +10218,27 @@
   let _subiendo = false;
 
   // ════ VISOR DEL BAUCHE ════
-  window.nxVerComprobante = function (url) {
+  // Un comprobante recibido por WhatsApp (fase 2 del inbox) se guarda como
+  // "wa-media:{ruta}" en vez de una URL directa -- el bucket es privado y una
+  // URL firmada expira en 1h, así que guardar la cruda en abonos.comprobante_url
+  // la dejaría rota para siempre. Se resuelve a una URL firmada fresca justo
+  // antes de mostrarla, cada vez que se abre.
+  window.nxVerComprobante = async function (url) {
     if (!url) return;
+    if (url.indexOf('wa-media:') === 0) {
+      const path = url.slice('wa-media:'.length);
+      try {
+        const api = getAPI();
+        const r = await fetch(`${api.url}/storage/v1/object/sign/whatsapp-inbox-media/${path}`, {
+          method: 'POST',
+          headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expiresIn: 3600 })
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        url = `${api.url}/storage/v1${d.signedURL || d.signedUrl}`;
+      } catch (e) { notify('err', 'No se pudo abrir el bauche', String(e && e.message || e).slice(0, 90)); return; }
+    }
     let ov = document.getElementById('nxVisorBauche');
     if (!ov) {
       ov = document.createElement('div');
@@ -10333,6 +10352,17 @@
     const inp = document.getElementById('nxBaucheInput');
     if (inp) inp.value = '';
     pintarEstado('vacio');
+  };
+
+  // Usado por el inbox de WhatsApp (fase 2): asigna un comprobante ya recibido
+  // (referencia "wa-media:{ruta}", nunca la URL firmada cruda -- ver
+  // nxVerComprobante) como si el usuario lo hubiera subido a mano, para que
+  // regAbono() lo guarde igual que cualquier otro bauche. previewUrl es solo
+  // para la miniatura de "listo" (puede ser la URL firmada, ya que esa sí es
+  // efímera y no se persiste en ningún lado).
+  window.nxBaucheAsignarExterno = function (ref, previewUrl) {
+    window._nxBaucheURL = ref;
+    pintarEstado('listo', previewUrl || ref);
   };
 
   // ════ INYECTAR EL CARGADOR EN EL MODAL #mAbono ════
