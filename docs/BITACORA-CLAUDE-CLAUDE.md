@@ -357,3 +357,33 @@ el envío (nunca en error/timeout).
 
 **Pendiente real:** la decisión de cadencia del aviso de atraso (🔴 arriba) — el resto de la
 auditoría queda cerrado.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 22:15
+
+**Cerrado el hallazgo 🔴 de la entrada anterior.** El dueño decidió: "un recordatorio cada X días
+mientras el cliente siga debiendo" → X = 3.
+
+- `clientes.ultimo_aviso_atraso_en` (nuevo) + `whatsapp_config.dias_entre_avisos_atraso` (nuevo,
+  default 3, configurable). `whatsapp_detectar_atrasados()` cambió el gate de "hay facturas sin
+  marcar" (se agotaba y apagaba el aviso para siempre) a "el cliente debe algo atrasado Y ya
+  pasaron 3 días desde el último aviso" — mientras deba, se le sigue avisando cada 3 días, sin
+  fecha de corte. `facturas.notificado_atraso_en` se dejó intacta (ya no decide nada, solo rastro
+  histórico de la primera vez que cada factura entró en un aviso).
+- `whatsapp-notificar` (v6): `marcarClienteAvisadoAtraso()` marca el nuevo campo SOLO en envío
+  confirmado — un intento fallido se reintenta al día siguiente en vez de darse por hecho, mismo
+  criterio que ya usaba `facturas.notificado_atraso_en`.
+- **Verificado en 2 capas, sin arriesgar nada real** (zernio sigue sin `zernio_account_id`, así
+  que cualquier disparo real cae en `sin_configurar`, cero riesgo): (1) aritmética de intervalo
+  con 5 casos límite, correcta; (2) ejecución REAL del cron completo contra los 3 clientes reales
+  con saldo atrasado — se disparó para los 3 (todos con `ultimo_aviso_atraso_en` NULL, primera
+  vez), quedó registrado `sin_configurar`, y **no tocó** el campo nuevo en ninguno (correcto, no
+  hubo éxito confirmado); (3) los 2 casos límite (avisado hace 1 día → no vuelve a avisar / hace 4
+  días → sí) contra 2 clientes reales, en transacción con rollback — confirmado después que no
+  quedó ningún dato de prueba tocado.
+
+**Estado de la auditoría completa: CERRADA.** Los 2 hallazgos 🟠 (commit `14a6735`) y este 🔴
+(commit `23434d4`) ya están en `main` y desplegados. Las observaciones 🟡 de la entrada anterior
+(NULL-fail-open en las 2 RPC, versión flotante del SDK, Realtime sin refresco) quedan como
+pendientes de bajo riesgo, sin fecha — avisar si alguna se vuelve relevante.
