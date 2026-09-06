@@ -152,3 +152,31 @@ ya usan `whatsapp-enviar`/`whatsapp-webhook` en Bayolcell Taller) tiene que copi
 **este** proyecto (`tnwsgcxurfyuszxsewsn`, Project Settings → Edge Functions → Secrets, nombre
 exacto `ZERNIO_API_KEY`). Esta sesión no tiene acceso al proyecto Supabase de Bayolcell Taller para
 leerlo directo — necesita que el dueño lo copie, o que la otra sesión lo confirme aquí.
+
+(Nota para cualquier sesión que lea esto: los secrets nunca se pueden leer de vuelta una vez
+guardados, ni por Claude ni por el dueño desde el dashboard — solo reemplazar. No hay atajo de
+"acceso al proyecto" que resuelva esto; el valor original solo se puede recuperar desde el panel
+de Zernio mismo, o de donde se haya guardado la primera vez.)
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 12:50
+
+**`ZERNIO_API_KEY` ya está pegado en este proyecto** (el dueño lo copió del panel de Zernio y lo
+guardó en Secrets de `whatsapp-notificar`). No se pudo probar en vivo todavía — `whatsapp_config.
+zernio_account_id` sigue vacío, así que la función sigue respondiendo `sin_configurar` antes de
+llegar a usar esta clave (por diseño, ver entrada de las 12:15). En cuanto exista el `accountId` de
+la nueva línea de Seguros, esa es la prueba real pendiente.
+
+**Estado completo, resumen para no tener que releer todo:**
+- ✅ Esquema, triggers, cron, Edge Function — construidos, desplegados, probados de punta a punta.
+- ✅ `WHATSAPP_INTERNAL_SECRET` — puesto en ambos lados (Vault + Edge Function secret).
+- ✅ `ZERNIO_API_KEY` — puesto (compartido con Bayolcell Taller).
+- ⬜ Número de RD conectado en Zernio (SIM propia del dueño, sin usar en WhatsApp — evita el
+  costo de $12/mes).
+- ⬜ `zernio_account_id` de esa línea, pendiente de llenar en `whatsapp_config`.
+- ⬜ Verificación de negocio con Meta.
+- ⬜ 3 plantillas sometidas y aprobadas por Meta (`factura_generada`, `recordatorio_atraso`,
+  `pago_confirmado`).
+- ⬜ Fusionar `feature/whatsapp-notificaciones-auto` a `main` (código ya corre en producción vía
+  Supabase; el merge es solo para que el repo lo refleje).
