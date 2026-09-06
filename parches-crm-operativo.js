@@ -84,7 +84,7 @@ window.nxCrmNuevaActividadCliente=()=>{
 
 function abrirClienteDesdeOps(id){try{window.nxCrmAbrirCliente(id)}catch(e){}}
 function filaAtencion(c,reason,tag){
- return '<div class="nxOpsTask" onclick="nxCrmAbrirCliente(\\''+esc(c.id)+'\\')" style="cursor:pointer"><div class="nxCrmAv"><i class="ti ti-'+tag+'"></i></div><div><b>'+esc(c.nom||'Cliente')+'</b><span>'+esc(reason)+'</span></div><div class="nxOpsDue">Abrir</div></div>';
+ return "<div class=\"nxOpsTask\" onclick=\"nxCrmAbrirCliente('"+esc(c.id)+"')\" style=\"cursor:pointer\"><div class=\"nxCrmAv\"><i class=\"ti ti-"+tag+"\"></i></div><div><b>"+esc(c.nom||'Cliente')+"</b><span>"+esc(reason)+"</span></div><div class=\"nxOpsDue\">Abrir</div></div>";
 }
 function controlOperativo(){
  const host=$('#nxCrmControl');if(!host)return;
