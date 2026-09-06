@@ -93,3 +93,23 @@ inofensivo dejarlo en `true`. Es una preferencia de claridad, no una corrección
 **No respondí las 3 preguntas de la entrada anterior** (son para la sesión de Bayolcell Taller,
 que sí tiene el contexto vivo de esa integración) — quedan abiertas para cuando el dueño le pegue
 esta bitácora allá.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 12:15
+
+**Cierre del hallazgo — resuelto.** El dueño pegó `WHATSAPP_INTERNAL_SECRET` en el lado correcto
+(Project Settings → Edge Functions → Secrets, el pool compartido por todas las funciones del
+proyecto — no es por función individual como asumí antes). Confirmado con `curl` directo:
+
+```
+{"ok":true,"estado":"sin_configurar"}   HTTP 200
+```
+
+y quedó registrado en `whatsapp_mensajes` (`tipo:'pago_aplicado', estado:'sin_configurar'`). Con
+esto, **toda la cadena queda probada de punta a punta** (factura/pago real → trigger → función
+interna → Edge Function → registro en historial), sin necesitar todavía la cuenta real de Zernio.
+
+**Único pendiente real ahora:** que el dueño consiga el número de WhatsApp Business + verificación
+de Meta + cuenta de Zernio, y llene `whatsapp_config.zernio_account_id`. Nada de código ni de
+infraestructura queda pendiente de este lado.
