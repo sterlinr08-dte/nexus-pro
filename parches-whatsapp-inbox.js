@@ -11,6 +11,7 @@
   const clientes = () => { try { return (window.ST || ST || {}).clientes || []; } catch (e) { return []; } };
 
   let hilos = [], hiloAbiertoId = null, mensajes = [];
+  let waFiltro = 'todos';
   let sb = null, canal = null;
 
   function css() {
@@ -51,6 +52,24 @@
 #v-waInbox .nxWaPend .acts{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 #v-waInbox .nxWaPend button{border:1px solid #dbe3ee;border-radius:999px;background:#fff;font-size:9.5px;font-weight:900;padding:7px 10px;cursor:pointer}
 #v-waInbox .nxWaPend button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+#v-waInbox .nxWaPro{margin:0 0 12px;padding:12px;border:1px solid rgba(255,255,255,.82);border-radius:17px;background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(240,253,244,.76));box-shadow:0 16px 42px -34px rgba(15,23,42,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#v-waInbox .nxWaProHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+#v-waInbox .nxWaProHead h3{font-size:12px;margin:0;color:#0f172a;font-weight:900}
+#v-waInbox .nxWaProHead p{font-size:9.5px;line-height:1.35;color:#64748b;margin:2px 0 0}
+#v-waInbox .nxWaProGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#v-waInbox .nxWaProKpi{border:1px solid rgba(226,232,240,.92);border-radius:14px;background:rgba(255,255,255,.74);padding:10px;min-width:0;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+#v-waInbox .nxWaProKpi:hover{transform:translateY(-1px);border-color:rgba(37,99,235,.22);box-shadow:0 14px 26px -25px rgba(15,23,42,.6)}
+#v-waInbox .nxWaProKpi.on{border-color:rgba(37,99,235,.55);background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(124,58,237,.08))}
+#v-waInbox .nxWaProKpi .l{font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaProKpi .v{font-size:20px;font-weight:900;color:#0f172a;margin-top:2px}
+#v-waInbox .nxWaProKpi .s{font-size:8.5px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaProActs{display:flex;gap:7px;flex-wrap:wrap}
+#v-waInbox .nxWaProActs button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:rgba(255,255,255,.86);padding:0 11px;font:inherit;font-size:9px;font-weight:900;color:#1d4ed8;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+#v-waInbox .nxWaProActs button.primary{background:linear-gradient(135deg,#25d366,#2563eb);border-color:transparent;color:#fff}
+#v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
+#v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
+#v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
+#v-waInbox .nxWaTag.ok{background:#ecfdf5;color:#059669}
 @media(max-width:760px){
   #v-waInbox{padding:0 10px 16px;background:linear-gradient(180deg,rgba(248,251,255,.97),rgba(246,248,251,.92))}
   #v-waInbox .nxCrmHomeHead{padding:13px 13px 16px;border-radius:16px;margin-bottom:10px}
@@ -67,6 +86,14 @@
   #v-waInbox .nxWaBub img,#v-waInbox .nxWaBub audio,#v-waInbox .nxWaBub video{max-width:100%;width:100%}
   #v-waInbox .nxWaPend{align-items:flex-start;flex-wrap:wrap}
   #v-waInbox .nxWaPend .acts{width:100%;margin-left:0;justify-content:flex-start}
+  #v-waInbox .nxWaPro{padding:10px;border-radius:16px}
+  #v-waInbox .nxWaProHead{display:block}
+  #v-waInbox .nxWaProGrid{display:flex;overflow-x:auto;gap:8px;padding-bottom:2px;scrollbar-width:none}
+  #v-waInbox .nxWaProGrid::-webkit-scrollbar{display:none}
+  #v-waInbox .nxWaProKpi{min-width:116px}
+  #v-waInbox .nxWaProActs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  #v-waInbox .nxWaProActs::-webkit-scrollbar{display:none}
+  #v-waInbox .nxWaProActs button{flex:0 0 auto}
 }
     `; document.head.appendChild(s);
   }
@@ -152,6 +179,7 @@
   function render() {
     const v = ensureView();
     v.innerHTML = `<div class="nxCrmHomeHead"><div><span class="nxCrmHomeBadge"><i class="ti ti-brand-whatsapp"></i> WhatsApp</span><h1>Inbox</h1><p>Conversaciones con clientes, preguntas y comprobantes de pago.</p></div></div>
+      <div id="nxWaProPanel"></div>
       <div id="nxWaPendPanel" style="margin-bottom:12px"></div>
       <div class="nxWaShell">
         <div class="nxWaCol nxWaListCol"><div class="nxWaListScroll" id="nxWaLista"></div></div>
@@ -162,10 +190,86 @@
 
   function pintar() {
     if (!$('#v-waInbox.on')) return;
+    pintarProPanel();
     pintarPendientes();
     pintarLista();
     pintarDetalle();
   }
+
+  function clienteDeHilo(h) {
+    return h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
+  }
+  function waPendienteCliente(c) {
+    if (!c) return 0;
+    try { if (typeof pendTot === 'function') return Number(pendTot(c)) || 0; } catch (e) {}
+    try { if (typeof pend === 'function') return Number(pend(c)) || 0; } catch (e) {}
+    return Math.max(0, Number(c.deuda_total || 0) - Number(c.pagado || 0) + Number(c.deuda_anterior || 0));
+  }
+  function waEstadoPoliza(c) {
+    if (!c) return { est: 'sin_cliente', lbl: '' };
+    try { if (typeof getEstPol === 'function') return getEstPol(c) || { est: 'vigente', lbl: '' }; } catch (e) {}
+    if (!c.fecha_fin) return { est: 'vigente', lbl: '' };
+    const d = new Date(String(c.fecha_fin).slice(0, 10) + 'T12:00:00');
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dias = Math.ceil((d - hoy) / 86400000);
+    return dias < 0 ? { est: 'vencida', lbl: 'Vencida' } : dias <= 30 ? { est: 'gracia', lbl: 'Vence pronto' } : { est: 'vigente', lbl: 'Vigente' };
+  }
+  function waTieneBauchePendiente(h) {
+    return mensajesPendientesCache.some(m => String(m.hilo_id) === String(h.id));
+  }
+  function waVentanaAbierta(h) {
+    return !!(h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000);
+  }
+  function waClasificarHilo(h) {
+    const c = clienteDeHilo(h);
+    if (!c) return { key: 'sin_cliente', label: 'Sin cliente', cls: 'err' };
+    if (waTieneBauchePendiente(h)) return { key: 'bauche', label: 'Bauche', cls: 'ok' };
+    if (waPendienteCliente(c) > 0) return { key: 'cobro', label: 'Cobro', cls: 'err' };
+    const ep = waEstadoPoliza(c);
+    if (ep.est === 'vencida' || ep.est === 'gracia') return { key: 'renovar', label: 'Renovar', cls: 'warn' };
+    if (h.no_leidos_count > 0) return { key: 'no_leidos', label: 'Nuevo', cls: 'warn' };
+    if (!waVentanaAbierta(h)) return { key: 'cerrada', label: '24h cerrada', cls: '' };
+    return { key: 'ok', label: 'Al dia', cls: 'ok' };
+  }
+  function hilosFiltrados() {
+    if (waFiltro === 'todos') return hilos;
+    return hilos.filter(h => waClasificarHilo(h).key === waFiltro);
+  }
+  function pintarProPanel() {
+    const host = $('#nxWaProPanel'); if (!host) return;
+    const conCliente = hilos.filter(h => clienteDeHilo(h));
+    const sinCliente = hilos.length - conCliente.length;
+    const noLeidos = hilos.filter(h => h.no_leidos_count > 0).length;
+    const conBauche = hilos.filter(waTieneBauchePendiente).length;
+    const conCobro = hilos.filter(h => waPendienteCliente(clienteDeHilo(h)) > 0).length;
+    const renovar = hilos.filter(h => { const ep = waEstadoPoliza(clienteDeHilo(h)); return ep.est === 'vencida' || ep.est === 'gracia'; }).length;
+    const kpi = (key, label, val, sub) => `<button class="nxWaProKpi ${waFiltro === key ? 'on' : ''}" onclick="nxWaFiltro('${key}')"><div class="l">${esc(label)}</div><div class="v">${val}</div><div class="s">${esc(sub)}</div></button>`;
+    host.innerHTML = `<section class="nxWaPro">
+      <div class="nxWaProHead"><div><h3>Centro WhatsApp Pro</h3><p>Prioriza clientes por cobro, renovacion, bauches y conversaciones sin vincular.</p></div></div>
+      <div class="nxWaProGrid">
+        ${kpi('todos', 'Conversaciones', hilos.length, conCliente.length + ' vinculadas')}
+        ${kpi('no_leidos', 'Sin responder', noLeidos, 'mensajes nuevos')}
+        ${kpi('cobro', 'Cobranza', conCobro, 'clientes con balance')}
+        ${kpi('renovar', 'Renovacion', renovar, 'vence/vencida')}
+        ${kpi('sin_cliente', 'Sin vincular', sinCliente, 'telefono suelto')}
+      </div>
+      <div class="nxWaProActs">
+        <button class="primary" onclick="nxWaAbrirCobranza()"><i class="ti ti-cash"></i> Cobranza</button>
+        <button onclick="nxWaAbrirRenovaciones()"><i class="ti ti-calendar-event"></i> Renovaciones</button>
+        <button onclick="nxWaAbrirMasivoDeuda()"><i class="ti ti-send"></i> WA deuda</button>
+        <button onclick="nxWaFiltro('bauche')"><i class="ti ti-receipt"></i> Bauches ${conBauche}</button>
+      </div>
+    </section>`;
+  }
+
+  window.nxWaFiltro = function (f) { waFiltro = f || 'todos'; pintar(); };
+  window.nxWaAbrirCobranza = function () { try { nav('clientes', null); setTimeout(() => { try { switchTab('cob'); } catch (e) {} }, 160); } catch (e) {} };
+  window.nxWaAbrirRenovaciones = function () { try { nav('polizas', null); } catch (e) {} };
+  window.nxWaAbrirMasivoDeuda = function () {
+    const ids = clientes().filter(c => c && c.activo !== false && c.wa && waPendienteCliente(c) > 0).map(c => c.id);
+    if (!ids.length) { try { toast('ok', 'Sin deuda', 'No hay clientes con WhatsApp y balance pendiente'); } catch (e) {} return; }
+    if (typeof abrirWAMasivo === 'function') abrirWAMasivo(ids);
+  };
 
   function pintarPendientes() {
     const host = $('#nxWaPendPanel'); if (!host) return;
@@ -237,14 +341,17 @@
 
   function pintarLista() {
     const cont = $('#nxWaLista'); if (!cont) return;
-    if (!hilos.length) { cont.innerHTML = '<div class="nxWaEmpty">Todavía no han llegado mensajes.</div>'; return; }
-    cont.innerHTML = hilos.map(h => {
+    const lista = hilosFiltrados();
+    if (!hilos.length) { cont.innerHTML = '<div class="nxWaEmpty">Todavia no han llegado mensajes.</div>'; return; }
+    if (!lista.length) { cont.innerHTML = '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>'; return; }
+    cont.innerHTML = lista.map(h => {
       const nombre = h.nombre_perfil || h.telefono_e164 || 'Sin nombre';
-      const cliente = h.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
+      const cliente = clienteDeHilo(h);
+      const tag = waClasificarHilo(h);
       const on = h.id === hiloAbiertoId ? ' on' : '';
       return `<div class="nxWaRow${on}" onclick="nxWaAbrirHilo('${h.id}')">
         <div class="nxWaAv">${esc(iniciales(cliente?.nom || nombre))}</div>
-        <div class="nxWaWho"><b>${esc(cliente?.nom || nombre)}</b><span>${esc(h.ultimo_mensaje_preview || '')}</span></div>
+        <div class="nxWaWho"><b>${esc(cliente?.nom || nombre)}</b><span>${esc(h.ultimo_mensaje_preview || '')}</span><em class="nxWaTag ${tag.cls}">${esc(tag.label)}</em></div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span style="font-size:8.5px;color:#94a3b8">${horaRel(h.ultimo_mensaje_at)}</span>
           ${h.no_leidos_count ? `<span class="nxWaBadge">${h.no_leidos_count}</span>` : ''}
