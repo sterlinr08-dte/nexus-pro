@@ -115,6 +115,21 @@ function ensureControl(){
  controlOperativo();
 }
 
-function start(){css();patchFicha();ensure();ensureControl();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
+
+function pintarEquipo(rows){
+ const host=$('#nxCrmEquipo');if(!host)return;
+ const hoy=new Date().toISOString().slice(0,10),ags=agentes(),map=new Map();
+ rows.forEach(t=>{const k=t.asignado_agente_id||'_sin';if(!map.has(k),!map.get(k))map.set(k,{pendientes:0,vencidas:0});const x=map.get(k);x.pendientes++;if(t.vence_en&&String(t.vence_en).slice(0,10)<hoy)x.vencidas++;});
+ const items=[...map.entries()].sort((a,b)=>b[1].vencidas-a[1].vencidas||b[1].pendientes-a[1].pendientes);
+ const cards=items.length?items.map(([id,x])=>{const a=ags.find(v=>String(v.id)===String(id));return '<div class="nxOpsTask"><div class="nxCrmAv">'+esc(a?.nom?.split(/\\s+/).map(z=>z[0]).slice(0,2).join('').toUpperCase()||'—')+'</div><div><b>'+esc(a?.nom||'Sin asignar')+'</b><span>'+x.pendientes+' pendiente'+(x.pendientes===1?'':'s')+(x.vencidas?' · '+x.vencidas+' vencida'+(x.vencidas===1?'':'s'):'')+'</span></div><div class="nxOpsDue '+(x.vencidas?'bad':'')+'">'+(x.vencidas?'Atender':'Al día')+'</div></div>';}).join(''):'<div class="nxOpsEmpty">Aún no hay tareas asignadas.</div>';
+ host.innerHTML='<section class="nxCrmPanel nxOpsPanel"><div class="nxOpsHead"><div><h3>Seguimiento por agente</h3><div class="nxOpsFilter">Carga pendiente de cada responsable</div></div></div><div class="nxOpsRows">'+cards+'</div></section>';
+}
+async function cargarEquipo(){
+ const ops=$('#nxCrmControl'),A=api();if(!ops||!A?.get)return;
+ if(!$('#nxCrmEquipo')){const h=document.createElement('div');h.id='nxCrmEquipo';ops.parentNode.insertBefore(h,ops.nextSibling);}
+ try{pintarEquipo(await A.get('crm_tareas','estado=eq.pendiente&select=asignado_agente_id,vence_en')||[])}catch(e){console.error('[CRM] equipo',e)}
+}
+
+function start(){css();patchFicha();ensure();ensureControl();cargarEquipo();const obs=new MutationObserver(()=>{if($('#v-crm.on'))ensure()});obs.observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
