@@ -7,6 +7,7 @@ const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const api=()=>{try{return window.API||API}catch(e){return null}};
 const clientes=()=>{try{return (window.ST||ST||{}).clientes||[]}catch(e){return[]}};
+const agentes=()=>{try{return ((window.ST||ST||{}).agentes||[]).filter(a=>a.activo!==false)}catch(e){return[]}};
 const ago=v=>{if(!v)return 'Sin fecha';const d=new Date(v),n=Date.now()-d.getTime(),days=Math.floor(n/86400000);return days<=0?'Hoy':days===1?'Ayer':'hace '+days+' días'};
 let tareas=[];
 
@@ -20,8 +21,8 @@ function css(){
 }
 function dueClass(t){return t.vence_en&&new Date(t.vence_en).getTime()<Date.now()?'bad':''}
 function taskHtml(t){
- const c=clientes().find(x=>String(x.id)===String(t.cliente_id));const due=t.vence_en?new Date(t.vence_en).toLocaleDateString('es-DO',{day:'2-digit',month:'short'}):'Sin fecha';
- return '<div class="nxOpsTask '+(dueClass(t)?'is-overdue':'')+'"><button class="nxOpsCheck" title="Completar" onclick="nxCrmCompletarTarea(\''+esc(t.id)+'\')"><i class="ti ti-check"></i></button><div><b>'+esc(t.titulo)+'</b><span>'+esc(c?.nom||'Cliente')+' · '+esc(t.tipo||'seguimiento')+'</span></div><div class="nxOpsDue '+dueClass(t)+'">'+due+'</div></div>';
+ const c=clientes().find(x=>String(x.id)===String(t.cliente_id));const due=t.vence_en?new Date(t.vence_en).toLocaleDateString('es-DO',{day:'2-digit',month:'short'}):'Sin fecha';const ag=agentes().find(a=>String(a.id)===String(t.asignado_agente_id));
+ return '<div class="nxOpsTask '+(dueClass(t)?'is-overdue':'')+'"><button class="nxOpsCheck" title="Completar" onclick="nxCrmCompletarTarea(\''+esc(t.id)+'\')"><i class="ti ti-check"></i></button><div><b>'+esc(t.titulo)+'</b><span>'+esc(c?.nom||'Cliente')+' · '+esc(t.tipo||'seguimiento')+(ag?' · '+esc(ag.nom):'')+'</span></div><div class="nxOpsDue '+dueClass(t)+'">'+due+'</div></div>';
 }
 async function cargar(){
  const A=api();if(!A?.get)return;
@@ -38,18 +39,19 @@ function ensure(){
  cargar();return true;
 }
 function optionClientes(){return clientes().filter(c=>c.activo!==false).sort((a,b)=>String(a.nom).localeCompare(String(b.nom))).map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nom)+'</option>').join('')}
+function optionAgentes(){return agentes().sort((a,b)=>String(a.nom).localeCompare(String(b.nom))).map(a=>'<option value="'+esc(a.id)+'">'+esc(a.nom)+'</option>').join('')}
 function modal(){
  $('#nxOpsModal')?.remove();
- const m=document.createElement('div');m.id='nxOpsModal';m.className='nxOpsModal';m.innerHTML='<div class="nxOpsDialog" role="dialog" aria-modal="true" aria-labelledby="nxOpsTitle"><h2 id="nxOpsTitle">Nueva tarea de seguimiento</h2><p>Se registrará en la ficha del cliente y aparecerá en la agenda del CRM.</p><div class="nxOpsGrid"><div class="nxOpsField full"><label>Cliente</label><select id="nxOpsCliente"><option value="">Selecciona un cliente…</option>'+optionClientes()+'</select></div><div class="nxOpsField full"><label>Tarea</label><input id="nxOpsTitulo" maxlength="160" placeholder="Ej.: Confirmar documentos de afiliación"></div><div class="nxOpsField"><label>Tipo</label><select id="nxOpsTipo"><option value="seguimiento">Seguimiento</option><option value="documento">Documento</option><option value="renovacion">Renovación</option><option value="cobro">Cobro</option><option value="afiliacion">Afiliación</option><option value="otro">Otro</option></select></div><div class="nxOpsField"><label>Prioridad</label><select id="nxOpsPrioridad"><option value="media">Media</option><option value="alta">Alta</option><option value="urgente">Urgente</option><option value="baja">Baja</option></select></div><div class="nxOpsField full"><label>Fecha de seguimiento</label><input id="nxOpsVence" type="datetime-local"></div><div class="nxOpsField full"><label>Nota (opcional)</label><textarea id="nxOpsNota" maxlength="1500" placeholder="Qué debe resolverse o verificarse"></textarea></div></div><div class="nxOpsFoot"><button onclick="nxCrmCerrarTarea()">Cancelar</button><button class="primary" id="nxOpsGuardar" onclick="nxCrmGuardarTarea()">Guardar tarea</button></div></div>';m.addEventListener('click',e=>{if(e.target===m)window.nxCrmCerrarTarea()});document.body.appendChild(m);setTimeout(()=>$('#nxOpsCliente')?.focus(),0);
+ const m=document.createElement('div');m.id='nxOpsModal';m.className='nxOpsModal';m.innerHTML='<div class="nxOpsDialog" role="dialog" aria-modal="true" aria-labelledby="nxOpsTitle"><h2 id="nxOpsTitle">Nueva tarea de seguimiento</h2><p>Se registrará en la ficha del cliente y aparecerá en la agenda del CRM.</p><div class="nxOpsGrid"><div class="nxOpsField full"><label>Cliente</label><select id="nxOpsCliente"><option value="">Selecciona un cliente…</option>'+optionClientes()+'</select></div><div class="nxOpsField full"><label>Tarea</label><input id="nxOpsTitulo" maxlength="160" placeholder="Ej.: Confirmar documentos de afiliación"></div><div class="nxOpsField"><label>Tipo</label><select id="nxOpsTipo"><option value="seguimiento">Seguimiento</option><option value="documento">Documento</option><option value="renovacion">Renovación</option><option value="cobro">Cobro</option><option value="afiliacion">Afiliación</option><option value="otro">Otro</option></select></div><div class="nxOpsField"><label>Prioridad</label><select id="nxOpsPrioridad"><option value="media">Media</option><option value="alta">Alta</option><option value="urgente">Urgente</option><option value="baja">Baja</option></select></div><div class="nxOpsField"><label>Responsable</label><select id="nxOpsAgente"><option value="">Sin asignar</option>'+optionAgentes()+'</select></div><div class="nxOpsField full"><label>Fecha de seguimiento</label><input id="nxOpsVence" type="datetime-local"></div><div class="nxOpsField full"><label>Nota (opcional)</label><textarea id="nxOpsNota" maxlength="1500" placeholder="Qué debe resolverse o verificarse"></textarea></div></div><div class="nxOpsFoot"><button onclick="nxCrmCerrarTarea()">Cancelar</button><button class="primary" id="nxOpsGuardar" onclick="nxCrmGuardarTarea()">Guardar tarea</button></div></div>';m.addEventListener('click',e=>{if(e.target===m)window.nxCrmCerrarTarea()});document.body.appendChild(m);setTimeout(()=>$('#nxOpsCliente')?.focus(),0);
 }
 window.nxCrmNuevaTarea=modal;
 window.nxCrmCerrarTarea=()=>$('#nxOpsModal')?.remove();
 window.nxCrmGuardarTarea=async()=>{
- const A=api(),cliente_id=$('#nxOpsCliente')?.value,titulo=$('#nxOpsTitulo')?.value.trim(),tipo=$('#nxOpsTipo')?.value,prioridad=$('#nxOpsPrioridad')?.value,vence=$('#nxOpsVence')?.value,nota=$('#nxOpsNota')?.value.trim();
+ const A=api(),cliente_id=$('#nxOpsCliente')?.value,titulo=$('#nxOpsTitulo')?.value.trim(),tipo=$('#nxOpsTipo')?.value,prioridad=$('#nxOpsPrioridad')?.value,asignado_agente_id=$('#nxOpsAgente')?.value||null,vence=$('#nxOpsVence')?.value,nota=$('#nxOpsNota')?.value.trim();
  if(!cliente_id||!titulo){try{toast('warn','Completa cliente y tarea')}catch(e){};return}
  const b=$('#nxOpsGuardar');b.disabled=true;b.textContent='Guardando…';
  try{
-  const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,vence_en:vence?new Date(vence).toISOString():null});
+  const r=await A.post('crm_tareas',{cliente_id,titulo,tipo,prioridad,asignado_agente_id,vence_en:vence?new Date(vence).toISOString():null});
   await A.post('crm_actividades',{cliente_id,tipo:'nota',titulo:'Tarea creada: '+titulo,detalle:nota||null,proxima_accion_en:vence?new Date(vence).toISOString():null});
   window.nxCrmCerrarTarea();await cargar();try{logAudit('CRM_TAREA_CREADA',titulo,'CRM',cliente_id);toast('ok','Tarea creada',titulo)}catch(e){}
  }catch(e){console.error(e);try{toast('err','No se pudo guardar',e.message)}catch(x){};b.disabled=false;b.textContent='Guardar tarea';}
