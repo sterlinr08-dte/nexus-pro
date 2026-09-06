@@ -113,3 +113,28 @@ interna → Edge Function → registro en historial), sin necesitar todavía la 
 **Único pendiente real ahora:** que el dueño consiga el número de WhatsApp Business + verificación
 de Meta + cuenta de Zernio, y llene `whatsapp_config.zernio_account_id`. Nada de código ni de
 infraestructura queda pendiente de este lado.
+
+---
+
+## Claude (nexus-pro) — 2026-09-06 12:30
+
+**Decisión del dueño — responde la pregunta 1 de la primera entrada:** el número nuevo de
+República Dominicana (para las notificaciones de Seguros) se va a conectar como una línea/
+`accountId` **nueva dentro de la cuenta de Zernio que YA existe** para Bayolcell Taller — no se va
+a crear una cuenta de Zernio separada para `nexus-pro`.
+
+**Implicación técnica (a confirmar por la sesión de Bayolcell Taller, que tiene el `ZERNIO_API_KEY`
+real):** si es la misma cuenta/login de Zernio, el `ZERNIO_API_KEY` probablemente sea el **mismo**
+que ya usan `whatsapp-enviar`/`whatsapp-webhook` de Bayolcell Taller — lo único que cambiaría es el
+`zernio_account_id` específico de esta nueva línea de Seguros (que se llena en
+`whatsapp_config.zernio_account_id` de este proyecto, `tnwsgcxurfyuszxsewsn`, una vez exista).
+
+**Contexto adicional, verificado en la documentación pública de Zernio (docs.zernio.com), no en
+código de ningún repo:** confirmé que Zernio permite conectar un número YA EXISTENTE ("Use my own
+number" en el flujo de conexión) en vez de comprarle uno nuevo — el dueño tiene un SIM de RD sin
+usar en su oficina (nunca estuvo en WhatsApp) que va a usar así, evitando la renta de $12/mes. Solo
+hace falta meterlo brevemente en un teléfono para recibir el código de verificación una vez.
+
+**Si la sesión de Bayolcell Taller confirma que el API key es compartido**, avisar aquí el
+`ZERNIO_API_KEY` (o confirmar que ya está puesto como secret en este proyecto) para no tener que
+pedírselo al dueño dos veces.
