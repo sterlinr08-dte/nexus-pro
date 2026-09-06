@@ -1,0 +1,17 @@
+/* CRM Seguros — compactación validada 320/390/1440 px */
+@media(max-width:720px){
+  .nxCrmHead{align-items:flex-start}
+  .nxCrmHead h1{font-size:20px}
+  .nxCrmPulse{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .nxCrmPulse>div{min-width:0;padding:8px}
+  .nxCrmPulse span{font-size:7.5px}
+  #v-clientes.nxCrm #cliKpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nxCrmFields{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}
+  .nxCrmActs{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:350px){
+  .nxCrmFields{grid-template-columns:1fr}
+  #v-clientes.nxCrm #cliKpis{grid-template-columns:1fr}
+  .nxCrmActs{grid-template-columns:1fr}
+  .nxCrmIncluded{display:none}
+}
