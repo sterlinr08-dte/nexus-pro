@@ -105,6 +105,19 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ ok: false, error: "metodo_no_permitido" }, 405);
 
+  try {
+    return await manejar(req);
+  } catch (e) {
+    // Blindaje: cualquier excepcion no prevista en el camino autorizado (mas largo que el de
+    // no_autorizado, que es el unico que se habia probado hasta ahora) terminaba en un 502 crudo
+    // de la plataforma sin dejar rastro -- confirmado en vivo, el dueño no podia responder desde
+    // el inbox y no habia ningun log que explicara por que.
+    console.error("whatsapp-inbox-enviar: excepcion no capturada:", e instanceof Error ? (e.stack || e.message) : String(e));
+    return json({ ok: false, error: "error_interno" }, 500);
+  }
+});
+
+async function manejar(req: Request): Promise<Response> {
   const sub = subDelJWT(req);
   const acceso = await resolverAcceso(sub);
   if (!acceso.autorizado) return json({ ok: false, error: "no_autorizado" }, 403);
@@ -141,11 +154,13 @@ Deno.serve(async (req: Request) => {
   try {
     resultado = await mandarConReintento(conversationId, config.zernio_account_id, mensaje);
   } catch (e) {
+    console.error("whatsapp-inbox-enviar: fetch a Zernio fallo:", e instanceof Error ? e.message : String(e));
     if (esTimeout(e)) return json({ ok: false, error: "zernio_timeout", mensaje: "Zernio no respondió a tiempo. No reintentes automáticamente." }, 504);
     return json({ ok: false, error: "no_se_pudo_contactar_zernio" }, 502);
   }
 
   if (!resultado.ok) {
+    console.error("whatsapp-inbox-enviar: Zernio respondio no-ok, status:", resultado.status, "data:", JSON.stringify(resultado.data));
     return json({ ok: false, error: "zernio_error", detalle: resultado.data }, 502);
   }
 
@@ -167,4 +182,4 @@ Deno.serve(async (req: Request) => {
   }).eq("id", hiloId);
 
   return json({ ok: true, messageId: resultado.data?.data?.messageId ?? null });
-});
+}
