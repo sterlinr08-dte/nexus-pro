@@ -74,11 +74,23 @@ async function esperar(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Fix 2026-09-07: el campo "messageType" no existe en la API real de Zernio (no esta en el
+// schema del endpoint /v1/inbox/conversations/{id}/messages, confirmado leyendo la doc real
+// en docs.zernio.com/messages/send-inbox-message) y "template" NO lleva {name, language,
+// variableMapping} directo -- va envuelto en "elements": [{name, language, components}], con
+// components en el formato estandar de la Cloud API de Meta ([{type:"body", parameters:[...]}]).
+// El shape viejo hacia que Zernio no reconociera "template" como valido, cayera a "no hay
+// contenido" y rechazara el envio con 400 "Message, attachment, or interactive content is
+// required" -- confirmado en vivo, nunca se habia probado un envio real con plantilla antes
+// (ni aca ni en Bayolcell Taller, que usa el mismo shape viejo en whatsapp-enviar).
+function armarComponents(variables: string[]): { type: string; parameters: { type: string; text: string }[] }[] {
+  return [{ type: "body", parameters: variables.map((v) => ({ type: "text", text: v })) }];
+}
+
 async function mandarPlantilla(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   const body = {
     accountId,
-    messageType: "template",
-    template: { name: nombre, language: "es", variableMapping: { body_text: [variables] } },
+    template: { elements: [{ name: nombre, language: "es", components: armarComponents(variables) }] },
   };
   const resp = await fetch(`https://zernio.com/api/v1/inbox/conversations/${encodeURIComponent(telefono)}/messages`, {
     method: "POST",
