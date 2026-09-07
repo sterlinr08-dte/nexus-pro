@@ -146,6 +146,14 @@
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaTag.ok{background:#ecfdf5;color:#059669}
+#v-waInbox .nxWaEnvioMasivoOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
+#v-waInbox .nxWaEnvioMasivoBox{width:100%;max-width:420px;max-height:80vh;overflow-y:auto}
+#v-waInbox .nxWaEnvioMasivoBox h3{margin:0 0 6px;font-size:13px;color:#0f172a;font-weight:900}
+#v-waInbox .nxWaEnvioMasivoBox>p{margin:0 0 12px;font-size:10.5px;color:#475569;line-height:1.4}
+#v-waInbox .nxWaEnvioMasivoActs{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+#v-waInbox .nxWaEnvioMasivoBarra{height:8px;border-radius:999px;background:#e5eaf2;overflow:hidden}
+#v-waInbox .nxWaEnvioMasivoBarraRelleno{height:100%;background:linear-gradient(90deg,#25d366,var(--wa-b),var(--wa-b2))}
+#v-waInbox .nxWaEnvioMasivoFallos{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
 @media(max-width:760px){
   #v-waInbox{padding:0 10px 16px;background:linear-gradient(180deg,rgba(248,251,255,.97),rgba(246,248,251,.92))}
   #v-waInbox .nxCrmHomeHead{padding:13px 13px 16px;border-radius:16px;margin-bottom:10px}
@@ -468,10 +476,159 @@
     const lista = waContactosPor(tipo || 'todos');
     const ids = lista.map(x => x.c.id);
     if (!ids.length) { try { toast('warn', 'Sin contactos', 'No hay clientes con WhatsApp en este segmento'); } catch (e) {} return; }
-    if (typeof abrirWAMasivo !== 'function') { try { toast('err', 'WA Masivo no disponible'); } catch (e) {} return; }
-    abrirWAMasivo(ids);
-    setTimeout(() => { try { if (typeof selWATipo === 'function') selWATipo(mapa[tipo] || 'factura'); } catch (e) {} }, 80);
+    _waPintarConfirmacionEnvioMasivo(mapa[tipo] || 'factura', ids);
   };
+
+  // ── Envío masivo automático (reemplaza el WA Masivo viejo de pestañas wa.me) ─────────────────
+  // El progreso vive en la base de datos (whatsapp_envio_masivo_lotes/_destinatarios), no solo en
+  // estas variables -- un refresco de página no pierde el progreso ni permite un doble envío,
+  // porque la Edge Function siempre filtra por estado='pendiente' del lado del servidor. Estas
+  // variables solo recuerdan CUÁL lote está activo y si ya hay un polling corriendo, para no
+  // disparar dos loops en paralelo si el agente hace doble click.
+  let _waLoteEnvioMasivoId = null;
+  let _waPollingEnCurso = false;
+  let _waConfirmacionPendiente = null;
+  const TIPO_ENVIO_MASIVO_LEGIBLE = { factura: 'la factura generada', pago: 'un recordatorio de pago pendiente', vence: 'un aviso de renovación de póliza' };
+
+  function _waPintarConfirmacionEnvioMasivo(tipo, clienteIds) {
+    _waConfirmacionPendiente = { tipo, clienteIds };
+    const overlay = document.createElement('div');
+    overlay.id = 'nxWaEnvioMasivoOverlay';
+    overlay.className = 'nxWaEnvioMasivoOverlay';
+    overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro">
+      <h3>Enviar por WhatsApp</h3>
+      <p>${clienteIds.length} cliente${clienteIds.length === 1 ? '' : 's'} recibirá${clienteIds.length === 1 ? '' : 'n'} ${esc(TIPO_ENVIO_MASIVO_LEGIBLE[tipo] || tipo)} automáticamente, sin abrir ninguna ventana.</p>
+      <div class="nxWaEnvioMasivoActs">
+        <button class="btn bghost" onclick="_waCerrarPanelEnvioMasivo()">Cancelar</button>
+        <button class="btn bwa" onclick="nxWaConfirmarEnvioMasivo()">Confirmar y enviar</button>
+      </div>
+    </div>`;
+    ensureView().appendChild(overlay);
+  }
+
+  window.nxWaConfirmarEnvioMasivo = function () {
+    if (!_waConfirmacionPendiente) return;
+    const { tipo, clienteIds } = _waConfirmacionPendiente;
+    _waConfirmacionPendiente = null;
+    nxWaIniciarEnvioMasivo(tipo, clienteIds);
+  };
+
+  window.nxWaIniciarEnvioMasivo = async function (tipo, clienteIds) {
+    const A = api(); if (!A?.post) return;
+    _waPintarProgresoEnvioMasivo({ estado: 'creando' });
+    let loteId;
+    try {
+      loteId = await A.post('rpc/whatsapp_crear_lote_envio_masivo', { p_tipo: tipo, p_cliente_ids: clienteIds });
+    } catch (e) {
+      _waCerrarPanelEnvioMasivo();
+      try { toast('err', 'No se pudo iniciar el envío', String(e && e.message || e)); } catch (e2) {}
+      return;
+    }
+    if (!loteId) { _waCerrarPanelEnvioMasivo(); try { toast('err', 'No se pudo iniciar el envío'); } catch (e) {} return; }
+    _waLoteEnvioMasivoId = loteId;
+    await _waPollLoteEnvioMasivo();
+  };
+
+  window._waCerrarPanelEnvioMasivo = function () {
+    const el = $('#nxWaEnvioMasivoOverlay');
+    if (el) el.remove();
+    _waLoteEnvioMasivoId = null;
+    _waConfirmacionPendiente = null;
+  };
+
+  // Llama a la Edge Function repetidas veces (hasta limite destinatarios "pendiente" por llamada)
+  // hasta que reporte terminado:true, actualizando la barra de progreso entre cada llamada. Si el
+  // agente cierra el panel (_waCerrarPanelEnvioMasivo pone _waLoteEnvioMasivoId=null), el loop se
+  // corta solo en la próxima vuelta -- el envío se detiene, el progreso ya hecho queda guardado.
+  window._waPollLoteEnvioMasivo = async function () {
+    if (_waPollingEnCurso) return;
+    _waPollingEnCurso = true;
+    const loteId = _waLoteEnvioMasivoId;
+    const A = api();
+    try {
+      while (_waLoteEnvioMasivoId === loteId) {
+        let resp;
+        try {
+          resp = await fetch(`${A.url}/functions/v1/whatsapp-envio-masivo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
+            body: JSON.stringify({ lote_id: loteId, limite: 15 }),
+          });
+        } catch (e) {
+          _waPintarProgresoEnvioMasivo({ estado: 'error_red', mensaje: String(e && e.message || e) });
+          return;
+        }
+        const d = await resp.json().catch(() => ({}));
+        if (!resp.ok || !d.ok) {
+          if (d.error === 'lote_ya_completado') break; // ya termino por otra via -- solo falta refrescar el resumen
+          _waPintarProgresoEnvioMasivo({ estado: 'error_red', mensaje: d.error || 'error desconocido' });
+          return;
+        }
+        await _waActualizarProgresoDesdeLote(loteId);
+        if (d.terminado) break;
+      }
+      await _waActualizarProgresoDesdeLote(loteId, true);
+    } finally {
+      _waPollingEnCurso = false;
+    }
+  };
+
+  async function _waActualizarProgresoDesdeLote(loteId, esFinal) {
+    const A = api(); if (!A?.get) return;
+    let lote;
+    try {
+      const filas = await A.get('whatsapp_envio_masivo_lotes', `id=eq.${loteId}&select=*`);
+      lote = filas && filas[0];
+    } catch (e) { return; }
+    if (!lote) return;
+    let fallidos = [];
+    try {
+      fallidos = await A.get('whatsapp_envio_masivo_destinatarios', `lote_id=eq.${loteId}&estado=eq.fallido&select=cliente_id,error_detalle`) || [];
+    } catch (e) { fallidos = []; }
+    const nombresPorId = new Map(clientes().map(c => [String(c.id), c.nom]));
+    const listaFallos = fallidos.map(f => ({ nombre: nombresPorId.get(String(f.cliente_id)) || 'Cliente', motivo: f.error_detalle || 'error' }));
+    _waPintarProgresoEnvioMasivo({
+      estado: (esFinal || lote.estado === 'completado') ? 'completado' : 'enviando',
+      total: lote.total_destinatarios, enviados: lote.enviados, fallidos: lote.fallidos, listaFallos,
+    });
+  }
+
+  function _waPintarProgresoEnvioMasivo(s) {
+    let overlay = $('#nxWaEnvioMasivoOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'nxWaEnvioMasivoOverlay';
+      overlay.className = 'nxWaEnvioMasivoOverlay';
+      ensureView().appendChild(overlay);
+    }
+    if (s.estado === 'creando') {
+      overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro"><h3>Preparando envío…</h3><p>Creando la tanda…</p></div>`;
+      return;
+    }
+    if (s.estado === 'error_red') {
+      overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro">
+        <h3>El envío se detuvo</h3>
+        <p>${esc(s.mensaje || '')} — lo ya enviado quedó guardado, podés reintentar sin repetir nada.</p>
+        <div class="nxWaEnvioMasivoActs">
+          <button class="btn bghost" onclick="_waCerrarPanelEnvioMasivo()">Cerrar</button>
+          <button class="btn bwa" onclick="_waPollLoteEnvioMasivo()">Reintentar</button>
+        </div>
+      </div>`;
+      return;
+    }
+    const total = s.total || 0, hechos = (s.enviados || 0) + (s.fallidos || 0);
+    const pct = total ? Math.round((hechos / total) * 100) : 0;
+    const listaFallosHTML = (s.listaFallos || []).map(f => `<div class="nxWaContact"><div class="tx"><b>${esc(f.nombre)}</b><span>${esc(f.motivo)}</span></div></div>`).join('');
+    overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro">
+      <h3>${s.estado === 'completado' ? 'Envío completado' : 'Enviando…'}</h3>
+      <div class="nxWaEnvioMasivoBarra"><div class="nxWaEnvioMasivoBarraRelleno" style="width:${pct}%"></div></div>
+      <p>${hechos} de ${total} — ${s.enviados || 0} enviados, ${s.fallidos || 0} fallidos</p>
+      ${listaFallosHTML ? `<div class="nxWaEnvioMasivoFallos">${listaFallosHTML}</div>` : ''}
+      <div class="nxWaEnvioMasivoActs">
+        <button class="btn ${s.estado === 'completado' ? 'bwa' : 'bghost'}" onclick="_waCerrarPanelEnvioMasivo()">Cerrar</button>
+      </div>
+    </div>`;
+  }
 
   function pintarPendientes() {
     const host = $('#nxWaPendPanel'); if (!host) return;
