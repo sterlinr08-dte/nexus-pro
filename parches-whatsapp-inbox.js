@@ -14,6 +14,9 @@
   let waFiltro = 'todos';
   let waContactFiltro = 'todos';
   let sb = null, canal = null;
+  // Ultimo render real del detalle -- permite que pintarDetalle() solo agregue los mensajes
+  // nuevos en vez de recrear todo el panel (mensajes + composer) en cada evento de Realtime.
+  let ultimoRenderHiloId = null, ultimoRenderVentanaAbierta = null, ultimoRenderMensajeCount = 0;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -469,17 +472,45 @@
     const cont = $('#nxWaDetalle'); if (!cont) return;
     const detailCol = cont.closest('.nxWaDetailCol');
     if (detailCol) detailCol.classList.toggle('has-open', !!hiloAbiertoId);
-    if (!hiloAbiertoId) { cont.innerHTML = '<div class="nxWaEmpty">Selecciona una conversación.</div>'; return; }
+    if (!hiloAbiertoId) { ultimoRenderHiloId = null; cont.innerHTML = '<div class="nxWaEmpty">Selecciona una conversación.</div>'; return; }
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
     const ventanaAbierta = h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000;
+
+    // Mismo hilo abierto y mismo estado de ventana: solo agregar los mensajes nuevos al final en
+    // vez de recrear todo el panel. Antes de esto, CADA evento de Realtime (enviar o recibir un
+    // mensaje) volvia a escribir el innerHTML completo -- incluido el <input> del composer, que
+    // se destruia y recreaba de nuevo, perdiendo el foco/lo que se estaba escribiendo y causando
+    // un parpadeo visible en toda la ventana. Confirmado en vivo, reportado por el dueño.
+    const box = $('#nxWaMsgsBox');
+    if (box && ultimoRenderHiloId === hiloAbiertoId && ultimoRenderVentanaAbierta === ventanaAbierta && mensajes.length >= ultimoRenderMensajeCount) {
+      const nuevos = mensajes.slice(ultimoRenderMensajeCount);
+      if (nuevos.length) {
+        const estabaAlFondo = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+        for (const m of nuevos) {
+          const div = document.createElement('div');
+          div.className = 'nxWaBub ' + m.direccion;
+          div.innerHTML = burbujaMedia(m) + (m.cuerpo ? esc(m.cuerpo) : '');
+          box.appendChild(div);
+        }
+        if (estabaAlFondo) box.scrollTop = box.scrollHeight;
+      }
+      ultimoRenderMensajeCount = mensajes.length;
+      const head = cont.querySelector('.nxWaHead');
+      if (head) head.textContent = cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '';
+      return;
+    }
+
     const filas = mensajes.map(m => `<div class="nxWaBub ${m.direccion}">${burbujaMedia(m)}${m.cuerpo ? esc(m.cuerpo) : ''}</div>`).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
     cont.innerHTML = `<div class="nxWaHead">${esc(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '')}</div>
       <div class="nxWaMsgs" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
         ? `<div class="nxWaComposer"><input id="nxWaTexto" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')nxWaEnviar()"><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.</div>`}`;
-    const box = $('#nxWaMsgsBox'); if (box) box.scrollTop = box.scrollHeight;
+    const nuevoBox = $('#nxWaMsgsBox'); if (nuevoBox) nuevoBox.scrollTop = nuevoBox.scrollHeight;
+    ultimoRenderHiloId = hiloAbiertoId;
+    ultimoRenderVentanaAbierta = ventanaAbierta;
+    ultimoRenderMensajeCount = mensajes.length;
   }
 
   window.nxWaEnviar = async function () {
