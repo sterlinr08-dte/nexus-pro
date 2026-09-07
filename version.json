@@ -1,7 +1,14 @@
 {
-  "version": "57.87",
+  "version": "57.88",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.88",
+      "fecha": "2026-09-07",
+      "notas": [
+        "ARREGLADO: en el modulo de WhatsApp, la barra lateral (el menu de navegacion) no se cerraba en el celular al tocar WhatsApp - se quedaba abierta tapando la pantalla. Le faltaba la misma linea que ya tienen los demas modulos para cerrarse solo al entrar."
+      ]
+    },
     {
       "version": "57.87",
       "fecha": "2026-09-07",

@@ -157,6 +157,7 @@
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on')); v.classList.add('on');
     document.querySelectorAll('#sbNav .ni').forEach(x => x.classList.remove('on'));
     (el && el.classList ? el : $('#nxWaInboxNav'))?.classList.add('on');
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     render();
     cargar();
     return false;
