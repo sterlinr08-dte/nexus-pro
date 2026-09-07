@@ -14,9 +14,60 @@
   let waFiltro = 'todos';
   let waContactFiltro = 'todos';
   let sb = null, canal = null;
-  // Ultimo render real del detalle -- permite que pintarDetalle() solo agregue los mensajes
-  // nuevos en vez de recrear todo el panel (mensajes + composer) en cada evento de Realtime.
-  let ultimoRenderHiloId = null, ultimoRenderVentanaAbierta = null, ultimoRenderMensajeCount = 0;
+  // "mensajesHiloId" es la unica fuente de verdad de a que hilo pertenecen los datos que hay
+  // ahora mismo en "mensajes" -- lo pone cargarMensajes() SOLO cuando escribe datos frescos y
+  // vigentes (nunca en un fallo, nunca en una carga superada por otra mas nueva). pintarDetalle()
+  // lo chequea el mismo, una sola vez, en vez de que cada lugar que llama a pintar()/
+  // pintarDetalle() tenga que acordarse de no hacerlo mientras la carga sigue en vuelo.
+  //
+  // Fix 2026-09-07, tercera pasada -- las dos pasadas anteriores del mismo dia intentaron evitar
+  // el render completo del panel con logica de diffing (comparar prefijos de ids, luego "huellas"
+  // por mensaje) para no destruir el <input> del composer en cada evento de Realtime. Revisadas
+  // por agentes, ambas terminaron introduciendo bugs nuevos y mas graves que el original (fuga
+  // transitoria de mensajes de un cliente bajo el nombre de otro, un contador de generacion global
+  // que descartaba cargas validas, huellas que no detectaban cambios reales). Se abandona esa
+  // estrategia: ahora pintarDetalle() SIEMPRE re-renderiza completo cuando hay datos frescos, pero
+  // preserva explicitamente el texto/foco/cursor del composer y la posicion del scroll a traves
+  // del rewrite -- eso es lo unico que de verdad le importa al agente, y es mucho mas simple de
+  // verificar sin bugs que un mecanismo de diffing incremental.
+  let ultimoRenderHiloId = null, mensajesHiloId = null;
+  // Fix 2026-09-07, cuarta pasada -- un contador de generacion incrementado DENTRO de
+  // cargarMensajes() (a la entrada de la funcion) queda "dormido" mientras un await previo al
+  // llamado lo bloquea (por ejemplo el RPC whatsapp_marcar_hilo_leido en nxWaAbrirHilo, o el
+  // fetch de envio en nxWaEnviar) -- eso permitia que una carga vieja y colgada de ESE MISMO hilo
+  // pasara el chequeo de generacion porque nadie mas la habia "adelantado" todavia. Ahora se
+  // reserva un token nuevo para el hilo en el INSTANTE en que se decide recargarlo (antes de
+  // cualquier await, incluida esa RPC), asi cualquier carga anterior en vuelo para ese hilo queda
+  // invalidada de inmediato, sin importar cuanto tarde en resolver ni si termina en exito o error.
+  const solicitudVigentePorHilo = new Map();
+  function marcarSolicitudCarga(hiloId) {
+    const token = {};
+    solicitudVigentePorHilo.set(hiloId, token);
+    return token;
+  }
+  // Fix 2026-09-07, sexta y ultima pasada -- 3 problemas mas, confirmados por revision con
+  // agentes sobre la quinta pasada:
+  // 1. El candado "disabled" del <input> del composer, puesto a mano por nxWaEnviar(), no
+  //    sobrevivia a un re-render (pintarDetalle() SIEMPRE reescribe el composer entero sin ese
+  //    atributo) -- cualquier evento de Realtime de OTRO hilo cualquiera podia reactivar el
+  //    composer en medio de un envio todavia en vuelo, permitiendo un doble envio real al
+  //    cliente. "hiloEnviosEnVuelo" es la fuente de verdad (independiente del DOM) que
+  //    pintarDetalle() consulta para decidir si el <input> nace deshabilitado.
+  // 2. El reintento de "Cargando..." pegado (ver pintarDetalle) solo se armaba una vez chequeando
+  //    "ultimoRenderHiloId", una variable COMPARTIDA con el render completo de CUALQUIER hilo --
+  //    rebotar entre hilos podia armar timers duplicados para el mismo hilo. Ahora se dedupe por
+  //    hilo en "hilosConReintentoProgramado", sin relacion con esa otra variable.
+  // 3. Ese mismo reintento no distinguia "la carga fallo" de "la carga sigue genuinamente en
+  //    curso" (por ejemplo, firmando varios adjuntos de bauches, algo que puede tardar mas de los
+  //    3s del reintento) -- lo relanzaba igual, invalidando y tirando a la basura el trabajo ya
+  //    hecho de la carga real. "hilosCargando" marca que hilos tienen una carga autorizada
+  //    genuinamente en vuelo ahora mismo; si sigue en curso, el reintento solo vuelve a esperar
+  //    en vez de cancelarla con una carga nueva.
+  const hiloEnviosEnVuelo = new Set();
+  const hilosCargando = new Set();
+  const hilosConReintentoProgramado = new Set();
+  const urlFirmadaCache = new Map();
+  const urlFirmadaEnVuelo = new Map();
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -170,32 +221,94 @@
   // ── Datos ──────────────────────────────────────────────────────────────
   async function cargar() {
     const A = api(); if (!A?.get) return;
-    try { hilos = await A.get('whatsapp_hilos', 'order=ultimo_mensaje_at.desc.nullslast&limit=100&select=*') || []; } catch (e) { hilos = []; }
+    // Un blip transitorio de este fetch no debe vaciar toda la lista de conversaciones visibles
+    // -- este refresco corre en cada evento de Realtime de CUALQUIER hilo, asi que es mucho mas
+    // frecuente que el de un solo hilo. Se deja "hilos" como estaba y se reintenta solo.
+    try { hilos = await A.get('whatsapp_hilos', 'order=ultimo_mensaje_at.desc.nullslast&limit=100&select=*') || []; } catch (e) { return; }
     if (hiloAbiertoId) await cargarMensajes(hiloAbiertoId);
     pintar();
   }
   function api() { try { return getAPI(); } catch (e) { return null; } }
 
   async function urlFirmada(path) {
-    const A = api(); if (!A) return null;
-    try {
-      const r = await fetch(`${A.url}/storage/v1/object/sign/whatsapp-inbox-media/${path}`, {
-        method: 'POST',
-        headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expiresIn: 3600 })
-      });
-      if (!r.ok) return null;
-      const d = await r.json();
-      return `${A.url}/storage/v1${d.signedURL || d.signedUrl}`;
-    } catch (e) { return null; }
+    // Cacheada por media_path -- pedir una URL firmada nueva en CADA refresco (cada evento de
+    // Realtime) para adjuntos que ya tenian una vigente era trafico/latencia innecesaria. Una
+    // entrada vencida se borra al leerla (no solo se ignora) para no crecer sin limite en una
+    // pestaña de larga duracion, y las peticiones concurrentes para el MISMO path comparten la
+    // misma promesa en vez de disparar un POST duplicado cada una.
+    const cacheada = urlFirmadaCache.get(path);
+    if (cacheada) {
+      if ((Date.now() - cacheada.at) < 45 * 60000) return cacheada.url;
+      urlFirmadaCache.delete(path);
+    }
+    if (urlFirmadaEnVuelo.has(path)) return urlFirmadaEnVuelo.get(path);
+    const A = api(); if (!A) return cacheada ? cacheada.url : null;
+    const promesa = (async () => {
+      try {
+        const r = await fetch(`${A.url}/storage/v1/object/sign/whatsapp-inbox-media/${path}`, {
+          method: 'POST',
+          headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expiresIn: 3600 })
+        });
+        if (!r.ok) return null;
+        const d = await r.json();
+        const url = `${A.url}/storage/v1${d.signedURL || d.signedUrl}`;
+        urlFirmadaCache.set(path, { url, at: Date.now() });
+        return url;
+      } catch (e) { return null; }
+    })();
+    urlFirmadaEnVuelo.set(path, promesa);
+    let resultado;
+    try { resultado = await promesa; } finally { urlFirmadaEnVuelo.delete(path); }
+    // El token real dura 60 min y nuestro cache lo da por vencido a los 45 como margen -- si el
+    // re-firmado justo en ese margen falla por algo transitorio (blip de red), es mejor devolver
+    // la URL vieja (probablemente todavia vigente del lado de Storage) que mostrar "Adjunto no
+    // disponible" por un fallo que nada tiene que ver con si el adjunto sigue disponible.
+    return resultado || (cacheada ? cacheada.url : null);
   }
 
-  async function cargarMensajes(hiloId) {
-    const A = api(); if (!A?.get) return;
+  async function cargarMensajes(hiloId, tokenReservado) {
+    const A = api(); if (!A?.get) return false;
+    // Fix 2026-09-07: bugs reales confirmados por revisiones sucesivas con agentes sobre el
+    // codigo ya en produccion (PR #300) y sobre intentos de arreglo posteriores el mismo dia:
+    // 1. "order=created_at.asc&limit=200" siempre trae los 200 mensajes MAS VIEJOS del hilo --
+    //    una vez que un hilo pasa de 200 mensajes, los nuevos (incluidos los que el propio
+    //    agente manda) dejan de verse para siempre. Se pide desc+limit (con "id" de desempate,
+    //    por si dos mensajes comparten el mismo created_at exacto) y se invierte en JS para
+    //    traer los 200 MAS RECIENTES en orden cronologico.
+    // 2. El "turno" vigente para pintar este hilo se reserva por fuera (ver
+    //    marcarSolicitudCarga) en el instante en que se decide recargarlo, no aca adentro -- si
+    //    quien llama no reservo uno de antemano (por ejemplo un refresco disparado por
+    //    Realtime), se reserva aca mismo. Esto evita que una carga vieja y colgada de ESE MISMO
+    //    hilo (por ejemplo esperando el loop secuencial de firmar varios adjuntos) pase el
+    //    chequeo de frescura solo porque nadie mas la "adelanto" todavia mientras un await previo
+    //    (una RPC, el fetch de un envio) bloqueaba a quien la iba a reemplazar.
+    // 3. Un error real de red/fetch NUNCA se reporta como exito -- antes, el catch dejaba
+    //    "datos=[]" y esa carga se guardaba igual como si fuera un hilo genuinamente vacio,
+    //    lo cual terminaba borrando toda la conversacion visible en pantalla (y el <input> del
+    //    composer con ella) por un simple blip transitorio. Ahora un error simplemente no toca
+    //    nada -- el proximo refresco de Realtime, o el reintento de pintarDetalle(), lo resuelve.
+    // Devuelve true SOLO si esta carga realmente escribio "mensajes"/"mensajesHiloId" con datos
+    // frescos y vigentes del hilo pedido.
+    const miToken = tokenReservado || marcarSolicitudCarga(hiloId);
+    hilosCargando.add(hiloId);
     try {
-      mensajes = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.asc&limit=200&select=*`) || [];
-      for (const m of mensajes) { if (m.media_path) m._url = await urlFirmada(m.media_path); }
-    } catch (e) { mensajes = []; }
+      let datos;
+      try {
+        datos = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.desc,id.desc&limit=200&select=*`) || [];
+        datos = datos.slice().reverse();
+        for (const m of datos) { if (m.media_path) m._url = await urlFirmada(m.media_path); }
+      } catch (e) { return false; }
+      if (solicitudVigentePorHilo.get(hiloId) !== miToken || hiloAbiertoId !== hiloId) return false; // superada por una carga mas nueva de ESTE hilo, o el usuario ya cambio de hilo
+      mensajes = datos;
+      mensajesHiloId = hiloId;
+      return true;
+    } finally {
+      // Solo borrar la marca de "en curso" si esta sigue siendo la carga vigente para el hilo --
+      // si una mas nueva ya la reemplazo en solicitudVigentePorHilo, esta (vieja) terminando no
+      // debe apagar la marca de la que sigue realmente en vuelo.
+      if (solicitudVigentePorHilo.get(hiloId) === miToken) hilosCargando.delete(hiloId);
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -451,11 +564,15 @@
 
   window.nxWaAbrirHilo = async function (id) {
     hiloAbiertoId = id;
+    // Reservar el turno de este hilo ANTES del await a la RPC de abajo -- si no, una carga vieja
+    // y colgada de una visita anterior a este mismo hilo podia "colarse" y pisar mensajes con
+    // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
+    const miToken = marcarSolicitudCarga(id);
     const h = hilos.find(x => x.id === id);
     // whatsapp_hilos no tiene policy de UPDATE para authenticated a proposito (todo escribe via
     // RPC/service role) -- un PATCH directo aqui lo bloquearia RLS en silencio.
     if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().post('rpc/whatsapp_marcar_hilo_leido', { p_hilo_id: id }); } catch (e) {} }
-    await cargarMensajes(id);
+    await cargarMensajes(id, miToken);
     pintarLista(); pintarDetalle();
   };
 
@@ -468,6 +585,24 @@
     return `<a href="${m._url}" target="_blank">📎 Ver documento</a>`;
   }
 
+  // Si la carga inicial de un hilo falla (blip de red) y no llega ningun otro evento de Realtime
+  // que la reintente de rebote (conversacion tranquila, sin trafico de otros clientes en ese
+  // momento), el panel quedaba en "Cargando..." para siempre. Se arma como mucho UN timer por
+  // hilo (dedupe propio en "hilosConReintentoProgramado", independiente de la variable que usa
+  // el render completo) y, si al disparar la carga sigue genuinamente en curso (por ejemplo
+  // firmando varios adjuntos, lo cual puede tardar mas de 3s), no la cancela con una carga nueva
+  // -- solo se vuelve a esperar.
+  function programarReintentoCarga(hiloId) {
+    if (hilosConReintentoProgramado.has(hiloId)) return;
+    hilosConReintentoProgramado.add(hiloId);
+    setTimeout(() => {
+      hilosConReintentoProgramado.delete(hiloId);
+      if (hiloAbiertoId !== hiloId || mensajesHiloId === hiloId) return; // ya no aplica, o ya se resolvio por otra via
+      if (hilosCargando.has(hiloId)) { programarReintentoCarga(hiloId); return; }
+      cargarMensajes(hiloId).then(exito => { if (exito && hiloAbiertoId === hiloId) pintarDetalle(); });
+    }, 3000);
+  }
+
   function pintarDetalle() {
     const cont = $('#nxWaDetalle'); if (!cont) return;
     const detailCol = cont.closest('.nxWaDetailCol');
@@ -476,49 +611,83 @@
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
     const ventanaAbierta = h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000;
+    const nombreCabecera = esc(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '');
 
-    // Mismo hilo abierto y mismo estado de ventana: solo agregar los mensajes nuevos al final en
-    // vez de recrear todo el panel. Antes de esto, CADA evento de Realtime (enviar o recibir un
-    // mensaje) volvia a escribir el innerHTML completo -- incluido el <input> del composer, que
-    // se destruia y recreaba de nuevo, perdiendo el foco/lo que se estaba escribiendo y causando
-    // un parpadeo visible en toda la ventana. Confirmado en vivo, reportado por el dueño.
-    const box = $('#nxWaMsgsBox');
-    if (box && ultimoRenderHiloId === hiloAbiertoId && ultimoRenderVentanaAbierta === ventanaAbierta && mensajes.length >= ultimoRenderMensajeCount) {
-      const nuevos = mensajes.slice(ultimoRenderMensajeCount);
-      if (nuevos.length) {
-        const estabaAlFondo = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
-        for (const m of nuevos) {
-          const div = document.createElement('div');
-          div.className = 'nxWaBub ' + m.direccion;
-          div.innerHTML = burbujaMedia(m) + (m.cuerpo ? esc(m.cuerpo) : '');
-          box.appendChild(div);
-        }
-        if (estabaAlFondo) box.scrollTop = box.scrollHeight;
+    // "mensajes" es un estado global compartido por TODOS los hilos -- solo es seguro pintarlo
+    // cuando "mensajesHiloId" (puesto por cargarMensajes exclusivamente al escribir datos
+    // frescos y vigentes) coincide con el hilo que esta abierto ahora mismo. Chequearlo aca
+    // adentro, una sola vez, evita depender de que CADA lugar que llama a pintar()/
+    // pintarDetalle() se acuerde de no hacerlo mientras la carga sigue en vuelo.
+    if (mensajesHiloId !== hiloAbiertoId) {
+      if (ultimoRenderHiloId !== hiloAbiertoId) {
+        cont.innerHTML = `<div class="nxWaHead">${nombreCabecera}</div><div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
+        ultimoRenderHiloId = hiloAbiertoId;
       }
-      ultimoRenderMensajeCount = mensajes.length;
-      const head = cont.querySelector('.nxWaHead');
-      if (head) head.textContent = cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '';
+      programarReintentoCarga(hiloAbiertoId);
       return;
     }
 
+    // Fix 2026-09-07, tercera y ultima pasada de este mismo dia -- las dos anteriores intentaron
+    // evitar el render completo con logica de diffing (prefijos de ids, luego huellas por
+    // mensaje) para no destruir el <input> del composer en cada evento de Realtime. Ambas,
+    // revisadas por agentes, terminaron introduciendo bugs mas graves que el original. Ahora
+    // siempre se re-renderiza completo, pero se preserva a mano el texto/foco/cursor del
+    // composer y la posicion del scroll a traves del rewrite -- lo unico que de verdad le
+    // importa al agente, y mucho mas simple de verificar sin bugs.
+    const inputPrevio = $('#nxWaTexto');
+    const teniaFoco = document.activeElement === inputPrevio;
+    const valorPrevio = inputPrevio ? inputPrevio.value : '';
+    const cursorPrevio = teniaFoco && inputPrevio ? [inputPrevio.selectionStart, inputPrevio.selectionEnd] : null;
+    const boxPrevio = $('#nxWaMsgsBox');
+    const estabaAlFondo = boxPrevio ? (boxPrevio.scrollTop + boxPrevio.clientHeight >= boxPrevio.scrollHeight - 40) : true;
+
     const filas = mensajes.map(m => `<div class="nxWaBub ${m.direccion}">${burbujaMedia(m)}${m.cuerpo ? esc(m.cuerpo) : ''}</div>`).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
-    cont.innerHTML = `<div class="nxWaHead">${esc(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '')}</div>
+    cont.innerHTML = `<div class="nxWaHead">${nombreCabecera}</div>
       <div class="nxWaMsgs" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
-        ? `<div class="nxWaComposer"><input id="nxWaTexto" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')nxWaEnviar()"><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div>`
+        ? `<div class="nxWaComposer"><input id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')nxWaEnviar()"><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.</div>`}`;
-    const nuevoBox = $('#nxWaMsgsBox'); if (nuevoBox) nuevoBox.scrollTop = nuevoBox.scrollHeight;
+
+    const nuevoBox = $('#nxWaMsgsBox');
+    if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : boxPrevio.scrollTop;
+
+    const nuevoInput = $('#nxWaTexto');
+    if (nuevoInput) {
+      if (valorPrevio) nuevoInput.value = valorPrevio;
+      if (teniaFoco) {
+        nuevoInput.focus();
+        const pos = cursorPrevio || [nuevoInput.value.length, nuevoInput.value.length];
+        nuevoInput.setSelectionRange(pos[0], pos[1]);
+      }
+    }
+
     ultimoRenderHiloId = hiloAbiertoId;
-    ultimoRenderVentanaAbierta = ventanaAbierta;
-    ultimoRenderMensajeCount = mensajes.length;
   }
 
   window.nxWaEnviar = async function () {
     const inp = $('#nxWaTexto'); if (!inp) return;
     const texto = inp.value.trim(); if (!texto) return;
     const hiloDestino = hiloAbiertoId; if (!hiloDestino) return;
+    // "hiloEnviosEnVuelo" es el candado real contra un doble envio -- a diferencia de
+    // inp.disabled (que pintarDetalle() puede resucitar sin querer si algun evento de Realtime
+    // de OTRO hilo cualquiera fuerza un re-render mientras este envio sigue en vuelo), esta marca
+    // vive fuera del DOM y pintarDetalle() la consulta para decidir si el <input> nace
+    // deshabilitado en cada render, sin importar cuantas veces se repinte mientras tanto.
+    if (hiloEnviosEnVuelo.has(hiloDestino)) return;
+    hiloEnviosEnVuelo.add(hiloDestino);
+    // Reservar el turno de este hilo invalida cualquier carga vieja y colgada del mismo hilo que
+    // pudiera resolver durante el round-trip del envio y pisar "mensajes" con datos de antes de
+    // mandar este mensaje.
+    marcarSolicitudCarga(hiloDestino);
     inp.value = ''; inp.disabled = true;
     const A = api();
+    // pintarDetalle() siempre re-renderiza completo -- si el usuario cambia de hilo mientras este
+    // envio sigue en vuelo, "inp" queda desconectado del documento. Estas dos funciones vuelven a
+    // buscar el <input> VIGENTE (y solo si el hilo de destino sigue siendo el que esta abierto)
+    // en vez de seguir usando esa referencia vieja, que de otro modo perdia el texto sin enviar en
+    // silencio y dejaba el foco sin restaurar despues de cada envio exitoso.
+    const restaurarTexto = () => { if (hiloAbiertoId === hiloDestino) { const actual = $('#nxWaTexto'); if (actual) actual.value = texto; } };
+    const reactivarComposer = () => { if (hiloAbiertoId === hiloDestino) { const actual = $('#nxWaTexto'); if (actual) { actual.disabled = false; actual.focus(); } } };
     try {
       const r = await fetch(`${A.url}/functions/v1/whatsapp-inbox-enviar`, {
         method: 'POST',
@@ -526,10 +695,11 @@
         body: JSON.stringify({ hilo_id: hiloDestino, mensaje: texto })
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok) { toast('err', 'No se pudo enviar', d.mensaje || d.error || ''); inp.value = texto; }
+      if (!r.ok || !d.ok) { toast('err', 'No se pudo enviar', d.mensaje || d.error || ''); restaurarTexto(); }
       else { if (hiloAbiertoId === hiloDestino) { await cargarMensajes(hiloDestino); pintarDetalle(); } await cargar(); }
-    } catch (e) { toast('err', 'No se pudo enviar', String(e && e.message || e)); inp.value = texto; }
-    inp.disabled = false; inp.focus();
+    } catch (e) { toast('err', 'No se pudo enviar', String(e && e.message || e)); restaurarTexto(); }
+    hiloEnviosEnVuelo.delete(hiloDestino);
+    reactivarComposer();
   };
 
   // ── Tiempo real ────────────────────────────────────────────────────────
