@@ -508,7 +508,15 @@
       if (!window.supabase) await cargarSDK();
       const A = api(); if (!A || !window.supabase) return;
       sb = window.supabase.createClient(A.url, A.key);
-      if (A.token) try { sb.realtime.setAuth(A.token); } catch (e) {}
+      // Fix 2026-09-07: setAuth() es asincrono (hace un round-trip antes de que el socket quede
+      // autenticado) -- sin el await, .channel().subscribe() de la linea de abajo se unia ANTES
+      // de que la autenticacion terminara, asi que la suscripcion quedaba registrada con el
+      // contexto anon por defecto. Como whatsapp_hilos/whatsapp_hilo_mensajes exigen
+      // mi_rol() is not null via RLS, cada evento llegaba con {"errors":["Error 401:
+      // Unauthorized"]} y sin datos -- confirmado en vivo leyendo realtime.subscription
+      // (claims_role quedaba "anon" en vez de "authenticated"). Por eso nunca se veian mensajes
+      // nuevos sin recargar la pagina a mano.
+      if (A.token) { try { await sb.realtime.setAuth(A.token); } catch (e) { console.error('[WA Inbox] setAuth', e); } }
       let debounce = null;
       const refrescar = () => { if (debounce) clearTimeout(debounce); debounce = setTimeout(() => { if ($('#v-waInbox.on')) cargar(); }, 400); };
       canal = sb.channel('nx-wa-inbox')
