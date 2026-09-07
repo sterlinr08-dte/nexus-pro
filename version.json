@@ -1,7 +1,14 @@
 {
-  "version": "57.89",
+  "version": "57.90",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.90",
+      "fecha": "2026-09-07",
+      "notas": [
+        "ARREGLADO (importante): la app no cargaba - salia el error 'Unexpected end of script'. El archivo que va cargando los parches de Seguros/CRM/WhatsApp en cadena se quedo con una funcion sin cerrar (le faltaba un cierre) al sumarle el ultimo modulo de WhatsApp. Se completo el cierre que faltaba."
+      ]
+    },
     {
       "version": "57.89",
       "fecha": "2026-09-07",
