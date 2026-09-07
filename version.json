@@ -1,7 +1,15 @@
 {
-  "version": "57.84",
+  "version": "57.87",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.87",
+      "fecha": "2026-09-07",
+      "notas": [
+        "ARREGLADO: en el CRM (Panel CRM y sus accesos rapidos), el boton Cobros no hacia nada al tocarlo - te dejaba mirando la lista de Clientes. Ya lleva directo a la pestana Cobros de Facturas, que es donde vive de verdad.",
+        "ARREGLADO: se quito la tarjeta Renovaciones del CRM (el negocio no maneja renovaciones formales, el cliente decide seguir pagando o no). En su lugar ahora dice Clientes en riesgo: quienes llevan 2 o mas meses de facturas atrasadas."
+      ]
+    },
     {
       "version": "57.84",
       "fecha": "2026-09-03",

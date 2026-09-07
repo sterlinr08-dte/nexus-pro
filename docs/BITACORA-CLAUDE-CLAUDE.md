@@ -442,3 +442,59 @@ registrado como `sin_configurar`, sin enviar nada, exactamente igual que factura
 atrasado/pago_aplicado hoy.
 
 `get_advisors(security)` corrido después de aplicar — sin hallazgos nuevos.
+
+## Claude (nexus-pro) — 2026-09-07 01:15
+
+Pedido del dueño: *"Quitar renovación no trabajo con renovación el cliente decide seguir... segmenta
+bien y audita porque hay botones que tiene bug"* — sobre el CRM Seguros (`parches-crm-entrada.js`,
+`parches-crm-operativo.js`, `parches-crm-seguros.js`).
+
+**Auditoría de botones (pedida explícita) — 1 bug real encontrado, confirmado contra el código real
+de `index.html` antes de tocar nada:** `nxCrmIr('cobros')` navegaba a `nav('clientes',...)` y luego
+llamaba `switchTab('cob')` — pero "Cobros" es una pestaña DENTRO de la vista Facturas (`#panelCob`
+vive en `#v-facturas`, confirmado leyendo `switchTab()`), no de Clientes. Como `switchTab` usa
+`getElementById` (busca en TODO el documento, no solo la vista visible), el panel se activaba en
+silencio mientras su vista contenedora seguía oculta — el usuario tocaba "Cobros" y no pasaba nada.
+Afectaba 4 botones a la vez (todos llaman a la misma función). Arreglado: esa línea pasa a
+`nav('facturas',...)`. Verificado con `switchCliTab`/`nav('polizas')` que los otros 2 destinos de
+`nxCrmIr` ya estaban bien — no se tocaron.
+
+**Alcance de "quitar renovación", confirmado con el dueño por `AskUserQuestion`** (había 2 lugares
+reales, uno mucho más grande que el otro): eligió **"Solo el CRM nuevo"** — NO tocar "Pólizas por
+vencer" de Avisos/Dashboard ni el recordatorio de WhatsApp por vencimiento (función vieja,
+establecida, con datos reales de producción). Reemplazo del segmento, también confirmado: **"Clientes
+en riesgo"** (2+ meses de facturas atrasadas, clientes activos) en vez de "Nada, solo quitarlo" u
+"otro".
+
+**Implementado:** quitado el KPI/panel "Renovaciones" del dashboard CRM, el KPI "Renuevan este mes"
+relabeleado a "En riesgo" en la pantalla de Clientes (100% por JS en runtime, cero cambios a
+`index.html` — respeta el alcance elegido), la opción "Renovación" de los 2 modales de tarea/
+seguimiento, el bloque "Renovación por registrar" del control operativo, y el campo "Renovación" de
+la ficha. El nuevo segmento "riesgo" reusa `_saldoFacturasCliente`+`mesCorte` — LA MISMA fórmula ya
+auditada de `rAvisos()` (v55.4), copiada como helper local en cada uno de los 2 archivos que la
+necesitan (mismo patrón sin-imports-compartidos que ya usa este módulo).
+
+**Bug propio, encontrado y arreglado ANTES de publicar (no llegó a producción):** el primer intento
+de la fórmula "meses de atraso" comparaba `f.periodo` (string "YYYY-MM") contra el valor crudo de
+`mesCorte()`, que es un OBJETO `{mes,anio}`, no un string — se habría comparado string contra
+`"[object Object]"`. Se encontró leyendo la implementación real de `mesCorte()` en `index.html` antes
+de escribir las pruebas (no se asumió el formato de memoria). Corregido armando `hoyKey` igual que
+hace `rAvisos()`.
+
+Verificado con Playwright + los 3 archivos reales (servidos por HTTP local, `mesCorte`/
+`_saldoFacturasCliente` copiados literales de `index.html` como stubs, no reinventados): 29
+comprobaciones — el bug de Cobros, 3 clientes de prueba (al día/1 mes/2 meses) con el saldo real
+correcto, el panel muestra "En riesgo"=1 (solo el de 2+ meses; el de 1 mes sigue en "Necesita
+atención" porque sí tiene balance — eso no cambió), la ficha sin "Renovación", el KPI de Clientes
+con clase/ícono/texto/valor correctos, los 2 modales sin `value="renovacion"`, el control operativo
+sin "Renovación por registrar". 0 errores de JS. `node --check` limpio en los 3 archivos. Detalle
+completo en `CLAUDE.md`.
+
+**Nota de coordinación (REGLA DE ORO entre chats):** antes de publicar, `git fetch` mostró 8
+commits nuevos en `origin/main`, 3 de otra sesión tocando los MISMOS 2 archivos
+(`8b6bbaf`/`e9195ad`/`5d4294b`, "CRM visual: modernizar panel/agenda/seguimiento" — vidrio
+esmerilado, degradados, hover/focus, sin tocar lógica). Se auditó el diff completo de ambos lados
+antes de tocar nada (regiones no se solapan: CSS puro vs. mis cambios de contenido/lógica) y se
+re-aplicaron mis cambios encima del CSS nuevo — re-verificado con las mismas 29 pruebas, en verde.
+`parches-crm-seguros.js` quedó sin tocar por la otra sesión (idéntico). `APP_VERSION` subió a
+57.87 (57.85/57.86 ya los había tomado esa sesión para su propio WhatsApp Pro).
