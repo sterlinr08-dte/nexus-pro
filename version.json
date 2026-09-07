@@ -1,7 +1,14 @@
 {
-  "version": "57.88",
+  "version": "57.89",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.89",
+      "fecha": "2026-09-07",
+      "notas": [
+        "ARREGLADO: el boton Copiar para soporte de la tarjeta de error copiaba lo ultimo que se habia registrado en el sistema (a veces solo una navegacion normal, como Navegacion: DASHBOARD) en vez del error real que hizo aparecer la tarjeta. Ahora copia siempre el error exacto que la tarjeta esta mostrando."
+      ]
+    },
     {
       "version": "57.88",
       "fecha": "2026-09-07",

@@ -5675,6 +5675,9 @@ function toast(tp,ttl,msg=''){
 let _errLog=[];
 try{_errLog=JSON.parse(localStorage.getItem('nx_error_log')||'[]');}catch(e){_errLog=[];}
 let _logFiltro='todos';
+// El error EXACTO que la tarjeta "¿Qué ocurrió?" está mostrando ahora mismo — copiarErrorSoporte()
+// debe reportar ESTE, nunca "lo último que se registró" (ver bug de raíz junto a copiarErrorSoporte).
+let _errPanelEntry=null;
 const _ERR_LOG_MAX=200;
 function _errGuardar(){try{localStorage.setItem('nx_error_log',JSON.stringify(_errLog.slice(-_ERR_LOG_MAX)));}catch(e){}}
 function _errBadgeActualizar(){
@@ -5694,6 +5697,7 @@ function registrarError(tipo,msg,stack,mostrarTarjeta){
 function mostrarErrorAmigable(entry){
   const panel=document.getElementById('errPanel'),overlay=document.getElementById('errOverlay');
   if(!panel||!overlay)return;
+  _errPanelEntry=entry;
   panel.className='err-panel err-type-red';
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
   const icon=document.getElementById('errIcon');if(icon)icon.innerHTML='<i class="ti ti-alert-triangle" style="color:#dc2626;font-size:22px"></i>';
@@ -5711,10 +5715,18 @@ function toggleErrTech(){
   const open=body.classList.toggle('open');
   const arrow=document.getElementById('errTechArrow');if(arrow)arrow.textContent=open?'▲':'▼';
 }
-function cerrarError(){document.getElementById('errOverlay')?.classList.remove('show');}
+function cerrarError(){document.getElementById('errOverlay')?.classList.remove('show');_errPanelEntry=null;}
 async function copiarErrorSoporte(){
-  const u=_errLog[_errLog.length-1];
-  const texto=u?`NEXUS PRO SEGUROS — reporte de error\nFecha: ${u.ts}\nVersión: ${typeof APP_VERSION!=='undefined'?APP_VERSION:'—'}\nUsuario: ${u.usuario}\nPantalla: ${u.url}\nMensaje: ${u.msg}\n\n${u.stack}`:'Sin error reciente que copiar.';
+  // BUG DE RAÍZ (arreglado): antes se copiaba _errLog[_errLog.length-1] — el ÚLTIMO renglón
+  // del registro compartido, sin importar su tipo. Ese registro también acumula eventos
+  // informativos (cada navegación deja un "Navegación: X"), así que si el usuario navegaba
+  // mientras la tarjeta de error seguía abierta, "Copiar para soporte" terminaba copiando esa
+  // navegación en vez del error real que disparó la tarjeta. Ahora se usa el error EXACTO que
+  // la tarjeta está mostrando (_errPanelEntry, fijado por mostrarErrorAmigable); si por algún
+  // motivo no está disponible, cae al último renglón con tipo==='error' (nunca a uno de tipo
+  // info/warn, que nunca abre esta tarjeta).
+  const u=_errPanelEntry||[..._errLog].reverse().find(e=>e.tipo==='error');
+  const texto=u?`NEXUS PRO SEGUROS — reporte de error\nFecha: ${u.ts}\nVersión: ${typeof APP_VERSION!=='undefined'?APP_VERSION:'—'}\nUsuario: ${u.usuario}\nPantalla: ${u.url}\nMensaje: ${u.msg}\n\n${u.stack}`:'No hay ningún error reciente registrado para copiar.';
   try{await navigator.clipboard.writeText(texto);toast('ok','Copiado','Pégalo en tu mensaje a soporte');}catch(e){toast('err','No se pudo copiar','Copia el texto manualmente');}
 }
 function abrirLog(){_logFiltro='todos';openM('mErrorLog');renderErrorLog();}
@@ -6527,7 +6539,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.88';
+const APP_VERSION='57.89';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
