@@ -345,7 +345,7 @@
 
   window.nxWaFiltro = function (f) { waFiltro = f || 'todos'; pintar(); };
   window.nxWaContactFiltro = function (f) { waContactFiltro = f || 'todos'; pintarProPanel(); };
-  window.nxWaAbrirCobranza = function () { try { nav('clientes', null); setTimeout(() => { try { switchTab('cob'); } catch (e) {} }, 160); } catch (e) {} };
+  window.nxWaAbrirCobranza = function () { try { nav('facturas', null); setTimeout(() => { try { switchTab('cob'); } catch (e) {} }, 160); } catch (e) {} };
   window.nxWaAbrirRenovaciones = function () { try { nav('polizas', null); } catch (e) {} };
   window.nxWaAbrirMasivoDeuda = function () {
     window.nxWaAbrirMasivoSegmento('deuda');

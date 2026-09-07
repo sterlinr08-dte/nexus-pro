@@ -1,7 +1,14 @@
 {
-  "version": "57.90",
+  "version": "57.91",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.91",
+      "fecha": "2026-09-07",
+      "notas": [
+        "ARREGLADO: el boton 'Cobros' del Buzon de WhatsApp (arriba, junto al de Renovaciones) tenia el mismo bug que ya se habia arreglado en el CRM - llevaba a Clientes en vez de a la pestana Cobros de Facturas, asi que no se veia nada al tocarlo. Arreglado de raiz en el propio boton (antes solo estaba tapado por un parche de otra pasada visual)."
+      ]
+    },
     {
       "version": "57.90",
       "fecha": "2026-09-07",
