@@ -12538,3 +12538,54 @@ vencidos, clientes en proceso, datos por completar). Todo aditivo — no toca Fa
   de nuevo con las mismas 29 pruebas, en verde. `parches-crm-seguros.js` no lo tocó esa otra sesión
   (idéntico byte a byte). `APP_VERSION`/`version.json` subieron a **57.87** (57.85/57.86 ya los
   había usado esa sesión para su propio trabajo de WhatsApp Pro).
+
+### Envío masivo de WhatsApp automático (7-sep-2026) — ⏸️ PENDIENTE DEL DUEÑO, leer antes de tocar nada
+
+**Si estás retomando esto en una sesión nueva: hay un paso manual del dueño bloqueando todo lo
+demás. Léelo completo antes de escribir código — ya está todo diseñado y la mayor parte ya escrita,
+falta solo correr una migración y seguir desde ahí.**
+
+- **Qué es:** reemplazo del "WA Masivo" viejo (que abría una pestaña de `wa.me` por cliente y
+  requería que el agente le diera "Enviar" a mano, uno por uno) por un envío automático real vía
+  Zernio, reusando el mismo mecanismo de plantillas ya probado en producción por
+  `whatsapp-notificar` (fase 1). Blueprint completo (20 secciones, generado y validado con
+  `the-architect`) en `blueprints/envio-masivo-whatsapp-blueprint.md` — leerlo ahí para el diseño
+  completo, esto es solo el resumen de estado.
+- **Decisión de arquitectura ya tomada, no reabrir:** se descartó la API de Broadcasts de Zernio
+  (`POST /v1/broadcasts`) porque su `template.variableMapping` solo puede rellenar con
+  nombre/teléfono/email/empresa del contacto, o un valor fijo IGUAL para toda la tanda — no puede
+  meter el saldo/total propio de CADA cliente, que es justo lo que este envío necesita. Verificado
+  contra la documentación real de Zernio (`docs.zernio.com/broadcasts/create-broadcast`), no
+  supuesto. En su lugar: la Edge Function nueva llama al endpoint 1-a-1 de Zernio en bucle, una vez
+  por cliente, igual que ya hace `whatsapp-notificar`.
+- **Ya hecho (3 commits locales, `main`, SIN pushear a origin):**
+  1. `409d946` — Edge Function `whatsapp-envio-masivo` (ya DESPLEGADA en Supabase, pero no se puede
+     probar todavía — ver el bloqueo abajo) + el blueprint completo.
+  2. `cd3ef7b` — `parches-whatsapp-inbox.js`: panel de confirmación + progreso en vivo
+     (`nxWaAbrirMasivoSegmento`/`nxWaIniciarEnvioMasivo`/`_waPollLoteEnvioMasivo`).
+  3. `95d6249` — `index.html`: se quitó el modal `#mWAMasivo` viejo y sus funciones
+     (`abrirWAMasivo`/`ejecutarWAMasivo`/etc. — `enviarReciboWA`/`_ultimoAbono` NO se tocaron, son
+     una función distinta). `APP_VERSION`/`version.json` subidos a **57.92**.
+- **🔴 BLOQUEADO ACÁ — paso manual, el clasificador de seguridad de Claude Code no deja aplicar
+  migraciones (crear tablas) directo en producción:** el archivo
+  `supabase/migrations/20260907190000_whatsapp_envio_masivo.sql` YA EXISTE en el repo (2 tablas +
+  RLS + 1 función RPC, ya probado en un `begin;...rollback;` sin errores) pero **todavía no se
+  aplicó a la base real**. El dueño tiene que:
+  1. Entrar a supabase.com → proyecto **"NEXUS PRO Seguros"** (`tnwsgcxurfyuszxsewsn`) → **SQL
+     Editor** → **New query**.
+  2. Copiar y pegar TODO el contenido de `supabase/migrations/20260907190000_whatsapp_envio_masivo.sql`.
+  3. Apretar **Run**. Debería decir "Success. No rows returned".
+- **Después de eso, lo que sigue (le toca a la sesión de Claude que esté activa en ese momento,
+  siguiendo el blueprint desde el paso 8):**
+  1. `get_advisors` (seguridad) sobre el proyecto — confirmar que las 2 tablas/1 función nuevas no
+     salen con ningún hallazgo.
+  2. Probar de punta a punta con 2-3 clientes de prueba reales (número real bajo control del
+     dueño), tipo `factura` (la única de las 3 plantillas ya aprobada por Meta hoy).
+  3. **Aparte, sin bloquear lo anterior:** el dueño (o quien maneje la cuenta de Zernio) tiene que
+     crear y mandar a aprobación de Meta 2 plantillas NUEVAS: `recordatorio_pago_pendiente`
+     (variables `[nombre, saldo_formateado]`) y `poliza_por_vencer` (variables `[nombre,
+     numero_poliza, fecha_fin]`) — hasta que Meta las apruebe, los tipos `pago`/`vence` del envío
+     masivo van a fallar limpio (fila `fallido` con el motivo real de Zernio), sin romper `factura`.
+  4. Con todo eso verificado: pedirle autorización explícita y fresca al dueño, en esa conversación
+     puntual, antes de `git push origin main` con los 3 commits ya hechos (y cualquier commit nuevo
+     de los pasos 8-9). Nunca asumir que una autorización de otra conversación sigue valiendo acá.
