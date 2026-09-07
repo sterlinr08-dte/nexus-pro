@@ -1,5 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Pinned a 2.112.2 (no floating @2): jsr:@supabase/supabase-js@2.116.0 quedo con una
+// dependencia interna rota (@supabase/postgrest-js y @supabase/realtime-js sin version
+// publicada que coincida) justo el 2026-09-07 -- confirmado reintentando el deploy 3 veces con
+// el mismo error de bundling. Fijar una version real evita quedar a merced de un release roto.
+import { createClient } from "jsr:@supabase/supabase-js@2.112.2";
 
 // whatsapp-notificar — NEXUS PRO, notificaciones automáticas de WhatsApp (fase 1: solo saliente).
 //
