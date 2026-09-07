@@ -12,6 +12,7 @@
 
   let hilos = [], hiloAbiertoId = null, mensajes = [];
   let waFiltro = 'todos';
+  let waContactFiltro = 'todos';
   let sb = null, canal = null;
 
   function css() {
@@ -66,6 +67,27 @@
 #v-waInbox .nxWaProActs{display:flex;gap:7px;flex-wrap:wrap}
 #v-waInbox .nxWaProActs button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:rgba(255,255,255,.86);padding:0 11px;font:inherit;font-size:9px;font-weight:900;color:#1d4ed8;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 #v-waInbox .nxWaProActs button.primary{background:linear-gradient(135deg,#25d366,#2563eb);border-color:transparent;color:#fff}
+#v-waInbox .nxWaContacts{margin-top:10px;border:1px solid rgba(226,232,240,.9);border-radius:15px;background:rgba(255,255,255,.7);overflow:hidden}
+#v-waInbox .nxWaContactsTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px 8px;border-bottom:1px solid rgba(226,232,240,.82)}
+#v-waInbox .nxWaContactsTop b{font-size:11px;color:#0f172a}
+#v-waInbox .nxWaContactsTop span{font-size:8.5px;color:#64748b}
+#v-waInbox .nxWaContactTabs{display:flex;gap:6px;overflow-x:auto;padding:0 10px 9px;scrollbar-width:none}
+#v-waInbox .nxWaContactTabs::-webkit-scrollbar{display:none}
+#v-waInbox .nxWaContactTabs button{height:29px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 9px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer}
+#v-waInbox .nxWaContactTabs button.on{background:#0f172a;border-color:#0f172a;color:#fff}
+#v-waInbox .nxWaContactList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:0 10px 10px}
+#v-waInbox .nxWaContact{display:flex;align-items:center;gap:8px;min-width:0;border:1px solid rgba(226,232,240,.9);border-radius:12px;background:#fff;padding:8px}
+#v-waInbox .nxWaContact .av{width:30px;height:30px;border-radius:12px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9px;font-weight:900}
+#v-waInbox .nxWaContact .tx{min-width:0;flex:1}
+#v-waInbox .nxWaContact .tx b{display:block;font-size:9.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaContact .tx span{display:block;font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#v-waInbox .nxWaContact .st{font-size:7.5px;font-weight:900;border-radius:999px;padding:3px 6px;background:#f1f5f9;color:#64748b;white-space:nowrap}
+#v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
+#v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
+#v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
+#v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:0 10px 10px}
+#v-waInbox .nxWaContactsFoot button{height:31px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
+#v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
 #v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
@@ -94,6 +116,10 @@
   #v-waInbox .nxWaProActs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
   #v-waInbox .nxWaProActs::-webkit-scrollbar{display:none}
   #v-waInbox .nxWaProActs button{flex:0 0 auto}
+  #v-waInbox .nxWaContactList{grid-template-columns:1fr;max-height:240px;overflow:auto}
+  #v-waInbox .nxWaContactsFoot{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  #v-waInbox .nxWaContactsFoot::-webkit-scrollbar{display:none}
+  #v-waInbox .nxWaContactsFoot button{flex:0 0 auto}
 }
     `; document.head.appendChild(s);
   }
@@ -256,19 +282,78 @@
       <div class="nxWaProActs">
         <button class="primary" onclick="nxWaAbrirCobranza()"><i class="ti ti-cash"></i> Cobranza</button>
         <button onclick="nxWaAbrirRenovaciones()"><i class="ti ti-calendar-event"></i> Renovaciones</button>
-        <button onclick="nxWaAbrirMasivoDeuda()"><i class="ti ti-send"></i> WA deuda</button>
+        <button onclick="nxWaAbrirMasivoSegmento('deuda')"><i class="ti ti-send"></i> WA deuda</button>
         <button onclick="nxWaFiltro('bauche')"><i class="ti ti-receipt"></i> Bauches ${conBauche}</button>
       </div>
+      ${waContactosHTML()}
     </section>`;
   }
 
+  function waContactos() {
+    return clientes().filter(c => c && c.activo !== false && c.wa).map(c => {
+      const deuda = waPendienteCliente(c);
+      const ep = waEstadoPoliza(c);
+      const renueva = ep.est === 'vencida' || ep.est === 'gracia';
+      let estado = { key: 'aldia', label: 'Al dia', cls: 'ok' };
+      if (deuda > 0) estado = { key: 'deuda', label: 'Deuda', cls: 'err' };
+      else if (renueva) estado = { key: 'renovar', label: 'Renovar', cls: 'warn' };
+      return { c, deuda, ep, estado };
+    }).sort((a, b) => (b.deuda - a.deuda) || String(a.c.nom || '').localeCompare(String(b.c.nom || ''), 'es'));
+  }
+  function waContactosPor(tipo) {
+    const all = waContactos();
+    if (tipo === 'deuda') return all.filter(x => x.estado.key === 'deuda');
+    if (tipo === 'renovar') return all.filter(x => x.estado.key === 'renovar');
+    if (tipo === 'aldia') return all.filter(x => x.estado.key === 'aldia');
+    return all;
+  }
+  function waContactosHTML() {
+    const all = waContactos();
+    const data = waContactosPor(waContactFiltro);
+    const count = k => waContactosPor(k).length;
+    const tab = (k, label) => `<button class="${waContactFiltro === k ? 'on' : ''}" onclick="nxWaContactFiltro('${k}')">${esc(label)} ${count(k)}</button>`;
+    const filas = data.slice(0, 8).map(x => {
+      const c = x.c;
+      const sub = [c.wa, c.plan, c.ars].filter(Boolean).join(' · ');
+      return `<div class="nxWaContact">
+        <div class="av">${esc(iniciales(c.nom))}</div>
+        <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(sub || 'WhatsApp registrado')}</span></div>
+        <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
+      </div>`;
+    }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
+    return `<div class="nxWaContacts">
+      <div class="nxWaContactsTop"><div><b>Lista de contactos WhatsApp</b><br><span>${all.length} clientes activos con numero registrado</span></div></div>
+      <div class="nxWaContactTabs">
+        ${tab('todos', 'Todos')}
+        ${tab('deuda', 'Deuda')}
+        ${tab('renovar', 'Renovar')}
+        ${tab('aldia', 'Al dia')}
+      </div>
+      <div class="nxWaContactList">${filas}</div>
+      <div class="nxWaContactsFoot">
+        <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')">Factura a todos</button>
+        <button onclick="nxWaAbrirMasivoSegmento('deuda')">Recordar deuda</button>
+        <button onclick="nxWaAbrirMasivoSegmento('renovar')">Renovaciones</button>
+        <button onclick="nxWaAbrirMasivoSegmento('aldia')">Clientes al dia</button>
+      </div>
+    </div>`;
+  }
+
   window.nxWaFiltro = function (f) { waFiltro = f || 'todos'; pintar(); };
+  window.nxWaContactFiltro = function (f) { waContactFiltro = f || 'todos'; pintarProPanel(); };
   window.nxWaAbrirCobranza = function () { try { nav('clientes', null); setTimeout(() => { try { switchTab('cob'); } catch (e) {} }, 160); } catch (e) {} };
   window.nxWaAbrirRenovaciones = function () { try { nav('polizas', null); } catch (e) {} };
   window.nxWaAbrirMasivoDeuda = function () {
-    const ids = clientes().filter(c => c && c.activo !== false && c.wa && waPendienteCliente(c) > 0).map(c => c.id);
-    if (!ids.length) { try { toast('ok', 'Sin deuda', 'No hay clientes con WhatsApp y balance pendiente'); } catch (e) {} return; }
-    if (typeof abrirWAMasivo === 'function') abrirWAMasivo(ids);
+    window.nxWaAbrirMasivoSegmento('deuda');
+  };
+  window.nxWaAbrirMasivoSegmento = function (tipo) {
+    const mapa = { todos: 'factura', deuda: 'pago', renovar: 'vence', aldia: 'factura' };
+    const lista = waContactosPor(tipo || 'todos');
+    const ids = lista.map(x => x.c.id);
+    if (!ids.length) { try { toast('warn', 'Sin contactos', 'No hay clientes con WhatsApp en este segmento'); } catch (e) {} return; }
+    if (typeof abrirWAMasivo !== 'function') { try { toast('err', 'WA Masivo no disponible'); } catch (e) {} return; }
+    abrirWAMasivo(ids);
+    setTimeout(() => { try { if (typeof selWATipo === 'function') selWATipo(mapa[tipo] || 'factura'); } catch (e) {} }, 80);
   };
 
   function pintarPendientes() {
