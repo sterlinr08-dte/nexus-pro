@@ -57,13 +57,32 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
 
 ## Arquitectura (importante)
 
-- **Es una app de un solo archivo HTML grande**, sin framework ni build step.
-  - `index.html` (~7.8k líneas, ~520 KB): toda la app — HTML, CSS y JS del núcleo.
-  - `parches.js` (~14.5k líneas, ~820 KB): "parches" móviles y módulos nuevos que
-    se inyectan sobre el núcleo (navegación móvil, FAB, POS, transferencias,
-    ciclos 20-20, recibos, etc.). Se carga al final con `parches.js?v=<APP_VERSION>`.
+- **Es una app de archivos HTML/JS grandes**, sin framework ni build step.
+  - `index.html` (~14k líneas, ~950 KB): toda la app — HTML, CSS y el núcleo de Seguros.
+  - **`parches.js` YA NO EXISTE como archivo único — dividido el 27-ago-2026** (el de
+    30,000+ líneas mezclaba Seguros con TODA la plataforma Multiempresa; se separó por
+    negocio/módulo, cada uno independiente — verificado que ninguno llama funciones/
+    variables de otro, salvo `nxMERegistrar` que tolera llegar tarde). `index.html` los
+    carga al final con `cargarConReintento(src)` (reintenta hasta 3 veces en redes
+    inestables), en paralelo, cada uno con `?v=<APP_VERSION>`:
+    - `parches-seguros.js` → **loader chico** (no el parche en sí): carga en cadena
+      `parches-seguros-base.js` (el parche histórico de Seguros, el más viejo y grande)
+      → `parches-crm-seguros.js` (+ su CSS `parches-crm-seguros-v2.css`) →
+      `parches-crm-entrada.js` → `parches-crm-operativo.js` → `parches-whatsapp-inbox.js`
+      (bandeja de WhatsApp de doble vía, ver más abajo).
+    - `parches-financiamiento.js` → Préstamos/Cobranza; define `window.nxMERegistrar`,
+      del que dependen los 4 siguientes — por eso `index.html` lo pide primero.
+    - `parches-vehiculos.js` → Compra y venta de vehículos.
+    - `parches-pos.js` → Punto de Venta (el más grande de todos, ~11,000 líneas).
+    - `parches-rifas.js` → Rifas (carga `qrcode.js` por su cuenta, solo cuando hace
+      falta un QR de boleto — no está en la lista de arriba, es una dependencia
+      perezosa suya, no un módulo de negocio aparte).
+    - `parches-panel-dueno.js` → Panel del Dueño (superadmin) + Consultorio + Clientes SaaS.
+    Si se agrega un módulo de negocio nuevo, sigue este mismo patrón: archivo propio +
+    una línea `cargarConReintento('parches-<nombre>.js')` en `index.html` (buscar el
+    bloque `SISTEMA DE PARCHES`, al final del `<body>`).
   - `sw.js`: Service Worker. **Solo cachea imágenes/iconos estáticos.** Nunca
-    intercepta Supabase, `parches.js`, `.html` ni peticiones con `?` (datos).
+    intercepta Supabase, ningún `parches-*.js`, `.html` ni peticiones con `?` (datos).
   - `manifest.json`: configuración PWA.
   - Iconos `icon-*.png` y `gen_icon.py` (generador de iconos).
 - **Backend: Supabase** (PostgreSQL + RLS + RPC).
@@ -83,7 +102,8 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.97** (ver `index.html` y `version.json`).
+> Versión actual: **57.87** (ver `index.html` y `version.json` — se desactualiza rápido,
+> confirmar siempre contra `APP_VERSION` real antes de confiar en este número).
 
 ---
 
