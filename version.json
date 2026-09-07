@@ -1,7 +1,14 @@
 {
-  "version": "57.92",
+  "version": "57.93",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.93",
+      "fecha": "2026-09-08",
+      "notas": [
+        "NUEVO: el Buzon de WhatsApp ahora manda el envio masivo (factura generada, recordatorio de pago pendiente, poliza por vencer) de forma automatica por WhatsApp, sin abrir ninguna pestana ni tener que confirmar cada mensaje uno por uno -- reemplaza al WA Masivo anterior. Los tipos 'recordatorio de pago' y 'poliza por vencer' quedan a la espera de que Meta apruebe sus 2 plantillas nuevas antes de poder usarse de verdad; 'factura generada' ya funciona desde ya, probado en vivo con un envio real."
+      ]
+    },
     {
       "version": "57.92",
       "fecha": "2026-09-08",

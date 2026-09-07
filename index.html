@@ -1050,25 +1050,26 @@ body.tema-glass #v-cliente360 .nxft-tabs{backdrop-filter:blur(12px) saturate(160
 }
 @media(prefers-reduced-motion:reduce){#v-cliente360 .sf-btn,#v-cliente360 .c360-back{transition:none !important}}
 
-/* Piloto neumórfico #7 — las 4 ventanas que quedaban ("requieren más cuidado" por
-   tener colores en línea con significado, no solo botones .bxl de siempre):
+/* Piloto neumórfico #7 — quedaban 4 ventanas ("requieren más cuidado" por tener
+   colores en línea con significado, no solo botones .bxl de siempre):
    #mErrorLog (Registro de errores), #mDocs (Documentos del cliente), #mBackup
-   (Backup de seguridad) y #mWAMasivo (WhatsApp masivo). Van en un solo bloque
-   pero CADA UNA con su propio acento — no hay un solo "azul neutro" que sirva
-   para las 4: #mErrorLog/#mDocs son utilitarias (azul, igual que #mHistCobros);
-   #mBackup y #mWAMasivo YA tenían marca propia en el resto del sistema (verde
-   #059669 el botón de Backup en la barra superior; verde WhatsApp el botón
-   .bwa) — usar azul ahí habría sido inconsistente con su propio color de
-   siempre, así que las dos llevan --nm-accent verde.
-   Regla que se repite en las 4: el .btn del piloto aplana TODOS los botones a
+   (Backup de seguridad) y #mWAMasivo (WhatsApp masivo, reemplazado el
+   2026-09-07 por el envío automático — ver parches-whatsapp-inbox.js, su
+   bloque de este piloto se quitó con el modal). Quedan estas 3, cada una con
+   su propio acento — no hay un solo "azul neutro" que sirva para todas:
+   #mErrorLog/#mDocs son utilitarias (azul, igual que #mHistCobros); #mBackup
+   YA tenía marca propia en el resto del sistema (verde #059669 el botón de
+   Backup en la barra superior) — usar azul ahí habría sido inconsistente con
+   su propio color de siempre, así que lleva --nm-accent verde.
+   Regla que se repite en las 3: el .btn del piloto aplana TODOS los botones a
    gris (gana por especificidad sobre .bc1/.bc3/.bc4/.bc5, que son clases con
    MENOS especificidad que "#id .btn") — así que donde el color blanco de esas
    clases quedaría invisible sobre gris (bc1/bc3/bc5, texto blanco de fábrica)
    se restaura SOLO el color de texto con un selector compuesto más específico
    (mismo criterio ya usado con #mAbono .btn.bwa/.btn.bc1). Los recuadros de
    AVISO con color real (el verde de "sin backup automático", el ámbar de
-   "recomendación", el verde de la vista previa de WhatsApp) se dejan
-   INTACTOS a propósito — son avisos con significado, no decoración. */
+   "recomendación") se dejan INTACTOS a propósito — son avisos con
+   significado, no decoración. */
 #mErrorLog .modal,#mDocs .modal{
   --nm-bg:#f6f8fb;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.16);--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#3568e0;
   background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
@@ -1155,87 +1156,6 @@ body.tema-premium #mBackup .mt{color:#34d399 !important}
 }
 #mBackup .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
 #mBackup .btn.bc5{
-  color:#fff !important;background:linear-gradient(145deg,#22c55e,var(--nm-accent)) !important;
-  box-shadow:6px 6px 14px rgba(5,150,105,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
-}
-
-/* #mWAMasivo — mismo acento verde, esta vez el de WhatsApp (.bwa). La vista
-   previa del mensaje (fondo verde claro) se deja intacta — es literalmente
-   cómo se ve el mensaje real. Las pestañas de tipo y la lista de clientes
-   pasan a pozo hundido, conservando el degradado de la pestaña activa. */
-#mWAMasivo .modal{
-  --nm-bg:#f6f8fb;--nm-hi:#ffffff;--nm-lo:rgba(51,65,90,.16);--nm-tx:#3a4252;--nm-tx2:#8791a3;--nm-accent:#059669;
-  --pill-bg:#dde1e6;--pill-hi:#f2f4f7;--pill-lo:rgba(30,41,59,.20);--pill-accent:#1ca2a4;
-  background:var(--nm-bg) !important;border:none !important;border-radius:22px !important;
-  box-shadow:9px 9px 18px var(--nm-lo),-9px -9px 18px var(--nm-hi) !important;
-}
-body.tema-premium #mWAMasivo .modal{
-  --nm-bg:#1c2230;--nm-hi:#262e40;--nm-lo:#10131b;--nm-tx:#e7ebf3;--nm-tx2:#8fa0bd;--nm-accent:#34d399;
-  --pill-bg:#2a313d;--pill-hi:#333c4a;--pill-lo:rgba(0,0,0,.55);--pill-accent:#2dd4bf;
-  color:var(--nm-tx) !important;
-}
-body.tema-glass #mWAMasivo .modal{--pill-bg:rgba(255,255,255,.38);--pill-hi:rgba(255,255,255,.85);--pill-lo:rgba(31,38,135,.16);--pill-accent:#0d9488}
-body.tema-glass #mWAMasivo .nxft-tabs{backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%)}
-#mWAMasivo .mt{color:var(--nm-tx)}
-#mWAMasivo .nxft-tabs{
-  background:linear-gradient(180deg,var(--pill-hi) 0%,var(--pill-bg) 50%,var(--pill-hi) 100%) !important;border:none !important;padding:6px !important;
-  box-shadow:inset 3px 3px 7px var(--pill-lo),inset -3px -3px 7px var(--pill-hi) !important;
-}
-#mWAMasivo .nxft-tab{
-  color:var(--nm-tx2);background:transparent !important;box-shadow:none !important;
-  transition:box-shadow .18s ease,color .18s ease,transform .12s ease !important;
-}
-#mWAMasivo .nxft-tab:hover{color:var(--pill-accent) !important}
-#mWAMasivo .nxft-tab:active{transform:translateY(1px)}
-#mWAMasivo .nxft-tab.is-active{
-  color:var(--pill-accent) !important;font-weight:800;
-  background:linear-gradient(180deg,var(--pill-lo) 0%,var(--pill-hi) 45%,var(--pill-lo) 100%) !important;
-  box-shadow:
-    inset 3px 3px 6px var(--pill-lo),
-    inset -3px -3px 6px var(--pill-hi),
-    inset 0 3px 5px var(--pill-lo),
-    inset 0 -3px 5px var(--pill-hi) !important;
-}
-#mWAMasivo #waClientesList{
-  background:var(--nm-bg) !important;border:none !important;
-  box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important;
-}
-#mWAMasivo #waCountLbl{color:var(--nm-tx2) !important}
-/* Checkbox premium para WA masivo (pedido del dueño, referencia "Select All Checkbox
-   UI Upgrade") — cuadro azul con check "dibujándose" en vez del checkbox nativo, fila
-   completa resaltada al marcar, y un "Seleccionar todos" con estado indeterminado
-   (guión) cuando hay algunos pero no todos marcados. */
-.wa-chk-sq{appearance:none;-webkit-appearance:none;width:22px;height:22px;border-radius:7px;
-  border:1.5px solid #cbd5e1;background:#fff;cursor:pointer;position:relative;flex:none;margin:0;
-  transition:background .15s ease,border-color .15s ease,transform .12s ease}
-.wa-chk-sq:active{transform:translateY(1px)}
-.wa-chk-sq:checked,.wa-chk-sq:indeterminate{background:#3568e0;border-color:#3568e0}
-.wa-chk-sq:checked::after{content:'';position:absolute;left:7px;top:3px;width:6px;height:11px;
-  border-bottom:2px solid #fff;border-right:2px solid #fff;transform:rotate(45deg);
-  animation:waCheckDraw 200ms ease forwards}
-.wa-chk-sq:indeterminate::after{content:'';position:absolute;left:5px;top:9px;width:10px;height:2px;
-  background:#fff;border-radius:2px}
-@keyframes waCheckDraw{0%{width:0;height:0}50%{width:6px;height:0}100%{width:6px;height:11px}}
-@media(prefers-reduced-motion:reduce){.wa-chk-sq:checked::after{animation:none}}
-.wa-selectall{display:flex;align-items:center;gap:10px;padding:8px 4px;margin-bottom:8px}
-.wa-selectall .wa-chk-sq{width:28px;height:28px;border-radius:9px}
-.wa-selectall .wa-chk-sq:checked::after,.wa-selectall .wa-chk-sq:indeterminate::after{left:9px}
-.wa-selectall-txt .t{font-size:12.5px;font-weight:800;color:#1e293b}
-.wa-selectall-txt .s{font-size:10.5px;color:#3568e0;font-weight:700}
-.wa-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;margin:3px;cursor:pointer;transition:background .15s ease}
-.wa-row.on{background:#eff6ff}
-body.tema-premium .wa-selectall-txt .t{color:var(--nm-tx)}
-body.tema-premium .wa-row.on{background:rgba(53,104,224,.16)}
-#mWAMasivo .btn{
-  border:none !important;border-radius:13px !important;background:var(--nm-bg);color:var(--nm-tx2);font-weight:700;
-  box-shadow:5px 5px 10px var(--nm-lo),-5px -5px 10px var(--nm-hi) !important;
-}
-#mWAMasivo .btn:active{box-shadow:inset 3px 3px 7px var(--nm-lo),inset -3px -3px 7px var(--nm-hi) !important}
-#mWAMasivo .btn.bc1{color:var(--nm-accent)}
-#mWAMasivo .btn.bc5{color:#16a34a}
-body.tema-premium #mWAMasivo .btn.bc1{color:var(--nm-accent) !important}
-body.tema-premium #mWAMasivo .btn.bc5{color:#4ade80 !important}
-#mWAMasivo .btn.bwa{
   color:#fff !important;background:linear-gradient(145deg,#22c55e,var(--nm-accent)) !important;
   box-shadow:6px 6px 14px rgba(5,150,105,.32),-4px -4px 10px var(--nm-hi),inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
@@ -4315,38 +4235,6 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
   </div>
 </div>
 
-<!-- Modal WA Masivo -->
-<div class="overlay" id="mWAMasivo">
-  <div class="modal" style="max-width:620px">
-    <div class="mt"><span>// WHATSAPP MASIVO</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
-    <!-- Tipo de mensaje -->
-    <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:8px">Tipo de mensaje</div>
-    <div class="nxft-tabs nxft-flex" style="margin-bottom:14px">
-      <button id="waTipoFactura" onclick="selWATipo('factura')" class="nxft-tab is-active"><i class="ti ti-file-invoice"></i> Factura del mes</button>
-      <button id="waTipoPago" onclick="selWATipo('pago')" class="nxft-tab"><i class="ti ti-clock"></i> Pago pendiente</button>
-      <button id="waTipoVence" onclick="selWATipo('vence')" class="nxft-tab"><i class="ti ti-calendar-x"></i> Póliza por vencer</button>
-    </div>
-    <!-- Vista previa del mensaje -->
-    <div style="font-size:10px;font-weight:600;color:#1e293b;margin-bottom:5px">Vista previa del mensaje</div>
-    <div id="waPreviewBox" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:11px;color:#166534;white-space:pre-line;line-height:1.6;margin-bottom:12px;font-family:var(--mono);max-height:100px;overflow-y:auto"></div>
-    <!-- Selección de clientes -->
-    <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
-      <button class="btn bsm bc5" onclick="selSoloDeuda()"><i class="ti ti-filter"></i> Solo con deuda</button>
-    </div>
-    <label class="wa-selectall" for="waSelAllChk">
-      <input type="checkbox" id="waSelAllChk" class="wa-chk-sq" onchange="selAllWA(this.checked)">
-      <div class="wa-selectall-txt"><div class="t">Seleccionar todos</div><div class="s" id="waSelAllSub">0 de 0 seleccionados</div></div>
-    </label>
-    <div id="waClientesList" style="max-height:220px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px">
-      <div id="waCountLbl" style="font-size:11px;color:#475569">0 clientes seleccionados</div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap">
-        <button class="btn" onclick="closeM('mWAMasivo')">Cancelar</button>
-        <button class="btn bwa" onclick="ejecutarWAMasivo()" id="btnEjecutarWA" style="font-size:12px;padding:8px 18px"><i class="ti ti-brand-whatsapp"></i> Enviar mensajes</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
 'use strict';
@@ -6539,7 +6427,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.92';
+const APP_VERSION='57.93';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13599,134 +13487,12 @@ function switchTab(tab){
   },false);
 })();
 
-// ── WA Masivo mejorado ────────────────────────────────────────────────────────
-let _waTipo='factura';
+// ── WA Masivo: reemplazado el 2026-09-07 por el envío automático vía Zernio ────
+// (nxWaAbrirMasivoSegmento/nxWaIniciarEnvioMasivo en parches-whatsapp-inbox.js) --
+// las funciones que abrían pestañas de wa.me una por una y el modal #mWAMasivo se
+// quitaron de acá. _ultimoAbono queda: lo usa enviarReciboWA(), abajo, que es una
+// función distinta (recibo de un solo pago), no parte del WA Masivo.
 let _ultimoAbono={cliente:null,monto:0};
-
-function abrirWAMasivo(preseleccion){
-  selWATipo('factura');
-  renderWAClientes(Array.isArray(preseleccion)?preseleccion:null);
-  openM('mWAMasivo');
-}
-
-function selWATipo(tipo){
-  _waTipo=tipo;
-  ['factura','pago','vence'].forEach(t=>{
-    const btn=document.getElementById('waTipo'+t.charAt(0).toUpperCase()+t.slice(1));
-    if(btn)btn.classList.toggle('is-active',t===tipo);
-  });
-  const preview=document.getElementById('waPreviewBox');
-  const ej=ST.clientes.find(c=>c.activo)||{nom:'Juan García',plan:'Superior',numero_poliza:'POL-2026-000001',wa:'',fecha_fin:'2026-12-31'};
-  if(tipo==='factura'){
-    preview.textContent=`Estimado/a *${ej.nom}*,
-
-Su factura *${MESES[new Date().getMonth()]} ${new Date().getFullYear()}* ha sido generada.
-*Póliza:* ${ej.numero_poliza||'POL-...'}
-*Plan:* ${ej.plan}
-*Total:* RD$ ${fmtN(getTot(ej))}
-
-_${CFG.empNom}_`;
-  }else if(tipo==='pago'){
-    preview.textContent=`Estimado/a *${ej.nom}*,
-
-Le recordamos que tiene un saldo *pendiente* de pago.
-*Póliza:* ${ej.numero_poliza||'—'}
-*Plan:* ${ej.plan}
-*Pendiente:* RD$ ${fmtN(pend(ej)||getTot(ej))}
-
-Por favor realice su pago a la brevedad.
-
-_${CFG.empNom}_`;
-  }else{
-    const ep=getEstPol(ej);
-    preview.textContent=`Estimado/a *${ej.nom}*,
-
-Le informamos que su póliza *${ej.numero_poliza||'—'}* ${ep.lbl.toLowerCase()}.
-*Fecha de vencimiento:* ${ej.fecha_fin||'—'}
-
-Contáctenos para renovar su cobertura.
-
-_${CFG.empNom}_`;
-  }
-}
-
-function renderWAClientes(preseleccion){
-  const act=ST.clientes.filter(c=>c.activo&&c.wa);
-  const el=document.getElementById('waClientesList');
-  if(!act.length){el.innerHTML='<div style="padding:14px;text-align:center;color:#475569;font-size:11px">No hay clientes con WhatsApp registrado</div>';return;}
-  const pre=Array.isArray(preseleccion)?preseleccion.map(String):null;
-  el.innerHTML=act.map((c,i)=>`<div class="wa-row${pre&&pre.includes(String(c.id))?' on':''}" id="warow_${i}" onclick="toggleWACli('wachk_${i}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
-    <input type="checkbox" id="wachk_${i}" class="wa-chk-sq" data-cid="${c.id}" ${pre&&pre.includes(String(c.id))?'checked':''} onclick="event.stopPropagation()" onchange="updWACount()"/>
-    <div class="av" style="background:#eff6ff;color:#1d4ed8;flex-shrink:0">${inits(c.nom)}</div>
-    <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1e293b">${c.nom}</div><div style="font-size:10px;color:#475569">${c.wa} · ${c.plan}${pendTot(c)>0?` · <span style="color:#dc2626">Debe ${fmt(pendTot(c))}</span>`:''}</div></div>
-  </div>`).join('');
-  updWACount();
-}
-
-function toggleWACli(id){const chk=document.getElementById(id);if(chk)chk.checked=!chk.checked;updWACount();}
-function selAllWA(v){document.querySelectorAll('#waClientesList input[type=checkbox]').forEach(c=>c.checked=v);updWACount();}
-function selSoloDeuda(){document.querySelectorAll('#waClientesList input[type=checkbox]').forEach(chk=>{const cid=chk.getAttribute('data-cid');const c=ST.clientes.find(x=>x.id===cid);chk.checked=c&&pendTot(c)>0;});updWACount();}
-function updWACount(){
-  const boxes=[...document.querySelectorAll('#waClientesList input[type=checkbox]')];
-  const n=boxes.filter(c=>c.checked).length,total=boxes.length;
-  boxes.forEach(chk=>{
-    const row=document.getElementById('warow_'+chk.id.replace('wachk_',''));
-    if(row)row.classList.toggle('on',chk.checked);
-  });
-  const lbl=document.getElementById('waCountLbl');
-  if(lbl)lbl.textContent=`${n} cliente${n!==1?'s':''} seleccionado${n!==1?'s':''}`;
-  const sub=document.getElementById('waSelAllSub');
-  if(sub)sub.textContent=`${n} de ${total} seleccionados`;
-  const all=document.getElementById('waSelAllChk');
-  if(all){all.checked=total>0&&n===total;all.indeterminate=n>0&&n<total;}
-}
-
-async function ejecutarWAMasivo(){
-  const selects=[...document.querySelectorAll('#waClientesList input[type=checkbox]:checked')];
-  if(!selects.length){toast('warn','Sin destinatarios','Selecciona al menos un cliente');return;}
-  let n=0;
-  for(const chk of selects){
-    const c=ST.clientes.find(x=>x.id===chk.getAttribute('data-cid'));if(!c?.wa)continue;
-    let msg='';
-    const ep=getEstPol(c);
-    if(_waTipo==='factura'){
-      const f=ST.facturas.filter(x=>x.cliente_id===c.id).sort((a,b)=>b.created_at?.localeCompare(a.created_at||'')||0)[0];
-      msg=`Estimado/a *${c.nom}*,
-
-Su factura *${MESES[new Date().getMonth()]} ${new Date().getFullYear()}* ha sido generada.
-*Póliza:* ${c.numero_poliza||'—'}
-*Plan:* ${c.plan}
-*Total:* RD$ ${fmtN(f?f.total:getTot(c))}
-
-_${CFG.empNom}_`;
-    }else if(_waTipo==='pago'){
-      msg=`Estimado/a *${c.nom}*,
-
-Le recordamos que tiene un saldo *pendiente* de pago.
-*Póliza:* ${c.numero_poliza||'—'}
-*Plan:* ${c.plan}
-*Pendiente:* RD$ ${fmtN(pend(c))}
-
-Por favor realice su pago a la brevedad.
-
-_${CFG.empNom}_`;
-    }else{
-      msg=`Estimado/a *${c.nom}*,
-
-Le informamos que su póliza *${c.numero_poliza||'—'}* ${ep.lbl.toLowerCase()}.
-*Fecha de vencimiento:* ${c.fecha_fin||'—'}
-
-Contáctenos para renovar su cobertura.
-
-_${CFG.empNom}_`;
-    }
-    window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-    await new Promise(r=>setTimeout(r,800));n++;
-  }
-  logAudit('WA_MASIVO',`${n} mensajes enviados · tipo: ${_waTipo}`);
-  toast('ok',`${n} mensajes de WhatsApp enviados`,`Tipo: ${_waTipo}`);
-  closeM('mWAMasivo');
-}
 
 // ── Recibo WhatsApp después de abono ────────────────────────────────────────
 function enviarReciboWA(){
