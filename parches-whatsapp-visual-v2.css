@@ -1,0 +1,7 @@
+/* NEXUS PRO · WhatsApp visual 2026 · ajuste móvil */
+@media(max-width:760px){
+  #v-waInbox .nxWaProActs{display:flex!important;margin-top:0!important;overflow-x:visible!important}
+  #v-waInbox .nxWaProActs button:not(.nxWaVisualContactsBtn){display:none!important}
+  #v-waInbox .nxWaProActs .nxWaVisualContactsBtn{display:inline-flex!important}
+  #v-waInbox.nxWaContactsOpen .nxWaContacts{display:block!important;max-height:42vh;overflow:auto;overscroll-behavior:contain}
+}
