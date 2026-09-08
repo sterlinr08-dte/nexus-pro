@@ -1,7 +1,14 @@
 {
-  "version": "58.00",
+  "version": "58.01",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.01",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO: la ventana de Contactos WhatsApp quedo mas ordenada -- los botones de envio masivo por segmento se separaron de 'Nueva plantilla' (accion rara, solo admin), y ahora avisa si alguno de los clientes con deuda ya recibio un aviso hace poco (se omite solo del envio masivo, ahora se ve por que antes de tocar el boton)."
+      ]
+    },
     {
       "version": "58.00",
       "fecha": "2026-09-08",

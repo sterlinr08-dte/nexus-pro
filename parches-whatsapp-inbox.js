@@ -67,6 +67,12 @@
   const hilosCargando = new Set();
   const hilosConReintentoProgramado = new Set();
   const hilosRecordatorioEnVuelo = new Set();
+  // Cadencia real de "Recordar deuda" (REGLAMENTO §12, migración whatsapp_envio_masivo_respeta_
+  // cadencia) -- se lee UNA vez al entrar al Buzón, no en cada repintado, para que el panel de
+  // Contactos pueda avisar cuántos de "Deuda" quedarían excluidos del envío masivo sin tener que
+  // disparar el envío para descubrirlo.
+  let waDiasCadencia = 3;
+  let waConfigCargada = false;
   const urlFirmadaCache = new Map();
   const urlFirmadaEnVuelo = new Map();
 
@@ -142,9 +148,13 @@
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
+#v-waInbox .nxWaContactsFootLbl{padding:8px 10px 3px;font-size:8px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8}
 #v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:0 10px 10px}
 #v-waInbox .nxWaContactsFoot button{height:31px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
 #v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
+#v-waInbox .nxWaContactsFootAdmin button{color:#7c3aed;border-color:#e9d5ff;background:#faf5ff}
+#v-waInbox .nxWaCadenciaNota{display:flex;align-items:flex-start;gap:6px;margin:0 10px 10px;padding:8px 10px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#92400e;font-size:8.5px;line-height:1.4}
+#v-waInbox .nxWaCadenciaNota i{flex:none;margin-top:1px;font-size:11px}
 #v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
@@ -225,7 +235,19 @@
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     render();
     cargar();
+    cargarConfigCadencia();
     return false;
+  }
+
+  async function cargarConfigCadencia() {
+    if (waConfigCargada) return;
+    const A = api(); if (!A?.get) return;
+    try {
+      const r = await A.get('whatsapp_config', 'select=dias_entre_avisos_atraso&activo=eq.true&limit=1');
+      if (r?.[0]?.dias_entre_avisos_atraso) waDiasCadencia = Number(r[0].dias_entre_avisos_atraso) || 3;
+      waConfigCargada = true;
+      pintarProPanel();
+    } catch (e) {}
   }
   window.nxAbrirWaInbox = open;
 
@@ -476,6 +498,18 @@
     if (tipo === 'aldia') return all.filter(x => x.estado.key === 'aldia');
     return all;
   }
+  // REGLAMENTO §12 regla 5: el envío masivo tipo "pago" excluye clientes avisados hace menos de
+  // waDiasCadencia días (whatsapp_crear_lote_envio_masivo lo hace en el servidor). Este conteo es
+  // solo para que el agente lo VEA antes de tocar "Recordar deuda", en vez de descubrirlo recién
+  // en el resultado del envío.
+  function waEnfriamientoDeuda() {
+    const ahora = Date.now();
+    return waContactosPor('deuda').filter(x => {
+      const u = x.c.ultimo_aviso_atraso_en; if (!u) return false;
+      return (ahora - new Date(u).getTime()) < waDiasCadencia * 86400000;
+    }).length;
+  }
+
   function waContactosHTML() {
     const all = waContactos();
     const data = waContactosPor(waContactFiltro);
@@ -490,6 +524,7 @@
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
       </div>`;
     }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
+    const enfriamiento = waEnfriamientoDeuda();
     return `<div class="nxWaContacts">
       <div class="nxWaContactsTop"><div><b>Lista de contactos WhatsApp</b><br><span>${all.length} clientes activos con numero registrado</span></div></div>
       <div class="nxWaContactTabs">
@@ -499,13 +534,18 @@
         ${tab('aldia', 'Al dia')}
       </div>
       <div class="nxWaContactList">${filas}</div>
+      <div class="nxWaContactsFootLbl">Envío por segmento</div>
       <div class="nxWaContactsFoot">
         <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')">Factura a todos</button>
         <button onclick="nxWaAbrirMasivoSegmento('deuda')">Recordar deuda</button>
         <button onclick="nxWaAbrirMasivoSegmento('renovar')">Renovaciones</button>
         <button onclick="nxWaAbrirMasivoSegmento('aldia')">Clientes al dia</button>
-        ${(sesion?.rol||'')==='admin'?'<button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-plus"></i> Nueva plantilla</button>':''}
       </div>
+      ${enfriamiento > 0 ? `<div class="nxWaCadenciaNota"><i class="ti ti-clock-pause"></i> ${enfriamiento} de ${count('deuda')} con deuda ya recibieron un aviso hace menos de ${waDiasCadencia} día${waDiasCadencia === 1 ? '' : 's'} — el envío masivo los omite solo, para no repetirles el mensaje.</div>` : ''}
+      ${(sesion?.rol||'')==='admin'?`<div class="nxWaContactsFootLbl">Administración</div>
+      <div class="nxWaContactsFoot nxWaContactsFootAdmin">
+        <button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-file-plus"></i> Nueva plantilla</button>
+      </div>`:''}
     </div>`;
   }
 
