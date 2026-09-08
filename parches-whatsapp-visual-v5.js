@@ -122,8 +122,13 @@ body.tema-premium .nxWaCtxClose{background:rgba(15,23,42,.55);border-color:rgba(
   function openContacts(){
     const r=root(),src=r&&$('.nxWaContacts',r);if(!src)return;
     const o=overlay(),body=$('#nxWaCtxBody',o),n=contactosCount();
+    // El KPI de días de atraso (objetivo Nº1 del módulo, REGLAMENTO §12) vive en .nxWaContactsTop,
+    // que este mismo archivo oculta por completo en la ventana clonada (display:none!important,
+    // no hay espacio) -- se rescata acá vía data-attribute para que igual se vea en el subtítulo,
+    // en vez de perderse sin que nadie se entere de que existía.
+    const promedio=src.dataset.promedioAtraso||'sin atrasos',atrasados=src.dataset.atrasados||'0';
     $('#nxWaCtxTitle',o).textContent='Contactos WhatsApp';
-    $('#nxWaCtxSub',o).textContent=n+' clientes con WhatsApp · segmenta sin salir del inbox';
+    $('#nxWaCtxSub',o).textContent=n+' con WhatsApp · '+atrasados+' atrasados · '+promedio;
     body.className='nxWaCtxBody';body.innerHTML=src.outerHTML;
     o.dataset.panel='contactos';o.classList.add('open');
     contactsSig=src.innerHTML;

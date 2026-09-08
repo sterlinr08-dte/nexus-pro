@@ -12,7 +12,10 @@
 
   let hilos = [], hiloAbiertoId = null, mensajes = [];
   let waFiltro = 'todos';
-  let waContactFiltro = 'todos';
+  // Objetivo de negocio Nº1 del módulo (REGLAMENTO §12): bajar el promedio de días de atraso de
+  // cobro. El panel de Contactos abre en "Atrasado" por defecto -- no en "Todos" -- para que lo
+  // primero que vea el agente sea justo lo que más mueve ese objetivo.
+  let waContactFiltro = 'atrasado';
   let sb = null, canal = null;
   // "mensajesHiloId" es la unica fuente de verdad de a que hilo pertenecen los datos que hay
   // ahora mismo en "mensajes" -- lo pone cargarMensajes() SOLO cuando escribe datos frescos y
@@ -191,6 +194,7 @@
 #v-waInbox .nxWaContactsTop span{font-size:8.5px;color:#64748b}
 #v-waInbox .nxWaContactsKpi{display:flex;align-items:center;gap:6px;flex:none}
 #v-waInbox .nxWaContactsKpi span{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(226,232,240,.9);border-radius:999px;background:#fff;padding:5px 8px;font-size:8px;font-weight:900;color:#475569}
+#v-waInbox .nxWaContactsKpi span.kpi-atraso{border-color:rgba(220,38,38,.3);background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContactTabs{display:flex;gap:6px;overflow-x:auto;padding:9px 10px;scrollbar-width:none}
 #v-waInbox .nxWaContactTabs::-webkit-scrollbar{display:none}
 #v-waInbox .nxWaContactTabs button{height:30px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer;box-shadow:0 10px 18px -18px rgba(15,23,42,.55)}
@@ -618,32 +622,38 @@
     const filas = data.slice(0, 14).map(x => {
       const c = x.c;
       const sub = [c.wa, c.plan, c.ars].filter(Boolean).join(' · ');
+      const mesesTxt = x.meses > 0 ? `${x.meses} mes${x.meses === 1 ? '' : 'es'} atrasado` : '';
       return `<div class="nxWaContact" role="button" tabindex="0" aria-label="Abrir chat con ${esc(c.nom || 'cliente')}" onclick="nxWaAbrirContacto('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
         <div class="av">${esc(iniciales(c.nom))}</div>
-        <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(sub || 'WhatsApp registrado')}</span></div>
+        <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(mesesTxt || sub || 'WhatsApp registrado')}</span></div>
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
         <i class="ti ti-chevron-right chev" aria-hidden="true"></i>
       </div>`;
     }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
     const deudaCount = count('deuda'), atrasadoCount = count('atrasado'), vencidoCount = count('vencido');
-    return `<div class="nxWaContacts">
-      <div class="nxWaContactsTop"><div><b>Contactos WhatsApp</b><br><span>${data.length} en este segmento · ${all.length} clientes con número</span></div><div class="nxWaContactsKpi"><span>${deudaCount} deuda</span><span>${atrasadoCount + vencidoCount} atraso</span></div></div>
+    // KPI del objetivo Nº1 (REGLAMENTO §12): promedio real de meses de atraso entre los
+    // genuinamente atrasados/vencidos -- no cuenta a quien solo debe el mes en curso.
+    const conAtraso = all.filter(x => x.meses > 0);
+    const promedioAtraso = conAtraso.length ? (conAtraso.reduce((s, x) => s + x.meses, 0) / conAtraso.length) : 0;
+    const promedioAtrasoTxt = promedioAtraso ? promedioAtraso.toFixed(1) + ' mes prom. atraso' : 'sin atrasos';
+    return `<div class="nxWaContacts" data-promedio-atraso="${esc(promedioAtrasoTxt)}" data-atrasados="${atrasadoCount + vencidoCount}">
+      <div class="nxWaContactsTop"><div><b>Contactos WhatsApp</b><br><span>${data.length} en este segmento · ${all.length} clientes con número</span></div><div class="nxWaContactsKpi"><span class="kpi-atraso">${esc(promedioAtrasoTxt)}</span><span>${atrasadoCount + vencidoCount} atrasados</span><span>${deudaCount} con saldo</span></div></div>
       <div class="nxWaContactTabs">
-        ${tab('todos', 'Todos')}
-        ${tab('factura', 'Factura')}
-        ${tab('deuda', 'Deuda')}
         ${tab('atrasado', 'Atrasado')}
         ${tab('vencido', 'Vencido')}
+        ${tab('deuda', 'Deuda')}
         ${tab('continuidad', 'Por vencer')}
+        ${tab('todos', 'Todos')}
+        ${tab('factura', 'Factura')}
         ${tab('aldia', 'Al dia')}
       </div>
       <div class="nxWaContactList">${filas}</div>
       <div class="nxWaContactsFoot nxWaContactsActGrid">
-        <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')"><i class="ti ti-send"></i>Factura a todos</button>
-        <button onclick="nxWaAbrirMasivoSegmento('deuda')"><i class="ti ti-cash"></i>Recordar deuda</button>
-        <button onclick="nxWaAbrirMasivoSegmento('atrasado')"><i class="ti ti-alert-triangle"></i>Atrasados</button>
+        <button class="primary" onclick="nxWaAbrirMasivoSegmento('atrasado')"><i class="ti ti-alert-triangle"></i>Recordar atrasados</button>
+        <button class="primary" onclick="nxWaAbrirMasivoSegmento('deuda')"><i class="ti ti-cash"></i>Recordar deuda</button>
         <button onclick="nxWaAbrirMasivoSegmento('vencido')"><i class="ti ti-calendar-off"></i>Vencidos</button>
         <button onclick="nxWaAbrirMasivoSegmento('continuidad')"><i class="ti ti-shield-check"></i>Por vencer</button>
+        <button onclick="nxWaAbrirMasivoSegmento('todos')"><i class="ti ti-send"></i>Factura a todos</button>
         <button onclick="nxWaAbrirMasivoSegmento('aldia')"><i class="ti ti-circle-check"></i>Al día</button>
         ${(sesion?.rol||'')==='admin'?'<button class="admin" onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-file-plus"></i>Nueva plantilla</button>':''}
       </div>
