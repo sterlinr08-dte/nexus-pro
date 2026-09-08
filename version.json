@@ -1,7 +1,14 @@
 {
-  "version": "58.05",
+  "version": "58.06",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.06",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO: el boton 'Enviar recordatorio de pago ahora' del Buzon ya no aparece (ni falla con un error confuso) para clientes que solo deben la factura del mes EN CURSO -- solo se muestra cuando el cliente tiene de verdad un periodo atrasado (ya cerrado y sin pagar), igual que decide el resto del sistema."
+      ]
+    },
     {
       "version": "58.05",
       "fecha": "2026-09-08",
