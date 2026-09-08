@@ -77,6 +77,13 @@
   const hilosConScrollInicial = new Set();
   const hilosPegadosAlFondo = new Set();
   let nxWaIgnorarScrollHasta = 0;
+  // Reportado 2026-09-08: los reintentos con setTimeout fijos para "pegar" el chat al fondo
+  // cuando una foto/video termina de cargar no cubren todos los casos reales -- en una conexión
+  // lenta o con varios adjuntos en el mismo hilo, el contenedor sigue creciendo después del
+  // último reintento y el chat queda visualmente arriba del todo. Un ResizeObserver no depende
+  // de adivinar CUÁNTO puede tardar cada adjunto: reacciona a CUALQUIER cambio real de altura del
+  // contenedor, venga de una imagen, un video, una fuente que carga tarde, etc.
+  let nxWaMsgsResizeObs = null;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -1030,6 +1037,21 @@
       else hilosPegadosAlFondo.delete(hiloId);
     };
   }
+  // El contenedor de mensajes es un nodo NUEVO en cada render (pintarDetalle reescribe todo
+  // #nxWaDetalle.innerHTML) -- así que el observer viejo queda huérfano y hay que reconectar uno
+  // nuevo cada vez. Mientras el hilo siga "pegado al fondo" (recién abierto o el agente no
+  // scrolleó hacia arriba), cualquier crecimiento real de altura -- lo haya causado lo que lo
+  // haya causado -- lo vuelve a mandar al fondo.
+  function vigilarAlturaMensajes(box, hiloId) {
+    if (nxWaMsgsResizeObs) { try { nxWaMsgsResizeObs.disconnect(); } catch (e) {} }
+    if (!box || !hiloId || typeof ResizeObserver === 'undefined') return;
+    nxWaMsgsResizeObs = new ResizeObserver(() => {
+      if (hiloAbiertoId !== hiloId) return;
+      if (!hilosConScrollInicial.has(hiloId) && !hilosPegadosAlFondo.has(hiloId)) return;
+      scrollFondoChat(false);
+    });
+    nxWaMsgsResizeObs.observe(box);
+  }
   function asegurarScrollFondoInicial(hiloId) {
     if (!hiloId || hiloAbiertoId !== hiloId) return;
     scrollFondoChat(false);
@@ -1121,12 +1143,13 @@
       ${ventanaAbierta
         ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><button class="nxWaIconBtn" onclick="toast('info','Adjuntos','Queda reservado para la siguiente fase: foto, video y documento con envío real.')"><i class="ti ti-paperclip"></i></button><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
-            ${h?.cliente_id ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
+            ${(h?.cliente_id && waMesesAtraso(cliente) > 0) ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
           </div>`}`;
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
     if (nuevoBox) vigilarScrollManual(nuevoBox, hiloAbiertoId);
+    if (nuevoBox) vigilarAlturaMensajes(nuevoBox, hiloAbiertoId);
     if (scrollInicial || pegadoAlFondo) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');

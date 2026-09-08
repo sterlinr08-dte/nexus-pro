@@ -1,7 +1,14 @@
 {
-  "version": "58.08",
+  "version": "58.09",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.09",
+      "fecha": "2026-09-08",
+      "notas": [
+        "RESTAURADO: se volvio a perder por un cruce con otra edicion simultanea -- el arreglo del scroll que se pega al fondo del chat con fotos/videos, y el filtro de 'Enviar recordatorio de pago ahora' para que no aparezca en clientes sin atraso real. Ambos ya estaban probados antes, solo se reaplicaron."
+      ]
+    },
     {
       "version": "58.08",
       "fecha": "2026-09-08",
