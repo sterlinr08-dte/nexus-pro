@@ -4,6 +4,7 @@
    - "Factura a todos" usa el segmento factura, nunca todos
    - "Al día" funciona como filtro, no como envío de factura
    - conserva búsqueda y scroll cuando cambia el filtro del panel clonado
+   - evita el bucle de re-render que reiniciaba continuamente las animaciones y dejaba la lista invisible
 */
 (function(){
   'use strict';
@@ -107,6 +108,18 @@
       <i class="ti ti-chevron-right chev" aria-hidden="true"></i>
     </div>`;
   }
+  function firmaLista(filtro,q,data){
+    return [filtro,q,data.length,data.map(x=>`${x.c.id}:${x.estado.key}:${x.meses}:${Math.round((x.deuda||0)*100)}`).join('|')].join('::');
+  }
+  function enlazarFilas(list){
+    $$('.nxWaFixRow',list).forEach(r=>{
+      if(r.dataset.nxFixBound)return;
+      r.dataset.nxFixBound='1';
+      const abrir=()=>{const id=r.dataset.clienteId;if(id&&typeof window.nxWaAbrirContacto==='function')window.nxWaAbrirContacto(id);};
+      r.addEventListener('click',abrir);
+      r.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();abrir();}});
+    });
+  }
   function renderLista(){
     const o=$('#nxWaCtxOverlay.open');
     const body=o&&$('#nxWaCtxBody',o);
@@ -119,13 +132,18 @@
     estadoUI.q=input?input.value:estadoUI.q;
     let data=porFiltro(filtro);
     if(q)data=data.filter(x=>norm([x.c.nom,x.c.wa,x.c.tel,x.c.plan,x.c.ars,x.c.numero_poliza].filter(Boolean).join(' ')).includes(q));
+
+    /* IMPORTANTE: no reconstruir el DOM si el contenido no cambió. Antes cada
+       innerHTML disparaba el MutationObserver, que volvía a llamar renderLista(),
+       generando un ciclo infinito. Con animaciones, ese ciclo reiniciaba opacity:0
+       en las tarjetas y la lista parecía vacía. */
+    const sig=firmaLista(filtro,q,data);
+    if(list.dataset.nxFixSig===sig){enlazarFilas(list);return;}
+
     estadoUI.rendering=true;
+    list.dataset.nxFixSig=sig;
     list.innerHTML=data.length?data.map(fila).join(''):'<div class="nxWaUhdNoResults show"><i class="ti ti-user-search"></i><b>Sin resultados</b><span>No hay contactos que coincidan con la búsqueda y el filtro actual.</span></div>';
-    $$('.nxWaFixRow',list).forEach(r=>{
-      const abrir=()=>{const id=r.dataset.clienteId;if(id&&typeof window.nxWaAbrirContacto==='function')window.nxWaAbrirContacto(id);};
-      r.addEventListener('click',abrir);
-      r.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();abrir();}});
-    });
+    enlazarFilas(list);
     requestAnimationFrame(()=>{
       const max=Math.max(0,body.scrollHeight-body.clientHeight);
       body.scrollTop=Math.min(estadoUI.scroll,max);
@@ -140,7 +158,7 @@
     if(input&&!input.dataset.nxFix){
       input.dataset.nxFix='1';
       input.value=estadoUI.q;
-      input.addEventListener('input',()=>{estadoUI.q=input.value;estadoUI.scroll=0;renderLista();});
+      input.addEventListener('input',()=>{estadoUI.q=input.value;estadoUI.scroll=0;const list=$('.nxWaContactList',body);if(list)delete list.dataset.nxFixSig;renderLista();});
     }
     if(!body.dataset.nxFixScroll){
       body.dataset.nxFixScroll='1';
@@ -165,7 +183,10 @@
       e.preventDefault();e.stopImmediatePropagation();
       estadoUI.q='';estadoUI.scroll=0;
       if(typeof window.nxWaContactFiltro==='function')window.nxWaContactFiltro('aldia');
-      setTimeout(queue,30);
+      setTimeout(()=>{
+        const list=$('#nxWaCtxOverlay[data-panel="contactos"] .nxWaContactList');if(list)delete list.dataset.nxFixSig;
+        queue();
+      },30);
     }
   },true);
 
@@ -177,13 +198,16 @@
     const input=body&&$('#nxWaUhdSearchInput',body);
     if(input)estadoUI.q=input.value;
     if(body)estadoUI.scroll=body.scrollTop;
-    setTimeout(queue,40);
+    setTimeout(()=>{
+      const list=$('#nxWaCtxOverlay[data-panel="contactos"] .nxWaContactList');if(list)delete list.dataset.nxFixSig;
+      queue();
+    },40);
   },true);
 
   function start(){
     queue();
     obs=new MutationObserver(queue);
-    obs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','data-panel']});
+    obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','data-panel']});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
