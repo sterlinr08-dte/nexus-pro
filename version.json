@@ -1,7 +1,14 @@
 {
-  "version": "57.97",
+  "version": "57.98",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.98",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO (sin cambio visible en pantalla): el envio masivo de 'Recordar deuda' ahora respeta la misma cadencia de dias que el aviso automatico y el recordatorio manual del Buzon -- antes un cliente podia recibir varios avisos de deuda el mismo dia por caminos distintos sin que ninguno se enterara de los otros. Tambien quedo activo el envio masivo de recordatorio de pago pendiente y poliza por vencer (las 2 plantillas que faltaban ya fueron aprobadas por Meta)."
+      ]
+    },
     {
       "version": "57.97",
       "fecha": "2026-09-08",

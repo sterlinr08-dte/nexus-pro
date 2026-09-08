@@ -30,6 +30,7 @@
 | 9 | **Seguros (clientes, facturación, cobro, NCF)** | ✅ decretado y auditado — v49.95 |
 | 10 | **Vista rueda** (modo experimental, Facturas + Cobros, solo admin) | ✅ decretado y construido — v50.9, ampliado v51.0 |
 | 11 | **Botones de acción y barra inferior** (POS) | ✅ decretado y auditado — v53.3, Tanda 1 |
+| 12 | **Envíos de WhatsApp (individuales y masivos)** | ✅ decretado y auditado — v57.98 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -578,3 +579,114 @@ botón dispara la llamada correcta con el argumento correcto, "Guardar"/"Emitir 
 argumento NO abre ningún documento, "Guardar e imprimir" sí, y los 4 Cancelar cierran su modal sin
 tocar ningún dato. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
 `new Function()`; `version.json` válido.
+
+---
+
+## 12 · REGLAMENTO DE ENVÍOS DE WHATSAPP (individuales y masivos)
+*(decretado por el dueño el 08-sep-2026 · auditado y aplicado en v57.98)*
+
+Todo mensaje de WhatsApp que sale de nexus-pro hacia un cliente — automático, manual desde el Buzón,
+o masivo por segmento — es un **mensaje de negocio iniciado fuera de la ventana de 24h de Meta**, así
+que siempre viaja como una **plantilla de WhatsApp Business ya aprobada**, nunca como texto libre. Es
+dinero real (costo por conversación de Meta) y reputación real con clientes reales — se audita como
+tal, no como regla forward-looking.
+
+**Plantillas — un nombre fijo por propósito, nunca texto armado a mano**
+
+1. Cada tipo de aviso usa EXACTAMENTE una plantilla aprobada por Meta, nunca contenido libre:
+
+   | Plantilla | Quién la manda | Para qué |
+   |---|---|---|
+   | `factura_generada` | `whatsapp-notificar` (evento) y envío masivo tipo `factura` | Avisar que se generó una factura nueva |
+   | `recordatorio_atraso` | `whatsapp-notificar` (cron `whatsapp_detectar_atrasados`) y el botón manual del Buzón (`whatsapp_recordatorio_manual`) | Avisar mora real — tono "estás atrasado", incluye meses de atraso |
+   | `recordatorio_pago_pendiente` | Envío masivo tipo `pago` | Avisar saldo pendiente a un SEGMENTO — tono neutral, sin implicar mora, porque no siempre son clientes atrasados de verdad |
+   | `poliza_por_vencer` | Envío masivo tipo `vence` | Avisar renovación próxima |
+   | `pago_confirmado` | `whatsapp-notificar` (evento) | Confirmar que un pago se aplicó |
+   | `entrega_confirmada` | `whatsapp-notificar` (evento, destino AGENTE, no cliente) | Avisarle al agente cuánto lleva acumulado al cobrar |
+
+   `recordatorio_atraso` y `recordatorio_pago_pendiente` son plantillas **deliberadamente distintas**
+   (auditado en esta tanda, no es una duplicación por descuido): la primera es 1-a-1 con semántica de
+   mora, la segunda es para un envío masivo a cualquier cliente con `pend(c)>0`, sin acusarlo de estar
+   atrasado.
+
+2. **La ventana de 24h de Meta manda en el Buzón.** Sin un mensaje entrante del cliente en las
+   últimas 24h, el composer de texto libre queda cerrado — solo una plantilla puede reabrir la
+   conversación (`nxAbrirWhatsAppDeCliente` crea el hilo vacío si hace falta; el botón "Enviar
+   recordatorio de pago ahora" es la única plantilla disponible hoy para reabrir desde el Buzón, y
+   solo aplica a clientes con deuda real).
+
+**Cadencia — una sola marca de tiempo, compartida por los 3 caminos**
+
+3. `clientes.ultimo_aviso_atraso_en` es la ÚNICA fuente de verdad de "cuándo fue el último aviso de
+   deuda a este cliente", y la respetan y actualizan los 3 caminos que pueden mandar un aviso de
+   deuda: el cron automático (`whatsapp_detectar_atrasados`), el botón manual del Buzón
+   (`whatsapp_recordatorio_manual`) y el envío masivo tipo `pago`. `whatsapp_config.dias_entre_avisos_atraso`
+   (hoy 3 días) es la cadencia mínima entre 2 avisos de deuda a UN cliente, sin importar por cuál de
+   los 3 caminos salió cada uno.
+4. **El botón manual del Buzón es la única excepción que puede saltarse la cadencia hacia adelante**
+   (puede mandar un aviso aunque `ultimo_aviso_atraso_en` sea reciente) — es una decisión puntual de
+   un agente sobre UN cliente que tiene la conversación abierta en pantalla, nunca una decisión a
+   ciegas sobre una lista. Al tener éxito, igual actualiza `ultimo_aviso_atraso_en`, así que sí cuenta
+   para bloquear el próximo aviso automático o masivo.
+5. **El envío masivo NUNCA puede saltarse la cadencia.** Un cliente con un aviso de deuda más
+   reciente que la cadencia queda excluido del lote — marcado `fallido` con el motivo, para que el
+   agente vea en el resultado final cuántos se omitieron y por qué, en vez de que el conteo total
+   simplemente sea más chico sin explicación.
+
+**Permisos y destinatarios**
+
+6. Cualquier agente autenticado de la organización puede disparar un envío masivo o el recordatorio
+   manual — hoy no hay restricción de rol (decisión: no se decreta una restricción sin un caso real
+   que la pida — *se revertiría si* un agente sin criterio manda una tanda a un segmento equivocado).
+7. Solo entran a un lote clientes **activos y con `wa` no vacío** — nunca se intenta formatear ni
+   enviar a un cliente sin WhatsApp válido (verificado en la RPC de creación del lote y en la Edge
+   Function, doble chequeo).
+8. **El monto/saldo/meses que va DENTRO de una plantilla siempre se recalcula en el servidor**
+   (RPC o Edge Function) en el momento de enviar — nunca se confía en una cifra que vino armada desde
+   el navegador. Aplica a los 3 caminos por igual.
+
+**Objetivos de negocio (qué se busca lograr, cómo se mide)**
+
+9. **Bajar el promedio de días de atraso de cobro** — el recordatorio de deuda (automático, manual o
+   masivo) existe para acelerar el cobro, no para llenar un registro de auditoría. Métrica: días
+   promedio entre `facturas.periodo` vencido y el abono que lo salda, comparando clientes que
+   recibieron un aviso reciente contra los que no.
+10. **Evitar el sobre-mensajeo** — ningún cliente debería sentir que nexus-pro le escribe todos los
+    días por lo mismo. Métrica: ningún cliente con más de 1 aviso de deuda por ciclo de
+    `dias_entre_avisos_atraso` (la regla 3-5 de arriba es el mecanismo; esta es la meta que
+    justifica el mecanismo).
+11. **Convertir renovaciones antes del vencimiento** — el aviso `poliza_por_vencer` busca que el
+    cliente renueve antes de quedar en gracia/vencida, no después.
+
+**Estado de la auditoría (v57.98):** se encontró y se corrigió el hueco real de esta tanda: los 3
+caminos de aviso de deuda eran completamente independientes entre sí — un cliente podía recibir 3
+plantillas de deuda distintas el mismo día sin que ningún camino se enterara de los otros 2. Se
+corrigió unificando los 3 bajo `clientes.ultimo_aviso_atraso_en` (migración
+`20260908230000_whatsapp_envio_masivo_respeta_cadencia.sql` + `whatsapp-envio-masivo/index.ts` v2).
+Se verificó además que la aparente duplicación `recordatorio_atraso`/`recordatorio_pago_pendiente`
+es intencional (regla 1), no un descuido — quedó documentada para que no se "corrija" por error más
+adelante. Las 2 plantillas nuevas del envío masivo (`recordatorio_pago_pendiente`, `poliza_por_vencer`)
+fueron aprobadas por Meta el 08-sep-2026; el comentario del código que las marcaba "pendientes de
+aprobación" quedó desactualizado y se corrigió en la misma tanda.
+
+**Pendientes de este reglamento (NO construidos):**
+- **Plantilla de "iniciar conversación"** para reabrir el Buzón con un cliente que NO tiene deuda ni
+  póliza por vencer (hoy, si un agente abre esa conversación desde la ficha/Facturas y la ventana
+  está cerrada, no hay ninguna plantilla que aplique — el Buzón queda sin poder mandar nada). Texto
+  propuesto para someter a Meta (categoría UTILITY, aunque la aprobación final la decide Meta):
+  > *"Hola {{1}}, te escribimos desde {{2}} sobre tu póliza de seguro de salud. Si tienes alguna
+  > pregunta o necesitas ayuda con tu cobertura, respóndenos por este medio."*
+  Variables: `{{1}}` nombre del cliente, `{{2}}` nombre de la empresa. Riesgo real: al no atarse a
+  una transacción concreta, Meta podría clasificarla como MARKETING en vez de UTILITY (más estricta,
+  distinto costo) — no hay forma de saberlo sin someterla.
+- **Opt-out / "no volver a escribirme"** — no existe ningún campo ni mecanismo hoy para que un
+  cliente pida dejar de recibir WhatsApp y que el sistema lo respete. No es solo cortesía: es
+  requisito de la política de WhatsApp Business. Revisar antes de escalar el volumen de envíos
+  masivos.
+- **Horario permitido de envío** — hoy los 3 caminos pueden mandar a cualquier hora (el cron corre
+  cuando corre, el botón manual y el envío masivo cuando el agente esté trabajando). No se decreta un
+  horario sin que el dueño lo pida — *se revertiría si* un cliente se queja por un mensaje fuera de
+  horario razonable.
+- **Tope de tamaño de un lote masivo** — "Factura a todos" no tiene límite de destinatarios más allá
+  del procesamiento de a `LIMITE_MAXIMO` (50) por llamada, que ya evita saturar la Edge Function pero
+  no evita que un agente incluya, por error, a un segmento mucho más grande del que quería.

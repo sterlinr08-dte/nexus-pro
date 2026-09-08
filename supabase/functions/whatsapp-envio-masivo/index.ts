@@ -117,10 +117,8 @@ async function mandarConReintento(telefono: string, accountId: string, nombre: s
 }
 
 // Nombre de plantilla Zernio/Meta por tipo de lote. "factura" reusa la plantilla YA aprobada por
-// Meta (misma que whatsapp-notificar usa para factura_generada); "pago"/"vence" son nuevas y
-// todavía no están aprobadas -- ver blueprint §10, no bloquea el resto del build: el código queda
-// listo y falla limpio con el error real de Zernio ("plantilla no encontrada"/no aprobada) hasta
-// que Meta las apruebe.
+// Meta (misma que whatsapp-notificar usa para factura_generada); "pago"/"vence" son propias de
+// este feature -- Meta las aprobó 2026-09-08, los 3 tipos ya mandan de verdad en producción.
 const PLANTILLAS: Record<string, { nombre: string }> = {
   factura: { nombre: "factura_generada" },
   pago: { nombre: "recordatorio_pago_pendiente" },
@@ -263,6 +261,14 @@ async function manejar(req: Request): Promise<Response> {
           zernio_message_id: resultado.data?.data?.messageId ?? null,
           enviado_at: new Date().toISOString(),
         }).eq("id", dest.id);
+        // "pago" comparte la MISMA marca de cadencia que el cron automático (whatsapp_detectar_
+        // atrasados/marcarClienteAvisadoAtraso) y el botón manual (whatsapp_recordatorio_manual) --
+        // así los 3 caminos se enteran entre sí y ninguno le manda un 2do aviso de deuda al mismo
+        // cliente antes de que pase dias_entre_avisos_atraso, sin importar por cuál camino salió
+        // el primero. Ver migración 20260908230000_whatsapp_envio_masivo_respeta_cadencia.
+        if (lote.tipo === "pago") {
+          await db.from("clientes").update({ ultimo_aviso_atraso_en: new Date().toISOString() }).eq("id", cliente.id);
+        }
       } else {
         await db.from("whatsapp_envio_masivo_destinatarios").update({
           estado: "fallido",
