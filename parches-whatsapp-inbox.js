@@ -66,6 +66,7 @@
   const hiloEnviosEnVuelo = new Set();
   const hilosCargando = new Set();
   const hilosConReintentoProgramado = new Set();
+  const hilosRecordatorioEnVuelo = new Set();
   const urlFirmadaCache = new Map();
   const urlFirmadaEnVuelo = new Map();
 
@@ -101,6 +102,8 @@
 #v-waInbox .nxWaComposer input:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
 #v-waInbox .nxWaComposer button{width:40px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:14px;font-weight:900;cursor:pointer;display:grid;place-items:center}
 #v-waInbox .nxWaCerrada{padding:10px;text-align:center;font-size:10.5px;color:#92400e;background:#fff7ed;border-top:1px solid #fed7aa}
+#v-waInbox .nxWaBtnRecordatorio{margin-top:8px;border:0;border-radius:999px;padding:8px 14px;font-size:10.5px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,#25d366,#128c7e);display:inline-flex;align-items:center;gap:6px}
+#v-waInbox .nxWaBtnRecordatorio:disabled{opacity:.6;cursor:default}
 #v-waInbox .nxWaEmpty{padding:24px;text-align:center;color:#64748b;font-size:10.5px;line-height:1.35}
 #v-waInbox .nxWaPend{border:1px solid #e5eaf2;border-radius:13px;padding:9px;display:flex;gap:9px;align-items:center;margin-bottom:7px;background:rgba(255,255,255,.74)}
 #v-waInbox .nxWaPend img{width:44px;height:44px;object-fit:cover;border-radius:10px;flex:none;background:#f1f5f9}
@@ -244,6 +247,27 @@
     try { if (typeof cerrarClientSummary === 'function') cerrarClientSummary(); } catch (e) {}
     try { nav('waInbox', null); } catch (e) {}
     await window.nxWaAbrirHilo(hiloId);
+  };
+
+  // Botón "Enviar recordatorio de pago ahora" -- aparece SOLO cuando la ventana de 24h de Meta
+  // está cerrada (nadie puede mandarle texto libre a ese cliente todavía). Dispara la MISMA
+  // plantilla que manda el ciclo automático (whatsapp_detectar_atrasados), pero ahora mismo, sin
+  // esperar los dias_entre_avisos_atraso -- el monto/meses de atraso los recalcula el propio RPC
+  // en el servidor, este botón nunca decide ni envía esas cifras.
+  window.nxWaRecordatorioManual = async function (clienteId, hiloId, btn) {
+    if (hilosRecordatorioEnVuelo.has(hiloId)) return;
+    hilosRecordatorioEnVuelo.add(hiloId);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-brand-whatsapp"></i> Enviando…'; }
+    const A = api();
+    try {
+      const r = await A.post('rpc/whatsapp_recordatorio_manual', { p_cliente_id: clienteId });
+      toast('ok', 'Recordatorio en camino', r?.monto ? `Se avisó sobre ${r.meses} mes(es) atrasado(s)` : '');
+    } catch (e) {
+      toast('err', 'No se pudo enviar el recordatorio', String(e && e.message || e));
+    } finally {
+      hilosRecordatorioEnVuelo.delete(hiloId);
+      if (hiloAbiertoId === hiloId) pintarDetalle();
+    }
   };
 
   // ── Datos ──────────────────────────────────────────────────────────────
@@ -823,7 +847,9 @@
       <div class="nxWaMsgs" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
         ? `<div class="nxWaComposer"><input id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')nxWaEnviar()"><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div>`
-        : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.</div>`}`;
+        : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
+            ${h?.cliente_id ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
+          </div>`}`;
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : boxPrevio.scrollTop;

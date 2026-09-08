@@ -1,7 +1,14 @@
 {
-  "version": "57.96",
+  "version": "57.97",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.97",
+      "fecha": "2026-09-08",
+      "notas": [
+        "NUEVO: cuando el Buzon de WhatsApp abre la conversacion de un cliente que nunca escribio (o que lleva mas de 24h sin escribir), ya no se queda sin poder hacer nada -- aparece un boton 'Enviar recordatorio de pago ahora' que manda al instante el mismo aviso de atraso que el sistema manda solo cada varios dias, sin tener que esperar ese ciclo. Solo aparece si el cliente realmente tiene algo atrasado."
+      ]
+    },
     {
       "version": "57.96",
       "fecha": "2026-09-08",
