@@ -1,5 +1,21 @@
 /* NEXUS PRO · WhatsApp visual 2026
    Capa visual aislada: no modifica API, pagos, webhooks ni reglas de negocio. */
+/* Motor compartido: las 6 pasadas visuales de WhatsApp observaban el DOM cada una por su cuenta
+   (6 MutationObserver corriendo a la vez sobre document.body) -- un observador compartido hace lo
+   mismo con una sola suscripcion. Cada archivo sigue dueño de su propio dedup (queued/
+   requestAnimationFrame) y de su propio enhance(); esto solo cambia QUIEN dispara el callback. */
+if(!window.__nxWaObsBus){
+  window.__nxWaObsBus=(function(){
+    const cbs=[];let started=false;
+    function fire(){for(const cb of cbs){try{cb();}catch(e){console.error(e);}}}
+    return{
+      subscribe(cb){
+        cbs.push(cb);
+        if(!started){started=true;new MutationObserver(fire).observe(document.body,{childList:true,subtree:true,characterData:true});}
+      }
+    };
+  })();
+}
 (function(){
   'use strict';
   if(window.__nxWaVisual20260906)return;
@@ -222,7 +238,8 @@ body.tema-premium #v-waInbox .nxWaBub.out{background:linear-gradient(135deg,#145
   function queueEnhance(){if(enhanceQueued)return;enhanceQueued=true;requestAnimationFrame(enhance);}
   function start(){
     injectCss();wrapOpenHilo();queueEnhance();
-    observer=new MutationObserver(queueEnhance);observer.observe(document.body,{childList:true,subtree:true});
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queueEnhance);
+    else{observer=new MutationObserver(queueEnhance);observer.observe(document.body,{childList:true,subtree:true,characterData:true});}
     window.addEventListener('resize',()=>{if(window.innerWidth>760){const v=view();if(v)v.classList.remove('nxWaChatOpen');}},{passive:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

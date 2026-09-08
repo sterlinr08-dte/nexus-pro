@@ -1,7 +1,14 @@
 {
-  "version": "57.91",
+  "version": "57.92",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.92",
+      "fecha": "2026-09-08",
+      "notas": [
+        "Eficiencia interna (sin cambio visible): las 6 pasadas visuales del Buzon de WhatsApp cada una vigilaba la pantalla por su cuenta (6 observadores del navegador corriendo a la vez). Ahora comparten uno solo — mismo resultado, menos trabajo para el celular/computadora."
+      ]
+    },
     {
       "version": "57.91",
       "fecha": "2026-09-07",

@@ -127,7 +127,8 @@ body.tema-premium #v-waInbox .nxWaSearchToggle,body.tema-premium #v-waInbox .nxW
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
   function start(){
     css();queue();
-    obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
     window.addEventListener('resize',queue,{passive:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

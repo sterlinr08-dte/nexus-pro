@@ -148,7 +148,8 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
   function start(){
     css();queue();
-    obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

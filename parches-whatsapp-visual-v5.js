@@ -149,7 +149,8 @@ body.tema-premium .nxWaCtxClose{background:rgba(15,23,42,.55);border-color:rgba(
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
   function start(){
     css();overlay();queue();
-    obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#nxWaCtxOverlay.open'))close();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

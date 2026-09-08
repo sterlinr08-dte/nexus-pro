@@ -52,6 +52,10 @@ body.tema-premium #v-waInbox .nxWaTag.nxWaSeguimiento,body.tema-premium #v-waInb
     limpiarRenovacionEn($('#nxWaCtxOverlay'));
   }
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
-  function start(){css();patchCobranza();queue();obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+  function start(){
+    css();patchCobranza();queue();
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

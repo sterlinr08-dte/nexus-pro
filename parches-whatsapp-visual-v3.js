@@ -100,6 +100,10 @@ body.tema-premium #v-waInbox .nxWaRow:has(.nxWaBadge){background:rgba(30,41,59,.
   }
   function enhance(){queued=false;css();enhanceHead();enhanceSearch();}
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
-  function start(){css();queue();obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+  function start(){
+    css();queue();
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
