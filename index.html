@@ -6427,7 +6427,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.93';
+const APP_VERSION='57.94';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7016,7 +7016,7 @@ function verCliente(id,tab){
             <div class="sf-hero-meta">${c.cedula?`<span>Céd. ${c.cedula}</span><span>·</span>`:''}<span>${c.ars||'Sin ARS'}</span><span>·</span><span>Agente: ${agt}</span></div>
           </div>
           <div class="sf-hero-acts">
-            ${nxWa(c.wa)?`<a class="sf-hero-btn" href="https://wa.me/${nxWa(c.wa)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
+            ${nxWa(c.wa)?`<button class="sf-hero-btn" onclick="nxAbrirWhatsAppDeCliente('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>`:''}
             <button class="sf-hero-btn primary" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
             <span class="sf-hero-star ${fav?'active':''}" onclick="toggleFav('${id}')" title="Marcar VIP" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">★</span>
           </div>
@@ -7289,7 +7289,7 @@ function pintarC360Expediente(c){
         <div class="sf-fact err"><span class="lb">Balance total</span><b>${fmt(pendTot(c))}</b></div>
       </div>
       <div class="sf-actions" style="flex-wrap:wrap">
-        ${wa?`<a class="sf-btn ok" href="https://wa.me/${wa}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
+        ${wa?`<button class="sf-btn ok" onclick="nxAbrirWhatsAppDeCliente('${c.id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>`:''}
         ${c.tel?`<a class="sf-btn" href="tel:${escHtml(c.tel)}"><i class="ti ti-phone"></i> Llamar</a>`:''}
         <button class="sf-btn primary" onclick="c360AccionRegistrarPago('${c.id}')"><i class="ti ti-cash"></i> Registrar pago</button>
         <button class="sf-btn" onclick="c360AccionNuevaFactura('${c.id}')"><i class="ti ti-file-invoice"></i> Nueva factura</button>

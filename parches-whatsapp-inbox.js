@@ -226,6 +226,26 @@
   }
   window.nxAbrirWaInbox = open;
 
+  // Botón "WhatsApp" de la ficha del cliente (index.html) -- en vez de abrir wa.me con el
+  // WhatsApp personal del agente, abre el hilo de ESE cliente en el Buzón real de nexus-pro. Si
+  // el cliente nunca escribió antes (no existe hilo todavía), whatsapp_hilo_por_cliente lo crea
+  // vacío -- el agente ve la conversación pero el cuadro de texto libre queda cerrado hasta que
+  // el cliente escriba primero (regla de Meta); ahí puede mandarle una plantilla para reabrirla.
+  window.nxAbrirWhatsAppDeCliente = async function (clienteId) {
+    const A = api(); if (!A?.post) return;
+    let hiloId;
+    try {
+      hiloId = await A.post('rpc/whatsapp_hilo_por_cliente', { p_cliente_id: clienteId });
+    } catch (e) {
+      try { toast('err', 'No se pudo abrir WhatsApp', String(e && e.message || e)); } catch (e2) {}
+      return;
+    }
+    if (!hiloId) { try { toast('err', 'No se pudo abrir WhatsApp'); } catch (e) {} return; }
+    try { if (typeof cerrarClientSummary === 'function') cerrarClientSummary(); } catch (e) {}
+    try { nav('waInbox', null); } catch (e) {}
+    await window.nxWaAbrirHilo(hiloId);
+  };
+
   // ── Datos ──────────────────────────────────────────────────────────────
   async function cargar() {
     const A = api(); if (!A?.get) return;

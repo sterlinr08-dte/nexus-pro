@@ -1,7 +1,14 @@
 {
-  "version": "57.93",
+  "version": "57.94",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.94",
+      "fecha": "2026-09-08",
+      "notas": [
+        "NUEVO: el boton 'WhatsApp' de la ficha del cliente (los 2 lugares donde aparece) ahora abre la conversacion de ese cliente en el Buzon de WhatsApp de nexus-pro, en vez de abrir tu WhatsApp personal por wa.me. Si el cliente nunca escribio antes, se crea la conversacion vacia y queda lista para mandarle una plantilla."
+      ]
+    },
     {
       "version": "57.93",
       "fecha": "2026-09-08",
