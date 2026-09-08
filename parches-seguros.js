@@ -51,7 +51,8 @@
     ['js','parches-whatsapp-contactos-uhd.js'],
     ['js','parches-whatsapp-contactos-fix.js'],
     ['js','parches-whatsapp-inbox-uhd.js'],
-    ['js','parches-whatsapp-animaciones.js']
+    ['js','parches-whatsapp-animaciones.js'],
+    ['js','parches-whatsapp-iconos-flat.js']
   ];
 
   var i=0;
