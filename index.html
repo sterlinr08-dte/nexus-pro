@@ -4003,6 +4003,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
         <button class="btn bsm bc1" id="btnReciboVer" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
       </div>
     </div>
@@ -6411,7 +6412,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.95';
+const APP_VERSION='57.96';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6923,6 +6924,7 @@ function sfFacturaCard(f){
       ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:11px;padding:6px;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#059669,#10b981);margin-bottom:5px">💰 COBRAR</button>`}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:4px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#6d28d9,#8b5cf6)">Factura</button>
+        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#1da851,#25d366)">WhatsApp</button>`}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#b45309,#f59e0b)">Precio</button>`:''}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#dc2626,#ef4444)">Anular</button>`:''}
       </div>
@@ -9870,6 +9872,7 @@ function rFact(){
         ${prevChip}
         <div class="sfr-foot"><span class="sfr-brand">${escHtml((CFG.empNom||'NEXUS PRO SEGUROS'))}</span>
           <div class="sfr-acts">
+            ${anul?'':`<button class="sfr-ico" aria-label="WhatsApp a ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();enviarWA('${f.id}')"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>`}
             <button class="sfr-ico" aria-label="Más acciones" onclick="event.stopPropagation();nxFactMenu('${f.id}',this)"><i class="ti ti-dots-vertical" aria-hidden="true"></i></button>
             ${anul?'':`<button class="sfr-cob" onclick="${cobrar}">COBRAR</button>`}
           </div>
@@ -9909,6 +9912,7 @@ function rFact(){
       <td data-lb="Estado"><span class="badge ${ec}">${est.pillTxt.toUpperCase()}</span></td>
       <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}</td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+        ${anul?'':btn(`event.stopPropagation();enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
         ${btn(`event.stopPropagation();nxFactMenu('${f.id}',this)`,'bghost','ti-dots-vertical','','Más acciones')}
       </div></td>
     </tr>`;
@@ -10140,9 +10144,15 @@ function nxMesesAntCompartir(cid,periodoActual){
   toast('warn','No se pudo compartir','Este navegador no permite compartir');
 }
 
-// enviarWA (botón manual "WhatsApp" de Facturas) se quitó el 2026-09-08 -- la factura generada
-// ya se manda sola por el sistema real (whatsapp_notificar_evento -> Edge Function -> Zernio) en
-// cuanto se crea la factura, así que el botón manual quedaba redundante.
+// enviarWA (botón "WhatsApp" de Facturas) -- la factura generada ya se manda sola por el sistema
+// real (whatsapp_notificar_evento -> Edge Function -> Zernio), pero el botón queda como acceso
+// rápido a la conversación real de ese cliente en el Buzón (parches-whatsapp-inbox.js), sin armar
+// ni precargar ningún mensaje.
+function enviarWA(fid){
+  const f=ST.facturas.find(x=>x.id===fid);const c=ST.clientes.find(x=>x.id===f?.cliente_id);
+  if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(c.id);
+}
 
 // Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
 // inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
@@ -10424,17 +10434,20 @@ function rCob(){
   }
 }
 function cobIrPag(p){_cobPagina=p;rCob();nxPagScrollTop();}
-// nxCobroWA (recordatorio de saldo pendiente por wa.me) se quitó el 2026-09-08 -- el atraso ya
-// se recuerda solo por el sistema real (whatsapp_detectar_atrasados -> whatsapp_notificar_evento
-// -> Zernio), con su propia cadencia. La opción "Al cliente" del selector de abajo se quitó con
-// ella; queda solo "A su agente", que no tiene equivalente automático.
+// Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+// inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
+function nxCobroWA(cid){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
+  if(!nxWa(c.wa)){toast('warn','Sin WhatsApp',(c.nom||'')+' no tiene número de WhatsApp registrado');return;}
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(cid);
+}
 
-// ════════ WHATSAPP: avisar al AGENTE que su cliente está atrasado ════════
+// ════════ WHATSAPP: elegir si escribirle al CLIENTE (Buzón) o avisar a su AGENTE ════════
 function nxWaElegir(cid){
   const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
   const ag=ST.agentes.find(a=>String(a.id)===String(c.agente_id));
   const tot=pendTot(c);
-  const telA=ag?nxWa(ag.tel):'';
+  const telC=nxWa(c.wa), telA=ag?nxWa(ag.tel):'';
   const opt=(ico,color,titulo,sub,tel,accion,arreglar)=>
     `<div class="waOpt${tel?'':' sinTel'}" ${tel?`onclick="${accion}"`:`onclick="${arreglar}"`} tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" aria-label="${escHtml(titulo)}">
        <div class="waIco" style="background:${color}1a;color:${color}"><i class="ti ${ico}"></i></div>
@@ -10447,7 +10460,8 @@ function nxWaElegir(cid){
   const html=`<div class="waSheet">
     <div class="waHd"><div><div class="waHdT">${escHtml(c.nom)}</div><div class="waHdS">${tot>0?'Debe '+fmt(tot):'Está al día'}</div></div>
       <button onclick="closeM('mWaElegir')" aria-label="Cerrar">✕</button></div>
-    <div class="waSec">Avisar a su agente</div>
+    <div class="waSec">¿A quién le escribo?</div>
+    ${opt('ti-user','#059669','Al cliente',c.nom+' · '+(c.wa||''),telC,`closeM('mWaElegir');nxCobroWA('${c.id}')`,`closeM('mWaElegir');editarCli('${c.id}')`)}
     ${ag?opt('ti-headset','#2563eb','A su agente',ag.nom+' · '+(ag.tel||''),telA,`closeM('mWaElegir');nxAgenteWA('${c.id}')`,`closeM('mWaElegir');editarAgt('${ag.id}')`)
         :`<div class="waOpt sinTel" style="cursor:default"><div class="waIco" style="background:#ef44441a;color:#ef4444"><i class="ti ti-alert-triangle"></i></div><div style="flex:1"><div class="waT">Sin agente</div><div class="waS">Este cliente no tiene agente asignado</div></div></div>`}
   </div>`;
@@ -11417,7 +11431,8 @@ async function regAbono(){
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Abono registrado',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
       folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
-      [{label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}]);
+      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
+       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
@@ -11459,7 +11474,8 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago a deuda anterior',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
       folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
-      [{label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}]);
+      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
+       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
@@ -13435,11 +13451,12 @@ function switchTab(tab){
 // verificar los 3 lados primero.
 let _ultimoAbono={cliente:null,monto:0};
 
-// enviarReciboWA() (botón "Enviar recibo" tras un abono) se quitó el 2026-09-08 -- el recibo ya
-// se manda solo por el sistema real (evento pago_aplicado -> Edge Function -> Zernio) en cuanto
-// se aplica el pago, así que el botón manual quedaba redundante. "Ver / compartir recibo"
-// (nxReciboMeses/nxReciboCompartir, en parches-seguros-base.js) sigue intacto para imprimir o
-// compartir por otra vía.
+// Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+// inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
+function enviarReciboWA(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(c.id);
+}
 
 // ── Animación "imprimiendo recibo" (referencia del dueño, 30-ago-2026) ──────
 // Componente COMPARTIDO: lo usan Seguros (regAbono), Financiamiento (nxPrestamoPagar)

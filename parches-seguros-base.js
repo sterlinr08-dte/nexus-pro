@@ -9959,6 +9959,8 @@
             .map(p => `<span style="display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
           const cid = cli.id ? esc(String(cli.id)) : '';
           const nomData = esc((cli.nom || '').toLowerCase());
+          const num = waNumero(cli);
+          const idSafe = esc(String(cli.id || i));
           return `
             <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
@@ -9972,6 +9974,7 @@
                   <div style="font-weight:900;color:#dc2626;font-size:15px;white-space:nowrap">${fmt(x.total)}</div>
                   <div style="display:flex;flex-direction:column;gap:4px;margin-top:5px">
                     ${cid ? `<button class="btn bsm" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;font-weight:800" onclick="window.nxCobrarPend('${cid}')"><i class="ti ti-wallet"></i> Cobrar</button>` : ''}
+                    ${num ? `<button class="btn bsm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;font-weight:800" onclick="window.nxRecordarPago('${idSafe}','${num}',${x.total})"><i class="ti ti-brand-whatsapp"></i> Recordar</button>` : '<span style="font-size:9px;color:#cbd5e1">Sin WhatsApp</span>'}
                   </div>
                 </div>
               </div>
@@ -10040,9 +10043,11 @@
     notify('err', 'No se pudo abrir el cobro', '');
   };
 
-  // nxRecordarPago (recordatorio de saldo pendiente por wa.me) se quitó el 2026-09-08 -- el
-  // atraso ya se recuerda solo por el sistema real (whatsapp_detectar_atrasados ->
-  // whatsapp_notificar_evento -> Zernio), con su propia cadencia.
+  // Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+  // inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
+  window.nxRecordarPago = function (clienteId) {
+    if (typeof window.nxAbrirWhatsAppDeCliente === 'function') window.nxAbrirWhatsAppDeCliente(clienteId);
+  };
 
   // ═══ BOTÓN AL LADO DE LA PESTAÑA "COBROS" ═══
   function inyectarBoton() {
@@ -12126,6 +12131,7 @@
           <div class="fr"><label>Referencia (opcional)</label><input id="recRef" class="no-upper" value="${esc(ref)}" placeholder="No. de cheque, transferencia..."></div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+          ${waNum(c) ? `<button class="btn bwa" type="button" onclick="window.nxReciboWA()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
           <button class="btn bc2" type="button" onclick="window.nxReciboCompartir()"><i class="ti ti-share"></i> Compartir</button>
           <button class="btn bc1" type="button" onclick="window.nxReciboImprimir()"><i class="ti ti-printer"></i> Imprimir</button>
         </div>
@@ -12243,9 +12249,16 @@
     return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses:*\n${mesesTxt}\n${adelantoTxt}\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
   }
 
-  // nxReciboWA (botón "WhatsApp" del modal de recibo) se quitó el 2026-09-08 -- el recibo ya se
-  // manda solo por el sistema real (evento pago_aplicado -> Zernio). "Compartir"/"Imprimir" siguen
-  // intactos abajo -- guardarMesesAbono()/construirTextoRecibo() los sigue usando esa función.
+  // Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+  // inbox.js) -- ya no arma ni manda el texto del recibo por wa.me, el agente lo escribe ahí si
+  // hace falta. guardarMesesAbono(d) se mantiene: es el registro de qué meses cubrió el pago,
+  // independiente de por dónde se avise.
+  window.nxReciboWA = function () {
+    const d = datosRecibo(); if (!d) return;
+    const num = waNum(d.c); if (!num) { toast('err', 'Cliente sin WhatsApp válido'); return; }
+    guardarMesesAbono(d);
+    if (typeof window.nxAbrirWhatsAppDeCliente === 'function') window.nxAbrirWhatsAppDeCliente(d.c.id);
+  };
 
   window.nxReciboCompartir = async function () {
     const d = datosRecibo(); if (!d) return;

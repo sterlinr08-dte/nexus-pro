@@ -1,7 +1,14 @@
 {
-  "version": "57.95",
+  "version": "57.96",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.96",
+      "fecha": "2026-09-08",
+      "notas": [
+        "VOLVIERON: los iconos de WhatsApp de Facturas, Cobros (recordatorio de deuda) y Recibo de pago que se habian quitado en la version 57.95 -- ahora vuelven a estar visibles, pero en vez de abrir tu WhatsApp personal abren el Buzon de nexus-pro con la conversacion de ese cliente, igual que ya hacia el boton de la ficha del cliente. Nada de esto manda ningun mensaje solo -- el agente escribe desde el Buzon si hace falta."
+      ]
+    },
     {
       "version": "57.95",
       "fecha": "2026-09-08",
