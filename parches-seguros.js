@@ -50,7 +50,8 @@
     ['js','parches-whatsapp-visual-v7.js'],
     ['js','parches-whatsapp-contactos-uhd.js'],
     ['js','parches-whatsapp-contactos-fix.js'],
-    ['js','parches-whatsapp-inbox-uhd.js']
+    ['js','parches-whatsapp-inbox-uhd.js'],
+    ['js','parches-whatsapp-animaciones.js']
   ];
 
   var i=0;
