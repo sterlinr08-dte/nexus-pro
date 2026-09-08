@@ -1,0 +1,222 @@
+/* NEXUS PRO · WhatsApp Inbox UHD · 2026-09-08
+   Capa visual final basada en el mockup aprobado por el dueño.
+   SOLO interfaz: no modifica API, Zernio, pagos, filtros ni reglas de negocio. */
+(function(){
+  'use strict';
+  if(window.__nxWaInboxUhd20260908)return;
+  window.__nxWaInboxUhd20260908=true;
+
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  let queued=false,obs=null;
+
+  function css(){
+    if($('#nxWaInboxUhdCss'))return;
+    const s=document.createElement('style');
+    s.id='nxWaInboxUhdCss';
+    s.textContent=`
+#v-waInbox{
+  --wau-blue:#1769e0;--wau-blue2:#2d8cff;--wau-green:#21c766;--wau-ink:#081a45;
+  --wau-muted:#7183a6;--wau-line:rgba(180,199,230,.42);--wau-glass:rgba(255,255,255,.84);
+  font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif!important;
+}
+
+/* Hero: WhatsApp / Inbox */
+#v-waInbox .nxCrmHomeHead{
+  position:relative!important;display:flex!important;align-items:center!important;gap:14px!important;
+  min-height:112px!important;margin:0 0 12px!important;padding:18px 20px!important;border-radius:25px!important;
+  border:1px solid rgba(255,255,255,.92)!important;
+  background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(234,244,255,.82))!important;
+  box-shadow:0 24px 58px -40px rgba(31,77,144,.56),inset 0 1px 0 rgba(255,255,255,.98)!important;
+  backdrop-filter:blur(24px) saturate(145%)!important;-webkit-backdrop-filter:blur(24px) saturate(145%)!important;
+  overflow:hidden!important;
+}
+#v-waInbox .nxCrmHomeHead:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 68% 0,rgba(63,150,255,.12),transparent 30%),radial-gradient(circle at 95% 70%,rgba(33,199,102,.10),transparent 27%);pointer-events:none}
+#v-waInbox .nxCrmHomeHead:after{display:none!important}
+#v-waInbox .nxWaUhdHeroIcon{position:relative;z-index:1;width:64px;height:64px;flex:0 0 64px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(145deg,#34df7e,#12bd5a);color:#fff;font-size:31px;box-shadow:0 16px 30px -17px rgba(16,185,129,.82),inset 0 1px 0 rgba(255,255,255,.45)}
+#v-waInbox .nxCrmHomeHead>div:not(.nxWaUhdHeroIcon):not(.nxWaUhdHeroTag){position:relative;z-index:1;min-width:0;flex:1}
+#v-waInbox .nxCrmHomeBadge{padding:0!important;border:0!important;background:transparent!important;color:#15a978!important;font-size:10px!important;letter-spacing:.13em!important}
+#v-waInbox .nxCrmHomeBadge i{display:none!important}
+#v-waInbox .nxCrmHomeHead h1{margin:4px 0 3px!important;font-size:29px!important;line-height:1!important;letter-spacing:-.7px!important;color:var(--wau-ink)!important;font-weight:900!important}
+#v-waInbox .nxCrmHomeHead p{margin:0!important;max-width:none!important;color:#647ca4!important;font-size:11px!important;line-height:1.35!important;white-space:normal!important}
+#v-waInbox .nxWaUhdHeroTag{position:relative;z-index:1;width:160px;flex:0 0 160px;color:#315681;font-size:10.5px;line-height:1.5;font-weight:650;padding-left:18px;border-left:1px solid rgba(119,154,202,.26)}
+#v-waInbox .nxWaUhdHeroTag:after{content:"";display:block;width:30px;height:3px;margin-top:9px;border-radius:99px;background:linear-gradient(90deg,#21c766,#0fb28e)}
+
+/* KPI cards */
+#v-waInbox .nxWaPro{margin:0 0 12px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;overflow:visible!important}
+#v-waInbox .nxWaProHead{display:none!important}
+#v-waInbox .nxWaProGrid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:9px!important;margin:0 0 11px!important;padding:0!important;overflow:visible!important}
+#v-waInbox .nxWaProKpi{
+  min-width:0!important;min-height:108px!important;padding:13px 12px 12px!important;border-radius:19px!important;
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:0!important;
+  border:1px solid rgba(205,219,240,.68)!important;background:rgba(255,255,255,.86)!important;
+  box-shadow:0 17px 36px -31px rgba(20,63,125,.55),inset 0 1px 0 rgba(255,255,255,.96)!important;transform:none!important;
+  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;overflow:hidden!important;
+}
+#v-waInbox .nxWaProKpi:hover{transform:translateY(-1px)!important}
+#v-waInbox .nxWaProKpi.on{border-color:rgba(53,137,246,.48)!important;background:linear-gradient(155deg,rgba(255,255,255,.97),rgba(228,241,255,.92))!important;box-shadow:0 17px 38px -27px rgba(37,99,235,.42),inset 0 1px 0 #fff!important}
+#v-waInbox .nxWaUhdKpiIcon{width:31px;height:31px;border-radius:11px;display:grid;place-items:center;margin-bottom:9px;background:#edf5ff;color:#1c72e7;font-size:16px;box-shadow:0 8px 18px -14px rgba(37,99,235,.55)}
+#v-waInbox .nxWaProKpi[data-wau-kind="cobranza"] .nxWaUhdKpiIcon{background:#eafaf1;color:#13a75f}
+#v-waInbox .nxWaProKpi[data-wau-kind="sin-responder"] .nxWaUhdKpiIcon{background:#eef5ff;color:#126de0}
+#v-waInbox .nxWaProKpi .v{order:0!important;margin:0 0 3px!important;font-size:22px!important;line-height:1!important;color:var(--wau-ink)!important;font-weight:900!important}
+#v-waInbox .nxWaProKpi .l{order:1!important;font-size:10px!important;line-height:1.16!important;text-transform:none!important;letter-spacing:0!important;color:#31527f!important;font-weight:750!important;white-space:normal!important;overflow:visible!important}
+#v-waInbox .nxWaProKpi .s{display:none!important}
+
+/* Top actions: keep real functions, make the main contact access dominant */
+#v-waInbox .nxWaProActs{display:flex!important;align-items:center!important;gap:8px!important;margin:0!important;overflow-x:auto!important;padding:0 0 2px!important;scrollbar-width:none!important}
+#v-waInbox .nxWaProActs::-webkit-scrollbar{display:none!important}
+#v-waInbox .nxWaProActs button{height:42px!important;flex:0 0 auto!important;border-radius:999px!important;padding:0 13px!important;border:1px solid rgba(188,206,234,.55)!important;background:rgba(255,255,255,.82)!important;color:#235b9f!important;font-size:9px!important;font-weight:850!important;box-shadow:0 12px 25px -22px rgba(31,78,142,.52)!important}
+#v-waInbox .nxWaProActs .nxWaVisualContactsBtn{height:48px!important;padding:0 17px!important;color:#124b9b!important;background:linear-gradient(145deg,#fff,#edf5ff)!important;border-color:rgba(122,175,242,.42)!important;font-size:10.5px!important;box-shadow:0 14px 28px -22px rgba(37,99,235,.48)!important}
+#v-waInbox .nxWaProActs .nxWaVisualContactsBtn i{font-size:17px!important;color:#1674ed!important}
+#v-waInbox .nxWaProActs .nxWaVisualContactsBtn .nxWaCtxCount{height:25px!important;min-width:25px!important;padding:0 7px!important;background:#e7f2ff!important;color:#1769e0!important;font-size:9px!important}
+#v-waInbox .nxWaUhdContactsChevron{font-size:15px;color:#3885eb;margin-left:2px}
+
+/* Conversation card */
+#v-waInbox .nxWaShell{gap:12px!important}
+#v-waInbox .nxWaListCol{border-radius:23px!important;border:1px solid rgba(255,255,255,.9)!important;background:rgba(255,255,255,.82)!important;box-shadow:0 22px 58px -42px rgba(22,59,111,.56)!important;overflow:hidden!important}
+#v-waInbox .nxWaListTools{min-height:76px!important;padding:14px 15px!important;gap:10px!important;border-bottom:1px solid rgba(196,213,236,.52)!important;background:rgba(255,255,255,.82)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important}
+#v-waInbox .nxWaListCaption{padding:0!important;min-width:0!important;flex:1!important}
+#v-waInbox .nxWaListCaption b{font-size:17px!important;line-height:1.08!important;letter-spacing:-.3px!important;color:var(--wau-ink)!important;font-weight:900!important}
+#v-waInbox .nxWaListCaption span{margin-top:5px!important;font-size:9px!important;line-height:1!important;text-transform:uppercase!important;letter-spacing:.04em!important;color:#778bab!important;font-weight:850!important}
+#v-waInbox .nxWaSearchToggle{display:grid!important;width:46px!important;height:46px!important;flex:0 0 46px!important;border-radius:17px!important;border:1px solid rgba(190,207,232,.48)!important;background:rgba(255,255,255,.9)!important;color:#126de0!important;font-size:19px!important;box-shadow:0 13px 26px -20px rgba(25,73,140,.45)!important}
+#v-waInbox .nxWaSearch{min-width:0!important}
+#v-waInbox .nxWaSearch input{height:44px!important;border-radius:16px!important;background:#f8fbff!important;border-color:rgba(184,204,233,.48)!important;font-size:11px!important}
+#v-waInbox .nxWaListScroll{padding:8px 10px 13px!important;background:linear-gradient(180deg,rgba(248,251,255,.60),rgba(244,249,255,.76))!important}
+#v-waInbox .nxWaRow{min-height:82px!important;margin:0 0 8px!important;padding:13px 13px!important;gap:12px!important;align-items:center!important;border:1px solid rgba(218,227,241,.72)!important;border-radius:18px!important;background:rgba(255,255,255,.92)!important;box-shadow:0 13px 28px -27px rgba(16,53,105,.52)!important;transform:none!important}
+#v-waInbox .nxWaRow:last-child{margin-bottom:0!important}
+#v-waInbox .nxWaRow:before{display:none!important}
+#v-waInbox .nxWaRow:hover{background:#fff!important;transform:translateY(-1px)!important}
+#v-waInbox .nxWaRow.on{background:linear-gradient(145deg,#fff,#edf6ff)!important;border-color:rgba(83,151,239,.40)!important;box-shadow:0 14px 30px -24px rgba(37,99,235,.34)!important}
+#v-waInbox .nxWaRow:after{display:none!important}
+#v-waInbox .nxWaAv{width:50px!important;height:50px!important;flex:0 0 50px!important;border-radius:50%!important;background:linear-gradient(145deg,#dceeff,#dff9ec)!important;color:#1164ce!important;font-size:13px!important;font-weight:900!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.95)!important}
+#v-waInbox .nxWaWho{min-width:0!important;flex:1!important;padding:0!important}
+#v-waInbox .nxWaWho b{font-size:12.5px!important;line-height:1.18!important;letter-spacing:-.12px!important;color:#07163d!important;font-weight:900!important}
+#v-waInbox .nxWaWho span{margin-top:4px!important;font-size:9.6px!important;line-height:1.25!important;color:#7788a7!important;font-weight:600!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#v-waInbox .nxWaTag{width:max-content!important;margin-top:6px!important;padding:4px 8px!important;border-radius:999px!important;font-size:7.5px!important;line-height:1!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.02em!important;background:#eaf4ff!important;color:#2467b6!important}
+#v-waInbox .nxWaTag.err{background:#fff0f2!important;color:#e23543!important}
+#v-waInbox .nxWaTag.warn{background:#fff6df!important;color:#bb7100!important}
+#v-waInbox .nxWaTag.ok{background:#e9f9f0!important;color:#0f9957!important}
+#v-waInbox .nxWaRowMeta{align-self:flex-start!important;min-width:42px!important;padding-top:2px!important;gap:5px!important}
+#v-waInbox .nxWaTime{font-size:8.5px!important;color:#7486a7!important;font-weight:850!important}
+#v-waInbox .nxWaBadge{background:#1a73e8!important}
+#v-waInbox .nxWaUhdChevron{align-self:center;flex:none;font-size:18px;color:#7f98be;margin-left:2px}
+
+/* Detail keeps the same functionality but matches the cleaner material */
+#v-waInbox .nxWaDetailCol{border-radius:23px!important;border:1px solid rgba(255,255,255,.9)!important;background:rgba(255,255,255,.84)!important;box-shadow:0 22px 58px -42px rgba(22,59,111,.56)!important}
+#v-waInbox .nxWaHead{background:rgba(255,255,255,.90)!important}
+#v-waInbox .nxWaMsgs{background:linear-gradient(180deg,#f4f9ff,#f4faf7)!important}
+
+/* Dark theme */
+body.tema-premium #v-waInbox .nxCrmHomeHead,body.tema-premium #v-waInbox .nxWaListCol,body.tema-premium #v-waInbox .nxWaDetailCol{background:linear-gradient(145deg,rgba(24,34,50,.95),rgba(16,25,40,.92))!important;border-color:rgba(255,255,255,.07)!important}
+body.tema-premium #v-waInbox .nxCrmHomeHead h1,body.tema-premium #v-waInbox .nxWaListCaption b,body.tema-premium #v-waInbox .nxWaWho b{color:#f8fafc!important}
+body.tema-premium #v-waInbox .nxCrmHomeHead p,body.tema-premium #v-waInbox .nxWaUhdHeroTag,body.tema-premium #v-waInbox .nxWaWho span{color:#9fb0c7!important}
+body.tema-premium #v-waInbox .nxWaProKpi,body.tema-premium #v-waInbox .nxWaRow{background:rgba(30,41,59,.88)!important;border-color:rgba(148,163,184,.12)!important}
+body.tema-premium #v-waInbox .nxWaProKpi .v{color:#f8fafc!important}body.tema-premium #v-waInbox .nxWaProKpi .l{color:#bdd0e8!important}
+body.tema-premium #v-waInbox .nxWaListTools{background:rgba(24,34,50,.92)!important;border-color:rgba(148,163,184,.12)!important}
+body.tema-premium #v-waInbox .nxWaListScroll{background:rgba(15,23,42,.52)!important}
+body.tema-premium #v-waInbox .nxWaSearchToggle{background:rgba(30,41,59,.9)!important;border-color:rgba(148,163,184,.14)!important;color:#93c5fd!important}
+
+@media(max-width:760px){
+  #v-waInbox{padding:0 10px 14px!important;background:transparent!important}
+  #v-waInbox .nxCrmHomeHead{min-height:104px!important;padding:15px 14px!important;border-radius:22px!important;gap:11px!important}
+  #v-waInbox .nxWaUhdHeroIcon{width:54px;height:54px;flex-basis:54px;border-radius:18px;font-size:27px}
+  #v-waInbox .nxCrmHomeBadge{font-size:8.7px!important}
+  #v-waInbox .nxCrmHomeHead h1{font-size:25px!important;margin-top:3px!important}
+  #v-waInbox .nxCrmHomeHead p{font-size:9.6px!important;white-space:normal!important;max-width:230px!important}
+  #v-waInbox .nxWaUhdHeroTag{display:none!important}
+  #v-waInbox .nxWaProGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important;margin-bottom:10px!important}
+  #v-waInbox .nxWaProKpi{min-height:91px!important;padding:9px 7px!important;border-radius:16px!important}
+  #v-waInbox .nxWaUhdKpiIcon{width:27px;height:27px;border-radius:9px;margin-bottom:7px;font-size:14px}
+  #v-waInbox .nxWaProKpi .v{font-size:18px!important;margin-bottom:3px!important}
+  #v-waInbox .nxWaProKpi .l{font-size:8.1px!important;line-height:1.12!important}
+  #v-waInbox .nxWaProActs{margin-bottom:2px!important}
+  #v-waInbox .nxWaProActs button:not(.nxWaVisualContactsBtn):not(.nxWaBauchesBtn){display:none!important}
+  #v-waInbox .nxWaProActs .nxWaVisualContactsBtn{height:45px!important;padding:0 15px!important;font-size:10px!important}
+  #v-waInbox .nxWaShell{display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;gap:10px!important}
+  #v-waInbox .nxWaListCol{min-height:0!important;max-height:none!important;border-radius:22px!important}
+  #v-waInbox .nxWaListTools{min-height:70px!important;padding:12px 13px!important}
+  #v-waInbox .nxWaListCaption b{font-size:16px!important}
+  #v-waInbox .nxWaListCaption span{font-size:8.4px!important}
+  #v-waInbox .nxWaSearchToggle{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:16px!important}
+  #v-waInbox .nxWaListScroll{padding:8px 8px 12px!important;max-height:none!important}
+  #v-waInbox .nxWaRow{min-height:79px!important;margin-bottom:7px!important;padding:12px 10px!important;gap:10px!important;border-radius:17px!important}
+  #v-waInbox .nxWaAv{width:47px!important;height:47px!important;flex-basis:47px!important;font-size:12px!important}
+  #v-waInbox .nxWaWho b{font-size:11.7px!important}
+  #v-waInbox .nxWaWho span{font-size:8.9px!important;max-width:100%!important}
+  #v-waInbox .nxWaTag{margin-top:5px!important;font-size:7px!important;padding:3px 7px!important}
+  #v-waInbox .nxWaUhdChevron{font-size:17px;margin-left:0}
+  #v-waInbox.nxWaChatOpen .nxWaDetailCol{border-radius:0!important;box-shadow:none!important}
+}
+@media(max-width:360px){
+  #v-waInbox{padding-left:7px!important;padding-right:7px!important}
+  #v-waInbox .nxCrmHomeHead{padding:13px 11px!important}
+  #v-waInbox .nxWaUhdHeroIcon{width:49px;height:49px;flex-basis:49px;font-size:24px}
+  #v-waInbox .nxCrmHomeHead h1{font-size:23px!important}
+  #v-waInbox .nxCrmHomeHead p{font-size:8.8px!important}
+  #v-waInbox .nxWaProGrid{gap:4px!important}
+  #v-waInbox .nxWaProKpi{padding:8px 5px!important;border-radius:14px!important}
+  #v-waInbox .nxWaProKpi .l{font-size:7.3px!important}
+  #v-waInbox .nxWaRow{padding-left:9px!important;padding-right:8px!important}
+  #v-waInbox .nxWaAv{width:43px!important;height:43px!important;flex-basis:43px!important}
+}
+@media(prefers-reduced-motion:reduce){#v-waInbox .nxWaProKpi,#v-waInbox .nxWaRow{transition:none!important}}
+`;
+    document.head.appendChild(s);
+  }
+
+  const KPI={
+    'conversaciones':['ti-messages','conversaciones'],
+    'sin responder':['ti-clock','sin-responder'],
+    'cobranza':['ti-currency-dollar','cobranza'],
+    'póliza':['ti-file-description','poliza'],
+    'poliza':['ti-file-description','poliza'],
+    'sin vincular':['ti-link','sin-vincular']
+  };
+
+  function hero(){
+    const root=$('#v-waInbox'),h=root&&$('.nxCrmHomeHead',root);if(!h)return;
+    if(!$('.nxWaUhdHeroIcon',h)){
+      const i=document.createElement('div');i.className='nxWaUhdHeroIcon';i.innerHTML='<i class="ti ti-brand-whatsapp"></i>';h.prepend(i);
+    }
+    if(!$('.nxWaUhdHeroTag',h)){
+      const t=document.createElement('div');t.className='nxWaUhdHeroTag';t.textContent='Conectando más personas a un futuro seguro';h.appendChild(t);
+    }
+    const p=$('p',h);if(p&&!p.dataset.wau){p.dataset.wau='1';p.textContent='Gestiona tus conversaciones con clientes';}
+  }
+
+  function kpis(){
+    const root=$('#v-waInbox');if(!root)return;
+    $$('.nxWaProKpi',root).forEach(b=>{
+      if(b.dataset.wauDone)return;
+      const label=String($('.l',b)?.textContent||'').trim().toLowerCase();
+      const cfg=KPI[label]||['ti-point','otro'];
+      const i=document.createElement('div');i.className='nxWaUhdKpiIcon';i.innerHTML='<i class="ti '+cfg[0]+'"></i>';
+      b.prepend(i);b.dataset.wauKind=cfg[1];b.dataset.wauDone='1';
+    });
+  }
+
+  function contacts(){
+    const root=$('#v-waInbox'),b=root&&$('.nxWaVisualContactsBtn',root);if(!b)return;
+    if(!$('.nxWaUhdContactsChevron',b)){
+      const i=document.createElement('i');i.className='ti ti-chevron-right nxWaUhdContactsChevron';b.appendChild(i);
+    }
+  }
+
+  function rows(){
+    const root=$('#v-waInbox');if(!root)return;
+    $$('.nxWaRow',root).forEach(r=>{
+      if(r.dataset.wauRow)return;
+      const i=document.createElement('i');i.className='ti ti-chevron-right nxWaUhdChevron';i.setAttribute('aria-hidden','true');r.appendChild(i);
+      r.dataset.wauRow='1';
+    });
+  }
+
+  function enhance(){queued=false;css();hero();kpis();contacts();rows();}
+  function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
+  function start(){
+    css();queue();
+    if(window.__nxWaObsBus)window.__nxWaObsBus.subscribe(queue);
+    else{obs=new MutationObserver(queue);obs.observe(document.body,{childList:true,subtree:true,characterData:true});}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
