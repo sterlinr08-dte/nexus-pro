@@ -12539,11 +12539,12 @@ vencidos, clientes en proceso, datos por completar). Todo aditivo — no toca Fa
   (idéntico byte a byte). `APP_VERSION`/`version.json` subieron a **57.87** (57.85/57.86 ya los
   había usado esa sesión para su propio trabajo de WhatsApp Pro).
 
-### Envío masivo de WhatsApp automático (7-sep-2026) — ⏸️ PENDIENTE DEL DUEÑO, leer antes de tocar nada
+### Envío masivo de WhatsApp automático (7-sep-2026) — 🔲 LISTO Y PROBADO, SOLO FALTA EL PUSH A MAIN
 
-**Si estás retomando esto en una sesión nueva: hay un paso manual del dueño bloqueando todo lo
-demás. Léelo completo antes de escribir código — ya está todo diseñado y la mayor parte ya escrita,
-falta solo correr una migración y seguir desde ahí.**
+**Si estás retomando esto en una sesión nueva: todo está escrito, desplegado y probado de punta a
+punta con un envío real confirmado por el dueño. Lo único que falta es pedirle autorización
+explícita y fresca, EN ESE MOMENTO, y hacer `git push origin main` — nunca asumir que una
+autorización de esta conversación (u otra) sigue valiendo en la tuya.**
 
 - **Qué es:** reemplazo del "WA Masivo" viejo (que abría una pestaña de `wa.me` por cliente y
   requería que el agente le diera "Enviar" a mano, uno por uno) por un envío automático real vía
@@ -12568,11 +12569,10 @@ falta solo correr una migración y seguir desde ahí.**
      (`abrirWAMasivo`/`ejecutarWAMasivo`/etc. — `enviarReciboWA`/`_ultimoAbono` NO se tocaron, son
      una función distinta). `APP_VERSION`/`version.json` subidos a **57.92**.
   4. `380a6d5` — el archivo de migración de abajo + esta misma nota.
-- **🔴 BLOQUEADO ACÁ — paso manual, el clasificador de seguridad de Claude Code no deja aplicar
-  migraciones (crear tablas) directo en producción:** el archivo
-  `supabase/migrations/20260907190000_whatsapp_envio_masivo.sql` YA EXISTE en el repo (2 tablas +
-  RLS + 1 función RPC, ya probado en un `begin;...rollback;` sin errores) pero **todavía no se
-  aplicó a la base real**. El dueño tiene que:
+- **✅ RESUELTO (7-sep-2026) — el dueño ya aplicó la migración a mano** (el clasificador de
+  seguridad de Claude Code bloquea crear tablas directo en producción, así que le tocó a él vía SQL
+  Editor). Verificado en vivo: las 2 tablas existen con RLS activo y la función RPC está creada.
+  Pasos que siguió (dejados acá para referencia, ya no hace falta repetirlos):
   1. Entrar a supabase.com → proyecto **"NEXUS PRO Seguros"** (`tnwsgcxurfyuszxsewsn`) → **SQL
      Editor** → **New query**.
   2. Copiar y pegar TODO el contenido de `supabase/migrations/20260907190000_whatsapp_envio_masivo.sql`
@@ -12686,17 +12686,24 @@ $$;
 revoke all on function public.whatsapp_crear_lote_envio_masivo(text, uuid[]) from public, anon;
 grant execute on function public.whatsapp_crear_lote_envio_masivo(text, uuid[]) to authenticated;
 ```
-- **Después de eso, lo que sigue (le toca a la sesión de Claude que esté activa en ese momento,
-  siguiendo el blueprint desde el paso 8):**
-  1. `get_advisors` (seguridad) sobre el proyecto — confirmar que las 2 tablas/1 función nuevas no
-     salen con ningún hallazgo.
-  2. Probar de punta a punta con 2-3 clientes de prueba reales (número real bajo control del
-     dueño), tipo `factura` (la única de las 3 plantillas ya aprobada por Meta hoy).
-  3. **Aparte, sin bloquear lo anterior:** el dueño (o quien maneje la cuenta de Zernio) tiene que
-     crear y mandar a aprobación de Meta 2 plantillas NUEVAS: `recordatorio_pago_pendiente`
+- **ACTUALIZADO 7-sep-2026, migración ya aplicada por el dueño — pasos 8 y 9 (tipo `factura`) YA
+  HECHOS Y VERIFICADOS, PENDIENTE SOLO EL PUSH FINAL:**
+  1. ✅ `get_advisors` (seguridad) corrido sobre el proyecto real — cero hallazgos mencionan
+     `whatsapp_envio_masivo_lotes`/`_destinatarios`/`whatsapp_crear_lote_envio_masivo`.
+  2. ✅ Prueba real de punta a punta, tipo `factura`, contra el cliente de prueba "ESTERLIN ESPINAL"
+     (mismo número de prueba `8297173291` ya usado en sesiones anteriores de WhatsApp) —
+     `whatsapp_crear_lote_envio_masivo` creó el lote, la Edge Function lo procesó, Zernio confirmó
+     el envío (`zernio_message_id` real: `wamid.HBgLMTgyOTcxNzMyOTEVAgARGBRDRTcxMTVBRDRGRkE2RTRBMUE2NwA=`),
+     el lote quedó `completado`, y **el dueño confirmó que el mensaje llegó de verdad a su
+     WhatsApp**. También se verificó en vivo el `409 lote_ya_completado` (una segunda llamada al
+     mismo `lote_id` ya completado lo devolvió correctamente, sin volver a mandar nada).
+  3. **Aparte, sin bloquear el push:** el dueño (o quien maneje la cuenta de Zernio) todavía tiene
+     que crear y mandar a aprobación de Meta 2 plantillas NUEVAS: `recordatorio_pago_pendiente`
      (variables `[nombre, saldo_formateado]`) y `poliza_por_vencer` (variables `[nombre,
      numero_poliza, fecha_fin]`) — hasta que Meta las apruebe, los tipos `pago`/`vence` del envío
-     masivo van a fallar limpio (fila `fallido` con el motivo real de Zernio), sin romper `factura`.
-  4. Con todo eso verificado: pedirle autorización explícita y fresca al dueño, en esa conversación
-     puntual, antes de `git push origin main` con los 3 commits ya hechos (y cualquier commit nuevo
-     de los pasos 8-9). Nunca asumir que una autorización de otra conversación sigue valiendo acá.
+     masivo van a fallar limpio (fila `fallido` con el motivo real de Zernio), sin romper `factura`,
+     que ya funciona de verdad en producción desde ahora.
+  4. 🔲 **ÚNICO PASO QUE FALTA:** pedirle autorización explícita y fresca al dueño, EN ESE MOMENTO
+     puntual, antes de `git push origin main` con los commits ya hechos (Edge Function, frontend,
+     quitar el WA Masivo viejo, subir versión, migración + esta nota). Nunca asumir que una
+     autorización de una conversación anterior sigue valiendo acá — preguntar de nuevo cada vez.
