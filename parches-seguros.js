@@ -49,7 +49,8 @@
     ['js','parches-whatsapp-visual-v6.js'],
     ['js','parches-whatsapp-visual-v7.js'],
     ['js','parches-whatsapp-contactos-uhd.js'],
-    ['js','parches-whatsapp-contactos-fix.js']
+    ['js','parches-whatsapp-contactos-fix.js'],
+    ['js','parches-whatsapp-inbox-uhd.js']
   ];
 
   var i=0;
