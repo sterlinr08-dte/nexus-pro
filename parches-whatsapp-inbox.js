@@ -659,6 +659,7 @@
       </div>
       <div class="fr"><label>Idioma</label><input id="nxWaPlIdioma" value="es"></div>
       <div class="fr"><label>Texto (usa {{1}}, {{2}}... para variables)</label><textarea id="nxWaPlTexto" rows="5" placeholder="Hola {{1}}, ..."></textarea></div>
+      <div class="fr"><label>Ejemplo de cada variable, separados por punto y coma (;) y en orden ({{1}}, {{2}}...) — Meta lo exige para revisar. No uses comas dentro de un ejemplo (ej. montos).</label><input id="nxWaPlEjemplos" placeholder="Juan Pérez; 6500.00"></div>
       <div id="nxWaPlResultado" style="font-size:11px;margin:6px 0"></div>
       <div class="nxWaEnvioMasivoActs">
         <button class="btn bghost" onclick="_waCerrarNuevaPlantilla()">Cancelar</button>
@@ -678,15 +679,27 @@
     const categoria = $('#nxWaPlCategoria')?.value || 'UTILITY';
     const idioma = ($('#nxWaPlIdioma')?.value || 'es').trim();
     const texto = ($('#nxWaPlTexto')?.value || '').trim();
+    const ejemplosTxt = ($('#nxWaPlEjemplos')?.value || '').trim();
     const resultDiv = $('#nxWaPlResultado');
     if (!nombre || !texto) { if (resultDiv) resultDiv.innerHTML = '<span style="color:#dc2626">Falta el nombre o el texto.</span>'; return; }
+    // Meta exige un valor de ejemplo por cada {{n}} del cuerpo para poder revisar la plantilla --
+    // sin esto, el envío queda "rechazado: formato no válido" sin decir cuál es el problema real
+    // (confirmado en vivo 2026-09-08 con saludo_inicial/pago_confirmado_periodo).
+    const numVariables = (texto.match(/\{\{\d+\}\}/g) || []).length;
+    const ejemplos = ejemplosTxt ? ejemplosTxt.split(';').map(s => s.trim()).filter(Boolean) : [];
+    if (numVariables > 0 && ejemplos.length !== numVariables) {
+      if (resultDiv) resultDiv.innerHTML = `<span style="color:#dc2626">El texto tiene ${numVariables} variable(s) pero pusiste ${ejemplos.length} ejemplo(s) -- tienen que coincidir.</span>`;
+      return;
+    }
+    const componente = { type: 'body', text: texto };
+    if (numVariables > 0) componente.example = { body_text: [ejemplos] };
     if (resultDiv) resultDiv.innerHTML = 'Enviando a Meta…';
     const A = api(); if (!A) { if (resultDiv) resultDiv.innerHTML = '<span style="color:#dc2626">Sin conexión.</span>'; return; }
     try {
       const r = await fetch(`${A.url}/functions/v1/whatsapp-plantilla-crear`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
-        body: JSON.stringify({ name: nombre, category: categoria, language: idioma, components: [{ type: 'body', text: texto }] }),
+        body: JSON.stringify({ name: nombre, category: categoria, language: idioma, components: [componente] }),
       });
       const d = await r.json().catch(() => null);
       if (r.ok && d?.ok) {

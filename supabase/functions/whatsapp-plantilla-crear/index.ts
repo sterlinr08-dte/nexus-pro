@@ -58,7 +58,10 @@ async function resolverAcceso(sub: string | null): Promise<{ autorizado: boolean
   return { autorizado: true, zernioAccountId: config.zernio_account_id };
 }
 
-type ComponenteBody = { type: "body"; text: string };
+// "example" es obligatorio para Meta cuando el texto tiene variables {{n}} -- sin esto rechaza
+// la plantilla como "formato no válido" sin decir cuál es el problema real (confirmado en vivo
+// 2026-09-08 con saludo_inicial/pago_confirmado_periodo, las 2 sin "example").
+type ComponenteBody = { type: "body"; text: string; example?: { body_text: string[][] } };
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });

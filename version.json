@@ -1,7 +1,14 @@
 {
-  "version": "58.11",
+  "version": "58.12",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.12",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO: el boton 'Nueva plantilla' del Buzon de WhatsApp ahora pide un ejemplo de cada variable del texto -- Meta lo exige para revisar la plantilla, y sin eso rechazaba el envio con un 'formato no valido' sin explicar por que (confirmado con las 2 plantillas sometidas antes)."
+      ]
+    },
     {
       "version": "58.11",
       "fecha": "2026-09-08",
