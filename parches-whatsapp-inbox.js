@@ -504,9 +504,71 @@
         <button onclick="nxWaAbrirMasivoSegmento('deuda')">Recordar deuda</button>
         <button onclick="nxWaAbrirMasivoSegmento('renovar')">Renovaciones</button>
         <button onclick="nxWaAbrirMasivoSegmento('aldia')">Clientes al dia</button>
+        ${(sesion?.rol||'')==='admin'?'<button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-plus"></i> Nueva plantilla</button>':''}
       </div>
     </div>`;
   }
+
+  // Someter una plantilla nueva de WhatsApp Business a revisión de Meta -- solo admin, es una
+  // acción rara/sensible (afecta el cupo y la reputación de plantillas de la cuenta real). Llama
+  // a whatsapp-plantilla-crear (Edge Function nueva), que reusa el mismo ZERNIO_API_KEY ya
+  // configurado -- así no hace falta entrar a Meta Business Manager a mano.
+  window.nxWaAbrirNuevaPlantilla = function () {
+    const overlay = document.createElement('div');
+    overlay.id = 'nxWaNuevaPlantillaOverlay';
+    overlay.className = 'nxWaEnvioMasivoOverlay';
+    overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro">
+      <h3>Nueva plantilla de WhatsApp</h3>
+      <div class="fr"><label>Nombre (sin espacios, ej. saludo_inicial)</label><input id="nxWaPlNombre" placeholder="saludo_inicial"></div>
+      <div class="fr"><label>Categoría</label>
+        <select id="nxWaPlCategoria">
+          <option value="UTILITY">UTILITY (transaccional)</option>
+          <option value="MARKETING" selected>MARKETING (promocional)</option>
+          <option value="AUTHENTICATION">AUTHENTICATION (código OTP)</option>
+        </select>
+      </div>
+      <div class="fr"><label>Idioma</label><input id="nxWaPlIdioma" value="es"></div>
+      <div class="fr"><label>Texto (usa {{1}}, {{2}}... para variables)</label><textarea id="nxWaPlTexto" rows="5" placeholder="Hola {{1}}, ..."></textarea></div>
+      <div id="nxWaPlResultado" style="font-size:11px;margin:6px 0"></div>
+      <div class="nxWaEnvioMasivoActs">
+        <button class="btn bghost" onclick="_waCerrarNuevaPlantilla()">Cancelar</button>
+        <button class="btn bwa" onclick="nxWaSometerPlantilla()">Someter a Meta</button>
+      </div>
+    </div>`;
+    ensureView().appendChild(overlay);
+  };
+
+  window._waCerrarNuevaPlantilla = function () {
+    const el = $('#nxWaNuevaPlantillaOverlay');
+    if (el) el.remove();
+  };
+
+  window.nxWaSometerPlantilla = async function () {
+    const nombre = ($('#nxWaPlNombre')?.value || '').trim();
+    const categoria = $('#nxWaPlCategoria')?.value || 'UTILITY';
+    const idioma = ($('#nxWaPlIdioma')?.value || 'es').trim();
+    const texto = ($('#nxWaPlTexto')?.value || '').trim();
+    const resultDiv = $('#nxWaPlResultado');
+    if (!nombre || !texto) { if (resultDiv) resultDiv.innerHTML = '<span style="color:#dc2626">Falta el nombre o el texto.</span>'; return; }
+    if (resultDiv) resultDiv.innerHTML = 'Enviando a Meta…';
+    const A = api(); if (!A) { if (resultDiv) resultDiv.innerHTML = '<span style="color:#dc2626">Sin conexión.</span>'; return; }
+    try {
+      const r = await fetch(`${A.url}/functions/v1/whatsapp-plantilla-crear`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
+        body: JSON.stringify({ name: nombre, category: categoria, language: idioma, components: [{ type: 'body', text: texto }] }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.ok) {
+        if (resultDiv) resultDiv.innerHTML = `<span style="color:#16a34a">Sometida a Meta correctamente. Estado: ${esc(JSON.stringify(d.data?.data || d.data || {}))}</span>`;
+        try { toast('ok', 'Plantilla sometida', nombre); } catch (e) {}
+      } else {
+        if (resultDiv) resultDiv.innerHTML = `<span style="color:#dc2626">Zernio/Meta rechazó el envío: ${esc(JSON.stringify(d?.data || d || {}))}</span>`;
+      }
+    } catch (e) {
+      if (resultDiv) resultDiv.innerHTML = `<span style="color:#dc2626">Error de red: ${esc(String(e && e.message || e))}</span>`;
+    }
+  };
 
   window.nxWaFiltro = function (f) { waFiltro = f || 'todos'; pintar(); };
   window.nxWaContactFiltro = function (f) { waContactFiltro = f || 'todos'; pintarProPanel(); };
