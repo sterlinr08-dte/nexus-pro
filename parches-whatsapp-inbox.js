@@ -67,14 +67,13 @@
   const hilosCargando = new Set();
   const hilosConReintentoProgramado = new Set();
   const hilosRecordatorioEnVuelo = new Set();
-  // Cadencia real de "Recordar deuda" (REGLAMENTO §12, migración whatsapp_envio_masivo_respeta_
-  // cadencia) -- se lee UNA vez al entrar al Buzón, no en cada repintado, para que el panel de
-  // Contactos pueda avisar cuántos de "Deuda" quedarían excluidos del envío masivo sin tener que
-  // disparar el envío para descubrirlo.
-  let waDiasCadencia = 3;
-  let waConfigCargada = false;
   const urlFirmadaCache = new Map();
   const urlFirmadaEnVuelo = new Map();
+  const borradoresPorHilo = new Map();
+  let respuestaActiva = null;
+  let busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
+  let nxWaMenuTimer = null;
+  let nxWaSwipe = null;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -103,10 +102,43 @@
 #v-waInbox .nxWaBub.in{align-self:flex-start;background:#fff;border:1px solid #e5eaf2;border-top-left-radius:6px}
 #v-waInbox .nxWaBub.out{align-self:flex-end;background:#dcf8c6;border-top-right-radius:6px}
 #v-waInbox .nxWaBub img{max-width:220px;border-radius:10px;display:block;cursor:pointer}
-#v-waInbox .nxWaComposer{display:flex;gap:7px;padding:10px;border-top:1px solid var(--wa-line);background:rgba(255,255,255,.92)}
-#v-waInbox .nxWaComposer input{flex:1;min-width:0;border:1px solid #dbe3ee;border-radius:999px;padding:10px 12px;font:inherit;font-size:11.5px;outline:none}
-#v-waInbox .nxWaComposer input:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
-#v-waInbox .nxWaComposer button{width:40px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:14px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+#v-waInbox .nxWaHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#v-waInbox .nxWaHeadMain{min-width:0;display:flex;align-items:center;gap:8px}
+#v-waInbox .nxWaBackMob{display:none}
+#v-waInbox .nxWaHeadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaHeadAct{border:1px solid #dbe3ee;background:#fff;color:#1d4ed8;border-radius:12px;width:34px;height:34px;display:grid;place-items:center;cursor:pointer}
+#v-waInbox .nxWaSearchBar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--wa-line);background:#f8fafc}
+#v-waInbox .nxWaSearchBar input{flex:1;min-width:0;border:1px solid #dbe3ee;border-radius:999px;padding:8px 11px;font:inherit;font-size:10.5px;outline:none}
+#v-waInbox .nxWaSearchBar button{border:1px solid #dbe3ee;background:#fff;color:#1d4ed8;border-radius:11px;height:30px;min-width:30px;font:inherit;font-weight:900;cursor:pointer}
+#v-waInbox .nxWaBubWrap{display:flex;position:relative;width:100%;touch-action:pan-y}
+#v-waInbox .nxWaBubWrap.in{justify-content:flex-start}
+#v-waInbox .nxWaBubWrap.out{justify-content:flex-end}
+#v-waInbox .nxWaBubWrap.same-prev{margin-top:-4px}
+#v-waInbox .nxWaBubWrap.diff-prev{margin-top:3px}
+#v-waInbox .nxWaBub{position:relative;white-space:pre-wrap;word-break:break-word}
+#v-waInbox .nxWaBub.hit{outline:2px solid rgba(37,99,235,.38);box-shadow:0 0 0 5px rgba(37,99,235,.12)}
+#v-waInbox .nxWaBubMenu{position:absolute;top:-8px;right:6px;border:1px solid #dbe3ee;background:rgba(255,255,255,.96);color:#64748b;border-radius:999px;width:24px;height:24px;display:grid;place-items:center;opacity:0;cursor:pointer;box-shadow:0 12px 24px -18px rgba(15,23,42,.7)}
+#v-waInbox .nxWaBubWrap.in .nxWaBubMenu{right:auto;left:6px}
+#v-waInbox .nxWaBubWrap:hover .nxWaBubMenu{opacity:1}
+#v-waInbox .nxWaQuote{border-left:3px solid rgba(37,99,235,.5);background:rgba(255,255,255,.58);border-radius:9px;padding:5px 7px;margin-bottom:5px;font-size:9.5px;color:#475569;cursor:pointer}
+#v-waInbox .nxWaQuote b{display:block;color:#1d4ed8;font-size:9px;margin-bottom:1px}
+#v-waInbox .nxWaBubMeta{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px;font-size:8.5px;color:#64748b}
+#v-waInbox .nxWaBub.out .nxWaBubMeta{color:#4b8563}
+#v-waInbox .nxWaRetry{border:0;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:3px 7px;font:inherit;font-size:8px;font-weight:900;cursor:pointer}
+#v-waInbox .nxWaComposerWrap{border-top:1px solid var(--wa-line);background:rgba(255,255,255,.92)}
+#v-waInbox .nxWaReplyBar{margin:8px 10px 0;padding:8px 10px;border-left:3px solid #25d366;border-radius:12px;background:#f8fafc;display:flex;align-items:center;gap:8px;font-size:10px;color:#475569}
+#v-waInbox .nxWaReplyBar .tx{min-width:0;flex:1}
+#v-waInbox .nxWaReplyBar b{display:block;color:#0f172a;font-size:10px}
+#v-waInbox .nxWaReplyBar span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaReplyBar button{border:0;background:transparent;color:#64748b;font-size:18px;cursor:pointer}
+#v-waInbox .nxWaComposer{display:flex;align-items:flex-end;gap:7px;padding:10px;background:transparent}
+#v-waInbox .nxWaComposer textarea{flex:1;min-width:0;max-height:96px;resize:none;overflow-y:auto;border:1px solid #dbe3ee;border-radius:18px;padding:10px 12px;font:inherit;font-size:16px;line-height:1.35;outline:none}
+#v-waInbox .nxWaComposer textarea:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
+#v-waInbox .nxWaComposer button{width:40px;height:40px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:14px;font-weight:900;cursor:pointer;display:grid;place-items:center;flex:none}
+#v-waInbox .nxWaComposer .nxWaIconBtn{background:#fff;color:#1d4ed8;border:1px solid #dbe3ee}
+.nxWaCtx{position:fixed;z-index:10000;background:#fff;border:1px solid #dbe3ee;border-radius:14px;box-shadow:0 20px 50px -30px rgba(15,23,42,.8);padding:6px;min-width:150px}
+.nxWaCtx button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:#fff;border-radius:10px;padding:8px 9px;font:inherit;font-size:10.5px;font-weight:800;color:#0f172a;cursor:pointer;text-align:left}
+.nxWaCtx button:hover{background:#f1f5f9}
 #v-waInbox .nxWaCerrada{padding:10px;text-align:center;font-size:10.5px;color:#92400e;background:#fff7ed;border-top:1px solid #fed7aa}
 #v-waInbox .nxWaBtnRecordatorio{margin-top:8px;border:0;border-radius:999px;padding:8px 14px;font-size:10.5px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,#25d366,#128c7e);display:inline-flex;align-items:center;gap:6px}
 #v-waInbox .nxWaBtnRecordatorio:disabled{opacity:.6;cursor:default}
@@ -148,13 +180,9 @@
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
-#v-waInbox .nxWaContactsFootLbl{padding:8px 10px 3px;font-size:8px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8}
 #v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:0 10px 10px}
 #v-waInbox .nxWaContactsFoot button{height:31px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
 #v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
-#v-waInbox .nxWaContactsFootAdmin button{color:#7c3aed;border-color:#e9d5ff;background:#faf5ff}
-#v-waInbox .nxWaCadenciaNota{display:flex;align-items:flex-start;gap:6px;margin:0 10px 10px;padding:8px 10px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#92400e;font-size:8.5px;line-height:1.4}
-#v-waInbox .nxWaCadenciaNota i{flex:none;margin-top:1px;font-size:11px}
 #v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
@@ -178,6 +206,7 @@
   #v-waInbox .nxWaListCol{min-height:280px;max-height:44vh}
   #v-waInbox .nxWaDetailCol{min-height:58vh}
   #v-waInbox .nxWaDetailCol:not(.has-open){display:none}
+  #v-waInbox .nxWaBackMob{display:grid}
   #v-waInbox .nxWaRow{padding:12px 10px}
   #v-waInbox .nxWaBub{max-width:88%;font-size:12px}
   #v-waInbox .nxWaBub img,#v-waInbox .nxWaBub audio,#v-waInbox .nxWaBub video{max-width:100%;width:100%}
@@ -235,19 +264,7 @@
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     render();
     cargar();
-    cargarConfigCadencia();
     return false;
-  }
-
-  async function cargarConfigCadencia() {
-    if (waConfigCargada) return;
-    const A = api(); if (!A?.get) return;
-    try {
-      const r = await A.get('whatsapp_config', 'select=dias_entre_avisos_atraso&activo=eq.true&limit=1');
-      if (r?.[0]?.dias_entre_avisos_atraso) waDiasCadencia = Number(r[0].dias_entre_avisos_atraso) || 3;
-      waConfigCargada = true;
-      pintarProPanel();
-    } catch (e) {}
   }
   window.nxAbrirWaInbox = open;
 
@@ -392,6 +409,31 @@
     if (min < 1) return 'ahora'; if (min < 60) return min + ' min'; const h = Math.round(min / 60);
     if (h < 24) return h + ' h'; return Math.round(h / 24) + ' d';
   }
+  function resumenMensaje(m) {
+    if (!m) return '';
+    if (m.cuerpo) return String(m.cuerpo).replace(/\s+/g, ' ').trim().slice(0, 120);
+    if (m.tipo_contenido === 'imagen') return 'Imagen';
+    if (m.tipo_contenido === 'audio') return 'Audio';
+    if (m.tipo_contenido === 'video') return 'Video';
+    if (m.media_path) return 'Documento adjunto';
+    return 'Mensaje';
+  }
+  function autorMensaje(m) { return m?.direccion === 'out' ? 'Tú' : 'Cliente'; }
+  function guardarBorradorActual() {
+    if (!hiloAbiertoId) return;
+    const inp = $('#nxWaTexto');
+    if (!inp) return;
+    borradoresPorHilo.set(hiloAbiertoId, inp.value || '');
+  }
+  function cabeceraChat(nombreCabecera) {
+    return `<div class="nxWaHead"><div class="nxWaHeadMain"><button class="nxWaHeadAct nxWaBackMob" onclick="nxWaCerrarDetalleMob()"><i class="ti ti-arrow-left"></i></button><span class="nxWaHeadName">${nombreCabecera}</span></div><button class="nxWaHeadAct" onclick="nxWaToggleBuscar()" title="Buscar en este chat"><i class="ti ti-search"></i></button></div>`;
+  }
+  function barraBusquedaChat() {
+    if (!busquedaChat.activa) return '';
+    const total = busquedaChat.ids.length;
+    const pos = total ? busquedaChat.idx + 1 : 0;
+    return `<div class="nxWaSearchBar"><input id="nxWaSearchInput" value="${esc(busquedaChat.q)}" placeholder="Buscar mensajes…" oninput="nxWaBuscarEnChat(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();nxWaSearchGo(event.shiftKey?-1:1)}"><span style="font-size:9px;color:#64748b;min-width:42px;text-align:center">${pos}/${total}</span><button onclick="nxWaSearchGo(-1)"><i class="ti ti-chevron-up"></i></button><button onclick="nxWaSearchGo(1)"><i class="ti ti-chevron-down"></i></button><button onclick="nxWaToggleBuscar(false)"><i class="ti ti-x"></i></button></div>`;
+  }
 
   function render() {
     const v = ensureView();
@@ -422,6 +464,17 @@
     try { if (typeof pend === 'function') return Number(pend(c)) || 0; } catch (e) {}
     return Math.max(0, Number(c.deuda_total || 0) - Number(c.pagado || 0) + Number(c.deuda_anterior || 0));
   }
+  function waFacturasCliente(c) {
+    try { return ((window.ST || ST || {}).facturas || []).filter(f => String(f.cliente_id) === String(c?.id) && f.estado !== 'Anulada'); } catch (e) { return []; }
+  }
+  function waMesesAtraso(c) {
+    try {
+      const mc = typeof mesCorte === 'function' ? mesCorte() : { mes: new Date().getMonth() + 1, anio: new Date().getFullYear() };
+      const hoyKey = `${mc.anio}-${String(mc.mes).padStart(2, '0')}`;
+      const saldo = typeof _saldoFacturasCliente === 'function' ? _saldoFacturasCliente(String(c.id)) : {};
+      return waFacturasCliente(c).filter(f => f.periodo && f.periodo < hoyKey && (saldo[f.id] ?? Number(f.total || 0)) > 0.009).length;
+    } catch (e) { return 0; }
+  }
   function waEstadoPoliza(c) {
     if (!c) return { est: 'sin_cliente', lbl: '' };
     try { if (typeof getEstPol === 'function') return getEstPol(c) || { est: 'vigente', lbl: '' }; } catch (e) {}
@@ -443,7 +496,7 @@
     if (waTieneBauchePendiente(h)) return { key: 'bauche', label: 'Bauche', cls: 'ok' };
     if (waPendienteCliente(c) > 0) return { key: 'cobro', label: 'Cobro', cls: 'err' };
     const ep = waEstadoPoliza(c);
-    if (ep.est === 'vencida' || ep.est === 'gracia') return { key: 'renovar', label: 'Renovar', cls: 'warn' };
+    if (ep.est === 'vencida' || ep.est === 'gracia') return { key: 'continuidad', label: 'Por vencer', cls: 'warn' };
     if (h.no_leidos_count > 0) return { key: 'no_leidos', label: 'Nuevo', cls: 'warn' };
     if (!waVentanaAbierta(h)) return { key: 'cerrada', label: '24h cerrada', cls: '' };
     return { key: 'ok', label: 'Al dia', cls: 'ok' };
@@ -459,20 +512,20 @@
     const noLeidos = hilos.filter(h => h.no_leidos_count > 0).length;
     const conBauche = hilos.filter(waTieneBauchePendiente).length;
     const conCobro = hilos.filter(h => waPendienteCliente(clienteDeHilo(h)) > 0).length;
-    const renovar = hilos.filter(h => { const ep = waEstadoPoliza(clienteDeHilo(h)); return ep.est === 'vencida' || ep.est === 'gracia'; }).length;
+    const continuidad = hilos.filter(h => { const ep = waEstadoPoliza(clienteDeHilo(h)); return ep.est === 'vencida' || ep.est === 'gracia'; }).length;
     const kpi = (key, label, val, sub) => `<button class="nxWaProKpi ${waFiltro === key ? 'on' : ''}" onclick="nxWaFiltro('${key}')"><div class="l">${esc(label)}</div><div class="v">${val}</div><div class="s">${esc(sub)}</div></button>`;
     host.innerHTML = `<section class="nxWaPro">
-      <div class="nxWaProHead"><div><h3>Centro WhatsApp Pro</h3><p>Prioriza clientes por cobro, renovacion, bauches y conversaciones sin vincular.</p></div></div>
+      <div class="nxWaProHead"><div><h3>Centro WhatsApp Pro</h3><p>Prioriza clientes por factura, cobro, póliza por vencer, bauches y conversaciones sin vincular.</p></div></div>
       <div class="nxWaProGrid">
         ${kpi('todos', 'Conversaciones', hilos.length, conCliente.length + ' vinculadas')}
         ${kpi('no_leidos', 'Sin responder', noLeidos, 'mensajes nuevos')}
         ${kpi('cobro', 'Cobranza', conCobro, 'clientes con balance')}
-        ${kpi('renovar', 'Renovacion', renovar, 'vence/vencida')}
+        ${kpi('continuidad', 'Póliza', continuidad, 'por vencer')}
         ${kpi('sin_cliente', 'Sin vincular', sinCliente, 'telefono suelto')}
       </div>
       <div class="nxWaProActs">
         <button class="primary" onclick="nxWaAbrirCobranza()"><i class="ti ti-cash"></i> Cobranza</button>
-        <button onclick="nxWaAbrirRenovaciones()"><i class="ti ti-calendar-event"></i> Renovaciones</button>
+        <button onclick="nxWaAbrirPolizasPorVencer()"><i class="ti ti-calendar-event"></i> Pólizas por vencer</button>
         <button onclick="nxWaAbrirMasivoSegmento('deuda')"><i class="ti ti-send"></i> WA deuda</button>
         <button onclick="nxWaFiltro('bauche')"><i class="ti ti-receipt"></i> Bauches ${conBauche}</button>
       </div>
@@ -483,33 +536,29 @@
   function waContactos() {
     return clientes().filter(c => c && c.activo !== false && c.wa).map(c => {
       const deuda = waPendienteCliente(c);
+      const meses = waMesesAtraso(c);
       const ep = waEstadoPoliza(c);
-      const renueva = ep.est === 'vencida' || ep.est === 'gracia';
+      const continuidad = ep.est === 'vencida' || ep.est === 'gracia';
+      const tieneFactura = waFacturasCliente(c).length > 0;
       let estado = { key: 'aldia', label: 'Al dia', cls: 'ok' };
-      if (deuda > 0) estado = { key: 'deuda', label: 'Deuda', cls: 'err' };
-      else if (renueva) estado = { key: 'renovar', label: 'Renovar', cls: 'warn' };
-      return { c, deuda, ep, estado };
+      if (meses >= 2) estado = { key: 'vencido', label: 'Vencido', cls: 'err' };
+      else if (meses === 1) estado = { key: 'atrasado', label: 'Atrasado', cls: 'err' };
+      else if (deuda > 0) estado = { key: 'deuda', label: 'Pendiente', cls: 'warn' };
+      else if (continuidad) estado = { key: 'continuidad', label: 'Por vencer', cls: 'warn' };
+      else if (tieneFactura) estado = { key: 'factura', label: 'Factura', cls: '' };
+      return { c, deuda, meses, ep, estado };
     }).sort((a, b) => (b.deuda - a.deuda) || String(a.c.nom || '').localeCompare(String(b.c.nom || ''), 'es'));
   }
   function waContactosPor(tipo) {
     const all = waContactos();
-    if (tipo === 'deuda') return all.filter(x => x.estado.key === 'deuda');
-    if (tipo === 'renovar') return all.filter(x => x.estado.key === 'renovar');
+    if (tipo === 'deuda') return all.filter(x => ['deuda', 'atrasado', 'vencido'].includes(x.estado.key));
+    if (tipo === 'atrasado') return all.filter(x => x.estado.key === 'atrasado');
+    if (tipo === 'vencido') return all.filter(x => x.estado.key === 'vencido');
+    if (tipo === 'factura') return all.filter(x => x.estado.key === 'factura' || x.estado.key === 'deuda' || x.estado.key === 'atrasado' || x.estado.key === 'vencido');
+    if (tipo === 'continuidad') return all.filter(x => x.estado.key === 'continuidad');
     if (tipo === 'aldia') return all.filter(x => x.estado.key === 'aldia');
     return all;
   }
-  // REGLAMENTO §12 regla 5: el envío masivo tipo "pago" excluye clientes avisados hace menos de
-  // waDiasCadencia días (whatsapp_crear_lote_envio_masivo lo hace en el servidor). Este conteo es
-  // solo para que el agente lo VEA antes de tocar "Recordar deuda", en vez de descubrirlo recién
-  // en el resultado del envío.
-  function waEnfriamientoDeuda() {
-    const ahora = Date.now();
-    return waContactosPor('deuda').filter(x => {
-      const u = x.c.ultimo_aviso_atraso_en; if (!u) return false;
-      return (ahora - new Date(u).getTime()) < waDiasCadencia * 86400000;
-    }).length;
-  }
-
   function waContactosHTML() {
     const all = waContactos();
     const data = waContactosPor(waContactFiltro);
@@ -524,28 +573,27 @@
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
       </div>`;
     }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
-    const enfriamiento = waEnfriamientoDeuda();
     return `<div class="nxWaContacts">
       <div class="nxWaContactsTop"><div><b>Lista de contactos WhatsApp</b><br><span>${all.length} clientes activos con numero registrado</span></div></div>
       <div class="nxWaContactTabs">
         ${tab('todos', 'Todos')}
+        ${tab('factura', 'Factura')}
         ${tab('deuda', 'Deuda')}
-        ${tab('renovar', 'Renovar')}
+        ${tab('atrasado', 'Atrasado')}
+        ${tab('vencido', 'Vencido')}
+        ${tab('continuidad', 'Por vencer')}
         ${tab('aldia', 'Al dia')}
       </div>
       <div class="nxWaContactList">${filas}</div>
-      <div class="nxWaContactsFootLbl">Envío por segmento</div>
       <div class="nxWaContactsFoot">
         <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')">Factura a todos</button>
         <button onclick="nxWaAbrirMasivoSegmento('deuda')">Recordar deuda</button>
-        <button onclick="nxWaAbrirMasivoSegmento('renovar')">Renovaciones</button>
+        <button onclick="nxWaAbrirMasivoSegmento('atrasado')">Atrasados</button>
+        <button onclick="nxWaAbrirMasivoSegmento('vencido')">Vencidos</button>
+        <button onclick="nxWaAbrirMasivoSegmento('continuidad')">Pólizas por vencer</button>
         <button onclick="nxWaAbrirMasivoSegmento('aldia')">Clientes al dia</button>
+        ${(sesion?.rol||'')==='admin'?'<button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-plus"></i> Nueva plantilla</button>':''}
       </div>
-      ${enfriamiento > 0 ? `<div class="nxWaCadenciaNota"><i class="ti ti-clock-pause"></i> ${enfriamiento} de ${count('deuda')} con deuda ya recibieron un aviso hace menos de ${waDiasCadencia} día${waDiasCadencia === 1 ? '' : 's'} — el envío masivo los omite solo, para no repetirles el mensaje.</div>` : ''}
-      ${(sesion?.rol||'')==='admin'?`<div class="nxWaContactsFootLbl">Administración</div>
-      <div class="nxWaContactsFoot nxWaContactsFootAdmin">
-        <button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-file-plus"></i> Nueva plantilla</button>
-      </div>`:''}
     </div>`;
   }
 
@@ -613,12 +661,12 @@
   window.nxWaFiltro = function (f) { waFiltro = f || 'todos'; pintar(); };
   window.nxWaContactFiltro = function (f) { waContactFiltro = f || 'todos'; pintarProPanel(); };
   window.nxWaAbrirCobranza = function () { try { nav('facturas', null); setTimeout(() => { try { switchTab('cob'); } catch (e) {} }, 160); } catch (e) {} };
-  window.nxWaAbrirRenovaciones = function () { try { nav('polizas', null); } catch (e) {} };
+  window.nxWaAbrirPolizasPorVencer = function () { try { nav('polizas', null); } catch (e) {} };
   window.nxWaAbrirMasivoDeuda = function () {
     window.nxWaAbrirMasivoSegmento('deuda');
   };
   window.nxWaAbrirMasivoSegmento = function (tipo) {
-    const mapa = { todos: 'factura', deuda: 'pago', renovar: 'vence', aldia: 'factura' };
+    const mapa = { todos: 'factura', factura: 'factura', deuda: 'pago', atrasado: 'pago', vencido: 'pago', continuidad: 'vence', aldia: 'factura' };
     const lista = waContactosPor(tipo || 'todos');
     const ids = lista.map(x => x.c.id);
     if (!ids.length) { try { toast('warn', 'Sin contactos', 'No hay clientes con WhatsApp en este segmento'); } catch (e) {} return; }
@@ -634,7 +682,7 @@
   let _waLoteEnvioMasivoId = null;
   let _waPollingEnCurso = false;
   let _waConfirmacionPendiente = null;
-  const TIPO_ENVIO_MASIVO_LEGIBLE = { factura: 'la factura generada', pago: 'un recordatorio de pago pendiente', vence: 'un aviso de renovación de póliza' };
+  const TIPO_ENVIO_MASIVO_LEGIBLE = { factura: 'la factura generada', pago: 'un recordatorio de pago pendiente', vence: 'un aviso de póliza por vencer' };
 
   function _waPintarConfirmacionEnvioMasivo(tipo, clienteIds) {
     _waConfirmacionPendiente = { tipo, clienteIds };
@@ -866,7 +914,10 @@
   }
 
   window.nxWaAbrirHilo = async function (id) {
+    guardarBorradorActual();
     hiloAbiertoId = id;
+    respuestaActiva = null;
+    busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
     // Reservar el turno de este hilo ANTES del await a la RPC de abajo -- si no, una carga vieja
     // y colgada de una visita anterior a este mismo hilo podia "colarse" y pisar mensajes con
     // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
@@ -886,6 +937,47 @@
     if (m.tipo_contenido === 'audio') return `<audio controls src="${m._url}" style="width:220px"></audio>`;
     if (m.tipo_contenido === 'video') return `<video controls src="${m._url}" style="max-width:220px"></video>`;
     return `<a href="${m._url}" target="_blank">📎 Ver documento</a>`;
+  }
+
+  function estadoMsg(m) {
+    if (m.direccion !== 'out') return '';
+    if (m.estado === 'fallido') return '<span style="color:#b91c1c">No enviado</span>';
+    if (m.estado === 'enviando') return '<span>⏱ enviando</span>';
+    if (m.estado === 'leido') return '<span style="color:#2563eb">✓✓</span>';
+    if (m.estado === 'entregado') return '<span>✓✓</span>';
+    return '<span>✓</span>';
+  }
+
+  function renderBurbuja(m, idx, porId) {
+    const prev = mensajes[idx - 1];
+    const samePrev = prev && prev.direccion === m.direccion;
+    const q = m.responde_a_id ? porId.get(String(m.responde_a_id)) : null;
+    const hit = busquedaChat.ids.includes(String(m.id)) ? ' hit' : '';
+    const quote = q ? `<div class="nxWaQuote" onclick="nxWaIrAMensaje('${q.id}')"><b>${esc(autorMensaje(q))}</b><span>${esc(resumenMensaje(q))}</span></div>` : '';
+    const cuerpo = m.cuerpo ? esc(m.cuerpo) : '';
+    const fallo = m.direccion === 'out' && m.estado === 'fallido';
+    const retry = fallo ? `<button class="nxWaRetry" onclick="nxWaReintentarMensaje('${m.id}')">Reintentar</button>` : '';
+    return `<div id="nxWaMsg-${esc(m.id)}" class="nxWaBubWrap ${m.direccion} ${samePrev ? 'same-prev' : 'diff-prev'}" onpointerdown="nxWaSwipeStart(event,'${esc(m.id)}')" onpointermove="nxWaSwipeMove(event)" onpointerup="nxWaSwipeEnd(event)" ontouchstart="nxWaLongStart(event,'${esc(m.id)}')" ontouchend="nxWaLongEnd()" ontouchmove="nxWaLongEnd()">
+      <div class="nxWaBub ${m.direccion}${hit}">
+        <button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>
+        ${quote}${burbujaMedia(m)}${cuerpo}
+        <div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div>
+      </div>
+    </div>`;
+  }
+
+  function recomputarBusqueda() {
+    const q = String(busquedaChat.q || '').trim().toLowerCase();
+    if (!q) { busquedaChat.ids = []; busquedaChat.idx = 0; return; }
+    busquedaChat.ids = mensajes.filter(m => String(m.cuerpo || '').toLowerCase().includes(q)).map(m => String(m.id));
+    if (busquedaChat.idx >= busquedaChat.ids.length) busquedaChat.idx = Math.max(0, busquedaChat.ids.length - 1);
+  }
+
+  function scrollAlMensaje(id) {
+    setTimeout(() => {
+      const el = document.getElementById('nxWaMsg-' + id);
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 40);
   }
 
   // Si la carga inicial de un hilo falla (blip de red) y no llega ningun otro evento de Realtime
@@ -923,7 +1015,7 @@
     // pintarDetalle() se acuerde de no hacerlo mientras la carga sigue en vuelo.
     if (mensajesHiloId !== hiloAbiertoId) {
       if (ultimoRenderHiloId !== hiloAbiertoId) {
-        cont.innerHTML = `<div class="nxWaHead">${nombreCabecera}</div><div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
+        cont.innerHTML = `${cabeceraChat(nombreCabecera)}<div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
         ultimoRenderHiloId = hiloAbiertoId;
       }
       programarReintentoCarga(hiloAbiertoId);
@@ -944,21 +1036,25 @@
     const boxPrevio = $('#nxWaMsgsBox');
     const estabaAlFondo = boxPrevio ? (boxPrevio.scrollTop + boxPrevio.clientHeight >= boxPrevio.scrollHeight - 40) : true;
 
-    const filas = mensajes.map(m => `<div class="nxWaBub ${m.direccion}">${burbujaMedia(m)}${m.cuerpo ? esc(m.cuerpo) : ''}</div>`).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
-    cont.innerHTML = `<div class="nxWaHead">${nombreCabecera}</div>
+    recomputarBusqueda();
+    const porId = new Map(mensajes.map(m => [String(m.id), m]));
+    const filas = mensajes.map((m, i) => renderBurbuja(m, i, porId)).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
+    const borrador = borradoresPorHilo.get(hiloAbiertoId) || valorPrevio || '';
+    const resp = respuestaActiva ? `<div class="nxWaReplyBar"><div class="tx"><b>Respondiendo a ${esc(respuestaActiva.autor || 'Cliente')}</b><span>${esc(respuestaActiva.texto || '')}</span></div><button onclick="nxWaCancelarRespuesta()">×</button></div>` : '';
+    cont.innerHTML = `${cabeceraChat(nombreCabecera)}${barraBusquedaChat()}
       <div class="nxWaMsgs" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
-        ? `<div class="nxWaComposer"><input id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')nxWaEnviar()"><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div>`
+        ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><button class="nxWaIconBtn" onclick="toast('info','Adjuntos','Queda reservado para la siguiente fase: foto, video y documento con envío real.')"><i class="ti ti-paperclip"></i></button><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
             ${h?.cliente_id ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
           </div>`}`;
 
     const nuevoBox = $('#nxWaMsgsBox');
-    if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : boxPrevio.scrollTop;
+    if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
 
     const nuevoInput = $('#nxWaTexto');
     if (nuevoInput) {
-      if (valorPrevio) nuevoInput.value = valorPrevio;
+      ajustarTexto(nuevoInput);
       if (teniaFoco) {
         nuevoInput.focus();
         const pos = cursorPrevio || [nuevoInput.value.length, nuevoInput.value.length];
@@ -969,9 +1065,85 @@
     ultimoRenderHiloId = hiloAbiertoId;
   }
 
-  window.nxWaEnviar = async function () {
-    const inp = $('#nxWaTexto'); if (!inp) return;
-    const texto = inp.value.trim(); if (!texto) return;
+  function ajustarTexto(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 96) + 'px';
+  }
+  window.nxWaAjustarTexto = ajustarTexto;
+  window.nxWaTextoInput = function (el) {
+    ajustarTexto(el);
+    if (hiloAbiertoId) borradoresPorHilo.set(hiloAbiertoId, el.value || '');
+  };
+  window.nxWaKey = function (event) {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.nxWaEnviar(); }
+  };
+  window.nxWaCerrarDetalleMob = function () {
+    guardarBorradorActual();
+    hiloAbiertoId = null; respuestaActiva = null; mensajes = []; mensajesHiloId = null;
+    pintarLista(); pintarDetalle();
+  };
+  window.nxWaSetRespuesta = function (id) {
+    const m = mensajes.find(x => String(x.id) === String(id)); if (!m) return;
+    respuestaActiva = { id: String(m.id), autor: autorMensaje(m), texto: resumenMensaje(m) };
+    pintarDetalle();
+    setTimeout(() => { const inp = $('#nxWaTexto'); if (inp) inp.focus(); }, 30);
+  };
+  window.nxWaCancelarRespuesta = function () { respuestaActiva = null; pintarDetalle(); };
+  window.nxWaIrAMensaje = function (id) { scrollAlMensaje(id); };
+  window.nxWaToggleBuscar = function (forzar) {
+    busquedaChat.activa = typeof forzar === 'boolean' ? forzar : !busquedaChat.activa;
+    if (!busquedaChat.activa) busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
+    pintarDetalle();
+    setTimeout(() => { const inp = $('#nxWaSearchInput'); if (inp) inp.focus(); }, 30);
+  };
+  window.nxWaBuscarEnChat = function (q) {
+    busquedaChat.q = q || ''; busquedaChat.idx = 0; recomputarBusqueda(); pintarDetalle();
+    setTimeout(() => { const inp = $('#nxWaSearchInput'); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }, 20);
+    if (busquedaChat.ids[0]) scrollAlMensaje(busquedaChat.ids[0]);
+  };
+  window.nxWaSearchGo = function (dir) {
+    recomputarBusqueda(); if (!busquedaChat.ids.length) return;
+    busquedaChat.idx = (busquedaChat.idx + dir + busquedaChat.ids.length) % busquedaChat.ids.length;
+    pintarDetalle(); scrollAlMensaje(busquedaChat.ids[busquedaChat.idx]);
+  };
+  window.nxWaCopiarMsg = async function (id) {
+    const m = mensajes.find(x => String(x.id) === String(id)); const txt = m?.cuerpo || '';
+    if (!txt) return toast('info', 'Sin texto para copiar');
+    try { await navigator.clipboard.writeText(txt); toast('ok', 'Mensaje copiado'); } catch (e) { toast('err', 'No se pudo copiar'); }
+  };
+  window.nxWaMsgMenu = function (event, id) {
+    event?.preventDefault?.(); event?.stopPropagation?.();
+    document.querySelectorAll('.nxWaCtx').forEach(x => x.remove());
+    const m = mensajes.find(x => String(x.id) === String(id)); if (!m) return;
+    const p = document.createElement('div'); p.className = 'nxWaCtx';
+    const x = Math.min((event?.clientX || 80), window.innerWidth - 170), y = Math.min((event?.clientY || 80), window.innerHeight - 150);
+    p.style.left = x + 'px'; p.style.top = y + 'px';
+    p.innerHTML = `<button onclick="nxWaSetRespuesta('${esc(id)}');this.closest('.nxWaCtx').remove()"><i class="ti ti-corner-up-left"></i> Responder</button>
+      ${m.cuerpo ? `<button onclick="nxWaCopiarMsg('${esc(id)}');this.closest('.nxWaCtx').remove()"><i class="ti ti-copy"></i> Copiar</button>` : ''}
+      ${m.direccion === 'out' && m.estado === 'fallido' ? `<button onclick="nxWaReintentarMensaje('${esc(id)}');this.closest('.nxWaCtx').remove()"><i class="ti ti-refresh"></i> Reintentar</button>` : ''}`;
+    document.body.appendChild(p);
+    setTimeout(() => document.addEventListener('click', () => p.remove(), { once: true }), 0);
+  };
+  window.nxWaLongStart = function (event, id) {
+    window.nxWaLongEnd();
+    nxWaMenuTimer = setTimeout(() => window.nxWaMsgMenu(event, id), 520);
+  };
+  window.nxWaLongEnd = function () { if (nxWaMenuTimer) clearTimeout(nxWaMenuTimer); nxWaMenuTimer = null; };
+  window.nxWaSwipeStart = function (event, id) { nxWaSwipe = { id, x: event.clientX, y: event.clientY, ok: true }; };
+  window.nxWaSwipeMove = function (event) {
+    if (!nxWaSwipe) return;
+    if (Math.abs(event.clientY - nxWaSwipe.y) > 35) nxWaSwipe.ok = false;
+  };
+  window.nxWaSwipeEnd = function (event) {
+    if (!nxWaSwipe) return;
+    const dx = event.clientX - nxWaSwipe.x;
+    const id = nxWaSwipe.id, ok = nxWaSwipe.ok;
+    nxWaSwipe = null;
+    if (ok && dx > 58) window.nxWaSetRespuesta(id);
+  };
+
+  async function enviarTextoWhatsApp(texto, respondeAId, tempId) {
     const hiloDestino = hiloAbiertoId; if (!hiloDestino) return;
     // "hiloEnviosEnVuelo" es el candado real contra un doble envio -- a diferencia de
     // inp.disabled (que pintarDetalle() puede resucitar sin querer si algun evento de Realtime
@@ -984,27 +1156,71 @@
     // pudiera resolver durante el round-trip del envio y pisar "mensajes" con datos de antes de
     // mandar este mensaje.
     marcarSolicitudCarga(hiloDestino);
-    inp.value = ''; inp.disabled = true;
+    const tempMsg = tempId ? mensajes.find(m => String(m.id) === String(tempId)) : {
+      id: 'tmp-' + Date.now(),
+      hilo_id: hiloDestino,
+      direccion: 'out',
+      tipo_contenido: 'text',
+      cuerpo: texto,
+      responde_a_id: respondeAId || null,
+      estado: 'enviando',
+      created_at: new Date().toISOString(),
+      _optimista: true
+    };
+    if (!tempId) mensajes.push(tempMsg);
+    if (!tempMsg) { hiloEnviosEnVuelo.delete(hiloDestino); return; }
+    tempMsg.estado = 'enviando';
+    tempMsg.error_detalle = null;
+    mensajesHiloId = hiloDestino;
+    respuestaActiva = null;
+    pintarDetalle();
+    const box = $('#nxWaMsgsBox'); if (box) box.scrollTop = box.scrollHeight;
     const A = api();
     // pintarDetalle() siempre re-renderiza completo -- si el usuario cambia de hilo mientras este
     // envio sigue en vuelo, "inp" queda desconectado del documento. Estas dos funciones vuelven a
     // buscar el <input> VIGENTE (y solo si el hilo de destino sigue siendo el que esta abierto)
     // en vez de seguir usando esa referencia vieja, que de otro modo perdia el texto sin enviar en
     // silencio y dejaba el foco sin restaurar despues de cada envio exitoso.
-    const restaurarTexto = () => { if (hiloAbiertoId === hiloDestino) { const actual = $('#nxWaTexto'); if (actual) actual.value = texto; } };
-    const reactivarComposer = () => { if (hiloAbiertoId === hiloDestino) { const actual = $('#nxWaTexto'); if (actual) { actual.disabled = false; actual.focus(); } } };
+    const marcarFallido = (detalle) => {
+      tempMsg.estado = 'fallido';
+      tempMsg.error_detalle = detalle || 'No enviado';
+      if (hiloAbiertoId === hiloDestino) pintarDetalle();
+    };
+    const reactivarComposer = () => { if (hiloAbiertoId === hiloDestino) { const actual = $('#nxWaTexto'); if (actual) { actual.disabled = false; actual.focus(); ajustarTexto(actual); } } };
     try {
       const r = await fetch(`${A.url}/functions/v1/whatsapp-inbox-enviar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
-        body: JSON.stringify({ hilo_id: hiloDestino, mensaje: texto })
+        body: JSON.stringify({ hilo_id: hiloDestino, mensaje: texto, responde_a_id: respondeAId || null })
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok) { toast('err', 'No se pudo enviar', d.mensaje || d.error || ''); restaurarTexto(); }
-      else { if (hiloAbiertoId === hiloDestino) { await cargarMensajes(hiloDestino); pintarDetalle(); } await cargar(); }
-    } catch (e) { toast('err', 'No se pudo enviar', String(e && e.message || e)); restaurarTexto(); }
+      if (!r.ok || !d.ok) { toast('err', 'No se pudo enviar', d.mensaje || d.error || ''); marcarFallido(d.mensaje || d.error || 'No enviado'); }
+      else {
+        if (d.mensaje) {
+          const i = mensajes.findIndex(m => String(m.id) === String(tempMsg.id));
+          if (i >= 0) mensajes[i] = d.mensaje;
+          if (hiloAbiertoId === hiloDestino) pintarDetalle();
+        } else if (hiloAbiertoId === hiloDestino) { await cargarMensajes(hiloDestino); pintarDetalle(); }
+        await cargar();
+      }
+    } catch (e) { toast('err', 'No se pudo enviar', String(e && e.message || e)); marcarFallido(String(e && e.message || e)); }
     hiloEnviosEnVuelo.delete(hiloDestino);
     reactivarComposer();
+  }
+
+  window.nxWaReintentarMensaje = async function (id) {
+    const m = mensajes.find(x => String(x.id) === String(id)); if (!m || !m.cuerpo) return;
+    await enviarTextoWhatsApp(String(m.cuerpo), m.responde_a_id || null, id);
+  };
+
+  window.nxWaEnviar = async function () {
+    const inp = $('#nxWaTexto'); if (!inp) return;
+    const texto = inp.value.trim(); if (!texto) return;
+    const hiloDestino = hiloAbiertoId; if (!hiloDestino) return;
+    const respondeAId = respuestaActiva?.id || null;
+    inp.value = ''; inp.disabled = true; ajustarTexto(inp);
+    borradoresPorHilo.set(hiloDestino, '');
+    await enviarTextoWhatsApp(texto, respondeAId, null);
   };
 
   // ── Tiempo real ────────────────────────────────────────────────────────

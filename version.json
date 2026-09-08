@@ -1,12 +1,19 @@
 {
-  "version": "58.01",
+  "version": "58.02",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.02",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO (WhatsApp seguros): experiencia de chat mas parecida a WhatsApp real. El compositor ahora es multilinea y autoexpandible, Enter envia y Shift+Enter crea salto de linea; cada conversacion conserva su borrador; se agrego responder a mensaje con cita real usando responde_a_id, swipe para responder en movil, menu por burbuja con Responder/Copiar/Reintentar, busqueda dentro del chat con flechas, envio optimista con estado enviando/fallido y reintento desde la burbuja. Tambien se corrigio el comportamiento de scroll para que los refrescos no brinquen la conversacion mientras el agente esta revisando mensajes anteriores."
+      ]
+    },
     {
       "version": "58.01",
       "fecha": "2026-09-08",
       "notas": [
-        "MEJORADO: la ventana de Contactos WhatsApp quedo mas ordenada -- los botones de envio masivo por segmento se separaron de 'Nueva plantilla' (accion rara, solo admin), y ahora avisa si alguno de los clientes con deuda ya recibio un aviso hace poco (se omite solo del envio masivo, ahora se ve por que antes de tocar el boton)."
+        "MEJORADO (WhatsApp seguros): la lista de contactos del Buzon queda organizada por estatus real: Factura, Deuda pendiente, Atrasado, Vencido, Poliza por vencer y Al dia. Se retiro el lenguaje de renovacion del modulo porque el cliente decide si continua o no; el sistema solo da seguimiento operativo."
       ]
     },
     {

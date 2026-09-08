@@ -122,7 +122,7 @@ async function manejar(req: Request): Promise<Response> {
   const acceso = await resolverAcceso(sub);
   if (!acceso.autorizado) return json({ ok: false, error: "no_autorizado" }, 403);
 
-  let body: { hilo_id?: string; mensaje?: string };
+  let body: { hilo_id?: string; mensaje?: string; responde_a_id?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -131,11 +131,22 @@ async function manejar(req: Request): Promise<Response> {
 
   const hiloId = body.hilo_id;
   const mensaje = (body.mensaje || "").trim();
+  const respondeAId = body.responde_a_id ? String(body.responde_a_id) : null;
   if (!hiloId) return json({ ok: false, error: "falta_hilo_id" }, 400);
   if (!mensaje) return json({ ok: false, error: "mensaje_vacio" }, 400);
 
   const { data: hilo, error: hiloError } = await db.from("whatsapp_hilos").select("id, telefono_e164, ultimo_inbound_at").eq("id", hiloId).maybeSingle();
   if (hiloError || !hilo) return json({ ok: false, error: "hilo_no_encontrado" }, 404);
+
+  if (respondeAId) {
+    const { data: mensajeRespondido } = await db
+      .from("whatsapp_hilo_mensajes")
+      .select("id")
+      .eq("id", respondeAId)
+      .eq("hilo_id", hiloId)
+      .maybeSingle();
+    if (!mensajeRespondido) return json({ ok: false, error: "responde_a_id_invalido" }, 400);
+  }
 
   if (!hilo.ultimo_inbound_at) {
     return json({ ok: false, error: "ventana_cerrada", mensaje: "Este hilo no tiene mensajes entrantes todavía." }, 409);
@@ -165,15 +176,20 @@ async function manejar(req: Request): Promise<Response> {
   }
 
   const ahora = new Date().toISOString();
-  await db.from("whatsapp_hilo_mensajes").insert({
+  const { data: mensajeInsertado, error: insertError } = await db.from("whatsapp_hilo_mensajes").insert({
     hilo_id: hiloId,
     direccion: "out",
     tipo_contenido: "text",
     cuerpo: mensaje,
     wa_message_id: resultado.data?.data?.messageId ?? null,
+    responde_a_id: respondeAId,
     estado: "enviado",
     enviado_por_agente_id: acceso.agenteId,
-  });
+  }).select("id,hilo_id,direccion,tipo_contenido,cuerpo,media_path,wa_message_id,responde_a_id,estado,error_detalle,enviado_por_agente_id,revision_pago_estado,abono_id,created_at").single();
+  if (insertError) {
+    console.error("whatsapp-inbox-enviar: no se pudo guardar el mensaje:", insertError.message);
+    return json({ ok: false, error: "mensaje_enviado_no_guardado" }, 500);
+  }
   await db.from("whatsapp_hilos").update({
     ultimo_mensaje_at: ahora,
     ultimo_mensaje_preview: mensaje.slice(0, 200),
@@ -181,5 +197,5 @@ async function manejar(req: Request): Promise<Response> {
     updated_at: ahora,
   }).eq("id", hiloId);
 
-  return json({ ok: true, messageId: resultado.data?.data?.messageId ?? null });
+  return json({ ok: true, messageId: resultado.data?.data?.messageId ?? null, mensaje: mensajeInsertado });
 }
