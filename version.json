@@ -6,7 +6,7 @@
       "version": "58.08",
       "fecha": "2026-09-08",
       "notas": [
-        "ARREGLADO: el chat de WhatsApp podia quedar arriba del todo al abrir una conversacion con fotos/videos que tardan en cargar -- ahora vigila el alto real del contenedor de mensajes y lo vuelve a pegar al fondo automaticamente sin importar cuanto tarde la imagen mas lenta."
+        "MEJORADO (WhatsApp seguros visual): la ventana de Contactos WhatsApp y los paneles de envio masivo ahora son mas compactos y legibles. La lista pasa a filas densas con cabecera de resumen, filtros mas claros, altura controlada, botones mejor organizados y mejor comportamiento en movil/escritorio para trabajar muchos clientes sin que la ventana tape de forma pesada el chat."
       ]
     },
     {

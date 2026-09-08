@@ -77,13 +77,6 @@
   const hilosConScrollInicial = new Set();
   const hilosPegadosAlFondo = new Set();
   let nxWaIgnorarScrollHasta = 0;
-  // Reportado 2026-09-08: los reintentos con setTimeout fijos (0/RAF/120/420ms) para "pegar" el
-  // chat al fondo cuando una foto/video termina de cargar no cubren todos los casos reales --
-  // en una conexión lenta o con varios adjuntos en el mismo hilo, el contenedor sigue creciendo
-  // después del último reintento y el chat queda visualmente arriba del todo. Un ResizeObserver
-  // no depende de adivinar CUÁNTO puede tardar cada adjunto: reacciona a CUALQUIER cambio real
-  // de altura del contenedor, venga de una imagen, un video, una fuente que carga tarde, etc.
-  let nxWaMsgsResizeObs = null;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -185,33 +178,36 @@
 #v-waInbox .nxWaProActs{display:flex;gap:7px;flex-wrap:wrap}
 #v-waInbox .nxWaProActs button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:rgba(255,255,255,.86);padding:0 11px;font:inherit;font-size:9px;font-weight:900;color:#1d4ed8;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 #v-waInbox .nxWaProActs button.primary{background:linear-gradient(135deg,#25d366,#2563eb);border-color:transparent;color:#fff}
-#v-waInbox .nxWaContacts{margin-top:10px;border:1px solid rgba(226,232,240,.9);border-radius:15px;background:rgba(255,255,255,.7);overflow:hidden}
-#v-waInbox .nxWaContactsTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px 8px;border-bottom:1px solid rgba(226,232,240,.82)}
-#v-waInbox .nxWaContactsTop b{font-size:11px;color:#0f172a}
+#v-waInbox .nxWaContacts{margin-top:10px;border:1px solid rgba(226,232,240,.9);border-radius:16px;background:rgba(255,255,255,.82);overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.95)}
+#v-waInbox .nxWaContactsTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px 8px;border-bottom:1px solid rgba(226,232,240,.82);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.86))}
+#v-waInbox .nxWaContactsTop b{font-size:11.5px;color:#0f172a}
 #v-waInbox .nxWaContactsTop span{font-size:8.5px;color:#64748b}
-#v-waInbox .nxWaContactTabs{display:flex;gap:6px;overflow-x:auto;padding:0 10px 9px;scrollbar-width:none}
+#v-waInbox .nxWaContactsKpi{display:flex;align-items:center;gap:6px;flex:none}
+#v-waInbox .nxWaContactsKpi span{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(226,232,240,.9);border-radius:999px;background:#fff;padding:5px 8px;font-size:8px;font-weight:900;color:#475569}
+#v-waInbox .nxWaContactTabs{display:flex;gap:6px;overflow-x:auto;padding:9px 10px;scrollbar-width:none}
 #v-waInbox .nxWaContactTabs::-webkit-scrollbar{display:none}
-#v-waInbox .nxWaContactTabs button{height:29px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 9px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer}
-#v-waInbox .nxWaContactTabs button.on{background:#0f172a;border-color:#0f172a;color:#fff}
-#v-waInbox .nxWaContactList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:0 10px 10px}
-#v-waInbox .nxWaContact{display:flex;align-items:center;gap:8px;min-width:0;border:1px solid rgba(226,232,240,.9);border-radius:12px;background:#fff;padding:8px}
-#v-waInbox .nxWaContact .av{width:30px;height:30px;border-radius:12px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9px;font-weight:900}
+#v-waInbox .nxWaContactTabs button{height:30px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer;box-shadow:0 10px 18px -18px rgba(15,23,42,.55)}
+#v-waInbox .nxWaContactTabs button.on{background:linear-gradient(135deg,#0f172a,#1d4ed8);border-color:#0f172a;color:#fff}
+#v-waInbox .nxWaContactList{display:grid;grid-template-columns:1fr;gap:0;padding:0 10px;max-height:318px;overflow:auto}
+#v-waInbox .nxWaContact{display:flex;align-items:center;gap:9px;min-width:0;border:0;border-bottom:1px solid rgba(226,232,240,.82);border-radius:0;background:transparent;padding:8px 2px}
+#v-waInbox .nxWaContact:hover{background:rgba(248,250,252,.72)}
+#v-waInbox .nxWaContact .av{width:32px;height:32px;border-radius:13px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9px;font-weight:900}
 #v-waInbox .nxWaContact .tx{min-width:0;flex:1}
-#v-waInbox .nxWaContact .tx b{display:block;font-size:9.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaContact .tx b{display:block;font-size:10px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #v-waInbox .nxWaContact .tx span{display:block;font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 #v-waInbox .nxWaContact .st{font-size:7.5px;font-weight:900;border-radius:999px;padding:3px 6px;background:#f1f5f9;color:#64748b;white-space:nowrap}
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
-#v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:0 10px 10px}
-#v-waInbox .nxWaContactsFoot button{height:31px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
+#v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:10px;border-top:1px solid rgba(226,232,240,.82);background:rgba(248,250,252,.78)}
+#v-waInbox .nxWaContactsFoot button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
 #v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
 #v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaTag.ok{background:#ecfdf5;color:#059669}
-#v-waInbox .nxWaEnvioMasivoOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
-#v-waInbox .nxWaEnvioMasivoBox{width:100%;max-width:420px;max-height:80vh;overflow-y:auto}
+#v-waInbox .nxWaEnvioMasivoOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.36);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#v-waInbox .nxWaEnvioMasivoBox{width:min(100%,460px);max-height:min(82vh,620px);overflow-y:auto;border-radius:18px!important;background:rgba(255,255,255,.96)!important;box-shadow:0 30px 80px -46px rgba(15,23,42,.9)!important}
 #v-waInbox .nxWaEnvioMasivoBox h3{margin:0 0 6px;font-size:13px;color:#0f172a;font-weight:900}
 #v-waInbox .nxWaEnvioMasivoBox>p{margin:0 0 12px;font-size:10.5px;color:#475569;line-height:1.4}
 #v-waInbox .nxWaEnvioMasivoActs{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
@@ -248,7 +244,10 @@
   #v-waInbox .nxWaProActs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
   #v-waInbox .nxWaProActs::-webkit-scrollbar{display:none}
   #v-waInbox .nxWaProActs button{flex:0 0 auto}
-  #v-waInbox .nxWaContactList{grid-template-columns:1fr;max-height:240px;overflow:auto}
+  #v-waInbox .nxWaContactsTop{align-items:flex-start}
+  #v-waInbox .nxWaContactsKpi{display:none}
+  #v-waInbox .nxWaContactTabs{padding:8px 9px}
+  #v-waInbox .nxWaContactList{grid-template-columns:1fr;max-height:230px;overflow:auto;padding:0 9px}
   #v-waInbox .nxWaContactsFoot{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   #v-waInbox .nxWaContactsFoot::-webkit-scrollbar{display:none}
   #v-waInbox .nxWaContactsFoot button{flex:0 0 auto}
@@ -592,7 +591,7 @@
     const data = waContactosPor(waContactFiltro);
     const count = k => waContactosPor(k).length;
     const tab = (k, label) => `<button class="${waContactFiltro === k ? 'on' : ''}" onclick="nxWaContactFiltro('${k}')">${esc(label)} ${count(k)}</button>`;
-    const filas = data.slice(0, 8).map(x => {
+    const filas = data.slice(0, 14).map(x => {
       const c = x.c;
       const sub = [c.wa, c.plan, c.ars].filter(Boolean).join(' · ');
       return `<div class="nxWaContact">
@@ -601,8 +600,9 @@
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
       </div>`;
     }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
+    const deudaCount = count('deuda'), atrasadoCount = count('atrasado'), vencidoCount = count('vencido');
     return `<div class="nxWaContacts">
-      <div class="nxWaContactsTop"><div><b>Lista de contactos WhatsApp</b><br><span>${all.length} clientes activos con numero registrado</span></div></div>
+      <div class="nxWaContactsTop"><div><b>Contactos WhatsApp</b><br><span>${data.length} en este segmento · ${all.length} clientes con número</span></div><div class="nxWaContactsKpi"><span>${deudaCount} deuda</span><span>${atrasadoCount + vencidoCount} atraso</span></div></div>
       <div class="nxWaContactTabs">
         ${tab('todos', 'Todos')}
         ${tab('factura', 'Factura')}
@@ -1030,22 +1030,6 @@
       else hilosPegadosAlFondo.delete(hiloId);
     };
   }
-  // El contenedor de mensajes es un nodo NUEVO en cada render (pintarDetalle reescribe todo
-  // #nxWaDetalle.innerHTML) -- así que el observer viejo queda huérfano y hay que reconectar uno
-  // nuevo cada vez. Mientras el hilo siga "pegado al fondo" (recién abierto o el agente no
-  // scrolleó hacia arriba), cualquier crecimiento real de altura -- lo haya causado lo que lo
-  // haya causado -- lo vuelve a mandar al fondo. Reusa nxWaIgnorarScrollHasta para no confundir
-  // este scroll programático con un scroll manual del agente.
-  function vigilarAlturaMensajes(box, hiloId) {
-    if (nxWaMsgsResizeObs) { try { nxWaMsgsResizeObs.disconnect(); } catch (e) {} }
-    if (!box || !hiloId || typeof ResizeObserver === 'undefined') return;
-    nxWaMsgsResizeObs = new ResizeObserver(() => {
-      if (hiloAbiertoId !== hiloId) return;
-      if (!hilosConScrollInicial.has(hiloId) && !hilosPegadosAlFondo.has(hiloId)) return;
-      scrollFondoChat(false);
-    });
-    nxWaMsgsResizeObs.observe(box);
-  }
   function asegurarScrollFondoInicial(hiloId) {
     if (!hiloId || hiloAbiertoId !== hiloId) return;
     scrollFondoChat(false);
@@ -1137,13 +1121,12 @@
       ${ventanaAbierta
         ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><button class="nxWaIconBtn" onclick="toast('info','Adjuntos','Queda reservado para la siguiente fase: foto, video y documento con envío real.')"><i class="ti ti-paperclip"></i></button><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
-            ${(h?.cliente_id && waMesesAtraso(cliente) > 0) ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
+            ${h?.cliente_id ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
           </div>`}`;
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
     if (nuevoBox) vigilarScrollManual(nuevoBox, hiloAbiertoId);
-    if (nuevoBox) vigilarAlturaMensajes(nuevoBox, hiloAbiertoId);
     if (scrollInicial || pegadoAlFondo) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');
