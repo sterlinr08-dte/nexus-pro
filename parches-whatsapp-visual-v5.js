@@ -25,8 +25,8 @@
 .nxWaCtxOverlay.open{display:block;pointer-events:auto}
 .nxWaCtxBackdrop{position:absolute;inset:0;background:rgba(15,23,42,.24);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .18s ease}
 .nxWaCtxOverlay.open .nxWaCtxBackdrop{opacity:1}
-.nxWaCtxSheet{position:absolute;right:14px;top:70px;bottom:14px;width:min(410px,calc(100vw - 28px));display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.88);border-radius:22px;background:rgba(255,255,255,.88);box-shadow:0 30px 80px -38px rgba(15,23,42,.58);backdrop-filter:blur(24px) saturate(155%);-webkit-backdrop-filter:blur(24px) saturate(155%);transform:translateX(18px) scale(.99);opacity:.65;transition:transform .19s cubic-bezier(.2,.8,.2,1),opacity .16s ease}
-.nxWaCtxOverlay.open .nxWaCtxSheet{transform:none;opacity:1}
+.nxWaCtxSheet{position:fixed;left:50%;top:50%;width:min(410px,calc(100vw - 28px));max-height:min(80vh,700px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.88);border-radius:22px;background:rgba(255,255,255,.88);box-shadow:0 30px 80px -38px rgba(15,23,42,.58);backdrop-filter:blur(24px) saturate(155%);-webkit-backdrop-filter:blur(24px) saturate(155%);transform:translate(-50%,-50%) scale(.97);opacity:.65;transition:transform .19s cubic-bezier(.2,.8,.2,1),opacity .16s ease}
+.nxWaCtxOverlay.open .nxWaCtxSheet{transform:translate(-50%,-50%);opacity:1}
 .nxWaCtxHead{display:flex;align-items:center;gap:10px;padding:13px 13px 11px;border-bottom:1px solid rgba(226,232,240,.78);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(239,246,255,.72));flex:none}
 .nxWaCtxIcon{width:35px;height:35px;border-radius:13px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#eaf2ff,#dcfce7);color:#1d4ed8;font-size:15px}
 .nxWaCtxTitle{min-width:0;flex:1}.nxWaCtxTitle b{display:block;font-size:12px;line-height:1.15;color:#0f172a;font-weight:900}.nxWaCtxTitle span{display:block;margin-top:2px;font-size:8px;line-height:1.3;color:#64748b;font-weight:650}

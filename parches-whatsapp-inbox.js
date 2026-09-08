@@ -197,16 +197,17 @@
 #v-waInbox .nxWaContactsKpi span.kpi-atraso{border-color:rgba(220,38,38,.3);background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContactTabs{display:flex;gap:6px;overflow-x:auto;padding:9px 10px;scrollbar-width:none}
 #v-waInbox .nxWaContactTabs::-webkit-scrollbar{display:none}
-#v-waInbox .nxWaContactTabs button{height:30px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer;box-shadow:0 10px 18px -18px rgba(15,23,42,.55)}
-#v-waInbox .nxWaContactTabs button.on{background:linear-gradient(135deg,#0f172a,#1d4ed8);border-color:#0f172a;color:#fff}
-#v-waInbox .nxWaContactList{display:grid;grid-template-columns:1fr;gap:0;padding:0 10px;max-height:318px;overflow:auto}
-#v-waInbox .nxWaContact{display:flex;align-items:center;gap:9px;min-width:0;border:0;border-bottom:1px solid rgba(226,232,240,.82);border-radius:0;background:transparent;padding:8px 2px}
-#v-waInbox .nxWaContact:hover{background:rgba(248,250,252,.72)}
-#v-waInbox .nxWaContact .av{width:32px;height:32px;border-radius:13px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9px;font-weight:900}
-#v-waInbox .nxWaContact .tx{min-width:0;flex:1}
+#v-waInbox .nxWaContactTabs button{height:30px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#f1f5f9;padding:0 12px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer;box-shadow:0 10px 18px -18px rgba(15,23,42,.55);transition:transform .12s ease,box-shadow .12s ease}
+#v-waInbox .nxWaContactTabs button:hover{transform:translateY(-1px)}
+#v-waInbox .nxWaContactTabs button.on{background:linear-gradient(135deg,#0f172a,#1d4ed8);border-color:#0f172a;color:#fff;box-shadow:0 12px 22px -16px rgba(29,78,216,.55)}
+#v-waInbox .nxWaContactList{display:flex;flex-direction:column;gap:8px;padding:2px 10px 10px;max-height:340px;overflow:auto}
+#v-waInbox .nxWaContact{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;min-width:0;border:1px solid rgba(226,232,240,.85);border-radius:16px;background:#fff;padding:10px 12px;box-shadow:0 10px 24px -22px rgba(15,23,42,.35);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+#v-waInbox .nxWaContact:hover{transform:translateY(-1px);box-shadow:0 14px 28px -18px rgba(15,23,42,.45)}
+#v-waInbox .nxWaContact .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9.5px;font-weight:900}
+#v-waInbox .nxWaContact .tx{min-width:0;flex:1;overflow:hidden}
 #v-waInbox .nxWaContact .tx b{display:block;font-size:10px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #v-waInbox .nxWaContact .tx span{display:block;font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-#v-waInbox .nxWaContact .st{font-size:7.5px;font-weight:900;border-radius:999px;padding:3px 6px;background:#f1f5f9;color:#64748b;white-space:nowrap}
+#v-waInbox .nxWaContact .st{flex:none;font-size:7.5px;font-weight:900;border-radius:999px;padding:4px 8px;background:#f1f5f9;color:#64748b;white-space:nowrap}
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}

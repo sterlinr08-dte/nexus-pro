@@ -1,7 +1,14 @@
 {
-  "version": "58.14",
+  "version": "58.15",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.15",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO: la ventana de Contactos WhatsApp quedo centrada en la pantalla (antes aparecia pegada al lado derecho), y tanto las pestanas de filtro como cada contacto de la lista pasan a un estilo de pastilla/tarjeta redondeada mas moderno, mas facil de leer."
+      ]
+    },
     {
       "version": "58.14",
       "fecha": "2026-09-08",
