@@ -1,7 +1,14 @@
 {
-  "version": "57.99",
+  "version": "58.00",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.00",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO: la confirmacion de pago por WhatsApp (al registrar un cobro) ahora dice A QUE PERIODO corresponde (ej. 'Agosto 2026'), calculado igual que el corte de facturacion del 20 al 20 -- antes solo decia el monto y el saldo, sin mencionar el mes. Requiere que se someta y Meta apruebe la plantilla nueva 'pago_confirmado_periodo'; mientras tanto la confirmacion de pago no se manda (falla limpio, sin romper el resto del cobro)."
+      ]
+    },
     {
       "version": "57.99",
       "fecha": "2026-09-08",

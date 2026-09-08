@@ -131,7 +131,11 @@ function armarPlantilla(tipo: string, nombreDestino: string, datos: Record<strin
     return { nombre: "recordatorio_atraso", variables: [nombreDestino, fmtMonto(datos.monto), `${meses} mes${meses === 1 ? "" : "es"}`] };
   }
   if (tipo === "pago_aplicado") {
-    return { nombre: "pago_confirmado", variables: [nombreDestino, fmtMonto(datos.monto), fmtMonto(datos.saldo_actual)] };
+    // pago_confirmado_periodo (v2 de pago_confirmado): agrega el período que cubrió este abono --
+    // trg_whatsapp_pago_aplicado lo calcula comparando el reparto de facturas ANTES/DESPUÉS del
+    // pago (un abono no está atado 1 a 1 a una factura, se reparte de la más vieja a la más
+    // nueva). "pago_confirmado" (3 variables, sin período) queda plantilla vieja, ya no se usa.
+    return { nombre: "pago_confirmado_periodo", variables: [nombreDestino, fmtMonto(datos.monto), String(datos.periodo || "su cuenta"), fmtMonto(datos.saldo_actual)] };
   }
   // Entrega confirmada (destino agente): monto = lo que acaba de depositar en este cobro,
   // acumulado = transferencias_saldo_disponible_agente() -- lo que el agente tiene en su poder
