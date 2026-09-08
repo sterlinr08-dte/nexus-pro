@@ -37,10 +37,10 @@
 .nxWaCtxBody .nxWaContactsTop{display:none!important}
 .nxWaCtxBody .nxWaContactTabs{position:sticky;top:-10px;z-index:2;padding:10px 0 9px!important;margin:0!important;background:linear-gradient(180deg,rgba(248,250,252,.96) 72%,rgba(248,250,252,0))}
 .nxWaCtxBody .nxWaContactTabs button{height:31px!important;font-size:8.5px!important;box-shadow:0 7px 16px -16px rgba(15,23,42,.5)}
-.nxWaCtxBody .nxWaContactList{grid-template-columns:1fr!important;gap:7px!important;padding:0!important;max-height:none!important;overflow:visible!important}
-.nxWaCtxBody .nxWaContact{padding:9px!important;border-radius:13px!important;background:rgba(255,255,255,.86)!important}
-.nxWaCtxBody .nxWaContact .av{width:34px!important;height:34px!important;border-radius:50%!important}
-.nxWaCtxBody .nxWaContact .tx b{font-size:10px!important}.nxWaCtxBody .nxWaContact .tx span{font-size:8.3px!important}
+.nxWaCtxBody .nxWaContactList{grid-template-columns:1fr!important;gap:10px!important;padding:0!important;max-height:none!important;overflow:visible!important;background:transparent!important}
+.nxWaCtxBody .nxWaContact{padding:11px 12px!important;border-radius:16px!important;background:#fff!important}
+.nxWaCtxBody .nxWaContact .av{width:38px!important;height:38px!important;border-radius:12px!important}
+.nxWaCtxBody .nxWaContact .tx b{font-size:10.5px!important}.nxWaCtxBody .nxWaContact .tx span{font-size:8.3px!important}
 .nxWaCtxBody .nxWaContactsFoot{position:sticky;bottom:-10px;z-index:2;margin:8px -10px -10px!important;padding:9px 10px calc(9px + env(safe-area-inset-bottom))!important;display:flex!important;gap:6px!important;flex-wrap:nowrap!important;overflow-x:auto!important;background:rgba(255,255,255,.92);border-top:1px solid rgba(226,232,240,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .nxWaCtxBody .nxWaContactsFoot button{flex:0 0 auto!important;height:31px!important;font-size:8.3px!important}
 /* La grilla de iconos de acciones masivas (parches-whatsapp-inbox.js) tiene que ganarle a las 2

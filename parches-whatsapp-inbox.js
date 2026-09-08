@@ -200,18 +200,21 @@
 #v-waInbox .nxWaContactTabs button{height:30px;flex:0 0 auto;border:1px solid #dbe3ee;border-radius:999px;background:#f1f5f9;padding:0 12px;font:inherit;font-size:8.5px;font-weight:900;color:#475569;cursor:pointer;box-shadow:0 10px 18px -18px rgba(15,23,42,.55);transition:transform .12s ease,box-shadow .12s ease}
 #v-waInbox .nxWaContactTabs button:hover{transform:translateY(-1px)}
 #v-waInbox .nxWaContactTabs button.on{background:linear-gradient(135deg,#0f172a,#1d4ed8);border-color:#0f172a;color:#fff;box-shadow:0 12px 22px -16px rgba(29,78,216,.55)}
-#v-waInbox .nxWaContactList{display:flex;flex-direction:column;gap:8px;padding:2px 10px 10px;max-height:340px;overflow:auto}
-#v-waInbox .nxWaContact{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;min-width:0;border:1px solid rgba(226,232,240,.85);border-radius:16px;background:#fff;padding:10px 12px;box-shadow:0 10px 24px -22px rgba(15,23,42,.35);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
-#v-waInbox .nxWaContact:hover{transform:translateY(-1px);box-shadow:0 14px 28px -18px rgba(15,23,42,.45)}
-#v-waInbox .nxWaContact .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;font-size:9.5px;font-weight:900}
+#v-waInbox .nxWaContactList{display:flex;flex-direction:column;gap:12px;padding:4px 10px 12px;max-height:340px;overflow:auto;background:#f4f6fa}
+#v-waInbox .nxWaContact{display:flex;flex-wrap:nowrap;align-items:center;gap:12px;min-width:0;border:1px solid rgba(226,232,240,.6);border-radius:18px;background:#fff;padding:12px 14px;box-shadow:0 10px 22px -18px rgba(15,23,42,.22);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+#v-waInbox .nxWaContact:hover{transform:translateY(-1px);box-shadow:0 14px 26px -16px rgba(15,23,42,.28)}
+#v-waInbox .nxWaContact .av{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#e0e7ff,#eef2ff);color:#4338ca;font-size:11px;font-weight:800}
+#v-waInbox .nxWaContact .av.av-err{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626}
+#v-waInbox .nxWaContact .av.av-warn{background:linear-gradient(135deg,#ffedd5,#fed7aa);color:#c2410c}
+#v-waInbox .nxWaContact .av.av-ok{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#059669}
 #v-waInbox .nxWaContact .tx{min-width:0;flex:1;overflow:hidden}
-#v-waInbox .nxWaContact .tx b{display:block;font-size:10px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#v-waInbox .nxWaContact .tx span{display:block;font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#v-waInbox .nxWaContact .tx b{display:block;font-size:11.5px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaContact .tx span{display:block;font-size:9px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 #v-waInbox .nxWaContact .st{flex:none;font-size:7.5px;font-weight:900;border-radius:999px;padding:4px 8px;background:#f1f5f9;color:#64748b;white-space:nowrap}
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
-#v-waInbox .nxWaContact .chev{flex:none;font-size:13px;color:#cbd5e1}
+#v-waInbox .nxWaContact .chev{flex:none;font-size:14px;color:#cbd5e1}
 #v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:10px;border-top:1px solid rgba(226,232,240,.82);background:rgba(248,250,252,.78)}
 #v-waInbox .nxWaContactsFoot button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
 #v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
@@ -624,8 +627,9 @@
       const c = x.c;
       const sub = [c.wa, c.plan, c.ars].filter(Boolean).join(' · ');
       const mesesTxt = x.meses > 0 ? `${x.meses} mes${x.meses === 1 ? '' : 'es'} atrasado` : '';
+      const avCls = x.estado.cls ? `av-${x.estado.cls}` : '';
       return `<div class="nxWaContact" role="button" tabindex="0" aria-label="Abrir chat con ${esc(c.nom || 'cliente')}" onclick="nxWaAbrirContacto('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
-        <div class="av">${esc(iniciales(c.nom))}</div>
+        <div class="av ${avCls}">${esc(iniciales(c.nom))}</div>
         <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(mesesTxt || sub || 'WhatsApp registrado')}</span></div>
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
         <i class="ti ti-chevron-right chev" aria-hidden="true"></i>

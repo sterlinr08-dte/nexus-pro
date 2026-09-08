@@ -1,7 +1,14 @@
 {
-  "version": "58.16",
+  "version": "58.17",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.17",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO: los contactos de WhatsApp ahora se ven como tarjetas mas espaciosas y modernas -- icono cuadrado redondeado con color segun el estado del cliente (rojo si esta atrasado/vencido, ambar si tiene deuda, verde si esta al dia), mas separacion entre filas."
+      ]
+    },
     {
       "version": "58.16",
       "fecha": "2026-09-08",
