@@ -86,18 +86,21 @@ async function esperar(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Idéntico a whatsapp-notificar/index.ts -- mismo contrato de plantilla ya confirmado contra la
-// API real de Zernio (docs.zernio.com/messages/send-inbox-message), reusado tal cual.
-function armarComponents(variables: string[]): { type: string; parameters: { type: string; text: string }[] }[] {
-  return [{ type: "body", parameters: variables.map((v) => ({ type: "text", text: v })) }];
-}
-
+// Fix 2026-09-08: idéntico al fix de whatsapp-notificar/index.ts -- Zernio cambió el contrato de
+// /v1/inbox/conversations/{id}/messages (ese {id} ahora exige un conversationId real, ya no acepta
+// un número de teléfono), causando un outage total desde ~2026-09-07 21:24 (hora RD), confirmado
+// en vivo contra whatsapp_mensajes/whatsapp_envio_masivo_destinatarios. Reemplazado por
+// POST /v1/inbox/conversations (crea la conversación si no existe y manda el mensaje en la misma
+// llamada), ver docs.zernio.com/messages/create-inbox-conversation.
 async function mandarPlantilla(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   const body = {
     accountId,
-    template: { elements: [{ name: nombre, language: "es", components: armarComponents(variables) }] },
+    participantId: telefono,
+    templateName: nombre,
+    templateLanguage: "es",
+    templateParams: variables,
   };
-  const resp = await fetch(`https://zernio.com/api/v1/inbox/conversations/${encodeURIComponent(telefono)}/messages`, {
+  const resp = await fetch(`https://zernio.com/api/v1/inbox/conversations`, {
     method: "POST",
     headers: { Authorization: `Bearer ${ZERNIO_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),

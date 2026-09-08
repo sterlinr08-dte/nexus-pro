@@ -1,7 +1,16 @@
 {
-  "version": "58.15",
+  "version": "58.16",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.16",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO (critico): Zernio cambio su API y desde ayer 9:24pm TODO el WhatsApp automatico (atrasos, pagos aplicados, entregas, envio masivo) fallaba silenciosamente -- ya se corrigio y se confirmo en vivo que vuelve a mandar.",
+        "MEJORADO: Contactos WhatsApp vuelve a abrir en la pestana 'Todos' por defecto (el KPI de atraso y los colores de boton se mantienen).",
+        "NUEVO: el WhatsApp ahora es obligatorio y se valida al crear/editar un cliente -- un numero invalido o vacio dejaba a ese cliente fuera de todo el modulo de WhatsApp sin ningun aviso."
+      ]
+    },
     {
       "version": "58.15",
       "fecha": "2026-09-08",

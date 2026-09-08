@@ -3816,7 +3816,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
     <div class="gf2">
       <div class="fr"><label>Nombre completo *</label><input type="text" id="cNom" placeholder="Nombres primero, luego Apellidos"/></div>
       <div class="fr"><label>Cédula / RNC</label><input type="text" id="cCed" placeholder="000-0000000-0"/></div>
-      <div class="fr"><label>WhatsApp</label><input type="text" id="cWA" placeholder="18091234567"/></div>
+      <div class="fr"><label>WhatsApp *</label><input type="text" id="cWA" placeholder="18091234567"/></div>
       <div class="fr"><label>Teléfono</label><input type="text" id="cTel"/></div>
       <div class="fr"><label>Email</label><input type="email" id="cEmail"/></div>
       <div class="fr" style="grid-column:1/-1"><div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:6px;letter-spacing:.3px">REFERENCIA DEL CLIENTE</div></div>
@@ -6412,7 +6412,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.15';
+const APP_VERSION='58.16';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -11716,6 +11716,14 @@ async function guardarCli(){
   // Nombre del cliente (obligatorio)
   const nom=document.getElementById('cNom').value.trim();
   if(!nom){toast('err','Campo requerido','Ingrese el nombre del cliente');return;}
+  // ── WhatsApp obligatorio y validado (decisión del dueño, auditoría 2026-09-08) ──
+  // Antes se guardaba lo que fuera (o nada) sin avisar -- un cliente sin WhatsApp válido queda
+  // afuera de TODO el módulo de Contactos/Buzón (waContactos() exige c.wa) sin que quien lo creó
+  // se entere nunca. nxWa() exige 10 dígitos (o 11 con código de país) para considerarlo válido.
+  const waInput=document.getElementById('cWA').value.trim();
+  if(!waInput){toast('err','Campo requerido','Ingrese el número de WhatsApp del cliente');return;}
+  const waNormalizado=nxWa(waInput);
+  if(!waNormalizado){toast('err','WhatsApp inválido','El número debe tener 10 dígitos (ej. 8091234567)');return;}
   // ── Validar coherencia de fechas de póliza ──
   const _fi=document.getElementById('cFecIni')?.value||'',_ff=document.getElementById('cFecFin')?.value||'';
   if(_fi&&_ff&&_ff<_fi){toast('err','Fechas invertidas','La fecha de fin de póliza no puede ser anterior a la de inicio');return;}
@@ -11750,7 +11758,7 @@ async function guardarCli(){
     precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
     precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:(nxWa(document.getElementById('cWA').value)||document.getElementById('cWA').value.replace(/\D/g,'')),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:waNormalizado,tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
   if(puedeModPrecio||!editCliId){datos.precio_titular=precioT;datos.precio_dep=precioD;} // en un cliente NUEVO siempre se manda (null = precio estándar)
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);

@@ -12,10 +12,10 @@
 
   let hilos = [], hiloAbiertoId = null, mensajes = [];
   let waFiltro = 'todos';
-  // Objetivo de negocio Nº1 del módulo (REGLAMENTO §12): bajar el promedio de días de atraso de
-  // cobro. El panel de Contactos abre en "Atrasado" por defecto -- no en "Todos" -- para que lo
-  // primero que vea el agente sea justo lo que más mueve ese objetivo.
-  let waContactFiltro = 'atrasado';
+  // El objetivo de negocio Nº1 (REGLAMENTO §12, bajar días de atraso) sigue reflejado en el KPI,
+  // el orden de pestañas y los colores de botón -- pero abrir directo en "Atrasado" por defecto
+  // dejaba al agente viendo muy pocos contactos (solo 2 de 74) sin contexto. Vuelve a "Todos".
+  let waContactFiltro = 'todos';
   let sb = null, canal = null;
   // "mensajesHiloId" es la unica fuente de verdad de a que hilo pertenecen los datos que hay
   // ahora mismo en "mensajes" -- lo pone cargarMensajes() SOLO cuando escribe datos frescos y

@@ -78,25 +78,24 @@ async function esperar(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Fix 2026-09-07: el campo "messageType" no existe en la API real de Zernio (no esta en el
-// schema del endpoint /v1/inbox/conversations/{id}/messages, confirmado leyendo la doc real
-// en docs.zernio.com/messages/send-inbox-message) y "template" NO lleva {name, language,
-// variableMapping} directo -- va envuelto en "elements": [{name, language, components}], con
-// components en el formato estandar de la Cloud API de Meta ([{type:"body", parameters:[...]}]).
-// El shape viejo hacia que Zernio no reconociera "template" como valido, cayera a "no hay
-// contenido" y rechazara el envio con 400 "Message, attachment, or interactive content is
-// required" -- confirmado en vivo, nunca se habia probado un envio real con plantilla antes
-// (ni aca ni en Bayolcell Taller, que usa el mismo shape viejo en whatsapp-enviar).
-function armarComponents(variables: string[]): { type: string; parameters: { type: string; text: string }[] }[] {
-  return [{ type: "body", parameters: variables.map((v) => ({ type: "text", text: v })) }];
-}
-
+// Fix 2026-09-08: Zernio cambió el contrato de /v1/inbox/conversations/{id}/messages -- ese {id}
+// ahora tiene que ser un conversationId real (obtenido de su endpoint de listar/buscar
+// conversaciones), ya NO acepta un número de teléfono como atajo. Confirmado en vivo: TODO envío
+// desde ~2026-09-07 21:24 (hora RD) falló con 404 "CONVERSATION_NOT_FOUND. Use the conversation id
+// from the list conversations endpoint" -- outage total de las 4 notificaciones automáticas desde
+// esa hora. La API sí documenta el reemplazo correcto para "mandar una plantilla a un número sin
+// conversación abierta todavía": POST /v1/inbox/conversations (crea la conversación si no existe
+// y manda el mensaje en la misma llamada), con participantId=teléfono + templateName +
+// templateLanguage + templateParams (docs.zernio.com/messages/create-inbox-conversation).
 async function mandarPlantilla(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   const body = {
     accountId,
-    template: { elements: [{ name: nombre, language: "es", components: armarComponents(variables) }] },
+    participantId: telefono,
+    templateName: nombre,
+    templateLanguage: "es",
+    templateParams: variables,
   };
-  const resp = await fetch(`https://zernio.com/api/v1/inbox/conversations/${encodeURIComponent(telefono)}/messages`, {
+  const resp = await fetch(`https://zernio.com/api/v1/inbox/conversations`, {
     method: "POST",
     headers: { Authorization: `Bearer ${ZERNIO_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -106,9 +105,9 @@ async function mandarPlantilla(telefono: string, accountId: string, nombre: stri
   return { ok: resp.ok && !!data?.success, data, status: resp.status };
 }
 
-// Ver whatsapp-enviar de Bayolcell Taller (fix 2026-09-05): un 404 CONVERSATION_NOT_FOUND es
-// inequívoco (Zernio nunca procesó el envío), así que reintentar es seguro — a diferencia de un
-// 5xx/timeout, donde el mensaje pudo haber salido igual del lado de Zernio.
+// El nuevo endpoint crea la conversación si hace falta, así que un CONVERSATION_NOT_FOUND ya no
+// debería ocurrir -- se deja el reintento como red de seguridad ante cualquier 404 transitorio del
+// lado de Zernio, sin costo si nunca se dispara.
 async function mandarConReintento(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   let resultado = await mandarPlantilla(telefono, accountId, nombre, variables);
   for (let intento = 1; intento <= 2 && esConversacionNoEncontrada(resultado); intento++) {
