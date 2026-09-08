@@ -74,6 +74,7 @@
   let busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
   let nxWaMenuTimer = null;
   let nxWaSwipe = null;
+  const hilosConScrollInicial = new Set();
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -934,6 +935,7 @@
     hiloAbiertoId = id;
     respuestaActiva = null;
     busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
+    hilosConScrollInicial.add(id);
     // Reservar el turno de este hilo ANTES del await a la RPC de abajo -- si no, una carga vieja
     // y colgada de una visita anterior a este mismo hilo podia "colarse" y pisar mensajes con
     // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
@@ -944,14 +946,16 @@
     if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().post('rpc/whatsapp_marcar_hilo_leido', { p_hilo_id: id }); } catch (e) {} }
     await cargarMensajes(id, miToken);
     pintarLista(); pintarDetalle();
+    asegurarScrollFondoInicial(id);
+    setTimeout(() => hilosConScrollInicial.delete(id), 900);
   };
 
   function burbujaMedia(m) {
     if (!m.media_path) return '';
     if (!m._url) return '<div style="font-size:10px;color:#94a3b8">📎 Adjunto no disponible</div>';
-    if (m.tipo_contenido === 'imagen') return `<img src="${m._url}" onclick="window.open('${m._url}','_blank')">`;
+    if (m.tipo_contenido === 'imagen') return `<img src="${m._url}" onload="nxWaMediaLoaded()" onclick="window.open('${m._url}','_blank')">`;
     if (m.tipo_contenido === 'audio') return `<audio controls src="${m._url}" style="width:220px"></audio>`;
-    if (m.tipo_contenido === 'video') return `<video controls src="${m._url}" style="max-width:220px"></video>`;
+    if (m.tipo_contenido === 'video') return `<video controls src="${m._url}" onloadedmetadata="nxWaMediaLoaded()" style="max-width:220px"></video>`;
     return `<a href="${m._url}" target="_blank">📎 Ver documento</a>`;
   }
 
@@ -995,6 +999,22 @@
       if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 40);
   }
+  function scrollFondoChat(suave) {
+    const box = $('#nxWaMsgsBox');
+    if (!box) return;
+    box.scrollTo({ top: box.scrollHeight, behavior: suave ? 'smooth' : 'auto' });
+  }
+  function asegurarScrollFondoInicial(hiloId) {
+    if (!hiloId || hiloAbiertoId !== hiloId) return;
+    scrollFondoChat(false);
+    requestAnimationFrame(() => { if (hiloAbiertoId === hiloId) scrollFondoChat(false); });
+    setTimeout(() => { if (hiloAbiertoId === hiloId) scrollFondoChat(false); }, 120);
+    setTimeout(() => { if (hiloAbiertoId === hiloId) scrollFondoChat(false); }, 420);
+  }
+  window.nxWaMediaLoaded = function () {
+    if (!hiloAbiertoId || !hilosConScrollInicial.has(hiloAbiertoId)) return;
+    asegurarScrollFondoInicial(hiloAbiertoId);
+  };
 
   // Si la carga inicial de un hilo falla (blip de red) y no llega ningun otro evento de Realtime
   // que la reintente de rebote (conversacion tranquila, sin trafico de otros clientes en ese
@@ -1052,7 +1072,8 @@
     const valorPrevio = inputPrevio ? inputPrevio.value : '';
     const cursorPrevio = teniaFoco && inputPrevio ? [inputPrevio.selectionStart, inputPrevio.selectionEnd] : null;
     const boxPrevio = $('#nxWaMsgsBox');
-    const estabaAlFondo = boxPrevio ? (boxPrevio.scrollTop + boxPrevio.clientHeight >= boxPrevio.scrollHeight - 40) : true;
+    const scrollInicial = hilosConScrollInicial.has(hiloAbiertoId);
+    const estabaAlFondo = scrollInicial || (boxPrevio ? (boxPrevio.scrollTop + boxPrevio.clientHeight >= boxPrevio.scrollHeight - 40) : true);
 
     recomputarBusqueda();
     const porId = new Map(mensajes.map(m => [String(m.id), m]));
@@ -1069,6 +1090,7 @@
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
+    if (scrollInicial) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');
     if (nuevoInput) {

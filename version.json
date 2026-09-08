@@ -1,7 +1,14 @@
 {
-  "version": "58.03",
+  "version": "58.04",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.04",
+      "fecha": "2026-09-08",
+      "notas": [
+        "CORREGIDO (WhatsApp seguros): al entrar a una conversacion el chat ahora aterriza de forma confiable en el ultimo mensaje, incluso cuando el hilo contiene imagenes, videos o comprobantes que terminan de cargar despues del render. Se agrego un scroll inicial reforzado y recalculo al cargar multimedia para evitar que la conversacion quede arriba o a media altura."
+      ]
+    },
     {
       "version": "58.03",
       "fecha": "2026-09-08",
