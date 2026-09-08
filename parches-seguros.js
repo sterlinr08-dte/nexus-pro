@@ -4,8 +4,64 @@
   'use strict';
   if(window.__nxSegurosLoader20260906)return;
   window.__nxSegurosLoader20260906=true;
-  function qv(){try{var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');return q>=0?s.slice(q):'';}catch(e){return '';}}
-  function load(src,done){var s=document.createElement('script');s.src=src+qv();s.async=false;s.onload=function(){if(done)done();};s.onerror=function(){console.error('[NEXUS PRO] No se pudo cargar '+src);};(document.head||document.documentElement).appendChild(s);}
-  function css(src){var l=document.createElement('link');l.rel='stylesheet';l.href=src+qv();l.onerror=function(){console.error('[NEXUS PRO] No se pudo cargar '+src);};(document.head||document.documentElement).appendChild(l);}
-  load('parches-seguros-base.js',function(){load('parches-crm-seguros.js',function(){css('parches-crm-seguros-v2.css');load('parches-crm-entrada.js',function(){load('parches-crm-operativo.js',function(){load('parches-whatsapp-inbox.js',function(){load('parches-whatsapp-visual.js',function(){css('parches-whatsapp-visual-v2.css');load('parches-whatsapp-visual-v3.js',function(){load('parches-whatsapp-visual-v4.js',function(){load('parches-whatsapp-visual-v5.js',function(){load('parches-whatsapp-visual-v6.js',function(){load('parches-whatsapp-visual-v7.js',function(){load('parches-whatsapp-contactos-uhd.js');});});});});});});});});});});
+
+  function qv(){
+    try{
+      var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');
+      return q>=0?s.slice(q):'';
+    }catch(e){return '';}
+  }
+
+  function load(src,done){
+    var s=document.createElement('script');
+    s.src=src+qv();
+    s.async=false;
+    s.onload=function(){if(done)done();};
+    s.onerror=function(){
+      console.error('[NEXUS PRO] No se pudo cargar '+src);
+      if(done)done();
+    };
+    (document.head||document.documentElement).appendChild(s);
+  }
+
+  function css(src){
+    var l=document.createElement('link');
+    l.rel='stylesheet';
+    l.href=src+qv();
+    l.onerror=function(){console.error('[NEXUS PRO] No se pudo cargar '+src);};
+    (document.head||document.documentElement).appendChild(l);
+  }
+
+  /* Secuencia explícita: evita anidar callbacks y reduce el riesgo de dejar
+     paréntesis/bloques sin cerrar al agregar una nueva capa visual. */
+  var pasos=[
+    ['js','parches-seguros-base.js'],
+    ['js','parches-crm-seguros.js'],
+    ['css','parches-crm-seguros-v2.css'],
+    ['js','parches-crm-entrada.js'],
+    ['js','parches-crm-operativo.js'],
+    ['js','parches-whatsapp-inbox.js'],
+    ['js','parches-whatsapp-visual.js'],
+    ['css','parches-whatsapp-visual-v2.css'],
+    ['js','parches-whatsapp-visual-v3.js'],
+    ['js','parches-whatsapp-visual-v4.js'],
+    ['js','parches-whatsapp-visual-v5.js'],
+    ['js','parches-whatsapp-visual-v6.js'],
+    ['js','parches-whatsapp-visual-v7.js'],
+    ['js','parches-whatsapp-contactos-uhd.js']
+  ];
+
+  var i=0;
+  function next(){
+    if(i>=pasos.length)return;
+    var p=pasos[i++];
+    if(p[0]==='css'){
+      css(p[1]);
+      next();
+      return;
+    }
+    load(p[1],next);
+  }
+
+  next();
 })();
