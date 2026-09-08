@@ -78,43 +78,53 @@
   function css() {
     if ($('#nxWaInboxCss')) return;
     const s = document.createElement('style'); s.id = 'nxWaInboxCss'; s.textContent = `
-#v-waInbox{--wa-b:#2563eb;--wa-b2:#7c3aed;--wa-line:rgba(226,232,240,.86);font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;min-height:100%;padding:0 0 18px;background:linear-gradient(180deg,rgba(248,251,255,.94),rgba(246,248,251,.82))}
-#v-waInbox .nxCrmHomeHead{position:relative;margin:0 0 12px;padding:16px 16px 18px;border:1px solid rgba(255,255,255,.82);border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(239,246,255,.9));box-shadow:0 18px 48px -38px rgba(15,23,42,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden}
-#v-waInbox .nxCrmHomeHead:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:999px;background:linear-gradient(90deg,#25d366,var(--wa-b),var(--wa-b2));opacity:.9}
+#v-waInbox{--wa-b:#2563eb;--wa-b2:#0f766e;--wa-green:#25d366;--wa-soft:#eff6ff;--wa-line:rgba(203,213,225,.72);font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;min-height:100%;padding:0 0 18px;background:linear-gradient(180deg,#f8fbff 0%,#eef6ff 48%,#f8fafc 100%)}
+#v-waInbox .nxCrmHomeHead{position:relative;margin:0 0 12px;padding:15px 16px 17px;border:1px solid rgba(255,255,255,.92);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.97),rgba(239,246,255,.92));box-shadow:0 18px 48px -38px rgba(15,23,42,.62);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overflow:hidden}
+#v-waInbox .nxCrmHomeHead:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:999px;background:linear-gradient(90deg,var(--wa-green),var(--wa-b),var(--wa-b2));opacity:.92}
 #v-waInbox .nxCrmHomeHead h1{font-size:25px;line-height:1.06;margin:4px 0 5px;font-weight:900;letter-spacing:0;color:#0f172a}
 #v-waInbox .nxCrmHomeHead p{max-width:560px;margin:0;font-size:10.5px;line-height:1.35;color:#475569}
 #v-waInbox .nxCrmHomeBadge{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;padding:6px 10px;border-radius:999px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.22);color:#047857;font-size:8.5px;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-#v-waInbox .nxWaShell{display:grid;grid-template-columns:minmax(280px,330px) minmax(0,1fr);gap:12px;height:calc(100vh - 170px);min-height:500px}
-#v-waInbox .nxWaCol{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.82);border-radius:17px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 46px -36px rgba(15,23,42,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#v-waInbox .nxWaShell{display:grid;grid-template-columns:minmax(292px,350px) minmax(0,1fr);gap:12px;height:calc(100vh - 168px);min-height:520px}
+#v-waInbox .nxWaCol{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.9);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 54px -38px rgba(15,23,42,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+#v-waInbox .nxWaListCol{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.88))}
 #v-waInbox .nxWaListScroll{overflow-y:auto;flex:1}
-#v-waInbox .nxWaRow{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--wa-line);cursor:pointer;transition:background .16s ease,transform .16s ease}
-#v-waInbox .nxWaRow:hover{background:#f8fafc;transform:translateX(2px)}
-#v-waInbox .nxWaRow.on{background:linear-gradient(90deg,rgba(37,99,235,.12),rgba(124,58,237,.08))}
-#v-waInbox .nxWaAv{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#dcfce7,#eaf1ff);color:#1d4ed8;display:grid;place-items:center;font-size:11px;font-weight:900;flex:none}
+#v-waInbox .nxWaRow{display:flex;gap:10px;padding:11px 12px;border-bottom:1px solid rgba(226,232,240,.72);cursor:pointer;position:relative;transition:background .16s ease,transform .16s ease,box-shadow .16s ease}
+#v-waInbox .nxWaRow:before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:999px;background:transparent}
+#v-waInbox .nxWaRow:hover{background:rgba(248,250,252,.9);transform:translateX(2px)}
+#v-waInbox .nxWaRow.on{background:linear-gradient(90deg,rgba(37,211,102,.13),rgba(37,99,235,.08));box-shadow:inset 0 0 0 1px rgba(37,99,235,.06)}
+#v-waInbox .nxWaRow.on:before{background:linear-gradient(180deg,var(--wa-green),var(--wa-b))}
+#v-waInbox .nxWaAv{width:38px;height:38px;border-radius:15px;background:linear-gradient(135deg,#dcfce7,#dbeafe);color:#1d4ed8;display:grid;place-items:center;font-size:11px;font-weight:900;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
 #v-waInbox .nxWaWho{min-width:0;flex:1}
 #v-waInbox .nxWaWho b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0f172a}
 #v-waInbox .nxWaWho span{display:block;font-size:9.5px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-#v-waInbox .nxWaBadge{background:#dc2626;color:#fff;border-radius:999px;font-size:8.5px;font-weight:900;padding:2px 6px;flex:none}
+#v-waInbox .nxWaRowMeta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:42px}
+#v-waInbox .nxWaTime{font-size:8.5px;color:#94a3b8;font-weight:800;white-space:nowrap}
+#v-waInbox .nxWaBadge{background:#16a34a;color:#fff;border-radius:999px;font-size:8.5px;font-weight:900;padding:2px 6px;flex:none;box-shadow:0 8px 18px -12px rgba(22,163,74,.9)}
 #v-waInbox .nxWaDetalle{display:flex;flex-direction:column;height:100%}
-#v-waInbox .nxWaHead{padding:12px;border-bottom:1px solid var(--wa-line);font-size:11px;font-weight:900;background:rgba(255,255,255,.88);color:#0f172a}
-#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(180deg,#f8fafc,#eef4ff)}
-#v-waInbox .nxWaBub{max-width:76%;padding:9px 11px;border-radius:14px;font-size:11.5px;line-height:1.4;box-shadow:0 10px 22px -20px rgba(15,23,42,.55)}
-#v-waInbox .nxWaBub.in{align-self:flex-start;background:#fff;border:1px solid #e5eaf2;border-top-left-radius:6px}
-#v-waInbox .nxWaBub.out{align-self:flex-end;background:#dcf8c6;border-top-right-radius:6px}
-#v-waInbox .nxWaBub img{max-width:220px;border-radius:10px;display:block;cursor:pointer}
-#v-waInbox .nxWaHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#v-waInbox .nxWaHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(226,232,240,.82);font-size:11px;font-weight:900;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.92));color:#0f172a;box-shadow:0 12px 24px -24px rgba(15,23,42,.75);z-index:2}
+#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;padding:16px 14px 14px;display:flex;flex-direction:column;gap:7px;background:linear-gradient(180deg,rgba(239,246,255,.86),rgba(248,250,252,.96)),radial-gradient(circle at 10% 15%,rgba(37,211,102,.08),transparent 26%),radial-gradient(circle at 82% 8%,rgba(37,99,235,.08),transparent 24%)}
+#v-waInbox .nxWaBub{max-width:74%;padding:8px 10px 6px;border-radius:15px;font-size:11.5px;line-height:1.43;box-shadow:0 13px 26px -23px rgba(15,23,42,.78)}
+#v-waInbox .nxWaBub.in{align-self:flex-start;background:rgba(255,255,255,.97);border:1px solid rgba(226,232,240,.92);border-top-left-radius:6px}
+#v-waInbox .nxWaBub.out{align-self:flex-end;background:linear-gradient(135deg,#dcfce7,#d9f99d);border:1px solid rgba(34,197,94,.18);border-top-right-radius:6px}
+#v-waInbox .nxWaBubWrap.diff-prev.in .nxWaBub:before{content:"";position:absolute;left:-5px;top:0;border-top:8px solid rgba(255,255,255,.97);border-left:6px solid transparent}
+#v-waInbox .nxWaBubWrap.diff-prev.out .nxWaBub:before{content:"";position:absolute;right:-5px;top:0;border-top:8px solid #d9f99d;border-right:6px solid transparent}
+#v-waInbox .nxWaBub img{max-width:220px;border-radius:12px;display:block;cursor:pointer}
 #v-waInbox .nxWaHeadMain{min-width:0;display:flex;align-items:center;gap:8px}
 #v-waInbox .nxWaBackMob{display:none}
-#v-waInbox .nxWaHeadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#v-waInbox .nxWaHeadAct{border:1px solid #dbe3ee;background:#fff;color:#1d4ed8;border-radius:12px;width:34px;height:34px;display:grid;place-items:center;cursor:pointer}
-#v-waInbox .nxWaSearchBar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--wa-line);background:#f8fafc}
+#v-waInbox .nxWaHeadAvatar{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:900;flex:none}
+#v-waInbox .nxWaHeadText{min-width:0}
+#v-waInbox .nxWaHeadName{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#0f172a}
+#v-waInbox .nxWaHeadSub{display:block;margin-top:2px;font-size:8.5px;font-weight:800;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaHeadAct{border:1px solid #dbe3ee;background:#fff;color:#1d4ed8;border-radius:13px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+#v-waInbox .nxWaHeadAct:hover{transform:translateY(-1px);box-shadow:0 14px 24px -20px rgba(15,23,42,.7);background:#f8fafc}
+#v-waInbox .nxWaSearchBar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--wa-line);background:rgba(248,250,252,.96)}
 #v-waInbox .nxWaSearchBar input{flex:1;min-width:0;border:1px solid #dbe3ee;border-radius:999px;padding:8px 11px;font:inherit;font-size:10.5px;outline:none}
 #v-waInbox .nxWaSearchBar button{border:1px solid #dbe3ee;background:#fff;color:#1d4ed8;border-radius:11px;height:30px;min-width:30px;font:inherit;font-weight:900;cursor:pointer}
 #v-waInbox .nxWaBubWrap{display:flex;position:relative;width:100%;touch-action:pan-y}
 #v-waInbox .nxWaBubWrap.in{justify-content:flex-start}
 #v-waInbox .nxWaBubWrap.out{justify-content:flex-end}
-#v-waInbox .nxWaBubWrap.same-prev{margin-top:-4px}
-#v-waInbox .nxWaBubWrap.diff-prev{margin-top:3px}
+#v-waInbox .nxWaBubWrap.same-prev{margin-top:-5px}
+#v-waInbox .nxWaBubWrap.diff-prev{margin-top:5px}
 #v-waInbox .nxWaBub{position:relative;white-space:pre-wrap;word-break:break-word}
 #v-waInbox .nxWaBub.hit{outline:2px solid rgba(37,99,235,.38);box-shadow:0 0 0 5px rgba(37,99,235,.12)}
 #v-waInbox .nxWaBubMenu{position:absolute;top:-8px;right:6px;border:1px solid #dbe3ee;background:rgba(255,255,255,.96);color:#64748b;border-radius:999px;width:24px;height:24px;display:grid;place-items:center;opacity:0;cursor:pointer;box-shadow:0 12px 24px -18px rgba(15,23,42,.7)}
@@ -125,17 +135,18 @@
 #v-waInbox .nxWaBubMeta{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px;font-size:8.5px;color:#64748b}
 #v-waInbox .nxWaBub.out .nxWaBubMeta{color:#4b8563}
 #v-waInbox .nxWaRetry{border:0;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:3px 7px;font:inherit;font-size:8px;font-weight:900;cursor:pointer}
-#v-waInbox .nxWaComposerWrap{border-top:1px solid var(--wa-line);background:rgba(255,255,255,.92)}
+#v-waInbox .nxWaComposerWrap{border-top:1px solid rgba(226,232,240,.86);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.95));box-shadow:0 -18px 32px -32px rgba(15,23,42,.65);z-index:2}
 #v-waInbox .nxWaReplyBar{margin:8px 10px 0;padding:8px 10px;border-left:3px solid #25d366;border-radius:12px;background:#f8fafc;display:flex;align-items:center;gap:8px;font-size:10px;color:#475569}
 #v-waInbox .nxWaReplyBar .tx{min-width:0;flex:1}
 #v-waInbox .nxWaReplyBar b{display:block;color:#0f172a;font-size:10px}
 #v-waInbox .nxWaReplyBar span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #v-waInbox .nxWaReplyBar button{border:0;background:transparent;color:#64748b;font-size:18px;cursor:pointer}
 #v-waInbox .nxWaComposer{display:flex;align-items:flex-end;gap:7px;padding:10px;background:transparent}
-#v-waInbox .nxWaComposer textarea{flex:1;min-width:0;max-height:96px;resize:none;overflow-y:auto;border:1px solid #dbe3ee;border-radius:18px;padding:10px 12px;font:inherit;font-size:16px;line-height:1.35;outline:none}
+#v-waInbox .nxWaComposer textarea{flex:1;min-width:0;max-height:96px;resize:none;overflow-y:auto;border:1px solid #dbe3ee;border-radius:20px;padding:10px 13px;font:inherit;font-size:16px;line-height:1.35;outline:none;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
 #v-waInbox .nxWaComposer textarea:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
-#v-waInbox .nxWaComposer button{width:40px;height:40px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:14px;font-weight:900;cursor:pointer;display:grid;place-items:center;flex:none}
-#v-waInbox .nxWaComposer .nxWaIconBtn{background:#fff;color:#1d4ed8;border:1px solid #dbe3ee}
+#v-waInbox .nxWaComposer button{width:42px;height:42px;border:0;background:linear-gradient(135deg,#25d366,#2563eb);color:#fff;border-radius:16px;font-weight:900;cursor:pointer;display:grid;place-items:center;flex:none;box-shadow:0 14px 28px -20px rgba(37,99,235,.85);transition:transform .16s ease,filter .16s ease}
+#v-waInbox .nxWaComposer button:hover{transform:translateY(-1px);filter:saturate(1.08)}
+#v-waInbox .nxWaComposer .nxWaIconBtn{background:#fff;color:#1d4ed8;border:1px solid #dbe3ee;box-shadow:none}
 .nxWaCtx{position:fixed;z-index:10000;background:#fff;border:1px solid #dbe3ee;border-radius:14px;box-shadow:0 20px 50px -30px rgba(15,23,42,.8);padding:6px;min-width:150px}
 .nxWaCtx button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:#fff;border-radius:10px;padding:8px 9px;font:inherit;font-size:10.5px;font-weight:800;color:#0f172a;cursor:pointer;text-align:left}
 .nxWaCtx button:hover{background:#f1f5f9}
@@ -202,13 +213,18 @@
   #v-waInbox .nxCrmHomeHead p{font-size:10px;max-width:270px}
   #v-waInbox #nxWaPendPanel{margin-bottom:10px}
   #v-waInbox .nxWaShell{display:flex;flex-direction:column;height:auto;min-height:0;gap:10px}
-  #v-waInbox .nxWaCol{border-radius:16px;min-height:220px;max-height:none}
+  #v-waInbox .nxWaCol{border-radius:16px;min-height:220px;max-height:none;box-shadow:0 16px 42px -34px rgba(15,23,42,.68)}
   #v-waInbox .nxWaListCol{min-height:280px;max-height:44vh}
-  #v-waInbox .nxWaDetailCol{min-height:58vh}
+  #v-waInbox .nxWaDetailCol{min-height:62vh}
   #v-waInbox .nxWaDetailCol:not(.has-open){display:none}
   #v-waInbox .nxWaBackMob{display:grid}
   #v-waInbox .nxWaRow{padding:12px 10px}
-  #v-waInbox .nxWaBub{max-width:88%;font-size:12px}
+  #v-waInbox .nxWaHead{padding:9px 10px}
+  #v-waInbox .nxWaHeadAvatar{width:34px;height:34px;border-radius:13px}
+  #v-waInbox .nxWaMsgs{padding:13px 10px 12px;gap:7px}
+  #v-waInbox .nxWaBub{max-width:87%;font-size:12px}
+  #v-waInbox .nxWaComposer{padding:8px;gap:6px}
+  #v-waInbox .nxWaComposer button{width:40px;height:40px;border-radius:15px}
   #v-waInbox .nxWaBub img,#v-waInbox .nxWaBub audio,#v-waInbox .nxWaBub video{max-width:100%;width:100%}
   #v-waInbox .nxWaPend{align-items:flex-start;flex-wrap:wrap}
   #v-waInbox .nxWaPend .acts{width:100%;margin-left:0;justify-content:flex-start}
@@ -425,8 +441,8 @@
     if (!inp) return;
     borradoresPorHilo.set(hiloAbiertoId, inp.value || '');
   }
-  function cabeceraChat(nombreCabecera) {
-    return `<div class="nxWaHead"><div class="nxWaHeadMain"><button class="nxWaHeadAct nxWaBackMob" onclick="nxWaCerrarDetalleMob()"><i class="ti ti-arrow-left"></i></button><span class="nxWaHeadName">${nombreCabecera}</span></div><button class="nxWaHeadAct" onclick="nxWaToggleBuscar()" title="Buscar en este chat"><i class="ti ti-search"></i></button></div>`;
+  function cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera) {
+    return `<div class="nxWaHead"><div class="nxWaHeadMain"><button class="nxWaHeadAct nxWaBackMob" onclick="nxWaCerrarDetalleMob()"><i class="ti ti-arrow-left"></i></button><div class="nxWaHeadAvatar">${esc(inicialesCabecera || '?')}</div><div class="nxWaHeadText"><span class="nxWaHeadName">${nombreCabecera}</span><span class="nxWaHeadSub">${esc(subCabecera || '')}</span></div></div><button class="nxWaHeadAct" onclick="nxWaToggleBuscar()" title="Buscar en este chat"><i class="ti ti-search"></i></button></div>`;
   }
   function barraBusquedaChat() {
     if (!busquedaChat.activa) return '';
@@ -905,8 +921,8 @@
       return `<div class="nxWaRow${on}" onclick="nxWaAbrirHilo('${h.id}')">
         <div class="nxWaAv">${esc(iniciales(cliente?.nom || nombre))}</div>
         <div class="nxWaWho"><b>${esc(cliente?.nom || nombre)}</b><span>${esc(h.ultimo_mensaje_preview || '')}</span><em class="nxWaTag ${tag.cls}">${esc(tag.label)}</em></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          <span style="font-size:8.5px;color:#94a3b8">${horaRel(h.ultimo_mensaje_at)}</span>
+        <div class="nxWaRowMeta">
+          <span class="nxWaTime">${horaRel(h.ultimo_mensaje_at)}</span>
           ${h.no_leidos_count ? `<span class="nxWaBadge">${h.no_leidos_count}</span>` : ''}
         </div>
       </div>`;
@@ -1002,11 +1018,13 @@
     const cont = $('#nxWaDetalle'); if (!cont) return;
     const detailCol = cont.closest('.nxWaDetailCol');
     if (detailCol) detailCol.classList.toggle('has-open', !!hiloAbiertoId);
-    if (!hiloAbiertoId) { ultimoRenderHiloId = null; cont.innerHTML = '<div class="nxWaEmpty">Selecciona una conversación.</div>'; return; }
+    if (!hiloAbiertoId) { ultimoRenderHiloId = null; cont.innerHTML = '<div class="nxWaEmpty"><b style="display:block;font-size:13px;color:#0f172a;margin-bottom:4px">Selecciona una conversación</b><span>Abre un cliente para revisar mensajes, comprobantes y seguimiento.</span></div>'; return; }
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
     const ventanaAbierta = h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000;
     const nombreCabecera = esc(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '');
+    const subCabecera = `${h?.telefono_e164 || ''}${h?.telefono_e164 ? ' · ' : ''}${ventanaAbierta ? 'ventana abierta' : 'solo plantilla/recordatorio'}`;
+    const inicialesCabecera = iniciales(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || 'WA');
 
     // "mensajes" es un estado global compartido por TODOS los hilos -- solo es seguro pintarlo
     // cuando "mensajesHiloId" (puesto por cargarMensajes exclusivamente al escribir datos
@@ -1015,7 +1033,7 @@
     // pintarDetalle() se acuerde de no hacerlo mientras la carga sigue en vuelo.
     if (mensajesHiloId !== hiloAbiertoId) {
       if (ultimoRenderHiloId !== hiloAbiertoId) {
-        cont.innerHTML = `${cabeceraChat(nombreCabecera)}<div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
+        cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}<div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
         ultimoRenderHiloId = hiloAbiertoId;
       }
       programarReintentoCarga(hiloAbiertoId);
@@ -1041,7 +1059,7 @@
     const filas = mensajes.map((m, i) => renderBurbuja(m, i, porId)).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
     const borrador = borradoresPorHilo.get(hiloAbiertoId) || valorPrevio || '';
     const resp = respuestaActiva ? `<div class="nxWaReplyBar"><div class="tx"><b>Respondiendo a ${esc(respuestaActiva.autor || 'Cliente')}</b><span>${esc(respuestaActiva.texto || '')}</span></div><button onclick="nxWaCancelarRespuesta()">×</button></div>` : '';
-    cont.innerHTML = `${cabeceraChat(nombreCabecera)}${barraBusquedaChat()}
+    cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}${barraBusquedaChat()}
       <div class="nxWaMsgs" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
         ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><button class="nxWaIconBtn" onclick="toast('info','Adjuntos','Queda reservado para la siguiente fase: foto, video y documento con envío real.')"><i class="ti ti-paperclip"></i></button><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`

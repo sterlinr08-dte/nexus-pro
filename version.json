@@ -1,7 +1,14 @@
 {
-  "version": "58.02",
+  "version": "58.03",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.03",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO (WhatsApp seguros visual): la ventana del inbox y las conversaciones ahora tienen una apariencia mas pro y comoda para trabajar: paneles con mejor profundidad, lista de chats mas clara, conversacion con fondo mas limpio, cabecera con avatar/estado, burbujas mas naturales con colita discreta, compositor mas pulido y ajustes moviles para que la ventana del chat se sienta mas estable y ligera en iPhone."
+      ]
+    },
     {
       "version": "58.02",
       "fecha": "2026-09-08",
