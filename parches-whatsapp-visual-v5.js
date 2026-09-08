@@ -43,6 +43,12 @@
 .nxWaCtxBody .nxWaContact .tx b{font-size:10px!important}.nxWaCtxBody .nxWaContact .tx span{font-size:8.3px!important}
 .nxWaCtxBody .nxWaContactsFoot{position:sticky;bottom:-10px;z-index:2;margin:8px -10px -10px!important;padding:9px 10px calc(9px + env(safe-area-inset-bottom))!important;display:flex!important;gap:6px!important;flex-wrap:nowrap!important;overflow-x:auto!important;background:rgba(255,255,255,.92);border-top:1px solid rgba(226,232,240,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .nxWaCtxBody .nxWaContactsFoot button{flex:0 0 auto!important;height:31px!important;font-size:8.3px!important}
+/* La grilla de iconos de acciones masivas (parches-whatsapp-inbox.js) tiene que ganarle a las 2
+   reglas de arriba dentro de esta misma ventana clonada -- misma cadena de clases + una clase
+   extra le da más especificidad, así no importa el orden de carga entre archivos. */
+.nxWaCtxBody .nxWaContactsFoot.nxWaContactsActGrid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(84px,1fr))!important;overflow:visible!important}
+.nxWaCtxBody .nxWaContactsFoot.nxWaContactsActGrid button{flex:initial!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;height:52px!important;width:auto!important}
+.nxWaCtxBody .nxWaContactsFoot.nxWaContactsActGrid button i{font-size:15px}
 .nxWaCtxBauches{display:flex;flex-direction:column;gap:8px}
 .nxWaCtxBauches .nxWaPend{margin:0!important;padding:10px!important;border-radius:14px!important;background:rgba(255,255,255,.90)!important;border-color:rgba(226,232,240,.86)!important;box-shadow:0 10px 22px -22px rgba(15,23,42,.5)}
 .nxWaCtxBauches .nxWaPend img{width:52px!important;height:52px!important;border-radius:12px!important}

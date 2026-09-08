@@ -206,9 +206,19 @@
 #v-waInbox .nxWaContact .st.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaContact .st.warn{background:#fff7ed;color:#d97706}
 #v-waInbox .nxWaContact .st.ok{background:#ecfdf5;color:#059669}
+#v-waInbox .nxWaContact .chev{flex:none;font-size:13px;color:#cbd5e1}
 #v-waInbox .nxWaContactsFoot{display:flex;gap:7px;flex-wrap:wrap;padding:10px;border-top:1px solid rgba(226,232,240,.82);background:rgba(248,250,252,.78)}
 #v-waInbox .nxWaContactsFoot button{height:32px;border:1px solid #dbe3ee;border-radius:999px;background:#fff;padding:0 10px;font:inherit;font-size:8.5px;font-weight:900;color:#1d4ed8;cursor:pointer}
 #v-waInbox .nxWaContactsFoot button.primary{background:#25d366;border-color:#25d366;color:#fff}
+/* Grilla de iconos para las acciones masivas de Contactos -- reemplaza la fila de píldoras que
+   quedaba saturada con 6-7 botones envueltos en cualquier orden. Se combina con .nxWaContactsFoot
+   (no la reemplaza) para conservar el "sticky" + zona segura + detección de clic que ya dependen
+   de esa clase en parches-whatsapp-visual-v5.js. */
+#v-waInbox .nxWaContactsActGrid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:7px;flex-wrap:initial}
+#v-waInbox .nxWaContactsActGrid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:54px;width:auto;border-radius:12px;font-size:7.8px;line-height:1.2;text-align:center;padding:2px 4px;transition:transform .12s ease,box-shadow .12s ease}
+#v-waInbox .nxWaContactsActGrid button:hover{transform:translateY(-1px);box-shadow:0 10px 20px -16px rgba(15,23,42,.5)}
+#v-waInbox .nxWaContactsActGrid button i{font-size:16px}
+#v-waInbox .nxWaContactsActGrid button.admin{color:#7c3aed;border-color:#e9d5ff;background:#faf5ff}
 #v-waInbox .nxWaTag{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:900}
 #v-waInbox .nxWaTag.err{background:#fff1f2;color:#dc2626}
 #v-waInbox .nxWaTag.warn{background:#fff7ed;color:#d97706}
@@ -612,6 +622,7 @@
         <div class="av">${esc(iniciales(c.nom))}</div>
         <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(sub || 'WhatsApp registrado')}</span></div>
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
+        <i class="ti ti-chevron-right chev" aria-hidden="true"></i>
       </div>`;
     }).join('') || '<div class="nxWaEmpty" style="grid-column:1/-1;padding:14px">No hay contactos en este segmento.</div>';
     const deudaCount = count('deuda'), atrasadoCount = count('atrasado'), vencidoCount = count('vencido');
@@ -627,14 +638,14 @@
         ${tab('aldia', 'Al dia')}
       </div>
       <div class="nxWaContactList">${filas}</div>
-      <div class="nxWaContactsFoot">
-        <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')">Factura a todos</button>
-        <button onclick="nxWaAbrirMasivoSegmento('deuda')">Recordar deuda</button>
-        <button onclick="nxWaAbrirMasivoSegmento('atrasado')">Atrasados</button>
-        <button onclick="nxWaAbrirMasivoSegmento('vencido')">Vencidos</button>
-        <button onclick="nxWaAbrirMasivoSegmento('continuidad')">Pólizas por vencer</button>
-        <button onclick="nxWaAbrirMasivoSegmento('aldia')">Clientes al dia</button>
-        ${(sesion?.rol||'')==='admin'?'<button onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-plus"></i> Nueva plantilla</button>':''}
+      <div class="nxWaContactsFoot nxWaContactsActGrid">
+        <button class="primary" onclick="nxWaAbrirMasivoSegmento('todos')"><i class="ti ti-send"></i>Factura a todos</button>
+        <button onclick="nxWaAbrirMasivoSegmento('deuda')"><i class="ti ti-cash"></i>Recordar deuda</button>
+        <button onclick="nxWaAbrirMasivoSegmento('atrasado')"><i class="ti ti-alert-triangle"></i>Atrasados</button>
+        <button onclick="nxWaAbrirMasivoSegmento('vencido')"><i class="ti ti-calendar-off"></i>Vencidos</button>
+        <button onclick="nxWaAbrirMasivoSegmento('continuidad')"><i class="ti ti-shield-check"></i>Por vencer</button>
+        <button onclick="nxWaAbrirMasivoSegmento('aldia')"><i class="ti ti-circle-check"></i>Al día</button>
+        ${(sesion?.rol||'')==='admin'?'<button class="admin" onclick="nxWaAbrirNuevaPlantilla()"><i class="ti ti-file-plus"></i>Nueva plantilla</button>':''}
       </div>
     </div>`;
   }

@@ -1,7 +1,14 @@
 {
-  "version": "58.12",
+  "version": "58.13",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.13",
+      "fecha": "2026-09-08",
+      "notas": [
+        "MEJORADO: la vista de Contactos WhatsApp quedo mas ordenada -- los 6-7 botones de envio masivo que iban amontonados en una fila ahora son una grilla de iconos clara, y cada contacto de la lista muestra una flechita que confirma que se puede tocar para abrir su chat."
+      ]
+    },
     {
       "version": "58.12",
       "fecha": "2026-09-08",
