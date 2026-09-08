@@ -1,7 +1,14 @@
 {
-  "version": "58.06",
+  "version": "58.07",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.07",
+      "fecha": "2026-09-08",
+      "notas": [
+        "CORREGIDO (WhatsApp seguros): se elimino el movimiento visible del scroll al abrir un chat. Ahora el panel completo queda oculto durante el micro-posicionamiento inicial, usa scrollTop directo en vez de scrollTo para evitar desplazamiento suave heredado y se muestra solo cuando ya esta colocado en el ultimo mensaje."
+      ]
+    },
     {
       "version": "58.06",
       "fecha": "2026-09-08",

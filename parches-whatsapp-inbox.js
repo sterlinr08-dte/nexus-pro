@@ -104,9 +104,10 @@
 #v-waInbox .nxWaTime{font-size:8.5px;color:#94a3b8;font-weight:800;white-space:nowrap}
 #v-waInbox .nxWaBadge{background:#16a34a;color:#fff;border-radius:999px;font-size:8.5px;font-weight:900;padding:2px 6px;flex:none;box-shadow:0 8px 18px -12px rgba(22,163,74,.9)}
 #v-waInbox .nxWaDetalle{display:flex;flex-direction:column;height:100%}
+#v-waInbox .nxWaDetalle.prep-bottom{opacity:0}
 #v-waInbox .nxWaHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(226,232,240,.82);font-size:11px;font-weight:900;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.92));color:#0f172a;box-shadow:0 12px 24px -24px rgba(15,23,42,.75);z-index:2}
 #v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;overflow-anchor:none;padding:16px 14px 14px;display:flex;flex-direction:column;gap:7px;background:linear-gradient(180deg,rgba(239,246,255,.86),rgba(248,250,252,.96)),radial-gradient(circle at 10% 15%,rgba(37,211,102,.08),transparent 26%),radial-gradient(circle at 82% 8%,rgba(37,99,235,.08),transparent 24%)}
-#v-waInbox .nxWaMsgs.prep-bottom{opacity:0;pointer-events:none}
+#v-waInbox .nxWaMsgs.prep-bottom{visibility:hidden;pointer-events:none;scroll-behavior:auto}
 #v-waInbox .nxWaBub{max-width:74%;padding:8px 10px 6px;border-radius:15px;font-size:11.5px;line-height:1.43;box-shadow:0 13px 26px -23px rgba(15,23,42,.78)}
 #v-waInbox .nxWaBub.in{align-self:flex-start;background:rgba(255,255,255,.97);border:1px solid rgba(226,232,240,.92);border-top-left-radius:6px}
 #v-waInbox .nxWaBub.out{align-self:flex-end;background:linear-gradient(135deg,#dcfce7,#d9f99d);border:1px solid rgba(34,197,94,.18);border-top-right-radius:6px}
@@ -940,6 +941,7 @@
     busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
     hilosConScrollInicial.add(id);
     hilosPegadosAlFondo.add(id);
+    $('#nxWaDetalle')?.classList.add('prep-bottom');
     // Reservar el turno de este hilo ANTES del await a la RPC de abajo -- si no, una carga vieja
     // y colgada de una visita anterior a este mismo hilo podia "colarse" y pisar mensajes con
     // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
@@ -1007,7 +1009,8 @@
     const box = $('#nxWaMsgsBox');
     if (!box) return;
     nxWaIgnorarScrollHasta = Date.now() + 350;
-    box.scrollTo({ top: box.scrollHeight, behavior: suave ? 'smooth' : 'auto' });
+    if (suave) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+    else box.scrollTop = box.scrollHeight;
   }
   function chatEstaAlFondo(box) {
     return !box || (box.scrollTop + box.clientHeight >= box.scrollHeight - 72);
@@ -1027,6 +1030,7 @@
       if (hiloAbiertoId !== hiloId) return;
       scrollFondoChat(false);
       $('#nxWaMsgsBox')?.classList.remove('prep-bottom');
+      $('#nxWaDetalle')?.classList.remove('prep-bottom');
       setTimeout(() => hilosConScrollInicial.delete(hiloId), 220);
     };
     requestAnimationFrame(mostrar);
@@ -1104,6 +1108,7 @@
     const filas = mensajes.map((m, i) => renderBurbuja(m, i, porId)).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
     const borrador = borradoresPorHilo.get(hiloAbiertoId) || valorPrevio || '';
     const resp = respuestaActiva ? `<div class="nxWaReplyBar"><div class="tx"><b>Respondiendo a ${esc(respuestaActiva.autor || 'Cliente')}</b><span>${esc(respuestaActiva.texto || '')}</span></div><button onclick="nxWaCancelarRespuesta()">×</button></div>` : '';
+    if (scrollInicial) cont.classList.add('prep-bottom'); else cont.classList.remove('prep-bottom');
     cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}${barraBusquedaChat()}
       <div class="nxWaMsgs ${scrollInicial ? 'prep-bottom' : ''}" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
