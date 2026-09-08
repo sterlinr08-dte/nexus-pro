@@ -1189,6 +1189,12 @@
     guardarBorradorActual();
     hiloAbiertoId = null; respuestaActiva = null; mensajes = []; mensajesHiloId = null;
     pintarLista(); pintarDetalle();
+    // "nxWaChatOpen" es una marca separada de un parche visual anterior (parches-whatsapp-
+    // visual.js) que oculta la lista y muestra el detalle en el celular -- este botón nativo de
+    // volver no sabía de su existencia y la dejaba pegada, mostrando la pantalla de detalle
+    // vacía sin forma de volver a la lista. Se limpia aquí explícitamente para no depender de
+    // que ambos mecanismos se mantengan sincronizados por su cuenta.
+    try { $('#v-waInbox')?.classList.remove('nxWaChatOpen'); } catch (e) {}
   };
   window.nxWaSetRespuesta = function (id) {
     const m = mensajes.find(x => String(x.id) === String(id)); if (!m) return;

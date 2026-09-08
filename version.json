@@ -1,7 +1,14 @@
 {
-  "version": "58.10",
+  "version": "58.11",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.11",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO: al volver de un chat de WhatsApp en el celular, a veces quedaba una pantalla en blanco sin poder ver la lista de conversaciones de nuevo. Era un cruce entre dos mecanismos internos que marcaban 'chat abierto' por separado y quedaban desincronizados."
+      ]
+    },
     {
       "version": "58.10",
       "fecha": "2026-09-08",
