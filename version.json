@@ -1,7 +1,14 @@
 {
-  "version": "58.04",
+  "version": "58.05",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.05",
+      "fecha": "2026-09-08",
+      "notas": [
+        "CORREGIDO (WhatsApp seguros): el chat ahora queda anclado al ultimo mensaje al abrir una conversacion y se mantiene ahi cuando entran o se envian mensajes nuevos. Solo deja de seguir el fondo cuando el agente sube manualmente, busca un mensaje o toca una cita para revisar historial. Esto evita que la ventana salte al primer mensaje despues de refrescos, renders o carga de multimedia."
+      ]
+    },
     {
       "version": "58.04",
       "fecha": "2026-09-08",

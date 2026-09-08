@@ -75,6 +75,8 @@
   let nxWaMenuTimer = null;
   let nxWaSwipe = null;
   const hilosConScrollInicial = new Set();
+  const hilosPegadosAlFondo = new Set();
+  let nxWaIgnorarScrollHasta = 0;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -103,7 +105,7 @@
 #v-waInbox .nxWaBadge{background:#16a34a;color:#fff;border-radius:999px;font-size:8.5px;font-weight:900;padding:2px 6px;flex:none;box-shadow:0 8px 18px -12px rgba(22,163,74,.9)}
 #v-waInbox .nxWaDetalle{display:flex;flex-direction:column;height:100%}
 #v-waInbox .nxWaHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(226,232,240,.82);font-size:11px;font-weight:900;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.92));color:#0f172a;box-shadow:0 12px 24px -24px rgba(15,23,42,.75);z-index:2}
-#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;padding:16px 14px 14px;display:flex;flex-direction:column;gap:7px;background:linear-gradient(180deg,rgba(239,246,255,.86),rgba(248,250,252,.96)),radial-gradient(circle at 10% 15%,rgba(37,211,102,.08),transparent 26%),radial-gradient(circle at 82% 8%,rgba(37,99,235,.08),transparent 24%)}
+#v-waInbox .nxWaMsgs{flex:1;overflow-y:auto;overflow-anchor:none;padding:16px 14px 14px;display:flex;flex-direction:column;gap:7px;background:linear-gradient(180deg,rgba(239,246,255,.86),rgba(248,250,252,.96)),radial-gradient(circle at 10% 15%,rgba(37,211,102,.08),transparent 26%),radial-gradient(circle at 82% 8%,rgba(37,99,235,.08),transparent 24%)}
 #v-waInbox .nxWaBub{max-width:74%;padding:8px 10px 6px;border-radius:15px;font-size:11.5px;line-height:1.43;box-shadow:0 13px 26px -23px rgba(15,23,42,.78)}
 #v-waInbox .nxWaBub.in{align-self:flex-start;background:rgba(255,255,255,.97);border:1px solid rgba(226,232,240,.92);border-top-left-radius:6px}
 #v-waInbox .nxWaBub.out{align-self:flex-end;background:linear-gradient(135deg,#dcfce7,#d9f99d);border:1px solid rgba(34,197,94,.18);border-top-right-radius:6px}
@@ -936,6 +938,7 @@
     respuestaActiva = null;
     busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
     hilosConScrollInicial.add(id);
+    hilosPegadosAlFondo.add(id);
     // Reservar el turno de este hilo ANTES del await a la RPC de abajo -- si no, una carga vieja
     // y colgada de una visita anterior a este mismo hilo podia "colarse" y pisar mensajes con
     // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
@@ -994,6 +997,7 @@
   }
 
   function scrollAlMensaje(id) {
+    if (hiloAbiertoId) hilosPegadosAlFondo.delete(hiloAbiertoId);
     setTimeout(() => {
       const el = document.getElementById('nxWaMsg-' + id);
       if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1002,7 +1006,19 @@
   function scrollFondoChat(suave) {
     const box = $('#nxWaMsgsBox');
     if (!box) return;
+    nxWaIgnorarScrollHasta = Date.now() + 350;
     box.scrollTo({ top: box.scrollHeight, behavior: suave ? 'smooth' : 'auto' });
+  }
+  function chatEstaAlFondo(box) {
+    return !box || (box.scrollTop + box.clientHeight >= box.scrollHeight - 72);
+  }
+  function vigilarScrollManual(box, hiloId) {
+    if (!box || !hiloId) return;
+    box.onscroll = () => {
+      if (Date.now() < nxWaIgnorarScrollHasta) return;
+      if (chatEstaAlFondo(box)) hilosPegadosAlFondo.add(hiloId);
+      else hilosPegadosAlFondo.delete(hiloId);
+    };
   }
   function asegurarScrollFondoInicial(hiloId) {
     if (!hiloId || hiloAbiertoId !== hiloId) return;
@@ -1012,7 +1028,7 @@
     setTimeout(() => { if (hiloAbiertoId === hiloId) scrollFondoChat(false); }, 420);
   }
   window.nxWaMediaLoaded = function () {
-    if (!hiloAbiertoId || !hilosConScrollInicial.has(hiloAbiertoId)) return;
+    if (!hiloAbiertoId || (!hilosConScrollInicial.has(hiloAbiertoId) && !hilosPegadosAlFondo.has(hiloAbiertoId))) return;
     asegurarScrollFondoInicial(hiloAbiertoId);
   };
 
@@ -1073,7 +1089,8 @@
     const cursorPrevio = teniaFoco && inputPrevio ? [inputPrevio.selectionStart, inputPrevio.selectionEnd] : null;
     const boxPrevio = $('#nxWaMsgsBox');
     const scrollInicial = hilosConScrollInicial.has(hiloAbiertoId);
-    const estabaAlFondo = scrollInicial || (boxPrevio ? (boxPrevio.scrollTop + boxPrevio.clientHeight >= boxPrevio.scrollHeight - 40) : true);
+    const pegadoAlFondo = hilosPegadosAlFondo.has(hiloAbiertoId);
+    const estabaAlFondo = scrollInicial || pegadoAlFondo || chatEstaAlFondo(boxPrevio);
 
     recomputarBusqueda();
     const porId = new Map(mensajes.map(m => [String(m.id), m]));
@@ -1090,7 +1107,8 @@
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
-    if (scrollInicial) asegurarScrollFondoInicial(hiloAbiertoId);
+    if (nuevoBox) vigilarScrollManual(nuevoBox, hiloAbiertoId);
+    if (scrollInicial || pegadoAlFondo) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');
     if (nuevoInput) {
@@ -1196,6 +1214,7 @@
     // pudiera resolver durante el round-trip del envio y pisar "mensajes" con datos de antes de
     // mandar este mensaje.
     marcarSolicitudCarga(hiloDestino);
+    hilosPegadosAlFondo.add(hiloDestino);
     const tempMsg = tempId ? mensajes.find(m => String(m.id) === String(tempId)) : {
       id: 'tmp-' + Date.now(),
       hilo_id: hiloDestino,
@@ -1214,7 +1233,7 @@
     mensajesHiloId = hiloDestino;
     respuestaActiva = null;
     pintarDetalle();
-    const box = $('#nxWaMsgsBox'); if (box) box.scrollTop = box.scrollHeight;
+    scrollFondoChat(false);
     const A = api();
     // pintarDetalle() siempre re-renderiza completo -- si el usuario cambia de hilo mientras este
     // envio sigue en vuelo, "inp" queda desconectado del documento. Estas dos funciones vuelven a
