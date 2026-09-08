@@ -12559,16 +12559,17 @@ autorización de esta conversación (u otra) sigue valiendo en la tuya.**
   contra la documentación real de Zernio (`docs.zernio.com/broadcasts/create-broadcast`), no
   supuesto. En su lugar: la Edge Function nueva llama al endpoint 1-a-1 de Zernio en bucle, una vez
   por cliente, igual que ya hace `whatsapp-notificar`.
-- **Ya hecho (4 commits locales, `main`, SIN pushear a origin — verificar con `git log
-  origin/main..HEAD` si esta lista se desactualiza):**
-  1. `409d946` — Edge Function `whatsapp-envio-masivo` (ya DESPLEGADA en Supabase, pero no se puede
-     probar todavía — ver el bloqueo abajo) + el blueprint completo.
-  2. `cd3ef7b` — `parches-whatsapp-inbox.js`: panel de confirmación + progreso en vivo
+- **Ya hecho (7 commits, `main` — verificar con `git log --oneline -10` cuál es el estado real, los
+  hashes de abajo quedan viejos apenas alguien haga rebase/push de nuevo):**
+  1. Edge Function `whatsapp-envio-masivo` (DESPLEGADA en Supabase) + el blueprint completo.
+  2. `parches-whatsapp-inbox.js`: panel de confirmación + progreso en vivo
      (`nxWaAbrirMasivoSegmento`/`nxWaIniciarEnvioMasivo`/`_waPollLoteEnvioMasivo`).
-  3. `95d6249` — `index.html`: se quitó el modal `#mWAMasivo` viejo y sus funciones
+  3. `index.html`: se quitó el modal `#mWAMasivo` viejo y sus funciones
      (`abrirWAMasivo`/`ejecutarWAMasivo`/etc. — `enviarReciboWA`/`_ultimoAbono` NO se tocaron, son
-     una función distinta). `APP_VERSION`/`version.json` subidos a **57.92**.
-  4. `380a6d5` — el archivo de migración de abajo + esta misma nota.
+     una función distinta). `APP_VERSION`/`version.json` subidos a **57.93** (57.92 ya lo había
+     usado, mientras tanto, otra sesión para su propio arreglo del MutationObserver de WhatsApp —
+     resuelto en un rebase antes de subir, sin perder ningún cambio de ninguno de los dos lados).
+  4. El archivo de migración (abajo) + esta nota de handoff, actualizada a medida que avanzó.
 - **✅ RESUELTO (7-sep-2026) — el dueño ya aplicó la migración a mano** (el clasificador de
   seguridad de Claude Code bloquea crear tablas directo en producción, así que le tocó a él vía SQL
   Editor). Verificado en vivo: las 2 tablas existen con RLS activo y la función RPC está creada.
