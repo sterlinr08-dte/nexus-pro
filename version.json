@@ -1,7 +1,14 @@
 {
-  "version": "58.09",
+  "version": "58.10",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.10",
+      "fecha": "2026-09-08",
+      "notas": [
+        "NUEVO: los contactos del panel 'Contactos WhatsApp' ahora son clicables -- tocar uno abre directo su conversacion en el Buzon. ARREGLADO: el compositor de mensajes respeta mejor la zona segura del celular para no quedar tapado por la barra del navegador."
+      ]
+    },
     {
       "version": "58.09",
       "fecha": "2026-09-08",

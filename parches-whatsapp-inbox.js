@@ -147,7 +147,7 @@
 #v-waInbox .nxWaBubMeta{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px;font-size:8.5px;color:#64748b}
 #v-waInbox .nxWaBub.out .nxWaBubMeta{color:#4b8563}
 #v-waInbox .nxWaRetry{border:0;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:3px 7px;font:inherit;font-size:8px;font-weight:900;cursor:pointer}
-#v-waInbox .nxWaComposerWrap{border-top:1px solid rgba(226,232,240,.86);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.95));box-shadow:0 -18px 32px -32px rgba(15,23,42,.65);z-index:2}
+#v-waInbox .nxWaComposerWrap{border-top:1px solid rgba(226,232,240,.86);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.95));box-shadow:0 -18px 32px -32px rgba(15,23,42,.65);z-index:2;flex:none;padding-bottom:env(safe-area-inset-bottom)}
 #v-waInbox .nxWaReplyBar{margin:8px 10px 0;padding:8px 10px;border-left:3px solid #25d366;border-radius:12px;background:#f8fafc;display:flex;align-items:center;gap:8px;font-size:10px;color:#475569}
 #v-waInbox .nxWaReplyBar .tx{min-width:0;flex:1}
 #v-waInbox .nxWaReplyBar b{display:block;color:#0f172a;font-size:10px}
@@ -320,6 +320,13 @@
     try { if (typeof cerrarClientSummary === 'function') cerrarClientSummary(); } catch (e) {}
     try { nav('waInbox', null); } catch (e) {}
     await window.nxWaAbrirHilo(hiloId);
+  };
+
+  // Tocar un contacto en el panel "Contactos WhatsApp" abre su chat -- reusa el mismo camino que
+  // el botón de la ficha del cliente, y cierra el panel/overlay para que se vea la conversación.
+  window.nxWaAbrirContacto = async function (clienteId) {
+    try { if (typeof window.nxWaVisualCerrarPanel === 'function') window.nxWaVisualCerrarPanel(); } catch (e) {}
+    await window.nxAbrirWhatsAppDeCliente(clienteId);
   };
 
   // Botón "Enviar recordatorio de pago ahora" -- aparece SOLO cuando la ventana de 24h de Meta
@@ -601,7 +608,7 @@
     const filas = data.slice(0, 14).map(x => {
       const c = x.c;
       const sub = [c.wa, c.plan, c.ars].filter(Boolean).join(' · ');
-      return `<div class="nxWaContact">
+      return `<div class="nxWaContact" role="button" tabindex="0" aria-label="Abrir chat con ${esc(c.nom || 'cliente')}" onclick="nxWaAbrirContacto('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
         <div class="av">${esc(iniciales(c.nom))}</div>
         <div class="tx"><b>${esc(c.nom || 'Cliente')}</b><span>${esc(sub || 'WhatsApp registrado')}</span></div>
         <span class="st ${x.estado.cls}">${esc(x.estado.label)}</span>
