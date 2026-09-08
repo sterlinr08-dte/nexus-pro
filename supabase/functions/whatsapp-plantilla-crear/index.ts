@@ -17,9 +17,14 @@ const ZERNIO_TIMEOUT_MS = 20000;
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+// "prefer" agregado: API.hdr() (helper REST del frontend, index.html) siempre lo manda
+// (Prefer: return=representation, pensado para /rest/v1/...) -- si alguien reusa ese helper
+// para llamar esta función (como el snippet de consola que se le pasó al dueño para someter
+// plantillas a mano), el preflight lo rechazaba sin este header permitido, y el navegador
+// reportaba un "Failed to fetch" genérico sin más detalle. Confirmado en vivo 2026-09-08.
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 function json(o: unknown, status = 200) {
