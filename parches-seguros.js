@@ -8,8 +8,11 @@
   function qv(){
     try{
       var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');
-      return q>=0?s.slice(q):'';
-    }catch(e){return '';}
+      var base=q>=0?s.slice(q):'';
+      /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
+         WhatsApp nuevas sin tocar el index.html monolítico solo por una versión. */
+      return base?(base+'&b=5818'):'?b=5818';
+    }catch(e){return '?b=5818';}
   }
 
   function load(src,done){
