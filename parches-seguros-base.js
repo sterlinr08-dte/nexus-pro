@@ -9957,8 +9957,6 @@
           const cli = x.cli || {};
           const chips = x.periodos.sort((a, b) => a.num - b.num)
             .map(p => `<span style="display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
-          const num = waNumero(cli);
-          const idSafe = esc(String(cli.id || i));
           const cid = cli.id ? esc(String(cli.id)) : '';
           const nomData = esc((cli.nom || '').toLowerCase());
           return `
@@ -9974,7 +9972,6 @@
                   <div style="font-weight:900;color:#dc2626;font-size:15px;white-space:nowrap">${fmt(x.total)}</div>
                   <div style="display:flex;flex-direction:column;gap:4px;margin-top:5px">
                     ${cid ? `<button class="btn bsm" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;font-weight:800" onclick="window.nxCobrarPend('${cid}')"><i class="ti ti-wallet"></i> Cobrar</button>` : ''}
-                    ${num ? `<button class="btn bsm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;font-weight:800" onclick="window.nxRecordarPago('${idSafe}','${num}',${x.total})"><i class="ti ti-brand-whatsapp"></i> Recordar</button>` : '<span style="font-size:9px;color:#cbd5e1">Sin WhatsApp</span>'}
                   </div>
                 </div>
               </div>
@@ -10043,15 +10040,9 @@
     notify('err', 'No se pudo abrir el cobro', '');
   };
 
-  // Abrir WhatsApp con un recordatorio de pago
-  window.nxRecordarPago = function (clienteId, numero, monto) {
-    const ST_ = getST();
-    const cli = (Array.isArray(ST_.clientes) ? ST_.clientes : []).find(c => String(c.id) === String(clienteId));
-    const nom = cli?.nom ? cli.nom.split(' ')[0] : '';
-    const msg = `Hola ${nom}, le saludamos de la correduría. Le recordamos que tiene un saldo pendiente de meses anteriores por ${fmt(monto)}. Agradecemos su pago. ¡Gracias!`;
-    try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
-  };
+  // nxRecordarPago (recordatorio de saldo pendiente por wa.me) se quitó el 2026-09-08 -- el
+  // atraso ya se recuerda solo por el sistema real (whatsapp_detectar_atrasados ->
+  // whatsapp_notificar_evento -> Zernio), con su propia cadencia.
 
   // ═══ BOTÓN AL LADO DE LA PESTAÑA "COBROS" ═══
   function inyectarBoton() {
@@ -12135,7 +12126,6 @@
           <div class="fr"><label>Referencia (opcional)</label><input id="recRef" class="no-upper" value="${esc(ref)}" placeholder="No. de cheque, transferencia..."></div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap">
-          ${waNum(c) ? `<button class="btn bwa" type="button" onclick="window.nxReciboWA()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
           <button class="btn bc2" type="button" onclick="window.nxReciboCompartir()"><i class="ti ti-share"></i> Compartir</button>
           <button class="btn bc1" type="button" onclick="window.nxReciboImprimir()"><i class="ti ti-printer"></i> Imprimir</button>
         </div>
@@ -12253,15 +12243,9 @@
     return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses:*\n${mesesTxt}\n${adelantoTxt}\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
   }
 
-  window.nxReciboWA = function () {
-    const d = datosRecibo(); if (!d) return;
-    if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
-    if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
-    const num = waNum(d.c); if (!num) { toast('err', 'Cliente sin WhatsApp válido'); return; }
-    guardarMesesAbono(d);
-    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
-    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(construirTextoRecibo(d)), '_blank', 'noopener,noreferrer');
-  };
+  // nxReciboWA (botón "WhatsApp" del modal de recibo) se quitó el 2026-09-08 -- el recibo ya se
+  // manda solo por el sistema real (evento pago_aplicado -> Zernio). "Compartir"/"Imprimir" siguen
+  // intactos abajo -- guardarMesesAbono()/construirTextoRecibo() los sigue usando esa función.
 
   window.nxReciboCompartir = async function () {
     const d = datosRecibo(); if (!d) return;

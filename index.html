@@ -4001,12 +4001,10 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       <div><b>Resumen del pago</b><span id="aboResumenTxt">Método: — · Banco: — · Cuenta: — · Agente: —</span></div>
     </div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado — envía el recibo</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
         <button class="btn bsm bc1" id="btnReciboVer" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
       </div>
-      <div id="reciboSinWA" style="display:none;font-size:10px;color:#92400e;margin-top:4px">Este cliente no tiene WhatsApp registrado — usa "Ver / compartir recibo" para imprimirlo o compartirlo por otra vía.</div>
     </div>
     <div style="margin-bottom:8px"><button class="btn bsm" id="btnReciboAdelanto" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
     <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
@@ -6094,27 +6092,13 @@ async function guardarCoberturas(){
   }
 }
 // Enviar las coberturas del plan de un cliente por WhatsApp
+// Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+// inbox.js) -- ya no arma ni precarga el texto de coberturas, el agente lo escribe/copia ahí.
 function enviarCoberturasWA(cid){
   const c=ST.clientes.find(x=>x.id===cid);
   if(!c){toast('err','Cliente no encontrado');return;}
   if(!c.wa){toast('err','Sin WhatsApp','Este cliente no tiene número de WhatsApp');return;}
-  // Determinar la clave del plan del cliente
-  const planTxt=(c.plan||'').toLowerCase();
-  let planKey='basico';
-  if(planTxt.includes('superior'))planKey='superior';
-  else if(planTxt.includes('esencial'))planKey='esencial';
-  const cob=(ST.config&&ST.config['cobertura_'+planKey])||'';
-  if(!cob.trim()){
-    toast('err','Sin coberturas','Primero escribe las coberturas en Configuración → Coberturas');
-    return;
-  }
-  // Armar mensaje con lista de puntos
-  const lineas=cob.split('\n').filter(l=>l.trim()).map(l=>'✅ '+l.trim()).join('\n');
-  const emp=CFG.empNom||'Nuestra correduría';
-  const msg=`*${emp}*\n\nHola ${c.nom.split(' ')[0]}, te comparto las coberturas de tu *Plan ${c.plan}*:\n\n${lineas}\n\n¿Tienes alguna pregunta? Con gusto te ayudamos. 🤝`;
-  const num=c.wa.replace(/\D/g,'');
-  const numFull=num.length===10?'1'+num:num;
-  window.open(`https://wa.me/${numFull}?text=${encodeURIComponent(msg)}`,'_blank');
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(cid);
 }
 function cargarTemaGuardado(){
   // El tema vive en la base (ver PREFERENCIAS DEL USUARIO), así que solo se puede aplicar
@@ -6427,7 +6411,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='57.94';
+const APP_VERSION='57.95';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6939,7 +6923,6 @@ function sfFacturaCard(f){
       ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:11px;padding:6px;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#059669,#10b981);margin-bottom:5px">💰 COBRAR</button>`}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:4px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#6d28d9,#8b5cf6)">Factura</button>
-        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#1da851,#25d366)">WhatsApp</button>`}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#b45309,#f59e0b)">Precio</button>`:''}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}',this)" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#dc2626,#ef4444)">Anular</button>`:''}
       </div>
@@ -9887,7 +9870,6 @@ function rFact(){
         ${prevChip}
         <div class="sfr-foot"><span class="sfr-brand">${escHtml((CFG.empNom||'NEXUS PRO SEGUROS'))}</span>
           <div class="sfr-acts">
-            ${anul?'':`<button class="sfr-ico" aria-label="WhatsApp a ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();enviarWA('${f.id}')"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>`}
             <button class="sfr-ico" aria-label="Más acciones" onclick="event.stopPropagation();nxFactMenu('${f.id}',this)"><i class="ti ti-dots-vertical" aria-hidden="true"></i></button>
             ${anul?'':`<button class="sfr-cob" onclick="${cobrar}">COBRAR</button>`}
           </div>
@@ -9927,7 +9909,6 @@ function rFact(){
       <td data-lb="Estado"><span class="badge ${ec}">${est.pillTxt.toUpperCase()}</span></td>
       <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}</td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
-        ${anul?'':btn(`enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
         ${btn(`event.stopPropagation();nxFactMenu('${f.id}',this)`,'bghost','ti-dots-vertical','','Más acciones')}
       </div></td>
     </tr>`;
@@ -10159,24 +10140,15 @@ function nxMesesAntCompartir(cid,periodoActual){
   toast('warn','No se pudo compartir','Este navegador no permite compartir');
 }
 
-async function enviarWA(fid){
-  const f=ST.facturas.find(x=>x.id===fid);const c=ST.clientes.find(x=>x.id===f?.cliente_id);
-  if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
-  const deudaStr=f.deuda_ant>0?`*Deuda anterior:* RD$ ${fmtN(f.deuda_ant)}`:'';
-  const msg=autoCfg.tpl.replace('{{nombre}}',c.nom).replace('{{plan}}',c.plan).replace('{{mes}}',MESES[f.mes-1]+' '+f.anio).replace('{{prima}}',fmtN(f.prima_base+f.prima_deps)).replace('{{deuda}}',deudaStr).replace('{{total}}',fmtN(f.total)).replace('{{poliza}}',c.numero_poliza||'—').replace('{{vence}}',c.fecha_fin||'—').replace('{{empresa}}',CFG.empNom);
-  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-  await API.patch('facturas',`id=eq.${fid}`,{wa_sent:true});f.wa_sent=true;
-  toast('ok','WhatsApp abierto',c.nom);rFact();
-}
+// enviarWA (botón manual "WhatsApp" de Facturas) se quitó el 2026-09-08 -- la factura generada
+// ya se manda sola por el sistema real (whatsapp_notificar_evento -> Edge Function -> Zernio) en
+// cuanto se crea la factura, así que el botón manual quedaba redundante.
 
+// Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
+// inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
 function enviarWAPoliza(cid){
   const c=ST.clientes.find(x=>x.id===cid);if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
-  const ep=getEstPol(c);
-  const fin=c.fecha_fin?new Date(c.fecha_fin):null;
-  const dias=fin?Math.ceil((fin-new Date())/86400000):null;
-  const msg=`Estimado/a *${c.nom}*,\n\nLe informamos que su póliza de seguro de salud *${c.numero_poliza||''}* ${dias!==null&&dias<0?'ha *vencido*':`*vence en ${dias} días* (${c.fecha_fin})`}.\n\n*Plan:* ${c.plan}\n*Estado:* ${ep.lbl}\n\nPor favor contáctenos para renovar.\n\n_${CFG.empNom}_`;
-  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-  toast('ok','WA de vencimiento enviado',c.nom);
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(cid);
 }
 
 // ── PDF ──────────────────────────────────────────────────────────────────────
@@ -10407,7 +10379,6 @@ function rCob(){
         ${prevChip}
         <div class="sfr-foot"><span class="sfr-brand">${escHtml((CFG.empNom||'NEXUS PRO SEGUROS'))}</span>
           <div class="sfr-acts">
-            <button class="sfr-ico" aria-label="WhatsApp a ${escHtml(c.nom)}" onclick="event.stopPropagation();nxCobroWA('${c.id}')"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
             <button class="sfr-cob" onclick="${cobrar}">COBRAR</button>
           </div>
         </div>
@@ -10441,7 +10412,6 @@ function rCob(){
         <div class="cbAmt"><div class="cbAl">Pendiente</div><div class="cbV ${pd>0?'red':'gray'}">${fmt(pd)}</div></div>
         <div class="cbActs">
           <button class="cbBtn cobrar" onclick="abrirAbono('${c.id}')"><i class="ti ti-cash"></i> COBRAR</button>
-          <button class="cbBtn wa" onclick="nxCobroWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i> WHATSAPP</button>
         </div>
       </div>
     </div>`;
@@ -10454,37 +10424,17 @@ function rCob(){
   }
 }
 function cobIrPag(p){_cobPagina=p;rCob();nxPagScrollTop();}
-// Recordatorio de cobro por WhatsApp DIRECTO al cliente (texto con lo que debe)
-function nxCobroWA(cid){
-  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
-  if(!nxWa(c.wa)){toast('warn','Sin WhatsApp',(c.nom||'')+' no tiene número de WhatsApp registrado');return;}
-  const da=deudaAnt(c);const pd=pend(c);const tot=pendTot(c);
-  const _mc=mesCorte();const mesLbl=MESES[_mc.mes-1]+' '+_mc.anio;
-  let cuerpo;
-  if(tot<=0){
-    cuerpo='¡Está al día con sus pagos! Gracias por su confianza. 🙏';
-  }else{
-    const lineas=[];
-    if(pd>0)lineas.push(`*Pendiente (${mesLbl}):* RD$ ${fmtN(pd)}`);
-    if(da>0)lineas.push(`*Deuda anterior:* RD$ ${fmtN(da)}`);
-    lineas.push(`*Total a pagar:* RD$ ${fmtN(tot)}`);
-    cuerpo=`Le recordamos su pago del seguro de salud:\n\n${lineas.join('\n')}\n\nPuede coordinar el pago con su agente. ¡Gracias!`;
-  }
-  const msg=`Estimado/a *${c.nom}*,\n\n${cuerpo}\n\n_${CFG.empNom}_`;
-  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-  toast('ok','WhatsApp abierto',c.nom);
-  try{logAudit('COBRO_RECORDATORIO_WA',c.nom+' · '+fmt(tot),'Cobros');}catch(e){}
-}
+// nxCobroWA (recordatorio de saldo pendiente por wa.me) se quitó el 2026-09-08 -- el atraso ya
+// se recuerda solo por el sistema real (whatsapp_detectar_atrasados -> whatsapp_notificar_evento
+// -> Zernio), con su propia cadencia. La opción "Al cliente" del selector de abajo se quitó con
+// ella; queda solo "A su agente", que no tiene equivalente automático.
 
-
-// ════════ WHATSAPP: elegir a quién se le escribe — al CLIENTE o a su AGENTE ════════
-// El mensaje al cliente reusa nxCobroWA (el de siempre). El del agente es nuevo:
-// le avisa que ESE cliente suyo está atrasado, para que le dé seguimiento.
+// ════════ WHATSAPP: avisar al AGENTE que su cliente está atrasado ════════
 function nxWaElegir(cid){
   const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
   const ag=ST.agentes.find(a=>String(a.id)===String(c.agente_id));
   const tot=pendTot(c);
-  const telC=nxWa(c.wa), telA=ag?nxWa(ag.tel):'';
+  const telA=ag?nxWa(ag.tel):'';
   const opt=(ico,color,titulo,sub,tel,accion,arreglar)=>
     `<div class="waOpt${tel?'':' sinTel'}" ${tel?`onclick="${accion}"`:`onclick="${arreglar}"`} tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" aria-label="${escHtml(titulo)}">
        <div class="waIco" style="background:${color}1a;color:${color}"><i class="ti ${ico}"></i></div>
@@ -10497,8 +10447,7 @@ function nxWaElegir(cid){
   const html=`<div class="waSheet">
     <div class="waHd"><div><div class="waHdT">${escHtml(c.nom)}</div><div class="waHdS">${tot>0?'Debe '+fmt(tot):'Está al día'}</div></div>
       <button onclick="closeM('mWaElegir')" aria-label="Cerrar">✕</button></div>
-    <div class="waSec">¿A quién le escribo?</div>
-    ${opt('ti-user','#059669','Al cliente',c.nom+' · '+(c.wa||''),telC,`closeM('mWaElegir');nxCobroWA('${c.id}')`,`closeM('mWaElegir');editarCli('${c.id}')`)}
+    <div class="waSec">Avisar a su agente</div>
     ${ag?opt('ti-headset','#2563eb','A su agente',ag.nom+' · '+(ag.tel||''),telA,`closeM('mWaElegir');nxAgenteWA('${c.id}')`,`closeM('mWaElegir');editarAgt('${ag.id}')`)
         :`<div class="waOpt sinTel" style="cursor:default"><div class="waIco" style="background:#ef44441a;color:#ef4444"><i class="ti ti-alert-triangle"></i></div><div style="flex:1"><div class="waT">Sin agente</div><div class="waS">Este cliente no tiene agente asignado</div></div></div>`}
   </div>`;
@@ -10666,16 +10615,13 @@ function rAvisos(){
       ${vencerArr.length?vencerArr.map(cardVence).join(''):'<div class="empty">Ninguna póliza por vencer 🎉</div>'}
     </div>`;
 }
-// Recordatorio de renovación por WhatsApp (póliza vencida o por vencer)
+// Recordatorio de renovación por WhatsApp (póliza vencida o por vencer) -- reusa el Buzón real
+// (parches-whatsapp-inbox.js), ya no arma ni precarga ningún mensaje.
 function nxVencerWA(cid){
   const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
   if(!nxWa(c.wa)){toast('warn','Sin WhatsApp',(c.nom||'')+' no tiene número de WhatsApp registrado');return;}
-  const e=getEstPol(c);
-  const linea=e.est==='vencida'?'ya *venció*':`*vence pronto* (${e.lbl.toLowerCase()})`;
-  const msg=`Estimado/a *${c.nom}*,\n\nLe informamos que su póliza *${c.numero_poliza||'—'}* ${linea}.\n*Fecha de vencimiento:* ${c.fecha_fin||'—'}\n\nContáctenos para renovar su cobertura y evitar interrupciones en su seguro.\n\n_${CFG.empNom}_`;
-  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-  toast('ok','WhatsApp abierto',c.nom);
   try{logAudit('POLIZA_VENCER_WA',c.nom+' · '+(c.fecha_fin||''),'Avisos');}catch(e2){}
+  if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(cid);
 }
 // ════════ BANCOS - Módulo nativo ════════
 let _bancosCache=[];
@@ -11386,10 +11332,6 @@ async function verHistorialAbonos(clienteId){
 // escondía por completo y sin aviso si el cliente no tenía WhatsApp registrado).
 function mostrarCajaRecibo(c){
   const reciboDiv=document.getElementById('reciboWAbtn');if(!reciboDiv)return;
-  const btnWA=document.getElementById('btnReciboWA');const avisoSinWA=document.getElementById('reciboSinWA');
-  const tieneWA=!!(c&&c.wa);
-  if(btnWA)btnWA.style.display=tieneWA?'':'none';
-  if(avisoSinWA)avisoSinWA.style.display=tieneWA?'none':'';
   reciboDiv.style.display='block';
 }
 // ── CUTOVER (docs/bitacora/2026-08-10-2321-chatgpt.md) ──────────────────────
@@ -11475,8 +11417,7 @@ async function regAbono(){
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Abono registrado',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
       folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
-      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
-       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
+      [{label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}]);
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
@@ -11518,8 +11459,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago a deuda anterior',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
       folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
-      [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
-       {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
+      [{label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}]);
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
@@ -13490,31 +13430,16 @@ function switchTab(tab){
 // ── WA Masivo: reemplazado el 2026-09-07 por el envío automático vía Zernio ────
 // (nxWaAbrirMasivoSegmento/nxWaIniciarEnvioMasivo en parches-whatsapp-inbox.js) --
 // las funciones que abrían pestañas de wa.me una por una y el modal #mWAMasivo se
-// quitaron de acá. _ultimoAbono queda: lo usa enviarReciboWA(), abajo, que es una
-// función distinta (recibo de un solo pago), no parte del WA Masivo.
+// quitaron de acá. _ultimoAbono queda -- es estado COMPARTIDO entre archivos (lo leen
+// parches-seguros-base.js y parches-whatsapp-inbox.js también, no solo este), nunca borrar sin
+// verificar los 3 lados primero.
 let _ultimoAbono={cliente:null,monto:0};
 
-// ── Recibo WhatsApp después de abono ────────────────────────────────────────
-function enviarReciboWA(){
-  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
-  const monto=_ultimoAbono.monto;
-  const msg=`Estimado/a *${c.nom}*,
-
-✅ Confirmamos recibo de su abono:
-
-*Monto:* RD$ ${fmtN(monto)}
-*Póliza:* ${c.numero_poliza||'—'}
-*Plan:* ${c.plan}
-*Fecha:* ${hoy()}
-*Saldo pendiente:* RD$ ${fmtN(pend(c))}
-
-Gracias por su pago.
-
-_${CFG.empNom}_`;
-  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
-  logAudit('RECIBO_WA',`Recibo enviado a ${c.nom} · RD$ ${fmtN(monto)}`);
-  toast('ok','Recibo enviado por WhatsApp',c.nom);
-}
+// enviarReciboWA() (botón "Enviar recibo" tras un abono) se quitó el 2026-09-08 -- el recibo ya
+// se manda solo por el sistema real (evento pago_aplicado -> Edge Function -> Zernio) en cuanto
+// se aplica el pago, así que el botón manual quedaba redundante. "Ver / compartir recibo"
+// (nxReciboMeses/nxReciboCompartir, en parches-seguros-base.js) sigue intacto para imprimir o
+// compartir por otra vía.
 
 // ── Animación "imprimiendo recibo" (referencia del dueño, 30-ago-2026) ──────
 // Componente COMPARTIDO: lo usan Seguros (regAbono), Financiamiento (nxPrestamoPagar)

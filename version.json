@@ -1,7 +1,14 @@
 {
-  "version": "57.94",
+  "version": "57.95",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "57.95",
+      "fecha": "2026-09-08",
+      "notas": [
+        "AUDITORIA: se quitaron 4 botones mas de WhatsApp que abrian tu numero personal (factura, recordatorio de deuda x2, recibo de pago x2) -- esos mensajes ya se mandan solos por el sistema real. Otros 2 (poliza por vencer, coberturas del plan) ahora abren el Buzon de nexus-pro en vez de tu WhatsApp, igual que el boton de la ficha del cliente."
+      ]
+    },
     {
       "version": "57.94",
       "fecha": "2026-09-08",
