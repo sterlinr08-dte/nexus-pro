@@ -6,7 +6,7 @@
       "version": "58.06",
       "fecha": "2026-09-08",
       "notas": [
-        "ARREGLADO: el boton 'Enviar recordatorio de pago ahora' del Buzon ya no aparece (ni falla con un error confuso) para clientes que solo deben la factura del mes EN CURSO -- solo se muestra cuando el cliente tiene de verdad un periodo atrasado (ya cerrado y sin pagar), igual que decide el resto del sistema."
+        "CORREGIDO (WhatsApp seguros): al abrir una conversacion el panel ya no muestra el recorrido del scroll bajando. Ahora prepara el hilo, lo posiciona en el ultimo mensaje antes de mostrarlo y mantiene el anclaje al fondo como WhatsApp mientras el agente no suba manualmente."
       ]
     },
     {
