@@ -12558,7 +12558,8 @@ falta solo correr una migración y seguir desde ahí.**
   contra la documentación real de Zernio (`docs.zernio.com/broadcasts/create-broadcast`), no
   supuesto. En su lugar: la Edge Function nueva llama al endpoint 1-a-1 de Zernio en bucle, una vez
   por cliente, igual que ya hace `whatsapp-notificar`.
-- **Ya hecho (3 commits locales, `main`, SIN pushear a origin):**
+- **Ya hecho (4 commits locales, `main`, SIN pushear a origin — verificar con `git log
+  origin/main..HEAD` si esta lista se desactualiza):**
   1. `409d946` — Edge Function `whatsapp-envio-masivo` (ya DESPLEGADA en Supabase, pero no se puede
      probar todavía — ver el bloqueo abajo) + el blueprint completo.
   2. `cd3ef7b` — `parches-whatsapp-inbox.js`: panel de confirmación + progreso en vivo
@@ -12566,6 +12567,7 @@ falta solo correr una migración y seguir desde ahí.**
   3. `95d6249` — `index.html`: se quitó el modal `#mWAMasivo` viejo y sus funciones
      (`abrirWAMasivo`/`ejecutarWAMasivo`/etc. — `enviarReciboWA`/`_ultimoAbono` NO se tocaron, son
      una función distinta). `APP_VERSION`/`version.json` subidos a **57.92**.
+  4. `380a6d5` — el archivo de migración de abajo + esta misma nota.
 - **🔴 BLOQUEADO ACÁ — paso manual, el clasificador de seguridad de Claude Code no deja aplicar
   migraciones (crear tablas) directo en producción:** el archivo
   `supabase/migrations/20260907190000_whatsapp_envio_masivo.sql` YA EXISTE en el repo (2 tablas +
