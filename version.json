@@ -1,7 +1,14 @@
 {
-  "version": "58.07",
+  "version": "58.08",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.08",
+      "fecha": "2026-09-08",
+      "notas": [
+        "ARREGLADO: el chat de WhatsApp podia quedar arriba del todo al abrir una conversacion con fotos/videos que tardan en cargar -- ahora vigila el alto real del contenedor de mensajes y lo vuelve a pegar al fondo automaticamente sin importar cuanto tarde la imagen mas lenta."
+      ]
+    },
     {
       "version": "58.07",
       "fecha": "2026-09-08",
