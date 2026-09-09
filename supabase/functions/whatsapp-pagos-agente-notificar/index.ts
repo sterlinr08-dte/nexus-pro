@@ -34,9 +34,9 @@ async function zernio(url: string, init: RequestInit) {
 
 const SPECS = {
   pago_pendiente_validacion: {
-    name: "pago_pendiente_validacion_agente",
-    body: "Hola {{1}}. Se registró un pago de RD$ {{2}} del cliente {{3}} vía {{4}} en {{5}}. Entra a NEXUS PRO para verificarlo y validarlo.",
-    example: ["ROBINSON", "4,500.00", "JUAN PEREZ", "Transferencia", "Banreservas"],
+    name: "pago_pendiente_validacion_agente_v2",
+    body: "Hola {{1}}. Tienes un pago pendiente de validar en NEXUS PRO por RD$ {{2}}. Cliente: {{3}}. Revisa el módulo Pagos por validar.",
+    example: ["ROBINSON", "4,500.00", "JUAN PEREZ"],
   },
   pago_validado_resumen: {
     name: "pago_validado_resumen_agente",
@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
   const telefono = tel(agente.tel);
   const nombre = String(agente.nom || "agente");
   const vars = tipo === "pago_pendiente_validacion"
-    ? [nombre, money(datos.monto), String(datos.cliente || "Cliente"), String(datos.metodo || "Pago"), String(datos.banco || "—")]
+    ? [nombre, money(datos.monto), String(datos.cliente || "Cliente")]
     : [nombre, money(datos.monto), money(datos.acumulado)];
 
   if (!telefono) {
