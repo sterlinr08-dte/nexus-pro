@@ -9,6 +9,7 @@
   const $=s=>document.querySelector(s);
   const STX=()=>{try{return window.ST||(typeof ST!=='undefined'?ST:{})}catch(e){return window.ST||{}}};
   const APIX=()=>{try{return window.API||(typeof API!=='undefined'?API:null)}catch(e){return window.API||null}};
+  const EDITID=()=>{try{return typeof editCliId!=='undefined'?editCliId:(window.editCliId||null)}catch(e){return window.editCliId||null}};
 
   function hoyLocal(){
     const d=new Date(),p=n=>String(n).padStart(2,'0');
@@ -83,6 +84,7 @@
         asegurarCampo();
         if(!validarNacimiento())return;
         const nacimiento=valorNacimiento();
+        const editIdAntes=EDITID();
         const A=APIX();
         if(!A||typeof A.post!=='function'||typeof A.patch!=='function')return await guardarOriginal.apply(this,arguments);
 
@@ -99,9 +101,8 @@
 
         try{
           const r=await guardarOriginal.apply(this,arguments);
-          const editId=(typeof window.editCliId!=='undefined'?window.editCliId:null);
-          if(editId){
-            const c=(STX().clientes||[]).find(x=>String(x.id)===String(editId));
+          if(editIdAntes){
+            const c=(STX().clientes||[]).find(x=>String(x.id)===String(editIdAntes));
             if(c)c.fecha_nacimiento=nacimiento;
           }
           return r;
