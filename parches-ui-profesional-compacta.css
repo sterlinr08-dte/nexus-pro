@@ -211,7 +211,14 @@ body.tema-premium #app .tn-b-primary{background:#1d4ed8 !important;color:#fff !i
   min-width:18px !important;
   height:18px !important;
   padding:0 5px !important;
-  display:inline-grid !important;
+  /* SIN !important a propósito: los badges nb1 (Clientes)/nb2 (Pólizas) se ocultan con
+     style="display:none" en el HTML y con nb.style.display='none'/'' desde actualizarTicker()
+     (index.html) -- un !important en esta hoja compartida les gana SIEMPRE a esos inline styles
+     sin !important, dejando el badge visible aunque diga display:none (bug real, 9-sep-2026:
+     el "0" de Clientes quedaba pegado en pantalla). Sin !important, el inline style manda cuando
+     existe, y esta regla solo aporta inline-grid cuando el badge SÍ debe mostrarse (JS lo deja en
+     display:'' para que caiga aquí). */
+  display:inline-grid;
   place-items:center !important;
   border-radius:999px !important;
   font-size:8px !important;
