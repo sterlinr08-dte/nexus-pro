@@ -142,15 +142,32 @@ function armarPlantilla(tipo: string, nombreDestino: string, datos: Record<strin
     return { nombre: "recordatorio_atraso", variables: [nombreDestino, fmtMonto(datos.monto), `${meses} mes${meses === 1 ? "" : "es"}`] };
   }
   if (tipo === "pago_aplicado") {
-    // pago_confirmado_periodo (v2 de pago_confirmado): agrega el período que cubrió este abono --
-    // trg_whatsapp_pago_aplicado lo calcula comparando el reparto de facturas ANTES/DESPUÉS del
-    // pago (un abono no está atado 1 a 1 a una factura, se reparte de la más vieja a la más
-    // nueva). "pago_confirmado" (3 variables, sin período) queda plantilla vieja, ya no se usa.
-    return { nombre: "pago_confirmado_periodo", variables: [nombreDestino, fmtMonto(datos.monto), String(datos.periodo || "su cuenta"), fmtMonto(datos.saldo_actual)] };
+    // pago_confirmado_periodo_v2: agrega el período que cubrió este abono -- trg_whatsapp_pago_aplicado
+    // lo calcula comparando el reparto de facturas ANTES/DESPUÉS del pago (un abono no está atado
+    // 1 a 1 a una factura, se reparte de la más vieja a la más nueva). "pago_confirmado" (3
+    // variables, sin período) y "pago_confirmado_periodo" (sin sufijo _v2) quedan plantillas
+    // viejas, ya no se usan -- ver nota de auditoria del 2026-09-09 mas abajo.
+    //
+    // AUDITORIA 2026-09-09: pago_confirmado_periodo (sin _v2) fue RECHAZADA por Meta
+    // (rejected_reason: INVALID_FORMAT) -- confirmado en vivo contra la API real de Zernio. Le
+    // faltaba el campo "example" (mismo problema que ya documentaba whatsapp-plantilla-crear desde
+    // el 8-sep, pero nunca se habia corregido). Un nombre RECHAZADO queda bloqueado en Zernio/Meta
+    // ("Ya existe contenido en Spanish para esta plantilla") -- no se puede reenviar corregida bajo
+    // el mismo nombre, hay que someter una nueva. pago_confirmado_periodo_v2 se sometio con el
+    // "example" correcto (mismo texto/variables, solo agrega el campo que faltaba) y quedo PENDING
+    // de revision de Meta al momento de este cambio.
+    return { nombre: "pago_confirmado_periodo_v2", variables: [nombreDestino, fmtMonto(datos.monto), String(datos.periodo || "su cuenta"), fmtMonto(datos.saldo_actual)] };
   }
   // Entrega confirmada (destino agente): monto = lo que acaba de depositar en este cobro,
   // acumulado = transferencias_saldo_disponible_agente() -- lo que el agente tiene en su poder
   // en total en este momento, no solo lo de este cobro.
+  //
+  // AUDITORIA 2026-09-09: esta plantilla NUNCA se habia creado en Meta/Zernio (0 resultados en el
+  // GET de plantillas, bajo cualquier idioma) -- por eso cada intento fallaba con "Template not
+  // found", desde antes y despues del arreglo del endpoint del 8-sep. Se sometio hoy por primera
+  // vez con el mismo nombre "entrega_confirmada" (sin colision de nombre, no hizo falta sufijo) y
+  // quedo PENDING de revision de Meta -- cero cambio de codigo necesario aqui, el nombre ya era el
+  // correcto.
   if (tipo === "entrega_confirmada") {
     return { nombre: "entrega_confirmada", variables: [nombreDestino, fmtMonto(datos.monto), fmtMonto(datos.acumulado)] };
   }
