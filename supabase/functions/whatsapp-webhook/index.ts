@@ -129,6 +129,46 @@ async function buscarMensajeLocalPorWaId(waId: string): Promise<string | null> {
   return data?.id ?? null;
 }
 
+// Palabras que dan de baja / vuelven a dar de alta. Se exige que el mensaje COMPLETO sea la
+// palabra (una vez normalizado: sin acentos, sin signos, en minúsculas) -- deliberadamente
+// estricto. Buscar la palabra "suelta" dentro del texto daría de baja a quien escriba "no puedo
+// pagar, dame de baja el mes que viene" o "quiero cancelar mi cita", que NO es lo que pidió.
+const PALABRAS_BAJA = ["baja", "stop", "cancelar", "no molestar", "unsubscribe", "salir", "eliminar", "borrar"];
+const PALABRAS_ALTA = ["alta", "start", "suscribir", "suscribirme"];
+
+function normalizarTextoClave(s: string): string {
+  return String(s || "")
+    .normalize("NFD").replace(/[^ -~]/g, "")  // quita acentos y cualquier no-ASCII
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .trim().replace(/\s+/g, " ");
+}
+
+async function aplicarPalabraClaveOptout(clienteId: string, texto: string) {
+  const t = normalizarTextoClave(texto);
+  if (!t) return;
+  try {
+    if (PALABRAS_BAJA.includes(t)) {
+      // .is(...) para NO pisar la fecha original si ya estaba de baja: ante un reclamo hay que
+      // poder decir desde cuándo se respetó, no desde el último "STOP" que mandó.
+      const { error } = await db.from("clientes")
+        .update({ whatsapp_optout_en: new Date().toISOString(), whatsapp_optout_origen: "cliente" })
+        .eq("id", clienteId).is("whatsapp_optout_en", null);
+      if (error) console.error("optout: no se pudo marcar la baja:", error.message);
+      else console.log("optout: cliente", clienteId, "pidio la baja por WhatsApp");
+    } else if (PALABRAS_ALTA.includes(t)) {
+      const { error } = await db.from("clientes")
+        .update({ whatsapp_optout_en: null, whatsapp_optout_origen: null })
+        .eq("id", clienteId).not("whatsapp_optout_en", "is", null);
+      if (error) console.error("optout: no se pudo quitar la baja:", error.message);
+      else console.log("optout: cliente", clienteId, "volvio a darse de alta por WhatsApp");
+    }
+  } catch (e) {
+    // Nunca romper el guardado del mensaje por esto -- el mensaje del cliente vale más que la marca.
+    console.error("optout: excepcion:", e instanceof Error ? e.message : String(e));
+  }
+}
+
 async function procesarMensaje(payload: any) {
   const msg = payload.message || {};
   const telefonoE164 = identificarContacto(payload);
@@ -208,6 +248,13 @@ async function procesarMensaje(payload: any) {
       return;
     }
     hiloId = nuevoHilo.id;
+  }
+
+  // Opt-out por palabra clave: si el cliente contesta "BAJA"/"STOP", el sistema deja de mandarle
+  // mensajes iniciados por el negocio. Es requisito de la política de WhatsApp Business, y hasta
+  // ahora no existía -- se le seguía avisando de la deuda a quien había pedido que no.
+  if (esEntrante && clienteId && tipoContenido === "text") {
+    await aplicarPalabraClaveOptout(clienteId, textoCrudo);
   }
 
   const revisionPagoEstado = esEntrante && tipoContenido === "imagen" ? "pendiente" : "ninguna";

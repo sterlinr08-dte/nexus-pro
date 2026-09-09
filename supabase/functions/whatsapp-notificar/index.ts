@@ -221,16 +221,20 @@ Deno.serve(async (req: Request) => {
   // (trigger de Postgres) siempre manda uno solo.
   let nombreDestino: string;
   let telCrudo: string | null | undefined;
+  // Opt-out: solo existe para clientes. Un aviso con destino AGENTE (entrega_confirmada) es
+  // comunicación interna del negocio con su personal -- ahí no aplica "no me escribas más".
+  let optoutEn: string | null = null;
   if (agente_id) {
     const { data: agente } = await db.from("agentes").select("nom, tel").eq("id", agente_id).maybeSingle();
     if (!agente) return json({ ok: false, error: "agente_no_encontrado" }, 404);
     nombreDestino = agente.nom ?? "agente";
     telCrudo = agente.tel;
   } else {
-    const { data: cliente } = await db.from("clientes").select("nom, wa").eq("id", cliente_id!).maybeSingle();
+    const { data: cliente } = await db.from("clientes").select("nom, wa, whatsapp_optout_en").eq("id", cliente_id!).maybeSingle();
     if (!cliente) return json({ ok: false, error: "cliente_no_encontrado" }, 404);
     nombreDestino = cliente.nom ?? "cliente";
     telCrudo = cliente.wa;
+    optoutEn = cliente.whatsapp_optout_en ?? null;
   }
 
   const { data: config } = await db.from("whatsapp_config").select("zernio_account_id, activo").eq("activo", true).limit(1).maybeSingle();
@@ -244,6 +248,21 @@ Deno.serve(async (req: Request) => {
   if (!plantilla) {
     await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, null, "error", null, "tipo de evento desconocido: " + tipo);
     return json({ ok: false, error: "tipo_desconocido" }, 400);
+  }
+
+  // Este es el cuello de botella de TODOS los mensajes que inicia el negocio hacia un cliente
+  // (factura generada, atraso del cron, botón manual del Buzón y pago aplicado): los 4 caminos
+  // pasan por acá vía whatsapp_notificar_evento. Chequear el opt-out en este único punto los cubre
+  // a todos de una vez, y cualquier trigger nuevo que se agregue en el futuro lo hereda solo.
+  //
+  // Se deja rastro en whatsapp_mensajes en vez de descartar en silencio: si Meta o el cliente
+  // reclaman, hay que poder mostrar que se respetó la baja y desde cuándo. Se usa estado 'error'
+  // porque el CHECK de la tabla solo admite enviado/error/sin_configurar -- el motivo va escrito
+  // en error_detalle, igual que "cliente sin WhatsApp registrado".
+  if (optoutEn) {
+    const desde = String(optoutEn).slice(0, 10);
+    await registrar(cliente_id ?? null, agente_id ?? null, tipo, referencia_id ?? null, plantilla, "error", null, `el cliente pidió no recibir WhatsApp (opt-out desde ${desde})`);
+    return json({ ok: true, estado: "error", motivo: "optout" });
   }
 
   const telefono = formatearTelefono(telCrudo);

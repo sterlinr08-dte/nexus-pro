@@ -236,12 +236,22 @@ async function manejar(req: Request): Promise<Response> {
 
     const { data: cliente } = await db
       .from("clientes")
-      .select("id, nom, wa, deuda_total, pagado, numero_poliza, fecha_fin")
+      .select("id, nom, wa, deuda_total, pagado, numero_poliza, fecha_fin, whatsapp_optout_en")
       .eq("id", dest.cliente_id)
       .maybeSingle();
 
     if (!cliente) {
       await db.from("whatsapp_envio_masivo_destinatarios").update({ estado: "fallido", error_detalle: "cliente no encontrado", enviado_at: new Date().toISOString() }).eq("id", dest.id);
+      continue;
+    }
+
+    // Segunda barrera del opt-out. whatsapp_crear_lote_envio_masivo ya excluye a quien pidió la
+    // baja al ARMAR el lote, pero un lote grande se procesa en varias tandas: si el cliente pide
+    // la baja por WhatsApp entre una tanda y la siguiente, sin este chequeo igual le llegaría el
+    // mensaje. Acá se revisa contra el estado de ESTE instante.
+    if (cliente.whatsapp_optout_en) {
+      const desde = String(cliente.whatsapp_optout_en).slice(0, 10);
+      await db.from("whatsapp_envio_masivo_destinatarios").update({ estado: "fallido", error_detalle: `el cliente pidió no recibir mensajes de WhatsApp (desde ${desde})`, enviado_at: new Date().toISOString() }).eq("id", dest.id);
       continue;
     }
 
