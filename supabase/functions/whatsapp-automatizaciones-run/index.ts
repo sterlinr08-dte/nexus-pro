@@ -109,7 +109,7 @@ async function crearTarea(regla: Regla, cand: Candidato, cliente: Cliente) {
   const cfg = regla.accion_config || {};
   const venceDias = Math.max(0, Math.min(365, Number(cfg.vence_dias ?? 1) || 0));
   const vence = new Date(Date.now() + venceDias * 86400000).toISOString();
-  const titulo = str(cfg.titulo || regla.nombre || "Seguimiento automático").slice(0, 180);
+  const titulo = str(cfg.titulo || regla.nombre || "Seguimiento automático").slice(0, 160);
   const prioridad = ["baja", "media", "alta", "urgente"].includes(str(cfg.prioridad).toLowerCase()) ? str(cfg.prioridad).toLowerCase() : "media";
   const asignado = cfg.asignar === "agente_cliente" ? cliente.agente_id : null;
   const { error } = await db.from("crm_tareas").insert({
@@ -146,7 +146,6 @@ async function enviarPlantilla(regla: Regla, cand: Candidato, cliente: Cliente) 
   const accountId = waCfg?.zernio_account_id;
   if (!accountId) throw new Error("WhatsApp NEXUS PRO no configurado");
 
-  // Validación fresca antes de cada envío: nunca dispara una plantilla pendiente/rechazada.
   const qs = new URLSearchParams({ accountId, status: "APPROVED", name, language });
   const check = await zernio(`https://zernio.com/api/v1/whatsapp/templates?${qs.toString()}`, { method: "GET" });
   const templates = check.data?.templates ?? check.data?.data?.templates ?? [];
