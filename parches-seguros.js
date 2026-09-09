@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp nuevas sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5840'):'?b=5840';
-    }catch(e){return '?b=5840';}
+      return base?(base+'&b=5841'):'?b=5841';
+    }catch(e){return '?b=5841';}
   }
 
   function load(src,done){
@@ -74,7 +74,8 @@
     ['js','parches-whatsapp-send-flight.js'],
     ['js','parches-whatsapp-enrutamiento-nexus.js'],
     ['js','parches-whatsapp-plantillas-facil.js'],
-    ['js','parches-whatsapp-automatizaciones.js']
+    ['js','parches-whatsapp-automatizaciones.js'],
+    ['js','parches-whatsapp-reglas-inteligentes.js']
   ];
 
   var i=0;
