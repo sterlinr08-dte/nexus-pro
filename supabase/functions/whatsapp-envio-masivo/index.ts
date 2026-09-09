@@ -86,12 +86,13 @@ async function esperar(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Fix 2026-09-08: idéntico al fix de whatsapp-notificar/index.ts -- Zernio cambió el contrato de
-// /v1/inbox/conversations/{id}/messages (ese {id} ahora exige un conversationId real, ya no acepta
-// un número de teléfono), causando un outage total desde ~2026-09-07 21:24 (hora RD), confirmado
-// en vivo contra whatsapp_mensajes/whatsapp_envio_masivo_destinatarios. Reemplazado por
-// POST /v1/inbox/conversations (crea la conversación si no existe y manda el mensaje en la misma
-// llamada), ver docs.zernio.com/messages/create-inbox-conversation.
+// Fix 2026-09-08: idéntico al fix de whatsapp-notificar/index.ts (ver ahí la explicación larga y
+// la corrección de la hipótesis falsa del "cambio de API"). Resumen: pasar el teléfono como {id}
+// en /v1/inbox/conversations/{id}/messages solo resuelve conversaciones que YA EXISTEN, y un lote
+// masivo va justamente a clientes que nunca han escrito -- por eso los 14 destinatarios del primer
+// lote real fallaron con 404 CONVERSATION_NOT_FOUND. Reemplazado por POST /v1/inbox/conversations,
+// que crea la conversación si no existe y manda en la misma llamada; verificado en producción con
+// un envío real. Ver docs.zernio.com/messages/create-inbox-conversation.
 async function mandarPlantilla(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   const body = {
     accountId,

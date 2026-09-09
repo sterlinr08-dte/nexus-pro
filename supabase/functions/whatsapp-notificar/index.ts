@@ -78,15 +78,27 @@ async function esperar(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Fix 2026-09-08: Zernio cambió el contrato de /v1/inbox/conversations/{id}/messages -- ese {id}
-// ahora tiene que ser un conversationId real (obtenido de su endpoint de listar/buscar
-// conversaciones), ya NO acepta un número de teléfono como atajo. Confirmado en vivo: TODO envío
-// desde ~2026-09-07 21:24 (hora RD) falló con 404 "CONVERSATION_NOT_FOUND. Use the conversation id
-// from the list conversations endpoint" -- outage total de las 4 notificaciones automáticas desde
-// esa hora. La API sí documenta el reemplazo correcto para "mandar una plantilla a un número sin
-// conversación abierta todavía": POST /v1/inbox/conversations (crea la conversación si no existe
-// y manda el mensaje en la misma llamada), con participantId=teléfono + templateName +
-// templateLanguage + templateParams (docs.zernio.com/messages/create-inbox-conversation).
+// Fix 2026-09-08: este camino usaba POST /v1/inbox/conversations/{id}/messages pasando el TELÉFONO
+// como si fuera el {id} de la conversación. Ese atajo solo resuelve conversaciones que YA EXISTEN
+// en Zernio; si el cliente nunca escribió, devuelve 404 CONVERSATION_NOT_FOUND. Como un aviso de
+// factura/atraso/pago va justamente a clientes que en su mayoría nunca han escrito, ese camino
+// nunca pudo funcionar para ellos.
+//
+// OJO, no fue un cambio de API de Zernio (esa fue la primera hipótesis, y era falsa -- verificada
+// contra el historial completo de whatsapp_mensajes: antes del 2026-09-08 solo hubo 2 intentos
+// reales de envío en toda la vida del sistema, y el único exitoso fue a un cliente que SÍ tenía
+// conversación abierta). El 2026-09-08 fue simplemente el primer día de uso real (pagos
+// automáticos + el primer envío masivo) y ahí se destapó el hueco que siempre estuvo ahí.
+//
+// El reemplazo correcto, documentado para "mandar una plantilla a un número con el que todavía no
+// hay conversación": POST /v1/inbox/conversations -- crea la conversación si no existe, reusa la
+// que haya si ya existe, y manda el mensaje en la misma llamada. Verificado en producción con un
+// envío real. Ver docs.zernio.com/messages/create-inbox-conversation.
+//
+// El Buzón (whatsapp-inbox-enviar / whatsapp-inbox-reaccionar) sigue usando el {id}/messages con
+// el teléfono A PROPÓSITO y NO hay que "arreglarlo": ahí siempre hay conversación abierta (esas
+// funciones exigen un mensaje entrante del cliente en las últimas 24h), así que el atajo resuelve
+// bien. Se confirmó en vivo que siguen enviando texto, ubicación y contactos sin errores.
 async function mandarPlantilla(telefono: string, accountId: string, nombre: string, variables: string[]): Promise<ResultadoZernio> {
   const body = {
     accountId,
