@@ -40,7 +40,7 @@ const SPECS = {
   },
   pago_validado_resumen: {
     name: "pago_validado_resumen_agente",
-    body: "Hola {{1}}. Validaste un pago de RD$ {{2}}. Tu monto acumulado validado en NEXUS PRO es RD$ {{3}}.",
+    body: "Hola {{1}}. Validaste un pago de RD$ {{2}}. Tu monto acumulado validado en NEXUS PRO es RD$ {{3}}. Puedes consultarlo en el módulo de pagos.",
     example: ["ROBINSON", "4,500.00", "18,750.00"],
   },
 } as const;
