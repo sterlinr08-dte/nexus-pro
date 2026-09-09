@@ -1,0 +1,525 @@
+/* NEXUS PRO · UI profesional fase 3 · 2026-09-09
+   Alcance: jerarquía de Dashboard, Clientes, Facturas y Solicitudes.
+   Unifica encabezados, pestañas, filtros, buscadores y acciones principales.
+   No altera lógica, datos, permisos ni flujos. Carga después de fases 1 y 2. */
+
+#app{
+  --nx3-blue:#2563eb;
+  --nx3-blue-soft:#eff6ff;
+  --nx3-line:#dbe3ee;
+  --nx3-line-strong:#cbd5e1;
+  --nx3-surface:#ffffff;
+  --nx3-soft:#f8fafc;
+  --nx3-text:#0f172a;
+  --nx3-muted:#64748b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. RITMO GENERAL — misma lectura en todos los módulos
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .content{
+  padding:14px 16px 18px !important;
+}
+#app .view.on{
+  max-width:none !important;
+}
+#app .ch{
+  min-height:36px !important;
+  margin-bottom:9px !important;
+  gap:10px !important;
+  align-items:center !important;
+}
+#app .ct{
+  font-size:12.5px !important;
+  font-weight:750 !important;
+  color:var(--nx3-text) !important;
+  letter-spacing:-.05px !important;
+}
+#app .ct-s{
+  margin-top:2px !important;
+  font-size:9.5px !important;
+  line-height:1.35 !important;
+  color:var(--nx3-muted) !important;
+}
+
+/* Separación consistente entre métricas, filtros y contenido. */
+#app .sf-kpis,
+#app .kg{
+  margin-bottom:10px !important;
+  gap:8px !important;
+}
+#app .nc + .nc{margin-top:0 !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. PESTAÑAS — segmentado sobrio, no píldoras/neumorfismo
+   ═══════════════════════════════════════════════════════════════════════ */
+html body #app #v-clientes .nxft-tabs.nxft-flex,
+html body #app #v-facturas .nxft-tabs,
+html body #app #v-cliente360 .nxft-tabs{
+  display:flex !important;
+  grid-template-columns:none !important;
+  align-items:center !important;
+  gap:3px !important;
+  padding:3px !important;
+  margin-bottom:10px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  background:var(--nx3-soft) !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:9px !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  scrollbar-width:none !important;
+}
+html body #app #v-clientes .nxft-tabs::-webkit-scrollbar,
+html body #app #v-facturas .nxft-tabs::-webkit-scrollbar,
+html body #app #v-cliente360 .nxft-tabs::-webkit-scrollbar{display:none !important}
+
+html body #app #v-clientes .nxft-tab,
+html body #app #v-facturas .nxft-tab,
+html body #app #v-cliente360 .nxft-tab{
+  flex:0 0 auto !important;
+  min-height:31px !important;
+  height:31px !important;
+  padding:0 10px !important;
+  border:1px solid transparent !important;
+  border-radius:7px !important;
+  background:transparent !important;
+  color:#5c687b !important;
+  box-shadow:none !important;
+  transform:none !important;
+  font-size:9.5px !important;
+  font-weight:700 !important;
+  gap:5px !important;
+}
+html body #app #v-clientes .nxft-tab:hover,
+html body #app #v-facturas .nxft-tab:hover,
+html body #app #v-cliente360 .nxft-tab:hover{
+  background:#fff !important;
+  color:#334155 !important;
+  border-color:#e2e8f0 !important;
+  box-shadow:none !important;
+}
+html body #app #v-clientes .nxft-tab.is-active:not(.nxft-add),
+html body #app #v-facturas .nxft-tab.is-active,
+html body #app #v-cliente360 .nxft-tab.is-active{
+  background:#fff !important;
+  color:var(--nx3-blue) !important;
+  border-color:#bfdbfe !important;
+  box-shadow:0 1px 2px rgba(15,23,42,.04) !important;
+  font-weight:750 !important;
+}
+html body #app #v-clientes .nxft-tab.nxft-add{
+  background:var(--nx3-blue) !important;
+  border-color:var(--nx3-blue) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+}
+html body #app #v-clientes .nxft-tab.nxft-add:hover{
+  background:#1d4ed8 !important;
+  border-color:#1d4ed8 !important;
+  color:#fff !important;
+}
+#app .nxft-cnt{
+  min-width:17px !important;
+  height:17px !important;
+  padding:0 4px !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border-radius:999px !important;
+  background:#e9eef5 !important;
+  color:#64748b !important;
+  font-size:7.5px !important;
+  line-height:1 !important;
+  box-shadow:none !important;
+}
+#app .nxft-tab.is-active .nxft-cnt{
+  background:#dbeafe !important;
+  color:#1d4ed8 !important;
+}
+
+/* Vista Lista/Cuadrícula: mismo lenguaje del resto de tabs. */
+html body #app #v-clientes .nxVistaTog{
+  display:inline-flex !important;
+  gap:2px !important;
+  padding:3px !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:8px !important;
+  background:var(--nx3-soft) !important;
+  box-shadow:none !important;
+}
+html body #app #v-clientes .nxVistaOpt{
+  min-height:28px !important;
+  padding:0 8px !important;
+  border:1px solid transparent !important;
+  border-radius:6px !important;
+  background:transparent !important;
+  color:#64748b !important;
+  box-shadow:none !important;
+  transform:none !important;
+  font-size:9px !important;
+}
+html body #app #v-clientes .nxVistaOpt.on{
+  background:#fff !important;
+  color:var(--nx3-blue) !important;
+  border-color:#dbeafe !important;
+  box-shadow:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. FILTROS — una sola franja limpia y compacta
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .frow{
+  display:flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  padding:7px !important;
+  margin-bottom:9px !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:9px !important;
+  background:var(--nx3-soft) !important;
+}
+#app .frow select,
+#app .frow input:not([type="hidden"]),
+#app .nxSf .nxFsel{
+  min-height:32px !important;
+  height:32px !important;
+  padding:0 10px !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:7px !important;
+  background:#fff !important;
+  color:#334155 !important;
+  box-shadow:none !important;
+  font-size:9.5px !important;
+  font-weight:600 !important;
+}
+#app .frow select:hover,
+#app .frow input:not([type="hidden"]):hover,
+#app .nxSf .nxFsel:hover{
+  border-color:var(--nx3-line-strong) !important;
+}
+#app .frow select:focus,
+#app .frow input:not([type="hidden"]):focus,
+#app .nxSf .nxFsel:focus,
+#app .nxSf .nxFsel:focus-visible{
+  outline:none !important;
+  border-color:#93c5fd !important;
+  box-shadow:0 0 0 2px rgba(37,99,235,.10) !important;
+}
+
+#app .nxSf .nxFclusters{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  align-items:flex-end !important;
+  gap:10px !important;
+  padding:9px 10px !important;
+  margin-bottom:10px !important;
+  background:var(--nx3-soft) !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:9px !important;
+  box-shadow:none !important;
+}
+#app .nxSf .nxFcluster{gap:4px !important}
+#app .nxSf .nxFcluster-lb{
+  font-size:7.5px !important;
+  letter-spacing:.35px !important;
+  color:#7a8799 !important;
+}
+#app .nxSf .nxFcluster-row{gap:5px !important}
+
+/* Lupa de filtros: tamaño estándar; la búsqueda sigue abriendo su ventana flotante. */
+#app .nbfWrap{gap:6px !important}
+#app .nbfLupa{
+  width:32px !important;
+  min-width:32px !important;
+  height:32px !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:7px !important;
+  background:#fff !important;
+  color:#64748b !important;
+  box-shadow:none !important;
+  font-size:14px !important;
+}
+#app .nbfLupa:hover{
+  background:#f8fafc !important;
+  color:var(--nx3-blue) !important;
+  border-color:#bfdbfe !important;
+}
+#app .nbfChip{
+  min-height:28px !important;
+  padding:0 7px !important;
+  border-radius:7px !important;
+  box-shadow:none !important;
+  font-size:8.5px !important;
+}
+
+/* Si aparece el buscador expandible viejo, se integra sin decoraciones flotantes. */
+#app .nxBusca{
+  min-height:34px !important;
+  height:34px !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:8px !important;
+  box-shadow:none !important;
+}
+#app .nxBusca:focus-within{
+  border-color:#93c5fd !important;
+  box-shadow:0 0 0 2px rgba(37,99,235,.10) !important;
+}
+#app .nxBusca-lupa{
+  width:34px !important;
+  height:34px !important;
+  font-size:14px !important;
+  border-radius:8px !important;
+}
+#app .nxBusca-x{
+  width:24px !important;
+  height:24px !important;
+  margin-right:5px !important;
+  font-size:10px !important;
+}
+#app .nxBusca-c.open::before,
+#app .nxBusca-c.open::after{display:none !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. DASHBOARD — accesos rápidos compactos, no tarjetas gigantes
+   ═══════════════════════════════════════════════════════════════════════ */
+#app #v-dashboard .qa-g{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(118px,1fr)) !important;
+  gap:6px !important;
+  margin-bottom:10px !important;
+}
+#app #v-dashboard .qa{
+  min-height:46px !important;
+  padding:7px 9px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:8px !important;
+  text-align:left !important;
+  border:1px solid var(--nx3-line) !important;
+  border-radius:9px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+#app #v-dashboard .qa:hover{
+  background:#f8fafc !important;
+  border-color:#bfdbfe !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+#app #v-dashboard .qa-i{
+  width:28px !important;
+  height:28px !important;
+  margin:0 !important;
+  flex:0 0 28px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:7px !important;
+  background:#eff6ff !important;
+  color:#2563eb !important;
+  font-size:14px !important;
+}
+#app #v-dashboard .qa-l{
+  font-size:9.5px !important;
+  font-weight:700 !important;
+  color:#334155 !important;
+  line-height:1.2 !important;
+}
+
+/* Dashboard: cabeceras de bloques alineadas con el resto del sistema. */
+#app #v-dashboard .nc .ch{
+  padding-bottom:7px !important;
+  margin-bottom:8px !important;
+  border-bottom:1px solid #edf1f5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5. CLIENTES / FACTURAS — métricas primero, navegación después, datos al final
+   ═══════════════════════════════════════════════════════════════════════ */
+#app #v-clientes .sf-kpis,
+#app #v-facturas .sf-kpis{
+  gap:7px !important;
+  margin-bottom:9px !important;
+}
+#app #v-clientes > .nc,
+#app #v-facturas > .nc{
+  margin-top:0 !important;
+}
+#app #v-clientes .nc > .ch,
+#app #v-facturas .nc > .ch{
+  padding-bottom:7px !important;
+  border-bottom:1px solid #edf1f5 !important;
+}
+
+/* Barras de selección masiva: informativas, no protagonistas. */
+#app .cliBulkBar{
+  min-height:34px !important;
+  padding:6px 9px !important;
+  gap:7px !important;
+  border-radius:8px !important;
+  background:#f8fbff !important;
+  border-color:#dbeafe !important;
+  font-size:9.5px !important;
+  box-shadow:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6. SOLICITUDES — lectura de administración más clara
+   ═══════════════════════════════════════════════════════════════════════ */
+#app #v-solicitudes .nxSL-head,
+#app .nxSL-head{
+  padding:12px 14px !important;
+  gap:12px !important;
+  border-radius:11px !important;
+  border:1px solid var(--nx3-line) !important;
+  background:#fff !important;
+  box-shadow:0 2px 8px rgba(15,23,42,.045) !important;
+}
+#app .nxSL-head-icon{
+  width:38px !important;
+  height:38px !important;
+  border-radius:9px !important;
+  font-size:17px !important;
+  box-shadow:none !important;
+}
+#app .nxSL-title{
+  font-size:15px !important;
+  letter-spacing:-.15px !important;
+}
+#app .nxSL-sub{
+  margin-top:2px !important;
+  font-size:9.5px !important;
+  color:#64748b !important;
+}
+#app .nxSL-head-stats{
+  gap:6px !important;
+}
+#app .nxSL-stat{
+  min-height:44px !important;
+  padding:7px 9px !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:8px !important;
+  background:#f8fafc !important;
+  box-shadow:none !important;
+}
+#app .nxSL-section{
+  margin-top:10px !important;
+  border-radius:10px !important;
+}
+#app .nxSL-section-head,
+#app .nxSL-section-title{
+  min-height:36px !important;
+}
+#app .nxSL-actions{gap:4px !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7. TEMA PREMIUM — misma jerarquía, superficies oscuras sobrias
+   ═══════════════════════════════════════════════════════════════════════ */
+body.tema-premium #app{
+  --nx3-line:#2f3b4d;
+  --nx3-line-strong:#405069;
+  --nx3-surface:#151f2f;
+  --nx3-soft:#111827;
+  --nx3-text:#e5e7eb;
+  --nx3-muted:#94a3b8;
+}
+body.tema-premium #app .ct{color:#e5e7eb !important}
+body.tema-premium #app .ct-s{color:#94a3b8 !important}
+body.tema-premium #app .frow,
+body.tema-premium #app .nxSf .nxFclusters,
+body.tema-premium #app #v-clientes .nxft-tabs,
+body.tema-premium #app #v-facturas .nxft-tabs,
+body.tema-premium #app #v-cliente360 .nxft-tabs{
+  background:#111827 !important;
+  border-color:#2f3b4d !important;
+}
+body.tema-premium #app .frow select,
+body.tema-premium #app .frow input:not([type="hidden"]),
+body.tema-premium #app .nxSf .nxFsel,
+body.tema-premium #app .nbfLupa,
+body.tema-premium #app .nxBusca,
+body.tema-premium #app #v-dashboard .qa{
+  background:#182233 !important;
+  border-color:#2f3b4d !important;
+  color:#d4dbea !important;
+}
+body.tema-premium #app #v-clientes .nxft-tab.is-active:not(.nxft-add),
+body.tema-premium #app #v-facturas .nxft-tab.is-active,
+body.tema-premium #app #v-cliente360 .nxft-tab.is-active{
+  background:#182233 !important;
+  border-color:#315ea8 !important;
+  color:#7fb0ff !important;
+}
+body.tema-premium #app #v-dashboard .qa-i{background:#162a4a !important;color:#7fb0ff !important}
+body.tema-premium #app #v-dashboard .qa-l{color:#d4dbea !important}
+body.tema-premium #app .nxSL-head,
+body.tema-premium #app .nxSL-stat{
+  background:#182233 !important;
+  border-color:#2f3b4d !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8. MÓVIL — compacto visualmente, cómodo al tacto
+   ═══════════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  #app .content{padding:9px !important}
+  #app .ch{min-height:34px !important}
+  #app .ct{font-size:12px !important}
+  #app .ct-s{font-size:9px !important}
+
+  html body #app #v-clientes .nxft-tabs.nxft-flex,
+  html body #app #v-facturas .nxft-tabs,
+  html body #app #v-cliente360 .nxft-tabs{
+    padding:3px !important;
+    gap:2px !important;
+  }
+  html body #app #v-clientes .nxft-tab,
+  html body #app #v-facturas .nxft-tab,
+  html body #app #v-cliente360 .nxft-tab{
+    min-height:34px !important;
+    height:34px !important;
+    padding:0 9px !important;
+    font-size:9.5px !important;
+  }
+
+  #app .frow{
+    padding:6px !important;
+    gap:5px !important;
+  }
+  #app .frow select,
+  #app .frow input:not([type="hidden"]),
+  #app .nxSf .nxFsel{
+    min-height:34px !important;
+    height:34px !important;
+  }
+  #app .nbfLupa{
+    width:34px !important;
+    min-width:34px !important;
+    height:34px !important;
+  }
+
+  #app #v-dashboard .qa-g{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:5px !important;
+  }
+  #app #v-dashboard .qa{
+    min-height:44px !important;
+    padding:7px 8px !important;
+  }
+
+  #app .nxSL-head{
+    padding:10px !important;
+    gap:9px !important;
+  }
+  #app .nxSL-head-icon{
+    width:34px !important;
+    height:34px !important;
+    font-size:15px !important;
+  }
+  #app .nxSL-title{font-size:14px !important}
+  #app .nxSL-head-stats{gap:5px !important}
+  #app .nxSL-stat{min-height:42px !important;padding:6px 7px !important}
+}
