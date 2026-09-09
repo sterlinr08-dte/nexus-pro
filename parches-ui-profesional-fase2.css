@@ -1,0 +1,405 @@
+/* NEXUS PRO · UI profesional fase 2 · 2026-09-09
+   Alcance: tarjetas, KPIs, tablas, modales, formularios, badges y paneles.
+   No altera lógica, permisos, datos ni flujos. Carga después de la fase 1. */
+
+#app{
+  --nx2-border:#e2e8f0;
+  --nx2-border-strong:#cbd5e1;
+  --nx2-bg:#ffffff;
+  --nx2-bg-soft:#f8fafc;
+  --nx2-text:#0f172a;
+  --nx2-muted:#64748b;
+  --nx2-blue:#2563eb;
+  --nx2-blue-soft:#eff6ff;
+  --nx2-green:#059669;
+  --nx2-red:#dc2626;
+  --nx2-amber:#d97706;
+  --nx2-shadow:0 2px 8px rgba(15,23,42,.055);
+  --nx2-shadow-modal:0 18px 55px rgba(15,23,42,.16);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. TARJETAS Y CONTENEDORES — planas, limpias, sin elevarse al pasar mouse
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .nc,
+#app .kpi,
+#app .nxSL-section,
+#app .nxSf .sf-kpi,
+#app .nxSf .sf-head,
+#app .nxSf .sf-card,
+#app .notif-panel{
+  background:#fff !important;
+  border:1px solid var(--nx2-border) !important;
+  box-shadow:var(--nx2-shadow) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#app .nc{
+  border-radius:12px !important;
+  padding:13px 15px !important;
+  margin-bottom:10px !important;
+}
+#app .nc:hover{
+  box-shadow:var(--nx2-shadow) !important;
+  transform:none !important;
+}
+
+#app .kpi{
+  border-radius:11px !important;
+  padding:12px 13px !important;
+  overflow:hidden !important;
+  transform:none !important;
+  transition:border-color .15s ease,background-color .15s ease !important;
+}
+#app .kpi:hover{
+  transform:none !important;
+  box-shadow:var(--nx2-shadow) !important;
+  border-color:var(--nx2-border-strong) !important;
+}
+#app .kpi::after{height:2px !important}
+#app .kl{font-size:9px !important;letter-spacing:.3px !important;margin-bottom:6px !important}
+#app .kv{font-size:18px !important;font-weight:750 !important;letter-spacing:-.25px !important}
+
+#app .nxSf .sf-kpis{gap:8px !important;margin-bottom:10px !important}
+#app .nxSf .sf-kpi{
+  border-radius:11px !important;
+  padding:10px 11px !important;
+  gap:8px !important;
+}
+#app .nxSf .sf-head{
+  border-radius:12px !important;
+  box-shadow:var(--nx2-shadow) !important;
+}
+
+#app .nxSL-section{
+  border-radius:12px !important;
+  padding:14px !important;
+  box-shadow:var(--nx2-shadow) !important;
+}
+#app .nxSL-section-head{margin-bottom:10px !important}
+#app .nxSL-section-title{font-size:10.5px !important;letter-spacing:.35px !important}
+#app .nxSL-section-title i{font-size:14px !important}
+#app .nxSL-section-count,
+#app .nxSL-section-badge{
+  min-width:24px !important;
+  min-height:22px !important;
+  padding:3px 7px !important;
+  font-size:9px !important;
+  box-shadow:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. TABLAS — densidad de sistema administrativo, lectura clara
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .tw,
+#app .nxSL-table-wrap,
+#app .nxSL-hist-table-wrap{
+  border:1px solid var(--nx2-border) !important;
+  border-radius:10px !important;
+  box-shadow:none !important;
+  background:#fff !important;
+}
+#app table{
+  font-size:10.5px !important;
+  background:#fff !important;
+}
+#app thead th{
+  background:#f8fafc !important;
+  color:#64748b !important;
+  padding:8px 10px !important;
+  font-size:8.5px !important;
+  font-weight:750 !important;
+  letter-spacing:.35px !important;
+  border-bottom:1px solid #dbe3ee !important;
+}
+#app tbody td{
+  padding:7px 10px !important;
+  border-bottom:1px solid #eef2f7 !important;
+  color:#1e293b !important;
+}
+#app tbody tr:hover td{
+  background:#f8fafc !important;
+}
+#app tbody tr:last-child td{border-bottom:none !important}
+
+#app .nxSL-table,
+#app .nxSL-hist-table{font-size:9.5px !important}
+#app .nxSL-table th,
+#app .nxSL-hist-table th{font-size:8px !important;padding:7px 9px !important}
+#app .nxSL-table td,
+#app .nxSL-hist-table td{padding:7px 9px !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. MODALES — una sola superficie, sin neumorfismo ni sombras dobles
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .overlay{
+  background:rgba(15,23,42,.38) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+  padding:1rem !important;
+}
+#app .overlay .modal,
+#app #mAbono .modal,
+#app #mCli .modal,
+#app #mInhab .modal,
+#app #mEmp .modal,
+#app #mAgente .modal,
+#app #mAsiento .modal,
+#app #mUsuario .modal,
+#app #mHistCobros .modal,
+#app #mErrorLog .modal,
+#app #mDocs .modal,
+#app #mBackup .modal{
+  background:#fff !important;
+  color:#0f172a !important;
+  border:1px solid #dbe3ee !important;
+  border-radius:14px !important;
+  box-shadow:var(--nx2-shadow-modal) !important;
+  padding:16px !important;
+}
+#app .overlay .mt,
+#app #mAbono .mt,
+#app #mCli .mt,
+#app #mInhab .mt,
+#app #mEmp .mt,
+#app #mAgente .mt,
+#app #mAsiento .mt,
+#app #mUsuario .mt,
+#app #mHistCobros .mt,
+#app #mErrorLog .mt,
+#app #mDocs .mt,
+#app #mBackup .mt{
+  color:#172033 !important;
+  font-size:12px !important;
+  font-weight:750 !important;
+  margin-bottom:12px !important;
+  letter-spacing:.05px !important;
+}
+#app .overlay .div{border-top-color:#edf1f5 !important;margin:10px 0 !important}
+#app .overlay .fe{gap:6px !important;margin-top:10px !important}
+
+/* Animación más sobria: sin rebote de escala. */
+@media(prefers-reduced-motion:no-preference){
+  #app .overlay.open .modal{animation:nx2ModalIn .16s ease-out both !important}
+  @keyframes nx2ModalIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. FORMULARIOS — campos compactos, planos, misma altura y foco azul
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .fr{margin-bottom:8px !important}
+#app .fr label,
+#app .overlay .fr label{
+  color:#64748b !important;
+  font-family:inherit !important;
+  font-size:8.5px !important;
+  font-weight:750 !important;
+  letter-spacing:.35px !important;
+  margin-bottom:4px !important;
+}
+#app .fr input,
+#app .fr select,
+#app .fr textarea,
+#app .overlay .fr input,
+#app .overlay .fr select,
+#app .overlay .fr textarea,
+#app #mAbono .fr input,
+#app #mAbono .fr select,
+#app #mCli .fr input,
+#app #mCli .fr select,
+#app #mInhab .fr input,
+#app #mInhab .fr select,
+#app #mEmp .fr input,
+#app #mEmp .fr select,
+#app #mAgente .fr input,
+#app #mAgente .fr select,
+#app #mAsiento .fr input,
+#app #mAsiento .fr select,
+#app #mUsuario .fr input,
+#app #mUsuario .fr select{
+  min-height:34px !important;
+  height:auto !important;
+  padding:7px 10px !important;
+  border:1px solid #d7e0ea !important;
+  border-radius:8px !important;
+  background:#fff !important;
+  color:#172033 !important;
+  box-shadow:none !important;
+  font-size:11px !important;
+}
+#app .fr textarea,
+#app .overlay .fr textarea{min-height:70px !important;resize:vertical !important}
+#app .fr input:focus,
+#app .fr select:focus,
+#app .fr textarea:focus,
+#app .overlay .fr input:focus,
+#app .overlay .fr select:focus,
+#app .overlay .fr textarea:focus{
+  outline:none !important;
+  border-color:#93b4ff !important;
+  box-shadow:0 0 0 3px rgba(37,99,235,.09) !important;
+  background:#fff !important;
+}
+#app .gf2{gap:8px !important}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5. BADGES / ESTADOS — aquí sí se permite píldora, pero sin relieve
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .badge{
+  min-height:20px !important;
+  padding:3px 8px !important;
+  gap:5px !important;
+  border-radius:999px !important;
+  background:#f8fafc !important;
+  border:1px solid #e2e8f0 !important;
+  box-shadow:none !important;
+  font-size:8.5px !important;
+  font-weight:750 !important;
+  letter-spacing:.1px !important;
+}
+#app .badge::before{width:5px !important;height:5px !important}
+#app .ncf-badge{
+  padding:3px 7px !important;
+  border-radius:6px !important;
+  font-size:8.5px !important;
+  box-shadow:none !important;
+}
+#app .nxSf .sf-badge{
+  height:20px !important;
+  padding:0 8px !important;
+  font-size:9px !important;
+  box-shadow:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6. PANELES FLOTANTES Y NOTIFICACIONES
+   ═══════════════════════════════════════════════════════════════════════ */
+#app .notif-panel{
+  border-radius:12px !important;
+  box-shadow:0 14px 38px rgba(15,23,42,.14) !important;
+  overflow:hidden !important;
+}
+#app .notif-h{padding:11px 13px !important}
+#app .notif-item{padding:10px 13px !important}
+#app .notif-item:hover{background:#f8fafc !important}
+
+/* Alertas semánticas: mantienen color, pero con menos volumen. */
+#app .alert-banner,
+#app .confirm-b{
+  border-radius:9px !important;
+  padding:9px 11px !important;
+  box-shadow:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7. TEMA OSCURO — misma geometría profesional, superficies oscuras limpias
+   ═══════════════════════════════════════════════════════════════════════ */
+body.tema-premium #app{
+  --nx2-border:#2b3748;
+  --nx2-border-strong:#3a485d;
+  --nx2-bg:#111827;
+  --nx2-bg-soft:#172033;
+  --nx2-text:#e5e7eb;
+  --nx2-muted:#94a3b8;
+  --nx2-shadow:0 2px 8px rgba(0,0,0,.18);
+  --nx2-shadow-modal:0 20px 55px rgba(0,0,0,.42);
+}
+body.tema-premium #app .nc,
+body.tema-premium #app .kpi,
+body.tema-premium #app .nxSL-section,
+body.tema-premium #app .nxSf .sf-kpi,
+body.tema-premium #app .nxSf .sf-head,
+body.tema-premium #app .nxSf .sf-card,
+body.tema-premium #app .notif-panel,
+body.tema-premium #app .tw,
+body.tema-premium #app .nxSL-table-wrap,
+body.tema-premium #app .nxSL-hist-table-wrap,
+body.tema-premium #app table{
+  background:#151e2d !important;
+  border-color:#2b3748 !important;
+  color:#e5e7eb !important;
+}
+body.tema-premium #app thead th{background:#111827 !important;color:#94a3b8 !important;border-bottom-color:#2b3748 !important}
+body.tema-premium #app tbody td{color:#dbe3ee !important;border-bottom-color:#263244 !important}
+body.tema-premium #app tbody tr:hover td{background:#192437 !important}
+body.tema-premium #app .overlay .modal,
+body.tema-premium #app #mAbono .modal,
+body.tema-premium #app #mCli .modal,
+body.tema-premium #app #mInhab .modal,
+body.tema-premium #app #mEmp .modal,
+body.tema-premium #app #mAgente .modal,
+body.tema-premium #app #mAsiento .modal,
+body.tema-premium #app #mUsuario .modal,
+body.tema-premium #app #mHistCobros .modal,
+body.tema-premium #app #mErrorLog .modal,
+body.tema-premium #app #mDocs .modal,
+body.tema-premium #app #mBackup .modal{
+  background:#151e2d !important;
+  color:#e5e7eb !important;
+  border-color:#2b3748 !important;
+  box-shadow:var(--nx2-shadow-modal) !important;
+}
+body.tema-premium #app .overlay .mt,
+body.tema-premium #app #mAbono .mt,
+body.tema-premium #app #mCli .mt,
+body.tema-premium #app #mInhab .mt,
+body.tema-premium #app #mEmp .mt,
+body.tema-premium #app #mAgente .mt,
+body.tema-premium #app #mAsiento .mt,
+body.tema-premium #app #mUsuario .mt,
+body.tema-premium #app #mHistCobros .mt,
+body.tema-premium #app #mErrorLog .mt,
+body.tema-premium #app #mDocs .mt,
+body.tema-premium #app #mBackup .mt{color:#f1f5f9 !important}
+body.tema-premium #app .fr label,
+body.tema-premium #app .overlay .fr label{color:#94a3b8 !important}
+body.tema-premium #app .fr input,
+body.tema-premium #app .fr select,
+body.tema-premium #app .fr textarea,
+body.tema-premium #app .overlay .fr input,
+body.tema-premium #app .overlay .fr select,
+body.tema-premium #app .overlay .fr textarea{
+  background:#111827 !important;
+  color:#e5e7eb !important;
+  border-color:#334155 !important;
+  box-shadow:none !important;
+}
+body.tema-premium #app .fr input:focus,
+body.tema-premium #app .fr select:focus,
+body.tema-premium #app .fr textarea:focus{
+  border-color:#5b8def !important;
+  box-shadow:0 0 0 3px rgba(59,130,246,.14) !important;
+}
+body.tema-premium #app .badge{background:#111827 !important;border-color:#334155 !important;box-shadow:none !important}
+
+/* Tema glass: mantiene fondo general, pero los componentes administrativos dejan el efecto vidrio. */
+body.tema-glass #app .nc,
+body.tema-glass #app .kpi,
+body.tema-glass #app .nxSL-section,
+body.tema-glass #app .nxSf .sf-kpi,
+body.tema-glass #app .nxSf .sf-head,
+body.tema-glass #app .nxSf .sf-card{
+  background:rgba(255,255,255,.95) !important;
+  border-color:#dde5ef !important;
+  box-shadow:var(--nx2-shadow) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8. MÓVIL — compacto visual, área táctil segura
+   ═══════════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  #app .nc{padding:11px 12px !important;border-radius:10px !important}
+  #app .kpi{padding:10px 11px !important;border-radius:10px !important}
+  #app .kv{font-size:16px !important}
+  #app .nxSL-section{padding:11px !important;border-radius:10px !important}
+  #app .overlay{padding:.5rem !important;align-items:flex-start !important}
+  #app .overlay .modal{padding:13px !important;border-radius:12px !important;max-width:100% !important}
+  #app .fr input,#app .fr select{min-height:36px !important;font-size:11.5px !important}
+  #app .tw,#app .nxSL-table-wrap,#app .nxSL-hist-table-wrap{border-radius:8px !important}
+  #app table{font-size:10px !important}
+  #app thead th{padding:7px 8px !important;font-size:8px !important}
+  #app tbody td{padding:7px 8px !important}
+}
