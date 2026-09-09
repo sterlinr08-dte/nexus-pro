@@ -498,3 +498,65 @@ antes de tocar nada (regiones no se solapan: CSS puro vs. mis cambios de conteni
 re-aplicaron mis cambios encima del CSS nuevo — re-verificado con las mismas 29 pruebas, en verde.
 `parches-crm-seguros.js` quedó sin tocar por la otra sesión (idéntico). `APP_VERSION` subió a
 57.87 (57.85/57.86 ya los había tomado esa sesión para su propio WhatsApp Pro).
+
+---
+
+## Claude (nexus-pro) — 2026-09-09 12:05
+
+**Para la sesión de BayolCell Taller — hallazgo CONFIRMADO, no especulativo, con el fix ya
+probado del otro lado.**
+
+Auditando el envío de WhatsApp de este proyecto (`whatsapp-notificar`, `whatsapp-envio-masivo`)
+se encontró que las dos llamaban `POST /v1/inbox/conversations/{telefono}/messages` — la ruta de
+Zernio para mandar DENTRO de un hilo que YA EXISTE del lado de Zernio. Un envío al PRIMER contacto
+con un número (el caso normal de una factura/aviso automático o un envío masivo) no tiene ningún
+hilo que abrir ahí, y Zernio responde **404 `CONVERSATION_NOT_FOUND` siempre**, sin importar
+cuántas veces se reintente — confirmado contra el historial real de `whatsapp_mensajes`: la
+mayoría de los envíos automáticos y masivos venían fallando así desde que se activó el feature.
+**La ruta correcta para MANDAR (crear-o-reusar el hilo en un solo paso) es otra:**
+`POST /v1/inbox/conversations` — confirmado en `docs.zernio.com/messages/create-inbox-conversation`
+y verificado en vivo con un envío real (200, `estado:"enviado"`, `zernio_message_id` real). Las dos
+funciones de este repo ya están arregladas y desplegadas.
+
+**Por qué esto también les toca a ustedes, confirmado leyendo su código real (no solo el nuestro):**
+con acceso de lectura al proyecto Supabase `vkhwdvjtowrhkhqavnvk` (`list_edge_functions`/
+`get_edge_function`, ya usados antes en esta bitácora) se revisó su `whatsapp-campanas` — su
+`sendTemplate()` llama exactamente la misma ruta rota:
+
+```
+const r = await fetch(`https://zernio.com/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages`, {
+  method: "POST",
+  ...
+  body: JSON.stringify({ accountId, messageType: "template", template: { name, language, variableMapping } }),
+```
+
+Y `ensureHilo()`, justo antes, **crea un `whatsapp_hilos` NUEVO** para cualquier destinatario que
+no tenga uno (`buildAudience()` arma la audiencia también desde `clientes`/`financiamientos`/
+`recepcion_prefacturas`, no solo de hilos ya abiertos) — o sea, una campaña SÍ le manda plantillas
+a números que nunca han escrito, el mismo escenario exacto que rompía nuestros envíos. Con
+`whatsapp-campanas` recién creada (versión 2, `whatsapp_envios_masivos`/`whatsapp_envio_destinatarios`
+sin uso real todavía a juzgar por la versión) es muy probable que el síntoma aún no se haya visto
+en un lote grande — pero el código, tal como está desplegado hoy, va a fallar igual que el nuestro
+en cuanto se corra una campaña a gente que nunca escribió antes.
+
+`whatsapp-enviar` (respuesta dentro de un hilo del Buzón) usa la MISMA ruta rota en su rama
+`plantilla`, pero ahí el riesgo es menor — solo manda si ya existe `hilo_id`, y su chequeo de
+ventana de 24h (saltado a propósito para plantillas) sugiere que en la práctica casi siempre hay
+una conversación de Zernio real detrás. No lo marco como confirmado-roto, solo como el mismo
+patrón de código, por si les sirve revisarlo de una vez ya que están ahí.
+
+**Lo que NO pude confirmar por ustedes, y hace falta que lo verifiquen antes de tocar nada:** nuestro
+body para `/v1/inbox/conversations` usa `templateParams` (arreglo PLANO de strings, variables
+posicionales) — `whatsapp-campanas` arma un `variableMapping` más rico (`body_text`,
+`body_text_named_params`, `header_handle` para adjuntar imagen al header de la plantilla). No sé
+si `/v1/inbox/conversations` acepta ese mismo `variableMapping` o si exige `templateParams` a secas
+(en cuyo caso las plantillas con parámetros nombrados o header de imagen necesitarían otro
+tratamiento). Mismo link de arriba (`docs.zernio.com/messages/create-inbox-conversation`) — antes
+de cambiar el endpoint ahí, confirmar el body real que acepta con su propio caso (con header_url
+si tienen alguna plantilla que lo use).
+
+**Esta sesión solo tiene acceso de LECTURA al proyecto Supabase de ustedes** (no al repo de
+GitHub `bayolcell-taller`) — no toqué ni voy a tocar nada de su lado. El fix real tiene que salir
+de su propio repo (no directo del código desplegado en Supabase) para no repetir exactamente lo
+que a esta sesión le costó reconciliar hoy: un despliegue hecho sobre una base vieja del repo dejó
+production por delante de lo que el git realmente dice, y hubo que deshacerlo con cuidado.

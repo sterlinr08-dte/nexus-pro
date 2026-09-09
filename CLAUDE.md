@@ -12539,7 +12539,19 @@ vencidos, clientes en proceso, datos por completar). Todo aditivo — no toca Fa
   (idéntico byte a byte). `APP_VERSION`/`version.json` subieron a **57.87** (57.85/57.86 ya los
   había usado esa sesión para su propio trabajo de WhatsApp Pro).
 
-### Envío masivo de WhatsApp automático (7-sep-2026) — 🔲 LISTO Y PROBADO, SOLO FALTA EL PUSH A MAIN
+### Envío masivo de WhatsApp automático (7-sep-2026) — ✅ DESPLEGADO Y EN PRODUCCIÓN
+**Corrección (9-sep-2026):** esta nota se quedó escrita como "🔲 solo falta el push" — el push YA
+se hizo (migración `whatsapp_envio_masivo`, 8-sep-2026) y el feature lleva usándose en producción
+desde entonces. El texto original de abajo se dejó tal cual por honestidad del registro (documenta
+el proceso real, no se reescribe la historia), pero **no es el estado actual** — no asumir que
+sigue "pendiente". Desde entonces el sistema de WhatsApp se amplió mucho más (opt-out, centro de
+automatizaciones, reglas inteligentes, reacciones, importar historial, Buzón con adjuntos/notas de
+voz/citas — ver `git log --oneline -i --grep=whatsapp` para el detalle real, no documentado aquí
+entrada por entrada). Ver la sección siguiente para un bug de raíz real encontrado el 9-sep-2026 en
+las dos funciones de envío (`whatsapp-notificar`/`whatsapp-envio-masivo`), ya arreglado.
+
+**Nota histórica (7-sep-2026), tal como se escribió en su momento — ya NO es el estado actual, ver
+arriba:**
 
 **Si estás retomando esto en una sesión nueva: todo está escrito, desplegado y probado de punta a
 punta con un envío real confirmado por el dueño. Lo único que falta es pedirle autorización
@@ -12704,7 +12716,57 @@ grant execute on function public.whatsapp_crear_lote_envio_masivo(text, uuid[]) 
      numero_poliza, fecha_fin]`) — hasta que Meta las apruebe, los tipos `pago`/`vence` del envío
      masivo van a fallar limpio (fila `fallido` con el motivo real de Zernio), sin romper `factura`,
      que ya funciona de verdad en producción desde ahora.
-  4. 🔲 **ÚNICO PASO QUE FALTA:** pedirle autorización explícita y fresca al dueño, EN ESE MOMENTO
-     puntual, antes de `git push origin main` con los commits ya hechos (Edge Function, frontend,
-     quitar el WA Masivo viejo, subir versión, migración + esta nota). Nunca asumir que una
-     autorización de una conversación anterior sigue valiendo acá — preguntar de nuevo cada vez.
+  4. ✅ **HECHO (8-sep-2026):** se pidió autorización, se hizo `git push origin main` — el feature
+     está en producción desde entonces (ver la corrección al inicio de esta sección).
+
+### WhatsApp — el ENDPOINT de envío estaba equivocado, y un error propio al arreglarlo (9-sep-2026)
+Pedido del dueño: *"Estudia lo que acabo de hacer en nexus pro whatsapp"*. Auditado el pipeline de
+envío (`whatsapp-notificar`, `whatsapp-envio-masivo`) contra la doc real de Zernio (leída en vivo,
+no de memoria) — encontrado que las dos llamaban `POST /v1/inbox/conversations/{telefono}/
+messages`, la ruta para mandar DENTRO de un hilo que YA EXISTE del lado de Zernio. Un envío al
+primer contacto con un número nuevo (el caso normal de un aviso automático o un envío masivo) no
+tiene ningún hilo que abrir ahí — Zernio responde **404 `CONVERSATION_NOT_FOUND` siempre**, sin
+importar cuántos reintentos. Confirmado contra el historial real de `whatsapp_mensajes`: la
+mayoría de los envíos, automáticos y masivos, venían fallando así.
+- **La ruta correcta es `POST /v1/inbox/conversations`** (crea el hilo si no existe, o lo reusa si
+  sí — un solo paso atómico). Confirmado en `docs.zernio.com/messages/create-inbox-conversation` y
+  verificado EN VIVO (mismo método ya usado en este archivo para funciones sin salida a internet
+  desde la sesión: `net.http_post` desde la propia base + leer `net._http_response`): un envío real
+  `atrasado`→`recordatorio_atraso` al cliente de prueba de siempre (ESTERLIN ESPINAL, sintético)
+  dio 200, `estado:"enviado"`, con un `zernio_message_id` real.
+- **Al llegar a arreglarlo, `git fetch` mostró que otra sesión YA LO HABÍA ENCONTRADO Y ARREGLADO
+  ANTES** — el diagnóstico independiente coincidió exacto con el de esa sesión (misma ruta, mismo
+  motivo), confirmado por commit `919d449` ("Corregir la causa raiz documentada del fallo de
+  envios de WhatsApp" — con la misma evidencia de `whatsapp_mensajes`) y por el propio código
+  desplegado (comentarios `// Fix 2026-09-08` en los dos archivos). Esa versión, además, agregaba
+  algo que mi propio arreglo NO tenía: el candado de **opt-out** (`clientes.whatsapp_optout_en`,
+  ver "notificaciones automáticas Zernio" arriba) — un cliente que pidió no recibir WhatsApp nunca
+  debe recibir un envío, ni automático ni masivo.
+- **ERROR PROPIO, encontrado y corregido antes de terminar (no quedó así):** construí y desplegué
+  mi arreglo sobre una base de git **81 commits vieja** — sin hacer `git fetch` primero, violando
+  la propia "REGLA DE ORO entre chats" de este archivo (fetch/reconciliar ANTES de publicar, no
+  después). Las dos funciones quedaron desplegadas (`whatsapp-notificar` v15, `whatsapp-envio-
+  masivo` v5) con el endpoint correcto **pero sin el candado de opt-out** que la otra sesión ya
+  tenía en producción — durante esa ventana, un cliente que había pedido no recibir WhatsApp podía
+  volver a recibir uno. **Corregido de inmediato al hacer `git fetch` y notar el desfase:** las dos
+  funciones se redesplegaron con el contenido REAL de `origin/main` (`git show origin/main:<ruta>`,
+  no mi propia versión) — `whatsapp-notificar` quedó en v16, `whatsapp-envio-masivo` en v6, los dos
+  con el opt-out y el reintento por `CONVERSATION_NOT_FOUND` (`mandarConReintento`) intactos como
+  red de seguridad — **el reintento NO se quitó**, se mantiene a propósito aunque con la ruta nueva
+  ya no debería dispararse en operación normal. Cualquier edición futura a estos 2 archivos debe
+  conservar el candado de opt-out — es lo primero que hay que verificar que sigue ahí.
+- **Hallazgo aparte, del testing en vivo, SIN reconfirmar contra el código actual (puede haber
+  cambiado desde el 9-sep):** al mismo tiempo se vio que `pago_confirmado_periodo` respondía
+  "Template not found... language code" con `templateLanguage:"es"`, mientras `recordatorio_atraso`/
+  `factura_generada` sí mandaban bien con ese mismo idioma — no es un bug de la ruta, es que esa
+  plantilla puntual no quedó aprobada por Meta bajo el código "es". No se tocó código a ciegas
+  (adivinar `es_ES`/`es_MX` sin confirmar el código real aprobado sería peor que dejarlo) — el
+  dueño tiene que revisar el panel de Zernio/Meta Business Manager para esa plantilla (y
+  probablemente `entrega_confirmada`) y decir el código exacto.
+- **Avisado a la sesión hermana de BayolCell Taller** (`docs/BITACORA-CLAUDE-CLAUDE.md`, entrada
+  9-sep-2026 12:05): con acceso de lectura al proyecto Supabase `vkhwdvjtowrhkhqavnvk` se confirmó
+  que su `whatsapp-campanas` (envío masivo de ellos) tiene el MISMO patrón de endpoint roto en
+  `sendTemplate()`, y que su `ensureHilo()` sí crea hilos nuevos para contactos que nunca han
+  escrito — mismo escenario que rompía los nuestros. No se tocó su código (esta sesión solo tiene
+  lectura a su Supabase, no a su repo) — quedó documentado con el hallazgo exacto para que su
+  propia sesión lo confirme y arregle desde su repo.
