@@ -22,7 +22,6 @@ begin
     url := 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/whatsapp-notificar-atraso-v2',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRud3NnY3h1cmZ5dXN6eHNld3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDM3NzIsImV4cCI6MjA5NjUxOTc3Mn0.G7hRg4Cdki0jilRMg2hUZ6dVJsqvXWXOPFQOdGVbR1k',
       'X-Internal-Secret',coalesce(v_secret,'')
     ),
     body := jsonb_build_object(
