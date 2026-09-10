@@ -8230,9 +8230,13 @@ function reconciliarDeudasClientes(){
 async function reconciliarPagosClientes(){
   try{
     if(!Array.isArray(ST.clientes)||!ST.clientes.length)return;
-    const abonos=await API.get('abonos','select=cliente_id,monto,estado')||[];
+    const abonos=await API.get('abonos','select=cliente_id,monto,estado,tipo')||[];
     const sum={};
-    abonos.forEach(a=>{const e=String(a.estado||'').toUpperCase();if(e==='ANULADO'||e==='ELIMINADO'||e==='INACTIVO')return;sum[a.cliente_id]=(sum[a.cliente_id]||0)+(Number(a.monto)||0);});
+    // El criterio debe ser IDÉNTICO al de seguros_diagnostico_financiero() en Supabase
+    // (que es la fuente de verdad): un cobro 'Reversado' no es dinero pagado, y un
+    // 'deuda_anterior' es saldo de arranque, no un cobro. Si esta suma incluye alguno de
+    // los dos, esta función "corrige" el pagado hacia arriba y deshace la reversa.
+    abonos.forEach(a=>{if(String(a.tipo||'')==='deuda_anterior')return;const e=String(a.estado||'').toUpperCase();if(e==='ANULADO'||e==='ELIMINADO'||e==='INACTIVO'||e==='REVERSADO')return;sum[a.cliente_id]=(sum[a.cliente_id]||0)+(Number(a.monto)||0);});
     const arreglar=[];
     ST.clientes.forEach(c=>{
       const sa=sum[c.id]||0,pg=Number(c.pagado||0),dt=Number(c.deuda_total||0);
