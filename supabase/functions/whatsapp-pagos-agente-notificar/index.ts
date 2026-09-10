@@ -45,12 +45,12 @@ const SPECS = {
   },
   transferencia_confirmada_emisor: {
     name: "transferencia_confirmada_emisor",
-    body: "Hola {{1}}. Tu transferencia de RD$ {{2}} a {{3}} fue confirmada. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}.",
+    body: "Hola {{1}}. Tu transferencia de RD$ {{2}} a {{3}} fue confirmada. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}. Consulta el detalle en NEXUS PRO.",
     example: ["ROBINSON", "20,000.00", "ESTERLIN", "5,000.00"],
   },
   transferencia_recibida: {
     name: "transferencia_recibida",
-    body: "Hola {{1}}. Recibiste una transferencia de {{2}} por RD$ {{3}}. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}.",
+    body: "Hola {{1}}. Recibiste una transferencia de {{2}} por RD$ {{3}}. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}. Consulta el detalle en NEXUS PRO.",
     example: ["ESTERLIN", "ROBINSON", "20,000.00", "60,000.00"],
   },
 } as const;
