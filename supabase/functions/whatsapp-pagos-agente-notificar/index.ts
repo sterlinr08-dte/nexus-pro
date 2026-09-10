@@ -53,6 +53,14 @@ const SPECS = {
     body: "Hola {{1}}. Recibiste una transferencia de {{2}} por RD$ {{3}}. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}. Consulta el detalle en NEXUS PRO.",
     example: ["ESTERLIN", "ROBINSON", "20,000.00", "60,000.00"],
   },
+  // Aviso al administrador SOLO cuando no es emisor ni receptor (CLAUDE.md: "informar si no es
+  // participante; si es receptor/emisor, evitar mensaje administrativo duplicado"). Quién lo recibe
+  // lo decide el trigger, no esta función.
+  transferencia_admin_resumen: {
+    name: "transferencia_admin_resumen",
+    body: "Hola {{1}}. Transferencia entre agentes confirmada en NEXUS PRO: {{2}} transfirió RD$ {{3}} a {{4}}. Consulta el detalle en NEXUS PRO.",
+    example: ["ESTERLIN", "ROBINSON", "20,000.00", "MARIA"],
+  },
 } as const;
 
 type Tipo = keyof typeof SPECS;
@@ -136,6 +144,8 @@ Deno.serve(async (req: Request) => {
     vars = [nombre, money(datos.monto), money(datos.acumulado)];
   } else if (tipo === "transferencia_confirmada_emisor") {
     vars = [nombre, money(datos.monto), String(datos.destino || "Agente"), money(datos.acumulado)];
+  } else if (tipo === "transferencia_admin_resumen") {
+    vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), String(datos.destino || "Agente")];
   } else {
     vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), money(datos.acumulado)];
   }
