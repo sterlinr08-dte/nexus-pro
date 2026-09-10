@@ -1,14 +1,7 @@
 {
-  "version": "58.18",
+  "version": "58.17",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
-    {
-      "version": "58.18",
-      "fecha": "2026-09-10",
-      "notas": [
-        "CORREGIDO (Dashboard movil): se reparo el bug visual que dejaba cuadros vacios en la barra superior y hacia que el menu lateral apagara demasiado la pantalla. El drawer movil vuelve a verse como panel claro/pro, los iconos de menu/notificaciones/actualizar quedan visibles y el overlay queda mas suave."
-      ]
-    },
     {
       "version": "58.17",
       "fecha": "2026-09-08",
