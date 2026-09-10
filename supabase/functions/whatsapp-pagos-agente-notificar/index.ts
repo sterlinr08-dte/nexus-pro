@@ -61,6 +61,13 @@ const SPECS = {
     body: "Hola {{1}}. Transferencia entre agentes confirmada en NEXUS PRO: {{2}} transfirió RD$ {{3}} a {{4}}. Consulta el detalle en NEXUS PRO.",
     example: ["ESTERLIN", "ROBINSON", "20,000.00", "MARIA"],
   },
+  // Aviso cuando el cierre contable del día 20 no se completa. El registro fiable queda en
+  // auditoría (CIERRE_CICLO_FALLIDO); este mensaje solo evita que el dueño tenga que ir a mirar.
+  cierre_ciclo_fallido: {
+    name: "cierre_ciclo_fallido",
+    body: "Hola {{1}}. El cierre automático del ciclo {{2}} no se completó en NEXUS PRO. Motivo: {{3}}. Revisa el sistema para resolverlo.",
+    example: ["ESTERLIN", "2026-08", "diferencia de reconciliacion en ROBINSON"],
+  },
 } as const;
 
 type Tipo = keyof typeof SPECS;
@@ -146,6 +153,8 @@ Deno.serve(async (req: Request) => {
     vars = [nombre, money(datos.monto), String(datos.destino || "Agente"), money(datos.acumulado)];
   } else if (tipo === "transferencia_admin_resumen") {
     vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), String(datos.destino || "Agente")];
+  } else if (tipo === "cierre_ciclo_fallido") {
+    vars = [nombre, String(datos.periodo || "?"), String(datos.motivo || "error no especificado")];
   } else {
     vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), money(datos.acumulado)];
   }
