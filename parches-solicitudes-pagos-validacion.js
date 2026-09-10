@@ -1,10 +1,10 @@
-/* NEXUS PRO · Solicitudes · pagos bancarios por validar · 2026-09-09
-   Mueve la operación de validación fuera de Automatizaciones y la integra en Solicitudes.
+/* NEXUS PRO · Solicitudes · pagos pendientes por validar · 2026-09-10
+   Fusiona la validación bancaria dentro de la cola operativa ya existente de Solicitudes.
    Reusa las RPC reales seguros_pagos_pendientes_validacion / seguros_validar_pago. */
 (function(){
 'use strict';
-if(window.__nxSolicitudesPagosValidacion20260909)return;
-window.__nxSolicitudesPagosValidacion20260909=true;
+if(window.__nxSolicitudesPagosValidacion20260910)return;
+window.__nxSolicitudesPagosValidacion20260910=true;
 
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -20,12 +20,14 @@ async function rpc(name,args={}){const A=APIx();if(!A?.post)throw new Error('Sin
 function css(){
   if($('#nxSolPayCss'))return;
   const s=document.createElement('style');s.id='nxSolPayCss';s.textContent=`
-/* El acceso operativo ya vive en Solicitudes; Automatizaciones conserva solo su configuración. */
+/* La validación de pagos vive dentro de una sola cola en Solicitudes. */
 #nxWaAutoOverlay .nxPayV2Entry,#v-waInbox .nxPayV2MainBadge{display:none!important}
-#v-solicitudes .nxSL-section-payval{border-left:4px solid #2563eb}
-#v-solicitudes .nxSL-section-payval .nxSL-section-title i{color:#2563eb}
-#v-solicitudes .nxSL-pay-count{background:#dbeafe;color:#1d4ed8}
+#v-solicitudes .nxSL-section-pend.nxSL-section-payval{border-left:4px solid #2563eb}
+#v-solicitudes .nxSL-section-pend.nxSL-section-payval .nxSL-section-title i{color:#2563eb}
+#v-solicitudes .nxSL-section-pend.nxSL-section-payval .nxSL-section-count{background:#dbeafe;color:#1d4ed8}
 #v-solicitudes .nxSL-pay-note{font-size:10px;color:#64748b;margin:-4px 0 12px;line-height:1.45}
+#v-solicitudes .nxSL-pay-merged{margin-top:10px;padding-top:10px;border-top:1px solid #e5eaf1}
+#v-solicitudes .nxSL-pay-merged-label{font-size:8.5px;font-weight:900;letter-spacing:.45px;color:#64748b;text-transform:uppercase;margin:0 0 8px}
 #v-solicitudes .nxSL-pay-amt{font-weight:900;color:#0f5fc7;white-space:nowrap}
 #v-solicitudes .nxSL-pay-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 #v-solicitudes .nxSL-pay-btn{height:30px;border:0;border-radius:999px;padding:0 10px;font:800 9px/1 'Plus Jakarta Sans','Segoe UI',system-ui;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
@@ -64,17 +66,56 @@ function fila(p){
   </tr>`;
 }
 
-function renderSection(){
+function numeroTexto(v){const n=parseInt(String(v||'').replace(/[^0-9]/g,''),10);return Number.isFinite(n)?n:0}
+
+function fusionarSection(){
   const view=$('#v-solicitudes');if(!view)return;
+
+  /* El bloque independiente anterior ya no debe existir. */
   $('#nxSolPaySection',view)?.remove();
-  const sec=document.createElement('div');sec.id='nxSolPaySection';sec.className='nxSL-section nxSL-section-payval';
-  sec.innerHTML=`<div class="nxSL-section-head"><div class="nxSL-section-title"><i class="ti ti-shield-dollar"></i> PAGOS PENDIENTES DE VALIDAR</div><div class="nxSL-section-count nxSL-pay-count">${items.length}</div></div>
-    <div class="nxSL-pay-note">Transferencias y depósitos aplicados que todavía requieren confirmación de la cuenta receptora. Los pagos registrados por el administrador en su propia cuenta se validan automáticamente y no aparecerán aquí.</div>
-    ${items.length?`<div class="nxSL-table-wrap"><table class="nxSL-table"><thead><tr><th>FECHA</th><th>CUENTA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO / BANCO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead><tbody>${items.map(fila).join('')}</tbody></table></div>`:'<div class="nxSL-empty-soft">✓ No hay pagos pendientes de validar.</div>'}`;
-  const anchor=$('.nxSL-section-pend',view);
-  if(anchor)anchor.insertAdjacentElement('beforebegin',sec);else $('.nxSL-head',view)?.insertAdjacentElement('afterend',sec);
-  $$('[data-pay-voucher]',sec).forEach(b=>b.onclick=()=>window.open(b.dataset.payVoucher,'_blank','noopener'));
-  $$('[data-pay-validate]',sec).forEach(b=>b.onclick=()=>abrirConfirmacion(b.closest('tr')?.dataset.payId));
+
+  const sec=$('.nxSL-section-pend',view);
+  if(!sec)return;
+  sec.classList.add('nxSL-section-payval');
+
+  const title=$('.nxSL-section-title',sec);
+  if(title)title.innerHTML='<i class="ti ti-shield-dollar"></i> PAGOS PENDIENTES POR VALIDAR';
+
+  const countEl=$('.nxSL-section-count',sec);
+  const current=countEl?numeroTexto(countEl.textContent):0;
+  const lastMerged=numeroTexto(sec.dataset.nxPayMergedTotal);
+  let base=numeroTexto(sec.dataset.nxPayBaseCount);
+  if(!sec.dataset.nxPayBaseCount||current!==lastMerged){base=current}
+  const total=base+items.length;
+  sec.dataset.nxPayBaseCount=String(base);
+  sec.dataset.nxPayMergedTotal=String(total);
+  sec.dataset.nxPayMerged='1';
+  if(countEl)countEl.textContent=String(total);
+
+  let note=$('#nxSolPayNote',sec);
+  if(!note){
+    note=document.createElement('div');note.id='nxSolPayNote';note.className='nxSL-pay-note';
+    const head=$('.nxSL-section-head',sec);
+    if(head)head.insertAdjacentElement('afterend',note);else sec.prepend(note);
+  }
+  note.textContent='Transferencias, depósitos y entregas de fondos que requieren validación del administrador. Los pagos registrados por el administrador en su propia cuenta se validan automáticamente y no aparecerán aquí.';
+
+  $('#nxSolPayMerged',sec)?.remove();
+
+  const empties=$$('.nxSL-empty-soft,.nxSL-empty',sec).filter(el=>/entrega|pendiente|confirm/i.test(el.textContent||''));
+  if(base===0&&items.length===0){
+    empties.forEach(el=>{el.style.display='';el.textContent='✓ No hay pagos pendientes por validar.'});
+  }else if(items.length>0){
+    empties.forEach(el=>{if(base===0)el.style.display='none'});
+  }
+
+  if(!items.length)return;
+
+  const merged=document.createElement('div');merged.id='nxSolPayMerged';merged.className='nxSL-pay-merged';
+  merged.innerHTML=`<div class="nxSL-pay-merged-label">VALIDACIONES BANCARIAS</div><div class="nxSL-table-wrap"><table class="nxSL-table"><thead><tr><th>FECHA</th><th>CUENTA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO / BANCO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead><tbody>${items.map(fila).join('')}</tbody></table></div>`;
+  sec.appendChild(merged);
+  $$('[data-pay-voucher]',merged).forEach(b=>b.onclick=()=>window.open(b.dataset.payVoucher,'_blank','noopener'));
+  $$('[data-pay-validate]',merged).forEach(b=>b.onclick=()=>abrirConfirmacion(b.closest('tr')?.dataset.payId));
 }
 
 function abrirConfirmacion(id){
@@ -93,13 +134,13 @@ async function validar(id,ov){
     const r=await rpc('seguros_validar_pago',{p_abono_id:id,p_nota:nota});
     ov.remove();toast('ok','Pago validado',`Acumulado de la cuenta: RD$ ${money(r?.acumulado)}`);
     lastLoad=0;await cargar(true);
-    if(typeof window.nxRefrescarSolicitudes==='function')await window.nxRefrescarSolicitudes();else renderSection();
+    if(typeof window.nxRefrescarSolicitudes==='function')await window.nxRefrescarSolicitudes();else fusionarSection();
   }catch(e){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Validar pago';toast('err','No se pudo validar',String(e?.message||e))}
 }
 
 async function integrar(force=false){
   css();const view=$('#v-solicitudes');if(!view||!view.classList.contains('on'))return;
-  try{await cargar(force);renderSection()}catch(e){console.error('[Solicitudes pagos]',e)}
+  try{await cargar(force);fusionarSection()}catch(e){console.error('[Solicitudes pagos]',e)}
 }
 
 function envolver(){
@@ -112,5 +153,5 @@ function envolver(){
 
 envolver();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',envolver,{once:true});
-setInterval(()=>{const v=$('#v-solicitudes');if(v?.classList.contains('on')&&!$('#nxSolPaySection',v))integrar(false)},2500);
+setInterval(()=>{const v=$('#v-solicitudes');if(!v?.classList.contains('on'))return;const sec=$('.nxSL-section-pend',v);if(sec&&sec.dataset.nxPayMerged!=='1')integrar(false)},2500);
 })();
