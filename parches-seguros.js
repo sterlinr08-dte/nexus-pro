@@ -10,9 +10,9 @@
       var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
-         WhatsApp nuevas sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5849'):'?b=5849';
-    }catch(e){return '?b=5849';}
+         WhatsApp/Solicitudes sin tocar el index.html monolítico solo por una versión. */
+      return base?(base+'&b=5850'):'?b=5850';
+    }catch(e){return '?b=5850';}
   }
 
   function load(src,done){
