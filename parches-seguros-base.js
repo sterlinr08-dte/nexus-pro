@@ -30,6 +30,78 @@
     style.textContent = `
       /* SOLO EN MÓVIL */
       @media (max-width: 768px) {
+        /* v58.18 - blindaje visual del dashboard movil:
+           evita botones fantasma en la barra superior y devuelve el drawer
+           lateral a un panel claro/pro sin apagar demasiado el dashboard. */
+        #mobOverlay {
+          background: rgba(15,23,42,.26) !important;
+          backdrop-filter: blur(1.5px) !important;
+          -webkit-backdrop-filter: blur(1.5px) !important;
+        }
+        .sb {
+          width: 236px !important;
+          left: -236px !important;
+          background: linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,251,255,.92)) !important;
+          color: #0f172a !important;
+          border-right: 1px solid rgba(226,232,240,.85) !important;
+          box-shadow: none !important;
+          backdrop-filter: blur(18px) saturate(145%) !important;
+          -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
+        }
+        .sb.mob-open {
+          left: 0 !important;
+          box-shadow: 20px 0 44px -28px rgba(15,23,42,.55) !important;
+        }
+        .sb.col { width: 236px !important; left: -236px !important; }
+        .sb .sb-top { border-bottom: 1px solid rgba(226,232,240,.84) !important; }
+        .sb .sb-nm, .sb .sb-un { color: #0f172a !important; }
+        .sb .sb-sm, .sb .sb-ur, .sb .ss { color: #64748b !important; }
+        .sb .ni:hover { background: rgba(79,70,229,.08) !important; }
+        .sb .ni.on { background: rgba(99,102,241,.14) !important; box-shadow: inset 3px 0 0 #6366f1 !important; }
+        .sb .ni-i { color: #94a3b8 !important; }
+        .sb .ni-l { color: #334155 !important; }
+        .sb .ni.on .ni-i, .sb .ni:hover .ni-i { color: #6366f1 !important; }
+        .sb .ni.on .ni-l, .sb .ni:hover .ni-l { color: #0f172a !important; }
+        body.spring-nav .sb .spring-ind {
+          background: rgba(99,102,241,.13) !important;
+          box-shadow: inset 3px 0 0 #6366f1,0 0 0 1px rgba(99,102,241,.08) !important;
+        }
+        .tn-tog, .tn-r > #btnRefrescar, .tn-r > .notif-bell {
+          width: 40px !important;
+          height: 40px !important;
+          min-width: 40px !important;
+          padding: 0 !important;
+          border: 0 !important;
+          border-radius: 14px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          overflow: visible !important;
+        }
+        .tn-tog {
+          background: linear-gradient(150deg,#34d399,#10b981 52%,#059669) !important;
+          color: #fff !important;
+          box-shadow: 0 8px 18px rgba(16,185,129,.34),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important;
+        }
+        .tn-r > .notif-bell {
+          background: linear-gradient(150deg,#fbbf24,#f59e0b 55%,#d97706) !important;
+          color: #fff !important;
+          box-shadow: 0 8px 18px rgba(217,119,6,.25),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important;
+        }
+        .tn-r > #btnRefrescar {
+          background: linear-gradient(150deg,#22d3ee,#8b5cf6 55%,#6d28d9) !important;
+          color: #fff !important;
+          box-shadow: 0 8px 18px rgba(109,40,217,.26),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important;
+        }
+        .tn-tog i, .tn-r > #btnRefrescar i, .tn-r > .notif-bell i {
+          display: block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          color: #fff !important;
+          font-size: 20px !important;
+          line-height: 1 !important;
+        }
+        .tn-r > .notif-bell .notif-badge { top: -5px !important; right: -4px !important; }
         
         /* Barra inferior */
         .mobile-bottom-nav-clean {

@@ -1334,17 +1334,35 @@ html body [tabindex="0"][role="button"]:focus-visible,html body tr[tabindex="0"]
 /* ════ RESPONSIVE MÓVIL COMPLETO ════ */
 @media(max-width:768px){
   /* Sidebar se convierte en drawer */
-  .sb{position:fixed;top:0;left:-220px;height:100vh;height:100dvh;z-index:200;transition:left .25s ease;box-shadow:none}
-  .sb.mob-open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.3)}
-  .sb.col{width:210px;left:-220px}
+  .sb{position:fixed;top:0;left:-236px;width:236px;height:100vh;height:100dvh;z-index:200;transition:left .25s ease;box-shadow:none;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,251,255,.92)) !important;color:#0f172a !important;border-right:1px solid rgba(226,232,240,.85);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%)}
+  .sb.mob-open{left:0;box-shadow:20px 0 44px -28px rgba(15,23,42,.55)}
+  .sb.col{width:236px;left:-236px}
+  .sb .sb-top{border-bottom:1px solid rgba(226,232,240,.84)}
+  .sb .sb-nm,.sb .sb-un{color:#0f172a !important}
+  .sb .sb-sm,.sb .sb-ur{color:#64748b !important}
+  .sb .ss{color:#64748b !important}
+  .sb .ni{color:#334155}
+  .sb .ni:hover{background:rgba(79,70,229,.08)}
+  .sb .ni.on{background:rgba(99,102,241,.14);box-shadow:inset 3px 0 0 #6366f1}
+  .sb .ni-i{color:#94a3b8 !important}
+  .sb .ni-l{color:#334155 !important}
+  .sb .ni.on .ni-i,.sb .ni:hover .ni-i{color:#6366f1 !important}
+  .sb .ni.on .ni-l,.sb .ni:hover .ni-l{color:#0f172a !important}
+  body.spring-nav .sb .spring-ind{background:rgba(99,102,241,.13);box-shadow:inset 3px 0 0 #6366f1,0 0 0 1px rgba(99,102,241,.08)}
   /* Overlay oscuro detrás del drawer */
-  #mobOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+  #mobOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.26);z-index:199;backdrop-filter:blur(1.5px);-webkit-backdrop-filter:blur(1.5px)}
   #mobOverlay.on{display:block}
   /* Main ocupa todo el ancho */
   .main{width:100%;min-width:0}
   .abody{position:relative}
   /* Topnav móvil — conservar el espacio de la barra de estado (notch/isla dinámica) en iOS */
   .tnav{padding:0 10px;padding-top:env(safe-area-inset-top,0);height:52px}
+  .tn-tog,.tn-r > #btnRefrescar,.tn-r > .notif-bell{width:40px !important;height:40px !important;min-width:40px !important;padding:0 !important;border:0 !important;border-radius:14px !important;display:flex !important;align-items:center !important;justify-content:center !important;overflow:visible !important}
+  .tn-tog{background:linear-gradient(150deg,#34d399,#10b981 52%,#059669) !important;color:#fff !important;box-shadow:0 8px 18px rgba(16,185,129,.34),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important}
+  .tn-r > .notif-bell{background:linear-gradient(150deg,#fbbf24,#f59e0b 55%,#d97706) !important;color:#fff !important;box-shadow:0 8px 18px rgba(217,119,6,.25),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important}
+  .tn-r > #btnRefrescar{background:linear-gradient(150deg,#22d3ee,#8b5cf6 55%,#6d28d9) !important;color:#fff !important;box-shadow:0 8px 18px rgba(109,40,217,.26),inset 0 2px 3px rgba(255,255,255,.55),inset 0 -5px 9px rgba(0,0,0,.18) !important}
+  .tn-tog i,.tn-r > #btnRefrescar i,.tn-r > .notif-bell i{display:block !important;opacity:1 !important;visibility:visible !important;color:#fff !important;font-size:20px !important;line-height:1 !important}
+  .tn-r > .notif-bell .notif-badge{top:-5px !important;right:-4px !important}
   .pttl{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
   /* Content móvil */
   .content{padding:10px}
