@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.112.2";
 
-// NEXUS PRO · Avisos internos al agente por validación de pagos bancarios.
+// NEXUS PRO · Avisos internos al agente por pagos bancarios y transferencias entre agentes.
 // Solo acepta llamadas server-side con X-Internal-Secret. Nunca expone ZERNIO_API_KEY.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -42,6 +42,16 @@ const SPECS = {
     name: "pago_validado_resumen_agente",
     body: "Hola {{1}}. Validaste un pago de RD$ {{2}}. Tu monto acumulado validado en NEXUS PRO es RD$ {{3}}. Puedes consultarlo en el módulo de pagos.",
     example: ["ROBINSON", "4,500.00", "18,750.00"],
+  },
+  transferencia_confirmada_emisor: {
+    name: "transferencia_confirmada_emisor",
+    body: "Hola {{1}}. Tu transferencia de RD$ {{2}} a {{3}} fue confirmada. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}.",
+    example: ["ROBINSON", "20,000.00", "ESTERLIN", "5,000.00"],
+  },
+  transferencia_recibida: {
+    name: "transferencia_recibida",
+    body: "Hola {{1}}. Recibiste una transferencia de {{2}} por RD$ {{3}}. Tu monto acumulado en NEXUS PRO ahora es RD$ {{4}}.",
+    example: ["ESTERLIN", "ROBINSON", "20,000.00", "60,000.00"],
   },
 } as const;
 
@@ -118,9 +128,17 @@ Deno.serve(async (req: Request) => {
   if (!agente) return json({ ok: false, error: "agente_no_encontrado" }, 404);
   const telefono = tel(agente.tel);
   const nombre = String(agente.nom || "agente");
-  const vars = tipo === "pago_pendiente_validacion"
-    ? [nombre, money(datos.monto), String(datos.cliente || "Cliente")]
-    : [nombre, money(datos.monto), money(datos.acumulado)];
+
+  let vars: string[];
+  if (tipo === "pago_pendiente_validacion") {
+    vars = [nombre, money(datos.monto), String(datos.cliente || "Cliente")];
+  } else if (tipo === "pago_validado_resumen") {
+    vars = [nombre, money(datos.monto), money(datos.acumulado)];
+  } else if (tipo === "transferencia_confirmada_emisor") {
+    vars = [nombre, money(datos.monto), String(datos.destino || "Agente"), money(datos.acumulado)];
+  } else {
+    vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), money(datos.acumulado)];
+  }
 
   if (!telefono) {
     await registrar(agenteId, tipo, referenciaId, spec.name, vars, "error", null, "agente sin WhatsApp registrado");
