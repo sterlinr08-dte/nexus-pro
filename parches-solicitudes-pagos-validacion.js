@@ -37,6 +37,7 @@ function css(){
 .nxSolPayCard{width:min(430px,100%);background:#fff;border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 30px 85px -36px rgba(15,23,42,.72);overflow:hidden}
 .nxSolPayHead{display:flex;align-items:center;gap:10px;padding:14px 15px;border-bottom:1px solid #edf1f6}.nxSolPayIco{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:#eaf1ff;color:#2563eb;font-size:18px}.nxSolPayHead b{font-size:12px;color:#17233d;flex:1}.nxSolPayX{width:34px;height:34px;border:0;border-radius:50%;background:#f4f6f9;color:#65738b;cursor:pointer}
 .nxSolPayBody{padding:14px 15px 8px;color:#506078;font-size:10px;line-height:1.55}.nxSolPayResume{padding:10px 11px;border-radius:13px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}.nxSolPayResume strong{display:block;color:#17233d;font-size:11px}.nxSolPayResume span{display:block;margin-top:3px}.nxSolPayWarn{padding:9px 10px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:9px;font-weight:700}.nxSolPayBody label{display:block;margin:11px 0 5px;font-size:8px;font-weight:900;text-transform:uppercase;color:#7a889e}.nxSolPayBody input{width:100%;height:40px;border:1px solid #dce4ef;border-radius:12px;padding:0 10px;background:#fff;color:#17233d;font:inherit;outline:none}.nxSolPayBody input:focus{border-color:#93b4ff;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.nxSL-pay-wait{font:800 8.5px 'Plus Jakarta Sans','Segoe UI',system-ui;color:#64748b;letter-spacing:.03em;white-space:nowrap}
 .nxSolPayFoot{display:flex;justify-content:flex-end;gap:8px;padding:11px 15px 15px}.nxSolPayFoot button{height:39px;border-radius:12px;padding:0 13px;font:800 9.5px 'Plus Jakarta Sans','Segoe UI',system-ui;cursor:pointer}.nxSolPayCancel{border:1px solid #dce4ef;background:#fff;color:#52627b}.nxSolPayConfirm{border:0;background:#2563eb;color:#fff;min-width:128px}.nxSolPayConfirm:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:700px){#v-solicitudes .nxSL-pay-actions{justify-content:flex-start}.nxSolPayOv{align-items:end;padding:8px}.nxSolPayCard{border-radius:22px 22px 16px 16px}.nxSolPayFoot{display:grid;grid-template-columns:1fr 1fr}.nxSolPayFoot button{width:100%}}
 `;document.head.appendChild(s);
@@ -58,11 +59,12 @@ function fila(p){
   return `<tr data-pay-id="${esc(p.abono_id)}">
     <td data-label="FECHA">${esc(fmtDate(p.fecha))}</td>
     <td data-label="CUENTA"><strong>${esc(p.agente||'—')}</strong></td>
+    <td data-label="COBRÓ">${esc(p.cobrado_por||'—')}</td>
     <td data-label="CLIENTE">${esc(p.cliente||'Cliente')}</td>
     <td data-label="MONTO" class="nxSL-pay-amt">RD$ ${money(p.monto)}</td>
     <td data-label="MÉTODO / BANCO"><strong>${esc(p.metodo||'Pago')}</strong><br><span style="font-size:8px;color:#64748b">${esc(p.banco||'—')}</span></td>
     <td data-label="REFERENCIA">${esc(p.referencia||'—')}</td>
-    <td data-label="ACCIONES"><div class="nxSL-pay-actions">${has?`<button type="button" class="nxSL-pay-btn voucher" data-pay-voucher="${esc(u)}"><i class="ti ti-photo"></i> VER</button>`:''}<button type="button" class="nxSL-pay-btn validar" data-pay-validate><i class="ti ti-shield-check"></i> VALIDAR</button></div></td>
+    <td data-label="ACCIONES"><div class="nxSL-pay-actions">${has?`<button type="button" class="nxSL-pay-btn voucher" data-pay-voucher="${esc(u)}"><i class="ti ti-photo"></i> VER</button>`:''}${p.puede_validar!==false?`<button type="button" class="nxSL-pay-btn validar" data-pay-validate><i class="ti ti-shield-check"></i> VALIDAR</button>`:`<span class="nxSL-pay-wait" title="El dinero entró a esa cuenta: solo su dueño o el administrador pueden validarlo">Lo valida ${esc(p.agente||'la cuenta')}</span>`}</div></td>
   </tr>`;
 }
 
@@ -98,7 +100,7 @@ function fusionarSection(){
     const head=$('.nxSL-section-head',sec);
     if(head)head.insertAdjacentElement('afterend',note);else sec.prepend(note);
   }
-  note.textContent='Transferencias, depósitos y entregas de fondos que requieren validación del administrador. Los pagos registrados por el administrador en su propia cuenta se validan automáticamente y no aparecerán aquí.';
+  note.textContent='Transferencias, depósitos y entregas de fondos que requieren validación. Solo llegan aquí los pagos CRUZADOS: los que registró alguien que no es el dueño de la cuenta donde entró el dinero. Lo valida el dueño de esa cuenta o el administrador; el resto se valida automáticamente y no aparece aquí.';
 
   $('#nxSolPayMerged',sec)?.remove();
 
@@ -112,7 +114,7 @@ function fusionarSection(){
   if(!items.length)return;
 
   const merged=document.createElement('div');merged.id='nxSolPayMerged';merged.className='nxSL-pay-merged';
-  merged.innerHTML=`<div class="nxSL-pay-merged-label">VALIDACIONES BANCARIAS</div><div class="nxSL-table-wrap"><table class="nxSL-table"><thead><tr><th>FECHA</th><th>CUENTA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO / BANCO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead><tbody>${items.map(fila).join('')}</tbody></table></div>`;
+  merged.innerHTML=`<div class="nxSL-pay-merged-label">VALIDACIONES BANCARIAS</div><div class="nxSL-table-wrap"><table class="nxSL-table"><thead><tr><th>FECHA</th><th>CUENTA</th><th>COBRÓ</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO / BANCO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead><tbody>${items.map(fila).join('')}</tbody></table></div>`;
   sec.appendChild(merged);
   $$('[data-pay-voucher]',merged).forEach(b=>b.onclick=()=>window.open(b.dataset.payVoucher,'_blank','noopener'));
   $$('[data-pay-validate]',merged).forEach(b=>b.onclick=()=>abrirConfirmacion(b.closest('tr')?.dataset.payId));
@@ -122,7 +124,7 @@ function abrirConfirmacion(id){
   const p=items.find(x=>String(x.abono_id)===String(id));if(!p)return;
   $('.nxSolPayOv')?.remove();
   const ov=document.createElement('div');ov.className='nxSolPayOv';
-  ov.innerHTML=`<div class="nxSolPayCard" role="dialog" aria-modal="true" aria-label="Validar pago"><div class="nxSolPayHead"><span class="nxSolPayIco"><i class="ti ti-shield-check"></i></span><b>Validar pago bancario</b><button type="button" class="nxSolPayX" aria-label="Cerrar"><i class="ti ti-x"></i></button></div><div class="nxSolPayBody"><div class="nxSolPayResume"><strong>${esc(p.cliente||'Cliente')} · RD$ ${money(p.monto)}</strong><span>${esc(p.metodo||'Pago')} · ${esc(p.banco||'—')} · Cuenta: ${esc(p.agente||'—')}</span></div><div class="nxSolPayWarn"><i class="ti ti-alert-triangle"></i> Confirma únicamente después de verificar que el dinero entró realmente a esa cuenta.</div><label for="nxSolPayNota">Nota de validación (opcional)</label><input id="nxSolPayNota" maxlength="240" autocomplete="off" placeholder="Ej.: depósito verificado en Banreservas"></div><div class="nxSolPayFoot"><button type="button" class="nxSolPayCancel">Cancelar</button><button type="button" class="nxSolPayConfirm"><i class="ti ti-check"></i> Validar pago</button></div></div>`;
+  ov.innerHTML=`<div class="nxSolPayCard" role="dialog" aria-modal="true" aria-label="Validar pago"><div class="nxSolPayHead"><span class="nxSolPayIco"><i class="ti ti-shield-check"></i></span><b>Validar pago bancario</b><button type="button" class="nxSolPayX" aria-label="Cerrar"><i class="ti ti-x"></i></button></div><div class="nxSolPayBody"><div class="nxSolPayResume"><strong>${esc(p.cliente||'Cliente')} · RD$ ${money(p.monto)}</strong><span>${esc(p.metodo||'Pago')} · ${esc(p.banco||'—')} · Entró a la cuenta de ${esc(p.agente||'—')}${p.cobrado_por?` · Lo cobró ${esc(p.cobrado_por)}`:''}</span></div><div class="nxSolPayWarn"><i class="ti ti-alert-triangle"></i> Confirma únicamente después de verificar que el dinero entró realmente a esa cuenta.</div><label for="nxSolPayNota">Nota de validación (opcional)</label><input id="nxSolPayNota" maxlength="240" autocomplete="off" placeholder="Ej.: depósito verificado en Banreservas"></div><div class="nxSolPayFoot"><button type="button" class="nxSolPayCancel">Cancelar</button><button type="button" class="nxSolPayConfirm"><i class="ti ti-check"></i> Validar pago</button></div></div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();$('.nxSolPayX',ov).onclick=close;$('.nxSolPayCancel',ov).onclick=close;ov.onclick=e=>{if(e.target===ov)close()};$('.nxSolPayConfirm',ov).onclick=()=>validar(id,ov);
 }
@@ -132,7 +134,7 @@ async function validar(id,ov){
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Validando…';
   try{
     const r=await rpc('seguros_validar_pago',{p_abono_id:id,p_nota:nota});
-    ov.remove();toast('ok','Pago validado',`Acumulado de la cuenta: RD$ ${money(r?.acumulado)}`);
+    ov.remove();toast('ok','Pago validado',`Acumulado de ${r?.agente||'la cuenta'}: RD$ ${money(r?.acumulado)}`);
     lastLoad=0;await cargar(true);
     if(typeof window.nxRefrescarSolicitudes==='function')await window.nxRefrescarSolicitudes();else fusionarSection();
   }catch(e){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Validar pago';toast('err','No se pudo validar',String(e?.message||e))}
