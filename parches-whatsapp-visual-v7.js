@@ -20,6 +20,10 @@
 #v-waInbox .nxWaBub.in .nxWaMsgMeta{color:#8a94a3}
 #v-waInbox .nxWaMsgState{display:inline-flex;align-items:center;gap:2px;min-width:11px;justify-content:flex-end}
 #v-waInbox .nxWaMsgState i{font-size:9.5px;line-height:1}
+/* El visto es texto, no un icono: asi ninguna regla de .ti puede pintarlo. Los dos
+   checks van juntos con letter-spacing negativo para parecerse al glifo de WhatsApp. */
+#v-waInbox .nxWaMsgCheck{font-size:11px;line-height:1;letter-spacing:-3px;padding-right:3px;font-weight:700}
+#v-waInbox .nxWaMsgState.st-leido .nxWaMsgCheck{color:#53bdeb}
 #v-waInbox .nxWaMsgState.st-enviando{color:#94a3b8}
 #v-waInbox .nxWaMsgState.st-enviado{color:#64748b}
 #v-waInbox .nxWaMsgState.st-entregado{color:#64748b}
@@ -86,11 +90,11 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
   }
   function estadoInfo(est){
     const e=String(est||'').toLowerCase();
-    if(e==='enviando')return{cls:'st-enviando',ico:'ti-clock',txt:'Enviando'};
-    if(e==='enviado')return{cls:'st-enviado',ico:'ti-check',txt:'Enviado'};
-    if(e==='entregado')return{cls:'st-entregado',ico:'ti-checks',txt:'Entregado'};
-    if(e==='leido')return{cls:'st-leido',ico:'ti-checks',txt:'Leído'};
-    if(e==='fallido')return{cls:'st-fallido',ico:'ti-alert-circle',txt:'No enviado'};
+    if(e==='enviando')return{cls:'st-enviando',ico:'ti-clock',txt:'Enviando',txto:'\u25CB'};
+    if(e==='enviado')return{cls:'st-enviado',ico:'ti-check',txt:'Enviado',txto:'\u2713'};
+    if(e==='entregado')return{cls:'st-entregado',ico:'ti-checks',txt:'Entregado',txto:'\u2713\u2713'};
+    if(e==='leido')return{cls:'st-leido',ico:'ti-checks',txt:'Leído',txto:'\u2713\u2713'};
+    if(e==='fallido')return{cls:'st-fallido',ico:'ti-alert-circle',txt:'No enviado',txto:'!'};
     return null;
   }
 
@@ -114,7 +118,11 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
         const inf=estadoInfo(m.estado);
         if(inf){
           const st=document.createElement('span');st.className='nxWaMsgState '+inf.cls;st.title=inf.txt+(m.estado==='fallido'&&m.error_detalle?' · '+String(m.error_detalle).slice(0,160):'');st.setAttribute('aria-label',inf.txt);
-          st.innerHTML='<i class="ti '+inf.ico+'"></i>'+(m.estado==='fallido'?'<span>No enviado</span>':'');meta.appendChild(st);
+          // El visto NO usa <i class="ti">. Se probo cuatro veces a neutralizar por CSS el
+          // recuadro morado con relieve que le caia encima y no se logro localizar la regla
+          // responsable. Con un caracter de texto el problema desaparece por construccion:
+          // ninguna regla de iconos puede alcanzarlo, porque ya no es un icono.
+          st.innerHTML='<span class="nxWaMsgCheck">'+inf.txto+'</span>'+(m.estado==='fallido'?'<span>No enviado</span>':'');meta.appendChild(st);
         }
       }
       b.appendChild(meta);
