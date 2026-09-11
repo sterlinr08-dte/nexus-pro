@@ -359,14 +359,17 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
     const inp=$('#nxWaTexto',comp),attach=$('.nxWaIconBtn',comp);if(!inp||!attach)return;
     comp.dataset.nxWaReplica='1';
 
-    const plus=document.createElement('button');plus.type='button';plus.className='nxWaRefPlus';plus.setAttribute('aria-label','Adjuntar');plus.innerHTML='<i class="ti ti-plus"></i>';
-    plus.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();attach.click();});
+    // El boton + ya no se crea. Solo servia para hacer attach.click(), o sea, para
+    // pinchar el clip que esta dos posiciones mas alla y hace exactamente lo mismo.
+    // Eran dos entradas para la misma accion. Se conserva el clip, que es el que abre
+    // el menu de adjuntos, y el clip SIGUE siendo el ancla de esta funcion:
+    // si desaparece del marcado, este enhanceComposer sale por el return de arriba y
+    // se lleva por delante tambien el emoji y la camara.
 
     const pill=document.createElement('div');pill.className='nxWaRefTextPill';
     const emoji=document.createElement('button');emoji.type='button';emoji.className='nxWaRefInlineBtn nxWaRefEmoji';emoji.setAttribute('aria-label','Emoji');emoji.innerHTML='<i class="ti ti-mood-smile"></i>';emoji.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openEmoji(emoji);});
     const camera=document.createElement('button');camera.type='button';camera.className='nxWaRefInlineBtn nxWaRefCamera';camera.setAttribute('aria-label','Cámara');camera.innerHTML='<i class="ti ti-camera"></i>';camera.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();cameraFromExisting(attach);});
 
-    comp.insertBefore(plus,comp.firstChild);
     comp.insertBefore(pill,inp);
     pill.appendChild(inp);pill.appendChild(emoji);pill.appendChild(attach);pill.appendChild(camera);
   }
@@ -375,7 +378,7 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
     const root=$('#v-waInbox');if(!root)return;
     const closed=$('.nxWaCerrada',root);if(!closed||$('.nxWaComposer',root)||$('.nxWaRefClosedComposer',root))return;
     const box=document.createElement('div');box.className='nxWaRefClosedComposer';box.setAttribute('aria-disabled','true');
-    box.innerHTML='<div class="nxWaRefClosedPlus"><i class="ti ti-plus"></i></div><div class="nxWaRefClosedPill"><span>Escribe un mensaje...</span><i class="ti ti-mood-smile"></i><i class="ti ti-paperclip"></i><i class="ti ti-camera"></i></div><div class="nxWaRefClosedMic"><i class="ti ti-microphone"></i></div>';
+    box.innerHTML='<div class="nxWaRefClosedPill"><span>Escribe un mensaje...</span><i class="ti ti-mood-smile"></i><i class="ti ti-paperclip"></i><i class="ti ti-camera"></i></div><div class="nxWaRefClosedMic"><i class="ti ti-microphone"></i></div>';
     closed.parentNode.insertBefore(box,closed);
   }
 
