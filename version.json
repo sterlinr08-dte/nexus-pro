@@ -1,9 +1,9 @@
 {
-  "version": "58.29",
+  "version": "58.30",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.29",
+      "version": "58.30",
       "fecha": "2026-09-10",
       "notas": [
         "ARREGLADO: al quitar el icono de clip del chat desaparecieron tambien el boton + , el emoji y la camara. El clip era la pieza de la que colgaba todo el composer. Vuelve a estar, pero oculto: el + es el que se ve y funciona.",
@@ -12,7 +12,8 @@
         "ARREGLADO DE VERDAD: el visto de los mensajes salia dentro de un recuadro morado con relieve. Ya no se dibuja como icono sino como texto, asi que ninguna regla de iconos puede alcanzarlo. Ahora es un doble check azul, como en WhatsApp.",
         "QUITADO: el boton + del chat. Solo servia para pulsar el clip que esta al lado y hace exactamente lo mismo; ahora el clip es la unica entrada para adjuntar.",
         "MEJORADO: el texto de los mensajes del chat pasa de 10.9px a 12px en el telefono. Se lee bastante mejor y las burbujas crecen solo unos milimetros.",
-        "ARREGLADO (critico): una de las capas del chat dejo de cargar por completo por un error introducido al documentar el cambio anterior. El chat volvia a su aspecto sin ajustar. Ya esta corregido."
+        "ARREGLADO (critico): una de las capas del chat dejo de cargar por completo por un error introducido al documentar el cambio anterior. El chat volvia a su aspecto sin ajustar. Ya esta corregido.",
+        "MEJORADO: la hora y el visto de los mensajes pasan a 9px. Antes habia dos tamanos distintos -- 6.6px en tus mensajes y 7.7px en los del cliente -- y los dos se quedaban cortos al lado del texto."
       ]
     },
     {
