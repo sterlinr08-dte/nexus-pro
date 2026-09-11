@@ -19,8 +19,21 @@
    En una burbuja de chat no pega: WhatsApp pone un glifo pequeno del color de la
    hora. Se desactiva SOLO dentro del pie del mensaje, para no tocar el resto de
    iconos del sistema, que si quieren ese aspecto. */
-#v-waInbox .nxWaBub .nxWaMsgMeta i.ti,
-#v-waInbox .nxWaBub .nxWaBubMeta i.ti{
+/* El clip sigue en el DOM porque enhanceComposer lo necesita como ancla, pero no
+   debe verse: el + es el que el usuario pulsa, y por debajo pincha este. */
+#v-waInbox .nxWaComposer .nxWaClipOculto{display:none!important}
+
+/* Red mas amplia a proposito. El selector anterior apuntaba solo a
+   .nxWaMsgMeta i.ti y no basto -- el dueno seguia viendo el circulo morado en
+   produccion. En vez de seguir persiguiendo el nodo exacto se aplana cualquier .ti
+   dentro de una burbuja y, por si acaso, los iconos de visto esten donde esten.
+   Aplanar un check no puede romper nada. */
+#v-waInbox .nxWaBub .ti,
+#v-waInbox .nxWaMsgMeta .ti,
+#v-waInbox .nxWaBubMeta .ti,
+#v-waInbox .nxWaMsgState .ti,
+#v-waInbox .ti-checks,
+#v-waInbox .ti-check{
   width:auto!important;height:auto!important;min-width:0!important;
   background:none!important;border:0!important;border-radius:0!important;
   box-shadow:none!important;backdrop-filter:none!important;
@@ -28,8 +41,11 @@
   color:inherit!important;font-size:12px!important;line-height:1!important;
   vertical-align:-1px!important;transform:none!important;
 }
-#v-waInbox .nxWaBub .nxWaMsgMeta i.ti::after,
-#v-waInbox .nxWaBub .nxWaBubMeta i.ti::after{content:none!important;display:none!important}
+#v-waInbox .nxWaBub .ti::after,
+#v-waInbox .nxWaMsgMeta .ti::after,
+#v-waInbox .nxWaMsgState .ti::after,
+#v-waInbox .ti-checks::after,
+#v-waInbox .ti-check::after{content:none!important;display:none!important}
 #v-waInbox .nxWaBub.out .nxWaMsgState.st-leido i.ti{color:#53bdeb!important}
 #v-waInbox .nxWaUhdHeroIcon{
   background:#21c766!important;
