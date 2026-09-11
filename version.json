@@ -1,7 +1,18 @@
 {
-  "version": "58.17",
+  "version": "58.18",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.18",
+      "fecha": "2026-09-10",
+      "notas": [
+        "MEJORADO: el WhatsApp en el telefono se ve mucho mas compacto -- la cabecera, las tarjetas de arriba y cada conversacion ocupan bastante menos alto, asi que caben casi el doble de chats en pantalla sin tener que desplazarse.",
+        "ARREGLADO: la foto de la oficina se veia por debajo de todo el modulo de WhatsApp en el telefono y su texto ('Seguros de Salud') se leia encima de los datos. Ya no.",
+        "ARREGLADO: las burbujas del chat quedaban altisimas con un hueco entre el texto y la hora, y los visto (checks) aparecian separados de la hora en otro renglon. Llevaban dos pies puestos uno debajo del otro; ahora va uno solo y pegado al texto, como en WhatsApp.",
+        "ARREGLADO: la ultima conversacion de la lista se quedaba debajo del boton flotante y no se podia leer completa.",
+        "QUITADO: el icono de clip del chat -- no adjuntaba nada, solo avisaba de que estaba pendiente. El boton + es el que adjunta de verdad."
+      ]
+    },
     {
       "version": "58.17",
       "fecha": "2026-09-08",
