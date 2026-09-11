@@ -121,8 +121,13 @@
 #v-waInbox .nxWaBub{max-width:74%;padding:8px 10px 6px;border-radius:15px;font-size:11.5px;line-height:1.43;box-shadow:0 13px 26px -23px rgba(15,23,42,.78)}
 #v-waInbox .nxWaBub.in{align-self:flex-start;background:rgba(255,255,255,.97);border:1px solid rgba(226,232,240,.92);border-top-left-radius:6px}
 #v-waInbox .nxWaBub.out{align-self:flex-end;background:linear-gradient(135deg,#dcfce7,#d9f99d);border:1px solid rgba(34,197,94,.18);border-top-right-radius:6px}
-#v-waInbox .nxWaBubWrap.diff-prev.in .nxWaBub:before{content:"";position:absolute;left:-5px;top:0;border-top:8px solid rgba(255,255,255,.97);border-left:6px solid transparent}
-#v-waInbox .nxWaBubWrap.diff-prev.out .nxWaBub:before{content:"";position:absolute;right:-5px;top:0;border-top:8px solid #d9f99d;border-right:6px solid transparent}
+/* Las colitas de la burbuja se quitaron a proposito. Estaban dibujadas en left/right:-5px,
+   es decir FUERA del cuerpo, asi que no se leian como la cola de un bocadillo sino como un
+   triangulito suelto al lado. La capa aura ya lo habia notado y las repinto de verde a azul
+   palido (#d9efff), pero repintar no arregla que esten despegadas. Con el fondo glass actual
+   no hay forma limpia de integrarlas -- habria que recortar el borde y el blur del contenedor
+   -- asi que se eliminan, que es lo que recomendaba tambien la revision de ChatGPT.
+   Si algun dia se quieren de vuelta, el sitio es aqui y el problema a resolver es el -5px. */
 #v-waInbox .nxWaBub img{max-width:220px;border-radius:12px;display:block;cursor:pointer}
 #v-waInbox .nxWaHeadMain{min-width:0;display:flex;align-items:center;gap:8px}
 #v-waInbox .nxWaBackMob{display:none}

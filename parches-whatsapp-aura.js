@@ -82,13 +82,9 @@
 #v-waInbox .nxWaMsgs{gap:5px!important}
 #v-waInbox .nxWaBubWrap{margin-block:0!important}
 
-/* Las colas antiguas verdes quedan anuladas visualmente */
-#v-waInbox .nxWaBubWrap.diff-prev.out .nxWaBub:before{
-  border-top-color:#d9efff!important;
-}
-#v-waInbox .nxWaBubWrap.diff-prev.in .nxWaBub:before{
-  border-top-color:rgba(255,255,255,.94)!important;
-}
+/* Aqui se repintaban las colas verdes antiguas a azul palido. Ya no hace falta:
+   las colas se eliminaron en su origen (parches-whatsapp-inbox.js), porque el
+   problema no era el color sino que estaban dibujadas fuera de la burbuja. */
 
 /* Movil: mas compacto y parecido al mockup aprobado */
 @media(max-width:760px){
