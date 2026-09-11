@@ -1,9 +1,9 @@
 {
-  "version": "58.18",
+  "version": "58.19",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.18",
+      "version": "58.19",
       "fecha": "2026-09-10",
       "notas": [
         "MEJORADO: el WhatsApp en el telefono se ve mucho mas compacto -- la cabecera, las tarjetas de arriba y cada conversacion ocupan bastante menos alto, asi que caben casi el doble de chats en pantalla sin tener que desplazarse.",

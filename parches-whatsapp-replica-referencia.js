@@ -146,7 +146,8 @@
    checks de la hora.
    Se oculta el primero -- salvo cuando lleva el boton Reintentar de un mensaje
    fallido, que si es funcional y no puede desaparecer. */
-#v-waInbox .nxWaBubMeta:not(:has(.nxWaRetry)){display:none!important}
+#v-waInbox .nxWaBubMeta{margin:0!important;padding:0!important;min-height:0!important}
+#v-waInbox .nxWaBubMeta>span{display:none!important}
 
 /* WhatsApp pone la hora y los checks AL FINAL de la ultima linea de texto, no en un
    renglon aparte. El float lo consigue: si caben en esa linea se acomodan ahi, y si
@@ -258,6 +259,7 @@
   #v-waInbox .nxWaMsgs{padding:24px 12px 18px!important;gap:8px!important}
   #v-waInbox .nxWaBub{max-width:82%!important;padding:9px 11px 7px!important;font-size:11.4px!important;font-weight:600!important;line-height:1.34!important}
   #v-waInbox .nxWaBub.nxWaRefShort{padding:8px 11px!important;gap:12px!important}
+  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{padding:6px 9px 5px!important}
   #v-waInbox .nxWaComposerWrap{padding:9px 8px max(9px,env(safe-area-inset-bottom))!important}
   #v-waInbox .nxWaComposer{gap:6px!important}
   #v-waInbox .nxWaRefPlus,#v-waInbox .nxWaVoiceBtn,#v-waInbox #nxWaSendBtn,#v-waInbox .nxWaTextSendBtn{width:46px!important;height:46px!important;flex-basis:46px!important}
