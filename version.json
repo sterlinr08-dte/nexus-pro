@@ -1,7 +1,16 @@
 {
-  "version": "58.35",
+  "version": "58.36",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.36",
+      "fecha": "2026-09-11",
+      "notas": [
+        "ARREGLADO: los mensajes del chat se mostraban TODOS EN MAYUSCULAS, tanto los del cliente como los tuyos, y tambien lo que escribias en el cuadro de texto mientras lo tecleabas. Ahora se ven tal y como se escribieron.",
+        "IMPORTANTE: era solo un efecto visual. Lo que se guardaba y lo que se enviaba por WhatsApp siempre fue el texto original, asi que no hay ningun mensaje que corregir.",
+        "SIN CAMBIOS: la fecha del chat, las etiquetas de estado y el resto de la aplicacion siguen igual. Tambien sigue en mayusculas la vista previa de cada conversacion en la bandeja, que no es parte del chat."
+      ]
+    },
     {
       "version": "58.35",
       "fecha": "2026-09-11",
