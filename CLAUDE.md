@@ -224,3 +224,62 @@ NEXUS PRO debe responder sin ambigüedad:
 - ¿Cuál fue el consolidado mensual sin doble contabilización?
 
 Si alguna respuesta depende de sumar manualmente datos de distintas pantallas, la implementación todavía no está completa.
+
+---
+
+## Encargo visual vigente — WhatsApp móvil (10-sep-2026, 20:09 RD)
+
+El dueño compartió una captura real de **NEXUS PRO en iPhone/Safari** y pidió que **Claude + ChatGPT optimicen visualmente el Inbox de WhatsApp**. Esta solicitud es de **diseño/densidad visual**, no de lógica de negocio.
+
+### Lo que se ve en la captura y debe mejorar
+
+La pantalla conserva el concepto visual actual y funciona, pero en móvil consume demasiada altura antes de llegar a las conversaciones:
+
+- bloque `WHATSAPP / INBOX` demasiado alto;
+- las 5 tarjetas KPI (`Conversaciones`, `Sin responder`, `Cobranza`, `Póliza`, `Sin vincular`) tienen demasiado volumen vertical;
+- la zona de acciones deja `CONTACTOS` como elemento muy protagonista y ocupa otra franja completa;
+- la cabecera `CONVERSACIONES / 20 CHATS` también es alta;
+- las tarjetas de cada conversación son cómodas pero demasiado altas para una bandeja operativa;
+- el botón flotante morado inferior derecho puede invadir visualmente la lista;
+- hay mucho radio, padding y espacio en blanco acumulado entre bloques;
+- resultado: se ven pocas conversaciones por pantalla y el Inbox se siente “gigante”.
+
+### Objetivo visual
+
+Mantener la estética moderna, clara y tipo glass/píldora que ya gusta al dueño, pero convertir la pantalla en un **Inbox móvil mucho más compacto y operativo**:
+
+1. **Header WhatsApp compacto**: conservar logo + `WHATSAPP / INBOX`, pero reducir altura y padding sin perder identidad.
+2. **KPIs compactos**: mantener los 5 datos y sus iconos, pero con menor altura, tipografía jerárquica y separación más estrecha. No eliminar información útil solo para ganar espacio.
+3. **Acciones compactas**: `Contactos` y las demás acciones deben convivir sin crear otra “tarjeta gigante”. Preferir píldoras/scroll horizontal controlado si aplica.
+4. **Lista como protagonista**: la zona `CONVERSACIONES` debe empezar bastante más arriba y ocupar la mayor parte del viewport.
+5. **Filas de conversación**: reducir padding/altura, manteniendo avatar, nombre, preview, hora, etiqueta de estado y acceso. Deben poder verse más chats simultáneamente.
+6. **Buscador**: mantener el patrón actual de lupa que abre búsqueda; evitar un input permanente ocupando ancho/alto innecesario.
+7. **Botón flotante**: revisar tamaño/posición/z-index para que no tape conversaciones ni compita con acciones del módulo.
+8. **Safe areas iPhone**: respetar `env(safe-area-inset-*)`, Safari y teclado. No volver a introducir FOUC, saltos al cargar ni problemas de scroll.
+9. **Sin barra inferior nueva**: el dueño ha preferido evitar navegación inferior fija cuando duplica funciones.
+10. **No duplicar funciones**: conservar una sola entrada por acción real.
+
+### Restricciones técnicas
+
+- **No tocar Supabase, pagos, Zernio, Realtime, automatizaciones ni reglas de negocio por este trabajo visual.**
+- No modificar la lógica estable de carga/envío del chat para resolver un tema de tamaño.
+- No reintroducir el rediseño masivo que ya fue revertido por FOUC.
+- Hacer cambios visuales **aislados, por módulo y reversibles**.
+- Revisar la cascada completa de capas `parches-whatsapp-*` antes de agregar otro override; hay muchas capas existentes y no queremos seguir acumulando CSS contradictorio.
+- Antes de implementar, identificar cuál es hoy la **última capa que gana la cascada** para cada selector que se quiera compactar.
+- Probar al menos en ancho aproximado de iPhone 390–430 px y en escritorio; no asumir que una regla desktop sirve para móvil.
+- No publicar a `main` sin autorización explícita del dueño.
+
+### Coordinación con trabajos abiertos
+
+- **PR #326**: propuesta de compactación de WhatsApp **desktop**. Sigue siendo borrador; no mezclarla ciegamente con este encargo móvil.
+- **PR #327**: fix del falso `0 conversaciones` tras fallo transitorio de carga. Es funcional/resiliencia y debe revisarse por separado; no atribuirle este cambio visual.
+
+### Qué debe hacer Claude al leer esto
+
+1. Leer la bitácora más reciente y revisar los PR #326 y #327 antes de tocar archivos.
+2. Auditar la cascada real de `parches-whatsapp-*` en móvil.
+3. Proponer una **optimización visual móvil concreta** basada en la captura del dueño, priorizando densidad y espacio útil.
+4. Si implementa, hacerlo en rama/PR aislado, con bitácora nueva y sin publicar.
+5. Explicar exactamente qué alturas/paddings/radios/anchos cambia y por qué, y verificar que no afecte chat, scroll, teclado, Realtime ni envío.
+6. Dejar la versión lista para que el dueño la vea antes de autorizar publicación.
