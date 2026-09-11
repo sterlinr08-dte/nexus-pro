@@ -24,6 +24,22 @@
    checks van juntos con letter-spacing negativo para parecerse al glifo de WhatsApp. */
 #v-waInbox .nxWaMsgCheck{font-size:11px;line-height:1;letter-spacing:-3px;padding-right:3px;font-weight:700}
 #v-waInbox .nxWaMsgState.st-leido .nxWaMsgCheck{color:#53bdeb}
+/* Animacion del visto al pasar a leido. Deliberadamente acotada al <span> del check:
+   .nxWaBub y .nxWaBubWrap tienen animation/transition/transform apagados por las capas
+   22 (aura-safari-fix) y 24, por artefactos de iOS Safari, y eso NO se toca aqui.
+   Solo se dispara en la transicion real a leido, nunca al pintar la conversacion. */
+@keyframes nxWaCheckRead{
+  0%{transform:scale(1);opacity:.55}
+  45%{transform:scale(1.5)}
+  70%{transform:scale(.94)}
+  100%{transform:scale(1);opacity:1}
+}
+#v-waInbox .nxWaMsgState.nxWaCheckJustRead .nxWaMsgCheck{
+  display:inline-block;animation:nxWaCheckRead .5s cubic-bezier(.2,1.5,.3,1) both;
+}
+@media(prefers-reduced-motion:reduce){
+  #v-waInbox .nxWaMsgState.nxWaCheckJustRead .nxWaMsgCheck{animation:none}
+}
 #v-waInbox .nxWaMsgState.st-enviando{color:#94a3b8}
 #v-waInbox .nxWaMsgState.st-enviado{color:#64748b}
 #v-waInbox .nxWaMsgState.st-entregado{color:#64748b}
@@ -88,6 +104,12 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
       return d.toLocaleDateString('es-DO',{day:'numeric',month:'short',...(d.getFullYear()!==h.getFullYear()?{year:'numeric'}:{})});
     }catch(e){return''}
   }
+  // Estado anterior de cada mensaje, para animar SOLO la transicion a leido y no el
+  // primer pintado. Vive en un Map y no en el dataset del nodo porque pintar()
+  // reconstruye el innerHTML y el dataset se pierde: sin esto, cada refresco de
+  // Realtime volveria a animar todos los mensajes ya leidos.
+  const estadoPrevio=new Map();
+
   function estadoInfo(est){
     const e=String(est||'').toLowerCase();
     if(e==='enviando')return{cls:'st-enviando',ico:'ti-clock',txt:'Enviando',txto:'\u25CB'};
@@ -114,6 +136,9 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
       }
       const meta=document.createElement('div');meta.className='nxWaMsgMeta';
       const t=document.createElement('span');t.className='nxWaMsgTime';t.textContent=hora(m.created_at);meta.appendChild(t);
+      const estadoAntes=estadoPrevio.get(m.id);
+      estadoPrevio.set(m.id,m.estado);
+      const acabaDeLeerse=(m.direccion==='out'&&m.estado==='leido'&&estadoAntes&&estadoAntes!=='leido');
       if(m.direccion==='out'){
         const inf=estadoInfo(m.estado);
         if(inf){
@@ -122,6 +147,7 @@ body.tema-premium #v-waInbox .nxWaComposer:focus-within{background:rgba(27,36,52
           // recuadro morado con relieve que le caia encima y no se logro localizar la regla
           // responsable. Con un caracter de texto el problema desaparece por construccion:
           // ninguna regla de iconos puede alcanzarlo, porque ya no es un icono.
+          if(acabaDeLeerse)st.classList.add('nxWaCheckJustRead');
           st.innerHTML='<span class="nxWaMsgCheck">'+inf.txto+'</span>'+(m.estado==='fallido'?'<span>No enviado</span>':'');meta.appendChild(st);
         }
       }
