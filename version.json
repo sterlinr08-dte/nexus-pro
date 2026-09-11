@@ -1,15 +1,16 @@
 {
-  "version": "58.26",
+  "version": "58.27",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.26",
+      "version": "58.27",
       "fecha": "2026-09-10",
       "notas": [
         "ARREGLADO: al quitar el icono de clip del chat desaparecieron tambien el boton + , el emoji y la camara. El clip era la pieza de la que colgaba todo el composer. Vuelve a estar, pero oculto: el + es el que se ve y funciona.",
         "ARREGLADO: el doble check de los mensajes seguia saliendo como un icono morado con relieve. Ahora si queda plano y azul, como en WhatsApp.",
         "QUITADO: la colita triangular de las burbujas del chat. Estaba dibujada fuera del cuerpo de la burbuja, asi que se veia como un triangulito suelto al lado en vez de como la cola de un bocadillo.",
-        "ARREGLADO DE VERDAD: el visto de los mensajes salia dentro de un recuadro morado con relieve. Ya no se dibuja como icono sino como texto, asi que ninguna regla de iconos puede alcanzarlo. Ahora es un doble check azul, como en WhatsApp."
+        "ARREGLADO DE VERDAD: el visto de los mensajes salia dentro de un recuadro morado con relieve. Ya no se dibuja como icono sino como texto, asi que ninguna regla de iconos puede alcanzarlo. Ahora es un doble check azul, como en WhatsApp.",
+        "QUITADO: el boton + del chat. Solo servia para pulsar el clip que esta al lado y hace exactamente lo mismo; ahora el clip es la unica entrada para adjuntar."
       ]
     },
     {

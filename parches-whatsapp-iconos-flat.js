@@ -19,10 +19,6 @@
    En una burbuja de chat no pega: WhatsApp pone un glifo pequeno del color de la
    hora. Se desactiva SOLO dentro del pie del mensaje, para no tocar el resto de
    iconos del sistema, que si quieren ese aspecto. */
-/* El clip sigue en el DOM porque enhanceComposer lo necesita como ancla, pero no
-   debe verse: el + es el que el usuario pulsa, y por debajo pincha este. */
-#v-waInbox .nxWaComposer .nxWaClipOculto{display:none!important}
-
 /* Red mas amplia a proposito. El selector anterior apuntaba solo a
    .nxWaMsgMeta i.ti y no basto -- el dueno seguia viendo el circulo morado en
    produccion. En vez de seguir persiguiendo el nodo exacto se aplana cualquier .ti
