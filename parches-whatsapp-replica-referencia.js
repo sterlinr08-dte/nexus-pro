@@ -138,6 +138,27 @@
 }
 #v-waInbox .nxWaBub.nxWaRefShort .nxWaMsgText{white-space:nowrap!important}
 #v-waInbox .nxWaBub.nxWaRefShort .nxWaBubMeta,#v-waInbox .nxWaBub.nxWaRefShort .nxWaMsgMeta{margin:0 0 1px!important;white-space:nowrap!important}
+/* ── Pie de la burbuja: uno solo, y pegado al texto como en WhatsApp ──────────
+   La burbuja traia DOS pies apilados: .nxWaBubMeta (del marcado base de inbox.js,
+   con el ✓✓ crudo) y .nxWaMsgMeta (que anade visual-v7 y ya lleva hora Y estado).
+   Al ser dos <div> quedaban en renglones distintos: el texto arriba, los checks en
+   una linea, la hora en otra. Eso es lo que estiraba la burbuja y separaba los
+   checks de la hora.
+   Se oculta el primero -- salvo cuando lleva el boton Reintentar de un mensaje
+   fallido, que si es funcional y no puede desaparecer. */
+#v-waInbox .nxWaBubMeta:not(:has(.nxWaRetry)){display:none!important}
+
+/* WhatsApp pone la hora y los checks AL FINAL de la ultima linea de texto, no en un
+   renglon aparte. El float lo consigue: si caben en esa linea se acomodan ahi, y si
+   no caben bajan solos -- que es exactamente lo que hace WhatsApp.
+   flow-root es necesario porque la burbuja es display:block y un bloque normal no
+   contiene el float (se saldria de la burbuja). No se usa el clearfix de :after
+   porque ese pseudo-elemento ya esta ocupado/anulado por la colita de la burbuja. */
+#v-waInbox .nxWaBub:not(.nxWaRefShort){display:flow-root!important}
+#v-waInbox .nxWaBub:not(.nxWaRefShort) .nxWaMsgMeta{
+  float:right!important;margin:0 0 0 9px!important;padding-top:3px!important;
+  white-space:nowrap!important;
+}
 #v-waInbox .nxWaBubMenu,#v-waInbox .nxWaMsgDrop{position:absolute!important}
 
 /* Multimedia mantiene proporción propia */
