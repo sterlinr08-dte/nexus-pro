@@ -1,7 +1,17 @@
 {
-  "version": "58.31",
+  "version": "58.32",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.32",
+      "fecha": "2026-09-11",
+      "notas": [
+        "QUITADO: el aspecto 3D del modulo de WhatsApp. Los iconos ya no salen dentro de una pastilla morada con brillo y relieve -- ese circulo venia del estilo general de iconos de la aplicacion y se colaba incluso dentro de los cuadros verde y azul del encabezado, de los indicadores y de la hoja de Contactos.",
+        "QUITADO: el relieve de las tarjetas de WhatsApp. Fuera el filo blanco de arriba, las sombras con volumen y los degradados en diagonal de la cabecera, los indicadores, las filas de conversacion, las burbujas, el compositor y la hoja de Contactos. Todo queda plano y de un solo color.",
+        "SIN CAMBIOS: tamanos, margenes, radios, tipografia y colocacion siguen exactamente igual, asi que la bandeja compacta del telefono no se mueve. Tampoco se toco el fondo del chat ni el selector de fondo, donde el degradado si es parte del dibujo.",
+        "SIN CAMBIOS: envio de mensajes, notas de voz, adjuntos, scroll, teclado, tiempo real y automatizaciones. Este cambio es solo de color y sombra."
+      ]
+    },
     {
       "version": "58.31",
       "fecha": "2026-09-10",
