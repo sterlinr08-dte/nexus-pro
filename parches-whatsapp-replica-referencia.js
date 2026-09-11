@@ -163,10 +163,10 @@
   margin:1px 0 0!important;padding:0!important;white-space:nowrap!important;
 }
 
-/* El estado (los checks) se estaba dibujando como un circulo morado enorme. No
-   localice que capa lo hace, asi que en vez de perseguirlo se neutraliza aqui:
-   sea cual sea el origen, el check vuelve a ser un glifo pequeno del color de la
-   hora, como en WhatsApp -- y el azul de "leido" es el de WhatsApp. */
+/* Reseteo del contenedor del estado. El circulo morado en si lo provocaba el
+   tratamiento global de iconos (.ti de parches-seguros-base.js) sobre el <i>, y se
+   desactiva en parches-whatsapp-iconos-flat.js, que es la capa que se encarga de
+   eso. Aqui solo se aplana el <span> que lo envuelve. */
 #v-waInbox .nxWaBub .nxWaMsgState{
   background:none!important;box-shadow:none!important;border:0!important;
   width:auto!important;height:auto!important;min-width:0!important;

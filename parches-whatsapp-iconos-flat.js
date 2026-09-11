@@ -11,6 +11,26 @@
     s.id='nxWaFlatIconsCss';
     s.textContent=`
 /* Iconografia plana: sin brillo, relieve ni sombras volumetricas */
+
+/* El check de los mensajes salia como un circulo morado 3D. No venia del modulo
+   WhatsApp: es el tratamiento GLOBAL de iconos de parches-seguros-base.js, que
+   convierte todo .ti "suelto" en una pastilla de 1.7em con gradiente
+   #8b5cf6 -> #22d3ee, sombra interior y un ::after de reflejo cristalino.
+   En una burbuja de chat no pega: WhatsApp pone un glifo pequeno del color de la
+   hora. Se desactiva SOLO dentro del pie del mensaje, para no tocar el resto de
+   iconos del sistema, que si quieren ese aspecto. */
+#v-waInbox .nxWaBub .nxWaMsgMeta i.ti,
+#v-waInbox .nxWaBub .nxWaBubMeta i.ti{
+  width:auto!important;height:auto!important;min-width:0!important;
+  background:none!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;overflow:visible!important;
+  color:inherit!important;font-size:12px!important;line-height:1!important;
+  vertical-align:-1px!important;transform:none!important;
+}
+#v-waInbox .nxWaBub .nxWaMsgMeta i.ti::after,
+#v-waInbox .nxWaBub .nxWaBubMeta i.ti::after{content:none!important;display:none!important}
+#v-waInbox .nxWaBub.out .nxWaMsgState.st-leido i.ti{color:#53bdeb!important}
 #v-waInbox .nxWaUhdHeroIcon{
   background:#21c766!important;
   box-shadow:none!important;
