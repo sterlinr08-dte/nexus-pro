@@ -274,7 +274,15 @@
   #v-waInbox .nxWaMsgs{padding:24px 12px 18px!important;gap:8px!important}
   #v-waInbox .nxWaBub{max-width:82%!important;padding:9px 11px 7px!important;font-size:11.4px!important;font-weight:600!important;line-height:1.34!important}
   #v-waInbox .nxWaBub.nxWaRefShort{padding:8px 11px!important;gap:12px!important}
-  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{padding:5px 9px 4px!important}
+  /* Tamano del texto pedido por el dueno: 12px. Va aqui, en la capa 24, y con DOS
+     clases a proposito. La capa 24 ya pedia 11.4px con `.nxWaBub` a secas y nunca se
+     aplicaba: una sola clase pierde contra las reglas de dos clases de las capas 20,
+     21 y 23, aunque estas carguen antes. Con `.in`/`.out` se empata en especificidad
+     y gana esta por ser la ultima declarada. Antes mandaba burbuja-fit-final (capa 23)
+     con 10.9px. */
+  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{
+    padding:5px 9px 4px!important;font-size:12px!important;line-height:1.3!important;
+  }
   #v-waInbox .nxWaComposerWrap{padding:9px 8px max(9px,env(safe-area-inset-bottom))!important}
   #v-waInbox .nxWaComposer{gap:6px!important}
   #v-waInbox .nxWaRefPlus,#v-waInbox .nxWaVoiceBtn,#v-waInbox #nxWaSendBtn,#v-waInbox .nxWaTextSendBtn{width:46px!important;height:46px!important;flex-basis:46px!important}
