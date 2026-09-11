@@ -1,9 +1,9 @@
 {
-  "version": "58.28",
+  "version": "58.29",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.28",
+      "version": "58.29",
       "fecha": "2026-09-10",
       "notas": [
         "ARREGLADO: al quitar el icono de clip del chat desaparecieron tambien el boton + , el emoji y la camara. El clip era la pieza de la que colgaba todo el composer. Vuelve a estar, pero oculto: el + es el que se ve y funciona.",
@@ -11,7 +11,8 @@
         "QUITADO: la colita triangular de las burbujas del chat. Estaba dibujada fuera del cuerpo de la burbuja, asi que se veia como un triangulito suelto al lado en vez de como la cola de un bocadillo.",
         "ARREGLADO DE VERDAD: el visto de los mensajes salia dentro de un recuadro morado con relieve. Ya no se dibuja como icono sino como texto, asi que ninguna regla de iconos puede alcanzarlo. Ahora es un doble check azul, como en WhatsApp.",
         "QUITADO: el boton + del chat. Solo servia para pulsar el clip que esta al lado y hace exactamente lo mismo; ahora el clip es la unica entrada para adjuntar.",
-        "MEJORADO: el texto de los mensajes del chat pasa de 10.9px a 12px en el telefono. Se lee bastante mejor y las burbujas crecen solo unos milimetros."
+        "MEJORADO: el texto de los mensajes del chat pasa de 10.9px a 12px en el telefono. Se lee bastante mejor y las burbujas crecen solo unos milimetros.",
+        "ARREGLADO (critico): una de las capas del chat dejo de cargar por completo por un error introducido al documentar el cambio anterior. El chat volvia a su aspecto sin ajustar. Ya esta corregido."
       ]
     },
     {
