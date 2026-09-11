@@ -144,21 +144,23 @@
    Al ser dos <div> quedaban en renglones distintos: el texto arriba, los checks en
    una linea, la hora en otra. Eso es lo que estiraba la burbuja y separaba los
    checks de la hora.
-   Se oculta el primero -- salvo cuando lleva el boton Reintentar de un mensaje
-   fallido, que si es funcional y no puede desaparecer. */
+   Se ocultan los <span> del primero, no el contenedor: estadoMsg() siempre devuelve
+   un <span> y el boton Reintentar de un mensaje fallido es un <button>, asi que
+   sobrevive. Se hace asi, y no con :not(:has(.nxWaRetry)), porque si algun Safari no
+   parsea ese selector descarta la regla entera y el pie duplicado reaparece. */
 #v-waInbox .nxWaBubMeta{margin:0!important;padding:0!important;min-height:0!important}
 #v-waInbox .nxWaBubMeta>span{display:none!important}
 
-/* WhatsApp pone la hora y los checks AL FINAL de la ultima linea de texto, no en un
-   renglon aparte. El float lo consigue: si caben en esa linea se acomodan ahi, y si
-   no caben bajan solos -- que es exactamente lo que hace WhatsApp.
-   flow-root es necesario porque la burbuja es display:block y un bloque normal no
-   contiene el float (se saldria de la burbuja). No se usa el clearfix de :after
-   porque ese pseudo-elemento ya esta ocupado/anulado por la colita de la burbuja. */
-#v-waInbox .nxWaBub:not(.nxWaRefShort){display:flow-root!important}
+/* El pie va INLINE, no flotado. Con float el navegador lo empujaba a su propio
+   renglon muy a menudo, porque la burbuja es width:fit-content y el calculo de
+   ancho no le reserva sitio -- y ese renglon extra era la franja azul de sobra.
+   Como .nxWaMsgText es un span inline, un inline-flex justo despues se coloca al
+   final de la ultima linea de texto si cabe, y baja solo si no cabe. Que es
+   exactamente lo que hace WhatsApp, sin las rarezas de float + fit-content. */
 #v-waInbox .nxWaBub:not(.nxWaRefShort) .nxWaMsgMeta{
-  float:right!important;margin:0 0 0 9px!important;padding-top:3px!important;
-  white-space:nowrap!important;
+  display:inline-flex!important;float:none!important;
+  margin:0 0 0 8px!important;padding:0!important;
+  vertical-align:bottom!important;white-space:nowrap!important;
 }
 #v-waInbox .nxWaBubMenu,#v-waInbox .nxWaMsgDrop{position:absolute!important}
 
@@ -259,7 +261,7 @@
   #v-waInbox .nxWaMsgs{padding:24px 12px 18px!important;gap:8px!important}
   #v-waInbox .nxWaBub{max-width:82%!important;padding:9px 11px 7px!important;font-size:11.4px!important;font-weight:600!important;line-height:1.34!important}
   #v-waInbox .nxWaBub.nxWaRefShort{padding:8px 11px!important;gap:12px!important}
-  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{padding:6px 9px 5px!important}
+  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{padding:5px 9px 4px!important}
   #v-waInbox .nxWaComposerWrap{padding:9px 8px max(9px,env(safe-area-inset-bottom))!important}
   #v-waInbox .nxWaComposer{gap:6px!important}
   #v-waInbox .nxWaRefPlus,#v-waInbox .nxWaVoiceBtn,#v-waInbox #nxWaSendBtn,#v-waInbox .nxWaTextSendBtn{width:46px!important;height:46px!important;flex-basis:46px!important}
