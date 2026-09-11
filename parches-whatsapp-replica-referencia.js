@@ -295,7 +295,15 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
       let txt='';
       Array.from(b.childNodes).forEach(n=>{
         if(n.nodeType!==3||!String(n.nodeValue||'').trim())return;
-        const span=document.createElement('span');span.className='nxWaMsgText';span.textContent=n.nodeValue;
+        // El cuerpo del mensaje entraba CRUDO: si traia saltos de linea al final -- cosa
+        // normal en lo que llega de WhatsApp -- `white-space:pre-wrap` los dibujaba como
+        // espacio vacio y la burbuja quedaba altisima con el texto arriba y la hora abajo.
+        // Se nota en que las burbujas de <=18 caracteres NO tenian el problema: esas reciben
+        // .nxWaRefShort, que fuerza white-space:nowrap y colapsaba los saltos por accidente.
+        // Solo se quitan los blancos de los extremos QUE CONTIENEN UN SALTO, para no comerse
+        // un espacio simple legitimo ni el formato interno del mensaje.
+        const limpio=String(n.nodeValue||'').replace(/^\s*\n\s*/,'').replace(/\s*\n\s*$/,'');
+        const span=document.createElement('span');span.className='nxWaMsgText';span.textContent=limpio;
         txt+=String(n.nodeValue||'').trim();b.replaceChild(span,n);
       });
       if(!txt){const span=$('.nxWaMsgText',b);txt=span?.textContent?.trim()||'';}
