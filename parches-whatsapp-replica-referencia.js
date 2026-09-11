@@ -279,6 +279,15 @@
   #v-waInbox .nxWaMsgs{padding:24px 12px 18px!important;gap:8px!important}
   #v-waInbox .nxWaBub{max-width:82%!important;padding:9px 11px 7px!important;font-size:11.4px!important;font-weight:600!important;line-height:1.34!important}
   #v-waInbox .nxWaBub.nxWaRefShort{padding:8px 11px!important;gap:12px!important}
+  /* Hora y visto a 9px, pedido por el dueno. Antes convivian DOS tamanos distintos:
+     6.6px en las salientes (capa 23, tres clases) y 7.7px en las entrantes (capa 24,
+     una clase). Se unifican. Hacen falta TRES clases para ganarle a la capa 23: con
+     menos, la regla se escribe y no se aplica, que es justo lo que pasaba con la de
+     11.4px del texto. */
+  #v-waInbox .nxWaBub.in .nxWaMsgMeta,
+  #v-waInbox .nxWaBub.out .nxWaMsgMeta,
+  #v-waInbox .nxWaBub.in .nxWaBubMeta,
+  #v-waInbox .nxWaBub.out .nxWaBubMeta{font-size:9px!important}
   /* Tamano del texto pedido por el dueno: 12px. Va aqui, en la capa 24, y con DOS
      clases a proposito. La capa 24 ya pedia 11.4px con .nxWaBub a secas y nunca se
      aplicaba: una sola clase pierde contra las reglas de dos clases de las capas 20,
