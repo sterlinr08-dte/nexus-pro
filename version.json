@@ -1,7 +1,18 @@
 {
-  "version": "58.33",
+  "version": "58.34",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.34",
+      "fecha": "2026-09-11",
+      "notas": [
+        "ARREGLADO: el boton de emoji del chat salia como un circulo verde relleno y el de microfono como un degradado azul-morado. Los dos debian estar planos desde hace dias, pero habia reglas viejas mas fuertes que se imponian. Ahora el emoji y el clip son iconos limpios sin fondo, el microfono es verde liso y el de enviar azul liso.",
+        "MEJORADO: los iconos de WhatsApp pasan de diez tamanos distintos a seis, y de quince colores a tres mas los de estado. Antes habia nueve azules casi identicos conviviendo sin que nadie los hubiera elegido.",
+        "MEJORADO: el doble check baja de 11px a 9px para quedar al mismo nivel que la hora, en vez de competir con ella.",
+        "MEJORADO: la flecha de la pildora de Contactos era un simbolo de teclado, no un icono. Ahora es el mismo icono que usa el resto del sistema.",
+        "SIN CAMBIOS: ninguna caja, margen ni radio cambia. Solo tamano y color de los iconos, asi que la bandeja compacta sigue igual. Tampoco se toco envio, voz, adjuntos, scroll, teclado, tiempo real, automatizaciones ni Supabase."
+      ]
+    },
     {
       "version": "58.33",
       "fecha": "2026-09-11",
