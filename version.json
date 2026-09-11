@@ -1,7 +1,14 @@
 {
-  "version": "58.32",
+  "version": "58.33",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.33",
+      "fecha": "2026-09-11",
+      "notas": [
+        "AJUSTADO: el aplanado de iconos de WhatsApp tambien cubre la capa de dibujo del propio icono, no solo el brillo. Antes se apagaba el reflejo pero no se limpiaba la capa donde la fuente dibuja el simbolo, que podia conservar fondo o sombra. Los simbolos se siguen viendo igual: solo se le quita el fondo y la sombra, nunca el dibujo."
+      ]
+    },
     {
       "version": "58.32",
       "fecha": "2026-09-11",

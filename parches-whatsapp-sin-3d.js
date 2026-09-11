@@ -62,6 +62,15 @@
   filter:none!important;text-shadow:none!important;
 }
 #v-waInbox .ti::after{content:none!important;display:none!important}
+/* El ::before NO se toca en su "content": ahi es donde la fuente Tabler dibuja
+   el glifo, y vaciarlo borraria todos los iconos. Solo se le quita cualquier
+   fondo, sombra o filtro, que es el unico hueco que dejaba la regla de arriba:
+   se apagaba el ::after (el reflejo) pero nunca el ::before. */
+#v-waInbox .ti::before{
+  background:none!important;background-image:none!important;
+  box-shadow:none!important;filter:none!important;
+  border:0!important;outline:0!important;
+}
 
 :is(#v-waInbox,.nxWaCtxOverlay,.nxWaCtx,.nxWaModalOv,.nxWaPreviewOv,.nxWaMhOv,
     .nxWaChatPop,.nxWaAttachPop,.nxWaEmojiPop,.nxWaBusy,.nxWaAutoOverlay,
@@ -80,6 +89,13 @@
     .nxWaChatPop,.nxWaAttachPop,.nxWaEmojiPop,.nxWaBusy,.nxWaAutoOverlay,
     .nxWaAdminDelOv,.nxWaRulesOverlay,.nxWaTplOverlay,.nxWaEnvioMasivoOverlay) .ti::after{
   content:none!important;display:none!important;
+}
+:is(#v-waInbox,.nxWaCtxOverlay,.nxWaCtx,.nxWaModalOv,.nxWaPreviewOv,.nxWaMhOv,
+    .nxWaChatPop,.nxWaAttachPop,.nxWaEmojiPop,.nxWaBusy,.nxWaAutoOverlay,
+    .nxWaAdminDelOv,.nxWaRulesOverlay,.nxWaTplOverlay,.nxWaEnvioMasivoOverlay) .ti::before{
+  background:none!important;background-image:none!important;
+  box-shadow:none!important;filter:none!important;
+  border:0!important;outline:0!important;
 }
 
 /* ============================================================
