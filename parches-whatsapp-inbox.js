@@ -1042,12 +1042,13 @@
     const cuerpo = m.cuerpo ? esc(m.cuerpo) : '';
     const fallo = m.direccion === 'out' && m.estado === 'fallido';
     const retry = fallo ? `<button class="nxWaRetry" onclick="nxWaReintentarMensaje('${m.id}')">Reintentar</button>` : '';
+    // CUIDADO: la burbuja usa white-space:pre-wrap, asi que la indentacion de ESTE
+    // template se DIBUJA en pantalla. Cuando estaba partido en varias lineas, el salto
+    // y los 8 espacios de delante del cuerpo salian como una sangria en la primera
+    // linea del mensaje, y el salto de detras como un hueco antes de la hora. Por eso
+    // la burbuja va en UNA sola linea: no es estilo, es correccion. No la partas.
     return `<div id="nxWaMsg-${esc(m.id)}" class="nxWaBubWrap ${m.direccion} ${samePrev ? 'same-prev' : 'diff-prev'}" onpointerdown="nxWaSwipeStart(event,'${esc(m.id)}')" onpointermove="nxWaSwipeMove(event)" onpointerup="nxWaSwipeEnd(event)" ontouchstart="nxWaLongStart(event,'${esc(m.id)}')" ontouchend="nxWaLongEnd()" ontouchmove="nxWaLongEnd()">
-      <div class="nxWaBub ${m.direccion}${hit}">
-        <button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>
-        ${quote}${burbujaMedia(m)}${cuerpo}
-        <div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div>
-      </div>
+      <div class="nxWaBub ${m.direccion}${hit}"><button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>${quote}${burbujaMedia(m)}${cuerpo}<div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div></div>
     </div>`;
   }
 

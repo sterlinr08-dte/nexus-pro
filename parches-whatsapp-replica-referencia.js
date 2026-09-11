@@ -151,17 +151,30 @@
 #v-waInbox .nxWaBubMeta{margin:0!important;padding:0!important;min-height:0!important}
 #v-waInbox .nxWaBubMeta>span{display:none!important}
 
-/* El pie va INLINE, no flotado. Con float el navegador lo empujaba a su propio
-   renglon muy a menudo, porque la burbuja es width:fit-content y el calculo de
-   ancho no le reserva sitio -- y ese renglon extra era la franja azul de sobra.
-   Como .nxWaMsgText es un span inline, un inline-flex justo despues se coloca al
-   final de la ultima linea de texto si cabe, y baja solo si no cabe. Que es
-   exactamente lo que hace WhatsApp, sin las rarezas de float + fit-content. */
+/* Pie del mensaje largo: bloque, pegado y SIEMPRE a la derecha.
+   Probe dos alternativas mas "WhatsApp" y las dos fallan aqui: con float el
+   navegador lo empuja a su propio renglon porque la burbuja es width:fit-content
+   y ese calculo no le reserva sitio; con inline-flex, cuando no cabe baja pero
+   queda pegado a la IZQUIERDA, que es peor. Un bloque con justify-content:flex-end
+   es predecible en todos los casos. Los mensajes cortos si van en linea: de eso se
+   encarga .nxWaRefShort. */
 #v-waInbox .nxWaBub:not(.nxWaRefShort) .nxWaMsgMeta{
-  display:inline-flex!important;float:none!important;
-  margin:0 0 0 8px!important;padding:0!important;
-  vertical-align:bottom!important;white-space:nowrap!important;
+  display:flex!important;float:none!important;justify-content:flex-end!important;
+  margin:1px 0 0!important;padding:0!important;white-space:nowrap!important;
 }
+
+/* El estado (los checks) se estaba dibujando como un circulo morado enorme. No
+   localice que capa lo hace, asi que en vez de perseguirlo se neutraliza aqui:
+   sea cual sea el origen, el check vuelve a ser un glifo pequeno del color de la
+   hora, como en WhatsApp -- y el azul de "leido" es el de WhatsApp. */
+#v-waInbox .nxWaBub .nxWaMsgState{
+  background:none!important;box-shadow:none!important;border:0!important;
+  width:auto!important;height:auto!important;min-width:0!important;
+  padding:0!important;margin:0 0 0 3px!important;border-radius:0!important;
+  filter:none!important;transform:none!important;
+}
+#v-waInbox .nxWaBub .nxWaMsgState i{font-size:11px!important;line-height:1!important}
+#v-waInbox .nxWaBub.out .nxWaMsgState.st-leido i{color:#53bdeb!important}
 #v-waInbox .nxWaBubMenu,#v-waInbox .nxWaMsgDrop{position:absolute!important}
 
 /* Multimedia mantiene proporción propia */
@@ -332,7 +345,7 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
         txt+=String(n.nodeValue||'').trim();b.replaceChild(span,n);
       });
       if(!txt){const span=$('.nxWaMsgText',b);txt=span?.textContent?.trim()||'';}
-      if(txt&&txt.length<=18&&!b.querySelector('img,video,audio,.nxWaQuote,.nxWaReplyQuote'))b.classList.add('nxWaRefShort');
+      if(txt&&txt.length<=28&&!b.querySelector('img,video,audio,.nxWaQuote,.nxWaReplyQuote'))b.classList.add('nxWaRefShort');
     });
   }
 
