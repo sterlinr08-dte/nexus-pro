@@ -147,6 +147,7 @@
 #v-waInbox .nxWaBubWrap:hover .nxWaBubMenu{opacity:1}
 #v-waInbox .nxWaQuote{border-left:3px solid rgba(37,99,235,.5);background:rgba(255,255,255,.58);border-radius:9px;padding:5px 7px;margin-bottom:5px;font-size:9.5px;color:#475569;cursor:pointer}
 #v-waInbox .nxWaQuote b{display:block;color:#1d4ed8;font-size:9px;margin-bottom:1px}
+#v-waInbox .nxWaQuote span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 #v-waInbox .nxWaBubMeta{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px;font-size:8.5px;color:#64748b}
 #v-waInbox .nxWaBub.out .nxWaBubMeta{color:#4b8563}
 #v-waInbox .nxWaRetry{border:0;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:3px 7px;font:inherit;font-size:8px;font-weight:900;cursor:pointer}
@@ -470,7 +471,17 @@
   }
   function resumenMensaje(m) {
     if (!m) return '';
-    if (m.cuerpo) return String(m.cuerpo).replace(/\s+/g, ' ').trim().slice(0, 120);
+    if (m.cuerpo) {
+      // Antes era un slice(0,120) seco: cortaba a media palabra y sin puntos
+      // suspensivos, asi que el citado terminaba en cosas como "...PUEDES CON" y
+      // no habia forma de saber que seguia. Se corta en el ultimo espacio y se
+      // marca el corte.
+      const txt = String(m.cuerpo).replace(/\s+/g, ' ').trim();
+      if (txt.length <= 120) return txt;
+      const corte = txt.slice(0, 120);
+      const esp = corte.lastIndexOf(' ');
+      return (esp > 60 ? corte.slice(0, esp) : corte).trimEnd() + '…';
+    }
     if (m.tipo_contenido === 'imagen') return 'Imagen';
     if (m.tipo_contenido === 'audio') return 'Audio';
     if (m.tipo_contenido === 'video') return 'Video';

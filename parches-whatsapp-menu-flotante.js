@@ -40,9 +40,18 @@
     const icon=el.querySelector?.('.ti-menu-2');
     if(!icon||!visible(el))return false;
     const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
-    const large=r.width>=52&&r.height>=52;
+    // El umbral estaba en 52px y el boton real ronda los 50: se quedaba fuera por un
+    // par de pixeles, no se reconocia como candidato y por eso nunca se ocultaba al
+    // abrir un chat, tapando el microfono del composer. 40px sigue descartando
+    // iconos de barra sin dejar fuera un boton flotante de tamano tactil normal.
+    const large=r.width>=40&&r.height>=40;
     const lowerRight=r.right>=innerWidth-130&&r.bottom>=innerHeight*.52;
-    const floating=cs.position==='fixed'||cs.position==='absolute'||lowerRight;
+    // Antes bastaba con estar posicionado O estar abajo a la derecha. Con "O", el menu
+    // hamburguesa de arriba a la izquierda -- que tambien es fixed y tambien lleva
+    // .ti-menu-2 -- podia colarse como candidato y acabar oculto en su lugar. Al bajar
+    // el umbral de tamano ese riesgo crecia, asi que ahora se exigen las dos cosas:
+    // un boton flotante de verdad esta posicionado Y abajo a la derecha.
+    const floating=(cs.position==='fixed'||cs.position==='absolute')&&lowerRight;
     return large&&floating;
   }
 
