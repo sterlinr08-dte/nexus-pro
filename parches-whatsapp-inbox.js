@@ -147,6 +147,7 @@
 #v-waInbox .nxWaBubWrap:hover .nxWaBubMenu{opacity:1}
 #v-waInbox .nxWaQuote{border-left:3px solid rgba(37,99,235,.5);background:rgba(255,255,255,.58);border-radius:9px;padding:5px 7px;margin-bottom:5px;font-size:9.5px;color:#475569;cursor:pointer}
 #v-waInbox .nxWaQuote b{display:block;color:#1d4ed8;font-size:9px;margin-bottom:1px}
+#v-waInbox .nxWaQuote span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 #v-waInbox .nxWaBubMeta{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px;font-size:8.5px;color:#64748b}
 #v-waInbox .nxWaBub.out .nxWaBubMeta{color:#4b8563}
 #v-waInbox .nxWaRetry{border:0;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:3px 7px;font:inherit;font-size:8px;font-weight:900;cursor:pointer}
@@ -470,7 +471,17 @@
   }
   function resumenMensaje(m) {
     if (!m) return '';
-    if (m.cuerpo) return String(m.cuerpo).replace(/\s+/g, ' ').trim().slice(0, 120);
+    if (m.cuerpo) {
+      // Antes era un slice(0,120) seco: cortaba a media palabra y sin puntos
+      // suspensivos, asi que el citado terminaba en cosas como "...PUEDES CON" y
+      // no habia forma de saber que seguia. Se corta en el ultimo espacio y se
+      // marca el corte.
+      const txt = String(m.cuerpo).replace(/\s+/g, ' ').trim();
+      if (txt.length <= 120) return txt;
+      const corte = txt.slice(0, 120);
+      const esp = corte.lastIndexOf(' ');
+      return (esp > 60 ? corte.slice(0, esp) : corte).trimEnd() + '…';
+    }
     if (m.tipo_contenido === 'imagen') return 'Imagen';
     if (m.tipo_contenido === 'audio') return 'Audio';
     if (m.tipo_contenido === 'video') return 'Video';
@@ -1042,12 +1053,13 @@
     const cuerpo = m.cuerpo ? esc(m.cuerpo) : '';
     const fallo = m.direccion === 'out' && m.estado === 'fallido';
     const retry = fallo ? `<button class="nxWaRetry" onclick="nxWaReintentarMensaje('${m.id}')">Reintentar</button>` : '';
+    // CUIDADO: la burbuja usa white-space:pre-wrap, asi que la indentacion de ESTE
+    // template se DIBUJA en pantalla. Cuando estaba partido en varias lineas, el salto
+    // y los 8 espacios de delante del cuerpo salian como una sangria en la primera
+    // linea del mensaje, y el salto de detras como un hueco antes de la hora. Por eso
+    // la burbuja va en UNA sola linea: no es estilo, es correccion. No la partas.
     return `<div id="nxWaMsg-${esc(m.id)}" class="nxWaBubWrap ${m.direccion} ${samePrev ? 'same-prev' : 'diff-prev'}" onpointerdown="nxWaSwipeStart(event,'${esc(m.id)}')" onpointermove="nxWaSwipeMove(event)" onpointerup="nxWaSwipeEnd(event)" ontouchstart="nxWaLongStart(event,'${esc(m.id)}')" ontouchend="nxWaLongEnd()" ontouchmove="nxWaLongEnd()">
-      <div class="nxWaBub ${m.direccion}${hit}">
-        <button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>
-        ${quote}${burbujaMedia(m)}${cuerpo}
-        <div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div>
-      </div>
+      <div class="nxWaBub ${m.direccion}${hit}"><button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>${quote}${burbujaMedia(m)}${cuerpo}<div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div></div>
     </div>`;
   }
 
@@ -1187,7 +1199,11 @@
     cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}${barraBusquedaChat()}
       <div class="nxWaMsgs ${scrollInicial ? 'prep-bottom' : ''}" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
-        ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><button class="nxWaIconBtn" onclick="toast('info','Adjuntos','Queda reservado para la siguiente fase: foto, video y documento con envío real.')"><i class="ti ti-paperclip"></i></button><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`
+        // Aqui habia un boton de clip que NO adjuntaba nada: solo mostraba un aviso de
+        // "queda reservado para la siguiente fase". El boton + del composer
+        // (nxWaRefPlus, en replica-referencia) si hace ese trabajo de verdad, asi que
+        // eran dos iconos para lo mismo y uno estaba muerto. Se quito el clip.
+        ? `<div class="nxWaComposerWrap">${resp}<div class="nxWaComposer"><textarea id="nxWaTexto" ${hiloEnviosEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} placeholder="Escribe un mensaje…" rows="1" oninput="nxWaTextoInput(this)" onkeydown="nxWaKey(event)">${esc(borrador)}</textarea><button onclick="nxWaEnviar()"><i class="ti ti-send"></i></button></div></div>`
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
             ${(h?.cliente_id && waMesesAtraso(cliente) > 0) ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
           </div>`}`;

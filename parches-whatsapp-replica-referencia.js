@@ -138,6 +138,43 @@
 }
 #v-waInbox .nxWaBub.nxWaRefShort .nxWaMsgText{white-space:nowrap!important}
 #v-waInbox .nxWaBub.nxWaRefShort .nxWaBubMeta,#v-waInbox .nxWaBub.nxWaRefShort .nxWaMsgMeta{margin:0 0 1px!important;white-space:nowrap!important}
+/* ── Pie de la burbuja: uno solo, y pegado al texto como en WhatsApp ──────────
+   La burbuja traia DOS pies apilados: .nxWaBubMeta (del marcado base de inbox.js,
+   con el ✓✓ crudo) y .nxWaMsgMeta (que anade visual-v7 y ya lleva hora Y estado).
+   Al ser dos <div> quedaban en renglones distintos: el texto arriba, los checks en
+   una linea, la hora en otra. Eso es lo que estiraba la burbuja y separaba los
+   checks de la hora.
+   Se ocultan los <span> del primero, no el contenedor: estadoMsg() siempre devuelve
+   un <span> y el boton Reintentar de un mensaje fallido es un <button>, asi que
+   sobrevive. Se hace asi, y no con :not(:has(.nxWaRetry)), porque si algun Safari no
+   parsea ese selector descarta la regla entera y el pie duplicado reaparece. */
+#v-waInbox .nxWaBubMeta{margin:0!important;padding:0!important;min-height:0!important}
+#v-waInbox .nxWaBubMeta>span{display:none!important}
+
+/* Pie del mensaje largo: bloque, pegado y SIEMPRE a la derecha.
+   Probe dos alternativas mas "WhatsApp" y las dos fallan aqui: con float el
+   navegador lo empuja a su propio renglon porque la burbuja es width:fit-content
+   y ese calculo no le reserva sitio; con inline-flex, cuando no cabe baja pero
+   queda pegado a la IZQUIERDA, que es peor. Un bloque con justify-content:flex-end
+   es predecible en todos los casos. Los mensajes cortos si van en linea: de eso se
+   encarga .nxWaRefShort. */
+#v-waInbox .nxWaBub:not(.nxWaRefShort) .nxWaMsgMeta{
+  display:flex!important;float:none!important;justify-content:flex-end!important;
+  margin:1px 0 0!important;padding:0!important;white-space:nowrap!important;
+}
+
+/* Reseteo del contenedor del estado. El circulo morado en si lo provocaba el
+   tratamiento global de iconos (.ti de parches-seguros-base.js) sobre el <i>, y se
+   desactiva en parches-whatsapp-iconos-flat.js, que es la capa que se encarga de
+   eso. Aqui solo se aplana el <span> que lo envuelve. */
+#v-waInbox .nxWaBub .nxWaMsgState{
+  background:none!important;box-shadow:none!important;border:0!important;
+  width:auto!important;height:auto!important;min-width:0!important;
+  padding:0!important;margin:0 0 0 3px!important;border-radius:0!important;
+  filter:none!important;transform:none!important;
+}
+#v-waInbox .nxWaBub .nxWaMsgState i{font-size:11px!important;line-height:1!important}
+#v-waInbox .nxWaBub.out .nxWaMsgState.st-leido i{color:#53bdeb!important}
 #v-waInbox .nxWaBubMenu,#v-waInbox .nxWaMsgDrop{position:absolute!important}
 
 /* Multimedia mantiene proporción propia */
@@ -237,6 +274,7 @@
   #v-waInbox .nxWaMsgs{padding:24px 12px 18px!important;gap:8px!important}
   #v-waInbox .nxWaBub{max-width:82%!important;padding:9px 11px 7px!important;font-size:11.4px!important;font-weight:600!important;line-height:1.34!important}
   #v-waInbox .nxWaBub.nxWaRefShort{padding:8px 11px!important;gap:12px!important}
+  #v-waInbox .nxWaBub.in,#v-waInbox .nxWaBub.out{padding:5px 9px 4px!important}
   #v-waInbox .nxWaComposerWrap{padding:9px 8px max(9px,env(safe-area-inset-bottom))!important}
   #v-waInbox .nxWaComposer{gap:6px!important}
   #v-waInbox .nxWaRefPlus,#v-waInbox .nxWaVoiceBtn,#v-waInbox #nxWaSendBtn,#v-waInbox .nxWaTextSendBtn{width:46px!important;height:46px!important;flex-basis:46px!important}
@@ -295,11 +333,19 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
       let txt='';
       Array.from(b.childNodes).forEach(n=>{
         if(n.nodeType!==3||!String(n.nodeValue||'').trim())return;
-        const span=document.createElement('span');span.className='nxWaMsgText';span.textContent=n.nodeValue;
+        // El cuerpo del mensaje entraba CRUDO: si traia saltos de linea al final -- cosa
+        // normal en lo que llega de WhatsApp -- `white-space:pre-wrap` los dibujaba como
+        // espacio vacio y la burbuja quedaba altisima con el texto arriba y la hora abajo.
+        // Se nota en que las burbujas de <=18 caracteres NO tenian el problema: esas reciben
+        // .nxWaRefShort, que fuerza white-space:nowrap y colapsaba los saltos por accidente.
+        // Solo se quitan los blancos de los extremos QUE CONTIENEN UN SALTO, para no comerse
+        // un espacio simple legitimo ni el formato interno del mensaje.
+        const limpio=String(n.nodeValue||'').replace(/^\s*\n\s*/,'').replace(/\s*\n\s*$/,'');
+        const span=document.createElement('span');span.className='nxWaMsgText';span.textContent=limpio;
         txt+=String(n.nodeValue||'').trim();b.replaceChild(span,n);
       });
       if(!txt){const span=$('.nxWaMsgText',b);txt=span?.textContent?.trim()||'';}
-      if(txt&&txt.length<=18&&!b.querySelector('img,video,audio,.nxWaQuote,.nxWaReplyQuote'))b.classList.add('nxWaRefShort');
+      if(txt&&txt.length<=28&&!b.querySelector('img,video,audio,.nxWaQuote,.nxWaReplyQuote'))b.classList.add('nxWaRefShort');
     });
   }
 
