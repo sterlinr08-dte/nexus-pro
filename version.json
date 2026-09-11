@@ -1,7 +1,18 @@
 {
-  "version": "58.34",
+  "version": "58.35",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.35",
+      "fecha": "2026-09-11",
+      "notas": [
+        "NUEVO: los mensajes que acaban de llegar entran con un pequeno deslizamiento, desde su lado de la pantalla. Solo se anima el mensaje nuevo de verdad: al abrir un chat, al cambiar de conversacion y al cargar mensajes antiguos no se mueve nada, que es lo que antes provocaba parpadeo en el iPhone.",
+        "MEJORADO: los iconos de la cabecera del chat, el menu de la burbuja, el cierre de la hoja de Contactos y el boton de Bauches ahora responden al tacto como el resto del modulo. Antes unos reaccionaban y otros no.",
+        "MEJORADO: las animaciones del modulo se escribieron en momentos distintos con cinco curvas y duraciones sueltas. Ahora todas siguen el mismo ritmo, y la lista de conversaciones entra algo mas rapido: la cascada anterior se hacia larga.",
+        "ARREGLADO: con la opcion del telefono para reducir el movimiento activada, algunas animaciones seguian ejecutandose igual.",
+        "ARREGLADO: un vigilante interno revisaba el documento entero cada vez que cambiaba cualquier cosa en pantalla. Ahora solo mira la zona de WhatsApp, lo que evita tirones con mensajes entrando en tiempo real."
+      ]
+    },
     {
       "version": "58.34",
       "fecha": "2026-09-11",

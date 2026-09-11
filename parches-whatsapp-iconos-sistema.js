@@ -221,10 +221,33 @@ body.tema-premium #v-waInbox .nxWaRow i.chev{color:#c2cfe3!important}
     inject();
     chevronContactos();
     /* La bandeja se repinta sola al navegar; el observador solo vuelve a poner
-       el chevron si el boton se regenera. No hace nada mas. */
+       el chevron si el boton se regenera.
+       Acotado a proposito: la primera version vigilaba document.documentElement
+       entero y ejecutaba un querySelector en CADA mutacion del documento. En una
+       pantalla con mensajes entrando en tiempo real eso son miles de llamadas
+       por minuto para una tarea que solo importa cuando se repinta la bandeja.
+       Ahora vigila solo #v-waInbox y agrupa por frame. */
     try{
-      var mo=new MutationObserver(function(){chevronContactos();});
-      mo.observe(document.documentElement,{childList:true,subtree:true});
+      var raiz=document.getElementById('v-waInbox');
+      var pendiente=false;
+      var revisar=function(){pendiente=false;chevronContactos();};
+      var enMutacion=function(){
+        if(pendiente)return;
+        pendiente=true;
+        requestAnimationFrame(revisar);
+      };
+      if(raiz){
+        new MutationObserver(enMutacion).observe(raiz,{childList:true,subtree:true});
+      }else{
+        var espera=new MutationObserver(function(){
+          var r=document.getElementById('v-waInbox');
+          if(!r)return;
+          espera.disconnect();
+          chevronContactos();
+          new MutationObserver(enMutacion).observe(r,{childList:true,subtree:true});
+        });
+        espera.observe(document.body,{childList:true,subtree:true});
+      }
     }catch(e){}
   }
 
