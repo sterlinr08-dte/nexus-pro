@@ -83,13 +83,10 @@ Plantillas que ya estaban enviando correctamente en los últimos registros verif
 - `pago_confirmado_periodo_v2`
 - `recordatorio_atraso`
 - `entrega_confirmada`
+- `pago_pendiente_validacion_agente_v2` — **APPROVED**
+- `pago_validado_resumen_agente` — **APPROVED**
 
-Plantillas que seguían pendientes de aprobación de Meta en el último estado comprobado:
-
-- `pago_pendiente_validacion_agente_v2`
-- `pago_validado_resumen_agente`
-
-Existe una tarea automática que vigila estas dos plantillas y avisa cuando alguna pase a `APPROVED`.
+Las dos plantillas de agente anteriores ya fueron aprobadas por Meta. La vigilancia automática que esperaba su aprobación ya no es necesaria.
 
 ## Próxima iniciativa acordada — acumulados, transferencias y cierre por ciclo
 
@@ -163,6 +160,34 @@ Posibles plantillas nuevas, sujetas a auditoría y a convención existente:
 
 No crear plantillas nuevas sin revisar primero si alguna existente cubre el mismo caso.
 
+### Regla de ciclos y atribución de pagos — decisión del dueño (11-sep-2026)
+
+- **Los agentes no tienen comisión.** No incluir comisión en reportes, acumulados ni plantillas relacionadas con este flujo.
+- El ciclo operativo de agentes es **del día 20 de un mes al día 20 del mes siguiente**.
+- La implementación debe definir el corte técnico del día 20 de forma que un mismo pago nunca pueda caer en dos ciclos. Antes de modificar cálculos existentes, auditar timestamps, zona horaria y fuente de verdad.
+- **La atribución del acumulado del agente se hace por la fecha real en que el pago fue aplicado/cobrado, no por el período de la deuda que ese pago está saldando.**
+- Si un cliente tiene, por ejemplo, una cuota atrasada del ciclo anterior y otra del ciclo actual, y el agente cobra ambas durante el ciclo actual, **ambos importes cuentan como dinero cobrado por el agente en el ciclo actual**.
+- El período de la factura/cuota del cliente debe conservarse para la cuenta por cobrar y el historial del cliente, pero **no debe mover retroactivamente el efectivo cobrado hacia un ciclo anterior del agente**.
+- Por tanto, NEXUS PRO debe distinguir dos conceptos distintos:
+  1. **período/cuota a la que corresponde la deuda del cliente**;
+  2. **fecha efectiva del pago y ciclo de cobro del agente**.
+- No reconstruir el acumulado del agente usando solamente el mes o período de la factura; eso distorsionaría el dinero realmente recibido dentro de cada ciclo.
+
+#### Caso mínimo obligatorio de QA para esta regla
+
+Cliente con dos pagos pendientes:
+
+- uno correspondiente al ciclo anterior;
+- uno correspondiente al ciclo actual;
+- ambos cobrados/aplicados por el mismo agente dentro del ciclo actual.
+
+Resultado esperado:
+
+- la deuda del cliente queda aplicada a sus períodos correctos;
+- el acumulado de cobro del agente en el ciclo actual aumenta por **la suma de ambos pagos**;
+- el ciclo anterior del agente no se recalcula retroactivamente por ese cobro tardío;
+- no existe doble contabilización.
+
 ### Reporte por ciclo
 
 Para cada agente y ciclo debe poder determinarse:
@@ -208,7 +233,8 @@ Probar como mínimo:
 - administrador cobrando directamente y recibiendo transferencias;
 - dos ciclos dentro del mismo mes;
 - cierre mensual;
-- comprobación matemática de que ninguna transferencia aumenta el total cobrado.
+- comprobación matemática de que ninguna transferencia aumenta el total cobrado;
+- pago tardío de un período anterior cobrado dentro del ciclo actual, verificando que el acumulado del agente se atribuya al ciclo de cobro real.
 
 ## Criterio de aceptación de la iniciativa
 
