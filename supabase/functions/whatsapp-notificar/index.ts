@@ -135,7 +135,7 @@ type Plantilla = { nombre: string; variables: string[] };
 // plantilla no necesita saber cuál es, solo el texto que va en la variable {{1}}.
 function armarPlantilla(tipo: string, nombreDestino: string, datos: Record<string, unknown>): Plantilla | null {
   if (tipo === "factura_generada") {
-    return { nombre: "factura_generada", variables: [nombreDestino, fmtMonto(datos.monto), periodoLegible(datos.periodo as string)] };
+    return { nombre: "factura_generada_v2", variables: [nombreDestino, fmtMonto(datos.monto), periodoLegible(datos.periodo as string)] };
   }
   if (tipo === "atrasado") {
     const meses = Number(datos.meses) || 1;
