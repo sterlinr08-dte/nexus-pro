@@ -124,7 +124,7 @@ async function mandarConReintento(telefono: string, accountId: string, nombre: s
 // Meta (misma que whatsapp-notificar usa para factura_generada); "pago"/"vence" son propias de
 // este feature -- Meta las aprobó 2026-09-08, los 3 tipos ya mandan de verdad en producción.
 const PLANTILLAS: Record<string, { nombre: string }> = {
-  factura: { nombre: "factura_generada" },
+  factura: { nombre: "factura_generada_v2" },
   pago: { nombre: "recordatorio_pago_pendiente" },
   vence: { nombre: "poliza_por_vencer" },
 };
