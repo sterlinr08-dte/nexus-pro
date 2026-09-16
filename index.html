@@ -2911,7 +2911,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
   <div style="background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:500px;box-shadow:0 25px 60px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
       <div>
-        <div style="font-size:18px;font-weight:700;color:#0f1f3d">🏢 Seleccionar Empresa</div>
+        <div style="font-size:18px;font-weight:700;color:#0f1f3d"><i class="ti ti-building"></i> Seleccionar Empresa</div>
         <div style="font-size:11px;color:#475569;margin-top:2px">Cada empresa tiene su base de datos independiente</div>
       </div>
       <button onclick="cerrarTenants()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;cursor:pointer;color:#475569"><i class="ti ti-x"></i> Cerrar</button>
@@ -6684,10 +6684,10 @@ function rMetasProgress(){
   const cobrado=ST.clientes.reduce((s,c)=>s+(c.pagado||0),0);
   const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):0;
   el.innerHTML=`
-    <div style="font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase;color:#1e293b">📊 Progreso del mes</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase;color:#1e293b"><i class="ti ti-chart-bar"></i> Progreso del mes</div>
     ${m.clientes?`<div class="meta-card">
       <div class="meta-row">
-        <div class="meta-name">🆕 Clientes nuevos</div>
+        <div class="meta-name"><i class="ti ti-sparkles"></i> Clientes nuevos</div>
         <div class="meta-val">${nuevos} / ${m.clientes}</div>
       </div>
       <div class="meta-bar"><div class="meta-fill" style="width:${pct(nuevos,m.clientes)}%;background:linear-gradient(90deg,#6d28d9,#60a5fa)"></div></div>
@@ -6701,7 +6701,7 @@ function rMetasProgress(){
     </div>`:''}
     ${m.facturas?`<div class="meta-card">
       <div class="meta-row">
-        <div class="meta-name">📄 Facturas</div>
+        <div class="meta-name"><i class="ti ti-file-invoice"></i> Facturas</div>
         <div class="meta-val">${facMes} / ${m.facturas}</div>
       </div>
       <div class="meta-bar"><div class="meta-fill" style="width:${pct(facMes,m.facturas)}%;background:linear-gradient(90deg,#d97706,#f59e0b)"></div></div>
@@ -6727,21 +6727,21 @@ function rNotifs(){
   ST.clientes.filter(c=>c.activo&&c.fecha_fin).forEach(c=>{
     const d=Math.ceil((new Date(c.fecha_fin)-hoyD)/86400000);
     if(d>=0&&d<=30){
-      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:null,tipo:'cobros',nav:{tipo:'cliente',id:c.id}});
+      _notifs.push({id:'pol_'+c.id,icon:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i>',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:null,tipo:'cobros',nav:{tipo:'cliente',id:c.id}});
     }
   });
   // Clientes nuevos hoy → navega al cliente
   const hoyStr=hoyD.toISOString().slice(0,10);
   ST.clientes.filter(c=>c.created_at?.slice(0,10)===hoyStr).forEach(c=>{
     const creadoPor=c.created_by_name?' · CREADO POR: '+c.created_by_name:'';
-    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
+    _notifs.push({id:'nvo_'+c.id,icon:'<i class="ti ti-sparkles"></i>',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
   });
   // Facturas pendientes → navega a facturas
   const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   if(pendCount>0)_notifs.push({id:'pend_fac',icon:'<i class="ti ti-cash"></i>',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:null,tipo:'cobros',nav:{tipo:'facturas'}});
   // Errores del sistema → navega a auditoría
   if(window._errorLog&&window._errorLog.length>0){
-    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:null,tipo:'errores',nav:{tipo:'errores'}});
+    _notifs.push({id:'err_log',icon:'<i class="ti ti-alert-circle" style="color:#dc2626"></i>',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:null,tipo:'errores',nav:{tipo:'errores'}});
   }
 
   const badge=document.getElementById('notifBadge');
@@ -8063,16 +8063,16 @@ function generarEmailPreview(){
   const facHoy=ST.facturas.filter(f=>f.created_at?.slice(0,10)===hoyD).length;
 
   document.getElementById('emailPreview').innerHTML=`
-    <div style="font-weight:700;color:#0f1f3d;font-size:13px;margin-bottom:8px">📊 Reporte del día — ${hoyD}</div>
+    <div style="font-weight:700;color:#0f1f3d;font-size:13px;margin-bottom:8px"><i class="ti ti-chart-bar"></i> Reporte del día — ${hoyD}</div>
     <div style="color:#6d28d9;font-weight:600;margin-bottom:6px">${CFG.empNom}</div>
     <div style="border-top:1px solid #e2e8f0;padding-top:8px">
-      <div style="margin-bottom:4px">👥 Clientes activos: <strong>${act.length}</strong></div>
-      <div style="margin-bottom:4px">🆕 Nuevos hoy: <strong>${nuevosHoy}</strong></div>
-      <div style="margin-bottom:4px">📄 Facturas hoy: <strong>${facHoy}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-users"></i> Clientes activos: <strong>${act.length}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-sparkles"></i> Nuevos hoy: <strong>${nuevosHoy}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-file-invoice"></i> Facturas hoy: <strong>${facHoy}</strong></div>
       <div style="margin-bottom:4px"><i class="ti ti-cash"></i> Prima mensual: <strong>${fmt(prima)}</strong></div>
-      <div style="margin-bottom:4px">✅ Cobrado: <strong>${fmt(cob)}</strong></div>
-      <div style="margin-bottom:4px">⏳ Pendiente: <strong>${fmt(pend2)}</strong></div>
-      <div style="color:#dc2626">⚠️ Pólizas por vencer: <strong>${polVenc}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-circle-check"></i> Cobrado: <strong>${fmt(cob)}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-clock"></i> Pendiente: <strong>${fmt(pend2)}</strong></div>
+      <div style="color:#dc2626"><i class="ti ti-alert-triangle"></i> Pólizas por vencer: <strong>${polVenc}</strong></div>
     </div>`;
 }
 
@@ -9247,7 +9247,7 @@ function rCli(){
       if(c.fecha_seguimiento){
         const fs=new Date(String(c.fecha_seguimiento).slice(0,10)+'T12:00:00');
         const diff=Math.floor((fs-hoy2)/86400000);
-        if(diff<0)segTxt=`<span style="color:#ef4444">⚠ Seguimiento vencido</span>`;
+        if(diff<0)segTxt=`<span style="color:#ef4444"><i class="ti ti-alert-triangle"></i> Seguimiento vencido</span>`;
         else if(diff===0)segTxt=`<span style="color:#f59e0b"><i class="ti ti-calendar"></i> Seguimiento hoy</span>`;
         else segTxt=`<span style="color:#475569"><i class="ti ti-calendar"></i> Seguimiento en ${diff}d</span>`;
       }
@@ -9265,7 +9265,7 @@ function rCli(){
         ${segTxt}
       </div>`;
     }
-    const agTxt=(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style="color:#ef4444;font-size:9px">⚠ SIN AGENTE</span>';})();
+    const agTxt=(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> <span style="color:#ef4444;font-size:9px">SIN AGENTE</span>';})();
     const accMenuHTML=`<div class="acc-menu-hd">ACCIONES RÁPIDAS</div>
             <button class="acc-i-blue" onclick="editarCli('${c.id}');cerrarAccMenus()"><i class="ti ti-edit"></i> Editar</button>
             <button class="acc-i-green" onclick="abrirAbono('${c.id}');cerrarAccMenus()"><i class="ti ti-wallet"></i> Registrar cobro</button>
@@ -9894,7 +9894,7 @@ function rFact(){
     const ec=CLS_BADGE[est.cls];
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
     const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
-    const agTxt=ag?ag.nom:'⚠ Sin agente';
+    const agTxt=ag?ag.nom:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> Sin agente';
     const anul=est.anul;
     const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
     const sal=est.sal;
