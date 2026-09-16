@@ -8766,13 +8766,20 @@
     try {
       const api = getAPI();
       const baseUrl = (api?.url || 'https://tnwsgcxurfyuszxsewsn.supabase.co');
+      const tokenSesion = api?.token || '';
+      if (!tokenSesion || tokenSesion === api?.key) {
+        _historial = _historial.filter(m => m.tipo !== 'cargando');
+        _historial.push({ tipo: 'error', texto: 'Tu sesión segura no está disponible. Cierra sesión y vuelve a entrar.' });
+        if (modal) renderModal(modal);
+        return;
+      }
 
       const resp = await fetch(baseUrl + '/functions/v1/nexus-smart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': (api?.key || ''),
-          'Authorization': 'Bearer ' + (api?.token || api?.key || '')
+          'Authorization': 'Bearer ' + tokenSesion
         },
         body: JSON.stringify({ pregunta })
       });
