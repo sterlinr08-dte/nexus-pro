@@ -10,9 +10,9 @@
       var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
-         WhatsApp/Solicitudes sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5875'):'?b=5875';
-    }catch(e){return '?b=5875';}
+         WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
+      return base?(base+'&b=5876'):'?b=5876';
+    }catch(e){return '?b=5876';}
   }
 
   function load(src,done){
@@ -44,6 +44,8 @@
     ['js','parches-crm-entrada.js'],
     ['js','parches-crm-operativo.js'],
     ['js','parches-cumpleanos-clientes.js'],
+    ['css','parches-clientes-novedades.css'],
+    ['js','parches-clientes-novedades.js'],
     ['js','parches-whatsapp-inbox.js'],
     ['js','parches-whatsapp-visual.js'],
     ['css','parches-whatsapp-visual-v2.css'],
