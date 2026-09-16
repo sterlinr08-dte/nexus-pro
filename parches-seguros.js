@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5879'):'?b=5879';
-    }catch(e){return '?b=5879';}
+      return base?(base+'&b=5880'):'?b=5880';
+    }catch(e){return '?b=5880';}
   }
 
   function load(src,done){
@@ -39,6 +39,7 @@
      paréntesis/bloques sin cerrar al agregar una nueva capa visual. */
   var pasos=[
     ['js','parches-seguros-base.js'],
+    ['js','parches-excepciones.js'],
     ['js','parches-crm-seguros.js'],
     ['css','parches-crm-seguros-v2.css'],
     ['js','parches-crm-entrada.js'],
