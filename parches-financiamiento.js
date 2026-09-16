@@ -2353,7 +2353,7 @@
             <select id="prPagoMetodo" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Cheque">Cheque</option><option value="Otro">Otro</option></select>
             <input id="prPagoNota" class="no-upper" placeholder="Referencia / nota (opcional)" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
           </div>
-          <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
+          <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px"><i class="ti ti-circle-check"></i> Préstamo saldado</div>'}
           <div class="nxPrActs">
             ${waNumero(p.telefono) ? `<button class="nxPrAcc wa" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
@@ -2454,12 +2454,12 @@
     const metodo = String(x.metodo || 'Efectivo');
     const METS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Pago móvil', 'Cheque'];
     const metActivo = METS.find(m => m.toLowerCase() === metodo.toLowerCase());
-    const metTiles = METS.map(m => { const on = m === metActivo; return `<div class="met${on ? ' on' : ''}">${m}${on ? ' ✓' : ''}</div>`; }).join('') + (!metActivo ? `<div class="met on">${esc(metodo)} ✓</div>` : '');
+    const metTiles = METS.map(m => { const on = m === metActivo; return `<div class="met${on ? ' on' : ''}">${m}${on ? ' <i class="ti ti-circle-check"></i>' : ''}</div>`; }).join('') + (!metActivo ? `<div class="met on">${esc(metodo)} <i class="ti ti-circle-check"></i></div>` : '');
     const empNom = empresaNom();
     const estCol = info.key === 'pagado' ? '#16a34a' : info.key === 'vencido' ? '#dc2626' : '#4f46e5';
     const waMsg = `*COMPROBANTE DE PAGO* — ${empNom}\n${rec}\n\nCliente: ${nombre}\nMonto recibido: ${fmt(monto)}\n(${letras})\nMétodo: ${metodo}\nFecha: ${fechaHora}\nContrato: ${prRef(p)}\nBalance actual: ${fmt(balAct)}\n\nGracias por su pago.`;
     const waNum = waNumero(tel);
-    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante ${rec} — ${esc(nombre)}</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante ${rec} — ${esc(nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>
         *{box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;margin:0;background:#f1f5f9}
         .wrap{max-width:720px;margin:0 auto;padding:16px}
@@ -2491,7 +2491,7 @@
         @media(max-width:640px){.body{grid-template-columns:1fr}}
       </style></head><body>
       <div class="acts">
-        <button class="b-close" onclick="window.close()">✕ Cerrar</button>
+        <button class="b-close" onclick="window.close()"><i class="ti ti-x"></i> Cerrar</button>
         <button class="b-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
         ${waNum ? `<button class="b-wa" id="cpWA">WhatsApp</button>` : ''}
         <button class="b-mail" id="cpMail">Correo</button>
@@ -2500,7 +2500,7 @@
         <div class="hd">
           <div class="brand"><div class="blogo">N</div><div><div class="bnom">${esc(empNom)}</div><div class="bsub">FINANCIAMIENTO</div></div></div>
           <div class="htitle"><h1>COMPROBANTE DE PAGO</h1><span>Recibo de pago de préstamo</span></div>
-          <div class="recbox"><div class="rec">${rec}</div><div class="badge">✓ REGISTRADO</div><div class="recsub">Comprobante de pago</div></div>
+          <div class="recbox"><div class="rec">${rec}</div><div class="badge"><i class="ti ti-circle-check"></i> REGISTRADO</div><div class="recsub">Comprobante de pago</div></div>
         </div>
         <div class="meta">
           <div><b>Fecha y hora</b>${esc(fechaHora)}</div>
@@ -2614,7 +2614,7 @@
     const waNum = waNumero(tel);
     const thead = '<tr>' + cols.map(c => '<th class="' + c[1] + '">' + esc(c[0]) + '</th>').join('') + '</tr>';
     const tbody = filas.map(f => '<tr>' + f.map(c => '<td class="' + c[1] + '">' + esc(c[0]) + '</td>').join('') + '</tr>').join('');
-    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docTit)} ${esc(ref)} — ${esc(nombre)}</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docTit)} ${esc(ref)} — ${esc(nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>
         *{box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;margin:0;background:#f1f5f9}
         .wrap{max-width:820px;margin:0 auto;padding:16px}
@@ -2647,7 +2647,7 @@
         @media(max-width:640px){.body{grid-template-columns:1fr}}
       </style></head><body>
       <div class="acts">
-        <button class="b-close" onclick="window.close()">✕ Cerrar</button>
+        <button class="b-close" onclick="window.close()"><i class="ti ti-x"></i> Cerrar</button>
         <button class="b-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
         ${waNum ? '<button class="b-wa" id="amWA">WhatsApp</button>' : ''}
         <button class="b-mail" id="amMail">Correo</button>
@@ -2959,7 +2959,7 @@
       : s.estado === 'aprobada' && s.prestamo_id
       // Ya es un préstamo real: el expediente se queda aquí como respaldo permanente, y desde
       // aquí se salta al préstamo (el camino de vuelta lo da el botón "Expediente firmado").
-      ? `<div style="font-size:11.5px;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px;margin-top:8px">✓ Aprobada — ya es un préstamo real. Estos documentos quedan guardados aquí como respaldo.</div>
+      ? `<div style="font-size:11.5px;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px;margin-top:8px"><i class="ti ti-circle-check"></i> Aprobada — ya es un préstamo real. Estos documentos quedan guardados aquí como respaldo.</div>
          <button class="btn bsm bc1" type="button" style="width:100%;margin-top:8px" onclick="document.getElementById('nxPrSolModal').remove();window.nxPrestamoVer('${s.prestamo_id}')"><i class="ti ti-cash"></i> Ver el préstamo</button>`
       : (s.estado === 'rechazada' && s.motivo_rechazo ? `<div style="font-size:11.5px;color:#dc2626;background:#fef2f2;border-radius:8px;padding:8px;margin-top:8px"><b>Motivo:</b> ${esc(s.motivo_rechazo)}</div>` : '');
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:88vh;overflow-y:auto">

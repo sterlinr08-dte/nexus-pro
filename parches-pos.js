@@ -1435,7 +1435,7 @@
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
           <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div></div>
-          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div>${aplicaHTML}</div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
+          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div>${aplicaHTML}</div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1"><i class="ti ti-chevron-right"></i></span></div>
         </div>
         ${abierto ? ppkDetailHTML(p) : ''}
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
@@ -1492,7 +1492,7 @@
     return `<div class="nxPpkDet">
         <div class="nxPpkBox">
           ${cabHTML}
-          ${(puedeVerMin() && Number(p.precio_minimo || 0) > 0) ? `<div style="text-align:right;font-size:9px;color:#b7bfd0;font-weight:800;margin:-2px 0 2px">🔒 mín ${fmt(p.precio_minimo)}</div>` : ''}
+          ${(puedeVerMin() && Number(p.precio_minimo || 0) > 0) ? `<div style="text-align:right;font-size:9px;color:#b7bfd0;font-weight:800;margin:-2px 0 2px"><i class="ti ti-lock"></i> mín ${fmt(p.precio_minimo)}</div>` : ''}
           <div class="nxPpkExiH"><span class="nxPpkExiL">Existencia</span>${exiHTML}</div>
           ${p.serial ? '<div id="ppkSer" style="margin-top:4px"><div style="font-size:10px;color:#475569">Cargando seriales…</div></div>' : ''}
           <button class="nxPpkElegir" type="button" onclick="event.stopPropagation();window.nxProdPickElegir('${p.id}')"><i class="ti ti-circle-plus"></i> Elegir — ${fmt(aplica)}</button>
@@ -1572,7 +1572,7 @@
     // Si no coinciden (un descuadre de antes de esta regla), se avisa y se ofrece cuadrarlo.
     const disp = rows.length;
     const descuadre = Number(p.stock || 0) !== disp;
-    const avisoCuadre = descuadre ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#92400e;margin-bottom:10px">⚠️ El stock dice <b>${Number(p.stock || 0)}</b> pero hay <b>${disp}</b> IMEI disponible(s). <button class="btn bsm bc1" type="button" style="margin-left:6px" onclick="window.nxSerialCuadrar('${pid}')">Cuadrar a ${disp}</button></div>` : '';
+    const avisoCuadre = descuadre ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#92400e;margin-bottom:10px"><i class="ti ti-alert-triangle"></i> El stock dice <b>${Number(p.stock || 0)}</b> pero hay <b>${disp}</b> IMEI disponible(s). <button class="btn bsm bc1" type="button" style="margin-left:6px" onclick="window.nxSerialCuadrar('${pid}')">Cuadrar a ${disp}</button></div>` : '';
     const ov = document.createElement('div'); ov.id = 'nxSerMgr'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
@@ -2534,7 +2534,7 @@
     const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Crédito' : 'Pendiente';
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
-    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px">⚠️ Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
+    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px"><i class="ti ti-alert-triangle"></i> Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
     try {
       const fb = document.getElementById('finBox'), cfg = document.getElementById('finCfg'), chk = document.getElementById('finChk'), pv = document.getElementById('finPrev');
       if (fb) fb.style.display = (c.credito > 0 && cliId) ? '' : 'none';
@@ -3010,7 +3010,7 @@
     const _cliT = (v.cliente_id ? _clientes.find(x => String(x.id) === String(v.cliente_id)) : null) || null;
     const _cliRnc = (_cliT && _cliT.cedula) ? ((_cliT.tipo_persona === 'juridica' ? 'RNC: ' : 'Cédula: ') + esc(_cliT.cedula)) : '';
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Cascadia Code,Consolas,Courier New,monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;display:flex;flex-wrap:wrap;gap:8px;background:#1e3a6e;margin:-12px -12px 10px;padding:9px 12px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif">✕ Cerrar</button>${v.id ? `<button onclick="if(window.opener&&window.opener.nxFacDocVenta){window.opener.nxFacDocVenta('${v.id}');window.opener.focus();}else{alert('Abre este ticket desde el sistema para ver la factura completa.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif">📄 Factura completa</button>` : ''}${(v.id && !v.anulada) ? `<button onclick="if(window.opener&&window.opener.nxDevNueva){window.opener.nxDevNueva('${v.id}');window.opener.focus();window.close();}else{alert('Abre este ticket desde el sistema (no en una pestaña aparte) para poder hacer una devolución.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif">↩︎ Devolver</button>` : ''}</div>
@@ -3124,8 +3124,8 @@
       @media(max-width:700px){.doc{padding:18px 14px}.partes,.pie{grid-template-columns:1fr}.dhr{text-align:left}table{font-size:11.5px;table-layout:fixed}th,td{padding:7px 4px;overflow-wrap:break-word}th:first-child,td.n{display:none}th:nth-child(2),td:nth-child(2){width:36%!important}th:nth-child(3),td:nth-child(3){width:11%!important}th:nth-child(4),td:nth-child(4){width:18%!important}th:nth-child(5),td:nth-child(5){width:15%!important}th:nth-child(6),td:nth-child(6){width:20%!important}td.b{white-space:normal}.ser{font-size:10px}.sub{gap:6px}.dtit{font-size:20px}.dnum{font-size:19px}}
       </style></head><body>
       <div class="bar">
-        <button type="button" id="bX">✕ Cerrar</button>
-        <button type="button" class="pr" id="bP">🖨️ Imprimir / PDF</button>
+        <button type="button" id="bX"><i class="ti ti-x"></i> Cerrar</button>
+        <button type="button" class="pr" id="bP"><i class="ti ti-printer"></i> Imprimir / PDF</button>
         <button type="button" class="wa" id="bW">WhatsApp</button>
       </div>
       <div class="doc">
@@ -3299,7 +3299,7 @@
     return `<tr class="${sel ? 'nxProdRowSel' : ''}">
       <td class="nxProdChk"><input type="checkbox" aria-label="Seleccionar ${esc(p.nombre || '')}" ${sel ? 'checked' : ''} onchange="window.nxProdSelToggle('${p.id}',this)"></td>
       <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
-      <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
+      <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel."><i class="ti ti-alert-triangle"></i> Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
       <td style="text-align:right;white-space:nowrap">${stkCell}</td>
       <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
       <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
@@ -5110,10 +5110,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function nxDevImprimirObj(dev) {
     const e = empInfo();
     const filas = (dev._items || []).map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.precio)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nota de crédito ${esc(dev.numero || '')}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nota de crédito ${esc(dev.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:540px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="line"></div>
@@ -5493,7 +5493,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
             <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none"><input id="posAbFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"></div>
             <div style="display:flex;gap:6px"><select id="posAbMet" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><input id="posAbNota" class="no-upper" placeholder="Nota" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button aria-label="Registrar un abono" class="btn bc1 bsm" type="button" onclick="window.nxPosAbonar('${id}')"><i class="ti ti-plus"></i></button></div>
-          </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
+          </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px"><i class="ti ti-circle-check"></i> Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">VENTAS FIADAS (${ventas.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${ventasHTML}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">ABONOS (${abonos.length})</div>
@@ -5588,7 +5588,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div><span style="color:var(--pf-txt3)">Email</span><br><b>${esc(c.email || '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Dirección</span><br><b>${esc(c.direccion || '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Cliente desde</span><br><b>${String(c.created_at || '').slice(0, 10).split('-').reverse().join('/') || '—'}</b></div>
-      </div>${c.acepta_whatsapp ? '<div style="margin-top:6px">' + badge('✓ Acepta WhatsApp', '#16a34a', '#f0fdf4') + '</div>' : ''}`;
+      </div>${c.acepta_whatsapp ? '<div style="margin-top:6px">' + badge('<i class="ti ti-circle-check"></i> Acepta WhatsApp', '#16a34a', '#f0fdf4') + '</div>' : ''}`;
 
     // 2) Facturas (TODAS, no solo fiadas)
     const facturasHTML = ventas.length ? ventas.map(v => fila(`
@@ -6040,10 +6040,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let run = 0;
     const filas = movs.map(m => { run += m.cargo - m.abono; return `<tr><td>${fechaDMY(m.f)}</td><td>${esc(m.t)}</td><td class="r">${m.cargo ? fmt(m.cargo) : ''}</td><td class="r">${m.abono ? fmt(m.abono) : ''}</td><td class="r">${fmt(run)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">Sin movimientos</td></tr>';
     const e = empInfo();
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta — ${esc(c.nombre)}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta — ${esc(c.nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:640px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.box{display:flex;gap:10px;margin:10px 0}.kp{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:10px;text-align:center}.kp b{display:block;font-size:16px}.kp span{font-size:10px;color:#555}.sal{font-weight:800;font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="line"></div>
@@ -6434,10 +6434,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.costo)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
     const imFilas = imeis.map((s, i) => { const p = _prods.find(x => String(x.id) === String(s.producto_id)); return `<tr><td>${i + 1}</td><td style="font-family:var(--mono);font-weight:bold">${esc(s.serial)}</td><td>${esc(p ? p.nombre : '')}</td><td>${s.estado === 'vendido' ? 'Vendido' : 'Disponible'}</td></tr>`; }).join('');
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compra ${esc(c.numero || '')}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compra ${esc(c.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -6718,10 +6718,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const row = (l, v, col) => `<tr><td>${l}</td><td style="text-align:right${col ? ';color:' + col : ''}">${fmt(v)}</td></tr>`;
     const movHTML = (movs || []).length ? movs.map(m => `<tr><td>${m.tipo === 'entrada' ? '➕' : '➖'} ${esc(m.concepto || m.tipo)}</td><td style="text-align:right;color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</td></tr>`).join('') : '';
     const desc = Number(c.descuadre || 0);
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cierre de caja</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cierre de caja</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#1e293b;max-width:420px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.muted{color:#475569;font-size:11px;text-align:center}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:6px 4px;border-bottom:1px solid #eef2f6}.tit{font-size:11px;font-weight:800;color:#475569;margin:10px 0 2px}.big td{font-size:15px;font-weight:800}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:10px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:10px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button></div>
         <h1>📋 Cierre de Caja</h1>
         <div class="muted">${esc(e.nom)} · ${c.created_by_name ? esc(c.created_by_name) + ' · ' : ''}${fechaDMY(c.cierre)}</div>
         <div class="muted">Apertura: ${fechaDMY(c.apertura)}</div>
@@ -6738,7 +6738,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </table>
         ${movHTML ? '<div class="tit">MOVIMIENTOS</div><table>' + movHTML + '</table>' : ''}
         ${c.notas ? '<div class="muted" style="text-align:left;margin-top:6px">📝 ' + esc(c.notas) + '</div>' : ''}
-        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:16px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:16px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
@@ -6970,7 +6970,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const filas = arr.map(o => { TD += o.debe; TH += o.haber; return `<tr><td class="nxFacCod">${esc(o.cuenta.codigo)}</td><td>${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(o.debe)}</td><td style="text-align:right">${fmt(o.haber)}</td></tr>`; }).join('');
     const cuadra = Math.round(TD) === Math.round(TH);
     return `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">TOTALES</td><td style="text-align:right;font-weight:800">${fmt(TD)}</td><td style="text-align:right;font-weight:800">${fmt(TH)}</td></tr></tbody></table></div>
-      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '✓ La balanza cuadra (Debe = Haber)' : '⚠ Descuadre de ' + fmt(Math.abs(TD - TH))}</div>`;
+      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '<i class="ti ti-circle-check"></i> La balanza cuadra (Debe = Haber)' : '⚠ Descuadre de ' + fmt(Math.abs(TD - TH))}</div>`;
   }
 
   function ctaResultados() {
@@ -7017,7 +7017,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <tr class="nxCtaTotR"><td>Total patrimonio</td><td style="text-align:right">${fmt(patrimonio)}</td></tr>
         <tr class="nxCtaGran"><td>PASIVO + CAPITAL</td><td style="text-align:right">${fmt(pasMasCap)}</td></tr>
       </table>
-      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '✓ Balance cuadrado (Activo = Pasivo + Capital)' : '⚠ Diferencia de ' + fmt(Math.abs(act - pasMasCap))}</div></div>`;
+      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '<i class="ti ti-circle-check"></i> Balance cuadrado (Activo = Pasivo + Capital)' : '⚠ Diferencia de ' + fmt(Math.abs(act - pasMasCap))}</div></div>`;
   }
 
   // ── Acciones Contabilidad ──
@@ -7142,10 +7142,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const list = asientosRango();
       cuerpo = list.map(a => { const ls = asLineas(a); const filas = ls.map(l => `<tr><td>${esc(l.cuenta_codigo || '')}</td><td>${esc(l.cuenta_nombre || '')}</td><td class="r">${Number(l.debito) ? fmt(l.debito) : ''}</td><td class="r">${Number(l.credito) ? fmt(l.credito) : ''}</td></tr>`).join(''); return `<div class="as"><b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || '')}<table><thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Debe</th><th class="r">Haber</th></tr></thead><tbody>${filas}</tbody></table></div>`; }).join('') || '<div style="color:#777">Sin asientos en el período.</div>';
     }
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulos[tipo] || 'Reporte'}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulos[tipo] || 'Reporte'}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px 6px}td{padding:4px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999;border-bottom:none}.gran td{font-weight:800;font-size:14px;border-top:2px solid #111;border-bottom:none}.sec td{font-weight:800;font-size:10px;text-transform:uppercase;color:#555;padding-top:10px}.ind{padding-left:16px}.as{border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;margin-bottom:8px}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="line"></div>
@@ -7206,7 +7206,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let td = 0, th = 0;
     _asEdit.lineas.forEach(l => { td += Number(l.debito || 0); th += Number(l.credito || 0); });
     const ok = Math.round(td) === Math.round(th) && td > 0;
-    el.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Debe: <b>${fmt(td)}</b></span><span>Haber: <b>${fmt(th)}</b></span><span style="color:${ok ? '#16a34a' : '#dc2626'};font-weight:800">${ok ? '✓ cuadra' : 'Diferencia ' + fmt(Math.abs(td - th))}</span></div>`;
+    el.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Debe: <b>${fmt(td)}</b></span><span>Haber: <b>${fmt(th)}</b></span><span style="color:${ok ? '#16a34a' : '#dc2626'};font-weight:800">${ok ? '<i class="ti ti-circle-check"></i> cuadra' : 'Diferencia ' + fmt(Math.abs(td - th))}</span></div>`;
   }
   window.nxAsTotals = function () { leerAsLineas(); pintarAsTot(); };
   window.nxAsAddLinea = function () { leerAsLineas(); _asEdit.lineas.push({ cuenta_id: '', debito: '', credito: '' }); pintarAsLineas(); };
@@ -7502,10 +7502,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.precio)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
     let venc = ''; try { const d = new Date(String(c.fecha).slice(0, 10) + 'T12:00:00'); d.setDate(d.getDate() + Number(c.validez_dias || 15)); venc = fechaDMY(d.toLocaleDateString('en-CA')); } catch (er) {}
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cotización ${esc(c.numero || '')}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cotización ${esc(c.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:660px;margin:0 auto;padding:22px;font-size:12.5px}h1{font-size:17px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.tot{margin-left:auto;max-width:280px}.tot td{padding:3px 6px;border:none}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-22px -22px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-22px -22px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}${e.dir ? '<br>' + esc(e.dir) : ''}</div>
         <div class="line"></div>
@@ -7651,10 +7651,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     const porAlm = _almacenes.length ? _almacenes.map(a => `${esc(a.nombre)}: ${fmtN(stockEnAlm(id, a.id))}`).join(' · ') : '';
     const filas = (_invProdMovs || []).map(m => { const t = MOV_LBL[m.tipo] || [m.tipo, '#111']; const c = Number(m.cantidad || 0); return `<tr><td>${fechaDMY(m.fecha)}</td><td>${t[0]}</td><td class="r" style="color:${c < 0 ? '#b91c1c' : '#15803d'}">${c > 0 ? '+' : ''}${fmtN(c)}</td><td class="r">${m.stock_nuevo != null ? fmtN(m.stock_nuevo) : ''}</td><td>${esc(m.referencia || m.motivo || '')}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">Sin movimientos</td></tr>';
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardex — ${esc(p.nombre)}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardex — ${esc(p.nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -7901,10 +7901,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     const filas = (t._items || []).map((it, i) => `<tr><td>${i + 1}</td><td>${esc(it.nombre)}</td><td class="r">${fmtN(it.cantidad)}</td></tr>`).join('');
     const total = (t._items || []).reduce((s, it) => s + Number(it.cantidad || 0), 0);
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Despacho ${esc(t.numero || '')}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Despacho ${esc(t.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:560px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.rut{display:flex;justify-content:space-between;margin:8px 0;font-weight:700}.fz{display:flex;justify-content:space-between;margin-top:40px;font-size:12px}.fz>div{text-align:center;width:45%;border-top:1px solid #999;padding-top:4px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -8149,10 +8149,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     let tM = 0, tC = 0;
     const filas = Object.values(acc).filter(o => o.ventas > 0).map(o => { tM += o.monto; tC += o.comision; return `<tr><td>${esc(o.nombre)}</td><td class="r">${o.ventas}</td><td class="r">${fmt(o.monto)}</td><td class="r">${o.pct}%</td><td class="r">${fmt(o.comision)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">No hay ventas con vendedor asignado en el período.</td></tr>';
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comisiones</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comisiones</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="line"></div>
         <div class="c"><b>REPORTE DE COMISIONES</b></div>
@@ -8211,10 +8211,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       mSin += sin; mItb += itbis; mTot += total;
       return `<tr><td>${esc(v.ncf)}</td><td>${fechaDMY(v.fecha || v.created_at)}</td><td>${esc(v.cliente_nombre || 'Consumidor final')}</td><td class="r">${fmt(sin)}</td><td class="r">${fmt(itbis)}</td><td class="r">${fmt(total)}</td></tr>`;
     }).join('') || '<tr><td colspan="6" style="text-align:center;color:#777;padding:14px">No hay ventas con NCF en el período.</td></tr>';
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reporte 607 (NCF)</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reporte 607 (NCF)</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:760px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -8501,10 +8501,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const e = empInfo();
     const totDed = Number(l.sfs) + Number(l.afp) + Number(l.isr) + Number(l.otras_deducciones);
     const fila = (lbl, v, neg) => `<tr><td>${lbl}</td><td style="text-align:right">${neg ? '- ' : ''}${fmt(v)}</td></tr>`;
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago — ${esc(l.empleado_nombre)}</title>
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago — ${esc(l.empleado_nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:460px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:6px 0}td{padding:4px 0}.line{border-top:1px solid #ccc;margin:8px 0}.tot{font-weight:800;font-size:15px}.sec{font-weight:800;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-top:8px}.box{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="line"></div>
@@ -8523,7 +8523,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="text-align:center;width:45%;border-top:1px solid #999;padding-top:4px">Recibí conforme</div>
           <div style="text-align:center;width:45%;border-top:1px solid #999;padding-top:4px">Pagado por</div>
         </div>
-        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:18px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:18px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
@@ -10627,7 +10627,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
-        <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
+        <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800"><i class="ti ti-chevron-right"></i></span></div>`).join('')
       : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">' + (window.__fhCargando ? 'Cargando facturas…' : 'Sin facturas' + (qq ? ' con esa búsqueda' : '')) + '</div>';
     const nav = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
       <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHistRows(${_fhPage - 1})">&lsaquo; Anterior</button>

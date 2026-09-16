@@ -8,7 +8,7 @@
 <meta property="og:title" content="🎟️ Participa en la rifa">
 <meta property="og:description" content="Elige tus números, sube tu pago y participa. ¡Mucha suerte!">
 <meta property="og:image" content="https://nexusprord.com/icon-512.png">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
 <style>
 :root{--c:#4f46e5;--c2:#4338ca;--gold:#e9c46a;--gold2:#caa84a;--goldsoft:#f0d98a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -146,8 +146,10 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .faq{border-top:1px solid #eef1f6}
 .faq summary{font-size:14px;font-weight:700;color:#0f172a;cursor:pointer;padding:11px 2px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";color:var(--c);font-size:21px;font-weight:800;flex:0 0 auto}
-.faq[open] summary::after{content:"\2212"}
+.faq summary .faqIco{color:var(--c);font-size:21px;flex:0 0 auto}
+.faq summary .faqIco.ti-minus{display:none}
+.faq[open] summary .faqIco.ti-plus{display:none}
+.faq[open] summary .faqIco.ti-minus{display:inline-block}
 .faqa{font-size:13px;color:#475569;line-height:1.5;padding:0 2px 12px}
 .rtxt{font-size:13.5px;color:#334155;line-height:1.6}
 body.rdark .rtxt{color:#cbd5e1}
@@ -538,7 +540,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
   function faqHTML(){
     var fq=R.faqs||[]; if(!fq.length)return '';
     return '<div class="card mg-card" id="faqsec">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-help-circle"></i></div><div><h3>Preguntas frecuentes</h3><small>Resolvemos tus dudas</small></div></div>'+
-      fq.map(function(f){return '<details class="faq"><summary>'+esc(f.q||'')+'</summary><div class="faqa">'+esc(f.a||'').replace(/\n/g,'<br>')+'</div></details>';}).join('')+
+      fq.map(function(f){return '<details class="faq"><summary>'+esc(f.q||'')+'<i class="ti ti-plus faqIco"></i><i class="ti ti-minus faqIco"></i></summary><div class="faqa">'+esc(f.a||'').replace(/\n/g,'<br>')+'</div></details>';}).join('')+
     '</div>';
   }
   function boardInto(){
@@ -551,14 +553,14 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
     var cells=slice.map(function(s){var so=sold[s], se=selMap[s];
       var cls="n"+(so?" sold":(se?" sel":""));
       return '<button class="'+cls+'" '+(so?'disabled':'onclick="window.__toggle(\''+s+'\')"')+'>'+s+'</button>';}).join('');
-    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'>‹</button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'>›</button></div>':'';
+    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'><i class="ti ti-chevron-left"></i></button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'><i class="ti ti-chevron-right"></i></button></div>':'';
     wrap.innerHTML='<div class="board">'+(slice.length?cells:'<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;font-size:13px">Sin números con ese filtro</div>')+'</div>'+pager;
     chipsInto();
   }
   function chipsInto(){
     var el=document.getElementById("chips"); if(!el)return;
     if(!cart.length){el.innerHTML="";return;}
-    el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>';
+    el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')"><i class="ti ti-x"></i></span></span>';}).join('')+'</div>';
   }
   function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData) && acceptedTerms; }
   window.__terms=function(v){ acceptedTerms=!!v; refreshCart(); };
@@ -683,7 +685,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
     var bn=onlyD(F.tel||""); if(bn.length===10)bn="1"+bn;
     var waHref='https://api.whatsapp.com/send?'+(bn.length>=8?('phone='+bn+'&'):'')+'text='+waTxt;
     var wa=link?'<a class="wabtn mg-shine" href="'+waHref+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
-    return '<div class="body"><div class="ok"><div class="okIc"><div class="ic">✓</div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+
+    return '<div class="body"><div class="ok"><div class="okIc"><div class="ic"><i class="ti ti-circle-check"></i></div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+
       '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
       '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
       '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+

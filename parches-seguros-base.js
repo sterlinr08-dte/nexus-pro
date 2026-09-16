@@ -450,16 +450,16 @@
   // ═══════════════════════════════════════════════════════════
   // Catálogo de TODAS las opciones disponibles para el menú
   const NX_MENU_CATALOG = [
-    { go:'dashboard', icon:'🏠', label:'Inicio' },
-    { go:'clientes',  icon:'👥', label:'Clientes' },
-    { go:'proceso',   icon:'📋', label:'Clientes en proceso' },
-    { go:'polizas',   icon:'📜', label:'Pólizas' },
-    { go:'facturas',  icon:'📄', label:'Facturas' },
-    { go:'cobros',    icon:'💰', label:'Cobros' },
-    { go:'historial', icon:'🧾', label:'Historial de pagos' },
-    { go:'reportes',  icon:'📊', label:'Reportes' },
-    { go:'sistema',   icon:'⚙️', label:'Configuración' },
-    { go:'usuarios',  icon:'👤', label:'Usuarios' }
+    { go:'dashboard', icon:'ti-home', label:'Inicio' },
+    { go:'clientes',  icon:'ti-users', label:'Clientes' },
+    { go:'proceso',   icon:'ti-clipboard-list', label:'Clientes en proceso' },
+    { go:'polizas',   icon:'ti-history', label:'Pólizas' },
+    { go:'facturas',  icon:'ti-file-text', label:'Facturas' },
+    { go:'cobros',    icon:'ti-cash', label:'Cobros' },
+    { go:'historial', icon:'ti-receipt', label:'Historial de pagos' },
+    { go:'reportes',  icon:'ti-chart-bar', label:'Reportes' },
+    { go:'sistema',   icon:'ti-settings', label:'Configuración' },
+    { go:'usuarios',  icon:'ti-user', label:'Usuarios' }
   ];
   const NX_MENU_KEY = 'nx_menu_cfg';
 
@@ -488,7 +488,7 @@
         <h3>MENÚ</h3>
         <button type="button" class="nx-menu-edit-btn" data-action="edit-menu"><i class="ti ti-pencil"></i> Editar</button>
       </div>
-      ${items.map(it => `<button type="button" data-go="${it.go}"><span class="icon">${it.icon}</span><span><b>${it.label}</b></span></button>`).join('')}
+      ${items.map(it => `<button type="button" data-go="${it.go}"><span class="icon"><i class="ti ${it.icon}"></i></span><span><b>${it.label}</b></span></button>`).join('')}
     `;
   }
 
@@ -556,7 +556,7 @@
               return `
               <div class="nx-me-row${w.on ? '' : ' off'}">
                 <button type="button" class="nx-me-check" data-me="toggle" data-idx="${idx}" aria-label="Mostrar u ocultar"><i class="ti ti-check"></i></button>
-                <span class="nx-me-ico">${it.icon}</span>
+                <span class="nx-me-ico"><i class="ti ${it.icon}"></i></span>
                 <span class="nx-me-label">${it.label}</span>
                 <span class="nx-me-arrows">
                   <button type="button" data-me="up" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} aria-label="Subir"><i class="ti ti-chevron-up"></i></button>
@@ -8718,7 +8718,7 @@
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Conversaciones guardadas" aria-label="Conversaciones guardadas"><i class="ti ti-history"></i></button>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación" aria-label="Nueva conversación"><i class="ti ti-refresh"></i></button>
           <button style="background:rgba(255,255,255,.18);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:4px;display:inline-flex;align-items:center;justify-content:center" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
-          <button aria-label="Cerrar ventana" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar">✕</button>
+          <button aria-label="Cerrar ventana" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar"><i class="ti ti-x"></i></button>
         </div>
         <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc;-webkit-overflow-scrolling:touch">
           ${mensajes}
@@ -9004,7 +9004,7 @@
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
             <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
-            <button aria-label="Cerrar ventana" onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
+            <button aria-label="Cerrar ventana" onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar"><i class="ti ti-x"></i></button>
           </div>
         </div>
         <div class="nxCi-body">
@@ -11101,7 +11101,7 @@
             <div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((c && c.nom) || 'Cédula no registrada')}</div>
             <div style="font-size:11px;opacity:.85;font-family:var(--mono,monospace)">${esc(fmtCed(k))}</div>
           </div>
-          <button aria-label="Cerrar ventana" onclick="document.getElementById('nxTssFichaOv').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0">✕</button>
+          <button aria-label="Cerrar ventana" onclick="document.getElementById('nxTssFichaOv').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0"><i class="ti ti-x"></i></button>
         </div>
         ${cuerpo}
       </div>`;

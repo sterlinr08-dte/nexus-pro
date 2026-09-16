@@ -11,7 +11,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
 <style>
 :root{--c:#4f46e5;--c2:#6d28d9}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -363,7 +363,7 @@ label.fl:first-child{margin-top:0}
     if(document.getElementById("recOv"))return;
     var ov=document.createElement("div"); ov.className="rec"; ov.id="recOv";
     ov.innerHTML='<video class="rv" id="recPrev" autoplay muted playsinline></video>'
-      +'<div class="recTop"><button type="button" class="recX" onclick="window.__recCerrar()">&times;</button><span id="recEst">Preparando la cámara…</span></div>'
+      +'<div class="recTop"><button type="button" class="recX" onclick="window.__recCerrar()"><i class="ti ti-x"></i></button><span id="recEst">Preparando la cámara…</span></div>'
       +'<div class="recTxt"><span class="gl">Lee esto en voz alta</span>'+esc(guionTexto())+'</div>'
       +'<div class="recBar"><button type="button" class="recBtn" id="recBtn" onclick="window.__recToggle()" disabled aria-label="Grabar"></button>'
       +'<button type="button" class="recAlt" onclick="window.__recCerrar();document.getElementById(\'fVideo\').click()">Usar la cámara del teléfono</button></div>';

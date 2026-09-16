@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vendedor · Rifas</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
 <style>
 :root{--c:#4f46e5;--c2:#4338ca}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -219,12 +219,12 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var slice=nums.slice(page*PER,page*PER+PER);
     var selMap={}; cart.forEach(function(n){selMap[n]=1;});
     var cells=slice.map(function(s){var so=sold[s], se=selMap[s];return '<button class="n'+(so?' sold':(se?' sel':''))+'" '+(so?'disabled':'onclick="window.__toggle(\''+s+'\')"')+'>'+s+'</button>';}).join('');
-    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'>‹</button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'>›</button></div>':'';
+    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'><i class="ti ti-chevron-left"></i></button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'><i class="ti ti-chevron-right"></i></button></div>':'';
     wrap.innerHTML='<div class="board">'+(slice.length?cells:'<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;font-size:13px">Sin números</div>')+'</div>'+pager;
     chipsInto();
   }
   function chipsInto(){ var el=document.getElementById("chips"); if(!el)return; if(!cart.length){el.innerHTML="";return;}
-    el.innerHTML='<div class="chips"><span class="lbl">Números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip">'+esc(n)+'<span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>'; }
+    el.innerHTML='<div class="chips"><span class="lbl">Números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip">'+esc(n)+'<span onclick="window.__toggle(\''+n+'\')"><i class="ti ti-x"></i></span></span>';}).join('')+'</div>'; }
   function canSell(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim(); }
   function missTxt(){var m=[]; if(!count())m.push(RB.ocultar_numeros?"cantidad":"número"); if(!(F.nom||"").trim())m.push("nombre"); if(!(F.tel||"").trim())m.push("WhatsApp"); return m.length?"Falta: "+m.join(" · "):"";}
   function cartBar(){ var bar=document.createElement("div");bar.className="cart";bar.id="cartBar"; var mt=missTxt();
@@ -263,7 +263,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var link=doneId?(BOLETO+"?id="+doneId):"";
     var wt=encodeURIComponent('🎟️ '+(RB.premio||"Rifa")+'\nNúmeros: '+doneNums.join(", ")+(link?'\nBoleto: '+link:''));
     var wa=(F.tel?'https://wa.me/'+ (F.tel.replace(/\D/g,"").length>=10?"1":"") + F.tel.replace(/\D/g,"") +'?text='+wt : 'https://api.whatsapp.com/send?text='+wt);
-    app.innerHTML='<div class="wrap"><div class="body"><div class="ok"><div class="ic2">✓</div>'+
+    app.innerHTML='<div class="wrap"><div class="body"><div class="ok"><div class="ic2"><i class="ti ti-circle-check"></i></div>'+
       '<h2>¡Venta registrada!</h2><div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
       '<p style="color:#475569;font-size:14px">Quedó <b>por confirmar</b>. El organizador validará el pago.</p>'+
       '<a class="wabtn" href="'+wa+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar boleto al comprador</a>'+
