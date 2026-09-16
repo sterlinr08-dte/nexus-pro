@@ -8,6 +8,7 @@
 
   var activo=false;
   var modo='pendientes';
+  var tipo='TODOS';
   var filtro='TODOS';
   var cache=[];
   var cargando=false;
@@ -27,7 +28,23 @@
   function diasDesde(ts){if(!ts)return 0;var d=new Date(ts);if(isNaN(d))return 0;return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));}
   function etiquetaEstado(k){return (ESTADOS[k]||{label:k||'Novedad'}).label;}
   function fmtFecha(v){if(!v)return '';try{return new Date(v.length===10?v+'T12:00:00':v).toLocaleDateString('es-DO',{day:'2-digit',month:'short'});}catch(e){return String(v);}}
-  function notify(tipo,titulo,sub){try{if(typeof toast==='function')toast(tipo,titulo,sub||'');}catch(e){}}
+  function notify(tipoAviso,titulo,sub){try{if(typeof toast==='function')toast(tipoAviso,titulo,sub||'');}catch(e){}}
+
+  // Clasificación operativa sin cambiar el estado real del cliente.
+  // ENTRADA = activación / proceso. SALIDA = candidato por 2+ meses vencidos o retiro ya escalado.
+  // Un solo mes vencido sigue visible como EN_RIESGO, pero NO entra en SALIDA ni habilita retiro.
+  function mesesMora(n){
+    try{var m=n&&n.metadata&&n.metadata.meses;return Math.max(0,Number(m)||0);}catch(e){return 0;}
+  }
+  function tipoNovedad(n){
+    if(!n)return 'OTRO';
+    if(n.estado==='POR_RETIRAR')return 'SALIDA';
+    if(n.origen_clave==='mora_fifo')return mesesMora(n)>=2?'SALIDA':'OTRO';
+    if(n.origen_clave==='proceso_actual'||n.estado==='POR_ACTIVAR')return 'ENTRADA';
+    return 'OTRO';
+  }
+  function coincideTipo(n){return tipo==='TODOS'||tipoNovedad(n)===tipo;}
+  function tipoLabel(n){var t=tipoNovedad(n);return t==='ENTRADA'?'Entrada':t==='SALIDA'?'Salida':'';}
 
   async function rpcSync(){
     try{
@@ -63,7 +80,7 @@
       var v=document.getElementById('v-clientes');
       if(v){
         var titulo=[].slice.call(document.querySelectorAll('#v-dashboard .ct')).find(function(x){return /Clientes en proceso/i.test(x.textContent||'');});
-        if(titulo){titulo.textContent='Novedades pendientes';var sub=titulo.parentElement&&titulo.parentElement.querySelector('.ct-s');if(sub)sub.textContent='activaciones, gestiones y casos de riesgo';}
+        if(titulo){titulo.textContent='Novedades pendientes';var sub=titulo.parentElement&&titulo.parentElement.querySelector('.ct-s');if(sub)sub.textContent='entradas, gestiones, riesgo y salidas';}
       }
     }catch(e){}
   }
@@ -76,7 +93,9 @@
     v.classList.toggle('nxnov-activo',!!on);
   }
 
-  function conteoEstado(k){return cache.filter(function(n){return (modo==='pendientes'?n.abierta!==false:n.abierta===false)&&(k==='TODOS'||n.estado===k);}).length;}
+  function enModo(n){return modo==='pendientes'?n.abierta!==false:n.abierta===false;}
+  function conteoEstado(k){return cache.filter(function(n){return enModo(n)&&coincideTipo(n)&&(k==='TODOS'||n.estado===k);}).length;}
+  function conteoTipo(k){return cache.filter(function(n){return enModo(n)&&(k==='TODOS'||tipoNovedad(n)===k);}).length;}
 
   function ageClass(d){return d>=10?'danger':d>=4?'hot':'';}
 
@@ -87,18 +106,21 @@
     var auto=n.origen==='AUTOMATICA';
     var seg=n.fecha_seguimiento?(' · Seguimiento '+fmtFecha(n.fecha_seguimiento)):'';
     var ced=c.cedula||'Sin cédula';
-    return '<div class="nxnov-card" data-estado="'+h(n.estado)+'">'+
+    var t=tipoNovedad(n),tl=tipoLabel(n);
+    var meses=mesesMora(n);
+    var salidaLista=t==='SALIDA'&&n.estado==='EN_RIESGO';
+    return '<div class="nxnov-card" data-estado="'+h(n.estado)+'" data-tipo="'+h(t)+'">'+
       '<div class="nxnov-mark"></div>'+
       '<div class="nxnov-main">'+
         '<div class="nxnov-row1"><span class="nxnov-name">'+h(c.nom||'Cliente')+'</span><span class="nxnov-badge">'+h(etiquetaEstado(n.estado))+'</span></div>'+
-        '<div class="nxnov-meta">Céd. '+h(ced)+(a.nom?' · '+h(a.nom):'')+' · '+(auto?'Automática':'Manual')+h(seg)+'</div>'+
+        '<div class="nxnov-meta">Céd. '+h(ced)+(a.nom?' · '+h(a.nom):'')+' · '+(auto?'Automática':'Manual')+(tl?' · '+h(tl):'')+(n.origen_clave==='mora_fifo'&&meses?' · '+meses+' mes'+(meses===1?'':'es')+' vencido'+(meses===1?'':'s'):'')+h(seg)+'</div>'+
         '<div class="nxnov-reason">'+h(n.motivo||'Novedad')+'</div>'+
         (n.detalle?'<div class="nxnov-detail">'+h(n.detalle)+'</div>':'')+
         '<div class="nxnov-age '+ageClass(d)+'"><i class="ti ti-clock"></i> '+d+' día'+(d===1?'':'s')+' pendiente'+(d===1?'':'s')+'</div>'+
       '</div>'+
       '<div class="nxnov-actions">'+
         '<button class="nxnov-ico" onclick="event.stopPropagation();editarCli(\''+h(c.id||'')+'\')" title="Abrir cliente" aria-label="Abrir cliente"><i class="ti ti-user"></i></button>'+
-        (n.estado==='EN_RIESGO'?'<button class="nxnov-ico risk" onclick="event.stopPropagation();nxNovPorRetirar(\''+h(n.id)+'\')" title="Marcar por retirar" aria-label="Marcar por retirar"><i class="ti ti-user-minus"></i></button>':'')+
+        (salidaLista?'<button class="nxnov-ico risk" onclick="event.stopPropagation();nxNovPorRetirar(\''+h(n.id)+'\')" title="Marcar por retirar" aria-label="Marcar por retirar"><i class="ti ti-user-minus"></i></button>':'')+
         (!auto&&n.abierta!==false?'<button class="nxnov-ico" onclick="event.stopPropagation();nxNovEditar(\''+h(n.id)+'\')" title="Editar novedad" aria-label="Editar novedad"><i class="ti ti-edit"></i></button>':'')+
         (!auto&&n.abierta!==false?'<button class="nxnov-ico resolve" onclick="event.stopPropagation();nxNovResolver(\''+h(n.id)+'\')" title="Resolver" aria-label="Resolver"><i class="ti ti-check"></i></button>':'')+
       '</div></div>';
@@ -108,14 +130,18 @@
     var box=document.getElementById('tbCli');if(!box)return;
     ocultarControles(true);
     ajustarEtiqueta();
-    var base=cache.filter(function(n){return modo==='pendientes'?n.abierta!==false:n.abierta===false;});
+    var baseModo=cache.filter(enModo);
+    var base=baseModo.filter(coincideTipo);
     var list=base.filter(function(n){return filtro==='TODOS'||n.estado===filtro;});
     var op=abiertas();
+    var entradas=op.filter(function(n){return tipoNovedad(n)==='ENTRADA';}).length;
+    var salidas=op.filter(function(n){return tipoNovedad(n)==='SALIDA';}).length;
     var kg={POR_ACTIVAR:0,EN_GESTION:0,EN_RIESGO:0,POR_RETIRAR:0};
     op.forEach(function(n){if(kg[n.estado]!=null)kg[n.estado]++;});
     box.innerHTML='<div class="nxnov-shell">'+
-      '<section class="nxnov-hero"><div class="nxnov-head"><div class="nxnov-title"><h3>Novedades de clientes</h3><p>Lo que necesita atención antes de cerrar el ciclo. Los casos automáticos se actualizan con los datos reales del sistema.</p></div><button class="nxnov-new" onclick="nxNovNueva()"><i class="ti ti-plus"></i><span>Nueva novedad</span></button></div>'+
-      '<div class="nxnov-kpis"><div class="nxnov-kpi"><b>'+op.length+'</b><span>Pendientes</span></div><div class="nxnov-kpi"><b>'+kg.EN_GESTION+'</b><span>En gestión</span></div><div class="nxnov-kpi"><b>'+kg.EN_RIESGO+'</b><span>En riesgo</span></div><div class="nxnov-kpi"><b>'+kg.POR_RETIRAR+'</b><span>Por retirar</span></div></div></section>'+
+      '<section class="nxnov-hero"><div class="nxnov-head"><div class="nxnov-title"><h3>Novedades de clientes</h3><p>Entradas para activación y salidas por falta de pago. Salida se selecciona automáticamente solo al acumular 2 meses vencidos; la baja nunca se ejecuta sola.</p></div><button class="nxnov-new" onclick="nxNovNueva()"><i class="ti ti-plus"></i><span>Nueva novedad</span></button></div>'+
+      '<div class="nxnov-kpis"><div class="nxnov-kpi"><b>'+op.length+'</b><span>Pendientes</span></div><div class="nxnov-kpi"><b>'+entradas+'</b><span>Entradas</span></div><div class="nxnov-kpi"><b>'+salidas+'</b><span>Salidas</span></div><div class="nxnov-kpi"><b>'+kg.EN_RIESGO+'</b><span>En riesgo</span></div></div></section>'+
+      '<div class="nxnov-segments" role="tablist" aria-label="Tipo de novedad"><button class="nxnov-seg '+(tipo==='TODOS'?'on':'')+'" onclick="nxNovTipo(\'TODOS\')">Todas <span>'+conteoTipo('TODOS')+'</span></button><button class="nxnov-seg '+(tipo==='ENTRADA'?'on':'')+'" onclick="nxNovTipo(\'ENTRADA\')">Entrada <span>'+conteoTipo('ENTRADA')+'</span></button><button class="nxnov-seg '+(tipo==='SALIDA'?'on':'')+'" onclick="nxNovTipo(\'SALIDA\')">Salida <span>'+conteoTipo('SALIDA')+'</span></button></div>'+
       '<div class="nxnov-segments" role="tablist"><button class="nxnov-seg '+(modo==='pendientes'?'on':'')+'" onclick="nxNovModo(\'pendientes\')">Pendientes <span>'+abiertas().length+'</span></button><button class="nxnov-seg '+(modo==='resueltos'?'on':'')+'" onclick="nxNovModo(\'resueltos\')">Resueltos <span>'+cache.filter(function(n){return n.abierta===false;}).length+'</span></button></div>'+
       '<div class="nxnov-filterbar">'+
         filtroBtn('TODOS','Todos',base.length)+
@@ -187,12 +213,17 @@
   window.nxNovPorRetirar=async function(id){
     var n=cache.find(function(x){return String(x.id)===String(id);});if(!n)return;
     var c=cliente(n.cliente_id);if(!c)return;
+    if(tipoNovedad(n)!=='SALIDA'){
+      notify('info','Aún no corresponde a salida','Salida se habilita cuando el cliente acumula 2 meses vencidos.');
+      return;
+    }
     var existe=cache.some(function(x){return x.abierta!==false&&x.estado==='POR_RETIRAR'&&String(x.cliente_id)===String(c.id);});
     if(existe){notify('info','Ya está por retirar',c.nom);return;}
     try{await API.post('cliente_novedades',{cliente_id:c.id,agente_id:c.agente_id||null,estado:'POR_RETIRAR',motivo:'Retiro pendiente de confirmar',detalle:'Caso escalado desde seguimiento por falta de pago. La salida NO se ejecuta automáticamente.',origen:'MANUAL',prioridad:'ALTA',abierta:true,created_by_name:(window.sesion&&sesion.nom)||null});notify('ok','Marcado por retirar','La salida sigue pendiente de confirmación humana.');await cargar();}catch(e){notify('err','No se pudo marcar',e.message||String(e));}
   };
 
   window.nxNovModo=function(v){modo=v;filtro='TODOS';pintar();};
+  window.nxNovTipo=function(v){tipo=v;filtro='TODOS';pintar();};
   window.nxNovFiltro=function(v){filtro=v;pintar();};
   window.nxNovAbrir=function(){try{nav('clientes',null);}catch(e){}setTimeout(function(){switchCliTab('novedades');},180);};
 
@@ -216,7 +247,7 @@
       var orig=window.switchCliTab;
       var fn=function(tab){
         if(tab==='novedades'||tab==='proceso'){
-          activo=true;modo='pendientes';filtro='TODOS';ocultarControles(true);
+          activo=true;modo='pendientes';tipo='TODOS';filtro='TODOS';ocultarControles(true);
           var r=orig.call(this,'proceso');
           ajustarEtiqueta();
           setTimeout(function(){cargar({sync:true});},30);
