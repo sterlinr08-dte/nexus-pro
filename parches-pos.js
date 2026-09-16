@@ -7496,7 +7496,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO INVENTARIO (kardex / valoración / ajuste) estilo Odoo ──
   // ════════════════════════════════════════════════════════════════════
-  let _invMovs = [], _invProdSel = '', _invProdMovs = [];
+  let _invMovs = [], _invProdSel = '', _invProdMovs = [], _invDescuadres = [];
   let _almacenes = [], _stockAlmRows = {}, _almacenSel = '';
   const MOV_LBL = { venta: ['Venta', '#dc2626'], compra: ['Compra', '#16a34a'], devolucion: ['Devolución', '#6d28d9'], anulacion: ['Anulación', '#475569'], ajuste: ['Ajuste', '#ea580c'], apertura: ['Apertura', '#7c3aed'], transferencia: ['Transferencia', '#0891b2'] };
   function almPrincipal() { return _almacenes.find(a => a.es_principal) || _almacenes[0] || null; }
@@ -7517,10 +7517,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (r && r.id) { await getAPI().patch('pos_stock_almacen', 'id=eq.' + r.id, { stock: nuevo }); r.stock = nuevo; }
     else { const res = await getAPI().post('pos_stock_almacen', { producto_id: pid, almacen_id: aid, stock: nuevo }); const row = res && res[0]; _stockAlmRows[k] = { id: row ? row.id : null, stock: nuevo }; }
   }
-  // Registra un movimiento de inventario (best-effort, no bloquea la operación)
-  async function logMov(prod, tipo, cantidad, stockAnterior, stockNuevo, referencia, motivo) {
-    try { await getAPI().post('pos_inv_movimientos', { producto_id: prod.id, producto_nombre: prod.nombre, tipo: tipo, cantidad: cantidad, stock_anterior: stockAnterior, stock_nuevo: stockNuevo, referencia: referencia || null, motivo: motivo || null, created_by_name: (typeof nomAdmin === 'function' ? nomAdmin() : null) }); } catch (e) {}
-  }
   // ══════════════ KARDEX INTELIGENTE (Fase 5, Plan Maestro POS 3.0) ══════════════
   // "No modificar inventario directamente. Todo movimiento deberá provenir de: Compra, Venta,
   // Ajuste, Transferencia, Garantía, Taller, Producción. Con historial completo." — regla del
@@ -7535,32 +7531,41 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // piezas del inventario ni existe un módulo de producción dentro del POS — no se inventó uno
   // solo para tener dónde usar el tipo, mismo criterio de "no fingir" del resto del sistema).
   const MOV_TIPOS_VALIDOS = ['compra', 'venta', 'ajuste', 'transferencia', 'garantia', 'taller', 'produccion', 'devolucion', 'anulacion', 'apertura'];
-  // Mueve el stock TOTAL de un producto (y, si se pasa almacenId, también ESE almacén por el
-  // mismo delta — nunca al revés). delta positivo = entra, negativo = sale. `opts.piso0` (default
-  // true) evita bajar de 0; `opts.extra` son campos adicionales para fusionar en el mismo PATCH
-  // (ej. costo en una compra). Devuelve el stock nuevo, o null si el tipo no es válido.
+  // Mueve stock TOTAL + almacén + kardex dentro de UNA transacción en la base. El servidor
+  // bloquea la fila del producto, rechaza negativos y exige almacén cuando multi-almacén está
+  // activo. Así un corte de red nunca deja actualizado solo uno de los tres registros.
   async function moverStock(prod, tipo, delta, opts) {
     opts = opts || {};
     if (!prod || !prod.id) return null;
-    if (MOV_TIPOS_VALIDOS.indexOf(tipo) === -1) { console.warn('moverStock: tipo de movimiento inválido:', tipo); return null; }
+    if (MOV_TIPOS_VALIDOS.indexOf(tipo) === -1 || tipo === 'venta' || tipo === 'transferencia') { throw new Error('INVENTARIO_TIPO_INVALIDO'); }
     delta = Number(delta || 0);
-    const prev = Number(prod.stock || 0);
-    let ns = prev + delta;
-    if (opts.piso0 !== false) ns = Math.max(0, ns);
-    prod.stock = ns;
-    const body = Object.assign({ stock: ns }, opts.extra || null);
-    if (opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo')) prod.costo = opts.extra.costo;
-    try { await getAPI().patch('pos_productos', 'id=eq.' + prod.id, body); } catch (e) {}
-    logMov(prod, tipo, delta, prev, ns, opts.referencia || null, opts.motivo || null).catch(() => {});
-    if (_almacenes.length && opts.almacenId) {
-      try { await upsertStockAlm(prod.id, opts.almacenId, stockEnAlm(prod.id, opts.almacenId) + delta); } catch (e) {}
+    if (!delta) return Number(prod.stock || 0);
+    const aid = _almacenes.length ? (opts.almacenId || _almacenSel || (almPrincipal() && almPrincipal().id) || null) : null;
+    const r = await getAPI().post('rpc/pos_mover_stock_atomico', {
+      p_producto_id: prod.id,
+      p_tipo: tipo,
+      p_delta: delta,
+      p_almacen_id: aid,
+      p_referencia: opts.referencia || null,
+      p_motivo: opts.motivo || null,
+      p_costo: opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo') ? Number(opts.extra.costo) : null
+    });
+    const res = Array.isArray(r) ? r[0] : r;
+    if (!res || res.ok !== true) throw new Error('INVENTARIO_MOVIMIENTO_SIN_CONFIRMACION');
+    prod.stock = Number(res.stock_nuevo || 0);
+    if (opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo')) prod.costo = Number(opts.extra.costo);
+    if (aid) {
+      const k = stockKey(prod.id, aid);
+      if (!_stockAlmRows[k]) _stockAlmRows[k] = { id: null, stock: 0 };
+      _stockAlmRows[k].stock = Number(res.stock_almacen_nuevo || 0);
     }
-    return ns;
+    return prod.stock;
   }
   async function cargarInventario() {
     try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) {}
     try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; _stockAlmRows = {}; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) { _stockAlmRows = {}; }
+    try { _invDescuadres = await getAPI().post('rpc/pos_inventario_conciliacion', {}) || []; } catch (e) { _invDescuadres = []; }
   }
   function invProductosStock() { return (_prods || []).filter(p => p.tipo !== 'servicio'); }
   function movFila(m) {
@@ -7576,6 +7581,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const valPrecio = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.precio || 0), 0);
     const bajos = prods.filter(p => Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0);
     const sinStock = prods.filter(p => Number(p.stock || 0) <= 0);
+    const conciliacion = _invDescuadres.length
+      ? `<div class="nxRepCard" style="margin-bottom:12px;border-color:#fecaca;background:#fff7f7"><div class="nxRepTit" style="color:#b91c1c"><i class="ti ti-alert-triangle"></i> Conciliación pendiente (${_invDescuadres.length})</div><div style="font-size:11.5px;color:#7f1d1d">${_invDescuadres.map(x => `${esc(x.producto_nombre)}: global ${fmtN(x.stock_global)} · almacenes ${fmtN(x.stock_almacenes)}`).join('<br>')}</div></div>`
+      : (_almacenes.length ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin:0 0 10px"><i class="ti ti-circle-check"></i> Inventario conciliado: stock global = suma de almacenes</div>' : '');
     const kpi = (l, v, c) => kpiPf(l, v, c);
     const prodList = prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     let detalle = '';
@@ -7607,7 +7615,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
         <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
       </div>
-      ${almSec}${detalle}${bajosHTML}${recientes}</div>`;
+      ${conciliacion}${almSec}${detalle}${bajosHTML}${recientes}</div>`;
   }
   window.nxInvBuscar = function (txt) {
     const t = String(txt || '').toLowerCase();

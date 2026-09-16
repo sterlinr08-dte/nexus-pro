@@ -1,7 +1,16 @@
 {
-  "version": "58.38",
+  "version": "58.39",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.39",
+      "fecha": "2026-09-16",
+      "notas": [
+        "CORREGIDO: dos existencias históricas que una venta sin almacén dejó infladas en el Almacén Principal quedaron conciliadas con su stock global.",
+        "PROTEGIDO: ajustes, compras, devoluciones, anulaciones y aperturas actualizan stock global, almacén y kardex en una sola transacción; si una parte falla, no cambia ninguna.",
+        "CONTROL: Inventario muestra el estado de conciliación y el servidor exige almacén en toda venta cuando multi-almacén está activo. Sin cambios impositivos."
+      ]
+    },
     {
       "version": "58.38",
       "fecha": "2026-09-16",
