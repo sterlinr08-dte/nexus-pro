@@ -5944,6 +5944,13 @@
    NEXUS PRO - ICONOS SEMÁNTICOS COLOR 3D VIBRANTE
    Asigna colores automáticamente según el tipo de icono Tabler.
    Solo visual. No cambia lógica.
+   16-sep-2026: el box-shadow de cada color ahora es directamente el valor
+   aplanado (antes lo pisaba "ÍCONOS 2.5D", cargado después, con la misma
+   especificidad — ganaba por orden de carga). También se quitó de aquí el
+   @media(max-width:768px) que reducía la sombra en móvil: por el mismo
+   motivo de especificidad/orden, esa regla nunca llegó a aplicarse (2.5D
+   también le ganaba en móvil) — cero cambio visual real, solo se dejó de
+   fingir un comportamiento que no ocurría.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -6003,10 +6010,9 @@
         background: linear-gradient(145deg, #d1fae5, #6ee7b7) !important;
         color: #047857 !important;
         box-shadow:
-          0 10px 24px rgba(16,185,129,.30),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(5,150,105,.18) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ AZUL VIBRANTE - Info, Reportes, Datos, Gráficos ═══ */
@@ -6023,10 +6029,9 @@
         background: linear-gradient(145deg, #dbeafe, #93c5fd) !important;
         color: #1e40af !important;
         box-shadow:
-          0 10px 24px rgba(15,23,42,.30),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(15,23,42,.20) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ MORADO VIBRANTE - Personas, Agentes, Clientes, Equipo ═══ */
@@ -6040,10 +6045,9 @@
         background: linear-gradient(145deg, #ede9fe, #c4b5fd) !important;
         color: #6d28d9 !important;
         box-shadow:
-          0 10px 24px rgba(15,23,42,.30),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(15,23,42,.20) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ AZUL OSCURO - Bancos, Edificios, Cuentas ═══ */
@@ -6054,10 +6058,9 @@
         background: linear-gradient(145deg, #c7d2fe, #6366f1) !important;
         color: #ffffff !important;
         box-shadow:
-          0 10px 24px rgba(79,70,229,.40),
-          0 4px 10px rgba(15,23,42,.10),
-          inset 0 1px 0 rgba(255,255,255,.40),
-          inset 0 -2px 6px rgba(15,23,42,.30) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ NARANJA VIBRANTE - Pendiente, Atención, Trofeos ═══ */
@@ -6072,10 +6075,9 @@
         background: linear-gradient(145deg, #fed7aa, #fb923c) !important;
         color: #9a3412 !important;
         box-shadow:
-          0 10px 24px rgba(249,115,22,.32),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(234,88,12,.22) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ ROJO VIBRANTE - Eliminar, Anular, Rechazar, Negativo ═══ */
@@ -6089,10 +6091,9 @@
         background: linear-gradient(145deg, #fecaca, #f87171) !important;
         color: #991b1b !important;
         box-shadow:
-          0 10px 24px rgba(239,68,68,.32),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(220,38,38,.22) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ VERDE FLUORESCENTE - Confirmado, Check, OK ═══ */
@@ -6103,10 +6104,9 @@
         background: linear-gradient(145deg, #bbf7d0, #4ade80) !important;
         color: #14532d !important;
         box-shadow:
-          0 10px 24px rgba(34,197,94,.35),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(22,163,74,.25) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ CYAN VIBRANTE - Mensajes, Notificaciones, Solicitudes ═══ */
@@ -6120,10 +6120,9 @@
         background: linear-gradient(145deg, #cffafe, #67e8f9) !important;
         color: #155e75 !important;
         box-shadow:
-          0 10px 24px rgba(6,182,212,.32),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(8,145,178,.22) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ ROSA VIBRANTE - Pólizas, Documentos, Archivos ═══ */
@@ -6138,10 +6137,9 @@
         background: linear-gradient(145deg, #fce7f3, #f9a8d4) !important;
         color: #9d174d !important;
         box-shadow:
-          0 10px 24px rgba(236,72,153,.30),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(219,39,119,.22) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ AMARILLO VIBRANTE - Estrellas, Premium, Destacados ═══ */
@@ -6153,10 +6151,9 @@
         background: linear-gradient(145deg, #fef3c7, #fbbf24) !important;
         color: #78350f !important;
         box-shadow:
-          0 10px 24px rgba(245,158,11,.32),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(217,119,6,.25) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ TEAL - Transferencias, Movimientos, Cambios ═══ */
@@ -6168,10 +6165,9 @@
         background: linear-gradient(145deg, #ccfbf1, #5eead4) !important;
         color: #115e59 !important;
         box-shadow:
-          0 10px 24px rgba(20,184,166,.30),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(13,148,136,.20) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ GRIS OSCURO - Configuración, Sistema, Engranaje ═══ */
@@ -6183,10 +6179,9 @@
         background: linear-gradient(145deg, #cbd5e1, #475569) !important;
         color: #ffffff !important;
         box-shadow:
-          0 10px 24px rgba(71,85,105,.32),
-          0 4px 10px rgba(15,23,42,.10),
-          inset 0 1px 0 rgba(255,255,255,.40),
-          inset 0 -2px 6px rgba(51,65,85,.30) !important;
+          0 1px 2px rgba(15,23,42,.10),
+          0 2px 6px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.5) !important;
       }
       
       /* ═══ HOVER 3D LIFT (todos los iconos coloreados) ═══ */
@@ -6198,18 +6193,6 @@
         filter: brightness(1.05);
       }
       
-      /* ═══ MÓVIL: mantener color pero reducir profundidad de sombra ═══ */
-      @media (max-width: 768px) {
-        .kpi i[class*="ti-"],
-        .qa i[class*="ti-"],
-        .sm i[class*="ti-"],
-        .nc i[class*="ti-"] {
-          box-shadow:
-            0 6px 14px rgba(15,23,42,.18),
-            0 2px 5px rgba(15,23,42,.06),
-            inset 0 1px 0 rgba(255,255,255,.85) !important;
-        }
-      }
 
       /* ───────────────────────────────────────────────────────────────
          El CUADRO de color (fondo + sombra) queda SOLO para los íconos
@@ -6234,9 +6217,12 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - ÍCONOS 2.5D (aplana el 3D)
-   Quita el glow de color grande y el brillo glossy fuerte; deja el color +
-   una profundidad SUTIL (2.5D). Se inyecta DESPUÉS del sistema 3D para ganar.
+   NEXUS PRO - BUSCADOR DE ARTÍCULOS (chevron + reveal)
+   16-sep-2026: el aplanado 2.5D de los iconos semánticos que vivía aquí se
+   fusionó dentro de "ICONOS SEMÁNTICOS COLOR 3D VIBRANTE" (mismo box-shadow
+   final, un solo lugar) — este bloque quedó solo con lo que nunca fue parte
+   de ese sistema: el chevron del buscador de artículos y su animación de
+   entrada. Cero cambio visual.
    ════════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
@@ -6246,10 +6232,6 @@
     var prev = document.getElementById('nx-iconos-25d'); if (prev) prev.remove();
     var st = document.createElement('style'); st.id = 'nx-iconos-25d';
     st.textContent = [
-      /* Aplana TODOS los cuadros de ícono semántico a 2.5D: sombra suave + leve brillo, sin glow pesado */
-      '.kpi i[class*="ti-"],.qa i[class*="ti-"],.sm i[class*="ti-"],.nc i[class*="ti-"],td i[class*="ti-"],.tw i[class*="ti-"]{',
-      'box-shadow:0 1px 2px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.5)!important;',
-      '}',
       /* Chevron del buscador de artículos: círculo pequeño y limpio (no el gran círculo 3D) */
       '.nxPpkChev{width:26px!important;height:26px!important;min-width:26px!important;font-size:14px!important;border-radius:8px!important;background:#f1f5f9!important;color:#94a3b8!important;box-shadow:none!important;display:inline-flex!important;align-items:center;justify-content:center;padding:0!important;transition:transform .18s ease,background .15s,color .15s}',
       '.nxPpkWrap.on .nxPpkChev{background:#ede9fe!important;color:#6d28d9!important}',
@@ -11911,7 +11893,13 @@
   // en v53.8 el badge cambió de nombre a .lshield. .lsec-ic (el ícono del panel "Seguridad de
   // nivel empresarial") se sacó de esta lista el 1-ago-2026 al quitar ese panel por completo
   // del login (pedido del dueño) — el selector se quedaba huérfano, sin nada que proteger.
-  var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,' +
+  // .sm/.nc (16-sep-2026): faltaban en esta lista aunque SÍ están cubiertos por la paleta
+  // semántica de "ICONOS SEMÁNTICOS COLOR 3D VIBRANTE" (selectores .kpi/.qa/.sm/.nc). Como este
+  // sistema pinta con estilo inline + !important, le ganaba a esa paleta con !important de hoja
+  // de estilos sin importar el orden de carga — cualquier icono dentro de .sm/.nc que no
+  // estuviera en la lista de nombres conocidos de esa paleta perdía su color semántico y recibía
+  // en su lugar el color aleatorio del hash. Detectado al auditar el sistema de iconos completo.
+  var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,.sm,.nc,' +
                  '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.sb-av,.nx-fab,' +
                  '.lshield';
   function hue(name){
