@@ -1,7 +1,43 @@
 {
-  "version": "58.36",
+  "version": "58.40",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.40",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: una compra, sus artículos, los IMEI recibidos y el aumento de inventario se confirman juntos o se revierten juntos.",
+        "PROTEGIDO: reintentar una compra por pérdida de conexión no vuelve a duplicarla ni aumenta dos veces el stock.",
+        "PROTEGIDO: eliminar una compra revierte el inventario en una sola transacción y se bloquea si uno de sus IMEI ya fue reservado o vendido."
+      ]
+    },
+    {
+      "version": "58.39",
+      "fecha": "2026-09-16",
+      "notas": [
+        "CORREGIDO: dos existencias históricas que una venta sin almacén dejó infladas en el Almacén Principal quedaron conciliadas con su stock global.",
+        "PROTEGIDO: ajustes, compras, devoluciones, anulaciones y aperturas actualizan stock global, almacén y kardex en una sola transacción; si una parte falla, no cambia ninguna.",
+        "CONTROL: Inventario muestra el estado de conciliación y el servidor exige almacén en toda venta cuando multi-almacén está activo. Sin cambios impositivos."
+      ]
+    },
+    {
+      "version": "58.38",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: cada usuario trabaja con su propia caja abierta; una venta o abono no puede entrar por accidente en la caja de otro cajero.",
+        "PROTEGIDO: apertura, movimientos y cierre validan en el servidor quién es el dueño de la caja.",
+        "MEJORADO: el efectivo esperado y el descuadre del cierre se recalculan desde ventas, abonos y movimientos guardados, no desde cifras enviadas por la pantalla."
+      ]
+    },
+    {
+      "version": "58.37",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: una venta, sus artículos, los IMEI seleccionados y el descuento de inventario ahora se confirman juntos en una sola operación.",
+        "PROTEGIDO: un doble toque o un reintento por pérdida de internet reutiliza la misma venta y no vuelve a cobrar ni a descontar existencias.",
+        "SIN CAMBIOS: prefacturas continúan sin afectar inventario, caja ni contabilidad hasta convertirse en factura. La parte impositiva no se modificó."
+      ]
+    },
     {
       "version": "58.36",
       "fecha": "2026-09-11",

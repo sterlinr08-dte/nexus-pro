@@ -106,14 +106,20 @@ Verificado con SQL directo contra producción al escribir este documento (no lis
 Ninguno por ahora — el último bloque pendiente (2C-2, `seq_poliza`) se cerró el 22-ago-2026 (ver
 tabla de arriba y `docs/bitacora/2026-08-22-*-claude-bloque2c2-cierre.md`).
 
-### Sin tocar, documentado como riesgo conocido (no bloqueante hoy)
+### `nexus-smart` — cerrado en producción y fuente recuperada
 
-- **`nexus-smart`** (Edge Function del chatbot "Nexus Smart IA" del Dashboard de Seguros): tiene la
-  clave de Anthropic **hardcodeada en texto plano** dentro del código de la función (no
-  `Deno.env.get()`) y `verify_jwt:false` (se puede invocar sin sesión). Usa `SERVICE_ROLE_KEY`
-  (salta RLS), pero está acotada a datos de Seguros y no es multi-tenant. Documentado desde hace
-  tiempo en `CLAUDE.md`, nunca cerrado — mismo patrón que ya se cerró en otras funciones (§2.5), solo
-  que aquí no se ha hecho todavía.
+- La función en producción ya no conserva la clave de Anthropic en el código: usa el secreto
+  `ANTHROPIC_API_KEY` y rechaza llamadas sin un usuario real con rol administrador. Las pruebas de
+  solo lectura del 16-sep-2026 confirmaron HTTP 401 tanto sin credencial como usando la clave pública
+  `anon` como Bearer.
+- El código de la Edge Function no estaba versionado en el repositorio. Se recuperó desde la versión
+  8 activa y se añadió a `supabase/functions/nexus-smart/index.ts` en la rama
+  `chatgpt/security-nexus-smart-source`, con endurecimiento adicional pendiente de publicación:
+  usuario/perfil activos, pertenencia obligatoria a la organización `nexus-pro`, rechazo del
+  `service_role` como sesión interactiva, límites de entrada, timeout, fallos de consulta fail-closed
+  y transferencias solo `aceptada`.
+- Sigue siendo responsabilidad del dueño rotar la clave antigua de Anthropic si no se ha rotado desde
+  su exposición histórica. El valor del secreto nunca se extrae ni se guarda en el repositorio.
 
 ---
 
@@ -163,5 +169,7 @@ aplicar — lo que sigue son las 2 piezas de §5/§4 que dependen de una acción
 tipo de migración:
 
 1. Activar la protección de contraseñas filtradas en el panel de Supabase Auth (acción del dueño).
-2. Mover la clave de Anthropic de `nexus-smart` a `Deno.env.get()` + decidir si necesita
-   `verify_jwt:true` (mismo patrón ya usado para cerrar el reporte diario por correo).
+2. Revisar y publicar el endurecimiento versionado de `nexus-smart`; después confirmar una llamada
+   exitosa con una sesión real de administrador y rotar la clave histórica de Anthropic si sigue
+   pendiente. `verify_jwt:false` se conserva de forma intencional porque el candado efectivo vive
+   dentro de la función y distingue un usuario real de la clave pública `anon`.

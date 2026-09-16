@@ -39,12 +39,14 @@
      paréntesis/bloques sin cerrar al agregar una nueva capa visual. */
   var pasos=[
     ['js','parches-seguros-base.js'],
+    ['js','parches-excepciones.js'],
     ['js','parches-crm-seguros.js'],
     ['css','parches-crm-seguros-v2.css'],
     ['js','parches-crm-entrada.js'],
     ['js','parches-crm-operativo.js'],
     ['js','parches-cumpleanos-clientes.js'],
     ['css','parches-clientes-novedades.css'],
+    ['js','parches-clientes-novedades-compat.js'],
     ['js','parches-clientes-novedades.js'],
     ['js','parches-whatsapp-inbox.js'],
     ['js','parches-whatsapp-visual.js'],

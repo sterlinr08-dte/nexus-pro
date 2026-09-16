@@ -28,10 +28,26 @@
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
   function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  function authUidPOS() {
+    try {
+      const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
+      const b = p.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))).sub || null;
+    } catch (_) { return null; }
+  }
+  function cajaQS(estado, limite) {
+    const uid = authUidPOS() || '00000000-0000-0000-0000-000000000000';
+    const orden = estado === 'cerrada' ? 'cierre.desc' : 'apertura.desc';
+    return 'select=*&estado=eq.' + estado + '&usuario_id=eq.' + encodeURIComponent(uid) + '&order=' + orden + '&limit=' + (limite || 1);
+  }
 
   let _cats = [], _prods = [], _ventas = [], _clientes = [];
   let _fiadoByCli = {}, _abonosByCli = {};
   let _cart = [];
+  // Idempotencia del núcleo de venta: se conserva mientras el resultado sea ambiguo
+  // (por ejemplo, se cortó internet después de confirmar en el servidor) y solo se
+  // regenera tras recibir una respuesta exitosa.
+  let _ventaOperacionId = null;
   let _posTab = 'inicio';
   let _posCat = 'todas';
   let _factCli = '';
@@ -104,7 +120,7 @@
   let _prefHist = []; // historial COMPLETO de prefacturas (abierta/facturada/anulada)
   let _phQ = '', _phDesde = '', _phHasta = '', _phEstado = 'todas', _phSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
-  let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
+  let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [], _compraOperacionId = null;
   let _compraVista = 'lista'; // 'lista' = historial de compras · 'nueva' = pantalla completa de nueva compra
   let _cxpByProv = {}, _pagosProvByProv = {};
   // ── Contabilidad ──
@@ -132,7 +148,7 @@
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc'),
-      g('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'),
+      g('pos_cajas', cajaQS('abierta', 1)),
       g('pos_config', 'select=*&limit=1'),
       g('pos_ncf_secuencias', 'select=*&order=tipo.asc'),
       g('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -427,7 +443,7 @@
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'entidades') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {} }
     if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
-    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
+    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
@@ -2744,7 +2760,7 @@
     // `_caja` se carga una vez al abrir el POS, así que antes de bloquear se re-consulta la base
     // (por si la abrieron desde otro dispositivo o en otra pestaña).
     if (c.efe > 0 && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) {
         toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(c.efe) + ' en efectivo — si no, ese dinero no aparece en ningún arqueo');
         return;
@@ -2825,19 +2841,15 @@
       tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
       vendedor_id: vendId, vendedor_nombre: vendNom,
       almacen_id: (_almacenes.length && _almacenSel) ? _almacenSel : null,
-      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin(),
-      // Candado de cutover (revisión de ChatGPT, 2026-08-09 11:38 — 2da vuelta): el DEFAULT de
-      // la columna se queda en `true` PARA SIEMPRE (ver INVENTARIO_VENTA_ATOMICO_migracion.sql,
-      // ya no cambia a false). Es ESTE INSERT — el único camino real que crea una venta por el
-      // flujo NUEVO (confirmado por grep: es la única llamada POST a pos_ventas de todo el
-      // archivo) — el que la marca false EXPLÍCITO, para que la RPC la procese después. Cualquier
-      // otro cliente/pestaña con código viejo en caché (que no conoce este campo) sigue naciendo
-      // en `true` por el default — nunca puede quedar en un estado ambiguo entre "ya se descontó
-      // por moverStock" y "pendiente de la RPC", sin depender de en qué orden se desplegaron el
-      // SQL y el JS.
-      inventario_aplicado: false
+      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     if (_facFecha) body.fecha = _facFecha;
+    const items = _cart.map(it => {
+      const _p = _prods.find(x => String(x.id) === String(it.producto_id));
+      const gd = _p ? Number(_p.garantia_dias || 0) : 0;
+      const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
+      return { producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
+    });
     // Candado atómico de IMEI: reservar ANTES de crear la venta. Si el carrito no tiene
     // artículos con serial, reservarImeisCart() devuelve null y el flujo sigue igual de
     // siempre. Si algún IMEI ya no está disponible, reservarImeisCart() ya avisó por toast
@@ -2850,31 +2862,25 @@
       return;
     }
     try {
-      const r = await getAPI().post('pos_ventas', body);
-      const venta = (r && r[0]) || null;
-      if (!venta) throw new Error('No se pudo registrar la venta');
-      _imeiVentaCreada = true;
-      // A partir de aquí la venta YA EXISTE. Cualquier fallo de la confirmación de IMEI es
-      // secundario — REGLAMENTOS §2 regla 10: una venta cobrada nunca se revierte por un
-      // fallo secundario. Nunca throw desde este bloque; nunca liberar la reserva aquí
-      // (fijarReservaImeisAVenta la deja ligada a venta_id para que el TTL no la libere sola).
-      if (_imeiReserva) {
-        const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
-        try {
-          const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id, esperados);
-          if (confirmados === esperados) {
-            _imeiReserva = null;
-          } else {
-            await fijarReservaImeisAVenta(_imeiReserva, venta.id);
-            try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — esperados ' + esperados + ', confirmados ' + confirmados, 'POS'); } catch (e2) {}
-            toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
-          }
-        } catch (e) {
-          const fijada = await fijarReservaImeisAVenta(_imeiReserva, venta.id);
-          try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e) + (fijada ? ' · reserva fijada a la venta' : ' · NO se pudo fijar la reserva'), 'POS'); } catch (e2) {}
-          toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
-        }
+      if (!_ventaOperacionId) {
+        try { _ventaOperacionId = crypto.randomUUID(); }
+        catch (_) { _ventaOperacionId = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); }
       }
+      const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
+      const rCore = await getAPI().post('rpc/pos_registrar_venta_atomica', {
+        p_operacion_id: _ventaOperacionId,
+        p_venta: body,
+        p_items: items,
+        p_reserva_token: _imeiReserva,
+        p_imei_esperados: esperados
+      });
+      const core = Array.isArray(rCore) ? rCore[0] : rCore;
+      const venta = core && core.venta;
+      const itemsInsertados = (core && core.items) || [];
+      if (!core || core.ok !== true || !venta || itemsInsertados.length !== items.length) throw new Error('VENTA_ATOMICA_SIN_CONFIRMACION');
+      _imeiVentaCreada = true;
+      _imeiReserva = null;
+      _ventaOperacionId = null;
       // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
       try {
         const finChk = document.getElementById('finChk');
@@ -2895,22 +2901,6 @@
           }
         }
       } catch (eFin) { console.error('financiamiento:', eFin); }
-      const items = _cart.map(it => {
-        const _p = _prods.find(x => String(x.id) === String(it.producto_id));
-        const gd = _p ? Number(_p.garantia_dias || 0) : 0;
-        const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
-        return { venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
-      });
-      let itemsInsertados = null;
-      try { itemsInsertados = await getAPI().post('pos_venta_items', items); } catch (e) {}
-      // Fase 9 (Automatizaciones): el INSERT de arriba es best-effort a propósito (nunca debe revertir
-      // una venta ya cobrada) — pero si de verdad no se guardaron todas las líneas, eso degrada en
-      // silencio el resto de la cadena automática de esta factura (Reportes/Utilidad la subestiman,
-      // Kardex/garantías quedan incompletos). En vez de bloquear o reintentar (arriesgaría duplicar o sí
-      // bloquear un cobro ya hecho), se deja un rastro real en Auditoría para que no pase inadvertido.
-      if (!itemsInsertados || itemsInsertados.length !== items.length) {
-        try { window.logAudit && window.logAudit('POS_VENTA_ITEMS_INCOMPLETOS', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — se guardaron ' + ((itemsInsertados && itemsInsertados.length) || 0) + ' de ' + items.length + ' línea(s)', 'POS'); } catch (e2) {}
-      }
       // Motor de documentos: registrar la factura (con su origen si venía de cotización/prefactura)
       // y una garantía por cada línea que la trae — best-effort, nunca bloquea el cobro.
       try {
@@ -2962,23 +2952,6 @@
       try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
-      // descontar stock: RPC atómica del servidor (pos_aplicar_inventario_venta), no moverStock().
-      // moverStock() leía prod.stock del array en memoria (_prods, posiblemente desactualizado) y
-      // escribía un valor ABSOLUTO — entre 2 ventas concurrentes del mismo producto, una podía perder
-      // su descuento sin dejar rastro (lost-update). La RPC decrementa de forma RELATIVA
-      // (stock = stock - x con x <= stock en el WHERE) leyendo TODO del lado del servidor por
-      // venta_id — nunca del carrito — y es todo-o-nada por venta completa: si algo no alcanza, no
-      // baja NADA (REGLAMENTOS §1: nunca stock negativo) y la venta YA COBRADA se queda tal cual
-      // (REGLAMENTOS §2 regla 10 — este catch NUNCA debe bloquear ni revertir el cobro ya hecho).
-      try {
-        const rInv = await getAPI().post('rpc/pos_aplicar_inventario_venta', { p_venta_id: venta.id });
-        const resInv = Array.isArray(rInv) ? rInv[0] : rInv;
-        if (!resInv || resInv.ok !== true) throw new Error('INVENTARIO_RPC_SIN_OK');
-      } catch (eInv) {
-        const msgInv = String(eInv && eInv.message || eInv);
-        try { window.logAudit && window.logAudit('POS_VENTA_INVENTARIO_PENDIENTE', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — ' + msgInv, 'POS'); } catch (e2) {}
-        toast('warn', 'Venta realizada — inventario pendiente de revisión', 'El cobro se registró; el inventario de esta venta necesita revisión administrativa.');
-      }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
       if (_ncAplicar.length) { for (const n of _ncAplicar) { getAPI().patch('pos_devoluciones', 'id=eq.' + n.id, { estado: 'aplicada' }).catch(() => {}); const nm = (_notasCred || []).find(x => String(x.id) === String(n.id)); if (nm) nm.estado = 'aplicada'; } }
@@ -6073,7 +6046,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     // REGLAMENTO DE COBRO regla 4: un abono en efectivo entra a una caja abierta o no entra.
     const _met = val('posAbMet') || 'Efectivo';
     if (/efectivo/i.test(_met) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
     }
     try {
@@ -6145,12 +6118,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // compArt y todos los campos se mantienen, así que nxPosGuardarCompra no cambia.
   window.nxPosNuevaCompra = function () {
     _compraItems = [];
+    _compraOperacionId = null;
     cerrarModal('nxPosCompra'); // por si quedó un overlay viejo de una versión anterior
     _compraVista = 'nueva';
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxPosCompraCancelar = function () {
     _compraItems = [];
+    _compraOperacionId = null;
     _compraVista = 'lista';
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
@@ -6389,14 +6364,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const empNom = empId ? ((_clientes.find(x => String(x.id) === String(empId)) || {}).nombre || null) : null;
     const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
     try {
-      const r = await getAPI().post('pos_compras', body);
-      const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
-      const items = _compraItems.map(it => ({ compra_id: compra.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, costo: it.costo, importe: Math.round(it.costo * it.cantidad) }));
-      try { await getAPI().post('pos_compra_items', items); } catch (e) {}
-      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { moverStock(p, 'compra', Number(it.cantidad), { referencia: (compra.numero || ''), motivo: 'Compra', almacenId: almCompra, extra: { costo: it.costo } }).catch(() => {}); } } catch (e) {} }
+      if (!_compraOperacionId) {
+        try { _compraOperacionId = crypto.randomUUID(); }
+        catch (_) { _compraOperacionId = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); }
+      }
+      const items = _compraItems.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, cantidad: Number(it.cantidad), costo: Number(it.costo), importe: Math.round(it.costo * it.cantidad), imeis: it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [] }));
+      const r = await getAPI().post('rpc/pos_registrar_compra_atomica', { p_operacion_id: _compraOperacionId, p_compra: body, p_items: items });
+      const core = Array.isArray(r) ? r[0] : r;
+      const compra = core && core.compra; if (!core || core.ok !== true || !compra) throw new Error('COMPRA_ATOMICA_SIN_CONFIRMACION');
+      _compraOperacionId = null;
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
-      // Registrar IMEI/seriales de los equipos comprados (entran como disponibles, ligados a esta compra)
-      try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, compra_id: compra.id, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
       try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
       _compraItems = []; _compraVista = 'lista';
@@ -6452,14 +6429,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
     const compra = (_compras || []).find(x => String(x.id) === String(id));
     try {
-      // revertir stock de cada artículo (total + almacén + kardex)
-      try {
-        const items = await getAPI().get('pos_compra_items', 'select=producto_id,cantidad&compra_id=eq.' + id) || [];
-        const aid = (compra && compra.almacen_id) || (_almacenes.length && almPrincipal() && almPrincipal().id) || null;
-        for (const it of items) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { moverStock(p, 'ajuste', -Number(it.cantidad || 0), { referencia: 'Compra eliminada', motivo: 'Reversa de compra', almacenId: aid }).catch(() => {}); } }
-      } catch (e) {}
+      await getAPI().post('rpc/pos_eliminar_compra_atomica', { p_compra_id: id });
       await delAsientoOrigen('compra', id);
-      await getAPI().del('pos_compras', 'id=eq.' + id);
       toast('ok', 'Compra eliminada', 'Stock y contabilidad revertidos');
       cerrarModal('nxPosCompraDet'); await cargarComprasTab(); await cargarPOS(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
@@ -6607,8 +6578,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPosAbrirCaja = async function () {
     const ini = parseMoney(val('cajaIni'));
     try {
-      const r = await getAPI().post('pos_cajas', { monto_inicial: ini, estado: 'abierta', created_by_name: nomAdmin() });
-      _caja = (r && r[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null;
+      const r = await getAPI().post('rpc/pos_abrir_mi_caja', { p_monto_inicial: ini });
+      _caja = Array.isArray(r) ? r[0] : r; _cajaTot = _caja ? await totalesCaja(_caja) : null;
       toast('ok', 'Caja abierta', fmt(ini));
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
@@ -6629,8 +6600,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const monto = parseMoney(val('movMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
     const concepto = (val('movConc') || '').trim() || null;
     try {
-      const rmv = await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: concepto, monto: monto, created_by_name: nomAdmin() });
-      const movId = rmv && rmv[0] && rmv[0].id;
+      const rmv = await getAPI().post('rpc/pos_registrar_movimiento_mi_caja', { p_caja_id: _caja.id, p_tipo: tipo, p_concepto: concepto, p_monto: monto });
+      const mov = Array.isArray(rmv) ? rmv[0] : rmv; const movId = mov && mov.id;
       // Asiento: entrada → Debe Caja / Haber Otros ingresos · salida → Debe Gastos varios / Haber Caja
       try {
         const byc = await ctasMap();
@@ -6646,7 +6617,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosDelMov = async function (id) {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    try { await getAPI().del('pos_caja_movimientos', 'id=eq.' + id); await delAsientoOrigen('caja_mov', id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().post('rpc/pos_eliminar_movimiento_mi_caja', { p_movimiento_id: id }); await delAsientoOrigen('caja_mov', id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosCerrarCaja = function () {
     if (!_caja || !_cajaTot) return;
@@ -6681,10 +6652,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosConfirmarCierre = async function () {
     if (!_caja || !_cajaTot) return;
-    const tt = _cajaTot; const contado = parseMoney(val('cierreContado')); const desc = contado - tt.esperado;
-    const body = { estado: 'cerrada', cierre: new Date().toISOString(), ventas_efectivo: tt.efe, ventas_tarjeta: tt.tar, ventas_transferencia: tt.tra, ventas_credito: tt.cre, abonos_efectivo: tt.abEfe, entradas: tt.ent, salidas: tt.sal, efectivo_esperado: tt.esperado, efectivo_contado: contado, descuadre: desc, notas: (val('cierreNotas') || '').trim() || null };
+    const tt = _cajaTot; const contado = parseMoney(val('cierreContado'));
     try {
-      await getAPI().patch('pos_cajas', 'id=eq.' + _caja.id, body);
+      const rc = await getAPI().post('rpc/pos_cerrar_mi_caja', { p_caja_id: _caja.id, p_efectivo_contado: contado, p_notas: (val('cierreNotas') || '').trim() || null });
+      const cerrada = Array.isArray(rc) ? rc[0] : rc;
+      if (!cerrada || cerrada.estado !== 'cerrada') throw new Error('CAJA_CIERRE_SIN_CONFIRMACION');
+      const desc = Number(cerrada.descuadre || 0);
       // Asiento del descuadre: faltante → Debe Gastos varios / Haber Caja · sobrante → Debe Caja / Haber Otros ingresos
       try {
         if (Math.round(desc) !== 0) {
@@ -6696,12 +6669,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           }
         }
       } catch (e) {}
-      const cerrada = Object.assign({}, _caja, body, { monto_inicial: _caja.monto_inicial });
       toast('ok', 'Caja cerrada', 'Descuadre ' + (desc > 0 ? '+' : '') + fmt(desc));
       cerrarModal('nxPosCierre');
       const movs = (tt.movs || []).slice();
       _caja = null; _cajaTot = null;
-      try { _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {}
+      try { _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {}
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
       imprimirCierre(cerrada, movs);
     } catch (e) { toast('err', 'No se pudo cerrar', String(e && e.message || e)); }
@@ -7522,7 +7494,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO INVENTARIO (kardex / valoración / ajuste) estilo Odoo ──
   // ════════════════════════════════════════════════════════════════════
-  let _invMovs = [], _invProdSel = '', _invProdMovs = [];
+  let _invMovs = [], _invProdSel = '', _invProdMovs = [], _invDescuadres = [];
   let _almacenes = [], _stockAlmRows = {}, _almacenSel = '';
   const MOV_LBL = { venta: ['Venta', '#dc2626'], compra: ['Compra', '#16a34a'], devolucion: ['Devolución', '#6d28d9'], anulacion: ['Anulación', '#475569'], ajuste: ['Ajuste', '#ea580c'], apertura: ['Apertura', '#7c3aed'], transferencia: ['Transferencia', '#0891b2'] };
   function almPrincipal() { return _almacenes.find(a => a.es_principal) || _almacenes[0] || null; }
@@ -7543,10 +7515,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (r && r.id) { await getAPI().patch('pos_stock_almacen', 'id=eq.' + r.id, { stock: nuevo }); r.stock = nuevo; }
     else { const res = await getAPI().post('pos_stock_almacen', { producto_id: pid, almacen_id: aid, stock: nuevo }); const row = res && res[0]; _stockAlmRows[k] = { id: row ? row.id : null, stock: nuevo }; }
   }
-  // Registra un movimiento de inventario (best-effort, no bloquea la operación)
-  async function logMov(prod, tipo, cantidad, stockAnterior, stockNuevo, referencia, motivo) {
-    try { await getAPI().post('pos_inv_movimientos', { producto_id: prod.id, producto_nombre: prod.nombre, tipo: tipo, cantidad: cantidad, stock_anterior: stockAnterior, stock_nuevo: stockNuevo, referencia: referencia || null, motivo: motivo || null, created_by_name: (typeof nomAdmin === 'function' ? nomAdmin() : null) }); } catch (e) {}
-  }
   // ══════════════ KARDEX INTELIGENTE (Fase 5, Plan Maestro POS 3.0) ══════════════
   // "No modificar inventario directamente. Todo movimiento deberá provenir de: Compra, Venta,
   // Ajuste, Transferencia, Garantía, Taller, Producción. Con historial completo." — regla del
@@ -7561,32 +7529,41 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // piezas del inventario ni existe un módulo de producción dentro del POS — no se inventó uno
   // solo para tener dónde usar el tipo, mismo criterio de "no fingir" del resto del sistema).
   const MOV_TIPOS_VALIDOS = ['compra', 'venta', 'ajuste', 'transferencia', 'garantia', 'taller', 'produccion', 'devolucion', 'anulacion', 'apertura'];
-  // Mueve el stock TOTAL de un producto (y, si se pasa almacenId, también ESE almacén por el
-  // mismo delta — nunca al revés). delta positivo = entra, negativo = sale. `opts.piso0` (default
-  // true) evita bajar de 0; `opts.extra` son campos adicionales para fusionar en el mismo PATCH
-  // (ej. costo en una compra). Devuelve el stock nuevo, o null si el tipo no es válido.
+  // Mueve stock TOTAL + almacén + kardex dentro de UNA transacción en la base. El servidor
+  // bloquea la fila del producto, rechaza negativos y exige almacén cuando multi-almacén está
+  // activo. Así un corte de red nunca deja actualizado solo uno de los tres registros.
   async function moverStock(prod, tipo, delta, opts) {
     opts = opts || {};
     if (!prod || !prod.id) return null;
-    if (MOV_TIPOS_VALIDOS.indexOf(tipo) === -1) { console.warn('moverStock: tipo de movimiento inválido:', tipo); return null; }
+    if (MOV_TIPOS_VALIDOS.indexOf(tipo) === -1 || tipo === 'venta' || tipo === 'transferencia') { throw new Error('INVENTARIO_TIPO_INVALIDO'); }
     delta = Number(delta || 0);
-    const prev = Number(prod.stock || 0);
-    let ns = prev + delta;
-    if (opts.piso0 !== false) ns = Math.max(0, ns);
-    prod.stock = ns;
-    const body = Object.assign({ stock: ns }, opts.extra || null);
-    if (opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo')) prod.costo = opts.extra.costo;
-    try { await getAPI().patch('pos_productos', 'id=eq.' + prod.id, body); } catch (e) {}
-    logMov(prod, tipo, delta, prev, ns, opts.referencia || null, opts.motivo || null).catch(() => {});
-    if (_almacenes.length && opts.almacenId) {
-      try { await upsertStockAlm(prod.id, opts.almacenId, stockEnAlm(prod.id, opts.almacenId) + delta); } catch (e) {}
+    if (!delta) return Number(prod.stock || 0);
+    const aid = _almacenes.length ? (opts.almacenId || _almacenSel || (almPrincipal() && almPrincipal().id) || null) : null;
+    const r = await getAPI().post('rpc/pos_mover_stock_atomico', {
+      p_producto_id: prod.id,
+      p_tipo: tipo,
+      p_delta: delta,
+      p_almacen_id: aid,
+      p_referencia: opts.referencia || null,
+      p_motivo: opts.motivo || null,
+      p_costo: opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo') ? Number(opts.extra.costo) : null
+    });
+    const res = Array.isArray(r) ? r[0] : r;
+    if (!res || res.ok !== true) throw new Error('INVENTARIO_MOVIMIENTO_SIN_CONFIRMACION');
+    prod.stock = Number(res.stock_nuevo || 0);
+    if (opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo')) prod.costo = Number(opts.extra.costo);
+    if (aid) {
+      const k = stockKey(prod.id, aid);
+      if (!_stockAlmRows[k]) _stockAlmRows[k] = { id: null, stock: 0 };
+      _stockAlmRows[k].stock = Number(res.stock_almacen_nuevo || 0);
     }
-    return ns;
+    return prod.stock;
   }
   async function cargarInventario() {
     try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) {}
     try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; _stockAlmRows = {}; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) { _stockAlmRows = {}; }
+    try { _invDescuadres = await getAPI().post('rpc/pos_inventario_conciliacion', {}) || []; } catch (e) { _invDescuadres = []; }
   }
   function invProductosStock() { return (_prods || []).filter(p => p.tipo !== 'servicio'); }
   function movFila(m) {
@@ -7602,6 +7579,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const valPrecio = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.precio || 0), 0);
     const bajos = prods.filter(p => Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0);
     const sinStock = prods.filter(p => Number(p.stock || 0) <= 0);
+    const conciliacion = _invDescuadres.length
+      ? `<div class="nxRepCard" style="margin-bottom:12px;border-color:#fecaca;background:#fff7f7"><div class="nxRepTit" style="color:#b91c1c"><i class="ti ti-alert-triangle"></i> Conciliación pendiente (${_invDescuadres.length})</div><div style="font-size:11.5px;color:#7f1d1d">${_invDescuadres.map(x => `${esc(x.producto_nombre)}: global ${fmtN(x.stock_global)} · almacenes ${fmtN(x.stock_almacenes)}`).join('<br>')}</div></div>`
+      : (_almacenes.length ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin:0 0 10px"><i class="ti ti-circle-check"></i> Inventario conciliado: stock global = suma de almacenes</div>' : '');
     const kpi = (l, v, c) => kpiPf(l, v, c);
     const prodList = prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     let detalle = '';
@@ -7633,7 +7613,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
         <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
       </div>
-      ${almSec}${detalle}${bajosHTML}${recientes}</div>`;
+      ${conciliacion}${almSec}${detalle}${bajosHTML}${recientes}</div>`;
   }
   window.nxInvBuscar = function (txt) {
     const t = String(txt || '').toLowerCase();
@@ -8759,7 +8739,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     // REGLAMENTO DEL TALLER: el avance al recibir un equipo es efectivo (entra al arqueo), así que
     // exige caja abierta — mismo candado del §2/§3. Sin avance no estorba.
     if (abono > 0 && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir el avance de ' + fmt(abono) + ', o recibe el equipo sin avance.'); return; }
     }
     let numero = null; try { numero = await nextSeq('reparacion'); } catch (e) {}
@@ -9847,7 +9827,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const metodo = val('fpMet') || 'Efectivo';
     // REGLAMENTO DE COBRO regla 4 / REGLAMENTO DE CRÉDITO: cobrar una cuota en efectivo exige caja abierta.
     if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
     }
     // La mora se cobra DESPUÉS de cubrir el principal de la cuota (si el monto no alcanza para
@@ -10765,7 +10745,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (monto > _faltaApa + 1) { toast('err', 'Monto muy alto', 'Al apartado solo le falta ' + fmt(_faltaApa)); return; }
     // REGLAMENTO DE COBRO regla 4: abono de apartado en efectivo exige caja abierta.
     if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
     }
     try {
@@ -11079,4 +11059,3 @@ try {
   window.__NX_PARCHES_READY__ = true;
   window.dispatchEvent(new Event('nexus:parches-ready'));
 } catch (e) {}
-
