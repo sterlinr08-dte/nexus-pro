@@ -28,6 +28,18 @@
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
   function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  function authUidPOS() {
+    try {
+      const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
+      const b = p.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))).sub || null;
+    } catch (_) { return null; }
+  }
+  function cajaQS(estado, limite) {
+    const uid = authUidPOS() || '00000000-0000-0000-0000-000000000000';
+    const orden = estado === 'cerrada' ? 'cierre.desc' : 'apertura.desc';
+    return 'select=*&estado=eq.' + estado + '&usuario_id=eq.' + encodeURIComponent(uid) + '&order=' + orden + '&limit=' + (limite || 1);
+  }
 
   let _cats = [], _prods = [], _ventas = [], _clientes = [];
   let _fiadoByCli = {}, _abonosByCli = {};
@@ -136,7 +148,7 @@
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc'),
-      g('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'),
+      g('pos_cajas', cajaQS('abierta', 1)),
       g('pos_config', 'select=*&limit=1'),
       g('pos_ncf_secuencias', 'select=*&order=tipo.asc'),
       g('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -431,7 +443,7 @@
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'entidades') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {} }
     if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
-    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
+    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
@@ -2748,7 +2760,7 @@
     // `_caja` se carga una vez al abrir el POS, así que antes de bloquear se re-consulta la base
     // (por si la abrieron desde otro dispositivo o en otra pestaña).
     if (c.efe > 0 && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) {
         toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(c.efe) + ' en efectivo — si no, ese dinero no aparece en ningún arqueo');
         return;
@@ -6034,7 +6046,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     // REGLAMENTO DE COBRO regla 4: un abono en efectivo entra a una caja abierta o no entra.
     const _met = val('posAbMet') || 'Efectivo';
     if (/efectivo/i.test(_met) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
     }
     try {
@@ -6568,8 +6580,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPosAbrirCaja = async function () {
     const ini = parseMoney(val('cajaIni'));
     try {
-      const r = await getAPI().post('pos_cajas', { monto_inicial: ini, estado: 'abierta', created_by_name: nomAdmin() });
-      _caja = (r && r[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null;
+      const r = await getAPI().post('rpc/pos_abrir_mi_caja', { p_monto_inicial: ini });
+      _caja = Array.isArray(r) ? r[0] : r; _cajaTot = _caja ? await totalesCaja(_caja) : null;
       toast('ok', 'Caja abierta', fmt(ini));
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
@@ -6590,8 +6602,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const monto = parseMoney(val('movMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
     const concepto = (val('movConc') || '').trim() || null;
     try {
-      const rmv = await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: concepto, monto: monto, created_by_name: nomAdmin() });
-      const movId = rmv && rmv[0] && rmv[0].id;
+      const rmv = await getAPI().post('rpc/pos_registrar_movimiento_mi_caja', { p_caja_id: _caja.id, p_tipo: tipo, p_concepto: concepto, p_monto: monto });
+      const mov = Array.isArray(rmv) ? rmv[0] : rmv; const movId = mov && mov.id;
       // Asiento: entrada → Debe Caja / Haber Otros ingresos · salida → Debe Gastos varios / Haber Caja
       try {
         const byc = await ctasMap();
@@ -6607,7 +6619,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosDelMov = async function (id) {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    try { await getAPI().del('pos_caja_movimientos', 'id=eq.' + id); await delAsientoOrigen('caja_mov', id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().post('rpc/pos_eliminar_movimiento_mi_caja', { p_movimiento_id: id }); await delAsientoOrigen('caja_mov', id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosCerrarCaja = function () {
     if (!_caja || !_cajaTot) return;
@@ -6642,10 +6654,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosConfirmarCierre = async function () {
     if (!_caja || !_cajaTot) return;
-    const tt = _cajaTot; const contado = parseMoney(val('cierreContado')); const desc = contado - tt.esperado;
-    const body = { estado: 'cerrada', cierre: new Date().toISOString(), ventas_efectivo: tt.efe, ventas_tarjeta: tt.tar, ventas_transferencia: tt.tra, ventas_credito: tt.cre, abonos_efectivo: tt.abEfe, entradas: tt.ent, salidas: tt.sal, efectivo_esperado: tt.esperado, efectivo_contado: contado, descuadre: desc, notas: (val('cierreNotas') || '').trim() || null };
+    const tt = _cajaTot; const contado = parseMoney(val('cierreContado'));
     try {
-      await getAPI().patch('pos_cajas', 'id=eq.' + _caja.id, body);
+      const rc = await getAPI().post('rpc/pos_cerrar_mi_caja', { p_caja_id: _caja.id, p_efectivo_contado: contado, p_notas: (val('cierreNotas') || '').trim() || null });
+      const cerrada = Array.isArray(rc) ? rc[0] : rc;
+      if (!cerrada || cerrada.estado !== 'cerrada') throw new Error('CAJA_CIERRE_SIN_CONFIRMACION');
+      const desc = Number(cerrada.descuadre || 0);
       // Asiento del descuadre: faltante → Debe Gastos varios / Haber Caja · sobrante → Debe Caja / Haber Otros ingresos
       try {
         if (Math.round(desc) !== 0) {
@@ -6657,12 +6671,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           }
         }
       } catch (e) {}
-      const cerrada = Object.assign({}, _caja, body, { monto_inicial: _caja.monto_inicial });
       toast('ok', 'Caja cerrada', 'Descuadre ' + (desc > 0 ? '+' : '') + fmt(desc));
       cerrarModal('nxPosCierre');
       const movs = (tt.movs || []).slice();
       _caja = null; _cajaTot = null;
-      try { _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {}
+      try { _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {}
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
       imprimirCierre(cerrada, movs);
     } catch (e) { toast('err', 'No se pudo cerrar', String(e && e.message || e)); }
@@ -8720,7 +8733,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     // REGLAMENTO DEL TALLER: el avance al recibir un equipo es efectivo (entra al arqueo), así que
     // exige caja abierta — mismo candado del §2/§3. Sin avance no estorba.
     if (abono > 0 && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir el avance de ' + fmt(abono) + ', o recibe el equipo sin avance.'); return; }
     }
     let numero = null; try { numero = await nextSeq('reparacion'); } catch (e) {}
@@ -9808,7 +9821,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const metodo = val('fpMet') || 'Efectivo';
     // REGLAMENTO DE COBRO regla 4 / REGLAMENTO DE CRÉDITO: cobrar una cuota en efectivo exige caja abierta.
     if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
     }
     // La mora se cobra DESPUÉS de cubrir el principal de la cuota (si el monto no alcanza para
@@ -10726,7 +10739,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (monto > _faltaApa + 1) { toast('err', 'Monto muy alto', 'Al apartado solo le falta ' + fmt(_faltaApa)); return; }
     // REGLAMENTO DE COBRO regla 4: abono de apartado en efectivo exige caja abierta.
     if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
     }
     try {

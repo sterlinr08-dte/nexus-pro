@@ -1,7 +1,16 @@
 {
-  "version": "58.37",
+  "version": "58.38",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.38",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: cada usuario trabaja con su propia caja abierta; una venta o abono no puede entrar por accidente en la caja de otro cajero.",
+        "PROTEGIDO: apertura, movimientos y cierre validan en el servidor quién es el dueño de la caja.",
+        "MEJORADO: el efectivo esperado y el descuadre del cierre se recalculan desde ventas, abonos y movimientos guardados, no desde cifras enviadas por la pantalla."
+      ]
+    },
     {
       "version": "58.37",
       "fecha": "2026-09-16",
