@@ -17,11 +17,12 @@
 .nxnov-kpi{min-width:0;border-radius:14px;padding:9px 10px;background:rgba(241,245,249,.72);border:1px solid rgba(226,232,240,.75)}
 .nxnov-kpi b{display:block;font-size:17px;line-height:1;color:#0f172a;letter-spacing:-.02em}.nxnov-kpi span{display:block;margin-top:4px;font-size:9px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:none!important}
 
-.nxnov-segments{display:flex;align-items:center;gap:5px;padding:4px;border-radius:15px;background:rgba(226,232,240,.62);width:max-content;max-width:100%;overflow:auto;scrollbar-width:none}
+.nxnov-segments{position:relative;display:flex;align-items:center;gap:5px;padding:4px;border-radius:15px;background:rgba(226,232,240,.62);width:max-content;max-width:100%;overflow:auto;scrollbar-width:none}
 .nxnov-segments::-webkit-scrollbar{display:none}
-.nxnov-seg{position:relative;flex:0 0 auto;border:0;background:transparent;color:#64748b;border-radius:11px;min-height:34px;padding:0 12px;font-size:10.5px;font-weight:700;cursor:pointer;transition:background .15s ease,color .15s ease,transform .12s ease;white-space:nowrap;text-transform:none!important}
+.nxnov-seg-thumb{position:absolute;top:4px;left:0;height:calc(100% - 8px);width:0;border-radius:11px;background:rgba(255,255,255,.96);box-shadow:0 2px 8px rgba(15,23,42,.08);pointer-events:none;z-index:0;will-change:transform,width}
+.nxnov-seg{position:relative;z-index:1;flex:0 0 auto;border:0;background:transparent;color:#64748b;border-radius:11px;min-height:34px;padding:0 12px;font-size:10.5px;font-weight:700;cursor:pointer;transition:color .15s ease,transform .12s ease;white-space:nowrap;text-transform:none!important}
 .nxnov-seg:active{transform:scale(.97)}
-.nxnov-seg.on{background:rgba(255,255,255,.96);color:#111827;box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.nxnov-seg.on{color:#111827}
 .nxnov-filterbar{display:flex;align-items:center;gap:6px;overflow:auto;padding:1px 0 2px;scrollbar-width:none}.nxnov-filterbar::-webkit-scrollbar{display:none}
 .nxnov-filter{flex:0 0 auto;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;text-transform:none!important;transition:all .14s ease}
 .nxnov-filter.on{border-color:rgba(109,40,217,.18);background:rgba(109,40,217,.08);color:#6d28d9}
@@ -39,7 +40,7 @@
 
 .nxnov-overlay{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:flex-end;justify-content:center;padding:14px;background:rgba(15,23,42,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .18s ease;text-transform:none!important}
 .nxnov-overlay.open{opacity:1;pointer-events:auto}.nxnov-sheet{width:min(520px,100%);max-height:min(86dvh,720px);overflow:auto;background:rgba(255,255,255,.96);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,.8);border-radius:24px;padding:8px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 28px 70px rgba(15,23,42,.25);transform:translateY(18px) scale(.985);transition:transform .26s cubic-bezier(.2,.85,.25,1)}
-.nxnov-overlay.open .nxnov-sheet{transform:none}.nxnov-handle{width:38px;height:5px;border-radius:999px;background:#d7dde6;margin:2px auto 12px}.nxnov-sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.nxnov-sheet-h h3{margin:0;font-size:16px;letter-spacing:-.025em;color:#0f172a;text-transform:none!important}.nxnov-close{width:31px;height:31px;border:0;border-radius:50%;background:#eef2f7;color:#475569;display:grid;place-items:center;cursor:pointer}
+.nxnov-overlay.open .nxnov-sheet{transform:none}.nxnov-handle{position:relative;width:38px;height:5px;border-radius:999px;background:#d7dde6;margin:2px auto 12px;touch-action:none;cursor:grab}.nxnov-handle:active{cursor:grabbing}.nxnov-handle::before{content:"";position:absolute;inset:-16px -22px}.nxnov-sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.nxnov-sheet-h h3{margin:0;font-size:16px;letter-spacing:-.025em;color:#0f172a;text-transform:none!important}.nxnov-close{width:31px;height:31px;border:0;border-radius:50%;background:#eef2f7;color:#475569;display:grid;place-items:center;cursor:pointer}
 .nxnov-field{margin-bottom:11px}.nxnov-field label{display:block;margin:0 0 5px;font-size:9.5px;font-weight:750;color:#64748b;text-transform:none!important;letter-spacing:.01em}.nxnov-field input,.nxnov-field select,.nxnov-field textarea{width:100%;min-height:42px;border:1px solid #dce3ec!important;border-radius:12px!important;background:rgba(248,250,252,.9)!important;color:#0f172a!important;padding:9px 11px!important;font-size:13px!important;outline:none!important;text-transform:none!important}.nxnov-field textarea{min-height:78px;resize:vertical}.nxnov-field input:focus,.nxnov-field select:focus,.nxnov-field textarea:focus{border-color:#8b5cf6!important;box-shadow:0 0 0 3px rgba(139,92,246,.1)!important}.nxnov-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.nxnov-save{width:100%;height:44px;border:0;border-radius:13px;background:#111827;color:#fff;font-size:12px;font-weight:800;cursor:pointer;margin-top:2px;transition:transform .12s ease}.nxnov-save:active{transform:scale(.985)}
 
 .nxnov-quick{margin-left:auto!important;border-color:rgba(109,40,217,.18)!important;color:#6d28d9!important;background:rgba(109,40,217,.06)!important}
@@ -52,6 +53,6 @@
   .nxnov-grid2{grid-template-columns:1fr}.nxnov-overlay{padding:0;align-items:flex-end}.nxnov-sheet{width:100%;border-radius:24px 24px 0 0;max-height:90dvh;padding-left:14px;padding-right:14px}
 }
 
-@media(prefers-reduced-motion:reduce){.nxnov-card,.nxnov-new,.nxnov-seg,.nxnov-filter,.nxnov-ico,.nxnov-overlay,.nxnov-sheet{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.nxnov-card,.nxnov-new,.nxnov-seg,.nxnov-seg-thumb,.nxnov-filter,.nxnov-ico,.nxnov-overlay,.nxnov-sheet{transition:none!important}}
 @media(prefers-reduced-transparency:reduce){.nxnov-hero,.nxnov-sheet{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.nxnov-overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
 @media(prefers-contrast:more){.nxnov-card,.nxnov-hero,.nxnov-field input,.nxnov-field select,.nxnov-field textarea{border-color:#94a3b8!important}}

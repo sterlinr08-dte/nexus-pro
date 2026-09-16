@@ -80,6 +80,93 @@
 
   function ageClass(d){return d>=10?'danger':d>=4?'hot':'';}
 
+  function reduceMotion(){try{return window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+  function rubberband(overshoot,dimension){var c=.55;return (overshoot*dimension*c)/(dimension+c*Math.abs(overshoot));}
+
+  // La pastilla del segmentado persiste su última posición en esta variable (no en el DOM,
+  // porque pintar() reconstruye el árbol completo en cada render) para poder animar un
+  // desplazamiento real aunque el nodo del segmentado se destruya y se cree de nuevo.
+  var thumbRect=null;
+  function moverThumb(segEl,instant){
+    if(!segEl)return;
+    var on=segEl.querySelector('.nxnov-seg.on');
+    var thumb=segEl.querySelector('.nxnov-seg-thumb');
+    if(!on||!thumb)return;
+    var segBox=segEl.getBoundingClientRect();
+    var onBox=on.getBoundingClientRect();
+    var left=onBox.left-segBox.left;
+    var width=onBox.width;
+    var previo=thumbRect;
+    thumbRect={left:left,width:width};
+    if(instant||reduceMotion()||!previo){
+      thumb.style.transition='none';
+      thumb.style.transform='translateX('+left+'px)';
+      thumb.style.width=width+'px';
+      return;
+    }
+    thumb.style.transition='none';
+    thumb.style.transform='translateX('+previo.left+'px)';
+    thumb.style.width=previo.width+'px';
+    thumb.getBoundingClientRect();
+    requestAnimationFrame(function(){
+      thumb.style.transition='transform .28s cubic-bezier(.2,.85,.25,1), width .28s cubic-bezier(.2,.85,.25,1)';
+      thumb.style.transform='translateX('+left+'px)';
+      thumb.style.width=width+'px';
+    });
+  }
+
+  // Arrastre real del asa de la hoja (pointerdown/move/up), con rebote en el límite superior y
+  // umbral de distancia+velocidad para decidir si cierra o vuelve a su sitio. Se desactiva del
+  // todo si el usuario prefiere menos movimiento: el asa queda decorativa, como antes.
+  function instalarArrastreHoja(sheet){
+    var handle=sheet&&sheet.querySelector('.nxnov-handle');
+    if(!handle||handle.__nxDragBound)return;
+    handle.__nxDragBound=true;
+    if(reduceMotion())return;
+    var DIST=120,VEL=.55;
+    var arrastrando=false,inicioY=0,base=0,ultY=0,ultT=0,vel=0,alto=0;
+    function yActual(){
+      try{return new DOMMatrixReadOnly(getComputedStyle(sheet).transform).m42;}catch(e){return 0;}
+    }
+    handle.addEventListener('pointerdown',function(e){
+      if(e.pointerType==='mouse'&&e.button!==0)return;
+      arrastrando=true;
+      try{handle.setPointerCapture(e.pointerId);}catch(err){}
+      alto=sheet.getBoundingClientRect().height||1;
+      inicioY=e.clientY;base=yActual();ultY=e.clientY;ultT=e.timeStamp;vel=0;
+      sheet.style.transition='none';
+    });
+    handle.addEventListener('pointermove',function(e){
+      if(!arrastrando)return;
+      var dy=e.clientY-inicioY;
+      var y=base+dy;
+      if(y<0)y=rubberband(y,alto);
+      sheet.style.transform='translateY('+y+'px)';
+      var dt=e.timeStamp-ultT;
+      if(dt>0)vel=(e.clientY-ultY)/dt;
+      ultY=e.clientY;ultT=e.timeStamp;
+    });
+    function terminar(e){
+      if(!arrastrando)return;
+      arrastrando=false;
+      try{handle.releasePointerCapture(e.pointerId);}catch(err){}
+      var y=yActual();
+      var cerrar=(y>DIST)||(vel>VEL&&y>20);
+      if(cerrar){
+        sheet.style.transition='transform .22s cubic-bezier(.2,.7,.3,1)';
+        sheet.style.transform='translateY(100%)';
+        var ov=document.getElementById('nxNovOverlay');if(ov)ov.classList.remove('open');
+        setTimeout(function(){sheet.style.transition='';sheet.style.transform='';},240);
+      }else{
+        sheet.style.transition='transform .32s cubic-bezier(.2,.85,.25,1)';
+        sheet.style.transform='';
+        setTimeout(function(){sheet.style.transition='';},340);
+      }
+    }
+    handle.addEventListener('pointerup',terminar);
+    handle.addEventListener('pointercancel',terminar);
+  }
+
   function card(n){
     var c=cliente(n.cliente_id)||{};
     var a=agente(n.agente_id||c.agente_id)||{};
@@ -116,7 +203,7 @@
     box.innerHTML='<div class="nxnov-shell">'+
       '<section class="nxnov-hero"><div class="nxnov-head"><div class="nxnov-title"><h3>Novedades de clientes</h3><p>Lo que necesita atención antes de cerrar el ciclo. Los casos automáticos se actualizan con los datos reales del sistema.</p></div><button class="nxnov-new" onclick="nxNovNueva()"><i class="ti ti-plus"></i><span>Nueva novedad</span></button></div>'+
       '<div class="nxnov-kpis"><div class="nxnov-kpi"><b>'+op.length+'</b><span>Pendientes</span></div><div class="nxnov-kpi"><b>'+kg.EN_GESTION+'</b><span>En gestión</span></div><div class="nxnov-kpi"><b>'+kg.EN_RIESGO+'</b><span>En riesgo</span></div><div class="nxnov-kpi"><b>'+kg.POR_RETIRAR+'</b><span>Por retirar</span></div></div></section>'+
-      '<div class="nxnov-segments" role="tablist"><button class="nxnov-seg '+(modo==='pendientes'?'on':'')+'" onclick="nxNovModo(\'pendientes\')">Pendientes <span>'+abiertas().length+'</span></button><button class="nxnov-seg '+(modo==='resueltos'?'on':'')+'" onclick="nxNovModo(\'resueltos\')">Resueltos <span>'+cache.filter(function(n){return n.abierta===false;}).length+'</span></button></div>'+
+      '<div class="nxnov-segments" role="tablist"><div class="nxnov-seg-thumb"></div><button class="nxnov-seg '+(modo==='pendientes'?'on':'')+'" onclick="nxNovModo(\'pendientes\')">Pendientes <span>'+abiertas().length+'</span></button><button class="nxnov-seg '+(modo==='resueltos'?'on':'')+'" onclick="nxNovModo(\'resueltos\')">Resueltos <span>'+cache.filter(function(n){return n.abierta===false;}).length+'</span></button></div>'+
       '<div class="nxnov-filterbar">'+
         filtroBtn('TODOS','Todos',base.length)+
         filtroBtn('POR_ACTIVAR','Por activar',conteoEstado('POR_ACTIVAR'))+
@@ -125,6 +212,7 @@
         filtroBtn('POR_RETIRAR','Por retirar',conteoEstado('POR_RETIRAR'))+
       '</div>'+
       '<div class="nxnov-list">'+(list.length?list.map(card).join(''):'<div class="nxnov-empty"><i class="ti ti-circle-check"></i><b>No hay casos en esta vista</b><span>Cuando aparezca una novedad, quedará aquí hasta resolverse.</span></div>')+'</div></div>';
+    moverThumb(box.querySelector('.nxnov-segments'));
     inyectarAccesosRapidos();
   }
 
@@ -135,6 +223,7 @@
     var o=document.createElement('div');o.id='nxNovOverlay';o.className='nxnov-overlay';o.onclick=function(e){if(e.target===o)nxNovCerrar();};
     o.innerHTML='<div class="nxnov-sheet" role="dialog" aria-modal="true" aria-labelledby="nxNovTitulo"><div class="nxnov-handle"></div><div class="nxnov-sheet-h"><h3 id="nxNovTitulo">Nueva novedad</h3><button class="nxnov-close" onclick="nxNovCerrar()" aria-label="Cerrar"><i class="ti ti-x"></i></button></div><input type="hidden" id="nxNovId"><div class="nxnov-field"><label>Cliente</label><select id="nxNovCliente"></select></div><div class="nxnov-grid2"><div class="nxnov-field"><label>Estado</label><select id="nxNovEstado"><option value="POR_ACTIVAR">Por activar</option><option value="EN_GESTION">En gestión</option><option value="EN_RIESGO">En riesgo</option><option value="POR_RETIRAR">Por retirar</option></select></div><div class="nxnov-field"><label>Prioridad</label><select id="nxNovPrioridad"><option value="MEDIA">Media</option><option value="ALTA">Alta</option><option value="BAJA">Baja</option></select></div></div><div class="nxnov-field"><label>Motivo</label><input id="nxNovMotivo" placeholder="Ej. Falta documento, aprobación ARS, promesa de pago"></div><div class="nxnov-field"><label>Detalle / seguimiento</label><textarea id="nxNovDetalle" placeholder="Qué falta, qué se habló o cuál es el próximo paso"></textarea></div><div class="nxnov-field"><label>Fecha de seguimiento</label><input id="nxNovSeguimiento" type="date"></div><button id="nxNovGuardar" class="nxnov-save" onclick="nxNovGuardar()">Guardar novedad</button></div>';
     document.body.appendChild(o);
+    instalarArrastreHoja(o.querySelector('.nxnov-sheet'));
   }
 
   function llenarClientes(sel,pre){
@@ -233,6 +322,11 @@
       rf.__nxNovWrapped=true;window.rCli=rf;
     }
     var tb=document.getElementById('tbCli');if(tb&&window.MutationObserver){new MutationObserver(function(){if(!activo)inyectarAccesosRapidos();}).observe(tb,{childList:true,subtree:true});}
+    window.addEventListener('resize',function(){
+      if(!activo)return;
+      var box=document.getElementById('tbCli');
+      if(box)moverThumb(box.querySelector('.nxnov-segments'),true);
+    },{passive:true});
     cargar();
   }
 
