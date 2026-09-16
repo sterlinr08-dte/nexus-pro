@@ -1,7 +1,16 @@
 {
-  "version": "58.36",
+  "version": "58.37",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.37",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: una venta, sus artículos, los IMEI seleccionados y el descuento de inventario ahora se confirman juntos en una sola operación.",
+        "PROTEGIDO: un doble toque o un reintento por pérdida de internet reutiliza la misma venta y no vuelve a cobrar ni a descontar existencias.",
+        "SIN CAMBIOS: prefacturas continúan sin afectar inventario, caja ni contabilidad hasta convertirse en factura. La parte impositiva no se modificó."
+      ]
+    },
     {
       "version": "58.36",
       "fecha": "2026-09-11",

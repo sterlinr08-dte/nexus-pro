@@ -32,6 +32,10 @@
   let _cats = [], _prods = [], _ventas = [], _clientes = [];
   let _fiadoByCli = {}, _abonosByCli = {};
   let _cart = [];
+  // Idempotencia del núcleo de venta: se conserva mientras el resultado sea ambiguo
+  // (por ejemplo, se cortó internet después de confirmar en el servidor) y solo se
+  // regenera tras recibir una respuesta exitosa.
+  let _ventaOperacionId = null;
   let _posTab = 'inicio';
   let _posCat = 'todas';
   let _factCli = '';
@@ -2825,19 +2829,15 @@
       tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
       vendedor_id: vendId, vendedor_nombre: vendNom,
       almacen_id: (_almacenes.length && _almacenSel) ? _almacenSel : null,
-      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin(),
-      // Candado de cutover (revisión de ChatGPT, 2026-08-09 11:38 — 2da vuelta): el DEFAULT de
-      // la columna se queda en `true` PARA SIEMPRE (ver INVENTARIO_VENTA_ATOMICO_migracion.sql,
-      // ya no cambia a false). Es ESTE INSERT — el único camino real que crea una venta por el
-      // flujo NUEVO (confirmado por grep: es la única llamada POST a pos_ventas de todo el
-      // archivo) — el que la marca false EXPLÍCITO, para que la RPC la procese después. Cualquier
-      // otro cliente/pestaña con código viejo en caché (que no conoce este campo) sigue naciendo
-      // en `true` por el default — nunca puede quedar en un estado ambiguo entre "ya se descontó
-      // por moverStock" y "pendiente de la RPC", sin depender de en qué orden se desplegaron el
-      // SQL y el JS.
-      inventario_aplicado: false
+      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     if (_facFecha) body.fecha = _facFecha;
+    const items = _cart.map(it => {
+      const _p = _prods.find(x => String(x.id) === String(it.producto_id));
+      const gd = _p ? Number(_p.garantia_dias || 0) : 0;
+      const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
+      return { producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
+    });
     // Candado atómico de IMEI: reservar ANTES de crear la venta. Si el carrito no tiene
     // artículos con serial, reservarImeisCart() devuelve null y el flujo sigue igual de
     // siempre. Si algún IMEI ya no está disponible, reservarImeisCart() ya avisó por toast
@@ -2850,31 +2850,25 @@
       return;
     }
     try {
-      const r = await getAPI().post('pos_ventas', body);
-      const venta = (r && r[0]) || null;
-      if (!venta) throw new Error('No se pudo registrar la venta');
-      _imeiVentaCreada = true;
-      // A partir de aquí la venta YA EXISTE. Cualquier fallo de la confirmación de IMEI es
-      // secundario — REGLAMENTOS §2 regla 10: una venta cobrada nunca se revierte por un
-      // fallo secundario. Nunca throw desde este bloque; nunca liberar la reserva aquí
-      // (fijarReservaImeisAVenta la deja ligada a venta_id para que el TTL no la libere sola).
-      if (_imeiReserva) {
-        const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
-        try {
-          const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id, esperados);
-          if (confirmados === esperados) {
-            _imeiReserva = null;
-          } else {
-            await fijarReservaImeisAVenta(_imeiReserva, venta.id);
-            try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — esperados ' + esperados + ', confirmados ' + confirmados, 'POS'); } catch (e2) {}
-            toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
-          }
-        } catch (e) {
-          const fijada = await fijarReservaImeisAVenta(_imeiReserva, venta.id);
-          try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e) + (fijada ? ' · reserva fijada a la venta' : ' · NO se pudo fijar la reserva'), 'POS'); } catch (e2) {}
-          toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
-        }
+      if (!_ventaOperacionId) {
+        try { _ventaOperacionId = crypto.randomUUID(); }
+        catch (_) { _ventaOperacionId = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); }
       }
+      const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
+      const rCore = await getAPI().post('rpc/pos_registrar_venta_atomica', {
+        p_operacion_id: _ventaOperacionId,
+        p_venta: body,
+        p_items: items,
+        p_reserva_token: _imeiReserva,
+        p_imei_esperados: esperados
+      });
+      const core = Array.isArray(rCore) ? rCore[0] : rCore;
+      const venta = core && core.venta;
+      const itemsInsertados = (core && core.items) || [];
+      if (!core || core.ok !== true || !venta || itemsInsertados.length !== items.length) throw new Error('VENTA_ATOMICA_SIN_CONFIRMACION');
+      _imeiVentaCreada = true;
+      _imeiReserva = null;
+      _ventaOperacionId = null;
       // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
       try {
         const finChk = document.getElementById('finChk');
@@ -2895,22 +2889,6 @@
           }
         }
       } catch (eFin) { console.error('financiamiento:', eFin); }
-      const items = _cart.map(it => {
-        const _p = _prods.find(x => String(x.id) === String(it.producto_id));
-        const gd = _p ? Number(_p.garantia_dias || 0) : 0;
-        const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
-        return { venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
-      });
-      let itemsInsertados = null;
-      try { itemsInsertados = await getAPI().post('pos_venta_items', items); } catch (e) {}
-      // Fase 9 (Automatizaciones): el INSERT de arriba es best-effort a propósito (nunca debe revertir
-      // una venta ya cobrada) — pero si de verdad no se guardaron todas las líneas, eso degrada en
-      // silencio el resto de la cadena automática de esta factura (Reportes/Utilidad la subestiman,
-      // Kardex/garantías quedan incompletos). En vez de bloquear o reintentar (arriesgaría duplicar o sí
-      // bloquear un cobro ya hecho), se deja un rastro real en Auditoría para que no pase inadvertido.
-      if (!itemsInsertados || itemsInsertados.length !== items.length) {
-        try { window.logAudit && window.logAudit('POS_VENTA_ITEMS_INCOMPLETOS', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — se guardaron ' + ((itemsInsertados && itemsInsertados.length) || 0) + ' de ' + items.length + ' línea(s)', 'POS'); } catch (e2) {}
-      }
       // Motor de documentos: registrar la factura (con su origen si venía de cotización/prefactura)
       // y una garantía por cada línea que la trae — best-effort, nunca bloquea el cobro.
       try {
@@ -2962,23 +2940,6 @@
       try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
-      // descontar stock: RPC atómica del servidor (pos_aplicar_inventario_venta), no moverStock().
-      // moverStock() leía prod.stock del array en memoria (_prods, posiblemente desactualizado) y
-      // escribía un valor ABSOLUTO — entre 2 ventas concurrentes del mismo producto, una podía perder
-      // su descuento sin dejar rastro (lost-update). La RPC decrementa de forma RELATIVA
-      // (stock = stock - x con x <= stock en el WHERE) leyendo TODO del lado del servidor por
-      // venta_id — nunca del carrito — y es todo-o-nada por venta completa: si algo no alcanza, no
-      // baja NADA (REGLAMENTOS §1: nunca stock negativo) y la venta YA COBRADA se queda tal cual
-      // (REGLAMENTOS §2 regla 10 — este catch NUNCA debe bloquear ni revertir el cobro ya hecho).
-      try {
-        const rInv = await getAPI().post('rpc/pos_aplicar_inventario_venta', { p_venta_id: venta.id });
-        const resInv = Array.isArray(rInv) ? rInv[0] : rInv;
-        if (!resInv || resInv.ok !== true) throw new Error('INVENTARIO_RPC_SIN_OK');
-      } catch (eInv) {
-        const msgInv = String(eInv && eInv.message || eInv);
-        try { window.logAudit && window.logAudit('POS_VENTA_INVENTARIO_PENDIENTE', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — ' + msgInv, 'POS'); } catch (e2) {}
-        toast('warn', 'Venta realizada — inventario pendiente de revisión', 'El cobro se registró; el inventario de esta venta necesita revisión administrativa.');
-      }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
       if (_ncAplicar.length) { for (const n of _ncAplicar) { getAPI().patch('pos_devoluciones', 'id=eq.' + n.id, { estado: 'aplicada' }).catch(() => {}); const nm = (_notasCred || []).find(x => String(x.id) === String(n.id)); if (nm) nm.estado = 'aplicada'; } }
@@ -11079,4 +11040,3 @@ try {
   window.__NX_PARCHES_READY__ = true;
   window.dispatchEvent(new Event('nexus:parches-ready'));
 } catch (e) {}
-
