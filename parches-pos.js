@@ -120,7 +120,7 @@
   let _prefHist = []; // historial COMPLETO de prefacturas (abierta/facturada/anulada)
   let _phQ = '', _phDesde = '', _phHasta = '', _phEstado = 'todas', _phSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
-  let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
+  let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [], _compraOperacionId = null;
   let _compraVista = 'lista'; // 'lista' = historial de compras · 'nueva' = pantalla completa de nueva compra
   let _cxpByProv = {}, _pagosProvByProv = {};
   // ── Contabilidad ──
@@ -6118,12 +6118,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // compArt y todos los campos se mantienen, así que nxPosGuardarCompra no cambia.
   window.nxPosNuevaCompra = function () {
     _compraItems = [];
+    _compraOperacionId = null;
     cerrarModal('nxPosCompra'); // por si quedó un overlay viejo de una versión anterior
     _compraVista = 'nueva';
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxPosCompraCancelar = function () {
     _compraItems = [];
+    _compraOperacionId = null;
     _compraVista = 'lista';
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
@@ -6362,14 +6364,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const empNom = empId ? ((_clientes.find(x => String(x.id) === String(empId)) || {}).nombre || null) : null;
     const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
     try {
-      const r = await getAPI().post('pos_compras', body);
-      const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
-      const items = _compraItems.map(it => ({ compra_id: compra.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, costo: it.costo, importe: Math.round(it.costo * it.cantidad) }));
-      try { await getAPI().post('pos_compra_items', items); } catch (e) {}
-      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { moverStock(p, 'compra', Number(it.cantidad), { referencia: (compra.numero || ''), motivo: 'Compra', almacenId: almCompra, extra: { costo: it.costo } }).catch(() => {}); } } catch (e) {} }
+      if (!_compraOperacionId) {
+        try { _compraOperacionId = crypto.randomUUID(); }
+        catch (_) { _compraOperacionId = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); }
+      }
+      const items = _compraItems.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, cantidad: Number(it.cantidad), costo: Number(it.costo), importe: Math.round(it.costo * it.cantidad), imeis: it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [] }));
+      const r = await getAPI().post('rpc/pos_registrar_compra_atomica', { p_operacion_id: _compraOperacionId, p_compra: body, p_items: items });
+      const core = Array.isArray(r) ? r[0] : r;
+      const compra = core && core.compra; if (!core || core.ok !== true || !compra) throw new Error('COMPRA_ATOMICA_SIN_CONFIRMACION');
+      _compraOperacionId = null;
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
-      // Registrar IMEI/seriales de los equipos comprados (entran como disponibles, ligados a esta compra)
-      try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, compra_id: compra.id, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
       try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
       _compraItems = []; _compraVista = 'lista';
@@ -6425,14 +6429,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
     const compra = (_compras || []).find(x => String(x.id) === String(id));
     try {
-      // revertir stock de cada artículo (total + almacén + kardex)
-      try {
-        const items = await getAPI().get('pos_compra_items', 'select=producto_id,cantidad&compra_id=eq.' + id) || [];
-        const aid = (compra && compra.almacen_id) || (_almacenes.length && almPrincipal() && almPrincipal().id) || null;
-        for (const it of items) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { moverStock(p, 'ajuste', -Number(it.cantidad || 0), { referencia: 'Compra eliminada', motivo: 'Reversa de compra', almacenId: aid }).catch(() => {}); } }
-      } catch (e) {}
+      await getAPI().post('rpc/pos_eliminar_compra_atomica', { p_compra_id: id });
       await delAsientoOrigen('compra', id);
-      await getAPI().del('pos_compras', 'id=eq.' + id);
       toast('ok', 'Compra eliminada', 'Stock y contabilidad revertidos');
       cerrarModal('nxPosCompraDet'); await cargarComprasTab(); await cargarPOS(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }

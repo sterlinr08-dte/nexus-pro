@@ -1,7 +1,16 @@
 {
-  "version": "58.39",
+  "version": "58.40",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.40",
+      "fecha": "2026-09-16",
+      "notas": [
+        "PROTEGIDO: una compra, sus artículos, los IMEI recibidos y el aumento de inventario se confirman juntos o se revierten juntos.",
+        "PROTEGIDO: reintentar una compra por pérdida de conexión no vuelve a duplicarla ni aumenta dos veces el stock.",
+        "PROTEGIDO: eliminar una compra revierte el inventario en una sola transacción y se bloquea si uno de sus IMEI ya fue reservado o vendido."
+      ]
+    },
     {
       "version": "58.39",
       "fecha": "2026-09-16",
