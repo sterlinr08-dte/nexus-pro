@@ -8,7 +8,7 @@
   window.__NEXUS_REPORTE_CICLO_AGENTES_V1__=true;
 
   var cache={};
-  var estado={periodo:null,modo:'ciclo',data:null,fuente:null,loading:false,error:null};
+  var estado={periodo:null,modo:'ciclo',data:null,fuente:null,loading:false,error:null,req:0};
 
   function q(id){return document.getElementById(id);}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -114,28 +114,32 @@
   }
 
   async function cargar(force){
-    if(estado.loading)return;
     var body=q('nxC20Body');if(!body)return;
-    var ck=estado.modo+'|'+estado.periodo;
-    if(!force&&cache[ck]){estado.data=cache[ck].data;estado.fuente=cache[ck].fuente;pintar();return;}
+    var modo=estado.modo,periodo=estado.periodo,ck=modo+'|'+periodo,req=++estado.req;
+    if(!force&&cache[ck]){
+      estado.data=cache[ck].data;estado.fuente=cache[ck].fuente;estado.error=null;estado.loading=false;pintar();return;
+    }
     estado.loading=true;estado.error=null;
     body.innerHTML='<div class="nxC20Load"><div class="spin" style="margin:0 auto 8px"></div>Cargando cifras del servidor…</div>';
     try{
       var data=[],fuente='';
-      if(estado.modo==='mes'){
-        data=await API.post('rpc/seguros_reporte_mensual_admin',{p_mes:estado.periodo})||[];
+      if(modo==='mes'){
+        data=await API.post('rpc/seguros_reporte_mensual_admin',{p_mes:periodo})||[];
         fuente='mensual';
       }else{
-        var snap=await API.post('rpc/seguros_cierre_ciclo_admin',{p_periodo:estado.periodo})||[];
+        var snap=await API.post('rpc/seguros_cierre_ciclo_admin',{p_periodo:periodo})||[];
         if(snap.length){data=snap;fuente='snapshot';}
-        else{data=await API.post('rpc/seguros_resumen_ciclo_admin',{p_periodo:estado.periodo})||[];fuente='vivo';}
+        else{data=await API.post('rpc/seguros_resumen_ciclo_admin',{p_periodo:periodo})||[];fuente='vivo';}
       }
-      estado.data=Array.isArray(data)?data:[];estado.fuente=fuente;
-      cache[ck]={data:estado.data,fuente:fuente};
+      cache[ck]={data:Array.isArray(data)?data:[],fuente:fuente};
+      if(req!==estado.req||modo!==estado.modo||periodo!==estado.periodo)return;
+      estado.data=cache[ck].data;estado.fuente=fuente;
     }catch(e){
+      if(req!==estado.req||modo!==estado.modo||periodo!==estado.periodo)return;
       estado.error=rpcMsg(e);
       estado.data=[];estado.fuente=null;
     }
+    if(req!==estado.req)return;
     estado.loading=false;pintar();
   }
 
