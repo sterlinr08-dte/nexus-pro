@@ -1,5 +1,6 @@
-/* NEXUS PRO · Sidebar curva — prototipo visual 2026-09-17
-   Alcance: solo apariencia/transición del sidebar existente.
+/* NEXUS PRO · Sidebar curva — ajuste V3 2026-09-17
+   Alcance: solo forma/transición del sidebar existente.
+   La paleta, tarjetas, textos y sombra base pertenecen a SIDEBAR V3.
    No crea otro menú, no cambia toggleSB(), no altera markup ni lógica de negocio. */
 
 @media (min-width:769px){
@@ -9,9 +10,7 @@
     margin:10px 0;
     height:calc(100% - 20px);
     border-radius:0 44px 44px 0;
-    background:linear-gradient(180deg,var(--sidebar-accent) 0%,var(--sidebar) 46%,#172554 100%);
-    box-shadow:12px 0 30px rgba(15,31,61,.18),inset -1px 0 0 rgba(255,255,255,.08);
-    transition:width .34s cubic-bezier(.22,1,.36,1),border-radius .34s cubic-bezier(.22,1,.36,1),box-shadow .28s ease;
+    transition:width .34s cubic-bezier(.22,1,.36,1),border-radius .34s cubic-bezier(.22,1,.36,1);
     will-change:width;
     isolation:isolate;
   }
@@ -22,8 +21,8 @@
     z-index:0;
     pointer-events:none;
     background:
-      radial-gradient(80% 34% at 100% 10%,rgba(96,165,250,.20),transparent 70%),
-      radial-gradient(82% 34% at 100% 90%,rgba(109,40,217,.20),transparent 72%);
+      radial-gradient(80% 34% at 100% 10%,rgba(96,165,250,.14),transparent 70%),
+      radial-gradient(82% 34% at 100% 90%,rgba(109,40,217,.12),transparent 72%);
   }
   .sb::after{
     content:'';
@@ -34,15 +33,14 @@
     width:1px;
     z-index:2;
     pointer-events:none;
-    background:linear-gradient(180deg,transparent,rgba(255,255,255,.28) 18%,rgba(255,255,255,.10) 82%,transparent);
-    opacity:.65;
+    background:linear-gradient(180deg,transparent,rgba(255,255,255,.50) 18%,rgba(148,163,184,.18) 82%,transparent);
+    opacity:.7;
   }
   .sb > *{position:relative;z-index:1}
 
   .sb.col{
     width:58px;
     border-radius:0 36px 36px 0;
-    box-shadow:8px 0 24px rgba(15,31,61,.16),inset -1px 0 0 rgba(255,255,255,.08);
   }
 
   /* El texto no salta: se desvanece y se desplaza. Se conserva el DOM actual. */
@@ -75,12 +73,9 @@
     top:8px;
     height:calc(100dvh - 16px);
     border-radius:0 38px 38px 0;
-    background:linear-gradient(180deg,var(--sidebar-accent) 0%,var(--sidebar) 52%,#172554 100%);
-    box-shadow:none;
     overflow:hidden;
-    transition:left .32s cubic-bezier(.22,1,.36,1),box-shadow .24s ease;
+    transition:left .32s cubic-bezier(.22,1,.36,1);
   }
-  .sb.mob-open{box-shadow:12px 0 34px rgba(15,23,42,.30)}
 }
 
 @media (prefers-reduced-motion:reduce){
