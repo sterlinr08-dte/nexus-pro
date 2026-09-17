@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5882'):'?b=5882';
-    }catch(e){return '?b=5882';}
+      return base?(base+'&b=5883'):'?b=5883';
+    }catch(e){return '?b=5883';}
   }
 
   function load(src,done){
@@ -40,6 +40,7 @@
   var pasos=[
     ['js','parches-seguros-base.js'],
     ['css','parches-sidebar-curva.css'],
+    ['js','parches-reporte-ciclo-agentes.js'],
     ['js','parches-excepciones.js'],
     ['js','parches-crm-seguros.js'],
     ['css','parches-crm-seguros-v2.css'],
