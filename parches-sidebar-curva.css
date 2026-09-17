@@ -147,27 +147,27 @@
     will-change:left;
   }
 
-  /* La forma pertenece al panel; los brillos de desktop no deben crear otra silueta en móvil. */
+  /* La forma pertenece al panel; no se crea otra silueta ni otro contenedor. */
   nav.sb::before,nav.sb::after{pointer-events:none}
+}
 
-  /* En pantallas angostas la cintura es un poco menos profunda para no cortar etiquetas. */
-  @media(max-width:390px){
-    nav.sb{
-      -webkit-clip-path:polygon(
-        0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
-        calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
-        calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
-        calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
-        100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
-      );
-      clip-path:polygon(
-        0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
-        calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
-        calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
-        calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
-        100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
-      );
-    }
+/* En iPhone angosto la cintura se hace un poco menos profunda para no cortar etiquetas. */
+@media (max-width:390px){
+  nav.sb{
+    -webkit-clip-path:polygon(
+      0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
+      calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
+      calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
+      calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
+      100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
+    );
+    clip-path:polygon(
+      0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
+      calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
+      calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
+      calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
+      100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
+    );
   }
 }
 
