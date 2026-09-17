@@ -69,12 +69,105 @@
 }
 
 @media (max-width:768px){
-  .sb{
-    top:8px;
-    height:calc(100dvh - 16px);
-    border-radius:0 38px 38px 0;
+  /*
+   * MÓVIL V2 — misma pieza, geometría orgánica real.
+   *
+   * El drawer sigue siendo el MISMO nav.sb y conserva .mob-open/left.
+   * Solo se sustituye el antiguo rectángulo de esquinas redondeadas por un
+   * recorte continuo: hombro superior -> cintura central -> hombro inferior.
+   * No hay SVG, canvas, blur pesado ni un segundo sidebar.
+   */
+  nav.sb{
+    top:max(8px,env(safe-area-inset-top,0px));
+    bottom:max(8px,env(safe-area-inset-bottom,0px));
+    height:auto;
     overflow:hidden;
+    border-radius:0;
+    -webkit-clip-path:polygon(
+      0 0,
+      calc(100% - 22px) 0,
+      calc(100% - 14px) .7%,
+      calc(100% - 7px) 1.8%,
+      calc(100% - 2px) 3.1%,
+      100% 5%,
+      100% 25%,
+      calc(100% - 1px) 30%,
+      calc(100% - 4px) 34%,
+      calc(100% - 8px) 38%,
+      calc(100% - 13px) 41.5%,
+      calc(100% - 18px) 44.5%,
+      calc(100% - 22px) 47%,
+      calc(100% - 24px) 49%,
+      calc(100% - 24px) 51%,
+      calc(100% - 22px) 53%,
+      calc(100% - 18px) 55.5%,
+      calc(100% - 13px) 58.5%,
+      calc(100% - 8px) 62%,
+      calc(100% - 4px) 66%,
+      calc(100% - 1px) 70%,
+      100% 75%,
+      100% 95%,
+      calc(100% - 2px) 96.9%,
+      calc(100% - 7px) 98.2%,
+      calc(100% - 14px) 99.3%,
+      calc(100% - 22px) 100%,
+      0 100%
+    );
+    clip-path:polygon(
+      0 0,
+      calc(100% - 22px) 0,
+      calc(100% - 14px) .7%,
+      calc(100% - 7px) 1.8%,
+      calc(100% - 2px) 3.1%,
+      100% 5%,
+      100% 25%,
+      calc(100% - 1px) 30%,
+      calc(100% - 4px) 34%,
+      calc(100% - 8px) 38%,
+      calc(100% - 13px) 41.5%,
+      calc(100% - 18px) 44.5%,
+      calc(100% - 22px) 47%,
+      calc(100% - 24px) 49%,
+      calc(100% - 24px) 51%,
+      calc(100% - 22px) 53%,
+      calc(100% - 18px) 55.5%,
+      calc(100% - 13px) 58.5%,
+      calc(100% - 8px) 62%,
+      calc(100% - 4px) 66%,
+      calc(100% - 1px) 70%,
+      100% 75%,
+      100% 95%,
+      calc(100% - 2px) 96.9%,
+      calc(100% - 7px) 98.2%,
+      calc(100% - 14px) 99.3%,
+      calc(100% - 22px) 100%,
+      0 100%
+    );
     transition:left .32s cubic-bezier(.22,1,.36,1);
+    will-change:left;
+  }
+
+  /* La forma pertenece al panel; no se crea otra silueta ni otro contenedor. */
+  nav.sb::before,nav.sb::after{pointer-events:none}
+}
+
+/* En iPhone angosto la cintura se hace un poco menos profunda para no cortar etiquetas. */
+@media (max-width:390px){
+  nav.sb{
+    -webkit-clip-path:polygon(
+      0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
+      calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
+      calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
+      calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
+      100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
+    );
+    clip-path:polygon(
+      0 0,calc(100% - 20px) 0,calc(100% - 10px) 1.5%,100% 4.5%,100% 27%,
+      calc(100% - 3px) 34%,calc(100% - 8px) 39%,calc(100% - 14px) 44%,
+      calc(100% - 19px) 48%,calc(100% - 20px) 50%,calc(100% - 19px) 52%,
+      calc(100% - 14px) 56%,calc(100% - 8px) 61%,calc(100% - 3px) 66%,
+      100% 73%,100% 95.5%,calc(100% - 10px) 98.5%,calc(100% - 20px) 100%,0 100%
+    );
   }
 }
 
