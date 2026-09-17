@@ -1,0 +1,88 @@
+/* NEXUS PRO · Sidebar curva — prototipo visual 2026-09-17
+   Alcance: solo apariencia/transición del sidebar existente.
+   No crea otro menú, no cambia toggleSB(), no altera markup ni lógica de negocio. */
+
+@media (min-width:769px){
+  .sb{
+    position:relative;
+    overflow:hidden;
+    margin:10px 0;
+    height:calc(100% - 20px);
+    border-radius:0 44px 44px 0;
+    background:linear-gradient(180deg,var(--sidebar-accent) 0%,var(--sidebar) 46%,#172554 100%);
+    box-shadow:12px 0 30px rgba(15,31,61,.18),inset -1px 0 0 rgba(255,255,255,.08);
+    transition:width .34s cubic-bezier(.22,1,.36,1),border-radius .34s cubic-bezier(.22,1,.36,1),box-shadow .28s ease;
+    will-change:width;
+    isolation:isolate;
+  }
+  .sb::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(80% 34% at 100% 10%,rgba(96,165,250,.20),transparent 70%),
+      radial-gradient(82% 34% at 100% 90%,rgba(109,40,217,.20),transparent 72%);
+  }
+  .sb::after{
+    content:'';
+    position:absolute;
+    top:42px;
+    right:0;
+    bottom:42px;
+    width:1px;
+    z-index:2;
+    pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(255,255,255,.28) 18%,rgba(255,255,255,.10) 82%,transparent);
+    opacity:.65;
+  }
+  .sb > *{position:relative;z-index:1}
+
+  .sb.col{
+    width:58px;
+    border-radius:0 36px 36px 0;
+    box-shadow:8px 0 24px rgba(15,31,61,.16),inset -1px 0 0 rgba(255,255,255,.08);
+  }
+
+  /* El texto no salta: se desvanece y se desplaza. Se conserva el DOM actual. */
+  .sb .sb-nm,.sb .sb-sm,.sb .ni-l,.sb .ni-b,.sb .sb-un,.sb .sb-ur{
+    opacity:1;
+    transform:translateX(0);
+    transition:opacity .16s ease .11s,transform .28s cubic-bezier(.22,1,.36,1) .05s;
+  }
+  .sb.col .sb-nm,.sb.col .sb-sm,.sb.col .ni-l,.sb.col .ni-b,.sb.col .sb-un,.sb.col .sb-ur{
+    display:block !important;
+    opacity:0;
+    transform:translateX(-8px);
+    pointer-events:none;
+  }
+  .sb.col .sb-nm,.sb.col .sb-sm,.sb.col .sb-un,.sb.col .sb-ur{
+    width:0;max-width:0;overflow:hidden;
+  }
+  .sb.col .ni-l{width:0;max-width:0;overflow:hidden}
+  .sb.col .ni-b{width:0;max-width:0;overflow:hidden;padding-left:0;padding-right:0;margin-left:0}
+  .sb.col .ni{gap:0;justify-content:center;padding-left:0;padding-right:0}
+  .sb.col .sb-top{justify-content:center;padding-left:0;padding-right:0}
+  .sb.col .sb-u{justify-content:center;padding-left:0;padding-right:0}
+
+  /* El indicador activo sigue usando el sistema existente; solo adapta su contorno. */
+  .spring-ind{border-radius:14px}
+}
+
+@media (max-width:768px){
+  .sb{
+    top:8px;
+    height:calc(100dvh - 16px);
+    border-radius:0 38px 38px 0;
+    background:linear-gradient(180deg,var(--sidebar-accent) 0%,var(--sidebar) 52%,#172554 100%);
+    box-shadow:none;
+    overflow:hidden;
+    transition:left .32s cubic-bezier(.22,1,.36,1),box-shadow .24s ease;
+  }
+  .sb.mob-open{box-shadow:12px 0 34px rgba(15,23,42,.30)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sb,.sb *{transition-duration:.01ms !important;transition-delay:0s !important}
+}
