@@ -21,13 +21,24 @@
   width:var(--nx-rail);
   z-index:0;
   pointer-events:none;
-  border-radius:0 60px 60px 0;
   background:
     radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
     linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
-  /* Sombra reforzada: el carril debe leerse "por encima" del panel blanco,
-     como una pieza separada que flota sobre el fondo, no pegada al ras. */
-  box-shadow:10px 0 24px rgba(15,23,64,.28),2px 0 4px rgba(15,23,64,.14);
+  /* Silueta orgánica en "S" (referencia del dueño): cóncava cerca del logo,
+     convexa en la zona de íconos, cóncava otra vez cerca del footer. No se
+     puede lograr con border-radius solo — se recorta con una máscara SVG
+     (mask-size:100% 100% la estira al alto real del carril, sin importar si
+     es el sidebar de escritorio o el drawer móvil). */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L85,0 C100,20 70,38 60,58 C50,78 92,108 100,138 C108,176 100,260 92,300 C86,340 100,420 100,458 C100,488 65,508 62,538 C60,558 90,580 88,600 L0,600 Z' fill='white'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L85,0 C100,20 70,38 60,58 C50,78 92,108 100,138 C108,176 100,260 92,300 C86,340 100,420 100,458 C100,488 65,508 62,538 C60,558 90,580 88,600 L0,600 Z' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;
+  mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  /* filter:drop-shadow (no box-shadow) porque sigue la silueta real recortada
+     por la máscara, no el rectángulo de la caja — si no, la sombra se vería
+     cuadrada detrás de una forma con onda. */
+  filter:drop-shadow(6px 0 14px rgba(15,23,64,.30)) drop-shadow(1px 0 3px rgba(15,23,64,.16));
 }
 .sb > *{position:relative;z-index:1}
 
