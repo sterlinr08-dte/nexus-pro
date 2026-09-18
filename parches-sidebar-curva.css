@@ -16,7 +16,7 @@
     margin:10px 0;
     height:calc(100% - 20px);
     border-radius:0 44px 44px 0;
-    transition:width .34s cubic-bezier(.22,1,.36,1),border-radius .34s cubic-bezier(.22,1,.36,1);
+    transition:width .22s ease;
     will-change:width;
     isolation:isolate;
   }
