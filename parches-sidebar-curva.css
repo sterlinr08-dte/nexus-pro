@@ -1,79 +1,130 @@
-/* NEXUS PRO · Sidebar curva — azul degradado 2026-09-18
-   Alcance: SOLO el sidebar (forma + color + transición). No toca ticker,
-   dashboard, tarjetas KPI ni ninguna otra pantalla.
-   Decisión del dueño (18-sep-2026): reemplazar el look blanco/vidrio
-   (SIDEBAR V3) por un panel azul degradado, según mockup de referencia.
-   Sigue sin crear otro menú, sin cambiar toggleSB(), sin alterar markup
-   ni lógica de negocio — todo es override de color/forma vía CSS, con
-   !important donde hace falta para ganarle a las reglas de
-   parches-seguros-base.js (bloque NEXUS_SIDEBAR_V3), que carga antes
-   en el DOM. */
+/* NEXUS PRO · Sidebar desktop: carril azul curvo + panel blanco recto — 2026-09-18
+   Alcance: SOLO desktop (min-width:769px). Móvil NO se toca — conserva exactamente
+   el panel azul único que ya está en producción (bloque duplicado más abajo, sin
+   cambios, dentro de @media max-width:768px).
+   Una sola pieza de sidebar (nav.sb / #sbEl), sin duplicar markup: el carril azul
+   es un pseudo-elemento (::before) de ancho fijo; el panel blanco es el propio
+   fondo de nav.sb. Los íconos ya existentes (círculos de color) quedan centrados
+   dentro del carril en ambos estados; las etiquetas aparecen sobre el blanco solo
+   al expandir. No cambia toggleSB() ni el markup ni la lógica de negocio. */
 
 @media (min-width:769px){
+  :root{ --nx-rail: 68px; }
+
   .sb{
     position:relative;
     overflow:hidden;
     margin:10px 0;
     height:calc(100% - 20px);
-    border-radius:0 44px 44px 0;
+    width:210px;
+    border-radius:0;
+    background:#ffffff !important;
+    box-shadow:0 4px 18px rgba(15,23,42,.08);
     transition:width .22s ease;
     will-change:width;
     isolation:isolate;
   }
+  /* Carril azul curvo — pieza única, mismo ancho colapsado/expandido */
   .sb::before{
     content:'';
     position:absolute;
-    inset:0;
+    left:0; top:0; bottom:0;
+    width:var(--nx-rail);
     z-index:0;
     pointer-events:none;
+    border-radius:0 30px 30px 0;
     background:
-      radial-gradient(70% 40% at 15% 0%,rgba(255,255,255,.22),transparent 65%),
-      radial-gradient(80% 45% at 100% 100%,rgba(15,23,64,.35),transparent 70%);
-  }
-  .sb::after{
-    content:'';
-    position:absolute;
-    top:42px;
-    right:0;
-    bottom:42px;
-    width:1px;
-    z-index:2;
-    pointer-events:none;
-    background:linear-gradient(180deg,transparent,rgba(255,255,255,.30) 18%,rgba(255,255,255,.10) 82%,transparent);
-    opacity:.7;
+      radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
+      linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
+    box-shadow:6px 0 16px rgba(15,23,64,.18);
   }
   .sb > *{position:relative;z-index:1}
 
-  .sb.col{
-    width:58px;
-    border-radius:0 36px 36px 0;
-  }
+  .sb.col{ width:var(--nx-rail); }
 
-  /* El texto no salta: se desvanece y se desplaza. Se conserva el DOM actual. */
+  /* Etiquetas/textos: se desvanecen y se desplazan, no saltan. Se conserva el DOM actual. */
   .sb .sb-nm,.sb .sb-sm,.sb .ni-l,.sb .ni-b,.sb .sb-un,.sb .sb-ur{
     opacity:1;
     transform:translateX(0);
-    transition:opacity .16s ease .11s,transform .28s cubic-bezier(.22,1,.36,1) .05s;
+    transition:opacity .16s ease .08s,transform .2s ease .04s;
   }
   .sb.col .sb-nm,.sb.col .sb-sm,.sb.col .ni-l,.sb.col .ni-b,.sb.col .sb-un,.sb.col .sb-ur{
     display:block !important;
     opacity:0;
-    transform:translateX(-8px);
+    transform:translateX(-6px);
     pointer-events:none;
   }
-  .sb.col .sb-nm,.sb.col .sb-sm,.sb.col .sb-un,.sb.col .sb-ur{
-    width:0;max-width:0;overflow:hidden;
-  }
+  .sb.col .sb-nm,.sb.col .sb-sm,.sb.col .sb-un,.sb.col .sb-ur{ width:0;max-width:0;overflow:hidden; }
   .sb.col .ni-l{width:0;max-width:0;overflow:hidden}
   .sb.col .ni-b{width:0;max-width:0;overflow:hidden;padding-left:0;padding-right:0;margin-left:0}
-  .sb.col .ni{gap:0;justify-content:center;padding-left:0;padding-right:0}
+  .sb.col .ni{justify-content:center;padding-left:0;padding-right:0}
   .sb.col .sb-top{justify-content:center;padding-left:0;padding-right:0}
   .sb.col .sb-u{justify-content:center;padding-left:0;padding-right:0}
 
+  /* Ícono/logo/avatar siempre centrados dentro del carril, expandido o no */
+  nav.sb .ni{padding-left:0}
+  nav.sb .ni-i{margin-left:calc((var(--nx-rail) - 30px)/2)}
+  nav.sb .sb-top{padding-left:0}
+  nav.sb .sb-mk{margin-left:calc((var(--nx-rail) - 30px)/2)}
+  nav.sb .sb-u{padding-left:0}
+  nav.sb .sb-av{margin-left:calc((var(--nx-rail) - 28px)/2)}
+
   /* El indicador activo sigue usando el sistema existente; solo adapta su contorno. */
-  .spring-ind{border-radius:14px}
+  .spring-ind{border-radius:10px}
+
+  /* ── Panel blanco recto: textos oscuros, sin curva, sin sombra propia ── */
+  nav.sb .sb-top{border-bottom:1px solid rgba(15,23,42,.06) !important}
+  nav.sb .sb-nm{color:#0f172a !important}
+  nav.sb .sb-sm{color:#64748b !important}
+  nav.sb .ss{color:#94a3b8 !important}
+
+  nav.sb .ni{
+    color:#334155;
+    background:transparent !important;
+    border:1px solid transparent !important;
+    box-shadow:none !important;
+    border-radius:10px;
+  }
+  nav.sb .ni:hover{
+    background:rgba(15,23,42,.05) !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+  }
+  nav.sb .ni.on{
+    background:rgba(37,99,235,.10) !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+  }
+  nav.sb .ni.on::before{display:none !important}
+
+  nav.sb .ni-i{color:#fff !important}
+  nav.sb .ni-l{color:#334155 !important}
+  nav.sb .ni:hover .ni-l{color:#0f172a !important;font-weight:600}
+  nav.sb .ni.on   .ni-l{color:#1d4ed8 !important;font-weight:700}
+  nav.sb .ni i.ti-chevron-down{color:#94a3b8 !important}
+
+  nav.sb #niAdmin2 > span:not(.ni-l){
+    background:#eef2ff !important;
+    color:#4338ca !important;
+    box-shadow:none !important;
+  }
+
+  nav.sb .sb-ft{border-top:1px solid rgba(15,23,42,.06) !important}
+  nav.sb .sb-u{
+    background:transparent !important;
+    border:1px solid transparent !important;
+    box-shadow:none !important;
+    border-radius:10px;
+  }
+  nav.sb .sb-u:hover{ background:rgba(15,23,42,.05) !important; }
+  nav.sb .sb-un{color:#0f172a !important}
+  nav.sb .sb-ur{color:#64748b !important}
 }
 
+/* ════════════════════════════════════════════════════════════════
+   MÓVIL — sin cambios respecto a lo publicado. No forma parte de este
+   encargo (desktop-only); se conserva tal cual para no romper nada.
+   ════════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
   .sb{
     top:8px;
@@ -83,91 +134,79 @@
     transition:left .32s cubic-bezier(.22,1,.36,1);
   }
   .sb.mob-open{box-shadow:12px 0 34px rgba(15,23,64,.35)}
+
+  nav.sb{
+    background:
+      radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.14),transparent 55%),
+      linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%) !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+    border-right:0 !important;
+    box-shadow:
+      12px 0 32px rgba(15,23,64,.28),
+      inset -1px 0 0 rgba(255,255,255,.10) !important;
+  }
+  nav.sb .sb-top{border-bottom:1px solid rgba(255,255,255,.14) !important}
+  nav.sb .sb-nm{color:#fff !important}
+  nav.sb .sb-sm{color:rgba(255,255,255,.55) !important}
+  nav.sb .ss{color:rgba(255,255,255,.45) !important}
+
+  nav.sb .spring-ind{
+    background:rgba(255,255,255,.92) !important;
+    box-shadow:inset 2px 0 0 #fff,0 0 0 1px rgba(255,255,255,.3) !important;
+  }
+  nav.sb .spring-ind .spring-glow{
+    background:radial-gradient(58% 100% at 10% 50%,rgba(255,255,255,.6),rgba(147,197,253,.28) 52%,transparent 76%) !important;
+  }
+
+  nav.sb .ni{
+    color:rgba(255,255,255,.80);
+    background:transparent !important;
+    border:1px solid transparent !important;
+    box-shadow:none !important;
+  }
+  nav.sb .ni:hover{
+    background:rgba(255,255,255,.12) !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+  }
+  nav.sb .ni.on{
+    background:#ffffff !important;
+    border-color:transparent !important;
+    box-shadow:0 8px 18px rgba(15,23,64,.30) !important;
+  }
+  nav.sb .ni.on::before{display:none !important}
+
+  nav.sb .ni-i{color:rgba(255,255,255,.85) !important}
+  nav.sb .ni:hover .ni-i{color:#fff !important}
+  nav.sb .ni.on   .ni-i{color:#1e3fae !important}
+
+  nav.sb .ni-l{color:rgba(255,255,255,.80) !important}
+  nav.sb .ni:hover .ni-l{color:#fff !important;font-weight:600}
+  nav.sb .ni.on   .ni-l{color:#16225c !important;font-weight:700}
+
+  nav.sb .ni i.ti-chevron-down{color:rgba(255,255,255,.65) !important}
+
+  nav.sb #niAdmin2 > span:not(.ni-l){
+    background:#ffffff !important;
+    color:#1e3fae !important;
+    box-shadow:0 2px 6px rgba(15,23,64,.30) !important;
+  }
+
+  nav.sb .sb-ft{border-top:1px solid rgba(255,255,255,.14) !important}
+  nav.sb .sb-u{
+    background:#ffffff !important;
+    border:1px solid rgba(255,255,255,.5) !important;
+    box-shadow:0 8px 20px rgba(15,23,64,.30) !important;
+  }
+  nav.sb .sb-u:hover{
+    background:#f8fafc !important;
+    box-shadow:0 10px 24px rgba(15,23,64,.34) !important;
+  }
+  nav.sb .sb-un{color:#0f172a !important}
+  nav.sb .sb-ur{color:#475569 !important}
 }
 
 @media (prefers-reduced-motion:reduce){
   .sb,.sb *{transition-duration:.01ms !important;transition-delay:0s !important}
 }
-
-/* ════════════════════════════════════════════════════════════════
-   COLOR — panel azul degradado (reemplaza SIDEBAR V3 blanco/vidrio)
-   Aplica igual en desktop y móvil, colapsado y expandido: es el mismo
-   elemento nav.sb, solo cambia su ancho/curva por el bloque de arriba.
-   Todo con especificidad igual o mayor que NEXUS_SIDEBAR_V3 + !important,
-   y cargado después en el DOM, para ganar la cascada de forma predecible.
-   ════════════════════════════════════════════════════════════════ */
-nav.sb{
-  background:
-    radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.14),transparent 55%),
-    linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%) !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  border-right:0 !important;
-  box-shadow:
-    12px 0 32px rgba(15,23,64,.28),
-    inset -1px 0 0 rgba(255,255,255,.10) !important;
-}
-nav.sb .sb-top{border-bottom:1px solid rgba(255,255,255,.14) !important}
-nav.sb .sb-nm{color:#fff !important}
-nav.sb .sb-sm{color:rgba(255,255,255,.55) !important}
-nav.sb .ss{color:rgba(255,255,255,.45) !important}
-
-/* Indicador deslizante (spring-ind) detrás del item activo: de morado a blanco/azul */
-nav.sb .spring-ind{
-  background:rgba(255,255,255,.92) !important;
-  box-shadow:inset 2px 0 0 #fff,0 0 0 1px rgba(255,255,255,.3) !important;
-}
-nav.sb .spring-ind .spring-glow{
-  background:radial-gradient(58% 100% at 10% 50%,rgba(255,255,255,.6),rgba(147,197,253,.28) 52%,transparent 76%) !important;
-}
-
-/* Items del menú: transparentes sobre el azul; activo = pill blanco */
-nav.sb .ni{
-  color:rgba(255,255,255,.80);
-  background:transparent !important;
-  border:1px solid transparent !important;
-  box-shadow:none !important;
-}
-nav.sb .ni:hover{
-  background:rgba(255,255,255,.12) !important;
-  border-color:transparent !important;
-  box-shadow:none !important;
-  transform:translateY(-1px);
-}
-nav.sb .ni.on{
-  background:#ffffff !important;
-  border-color:transparent !important;
-  box-shadow:0 8px 18px rgba(15,23,64,.30) !important;
-}
-nav.sb .ni.on::before{display:none !important}
-
-nav.sb .ni-i{color:rgba(255,255,255,.85) !important}
-nav.sb .ni:hover .ni-i{color:#fff !important}
-nav.sb .ni.on   .ni-i{color:#1e3fae !important}
-
-nav.sb .ni-l{color:rgba(255,255,255,.80) !important}
-nav.sb .ni:hover .ni-l{color:#fff !important;font-weight:600}
-nav.sb .ni.on   .ni-l{color:#16225c !important;font-weight:700}
-
-nav.sb .ni i.ti-chevron-down{color:rgba(255,255,255,.65) !important}
-
-/* Badge ADMIN: blanco con texto azul, para contraste sobre el panel */
-nav.sb #niAdmin2 > span:not(.ni-l){
-  background:#ffffff !important;
-  color:#1e3fae !important;
-  box-shadow:0 2px 6px rgba(15,23,64,.30) !important;
-}
-
-/* Footer (tarjeta de perfil): queda blanca, flotando sobre el azul */
-nav.sb .sb-ft{border-top:1px solid rgba(255,255,255,.14) !important}
-nav.sb .sb-u{
-  background:#ffffff !important;
-  border:1px solid rgba(255,255,255,.5) !important;
-  box-shadow:0 8px 20px rgba(15,23,64,.30) !important;
-}
-nav.sb .sb-u:hover{
-  background:#f8fafc !important;
-  box-shadow:0 10px 24px rgba(15,23,64,.34) !important;
-}
-nav.sb .sb-un{color:#0f172a !important}
-nav.sb .sb-ur{color:#475569 !important}
