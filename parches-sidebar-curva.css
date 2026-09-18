@@ -21,7 +21,7 @@
   width:var(--nx-rail);
   z-index:0;
   pointer-events:none;
-  border-radius:0 30px 30px 0;
+  border-radius:0 40px 40px 0;
   background:
     radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
     linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
@@ -29,14 +29,28 @@
 }
 .sb > *{position:relative;z-index:1}
 
+/* Ícono/logo/avatar centrados dentro del carril (68px). sb-nav conserva su
+   padding-left:10px base (no se toca); ni/sb-top/sb-u sí se ponen en 0 para
+   que el margin-left de cada pieza sea el único responsable del centrado. */
 nav.sb .ni{padding-left:0}
-nav.sb .ni-i{margin-left:calc((var(--nx-rail) - 30px)/2)}
+nav.sb .ni-i{margin-left:9px}      /* centra un ícono de 30px: 10(sb-nav)+9+15 = 34 = mitad de 68 */
 nav.sb .sb-top{padding-left:0}
-nav.sb .sb-mk{margin-left:calc((var(--nx-rail) - 30px)/2)}
+nav.sb .sb-mk{margin-left:19px}    /* centra un logo de 30px, sin padding heredado: 19+15 = 34 */
 nav.sb .sb-u{padding-left:0}
-nav.sb .sb-av{margin-left:calc((var(--nx-rail) - 28px)/2)}
+nav.sb .sb-av{margin-left:20px}    /* centra un avatar de 28px, sin padding heredado: 20+14 = 34 */
 
-.spring-ind{border-radius:10px}
+/* Resaltado activo: el pill deslizante (spring-ind) es el indicador real;
+   se recorta para no tapar el carril — arranca justo donde termina. */
+.spring-ind{
+  left:var(--nx-rail);
+  right:10px;
+  border-radius:10px;
+  background:rgba(37,99,235,.12) !important;
+  box-shadow:inset 2px 0 0 #2563eb,0 0 0 1px rgba(37,99,235,.10) !important;
+}
+.spring-ind .spring-glow{
+  background:radial-gradient(58% 100% at 10% 50%,rgba(96,165,250,.45),rgba(37,99,235,.18) 52%,transparent 76%) !important;
+}
 
 nav.sb .sb-top{border-bottom:1px solid rgba(15,23,42,.06) !important}
 nav.sb .sb-nm{color:#0f172a !important}
@@ -55,12 +69,17 @@ nav.sb .ni:hover{
   border-color:transparent !important;
   box-shadow:none !important;
 }
+/* Respaldo si el pill deslizante (spring-ind) no llegó a inicializar: mismo
+   criterio, con gradiente para no tapar el carril. Se apaga cuando spring-ind
+   sí está activo (body.spring-nav), para no duplicar el resaltado. */
 nav.sb .ni.on{
-  background:rgba(37,99,235,.10) !important;
+  background-image:linear-gradient(90deg,transparent 0,transparent var(--nx-rail),rgba(37,99,235,.10) var(--nx-rail),rgba(37,99,235,.10) 100%) !important;
+  background-color:transparent !important;
   border-color:transparent !important;
   box-shadow:none !important;
 }
 nav.sb .ni.on::before{display:none !important}
+body.spring-nav nav.sb .ni.on{background-image:none !important}
 
 nav.sb .ni-i{color:#fff !important}
 nav.sb .ni-l{color:#334155 !important}
