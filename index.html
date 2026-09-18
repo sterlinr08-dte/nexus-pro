@@ -8579,6 +8579,11 @@ function nav(view,el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
   else document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${view}'`))n.classList.add('on');});
+  // Arrancar el resorte AQUÍ, antes del renderizado de la vista (más abajo,
+  // fn[view]() puede ser pesado y síncrono — tablas grandes). Si se llama
+  // después de eso, el resorte no tiene oportunidad de animar hasta que el
+  // hilo principal se libera, y se ve "congelado" y luego salta de golpe.
+  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   try{document.querySelectorAll('.nxFacBar').forEach(function(b){b.remove();});var _fabnav=document.querySelector('.nx-fab');if(_fabnav)_fabnav.classList.remove('nxFabLift');}catch(e){}
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
@@ -8602,8 +8607,6 @@ function nav(view,el){
   nxGuardarLugar('seguros', view);
   // Log de navegación
   logError('info', 'Navegación: '+(TITLES[view]||view), '', view);
-  // Indicador de resorte del sidebar (best-effort, ver script junto a <nav class="sb">)
-  if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
 }
 
 // ── TICKER ───────────────────────────────────────────────────────────────────
