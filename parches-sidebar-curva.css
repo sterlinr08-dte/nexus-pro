@@ -21,7 +21,7 @@
   width:var(--nx-rail);
   z-index:0;
   pointer-events:none;
-  border-radius:0 40px 40px 0;
+  border-radius:0 60px 60px 0;
   background:
     radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
     linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
