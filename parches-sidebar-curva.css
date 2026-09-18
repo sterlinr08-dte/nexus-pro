@@ -25,7 +25,9 @@
   background:
     radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
     linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
-  box-shadow:6px 0 16px rgba(15,23,64,.18);
+  /* Sombra reforzada: el carril debe leerse "por encima" del panel blanco,
+     como una pieza separada que flota sobre el fondo, no pegada al ras. */
+  box-shadow:10px 0 24px rgba(15,23,64,.28),2px 0 4px rgba(15,23,64,.14);
 }
 .sb > *{position:relative;z-index:1}
 
@@ -117,6 +119,8 @@ nav.sb .sb-ur{color:#64748b !important}
     width:210px;
     border-radius:0;
     background:#ffffff !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
     box-shadow:0 4px 18px rgba(15,23,42,.08);
     transition:width .22s ease;
     will-change:width;
@@ -156,6 +160,8 @@ nav.sb .sb-ur{color:#64748b !important}
     border-radius:0;
     overflow:hidden;
     background:#ffffff !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
     box-shadow:0 4px 18px rgba(15,23,42,.08);
     transition:left .32s cubic-bezier(.22,1,.36,1);
   }
