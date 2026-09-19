@@ -583,13 +583,15 @@ nav.sb .sb-ur{color:#64748b !important}
     transition-delay:.085s;
   }
 
-  /* Activo más parecido a píldora, sin borde duro ni línea lateral. */
+  /* Activo compacto: termina poco después del texto activo también en móvil. */
   .spring-ind{
     left:calc(var(--nx-rail) + 6px) !important;
-    right:12px;
+    right:auto !important;
+    width:104px;
     border-radius:18px;
     background:rgba(37,99,235,.10) !important;
     box-shadow:0 0 0 1px rgba(37,99,235,.06) !important;
+    transition:opacity .15s,width .16s cubic-bezier(.22,1,.36,1);
   }
   .sb:not(.mob-open) .spring-ind{opacity:0 !important}
 
