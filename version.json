@@ -1,7 +1,16 @@
 {
-  "version": "58.40",
+  "version": "58.41",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.41",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO: en iPhone/Safari el menú lateral ya fuerza la versión nueva para que no siga mostrando el diseño anterior desde caché.",
+        "MEJORADO: la barra azul permanece fija con sus iconos, mientras el panel blanco y los nombres se deslizan desde debajo.",
+        "CORREGIDO: el panel blanco se prolonga por detrás de la curva azul para eliminar el espacio vacío inferior; se conserva una sombra suave entre ambas capas."
+      ]
+    },
     {
       "version": "58.40",
       "fecha": "2026-09-16",
