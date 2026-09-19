@@ -1,7 +1,16 @@
 {
-  "version": "58.46",
+  "version": "58.47",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.47",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO: en móvil el selector activo ya no usa una píldora larga independiente; ahora el fondo se ajusta exactamente alrededor del texto activo.",
+        "CORREGIDO: se neutraliza el fondo estático del item activo para evitar el rectángulo ancho en iPhone.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.46",
       "fecha": "2026-09-19",
