@@ -1,7 +1,16 @@
 {
-  "version": "58.43",
+  "version": "58.44",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.44",
+      "fecha": "2026-09-19",
+      "notas": [
+        "MEJORADO: el footer del sidebar desktop ya no invade el carril azul y queda compacto dentro del panel blanco.",
+        "MEJORADO: la curva azul inferior es más progresiva y el estado activo del menú es más limpio y compacto.",
+        "MEJORADO: la barra superior desktop reduce altura y brillo del botón verde para un acabado más profesional."
+      ]
+    },
     {
       "version": "58.43",
       "fecha": "2026-09-19",
