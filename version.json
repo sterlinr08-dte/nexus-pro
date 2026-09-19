@@ -1,7 +1,16 @@
 {
-  "version": "58.41",
+  "version": "58.42",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.42",
+      "fecha": "2026-09-19",
+      "notas": [
+        "MEJORADO: en móvil la barra azul queda fija sin tapar el dashboard; el contenido empieza después del carril lateral.",
+        "CORREGIDO: el panel blanco ya no deja una forma blanca visible cuando el menú está cerrado y, al abrir, se desliza desde debajo del azul.",
+        "MEJORADO: la barra superior móvil queda compacta, redondeada, alineada con el safe-area del iPhone y con mejor separación visual."
+      ]
+    },
     {
       "version": "58.41",
       "fecha": "2026-09-19",
