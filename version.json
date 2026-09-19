@@ -1,7 +1,16 @@
 {
-  "version": "58.47",
+  "version": "58.48",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.48",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO: en móvil el selector activo del sidebar se fuerza a encoger al ancho real del texto y ya no ocupa el espacio restante de la fila.",
+        "MEJORADO: la píldora activa termina aproximadamente 10px después de la etiqueta, manteniendo la misma posición del texto.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.47",
       "fecha": "2026-09-19",
