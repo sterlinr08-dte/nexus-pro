@@ -583,17 +583,45 @@ nav.sb .sb-ur{color:#64748b !important}
     transition-delay:.085s;
   }
 
-  /* Activo compacto: termina poco después del texto activo también en móvil. */
+  /*
+   * MÓVIL: el selector visual se ata DIRECTAMENTE al texto activo.
+   * Así no depende del ancho total del row ni del cálculo del resorte.
+   * Esto elimina el rectángulo largo que seguía viéndose en iPhone.
+   */
   .spring-ind{
-    left:calc(var(--nx-rail) + 6px) !important;
-    right:auto !important;
-    width:104px;
-    border-radius:18px;
-    background:rgba(37,99,235,.10) !important;
-    box-shadow:0 0 0 1px rgba(37,99,235,.06) !important;
-    transition:opacity .15s,width .16s cubic-bezier(.22,1,.36,1);
+    display:none !important;
   }
-  .sb:not(.mob-open) .spring-ind{opacity:0 !important}
+  nav#sbEl.sb .ni.on{
+    background:transparent !important;
+    background-image:none !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+  }
+  nav#sbEl.sb .ni.on::before{
+    display:none !important;
+  }
+  nav#sbEl.sb .ni-l{
+    position:relative;
+    z-index:2;
+  }
+  nav#sbEl.sb .ni.on .ni-l::before{
+    content:'';
+    position:absolute;
+    left:-12px;
+    right:-12px;
+    top:50%;
+    height:38px;
+    transform:translateY(-50%);
+    border-radius:16px;
+    background:linear-gradient(180deg,rgba(239,246,255,.96),rgba(219,234,254,.78));
+    border:1px solid rgba(59,130,246,.08);
+    box-shadow:
+      0 5px 13px rgba(37,99,235,.075),
+      inset 0 1px 0 rgba(255,255,255,.90),
+      inset 2px 0 0 rgba(37,99,235,.58);
+    z-index:-1;
+    pointer-events:none;
+  }
 
   /* Footer queda claramente por debajo de la terminación azul, dentro del blanco. */
   .sb .sb-ft{
