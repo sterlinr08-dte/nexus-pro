@@ -256,7 +256,8 @@ nav.sb .sb-ur{color:#64748b !important}
 
   .sb:not(.col) .spring-ind{
     left:calc(var(--nx-rail) + 12px) !important;
-    right:18px !important;
+    right:auto !important;
+    width:104px;
     border-radius:14px !important;
     background:
       linear-gradient(180deg,rgba(239,246,255,.94),rgba(219,234,254,.72)) !important;
@@ -265,6 +266,12 @@ nav.sb .sb-ur{color:#64748b !important}
       0 5px 13px rgba(37,99,235,.075),
       inset 0 1px 0 rgba(255,255,255,.90),
       inset 2px 0 0 rgba(37,99,235,.62) !important;
+    transition:opacity .15s,width .16s cubic-bezier(.22,1,.36,1);
+  }
+  .sb.col .spring-ind{
+    left:10px !important;
+    right:10px !important;
+    width:auto !important;
   }
 
   .sb:not(.col) .sb-ft{
