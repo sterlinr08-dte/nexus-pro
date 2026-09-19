@@ -1,7 +1,17 @@
 {
-  "version": "58.49",
+  "version": "58.50",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.50",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO (bug real, confirmado con captura): en móvil, los títulos largos del menú (ej. \"Solicitudes pendientes\", \"Configuración\") se cortaban a la mitad sin aviso y en Configuración el badge ADMIN quedaba tapado/ilegible.",
+        "MEJORADO: ahora el título se acorta con \"…\" cuando no cabe, y el badge/flecha de la fila nunca se comprime — solo el texto cede espacio.",
+        "DETALLE: el indicador de resorte del menú ya no calcula/anima en móvil (estaba oculto mas seguía trabajando de fondo en cada clic).",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.49",
       "fecha": "2026-09-19",

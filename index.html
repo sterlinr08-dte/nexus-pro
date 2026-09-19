@@ -3085,6 +3085,11 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 
       window.nxSidebarSpringSync = function(instant){
         try{
+          // Móvil (parches-sidebar-curva.css) oculta #springInd con display:none
+          // y pinta el activo directo sobre .ni-l -- no tiene sentido medir/animar
+          // un elemento que no se ve. getComputedStyle es barato comparado con
+          // arrancar un requestAnimationFrame loop entero por cada click de nav().
+          if (window.getComputedStyle(indicator).display === 'none') return;
           var activo = container.querySelector('.ni.on');
           if (!activo || activo.offsetParent === null){ indicator.style.opacity = '0'; return; }
           indicator.style.opacity = '';
@@ -6443,7 +6448,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.49';
+const APP_VERSION='58.50';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

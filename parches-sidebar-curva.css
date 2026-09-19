@@ -188,8 +188,19 @@ nav.sb .sb-ur{color:#64748b !important}
     box-shadow:none;
   }
 
-  /* En expandido, los títulos arrancan ya dentro del panel blanco, no pegados al carril. */
-  .sb:not(.col) .ni-l{margin-left:14px}
+  /* En expandido, los títulos arrancan ya dentro del panel blanco, no pegados al carril.
+     min-width:0 + text-overflow es el mismo fix que móvil (bitácora
+     2026-09-19-2): sin esto, un título largo ("Configuración", "Solicitudes
+     pendientes") desborda la fila y nav.sb .ni{overflow:hidden} (base,
+     index.html) lo corta a la mitad sin "…", tapando el badge/chevron. */
+  .sb:not(.col) .ni-l{
+    margin-left:14px;
+    min-width:0;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sb:not(.col) .ni > *:not(.ni-l){flex-shrink:0}
   .sb:not(.col) .sb-nm,
   .sb:not(.col) .sb-sm{margin-left:8px}
 
@@ -532,19 +543,37 @@ nav.sb .sb-ur{color:#64748b !important}
     z-index:3;
   }
 
-  /* Labels: más aire entre carril e información. */
+  /* Labels: más aire entre carril e información.
+     flex:0 1 auto (no crece, SÍ puede encogerse) + min-width:0 es lo que
+     permite que, si el label no cabe, se recorte con "…" en vez de
+     desbordar la fila y que nav.sb .ni{overflow:hidden} (regla base,
+     index.html) lo corte a la mitad sin avisar -- bug real confirmado con
+     captura (2026-09-19-2, ver bitácora): "SOLICITUDES PENDIENTES" salía
+     como "SOLICITUDES PENDIENT" y "CONFIGURACIÓN" tapaba el badge ADMIN. */
   nav#sbEl.sb .ni-l{
     margin-left:12px;
     color:#334155 !important;
     font-size:10.5px;
     letter-spacing:.15px;
-    display:inline-flex !important;
-    flex:0 0 auto !important;
-    width:max-content !important;
-    inline-size:max-content !important;
-    max-width:calc(100% - var(--nx-rail) - 28px) !important;
+    /* inline-block, NO inline-flex: text-overflow:ellipsis no se aplica
+       dentro de un contenedor flex (limitación real de CSS) -- por eso el
+       primer intento de este fix seguía cortando el texto sin "…". Como
+       flex item de .ni (que sí es flex), el outer display se "blockifica"
+       igual y el ancho lo sigue controlando flex:0 1 auto de aquí abajo. */
+    display:inline-block !important;
+    flex:0 1 auto !important;
+    min-width:0 !important;
+    width:auto !important;
+    inline-size:auto !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
     white-space:nowrap;
+    vertical-align:middle;
   }
+  /* El resto de la fila (icono, badge, chevron, pill ADMIN) nunca se
+     encoge -- el único que cede espacio es el label, vía text-overflow. */
+  nav#sbEl.sb .ni > *:not(.ni-l){flex-shrink:0 !important}
 
   /* Los títulos de sección también pertenecen al panel blanco, no al azul. */
   nav#sbEl.sb .ss{
@@ -622,12 +651,15 @@ nav.sb .sb-ur{color:#64748b !important}
   body.spring-nav nav#sbEl.sb .ni.on .ni-l,
   body.tema-premium nav#sbEl.sb .ni.on .ni-l,
   body.tema-glass nav#sbEl.sb .ni.on .ni-l{
-    display:inline-flex !important;
-    flex:0 0 auto !important;
+    display:inline-block !important;
+    flex:0 1 auto !important;
     width:auto !important;
     inline-size:auto !important;
     min-width:0 !important;
-    max-width:none !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    vertical-align:middle;
     margin-left:2px !important;
     padding:8px 10px !important;
     border-radius:14px !important;
