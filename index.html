@@ -3045,9 +3045,34 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
         if (settled){ curA=targetA; curB=targetB; velA=0; velB=0; apply(); running=false; return; }
         requestAnimationFrame(tick);
       }
+      function fitWidth(el){
+        try{
+          var sb = document.getElementById('sbEl');
+          if (window.innerWidth <= 768 || !sb || sb.classList.contains('col')){
+            indicator.style.width = '';
+            return;
+          }
+          var cr = container.getBoundingClientRect();
+          var ir = indicator.getBoundingClientRect();
+          var label = el.querySelector('.ni-l');
+          var badge = el.querySelector('.ni-b');
+          if (!label) return;
+          var lr = label.getBoundingClientRect();
+          var farRight = lr.right;
+          if (badge && badge.offsetParent !== null){
+            var br = badge.getBoundingClientRect();
+            farRight = Math.max(farRight, br.right);
+          }
+          var left = ir.left - cr.left;
+          var desired = farRight - cr.left - left + 14;
+          var max = Math.max(72, cr.width - left - 14);
+          indicator.style.width = Math.max(72, Math.min(desired, max)) + 'px';
+        }catch(e){}
+      }
       function goTo(el, instant){
         var m = measure(el);
         targetA = m.a; targetB = m.b;
+        fitWidth(el);
         if (instant || reduced()){ curA=targetA; curB=targetB; velA=0; velB=0; apply(); return; }
         if (!running){ running = true; requestAnimationFrame(tick); }
       }
