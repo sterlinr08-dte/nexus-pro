@@ -1,7 +1,16 @@
 {
-  "version": "58.48",
+  "version": "58.49",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.49",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO: en móvil el selector activo ahora se dibuja directamente sobre el texto, eliminando el desplazamiento y el ancho heredado de la fila.",
+        "MEJORADO: el selector empieza 10px antes de la primera letra y termina 10px después de la última, manteniendo el texto en la misma posición.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.48",
       "fecha": "2026-09-19",
