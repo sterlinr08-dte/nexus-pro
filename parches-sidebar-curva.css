@@ -215,14 +215,22 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-backdrop-filter:none !important;
   }
 
-  .sb{
+  .sb,
+  .sb.col{
     top:8px;
+    left:0 !important;
+    width:var(--nx-rail) !important;
     height:calc(100dvh - 16px);
     border-radius:0;
     overflow:hidden;
     box-shadow:none;
-    transition:left .22s cubic-bezier(.22,1,.36,1);
+    transition:width .30s cubic-bezier(.22,1,.36,1) !important;
     isolation:isolate;
+  }
+  .sb.mob-open,
+  .sb.col.mob-open{
+    left:0 !important;
+    width:210px !important;
   }
 
   /* CAPA AZUL — pieza superior, separada y con más profundidad. */
@@ -249,8 +257,8 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
     filter:
-      drop-shadow(13px 0 17px rgba(15,23,64,.34))
-      drop-shadow(4px 0 7px rgba(15,23,64,.18));
+      drop-shadow(9px 0 13px rgba(15,23,64,.30))
+      drop-shadow(2px 0 4px rgba(15,23,64,.18));
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
@@ -259,8 +267,8 @@ nav.sb .sb-ur{color:#64748b !important}
     position:absolute;
     top:10px;
     bottom:14px;
-    left:calc(var(--nx-rail) - 34px);
-    right:8px;
+    left:0;
+    width:202px;
     z-index:0;
     pointer-events:none;
     background:rgba(255,255,255,.985);
@@ -269,7 +277,7 @@ nav.sb .sb-ur{color:#64748b !important}
     box-shadow:
       8px 0 22px rgba(15,23,42,.10),
       0 8px 22px rgba(15,23,42,.06);
-    transform:translateX(calc(-100% + 34px));
+    transform:translateX(calc(-202px + var(--nx-rail)));
     transition:transform .30s cubic-bezier(.22,1,.36,1) .035s;
     will-change:transform;
   }
@@ -297,38 +305,14 @@ nav.sb .sb-ur{color:#64748b !important}
   }
 
   /*
-   * Selector con ID para ganar la cascada de los 8 grupos de iconos
-   * multicolor del sidebar base. Así TODOS los iconos normales quedan
-   * blancos/transparentes aunque aquellas reglas también usen !important.
+   * Los iconos recuperan EXACTAMENTE la cascada visual anterior del sidebar base.
+   * Aquí solo se garantiza que queden por encima de las dos superficies.
+   * No se fuerzan colores, fondos, sombras, tamaño ni estilo activo.
    */
-  body nav#sbEl.sb .ni > i.ni-i{
-    margin-left:7px !important;
-    width:42px !important;
-    height:42px !important;
-    min-width:42px !important;
-    border-radius:13px !important;
-    color:#fff !important;
-    background:transparent !important;
-    background-image:none !important;
-    box-shadow:none !important;
-    border:none !important;
-    backdrop-filter:none !important;
-    -webkit-backdrop-filter:none !important;
-    font-size:19px !important;
+  nav#sbEl.sb .ni > i.ni-i{
     position:relative;
     z-index:3;
-    transform:none;
   }
-  body nav#sbEl.sb .ni > i.ni-i::after{display:none !important}
-
-  body nav#sbEl.sb .ni.on > i.ni-i{
-    background:rgba(96,165,250,.34) !important;
-    background-image:none !important;
-    box-shadow:
-      inset 0 0 0 1px rgba(255,255,255,.18),
-      0 7px 16px rgba(30,64,175,.18) !important;
-  }
-  nav#sbEl.sb .ni:active > i.ni-i{transform:scale(.94) !important}
 
   /* Labels: más aire entre carril e información. */
   nav#sbEl.sb .ni-l{
