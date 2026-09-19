@@ -12228,6 +12228,18 @@
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
+    // Transferencia/Depósito recién registrados quedan "pendiente" de validación
+    // bancaria (ver trg_whatsapp_pago_aplicado / seguros_validar_pago) -- el saldo
+    // ya se acreditó en pagado, pero el banco todavía no lo confirmó. No podemos
+    // decirle al cliente "confirmado, saldo $0" en ese momento: si la validación
+    // se demora, contradice al aviso de atraso automático que sigue corriendo con
+    // datos reales. 2026-09-19: caso real detectado (Faridy Sosa Cabrera) recibió
+    // este mensaje el mismo día que un recordatorio_atraso automático por el mismo
+    // pago, todavía sin validar.
+    const pendienteValidacion = (d.metodo === 'Transferencia' || d.metodo === 'Depósito');
+    if (pendienteValidacion) {
+      return `Estimado/a *${d.c.nom}*,\n\n📥 Recibimos su pago, en proceso de validación bancaria:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n*Método:* ${d.metodo}${d.ref ? ' · Ref. ' + d.ref : ''}\n\n*Meses que cubrirá:*\n${mesesTxt}\n\nEn cuanto el banco confirme la transferencia le avisamos con el saldo final. Gracias por su pago.\n_${empNom}_`;
+    }
     // Meses cubiertos MÁS ALLÁ del período actual = adelanto real (no solo
     // "pagó lo que tocaba este mes"), mismo corte 20-al-20 de mesCorte().
     let adelantoTxt = '';
