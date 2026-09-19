@@ -1,7 +1,16 @@
 {
-  "version": "58.42",
+  "version": "58.43",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.43",
+      "fecha": "2026-09-19",
+      "notas": [
+        "MEJORADO: en escritorio la barra lateral gana profundidad con sombra lateral, panel blanco elevado y mejor acabado del estado activo.",
+        "MEJORADO: la barra superior de escritorio ahora es una pieza redondeada, con mejor alineación, espaciado y jerarquía visual.",
+        "SIN CAMBIOS: móvil, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.42",
       "fecha": "2026-09-19",
