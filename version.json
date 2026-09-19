@@ -1,7 +1,16 @@
 {
-  "version": "58.45",
+  "version": "58.46",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.46",
+      "fecha": "2026-09-19",
+      "notas": [
+        "CORREGIDO: el selector activo del sidebar móvil también ajusta su ancho al texto cuando el menú está abierto.",
+        "MEJORADO: el selector móvil deja de extenderse hasta casi el borde derecho del panel blanco.",
+        "SIN CAMBIOS: desktop colapsado y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.45",
       "fecha": "2026-09-19",
