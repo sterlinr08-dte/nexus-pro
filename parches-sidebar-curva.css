@@ -196,65 +196,106 @@ nav.sb .sb-ur{color:#64748b !important}
 }
 
 /* ════════════════════════════════════════════════════════════════
-   MÓVIL — misma referencia visual del desktop:
-   - carril azul independiente a la izquierda;
-   - íconos FUERA del panel blanco, montados sobre el carril azul;
-   - títulos sobre panel blanco lineal;
-   - cabeza redondeada, tramo vertical y una sola curva inferior;
-   - footer/usuario ya en la zona blanca.
-   El drawer sigue usando el MISMO .sb.mob-open y la misma lógica por left.
+   MÓVIL — carril azul elevado + panel blanco que sale desde debajo.
+   Objetivo del dueño:
+   - el azul debe sentirse como una pieza separada y por encima;
+   - los iconos permanecen SIEMPRE sobre el carril azul;
+   - el panel blanco y las letras se desplazan juntos desde debajo del azul;
+   - misma silueta aprobada y misma lógica real del drawer (.mob-open / left).
    ════════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
+  /* El contenedor deja de ser la "pieza blanca": ahora solo contiene las dos capas. */
+  body.tema-glass nav#sbEl.sb,
+  nav#sbEl.sb{
+    background:transparent !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+
   .sb{
     top:8px;
     height:calc(100dvh - 16px);
     border-radius:0;
     overflow:hidden;
-    background:#ffffff !important;
-    backdrop-filter:none !important;
-    -webkit-backdrop-filter:none !important;
-    box-shadow:0 4px 18px rgba(15,23,42,.08);
+    box-shadow:none;
     transition:left .22s cubic-bezier(.22,1,.36,1);
     isolation:isolate;
   }
-  .sb.mob-open{box-shadow:12px 0 34px rgba(15,23,64,.28)}
 
-  /* Misma silueta aprobada: cap superior + columna recta + taper inferior. */
+  /*
+   * CAPA 1 — CARRIL AZUL.
+   * Queda por encima del panel blanco y proyecta la sombra hacia la derecha.
+   * La línea blanca decorativa se integra aquí para liberar ::after al panel.
+   */
   .sb::before{
+    content:'';
+    position:absolute;
+    left:0;top:0;bottom:0;
+    width:var(--nx-rail);
+    z-index:1;
+    pointer-events:none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 180' preserveAspectRatio='none'%3E%3Cpath d='M0,8 C10,48 27,66 48,80 C68,94 84,104 100,124' fill='none' stroke='white' stroke-opacity='.48' stroke-width='1.6'/%3E%3C/svg%3E"),
+      radial-gradient(120% 60% at 0% 0%,rgba(255,255,255,.20),transparent 55%),
+      linear-gradient(165deg,#4a7cf0 0%,#2e5bdb 48%,#1e3fae 100%);
+    background-repeat:no-repeat,no-repeat,no-repeat;
+    background-position:left 36px,0 0,0 0;
+    background-size:100% 138px,auto,auto;
     -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H70 C87,0 100,13 100,30 V438 C100,463 93,479 80,492 C66,506 48,515 36,529 C23,545 14,565 10,585 C8,592 7,597 7,600 H0 Z' fill='white'/%3E%3C/svg%3E");
     mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H70 C87,0 100,13 100,30 V438 C100,463 93,479 80,492 C66,506 48,515 36,529 C23,545 14,565 10,585 C8,592 7,597 7,600 H0 Z' fill='white'/%3E%3C/svg%3E");
     -webkit-mask-size:100% 100%;
     mask-size:100% 100%;
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
-    filter:drop-shadow(5px 0 12px rgba(15,23,64,.26)) drop-shadow(1px 0 2px rgba(15,23,64,.12));
+    filter:
+      drop-shadow(11px 0 15px rgba(15,23,64,.30))
+      drop-shadow(3px 0 5px rgba(15,23,64,.18));
   }
 
-  /* Línea blanca decorativa interna de la referencia. */
+  /*
+   * CAPA 2 — PANEL BLANCO.
+   * Solapa 14px por debajo del carril. Cerrado queda completamente "guardado"
+   * debajo del azul; al abrir se desliza a la derecha como una segunda pieza.
+   */
   .sb::after{
     content:'';
     position:absolute;
-    left:0;
-    top:36px;
-    width:var(--nx-rail);
-    height:138px;
+    top:0;bottom:0;
+    left:calc(var(--nx-rail) - 14px);
+    right:0;
     z-index:0;
     pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 180' preserveAspectRatio='none'%3E%3Cpath d='M0,8 C10,48 27,66 48,80 C68,94 84,104 100,124' fill='none' stroke='white' stroke-opacity='.48' stroke-width='1.6'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;
-    background-size:100% 100%;
-    opacity:.9;
+    background:#fff;
+    box-shadow:6px 0 20px rgba(15,23,42,.10);
+    transform:translateX(calc(-100% + 14px));
+    transition:transform .30s cubic-bezier(.22,1,.36,1) .035s;
+    will-change:transform;
   }
+  .sb.mob-open::after{transform:translateX(0)}
 
-  /* Header: marca/N dentro del azul; nombre de NEXUS en el panel blanco. */
-  .sb .sb-top{padding-left:0}
-  .sb .sb-mk{margin-left:19px}
+  /* Todo el contenido vive encima de las dos superficies. */
+  .sb > *{z-index:2}
+
+  /* Header: símbolo sobre azul; nombre acompaña al panel blanco. */
+  .sb .sb-top{padding-left:0;border-bottom-color:transparent !important}
+  .sb .sb-mk{
+    margin-left:19px;
+    position:relative;
+    z-index:3;
+  }
   .sb .sb-nm,
   .sb .sb-sm{margin-left:8px}
 
-  /* Íconos "afuera" del panel blanco: blancos y limpios sobre el carril azul.
-     El activo conserva su bloque translúcido, igual que en la referencia. */
-  nav.sb .ni{padding-left:0 !important;background:transparent !important;border-color:transparent !important;box-shadow:none !important}
+  /*
+   * ICONOS: nunca participan en el desplazamiento del panel.
+   * Permanecen blancos y centrados sobre la pieza azul.
+   */
+  nav.sb .ni{
+    padding-left:0 !important;
+    background:transparent !important;
+    border-color:transparent !important;
+    box-shadow:none !important;
+  }
   nav.sb .ni .ni-i{
     margin-left:3px !important;
     width:42px !important;
@@ -265,33 +306,78 @@ nav.sb .sb-ur{color:#64748b !important}
     background:transparent !important;
     box-shadow:none !important;
     font-size:19px !important;
+    position:relative;
+    z-index:3;
+    transform:none;
   }
   nav.sb .ni.on .ni-i{
     background:rgba(96,165,250,.34) !important;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 8px 18px rgba(30,64,175,.18) !important;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.17),
+      0 8px 18px rgba(30,64,175,.20) !important;
   }
   nav.sb .ni:active .ni-i{transform:scale(.94) !important}
+
+  /* LETRAS + elementos del panel: aparecen con la pieza blanca, no con los iconos. */
   nav.sb .ni-l{
     margin-left:8px;
     color:#334155 !important;
   }
+  .sb .ni-l,
+  .sb .ni-b,
+  .sb .ss,
+  .sb .sb-nm,
+  .sb .sb-sm,
+  .sb .sb-un,
+  .sb .sb-ur,
+  .sb .ni > i.ti-chevron-down{
+    transition:
+      opacity .16s ease,
+      transform .24s cubic-bezier(.22,1,.36,1);
+  }
+  .sb:not(.mob-open) .ni-l,
+  .sb:not(.mob-open) .ni-b,
+  .sb:not(.mob-open) .ss,
+  .sb:not(.mob-open) .sb-nm,
+  .sb:not(.mob-open) .sb-sm,
+  .sb:not(.mob-open) .sb-un,
+  .sb:not(.mob-open) .sb-ur,
+  .sb:not(.mob-open) .ni > i.ti-chevron-down{
+    opacity:0;
+    transform:translateX(-18px);
+  }
+  .sb.mob-open .ni-l,
+  .sb.mob-open .ni-b,
+  .sb.mob-open .ss,
+  .sb.mob-open .sb-nm,
+  .sb.mob-open .sb-sm,
+  .sb.mob-open .sb-un,
+  .sb.mob-open .sb-ur,
+  .sb.mob-open .ni > i.ti-chevron-down{
+    opacity:1;
+    transform:translateX(0);
+    transition-delay:.085s;
+  }
 
-  /* El resaltado del texto empieza justo después del carril azul. */
+  /* El resaltado de texto pertenece al panel blanco; nunca invade el carril. */
   .spring-ind{
     left:var(--nx-rail) !important;
     right:8px;
     border-radius:12px;
   }
+  .sb:not(.mob-open) .spring-ind{opacity:0 !important}
 
-  /* Footer como la referencia: avatar y usuario en el panel blanco, no sobre el azul. */
+  /* Footer en el panel blanco y sincronizado con su salida. */
   .sb .sb-u{
     margin-left:58px;
     padding:8px 6px;
     gap:8px;
+    transition:transform .24s cubic-bezier(.22,1,.36,1),opacity .16s ease;
   }
   .sb .sb-av{margin-left:0}
+  .sb:not(.mob-open) .sb-u{transform:translateX(-16px);opacity:0}
+  .sb.mob-open .sb-u{transform:translateX(0);opacity:1;transition-delay:.085s}
 
-  /* Mantener las etiquetas dentro del panel blanco en pantallas estrechas. */
   .sb .ni-b{margin-right:4px}
 }
 
