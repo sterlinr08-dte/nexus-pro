@@ -242,8 +242,8 @@ nav.sb .sb-ur{color:#64748b !important}
     background-size:100% 136px,auto,auto;
 
     /* Cabeza más redonda + tramo vertical + salida inferior más corta/redonda. */
-    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H54 C82,0 100,19 100,45 V456 C100,476 93,491 80,503 C66,516 48,523 35,534 C23,544 16,555 16,565 C16,576 9,586 0,590 Z' fill='white'/%3E%3C/svg%3E");
-    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H54 C82,0 100,19 100,45 V456 C100,476 93,491 80,503 C66,516 48,523 35,534 C23,544 16,555 16,565 C16,576 9,586 0,590 Z' fill='white'/%3E%3C/svg%3E");
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H54 C82,0 100,19 100,45 V425 C100,449 94,466 80,479 C66,492 47,500 32,510 C18,520 9,532 7,544 C6,550 3,556 0,560 Z' fill='white'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H54 C82,0 100,19 100,45 V425 C100,449 94,466 80,479 C66,492 47,500 32,510 C18,520 9,532 7,544 C6,550 3,556 0,560 Z' fill='white'/%3E%3C/svg%3E");
     -webkit-mask-size:100% 100%;
     mask-size:100% 100%;
     -webkit-mask-repeat:no-repeat;
@@ -258,14 +258,14 @@ nav.sb .sb-ur{color:#64748b !important}
     content:'';
     position:absolute;
     top:10px;
-    bottom:10px;
+    bottom:14px;
     left:calc(var(--nx-rail) - 18px);
     right:8px;
     z-index:0;
     pointer-events:none;
     background:rgba(255,255,255,.985);
     border:1px solid rgba(148,163,184,.10);
-    border-radius:28px;
+    border-radius:30px 30px 34px 34px;
     box-shadow:
       8px 0 22px rgba(15,23,42,.10),
       0 8px 22px rgba(15,23,42,.06);
@@ -391,14 +391,18 @@ nav.sb .sb-ur{color:#64748b !important}
   }
   .sb:not(.mob-open) .spring-ind{opacity:0 !important}
 
-  /* Footer más compacto para que nombre/rol no queden cortados de forma agresiva. */
+  /* Footer queda claramente por debajo de la terminación azul, dentro del blanco. */
+  .sb .sb-ft{
+    border-top:1px solid rgba(148,163,184,.08) !important;
+    padding-bottom:6px;
+  }
   .sb .sb-u{
     margin-left:66px;
-    margin-right:10px;
-    padding:8px 7px;
+    margin-right:12px;
+    padding:9px 8px;
     gap:7px;
     min-width:0;
-    border-radius:16px;
+    border-radius:18px;
     transition:transform .24s cubic-bezier(.22,1,.36,1),opacity .16s ease;
   }
   .sb .sb-av{
