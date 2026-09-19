@@ -3048,7 +3048,13 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       function fitWidth(el){
         try{
           var sb = document.getElementById('sbEl');
-          if (window.innerWidth <= 768 || !sb || sb.classList.contains('col')){
+          if (!sb){
+            indicator.style.width = '';
+            return;
+          }
+          var mobile = window.innerWidth <= 768;
+          if ((mobile && !sb.classList.contains('mob-open')) ||
+              (!mobile && sb.classList.contains('col'))){
             indicator.style.width = '';
             return;
           }
@@ -6437,7 +6443,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.45';
+const APP_VERSION='58.46';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
