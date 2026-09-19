@@ -1,7 +1,16 @@
 {
-  "version": "58.44",
+  "version": "58.45",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.45",
+      "fecha": "2026-09-19",
+      "notas": [
+        "MEJORADO: el selector activo del sidebar desktop termina poco después del texto activo, sin extenderse innecesariamente.",
+        "MEJORADO: el ancho del selector se adapta dinámicamente a la etiqueta y a su badge cuando existe.",
+        "SIN CAMBIOS: móvil, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.44",
       "fecha": "2026-09-19",
