@@ -196,7 +196,13 @@ nav.sb .sb-ur{color:#64748b !important}
 }
 
 /* ════════════════════════════════════════════════════════════════
-   MÓVIL — SIN CAMBIOS. Se conserva exactamente el drawer publicado.
+   MÓVIL — misma referencia visual del desktop:
+   - carril azul independiente a la izquierda;
+   - íconos FUERA del panel blanco, montados sobre el carril azul;
+   - títulos sobre panel blanco lineal;
+   - cabeza redondeada, tramo vertical y una sola curva inferior;
+   - footer/usuario ya en la zona blanca.
+   El drawer sigue usando el MISMO .sb.mob-open y la misma lógica por left.
    ════════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
   .sb{
@@ -209,8 +215,84 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-backdrop-filter:none !important;
     box-shadow:0 4px 18px rgba(15,23,42,.08);
     transition:left .22s cubic-bezier(.22,1,.36,1);
+    isolation:isolate;
   }
   .sb.mob-open{box-shadow:12px 0 34px rgba(15,23,64,.28)}
+
+  /* Misma silueta aprobada: cap superior + columna recta + taper inferior. */
+  .sb::before{
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H70 C87,0 100,13 100,30 V438 C100,463 93,479 80,492 C66,506 48,515 36,529 C23,545 14,565 10,585 C8,592 7,597 7,600 H0 Z' fill='white'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0,0 H70 C87,0 100,13 100,30 V438 C100,463 93,479 80,492 C66,506 48,515 36,529 C23,545 14,565 10,585 C8,592 7,597 7,600 H0 Z' fill='white'/%3E%3C/svg%3E");
+    -webkit-mask-size:100% 100%;
+    mask-size:100% 100%;
+    -webkit-mask-repeat:no-repeat;
+    mask-repeat:no-repeat;
+    filter:drop-shadow(5px 0 12px rgba(15,23,64,.26)) drop-shadow(1px 0 2px rgba(15,23,64,.12));
+  }
+
+  /* Línea blanca decorativa interna de la referencia. */
+  .sb::after{
+    content:'';
+    position:absolute;
+    left:0;
+    top:36px;
+    width:var(--nx-rail);
+    height:138px;
+    z-index:0;
+    pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 180' preserveAspectRatio='none'%3E%3Cpath d='M0,8 C10,48 27,66 48,80 C68,94 84,104 100,124' fill='none' stroke='white' stroke-opacity='.48' stroke-width='1.6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-size:100% 100%;
+    opacity:.9;
+  }
+
+  /* Header: marca/N dentro del azul; nombre de NEXUS en el panel blanco. */
+  .sb .sb-top{padding-left:0}
+  .sb .sb-mk{margin-left:19px}
+  .sb .sb-nm,
+  .sb .sb-sm{margin-left:8px}
+
+  /* Íconos "afuera" del panel blanco: blancos y limpios sobre el carril azul.
+     El activo conserva su bloque translúcido, igual que en la referencia. */
+  nav.sb .ni{padding-left:0 !important;background:transparent !important;border-color:transparent !important;box-shadow:none !important}
+  nav.sb .ni .ni-i{
+    margin-left:3px !important;
+    width:42px !important;
+    height:42px !important;
+    min-width:42px !important;
+    border-radius:12px !important;
+    color:#fff !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    font-size:19px !important;
+  }
+  nav.sb .ni.on .ni-i{
+    background:rgba(96,165,250,.34) !important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 8px 18px rgba(30,64,175,.18) !important;
+  }
+  nav.sb .ni:active .ni-i{transform:scale(.94) !important}
+  nav.sb .ni-l{
+    margin-left:8px;
+    color:#334155 !important;
+  }
+
+  /* El resaltado del texto empieza justo después del carril azul. */
+  .spring-ind{
+    left:var(--nx-rail) !important;
+    right:8px;
+    border-radius:12px;
+  }
+
+  /* Footer como la referencia: avatar y usuario en el panel blanco, no sobre el azul. */
+  .sb .sb-u{
+    margin-left:58px;
+    padding:8px 6px;
+    gap:8px;
+  }
+  .sb .sb-av{margin-left:0}
+
+  /* Mantener las etiquetas dentro del panel blanco en pantallas estrechas. */
+  .sb .ni-b{margin-right:4px}
 }
 
 @media (prefers-reduced-motion:reduce){
