@@ -538,6 +538,12 @@ nav.sb .sb-ur{color:#64748b !important}
     color:#334155 !important;
     font-size:10.5px;
     letter-spacing:.15px;
+    display:inline-flex !important;
+    flex:0 0 auto !important;
+    width:max-content !important;
+    inline-size:max-content !important;
+    max-width:calc(100% - var(--nx-rail) - 28px) !important;
+    white-space:nowrap;
   }
 
   /* Los títulos de sección también pertenecen al panel blanco, no al azul. */
@@ -607,8 +613,8 @@ nav.sb .sb-ur{color:#64748b !important}
   nav#sbEl.sb .ni.on .ni-l::before{
     content:'';
     position:absolute;
-    left:-12px;
-    right:-12px;
+    left:-10px;
+    right:-10px;
     top:50%;
     height:38px;
     transform:translateY(-50%);
@@ -621,6 +627,18 @@ nav.sb .sb-ur{color:#64748b !important}
       inset 2px 0 0 rgba(37,99,235,.58);
     z-index:-1;
     pointer-events:none;
+  }
+
+  /* Fallback fuerte para temas/reglas heredadas: el label activo debe
+     encoger al contenido, nunca ocupar el resto del row. */
+  body.spring-nav nav#sbEl.sb .ni.on .ni-l,
+  body.tema-premium nav#sbEl.sb .ni.on .ni-l,
+  body.tema-glass nav#sbEl.sb .ni.on .ni-l{
+    display:inline-flex !important;
+    flex:0 0 auto !important;
+    width:max-content !important;
+    inline-size:max-content !important;
+    min-width:0 !important;
   }
 
   /* Footer queda claramente por debajo de la terminación azul, dentro del blanco. */
