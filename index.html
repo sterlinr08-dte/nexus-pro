@@ -3048,7 +3048,13 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       function fitWidth(el){
         try{
           var sb = document.getElementById('sbEl');
-          if (window.innerWidth <= 768 || !sb || sb.classList.contains('col')){
+          if (!sb){
+            indicator.style.width = '';
+            return;
+          }
+          var mobile = window.innerWidth <= 768;
+          if ((mobile && !sb.classList.contains('mob-open')) ||
+              (!mobile && sb.classList.contains('col'))){
             indicator.style.width = '';
             return;
           }
