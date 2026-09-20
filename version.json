@@ -1,7 +1,17 @@
 {
-  "version": "58.65",
+  "version": "58.66",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.66",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA: Eliminado pestañeo/parpadeo en actualizaciones en tiempo real.",
+        "refrescarVistaActual() agrupado en requestAnimationFrame para un solo repintado por frame.",
+        "Dashboard y WhatsApp Inbox usan CSS contain para aislar repintados.",
+        "Cache-bust del loader actualizado (b=5925)."
+      ]
+    },
     {
       "version": "58.65",
       "fecha": "2026-09-20",
