@@ -868,3 +868,43 @@ nav.sb .sb-ur{color:#64748b !important}
     }
   }
 }
+
+
+/* ── Acordeones móviles: crecimiento vertical controlado ──────────
+   Al abrir Contabilidad o Configuración las opciones nacen hacia abajo.
+   Si superan la pantalla, solo el menú se desliza suavemente: el rail azul,
+   la curva y el dashboard permanecen estables. */
+@media (max-width:768px){
+  nav#sbEl.sb.mob-open{
+    display:flex !important;
+    flex-direction:column !important;
+    overflow:hidden !important;
+  }
+  nav#sbEl.sb.mob-open .sb-nav{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+  }
+  nav#sbEl.sb.mob-open .sb-nav::-webkit-scrollbar{display:none}
+  nav#sbEl.sb.mob-open .sb-ft{flex:0 0 auto}
+  nav#sbEl.sb.mob-open #sbContab,
+  nav#sbEl.sb.mob-open #sbConfig{
+    max-height:0;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:
+      max-height .42s cubic-bezier(.22,1,.36,1),
+      opacity .18s ease,
+      transform .30s cubic-bezier(.22,1,.36,1) !important;
+  }
+  nav#sbEl.sb.mob-open #sbContab[style*="max-height: "]:not([style*="max-height: 0"]),
+  nav#sbEl.sb.mob-open #sbConfig[style*="max-height: "]:not([style*="max-height: 0"]){
+    opacity:1;
+    transform:translateY(0);
+  }
+}
