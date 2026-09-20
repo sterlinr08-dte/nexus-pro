@@ -493,13 +493,13 @@ nav.sb .sb-ur{color:#64748b !important}
     mask-size:100% 100%;
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
-    /* La sombra pertenece a la silueta azul enmascarada: sigue cada curva,
-       no al rectángulo del panel blanco. */
+    /* Sombra gris neutra alrededor de TODA la silueta azul enmascarada.
+       No pertenece al panel blanco y acompaña las curvas superior, lateral e inferior. */
     filter:
-      drop-shadow(0 0 7px rgba(9,32,88,.34))
-      drop-shadow(6px 0 12px rgba(9,32,88,.30))
-      drop-shadow(0 7px 11px rgba(9,32,88,.24))
-      drop-shadow(0 -4px 8px rgba(9,32,88,.16));
+      drop-shadow(0 0 9px rgba(71,85,105,.34))
+      drop-shadow(4px 0 10px rgba(71,85,105,.22))
+      drop-shadow(0 6px 9px rgba(71,85,105,.18))
+      drop-shadow(0 -3px 7px rgba(71,85,105,.14));
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
