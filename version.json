@@ -1,7 +1,17 @@
 {
-  "version": "58.58",
+  "version": "58.59",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.59",
+      "fecha": "2026-09-20",
+      "notas": [
+        "FIX: TODAS las ventanas emergentes (modales, buscadores, filtros, alertas, fichas) ahora se muestran por encima del sidebar en móvil.",
+        "Antes solo .overlay se corrigió; ahora también .mbbOv, .nbfOv, .swal-overlay, .acc-backdrop, .cs-overlay, .cs-panel y .nfcPanel quedan encima del rail.",
+        "Ninguna ventana se corta por la izquierda en iPhone.",
+        "Cache-bust del loader actualizado (b=5919)."
+      ]
+    },
     {
       "version": "58.58",
       "fecha": "2026-09-20",

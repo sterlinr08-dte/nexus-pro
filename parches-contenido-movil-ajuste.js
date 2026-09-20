@@ -3,7 +3,9 @@
    cuando el sidebar-rail de 76px está visible.
 
    Problemas resueltos:
-   1. Modales (.overlay) z-index < sidebar rail → contenido tapado a la izquierda
+   1. Todos los paneles fullscreen (.overlay, .mbbOv, .nbfOv, .swal-overlay,
+      .acc-backdrop, .cs-overlay) quedan debajo del sidebar rail (z-index 10700)
+      → contenido tapado a la izquierda. Fix: subirlos a 10701+.
    2. Tablas con min-width:600px desbordan el ancho disponible
    3. Contenido genérico recortado por overflow-x:hidden
 
@@ -21,16 +23,23 @@
     s.textContent=`
 @media(max-width:768px){
 
-  /* ── MODALES ──
-     El sidebar-rail tiene z-index:10700. Los modales (.overlay) tienen z-index:100.
-     El rail se pinta ENCIMA del modal y tapa el contenido por la izquierda.
-     Fix: el overlay abierto sube por encima del rail pero debajo del
-     mobOverlay (10699) para no romper el drawer. */
+  /* ── PANELES FULLSCREEN POR ENCIMA DEL SIDEBAR RAIL ──
+     El sidebar-rail tiene z-index:10700. Todos los paneles overlay
+     deben subir por encima para que el rail no tape su contenido. */
+
   .overlay.open{
     z-index:10701 !important;
     padding-left:calc(8px + env(safe-area-inset-left,0px)) !important;
     padding-right:calc(8px + env(safe-area-inset-right,0px)) !important
   }
+
+  .mbbOv{z-index:10701 !important}
+  .nbfOv{z-index:10701 !important}
+  .swal-overlay{z-index:10701 !important}
+  .acc-backdrop{z-index:10701 !important}
+  .cs-overlay{z-index:10701 !important}
+  .cs-panel{z-index:10702 !important}
+  .nfcPanel{z-index:10702 !important}
 
   /* El modal dentro usa todo el ancho disponible sin desbordar */
   .overlay.open .modal{
@@ -38,6 +47,13 @@
     width:100% !important;
     box-sizing:border-box !important;
     overflow-x:auto !important
+  }
+
+  /* Modales dentro de .mbbOv y .nbfOv */
+  .mbbOv > div,
+  .nbfOv > div{
+    max-width:100% !important;
+    box-sizing:border-box !important
   }
 
   /* ── TABLAS ──
