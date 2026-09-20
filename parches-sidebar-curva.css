@@ -767,12 +767,17 @@ nav.sb .sb-ur{color:#64748b !important}
     padding-bottom:6px;
   }
   .sb .sb-u{
-    margin-left:58px;
+    margin-left:calc(var(--nx-rail) + 12px);
     margin-right:12px;
-    padding:10px 10px;
+    padding:9px 10px;
     gap:7px;
     min-width:0;
-    border-radius:18px;
+    border:1px solid rgba(148,163,184,.08);
+    border-radius:16px;
+    background:rgba(255,255,255,.72);
+    box-shadow:
+      0 5px 14px rgba(15,23,42,.045),
+      inset 0 1px 0 rgba(255,255,255,.92);
     transition:transform .24s cubic-bezier(.22,1,.36,1),opacity .16s ease;
   }
   .sb .sb-av{
