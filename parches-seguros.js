@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5951'):'?b=5951';
-    }catch(e){return '?b=5951';}
+      return base?(base+'&b=5952'):'?b=5952';
+    }catch(e){return '?b=5952';}
   }
 
   function load(src,done){
@@ -100,9 +100,28 @@
     ['js','parches-motion-fase2.js']
   ];
 
+  /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
+     estrictamente ordenada (los parches tienen dependencias), pero evita que
+     cada JS espere a que empiece a descargarse el siguiente. */
+  var precargados={};
+  function precargar(p){
+    if(!p||precargados[p[1]])return;
+    precargados[p[1]]=true;
+    try{
+      var l=document.createElement('link');
+      l.rel='preload';
+      l.as=p[0]==='css'?'style':'script';
+      l.href=p[1]+qv();
+      (document.head||document.documentElement).appendChild(l);
+    }catch(e){}
+  }
   var i=0;
+  function calentarSiguientes(){
+    for(var n=i;n<Math.min(i+3,pasos.length);n++)precargar(pasos[n]);
+  }
   function next(){
     if(i>=pasos.length)return;
+    calentarSiguientes();
     var p=pasos[i++];
     if(p[0]==='css'){
       css(p[1]);
