@@ -1,7 +1,19 @@
 {
-  "version": "58.57",
+  "version": "58.58",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.58",
+      "fecha": "2026-09-20",
+      "notas": [
+        "FIX GLOBAL: formularios, modales y tablas ya no se tapan con el sidebar en móvil.",
+        "Modales (.overlay) ahora se muestran por encima del sidebar-rail cuando están abiertos.",
+        "Tablas con min-width reducido (600px→420px) y scroll horizontal habilitado para que no se corten.",
+        "Contenido principal (.content) permite scroll horizontal controlado en vez de recortar silenciosamente.",
+        "Solo afecta móvil (≤768px). Reversible eliminando parches-contenido-movil-ajuste.js.",
+        "Cache-bust del loader actualizado (b=5918)."
+      ]
+    },
     {
       "version": "58.57",
       "fecha": "2026-09-20",
