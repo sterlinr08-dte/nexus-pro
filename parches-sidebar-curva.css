@@ -398,8 +398,7 @@ nav.sb .sb-ur{color:#64748b !important}
     width:var(--nx-rail) !important;
     height:calc(100dvh - 16px);
     border-radius:0;
-    /* Permite que el filtro de la silueta azul proyecte sombra fuera del rail. */
-    overflow:visible;
+    overflow:hidden;
     box-shadow:
       4px 0 18px rgba(15,23,42,.18),
       -2px 0 10px rgba(15,23,42,.10),
