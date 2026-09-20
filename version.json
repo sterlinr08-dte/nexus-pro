@@ -1,7 +1,16 @@
 {
-  "version": "58.64",
+  "version": "58.65",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.65",
+      "fecha": "2026-09-20",
+      "notas": [
+        "CORREGIDO: en móvil los textos del sidebar quedan físicamente dentro de la columna blanca, con 20px de separación después del rail azul.",
+        "MEJORADO: el panel abierto aumenta ligeramente su ancho para evitar recortes y mantener CONFIGURACIÓN, CONTABILIDAD y badges dentro de la superficie blanca.",
+        "MEJORADO: mayor profundidad entre rail azul y panel blanco mediante sombras más limpias, sin cambiar iconos ni navegación."
+      ]
+    },
     {
       "version": "58.64",
       "fecha": "2026-09-20",
