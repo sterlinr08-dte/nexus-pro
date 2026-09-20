@@ -2947,7 +2947,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
   <div class="abody">
     <nav class="sb" id="sbEl">
       <div class="sb-top">
-        <div class="sb-mk"><i class="ti ti-shield-check"></i></div>
+        <div class="sb-mk" onclick="toggleSB()" style="cursor:pointer"><i class="ti ti-shield-check"></i></div>
         <div><div class="sb-nm">NEXUS PRO</div><div class="sb-sm">v6 · seguros_rd</div></div>
       </div>
       <div class="sb-nav" id="sbNav">
@@ -6457,7 +6457,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.60';
+const APP_VERSION='58.61';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -1,7 +1,17 @@
 {
-  "version": "58.60",
+  "version": "58.61",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.61",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA: El escudo de NEXUS en la barra lateral ahora abre/cierra el menú al tocarlo.",
+        "En móvil: tap en el escudo expande el sidebar de 76px a 210px (menú completo) y lo cierra al tocarlo de nuevo.",
+        "Tap en el texto 'NEXUS PRO' sigue navegando al Dashboard como antes.",
+        "Cache-bust del loader actualizado (b=5921)."
+      ]
+    },
     {
       "version": "58.60",
       "fecha": "2026-09-20",

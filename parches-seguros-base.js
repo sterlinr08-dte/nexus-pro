@@ -6710,8 +6710,8 @@
     sbTop.title = 'Ir al Dashboard';
     
     sbTop.addEventListener('click', function(e) {
-      // Evitar conflicto con botones internos
-      if (e.target.closest('button') || e.target.closest('input')) return;
+      // Evitar conflicto con botones internos y con el escudo (toggle sidebar)
+      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.sb-mk')) return;
       e.preventDefault();
       e.stopPropagation();
       
