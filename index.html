@@ -6387,6 +6387,16 @@ let _contabAbierto=false;
 function moverAcordeonSidebar(panel,abierto){
   if(!panel)return;
   panel.style.maxHeight=abierto ? panel.scrollHeight+'px' : '0';
+
+  // El fondo azul y el panel blanco prolongan su tramo vertical mientras
+  // exista un acordeón abierto; así el borde curvo no corta los nuevos ítems.
+  const sidebar=document.getElementById('sbEl');
+  if(sidebar){
+    requestAnimationFrame(function(){
+      sidebar.classList.toggle('nx-accordion-open',!!(_contabAbierto||_configAbierto));
+    });
+  }
+
   if(!abierto)return;
   // Muestra las nuevas opciones dentro de la barra sin desplazar el dashboard.
   requestAnimationFrame(function(){
