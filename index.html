@@ -6357,7 +6357,7 @@ function toggleConfig(){
   _configAbierto=!_configAbierto;
   const sb=document.getElementById('sbConfig');
   const icn=document.getElementById('icnConfig');
-  if(sb)sb.style.maxHeight=_configAbierto?'600px':'0';
+  moverAcordeonSidebar(sb,_configAbierto);
   if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
   // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
   if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
@@ -6384,11 +6384,21 @@ function navConfig(tabNum,el){
 }
 
 let _contabAbierto=false;
+function moverAcordeonSidebar(panel,abierto){
+  if(!panel)return;
+  panel.style.maxHeight=abierto ? panel.scrollHeight+'px' : '0';
+  if(!abierto)return;
+  // Muestra las nuevas opciones dentro de la barra sin desplazar el dashboard.
+  requestAnimationFrame(function(){
+    const primerItem=panel.querySelector('.ni');
+    if(primerItem)primerItem.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+}
 function toggleContab(){
   _contabAbierto=!_contabAbierto;
   const sb=document.getElementById('sbContab');
   const icn=document.getElementById('icnContab');
-  if(sb)sb.style.maxHeight=_contabAbierto?'400px':'0';
+  moverAcordeonSidebar(sb,_contabAbierto);
   if(icn)icn.style.transform=_contabAbierto?'rotate(180deg)':'';
   // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
   if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
