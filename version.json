@@ -1,7 +1,18 @@
 {
-  "version": "58.56",
+  "version": "58.57",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.57",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA VISUAL: WhatsApp Inbox compacto para móvil — header, KPIs, filas de conversación y controles reducidos en altura para mostrar más chats en pantalla.",
+        "Header de 72px a 42px, KPIs de 62px a 38px, filas de conversación de 62px a 48px, avatares de 40px a 32px.",
+        "Diseño basado en sistema generado con Google Stitch (dark theme, acento #7c3aed, Inter).",
+        "Solo afecta móvil (≤760px). Desktop sin cambios. Reversible eliminando parches-whatsapp-inbox-compact-mobile.js.",
+        "Cache-bust del loader actualizado (b=5917)."
+      ]
+    },
     {
       "version": "58.56",
       "fecha": "2026-09-20",
