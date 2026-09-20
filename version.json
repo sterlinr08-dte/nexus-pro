@@ -1,7 +1,15 @@
 {
-  "version": "58.75",
+  "version": "58.76",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.76",
+      "fecha": "2026-09-20",
+      "notas": [
+        "FIX: parches-fase1-ui-motion.css ponía body opaco (#f0f4f8) y tapaba la foto de fondo (#nxBgPhoto). Se quitó el background de body para mantenerlo transparent.",
+        "Cache-bust del loader actualizado (b=5944)."
+      ]
+    },
     {
       "version": "58.75",
       "fecha": "2026-09-20",

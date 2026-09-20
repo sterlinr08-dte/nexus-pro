@@ -12,11 +12,12 @@
   --nx-ui-shadow:0 12px 32px rgba(15,31,61,.07);
 }
 
-html,body{
+html{
   font-family:Geist,"Segoe UI",system-ui,-apple-system,sans-serif;
   color:var(--nx-ui-ink);
-  background:var(--nx-ui-canvas);
 }
+/* body DEBE quedarse transparent para que #nxBgPhoto (z-index:-1) se vea.
+   Si body recibe un fondo opaco, tapa la foto de oficina por completo. */
 
 body:not(:has(#loginScreen:not([style*="display: none"]))) .main,
 #app{
