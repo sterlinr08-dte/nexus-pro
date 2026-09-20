@@ -423,7 +423,6 @@ nav.sb .sb-ur{color:#64748b !important}
   .sb.col.mob-open{
     left:0 !important;
     width:var(--nx-panel-open) !important;
-    overflow:visible !important;
   }
 
   #mobOverlay{z-index:10699 !important}

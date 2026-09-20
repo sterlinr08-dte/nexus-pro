@@ -1,7 +1,28 @@
 {
-  "version": "58.72",
+  "version": "58.74",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.74",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MERGE: Integración de cambios de ChatGPT (sombra gris del rail, fase 1 visual) con fix de Claude (avatar centrado en rail azul).",
+        "FIX: Revertido overflow:visible que causaba bug de fondo blanco.",
+        "FIX: Avatar de usuario posicionado sobre el rail azul, alineado con los íconos del menú.",
+        "Cache-bust del loader actualizado (b=5940)."
+      ]
+    },
+    {
+      "version": "58.73",
+      "fecha": "2026-09-20",
+      "notas": [
+        "FIX: Revertido overflow:visible que causaba bug de fondo blanco.",
+        "FIX: Avatar de usuario reposicionado al rail azul (alineado con los íconos del menú).",
+        "MEJORA: Gradiente de sombra en borde azul→blanco reforzado a .45 opacidad con difusión más amplia (52px).",
+        "MEJORA: Removidos drop-shadow inútiles (cortados por overflow:hidden) para mejor rendimiento.",
+        "Cache-bust del loader actualizado (b=5936)."
+      ]
+    },
     {
       "version": "58.72",
       "fecha": "2026-09-20",
