@@ -23,23 +23,50 @@
     s.textContent=`
 @media(max-width:768px){
 
-  /* ── PANELES FULLSCREEN POR ENCIMA DEL SIDEBAR RAIL ──
-     El sidebar-rail tiene z-index:10700. Todos los paneles overlay
-     deben subir por encima para que el rail no tape su contenido. */
+  /* ── PANELES FULLSCREEN: POR ENCIMA Y DESPUÉS DEL SIDEBAR RAIL ──
+     El sidebar-rail ocupa left:0 con width:var(--nx-rail,76px) y z-index:10700.
+     Subir z-index no es suficiente: los paneles que usan left:0/inset:0 tienen
+     su contenido físicamente detrás del rail. Solución: mover el borde izquierdo
+     de TODOS los paneles al final del rail para que nada quede tapado. */
 
   .overlay.open{
     z-index:10701 !important;
+    left:var(--nx-rail,76px) !important;
     padding-left:calc(8px + env(safe-area-inset-left,0px)) !important;
     padding-right:calc(8px + env(safe-area-inset-right,0px)) !important
   }
 
-  .mbbOv{z-index:10701 !important}
-  .nbfOv{z-index:10701 !important}
-  .swal-overlay{z-index:10701 !important}
-  .acc-backdrop{z-index:10701 !important}
-  .cs-overlay{z-index:10701 !important}
-  .cs-panel{z-index:10702 !important}
-  .nfcPanel{z-index:10702 !important}
+  .mbbOv{
+    z-index:10701 !important;
+    left:var(--nx-rail,76px) !important
+  }
+  .nbfOv{
+    z-index:10701 !important;
+    left:var(--nx-rail,76px) !important
+  }
+  .swal-overlay{
+    z-index:10701 !important;
+    left:var(--nx-rail,76px) !important
+  }
+  .acc-backdrop{
+    z-index:10701 !important;
+    left:var(--nx-rail,76px) !important
+  }
+  .cs-overlay{
+    z-index:10701 !important;
+    left:var(--nx-rail,76px) !important
+  }
+  .cs-panel{
+    z-index:10702 !important;
+    left:var(--nx-rail,76px) !important;
+    width:calc(100vw - var(--nx-rail,76px)) !important
+  }
+  .cs-panel.open{
+    transform:translateY(0) !important
+  }
+  .nfcPanel{
+    z-index:10702 !important
+  }
 
   /* El modal dentro usa todo el ancho disponible sin desbordar */
   .overlay.open .modal{
