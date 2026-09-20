@@ -1,7 +1,16 @@
 {
-  "version": "58.54",
+  "version": "58.55",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.55",
+      "fecha": "2026-09-20",
+      "notas": [
+        "REFUERZO: z-index del menú lateral móvil ahora también se aplica desde la hoja CSS del sidebar (con !important), no solo desde index.html.",
+        "Esto resuelve el caso donde Safari servía index.html cacheado sin el fix. Con esta publicación, el CSS cargado dinámicamente (con cache-bust) también fuerza el z-index correcto.",
+        "Cache-bust del loader actualizado (b=5916)."
+      ]
+    },
     {
       "version": "58.54",
       "fecha": "2026-09-20",

@@ -397,12 +397,15 @@ nav.sb .sb-ur{color:#64748b !important}
     box-shadow:none;
     transition:width .30s cubic-bezier(.22,1,.36,1) !important;
     isolation:isolate;
+    z-index:10700 !important;
   }
   .sb.mob-open,
   .sb.col.mob-open{
     left:0 !important;
     width:210px !important;
   }
+
+  #mobOverlay{z-index:10699 !important}
 
   /*
    * El carril azul ya no tapa el dashboard ni la barra superior.
