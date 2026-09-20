@@ -505,7 +505,13 @@ nav.sb .sb-ur{color:#64748b !important}
     z-index:0;
     pointer-events:none;
     background:
-      linear-gradient(90deg,rgba(30,63,174,.12) 0%,rgba(30,63,174,.04) 18px,transparent 40px),
+      linear-gradient(90deg,
+        transparent 0%,
+        transparent calc(var(--nx-rail) - 4px),
+        rgba(15,23,64,.18) var(--nx-rail),
+        rgba(15,23,64,.08) calc(var(--nx-rail) + 12px),
+        rgba(15,23,64,.03) calc(var(--nx-rail) + 24px),
+        transparent calc(var(--nx-rail) + 40px)),
       linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
     border:1px solid rgba(148,163,184,.12);
     border-radius:30px 30px 34px 40px;
