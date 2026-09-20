@@ -113,6 +113,7 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
       <div class="sep"></div>
       <button data-a="contact"><i class="ti ti-user"></i><span>Ver contacto</span></button>
       <button data-a="crm" ${c?'':'disabled'}><i class="ti ti-briefcase"></i><span>Abrir ficha CRM</span></button>
+      <button data-a="pago" ${c?'':'disabled'}><i class="ti ti-cash"></i><span>Registrar pago</span></button>
       <button data-a="unread"><i class="ti ti-mail"></i><span>Marcar como no leído</span></button>
       <div class="sep"></div>
       <button data-a="more"><i class="ti ti-dots"></i><span>Más</span><i class="ti ti-chevron-right arr"></i></button>`;
@@ -124,6 +125,7 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
       else if(a==='wall'){closePop();openWallpaper();}
       else if(a==='contact'){closePop();openContactCard();}
       else if(a==='crm'){closePop();const x=clienteActual();if(x&&typeof window.nxWaVisualAbrirFicha==='function')window.nxWaVisualAbrirFicha(x.id);}
+      else if(a==='pago'){closePop();const x=clienteActual();if(x&&typeof window.abrirAbono==='function')window.abrirAbono(x.id);else toastSafe('info','No se puede abrir el formulario de pago');}
       else if(a==='unread'){closePop();markUnread();}
       else if(a==='more'){closePop();openMoreMenu(anchor);}
     });

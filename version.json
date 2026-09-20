@@ -1,7 +1,18 @@
 {
-  "version": "58.61",
+  "version": "58.62",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.62",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA: Nuevo botón 'Registrar pago' en el menú de acciones del chat de WhatsApp.",
+        "Permite registrar un pago del cliente directamente desde la conversación sin salir del chat.",
+        "El botón se habilita cuando el chat está vinculado a un cliente; si no, aparece deshabilitado.",
+        "Usa la misma función de pago (abrirAbono) que ya existe en la Ficha CRM.",
+        "Cache-bust del loader actualizado (b=5922)."
+      ]
+    },
     {
       "version": "58.61",
       "fecha": "2026-09-20",
