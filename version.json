@@ -1,7 +1,16 @@
 {
-  "version": "58.55",
+  "version": "58.56",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.56",
+      "fecha": "2026-09-20",
+      "notas": [
+        "NUEVO: en móvil, cuando se abre cualquier formulario o ventana emergente, el menú lateral se cierra automáticamente. Ya no puede quedar tapado ni mezclado con un modal abierto.",
+        "Aplica a todos los tipos de ventanas: overlays (.overlay), buscadores de selección (.mbbOv), filtros (.nbfOv), y cualquier ventana futura (MutationObserver universal).",
+        "z-index reforzado en CSS dinámico como medida adicional de seguridad."
+      ]
+    },
     {
       "version": "58.55",
       "fecha": "2026-09-20",

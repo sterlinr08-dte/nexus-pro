@@ -4857,6 +4857,7 @@ nxBuscaEnsureCSS();
 // El callback onElegir recibe el registro COMPLETO elegido (no solo el id).
 window.__mbbReg=window.__mbbReg||{};
 function ModalBusquedaBase(o){
+  if(window.innerWidth<=768&&typeof closeMobSB==='function')closeMobSB();
   o=o||{};
   const id=o.id||('mbb'+Math.random().toString(36).slice(2));
   if(!document.getElementById('mbbCSS')){
@@ -5175,6 +5176,7 @@ function nxBuscaFiltroCSS(){
 }
 function nbfSnap(t){return {__id:t,__t:t};}
 function nxBuscaFiltroAbrir(id){
+  if(window.innerWidth<=768&&typeof closeMobSB==='function')closeMobSB();
   const c=window.__nbfReg[id];if(!c)return;
   nxBuscaFiltroCSS();
   let ov=document.getElementById('nbfOv_'+id);
@@ -6455,7 +6457,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.55';
+const APP_VERSION='58.56';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8435,7 +8437,29 @@ function closeMobSB(){
   document.getElementById('sbEl').classList.remove('mob-open');
   document.getElementById('mobOverlay').classList.remove('on');
 }
-function openM(id){document.getElementById(id).classList.add('open');}
+(function(){
+  if(window.__nxModalSBWatch)return;window.__nxModalSBWatch=true;
+  var ovClasses=['mbbOv','nbfOv','overlay','nx-menu-editor'];
+  new MutationObserver(function(muts){
+    if(window.innerWidth>768)return;
+    var sb=document.getElementById('sbEl');
+    if(!sb||!sb.classList.contains('mob-open'))return;
+    for(var i=0;i<muts.length;i++){
+      var m=muts[i];
+      if(m.type==='childList'){
+        for(var j=0;j<m.addedNodes.length;j++){
+          var n=m.addedNodes[j];
+          if(n.nodeType===1&&ovClasses.some(function(c){return n.classList.contains(c);})){closeMobSB();return;}
+        }
+      }
+      if(m.type==='attributes'&&m.attributeName==='class'){
+        var t=m.target;
+        if(t.classList.contains('overlay')&&t.classList.contains('open')){closeMobSB();return;}
+      }
+    }
+  }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+})();
+function openM(id){if(window.innerWidth<=768)closeMobSB();document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 // Botón "Actualizar": recarga datos desde Supabase y re-renderiza la vista actual
 async function refrescarDatos(btn){
