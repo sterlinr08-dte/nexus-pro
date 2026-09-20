@@ -296,7 +296,7 @@ body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
    Confirmado con una reproducción mínima aislada (mismo CSS, sin el resto del archivo).
    #loginScreen/#nxSplash/#nxLoader ya son overlays 100% opacos que cubren toda la pantalla
    por su cuenta, así que dejar <body> transparente no les cambia nada. */
-body{background:transparent}
+body{background:transparent !important}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(139,92,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -6457,7 +6457,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.77';
+const APP_VERSION='58.78';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
