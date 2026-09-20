@@ -399,7 +399,11 @@ nav.sb .sb-ur{color:#64748b !important}
     height:calc(100dvh - 16px);
     border-radius:0;
     overflow:hidden;
-    box-shadow:4px 0 18px rgba(15,23,42,.18);
+    box-shadow:
+      4px 0 18px rgba(15,23,42,.18),
+      -2px 0 10px rgba(15,23,42,.10),
+      0 4px 14px rgba(15,23,42,.12),
+      0 -4px 14px rgba(15,23,42,.08);
     transition:width .30s cubic-bezier(.22,1,.36,1) !important;
     isolation:isolate;
     z-index:10700 !important;
@@ -408,6 +412,7 @@ nav.sb .sb-ur{color:#64748b !important}
   .sb.col.mob-open{
     left:0 !important;
     width:var(--nx-panel-open) !important;
+    overflow:visible;
   }
 
   #mobOverlay{z-index:10699 !important}
@@ -489,9 +494,11 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
     filter:
-      drop-shadow(8px 0 14px rgba(15,23,64,.35))
-      drop-shadow(3px 0 5px rgba(15,23,64,.22))
-      drop-shadow(1px 0 2px rgba(15,23,64,.14));
+      drop-shadow(8px 0 14px rgba(15,23,64,.40))
+      drop-shadow(3px 0 6px rgba(15,23,64,.28))
+      drop-shadow(0 6px 10px rgba(15,23,64,.22))
+      drop-shadow(0 -4px 8px rgba(15,23,64,.14))
+      drop-shadow(-3px 0 6px rgba(15,23,64,.12));
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
@@ -507,10 +514,10 @@ nav.sb .sb-ur{color:#64748b !important}
     background:
       linear-gradient(90deg,
         transparent 0%,
-        transparent calc(var(--nx-rail) - 4px),
-        rgba(15,23,64,.18) var(--nx-rail),
-        rgba(15,23,64,.08) calc(var(--nx-rail) + 12px),
-        rgba(15,23,64,.03) calc(var(--nx-rail) + 24px),
+        transparent calc(var(--nx-rail) - 2px),
+        rgba(15,23,64,.30) var(--nx-rail),
+        rgba(15,23,64,.15) calc(var(--nx-rail) + 10px),
+        rgba(15,23,64,.06) calc(var(--nx-rail) + 22px),
         transparent calc(var(--nx-rail) + 40px)),
       linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
     border:1px solid rgba(148,163,184,.12);

@@ -1,7 +1,17 @@
 {
-  "version": "58.70",
+  "version": "58.71",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.71",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA: Sombra envolvente alrededor de toda la barra azul — drop-shadow en 4 direcciones + overflow:visible cuando el sidebar está abierto.",
+        "MEJORA: Box-shadow del contenedor en todas las direcciones (derecha, izquierda, arriba, abajo).",
+        "MEJORA: Gradiente de profundidad en el borde azul-blanco más intenso (.30 opacidad).",
+        "Cache-bust del loader actualizado (b=5932)."
+      ]
+    },
     {
       "version": "58.70",
       "fecha": "2026-09-20",
