@@ -802,3 +802,69 @@ nav.sb .sb-ur{color:#64748b !important}
 @media (prefers-reduced-motion:reduce){
   .sb,.sb *{transition-duration:.01ms !important;transition-delay:0s !important}
 }
+
+
+/* ── Entrada móvil del menú expandido ─────────────────────────────
+   El rail azul queda estable; el panel y sus textos se desplazan con
+   una sola curva de movimiento. Al cerrar, el texto desaparece primero
+   para que ningún label se asome fuera del rail. */
+@media (max-width:768px){
+  .sb,
+  .sb.col{
+    transition:width .42s cubic-bezier(.22,1,.36,1) !important;
+  }
+  .sb::after{
+    transition:transform .42s cubic-bezier(.22,1,.36,1) .015s !important;
+  }
+  .sb.mob-open,
+  .sb.col.mob-open{
+    width:var(--nx-panel-open) !important;
+  }
+
+  /* Aunque el componente conserve la clase .col al abrir en móvil,
+     sus labels recuperan ancho y entran después de que el panel empezó
+     a deslizarse. */
+  nav#sbEl.sb.col.mob-open .sb-nm,
+  nav#sbEl.sb.col.mob-open .sb-sm,
+  nav#sbEl.sb.col.mob-open .sb-un,
+  nav#sbEl.sb.col.mob-open .sb-ur,
+  nav#sbEl.sb.col.mob-open .ni-l,
+  nav#sbEl.sb.col.mob-open .ni-b{
+    width:auto !important;
+    max-width:100% !important;
+    opacity:1 !important;
+    transform:translateX(0) !important;
+    pointer-events:auto;
+    transition:
+      opacity .20s ease .115s,
+      transform .32s cubic-bezier(.22,1,.36,1) .115s !important;
+  }
+  nav#sbEl.sb.col.mob-open .ni-l{
+    animation:nexus-menu-label-in .32s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:.115s;
+  }
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(2) .ni-l{animation-delay:.135s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(3) .ni-l{animation-delay:.155s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(4) .ni-l{animation-delay:.175s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(5) .ni-l{animation-delay:.195s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(6) .ni-l{animation-delay:.215s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(7) .ni-l{animation-delay:.235s}
+
+  @keyframes nexus-menu-label-in{
+    from{opacity:0;transform:translateX(-10px)}
+    to{opacity:1;transform:translateX(0)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .sb,.sb.col,.sb::after,
+    nav#sbEl.sb.col.mob-open .sb-nm,
+    nav#sbEl.sb.col.mob-open .sb-sm,
+    nav#sbEl.sb.col.mob-open .sb-un,
+    nav#sbEl.sb.col.mob-open .sb-ur,
+    nav#sbEl.sb.col.mob-open .ni-l,
+    nav#sbEl.sb.col.mob-open .ni-b{
+      transition-duration:.01ms !important;
+      animation-duration:.01ms !important;
+    }
+  }
+}
