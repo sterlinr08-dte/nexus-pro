@@ -22,7 +22,7 @@ NEXUS PRO is a professional insurance operations dashboard with a **Daily App Ba
 - **Sidebar Rail:** fixed blue structural layer with subtle directional shadow; icons remain centered inside the rail.
 - **Sidebar White Panel:** separate elevated white surface with soft border, diffused shadow and large rounded termination.
 - **Navigation Labels:** live exclusively inside the white panel; never overlap or intrude into the blue rail.
-- **Active Navigation State:** compact light-blue pill anchored to the label zone only. It should hug the text with controlled breathing room and never extend behind the icon rail.
+- **Active Navigation State:** compact light-blue pill anchored to the label zone only. It should hug the text with controlled breathing room and never extend behind the icon rail. On mobile the pill inherits the same 20px white-zone gutter as its label.
 - **Buttons:** tactile, compact, no neon glow; active press uses a small transform/pressed-shadow response.
 - **Cards:** use elevation only when hierarchy benefits from it; keep shadows soft and tinted toward slate.
 - **Topbar:** light, compact and aligned to the content grid; avoid excessive glow or visual weight.
@@ -32,7 +32,7 @@ NEXUS PRO is a professional insurance operations dashboard with a **Daily App Ba
 - No horizontal scrolling.
 - No text may overlap the blue navigation rail.
 - Icons and labels occupy separate spatial zones.
-- White label panel begins after the rail boundary with at least 10–12px internal breathing room.
+- On mobile, the blue rail is 76px wide; the expanded navigation surface is 228px wide, and all labels begin at least 20px inside the white zone after the rail boundary.
 - Touch targets should be at least 44px.
 - Prefer grid/explicit zones over fragile spacing hacks.
 - The sidebar may overlay content when expanded, but internal layers must never overlap each other semantically.
