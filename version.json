@@ -1,7 +1,16 @@
 {
-  "version": "58.52",
+  "version": "58.53",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.53",
+      "fecha": "2026-09-20",
+      "notas": [
+        "CORREGIDO (confirmado con captura del dueño): el resaltado del item activo en móvil se veía montado sobre el ícono.",
+        "Causa: al activarse una fila, el texto saltaba 6px más cerca del ícono que en su estado normal (margen inconsistente entre estado activo e inactivo). Ahora usa el mismo margen en ambos casos -- el texto no se mueve al activarse, solo gana el fondo alrededor.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.52",
       "fecha": "2026-09-20",

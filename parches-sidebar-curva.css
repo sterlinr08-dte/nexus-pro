@@ -683,6 +683,15 @@ nav.sb .sb-ur{color:#64748b !important}
    * span del texto recibe fondo + padding. Así el ancho SIEMPRE es el del
    * contenido y el selector empieza 10px antes de la primera letra y termina
    * 10px después de la última, sin depender del flex de la fila.
+   *
+   * 2026-09-20: margin-left iba en 2px aquí -- MENOS que el margin-left:8px
+   * del label inactivo (arriba). Eso hacía que, al activarse una fila, el
+   * texto (y el fondo del pill, que empieza en ese mismo borde) saltara 6px
+   * más cerca del ícono que en su estado normal -- confirmado por el dueño
+   * con captura: "el selector se monta encima del ícono". Ahora usa el
+   * mismo margin-left que el estado inactivo: el texto no se mueve al
+   * activarse, solo gana el fondo/padding alrededor, con la misma
+   * separación del ícono que siempre tuvo.
    */
   nav#sbEl.sb .ni.on .ni-l,
   body.spring-nav nav#sbEl.sb .ni.on .ni-l,
@@ -697,7 +706,7 @@ nav.sb .sb-ur{color:#64748b !important}
     overflow:hidden !important;
     text-overflow:ellipsis !important;
     vertical-align:middle;
-    margin-left:2px !important;
+    margin-left:8px !important;
     padding:8px 10px !important;
     border-radius:14px !important;
     background:linear-gradient(180deg,rgba(239,246,255,.96),rgba(219,234,254,.78)) !important;
