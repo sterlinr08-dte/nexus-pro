@@ -1,0 +1,72 @@
+/* NEXUS PRO · Stitch motion foundation
+   First shared motion layer: visual feedback only. No data, route, background
+   or layout rules are changed here. */
+:root{
+  --nx-motion-ease:cubic-bezier(.22,1,.36,1);
+  --nx-motion-fast:160ms;
+  --nx-motion-base:220ms;
+  --nx-motion-drawer:360ms;
+}
+
+/* Assigned by parches-motion-fase2.js only to visible operational surfaces. */
+.nx-motion-item{
+  animation:nxSurfaceEnter var(--nx-motion-base) var(--nx-motion-ease) both;
+  animation-delay:var(--nx-motion-delay,0ms);
+  will-change:transform,opacity;
+}
+@keyframes nxSurfaceEnter{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Current module has a quiet persistent cue; color and geometry stay intact. */
+.sb .ni.on .ni-i{
+  animation:nxActiveGlyph 3s ease-in-out infinite;
+}
+@keyframes nxActiveGlyph{
+  0%,100%{opacity:.84}
+  50%{opacity:1}
+}
+
+/* Physical response belongs to pointer devices only; touch keeps the reliable
+   pressed state from the base layer and never scales controls. */
+@media (hover:hover){
+  :where(.btn,button,[role="button"]):not(:disabled){
+    transition:transform var(--nx-motion-fast) var(--nx-motion-ease),
+      box-shadow var(--nx-motion-fast) ease,
+      filter var(--nx-motion-fast) ease;
+  }
+  :where(.btn,button,[role="button"]):not(:disabled):hover{
+    transform:translateY(-1px);
+  }
+  :where(.nc,.tw,.sf-kpi,.role-card,.meta-card){
+    transition:transform var(--nx-motion-base) var(--nx-motion-ease),
+      box-shadow var(--nx-motion-base) ease;
+  }
+  :where(.nc,.tw,.sf-kpi,.role-card,.meta-card):hover{
+    transform:translateY(-1px);
+  }
+}
+
+/* Existing modal markup gains an entry without forcing a new display model. */
+.overlay > .modal,
+.overlay > [role="dialog"]{
+  animation:nxModalEnter 240ms var(--nx-motion-ease) both;
+}
+@keyframes nxModalEnter{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .nx-motion-item,
+  .sb .ni.on .ni-i,
+  .overlay > .modal,
+  .overlay > [role="dialog"]{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+  }
+  :where(.btn,button,[role="button"],.nc,.tw,.sf-kpi,.role-card,.meta-card){
+    transition-duration:.01ms !important;
+  }
+}
