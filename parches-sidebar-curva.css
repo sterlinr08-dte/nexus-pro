@@ -377,7 +377,12 @@ nav.sb .sb-ur{color:#64748b !important}
    - labels y footer con más aire y sin truncado agresivo.
    ════════════════════════════════════════════════════════════════ */
 @media (max-width:768px){
-  :root{ --nx-rail:76px; }
+  :root{
+    --nx-rail:76px;
+    --nx-panel-open:228px;
+    --nx-panel-white:220px;
+    --nx-white-gutter:20px;
+  }
 
   body.tema-glass nav#sbEl.sb,
   nav#sbEl.sb{
@@ -402,7 +407,7 @@ nav.sb .sb-ur{color:#64748b !important}
   .sb.mob-open,
   .sb.col.mob-open{
     left:0 !important;
-    width:210px !important;
+    width:var(--nx-panel-open) !important;
   }
 
   #mobOverlay{z-index:10699 !important}
@@ -484,8 +489,8 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
     filter:
-      drop-shadow(10px 0 16px rgba(15,23,64,.30))
-      drop-shadow(2px 0 5px rgba(15,23,64,.18));
+      drop-shadow(11px 0 18px rgba(15,23,64,.30))
+      drop-shadow(2px 0 6px rgba(15,23,64,.17));
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
@@ -495,7 +500,7 @@ nav.sb .sb-ur{color:#64748b !important}
     top:10px;
     bottom:14px;
     left:0;
-    width:202px;
+    width:var(--nx-panel-white);
     z-index:0;
     pointer-events:none;
     background:
@@ -503,9 +508,10 @@ nav.sb .sb-ur{color:#64748b !important}
     border:1px solid rgba(148,163,184,.12);
     border-radius:30px 30px 34px 40px;
     box-shadow:
-      12px 0 28px rgba(15,23,42,.12),
-      0 10px 24px rgba(15,23,42,.07),
-      inset 0 1px 0 rgba(255,255,255,.96);
+      14px 0 32px rgba(15,23,42,.13),
+      0 12px 28px rgba(15,23,42,.075),
+      inset 0 1px 0 rgba(255,255,255,.98),
+      inset -1px 0 0 rgba(148,163,184,.07);
     /*
      * Cerrado: completamente fuera del viewport del nav para que no aparezca
      * la gran "gota" blanca inferior. Abierto: entra a x=0 por debajo del azul,
@@ -522,7 +528,7 @@ nav.sb .sb-ur{color:#64748b !important}
   /* Header: símbolo fijo sobre azul; nombre acompaña al panel blanco. */
   .sb .sb-top{
     position:relative;
-    padding-left:calc(var(--nx-rail) + 12px) !important;
+    padding-left:calc(var(--nx-rail) + var(--nx-white-gutter)) !important;
     padding-right:12px !important;
     border-bottom-color:transparent !important;
   }
@@ -537,10 +543,11 @@ nav.sb .sb-ur{color:#64748b !important}
   .sb .sb-nm,
   .sb .sb-sm{margin-left:0 !important}
 
-  /* Menú sin tarjetas; solo iconos blancos sobre azul + labels en blanco. */
+  /* Menú: rail azul y columna blanca son zonas físicas independientes.
+     El gutter blanco evita que texto, pills o badges parezcan tocar el azul. */
   nav#sbEl.sb .ni{
     position:relative;
-    padding-left:calc(var(--nx-rail) + 12px) !important;
+    padding-left:calc(var(--nx-rail) + var(--nx-white-gutter)) !important;
     padding-right:12px !important;
     gap:6px !important;
     min-height:44px;
@@ -573,8 +580,9 @@ nav.sb .sb-ur{color:#64748b !important}
      como "SOLICITUDES PENDIENT" y "CONFIGURACIÓN" tapaba el badge ADMIN. */
   nav#sbEl.sb .ni-l{
     margin-left:0 !important;
-    color:#334155 !important;
+    color:#27364b !important;
     font-size:10.5px;
+    font-weight:650 !important;
     letter-spacing:.15px;
     /* inline-block, NO inline-flex: text-overflow:ellipsis no se aplica
        dentro de un contenedor flex (limitación real de CSS) -- por eso el
@@ -635,7 +643,7 @@ nav.sb .sb-ur{color:#64748b !important}
 
   /* Los títulos de sección también pertenecen al panel blanco, no al azul. */
   nav#sbEl.sb .ss{
-    padding-left:calc(var(--nx-rail) + 12px) !important;
+    padding-left:calc(var(--nx-rail) + var(--nx-white-gutter)) !important;
     color:#94a3b8 !important;
     letter-spacing:1.1px;
   }
@@ -748,7 +756,7 @@ nav.sb .sb-ur{color:#64748b !important}
     padding-bottom:6px;
   }
   .sb .sb-u{
-    margin-left:calc(var(--nx-rail) + 10px);
+    margin-left:calc(var(--nx-rail) + 16px);
     margin-right:12px;
     padding:10px 10px;
     gap:7px;
