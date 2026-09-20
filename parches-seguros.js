@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=5925'):'?b=5925';
-    }catch(e){return '?b=5925';}
+      return base?(base+'&b=5926'):'?b=5926';
+    }catch(e){return '?b=5926';}
   }
 
   function load(src,done){
