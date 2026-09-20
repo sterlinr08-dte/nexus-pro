@@ -412,7 +412,7 @@ nav.sb .sb-ur{color:#64748b !important}
   .sb.col.mob-open{
     left:0 !important;
     width:var(--nx-panel-open) !important;
-    overflow:visible;
+    overflow:visible !important;
   }
 
   #mobOverlay{z-index:10699 !important}
@@ -494,11 +494,11 @@ nav.sb .sb-ur{color:#64748b !important}
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
     filter:
-      drop-shadow(8px 0 14px rgba(15,23,64,.40))
-      drop-shadow(3px 0 6px rgba(15,23,64,.28))
-      drop-shadow(0 6px 10px rgba(15,23,64,.22))
-      drop-shadow(0 -4px 8px rgba(15,23,64,.14))
-      drop-shadow(-3px 0 6px rgba(15,23,64,.12));
+      drop-shadow(10px 0 16px rgba(15,23,64,.50))
+      drop-shadow(4px 0 8px rgba(15,23,64,.35))
+      drop-shadow(0 8px 14px rgba(15,23,64,.30))
+      drop-shadow(0 -6px 10px rgba(15,23,64,.20))
+      drop-shadow(-4px 0 8px rgba(15,23,64,.18));
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
@@ -515,10 +515,10 @@ nav.sb .sb-ur{color:#64748b !important}
       linear-gradient(90deg,
         transparent 0%,
         transparent calc(var(--nx-rail) - 2px),
-        rgba(15,23,64,.30) var(--nx-rail),
-        rgba(15,23,64,.15) calc(var(--nx-rail) + 10px),
-        rgba(15,23,64,.06) calc(var(--nx-rail) + 22px),
-        transparent calc(var(--nx-rail) + 40px)),
+        rgba(15,23,64,.38) var(--nx-rail),
+        rgba(15,23,64,.20) calc(var(--nx-rail) + 10px),
+        rgba(15,23,64,.08) calc(var(--nx-rail) + 24px),
+        transparent calc(var(--nx-rail) + 44px)),
       linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
     border:1px solid rgba(148,163,184,.12);
     border-radius:30px 30px 34px 40px;
@@ -771,20 +771,26 @@ nav.sb .sb-ur{color:#64748b !important}
     padding-bottom:6px;
   }
   .sb .sb-u{
-    margin-left:calc(var(--nx-rail) + 16px);
+    position:relative;
+    margin-left:0;
     margin-right:12px;
-    padding:10px 10px;
+    padding:10px 10px 10px calc(var(--nx-rail) + var(--nx-white-gutter));
     gap:7px;
     min-width:0;
     border-radius:18px;
     transition:transform .24s cubic-bezier(.22,1,.36,1),opacity .16s ease;
   }
   .sb .sb-av{
+    position:absolute !important;
+    left:18px !important;
+    top:50% !important;
+    transform:translateY(-50%);
     margin-left:0;
     width:31px;
     height:31px;
     min-width:31px;
     font-size:10px;
+    z-index:3;
   }
   .sb .sb-u > div:last-child{min-width:0;overflow:hidden}
   .sb .sb-un,.sb .sb-ur{
