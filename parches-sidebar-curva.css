@@ -394,7 +394,7 @@ nav.sb .sb-ur{color:#64748b !important}
     height:calc(100dvh - 16px);
     border-radius:0;
     overflow:hidden;
-    box-shadow:none;
+    box-shadow:4px 0 18px rgba(15,23,42,.18);
     transition:width .30s cubic-bezier(.22,1,.36,1) !important;
     isolation:isolate;
     z-index:10700 !important;
