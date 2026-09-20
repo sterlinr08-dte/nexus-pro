@@ -1,7 +1,17 @@
 {
-  "version": "58.51",
+  "version": "58.52",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.52",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORADO (a pedido del dueño, confirmado con captura): en móvil, 'CONFIGURACIÓN' se ve completa, no cortada.",
+        "Se logró liberando espacio de dos elementos decorativos en esa fila: el badge de texto 'ADMIN' (ya redundante -- esa opción de menú solo existe para admins) y la flecha desplegable, que vuelve a ser una flecha simple en vez de un círculo de color.",
+        "Solo en móvil. Desktop no cambia.",
+        "SIN CAMBIOS: navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.51",
       "fecha": "2026-09-20",

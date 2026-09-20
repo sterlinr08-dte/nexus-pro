@@ -585,6 +585,33 @@ nav.sb .sb-ur{color:#64748b !important}
   }
   nav#sbEl.sb .ni > i.ti-chevron-down{margin-left:2px !important}
 
+  /* 2026-09-20: el dueño confirmó que sí quiere ver "CONFIGURACIÓN" completa
+     en móvil, no solo más letras. Con el apretón de márgenes de arriba no
+     alcanzaba (quedaba "CONFI…") -- lo que sí lo logra, verificado con
+     captura, es liberar el espacio de dos elementos puramente decorativos
+     en esta fila:
+     1) el badge suelto "ADMIN" (#niAdmin2 > span sin clase) -- ya no aporta
+        info nueva: la fila entera solo existe en el DOM para admins
+        (index.html oculta #niAdmin2 por completo si el rol no es admin),
+        así que el texto "ADMIN" era 100% redundante en móvil;
+     2) la flecha desplegable, que una regla GLOBAL (.ti en
+        parches-seguros-base.js) convierte en un círculo de color de 1.7em
+        para todo ícono de la app -- se le quita esa regla solo a esta
+        flecha, solo en móvil, para que vuelva a ser una flecha chica plana
+        (como era antes de esa regla global).
+     No se toca la regla global .ti (afectaría toda la app) ni el badge en
+     desktop (ahí no se pidió el cambio). */
+  nav#sbEl.sb #niAdmin2 > span:not(.ni-l){display:none !important}
+  nav#sbEl.sb .ni > i.ti-chevron-down{
+    width:auto !important;
+    height:auto !important;
+    min-width:0 !important;
+    border-radius:0 !important;
+    background:none !important;
+    box-shadow:none !important;
+    color:rgba(148,163,184,.85) !important;
+  }
+
   /* Los títulos de sección también pertenecen al panel blanco, no al azul. */
   nav#sbEl.sb .ss{
     padding-left:calc(var(--nx-rail) - 10px) !important;
