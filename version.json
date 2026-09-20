@@ -1,7 +1,17 @@
 {
-  "version": "58.50",
+  "version": "58.51",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.51",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORADO (con captura real del celular): el título recortado en móvil ('Configuración' → 'CON…') ahora muestra más letras antes de cortar, apretando los márgenes entre el ícono, el texto y el badge/ADMIN/flecha sin cambiar tamaños ni colores.",
+        "CONFIRMADO: el icono del menú es un círculo de color de 30px (parches-seguros-base.js) y la flecha desplegable también es un círculo — esto explica por qué el texto disponible es más angosto de lo que parecía.",
+        "PENDIENTE (no es bug, es diseño): 'CONFIGURACIÓN' completa sigue sin caber en una sola línea con el carril de 76px + ícono circular + badge ADMIN + flecha; para verla completa haría falta ensanchar el panel o achicar alguno de esos elementos.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.50",
       "fecha": "2026-09-19",

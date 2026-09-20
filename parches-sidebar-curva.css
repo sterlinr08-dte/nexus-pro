@@ -551,7 +551,7 @@ nav.sb .sb-ur{color:#64748b !important}
      captura (2026-09-19-2, ver bitácora): "SOLICITUDES PENDIENTES" salía
      como "SOLICITUDES PENDIENT" y "CONFIGURACIÓN" tapaba el badge ADMIN. */
   nav#sbEl.sb .ni-l{
-    margin-left:12px;
+    margin-left:8px;
     color:#334155 !important;
     font-size:10.5px;
     letter-spacing:.15px;
@@ -574,6 +574,16 @@ nav.sb .sb-ur{color:#64748b !important}
   /* El resto de la fila (icono, badge, chevron, pill ADMIN) nunca se
      encoge -- el único que cede espacio es el label, vía text-overflow. */
   nav#sbEl.sb .ni > *:not(.ni-l){flex-shrink:0 !important}
+  /* Recupera espacio para el texto: el icono (30px, parches-seguros-base.js)
+     y el chevron (1.7em, también circular ahí mismo) ya son grandes de por
+     sí -- los márgenes/padding extra entre ellos y el label son lo único
+     que se puede achicar sin cambiar tamaños ni colores. Ganancia real:
+     ~13px más de texto visible antes de truncar (ej. "CON…" -> "CONFI…"). */
+  nav#sbEl.sb .ni > span:not(.ni-l):not(.ni-b){
+    margin-left:3px !important;
+    padding:1px 4px !important;
+  }
+  nav#sbEl.sb .ni > i.ti-chevron-down{margin-left:2px !important}
 
   /* Los títulos de sección también pertenecen al panel blanco, no al azul. */
   nav#sbEl.sb .ss{
