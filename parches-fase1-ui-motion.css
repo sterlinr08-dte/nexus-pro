@@ -1,0 +1,119 @@
+/* NEXUS PRO · Fase 1 — base visual y movimiento
+   Capa final, deliberadamente aislada: no modifica datos, navegación ni lógica. */
+:root{
+  --nx-ui-canvas:#f0f4f8;
+  --nx-ui-surface:#ffffff;
+  --nx-ui-ink:#172033;
+  --nx-ui-muted:#64748b;
+  --nx-ui-border:rgba(203,213,225,.72);
+  --nx-ui-accent:#2563eb;
+  --nx-ui-radius:16px;
+  --nx-ui-ease:cubic-bezier(.22,1,.36,1);
+  --nx-ui-shadow:0 12px 32px rgba(15,31,61,.07);
+}
+
+html,body{
+  font-family:Geist,"Segoe UI",system-ui,-apple-system,sans-serif;
+  color:var(--nx-ui-ink);
+  background:var(--nx-ui-canvas);
+}
+
+body:not(:has(#loginScreen:not([style*="display: none"]))) .main,
+#app{
+  background:
+    radial-gradient(800px 480px at 100% 0%,rgba(255,255,255,.78),transparent 62%),
+    var(--nx-ui-canvas);
+}
+
+/* Superficies operativas: profundidad sobria, sin glass global ni brillos. */
+.tnav,
+.tw,
+.overlay > *,
+.modal,
+[role="dialog"]{
+  border-color:var(--nx-ui-border);
+}
+
+.tnav{
+  box-shadow:0 8px 24px rgba(15,31,61,.065),0 2px 6px rgba(15,31,61,.035);
+}
+
+.tw{
+  border-radius:var(--nx-ui-radius);
+  background:rgba(255,255,255,.96);
+  box-shadow:0 8px 24px rgba(15,31,61,.045);
+  overflow:auto;
+}
+
+.tw table{
+  font-variant-numeric:tabular-nums;
+}
+
+.tw tbody tr{
+  transition:background-color 160ms ease;
+}
+
+.tw tbody tr:hover{
+  background:rgba(37,99,235,.05);
+}
+
+/* Estados de foco consistentes incluso donde el módulo usa elementos nativos. */
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid rgba(37,99,235,.72) !important;
+  outline-offset:2px;
+}
+
+/* Presión táctil estable: evita escalados que provocan saltos en Safari/iOS. */
+:where(button,.btn,[role="button"]):not(:disabled):active{
+  transform:translateY(1px) !important;
+  filter:brightness(.98);
+}
+
+/* Toda transición nueva usa propiedades de compositor. */
+.nx-ui-enter{
+  animation:nxUiEnter 220ms var(--nx-ui-ease) both;
+}
+@keyframes nxUiEnter{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Skeleton disponible para estados reales de carga; no crea datos ni placeholders falsos. */
+.nx-skeleton{
+  position:relative;
+  overflow:hidden;
+  border-radius:12px;
+  background:#e8eef6;
+  color:transparent !important;
+  pointer-events:none;
+}
+.nx-skeleton::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.62),transparent);
+  animation:nxSkeleton 1.35s ease-in-out infinite;
+}
+@keyframes nxSkeleton{to{transform:translateX(100%)}}
+
+/* Scroll visible pero ligero. */
+*{scrollbar-color:rgba(100,116,139,.46) transparent}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,116,139,.46);border-radius:999px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(37,99,235,.62)}
+
+@media (max-width:768px){
+  .content{padding-inline:16px;min-width:0}
+  .tw{border-radius:14px}
+  :where(button,.btn,[role="button"]){min-height:44px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
