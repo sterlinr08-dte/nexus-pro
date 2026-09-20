@@ -1,7 +1,16 @@
 {
-  "version": "58.62",
+  "version": "58.63",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.63",
+      "fecha": "2026-09-20",
+      "notas": [
+        "CORREGIDO: en móvil todos los textos del sidebar quedan completamente dentro del panel blanco y ya no se montan sobre el rail azul.",
+        "CORREGIDO: el selector activo sigue al texto dentro de la zona blanca, manteniendo iconos fijos sobre el rail azul.",
+        "MEJORADO: panel blanco con mayor profundidad mediante sombra, borde y superficie sutilmente graduada."
+      ]
+    },
     {
       "version": "58.62",
       "fecha": "2026-09-20",
