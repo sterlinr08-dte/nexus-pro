@@ -209,11 +209,11 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
       <button data-k="document"><i class="ti ti-file-text"></i><span>Documento</span></button>
       <button data-k="camera"><i class="ti ti-camera"></i><span>Cámara</span></button>
       <button data-k="gallery"><i class="ti ti-photo"></i><span>Galería</span></button>
-      <button data-k="audio"><i class="ti ti-microphone"></i><span>Audio</span></button>
+      <button data-k="pago"><i class="ti ti-cash"></i><span>Pagar</span></button>
       <button data-k="location"><i class="ti ti-map-pin"></i><span>Ubicación</span></button>
       <button data-k="contact"><i class="ti ti-user"></i><span>Contacto</span></button>
     </div>`;
-    p.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;closePop();if(['document','camera','gallery','audio'].includes(k))pickFile(k);else if(k==='location')sendLocation();else if(k==='contact')openContactPicker();});
+    p.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;closePop();if(['document','camera','gallery'].includes(k))pickFile(k);else if(k==='pago'){const x=clienteActual();if(x&&typeof window.abrirAbono==='function')window.abrirAbono(x.id);else toastSafe('info','Este chat no está vinculado a un cliente');}else if(k==='location')sendLocation();else if(k==='contact')openContactPicker();});
     positionPop(p,anchor,true);
   }
 

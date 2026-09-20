@@ -1,7 +1,17 @@
 {
-  "version": "58.63",
+  "version": "58.64",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.64",
+      "fecha": "2026-09-20",
+      "notas": [
+        "MEJORA: Botón 'Pagar' reemplaza 'Audio' en la grilla de adjuntos del chat de WhatsApp.",
+        "Permite registrar un pago directamente desde la grilla de adjuntos (clip) sin salir de la conversación.",
+        "Si el chat no está vinculado a un cliente, muestra un aviso informativo.",
+        "Cache-bust del loader actualizado (b=5923)."
+      ]
+    },
     {
       "version": "58.63",
       "fecha": "2026-09-20",
