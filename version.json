@@ -1,14 +1,15 @@
 {
-  "version": "58.67",
+  "version": "58.68",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.67",
+      "version": "58.68",
       "fecha": "2026-09-20",
       "notas": [
-        "MEJORA: Sombra interna entre el rail azul y el panel blanco del sidebar en móvil.",
-        "El panel blanco se siente debajo del rail azul con profundidad real.",
-        "Cache-bust del loader actualizado (b=5926)."
+        "MEJORA: Sombra más visible entre rail azul y panel blanco del sidebar (triple drop-shadow).",
+        "MEJORA: Iconos y escudo movidos más a la izquierda (left:23px → 15px).",
+        "MEJORA: Gutter reducido (20px → 14px) para que los textos se alineen mejor con los iconos.",
+        "Cache-bust del loader actualizado (b=5927)."
       ]
     },
     {
