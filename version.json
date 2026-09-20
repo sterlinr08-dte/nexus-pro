@@ -1,7 +1,16 @@
 {
-  "version": "58.53",
+  "version": "58.54",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.54",
+      "fecha": "2026-09-20",
+      "notas": [
+        "CORREGIDO (confirmado con captura): en móvil, si abrías el menú lateral con un formulario ya abierto (ej. editar cliente), el menú se veía tapado/mezclado con el formulario en vez de mostrarse encima.",
+        "Causa: el menú tenía menor prioridad de capa (z-index) que los formularios emergentes. Ahora el menú siempre se muestra por encima de cualquier formulario abierto.",
+        "SIN CAMBIOS: desktop, navegación y lógica de negocio permanecen intactos."
+      ]
+    },
     {
       "version": "58.53",
       "fecha": "2026-09-20",

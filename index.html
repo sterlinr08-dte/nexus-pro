@@ -1334,11 +1334,18 @@ html body [tabindex="0"][role="button"]:focus-visible,html body tr[tabindex="0"]
 /* ════ RESPONSIVE MÓVIL COMPLETO ════ */
 @media(max-width:768px){
   /* Sidebar se convierte en drawer */
-  .sb{position:fixed;top:0;left:-220px;height:100vh;height:100dvh;z-index:200;transition:left .25s ease;box-shadow:none}
+  /* z-index 200 -> 10700: si el usuario abre el menú con un formulario/modal
+     ya abierto detrás (.mbbOv/.nbfOv, z-index:10500; .nfcPanel, 10600), el
+     drawer quedaba TAPADO por el modal -- se veía "roto"/mezclado con el
+     formulario en vez de mostrarse encima (bug real, confirmado con
+     captura, ver docs/bitacora/2026-09-20-XXXX-claude.md). 10700 lo deja
+     por encima de cualquier modal normal de la app, y sigue por debajo de
+     los overlays de verdad top-level (splash/loader, ~99998-99999). */
+  .sb{position:fixed;top:0;left:-220px;height:100vh;height:100dvh;z-index:10700;transition:left .25s ease;box-shadow:none}
   .sb.mob-open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.3)}
   .sb.col{width:210px;left:-220px}
-  /* Overlay oscuro detrás del drawer */
-  #mobOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+  /* Overlay oscuro detrás del drawer -- sincronizado justo debajo del sidebar. */
+  #mobOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10699}
   #mobOverlay.on{display:block}
   /* Main ocupa todo el ancho */
   .main{width:100%;min-width:0}
@@ -6448,7 +6455,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.53';
+const APP_VERSION='58.54';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
