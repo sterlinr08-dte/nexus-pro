@@ -398,7 +398,8 @@ nav.sb .sb-ur{color:#64748b !important}
     width:var(--nx-rail) !important;
     height:calc(100dvh - 16px);
     border-radius:0;
-    overflow:hidden;
+    /* Permite que el filtro de la silueta azul proyecte sombra fuera del rail. */
+    overflow:visible;
     box-shadow:
       4px 0 18px rgba(15,23,42,.18),
       -2px 0 10px rgba(15,23,42,.10),
@@ -408,6 +409,16 @@ nav.sb .sb-ur{color:#64748b !important}
     isolation:isolate;
     z-index:10700 !important;
   }
+  /* Cuando el rail está cerrado, solo sus iconos permanecen dentro de 76px.
+     El contenido textual se recorta en sus propios contenedores, no en el rail,
+     de modo que la sombra gris del azul nunca queda cortada. */
+  nav#sbEl.sb:not(.mob-open) .sb-top,
+  nav#sbEl.sb:not(.mob-open) .sb-nav,
+  nav#sbEl.sb:not(.mob-open) .sb-ft{
+    max-width:var(--nx-rail);
+    overflow:hidden;
+  }
+
   .sb.mob-open,
   .sb.col.mob-open{
     left:0 !important;
