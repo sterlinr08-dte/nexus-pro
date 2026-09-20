@@ -16,15 +16,10 @@ html{
   font-family:Geist,"Segoe UI",system-ui,-apple-system,sans-serif;
   color:var(--nx-ui-ink);
 }
-/* body DEBE quedarse transparent para que #nxBgPhoto (z-index:-1) se vea.
-   Si body recibe un fondo opaco, tapa la foto de oficina por completo. */
-
-body:not(:has(#loginScreen:not([style*="display: none"]))) .main,
-#app{
-  background:
-    radial-gradient(800px 480px at 100% 0%,rgba(255,255,255,.78),transparent 62%),
-    var(--nx-ui-canvas);
-}
+/* body, .main y #app DEBEN quedarse sin fondo opaco para que
+   #nxBgPhoto (z-index:-1, foto de oficina) se vea a través.
+   Cada superficie operativa (.tw, .nc, .kpi, modales) ya tiene
+   su propio fondo blanco/glass; no hace falta cubrir todo. */
 
 /* Superficies operativas: profundidad sobria, sin glass global ni brillos. */
 .tnav,

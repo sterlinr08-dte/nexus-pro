@@ -1,7 +1,15 @@
 {
-  "version": "58.76",
+  "version": "58.77",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.77",
+      "fecha": "2026-09-20",
+      "notas": [
+        "FIX: Quitado fondo opaco de .main y #app en fase1 CSS que también tapaba #nxBgPhoto (foto de oficina).",
+        "Cache-bust del loader actualizado (b=5946)."
+      ]
+    },
     {
       "version": "58.76",
       "fecha": "2026-09-20",
