@@ -1,7 +1,16 @@
 {
-  "version": "58.68",
+  "version": "58.69",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.69",
+      "fecha": "2026-09-20",
+      "notas": [
+        "CORREGIDO: Curva azul extendida para cubrir todos los iconos incluyendo Configuración.",
+        "MEJORA: Sombra visible como gradiente izquierdo en el panel blanco (simula profundidad del rail).",
+        "Cache-bust del loader actualizado (b=5928)."
+      ]
+    },
     {
       "version": "58.68",
       "fecha": "2026-09-20",
