@@ -408,20 +408,11 @@ nav.sb .sb-ur{color:#64748b !important}
     isolation:isolate;
     z-index:10700 !important;
   }
-  /* Cuando el rail está cerrado, solo sus iconos permanecen dentro de 76px.
-     El contenido textual se recorta en sus propios contenedores, no en el rail,
-     de modo que la sombra gris del azul nunca queda cortada. */
-  nav#sbEl.sb:not(.mob-open) .sb-top,
-  nav#sbEl.sb:not(.mob-open) .sb-nav,
-  nav#sbEl.sb:not(.mob-open) .sb-ft{
-    max-width:var(--nx-rail);
-    overflow:hidden;
-  }
-
   .sb.mob-open,
   .sb.col.mob-open{
     left:0 !important;
     width:var(--nx-panel-open) !important;
+    overflow:visible !important;
   }
 
   #mobOverlay{z-index:10699 !important}

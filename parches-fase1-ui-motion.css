@@ -18,8 +18,12 @@ html,body{
   background:var(--nx-ui-canvas);
 }
 
-/* El fondo pertenece a cada módulo. Esta capa no lo reemplaza ni lo anima,
-   evitando flashes blancos mientras carga una superficie dinámica. */
+body:not(:has(#loginScreen:not([style*="display: none"]))) .main,
+#app{
+  background:
+    radial-gradient(800px 480px at 100% 0%,rgba(255,255,255,.78),transparent 62%),
+    var(--nx-ui-canvas);
+}
 
 /* Superficies operativas: profundidad sobria, sin glass global ni brillos. */
 .tnav,
