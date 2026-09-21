@@ -2272,10 +2272,10 @@
       const serLista = (it.seriales || []).length ? `<div class="serlst">${(it.seriales || []).map(x => esc(x.serial)).join(' · ')}</div>` : '';
       return `<tr>
         <td data-l="#" class="cN">${String(i + 1).padStart(2, '0')}</td>
-        <td data-l="Descripción" class="nxFacProductCell">
-          <div class="nxFacProductLead"><span class="nxFacProductIcon"><i class="ti ti-package"></i></span><div class="nxFacProductInfo"><div class="dnm">${esc(it.nombre)}</div>
+        <td data-l="Descripción">
+          <div class="dnm">${esc(it.nombre)}</div>
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
-          ${serLista}</div></div>
+          ${serLista}
         </td>
         <td data-l="Precio" class="r"><input class="pin" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
