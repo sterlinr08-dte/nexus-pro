@@ -161,6 +161,15 @@
 }
 `;
     (document.head||document.documentElement).appendChild(style);
+
+    /* nxPfEnsureCSS se crea al abrir el POS. Reinsertar nuestra capa después
+       garantiza que la mejora visual conserve prioridad sin tocar su lógica. */
+    function priorizar(){
+      var base=document.getElementById('nxPfCSS');
+      if(base&&style.parentNode)style.parentNode.appendChild(style);
+    }
+    priorizar();
+    new MutationObserver(priorizar).observe(document.head||document.documentElement,{childList:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
