@@ -4333,8 +4333,18 @@ function mostrarInstruccionesIOS(){
 }
 
 // ── Credenciales hardcodeadas (funcionan en cualquier dispositivo) ──────────
-const SUPABASE_URL_FIXED = 'https://tnwsgcxurfyuszxsewsn.supabase.co';
-const SUPABASE_KEY_FIXED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRud3NnY3h1cmZ5dXN6eHNld3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDM3NzIsImV4cCI6MjA5NjUxOTc3Mn0.G7hRg4Cdki0jilRMg2hUZ6dVJsqvXWXOPFQOdGVbR1k';
+// Clientes con base Supabase PROPIA (modelo "base por cliente"): el mismo index.html
+// se sirve en su dominio y aquí se elige la base por hostname. Cualquier host que no
+// esté en el mapa usa la base madre de NEXUS PRO (nexusprord.com) tal cual siempre.
+const NX_STUDIO_BASE = {url:'https://edbknlkjnlfmkkiizdbe.supabase.co', key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec'};
+const NX_BASES_POR_HOST = {
+  // STUDIO (POS) — proyecto Supabase propio "STUDIO RD" (edbknlkjnlfmkkiizdbe). Solo en su dominio.
+  'studiord.net':     NX_STUDIO_BASE,
+  'www.studiord.net': NX_STUDIO_BASE,
+};
+const _nxBaseHost = NX_BASES_POR_HOST[String(location.hostname||'').toLowerCase()] || null;
+const SUPABASE_URL_FIXED = _nxBaseHost ? _nxBaseHost.url : 'https://tnwsgcxurfyuszxsewsn.supabase.co';
+const SUPABASE_KEY_FIXED = _nxBaseHost ? _nxBaseHost.key : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRud3NnY3h1cmZ5dXN6eHNld3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDM3NzIsImV4cCI6MjA5NjUxOTc3Mn0.G7hRg4Cdki0jilRMg2hUZ6dVJsqvXWXOPFQOdGVbR1k';
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 async function sha256(str){const b=new TextEncoder().encode(str);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
