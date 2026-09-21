@@ -60,3 +60,13 @@ NEXUS PRO is a professional insurance operations dashboard with **Daily App Bala
 - No decorative gradients on large text.
 - No emoji in the operational UI.
 - No mount animations that repeatedly replay during routine data updates.
+
+
+## 8. Multiempresa POS Profile
+- **Atmosphere:** an operational workspace for daily sales: balanced density (6/10), structured asymmetry (5/10), and restrained motion (5/10). The Multiempresa hub is the administrative launcher; the POS shell is the focused work area.
+- **POS canvas:** Slate White (#F8FAFC) behind Pure Surface (#FFFFFF). **Nexus Blue** (#2563EB) remains the only structural accent for the quick-sale action, focus states and the navigation shell.
+- **Navigation:** the POS side rail is a calm blue structural plane. Its active item is a translucent white inset, never a neon glow or oversized pill.
+- **Dashboard:** operational KPIs use tabular numbers and compact 16px-radius surfaces. App shortcuts form an adaptive grid, not a fixed three-column feature row.
+- **Multiempresa cards:** each business/module card is a 112px minimum touch surface with icon, title, role-specific description and directional affordance. On mobile it becomes a single column.
+- **Motion:** cards and KPIs enter at 24ms intervals; hover lifts 1–2px only on pointer devices. Buttons press down 1px on activation. All movement uses transform and opacity, and respects reduced-motion settings.
+- **Never:** blend business identity colors into large backgrounds, duplicate navigation actions, animate sales amounts continuously, or use cosmetic motion that delays a sale, payment or inventory action.
