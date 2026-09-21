@@ -68,6 +68,16 @@ const SPECS = {
     body: "Hola {{1}}. El cierre automático del ciclo {{2}} no se completó en NEXUS PRO. Motivo: {{3}}. Revisa el sistema para resolverlo.",
     example: ["ESTERLIN", "2026-08", "diferencia de reconciliacion en ROBINSON"],
   },
+  pago_validado_agente_ciclo: {
+    name: "pago_validado_agente_ciclo",
+    body: "Hola {{1}}. Se validó un pago de RD$ {{2}} del cliente {{3}} en NEXUS PRO. Cobrado en este ciclo: RD$ {{4}}. Acumulado de ciclos anteriores: RD$ {{5}}. Consulta el detalle en el sistema.",
+    example: ["ROBINSON", "4,500.00", "JUAN PEREZ", "25,000.00", "140,000.00"],
+  },
+  pago_validado_admin_ciclo: {
+    name: "pago_validado_admin_ciclo",
+    body: "Hola {{1}}. El agente {{2}} validó un pago de RD$ {{3}} del cliente {{4}} en NEXUS PRO. Cobrado por el agente este ciclo: RD$ {{5}}. Acumulado de ciclos anteriores: RD$ {{6}}. Consulta en el sistema.",
+    example: ["ESTERLIN", "ROBINSON", "4,500.00", "JUAN PEREZ", "25,000.00", "140,000.00"],
+  },
 } as const;
 
 type Tipo = keyof typeof SPECS;
@@ -155,6 +165,10 @@ Deno.serve(async (req: Request) => {
     vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), String(datos.destino || "Agente")];
   } else if (tipo === "cierre_ciclo_fallido") {
     vars = [nombre, String(datos.periodo || "?"), String(datos.motivo || "error no especificado")];
+  } else if (tipo === "pago_validado_agente_ciclo") {
+    vars = [nombre, money(datos.monto), String(datos.cliente || "Cliente"), money(datos.acumulado_ciclo), money(datos.acumulado_anterior)];
+  } else if (tipo === "pago_validado_admin_ciclo") {
+    vars = [nombre, String(datos.agente_nombre || "Agente"), money(datos.monto), String(datos.cliente || "Cliente"), money(datos.acumulado_ciclo), money(datos.acumulado_anterior)];
   } else {
     vars = [nombre, String(datos.origen || "Agente"), money(datos.monto), money(datos.acumulado)];
   }
