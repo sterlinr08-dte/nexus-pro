@@ -1,13 +1,55 @@
 {
-  "version": "58.78",
+  "version": "58.83",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
     {
-      "version": "58.78",
-      "fecha": "2026-09-20",
+      "version": "58.83",
+      "fecha": "2026-09-21",
       "notas": [
-        "FIX: body{background:transparent} reforzado con !important para que ningún CSS cacheado por Safari pueda sobreescribirlo y tapar #nxBgPhoto.",
-        "Cache-bust del loader actualizado (b=5948)."
+        "MEJORA POS: Lista de artículos de Factura simplificada con separadores sutiles y menor peso visual.",
+        "MEJORA: Se eliminan tarjetas, sombras e iconografía sobredimensionada; Cobrar no tapa el último artículo."
+      ]
+    },
+    {
+      "version": "58.82",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA POS: Factura móvil rediseñada en la lista real de artículos agregados.",
+        "FIX: La lista ahora deja espacio para que la barra Cobrar no tape el último artículo.",
+        "MEJORA: Cada artículo muestra icono, nombre, código y controles dentro de una tarjeta más clara."
+      ]
+    },
+    {
+      "version": "58.81",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA POS: Factura > Buscar artículo ahora muestra el catálogo como lista compacta y táctil.",
+        "MEJORA: Producto, stock, precio y acción de elegir tienen jerarquía visual clara en móvil y PC."
+      ]
+    },
+    {
+      "version": "58.80",
+      "fecha": "2026-09-21",
+      "notas": [
+        "CORREGIDO POS: La mejora ahora aplica a la lista principal de artículos de la pantalla Factura, no solo al historial.",
+        "MEJORA: Filas de factura con jerarquía visible, importes destacados y controles compactos sin cambiar cálculos ni cobro."
+      ]
+    },
+    {
+      "version": "58.79",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA POS: Lista de facturas rediseñada para lectura rápida: número, cliente, fecha, total y acciones separados por fila.",
+        "MEJORA: Modal de facturas compacto, con filas táctiles y paginación clara en móvil y PC."
+      ]
+    },
+    {
+      "version": "58.78",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA: Se activa la nueva línea visual Stitch para Multiempresa y Punto de Venta.",
+        "FIX: La capa visual del POS se inserta después de sus estilos internos para que no quede oculta.",
+        "MEJORA: Hub Multiempresa, menú operativo, KPIs y accesos rápidos reciben jerarquía visual y transiciones ligeras."
       ]
     },
     {

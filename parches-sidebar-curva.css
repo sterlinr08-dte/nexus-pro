@@ -493,13 +493,9 @@ nav.sb .sb-ur{color:#64748b !important}
     mask-size:100% 100%;
     -webkit-mask-repeat:no-repeat;
     mask-repeat:no-repeat;
-    /* Sombra gris neutra alrededor de TODA la silueta azul enmascarada.
-       No pertenece al panel blanco y acompaña las curvas superior, lateral e inferior. */
-    filter:
-      drop-shadow(0 0 9px rgba(71,85,105,.34))
-      drop-shadow(4px 0 10px rgba(71,85,105,.22))
-      drop-shadow(0 6px 9px rgba(71,85,105,.18))
-      drop-shadow(0 -3px 7px rgba(71,85,105,.14));
+    /* La sombra se dibuja detrás en ::after: el rail conserva overflow oculto,
+       evitando que el panel blanco se filtre durante la carga. */
+    filter:none;
   }
 
   /* PANEL BLANCO — pieza separada, claramente redondeada y ligeramente inset. */
@@ -512,9 +508,14 @@ nav.sb .sb-ur{color:#64748b !important}
     width:var(--nx-panel-white);
     z-index:0;
     pointer-events:none;
-    /* El panel blanco no emite sombra ni gradiente oscuro: es una superficie limpia
-       debajo del rail. La profundidad sale exclusivamente del contorno azul. */
-    background:linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
+    /* Halo gris adherido a la MISMA curva azul, renderizado dentro del panel.
+       No usa sombra exterior ni overflow visible: no puede crear el flash blanco. */
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 600' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='h' x='-20%25' y='-8%25' width='140%25' height='118%25'%3E%3CfeGaussianBlur stdDeviation='4'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M0 0 H41 C62 0 76 19 76 45 V470 C76 490 71 504 61 516 C50 528 36 536 24 546 C14 556 7 566 5 576 C5 582 2 588 0 592 Z' fill='none' stroke='%236b7280' stroke-opacity='.46' stroke-width='12' filter='url(%23h)'/%3E%3Cpath d='M0 0 H41 C62 0 76 19 76 45 V470 C76 490 71 504 61 516 C50 528 36 536 24 546 C14 556 7 566 5 576 C5 582 2 588 0 592 Z' fill='none' stroke='%236b7280' stroke-opacity='.16' stroke-width='2'/%3E%3C/svg%3E"),
+      linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
+    background-repeat:no-repeat,no-repeat;
+    background-position:0 0,0 0;
+    background-size:100% 100%,100% 100%;
     border:1px solid rgba(148,163,184,.12);
     border-radius:30px 30px 34px 40px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset -1px 0 0 rgba(148,163,184,.07);
@@ -800,4 +801,138 @@ nav.sb .sb-ur{color:#64748b !important}
 
 @media (prefers-reduced-motion:reduce){
   .sb,.sb *{transition-duration:.01ms !important;transition-delay:0s !important}
+}
+
+
+/* ── Entrada móvil del menú expandido ─────────────────────────────
+   El rail azul queda estable; el panel y sus textos se desplazan con
+   una sola curva de movimiento. Al cerrar, el texto desaparece primero
+   para que ningún label se asome fuera del rail. */
+@media (max-width:768px){
+  .sb,
+  .sb.col{
+    transition:width .42s cubic-bezier(.22,1,.36,1) !important;
+  }
+  .sb::after{
+    transition:transform .42s cubic-bezier(.22,1,.36,1) .015s !important;
+  }
+  .sb.mob-open,
+  .sb.col.mob-open{
+    width:var(--nx-panel-open) !important;
+  }
+
+  /* Aunque el componente conserve la clase .col al abrir en móvil,
+     sus labels recuperan ancho y entran después de que el panel empezó
+     a deslizarse. */
+  nav#sbEl.sb.col.mob-open .sb-nm,
+  nav#sbEl.sb.col.mob-open .sb-sm,
+  nav#sbEl.sb.col.mob-open .sb-un,
+  nav#sbEl.sb.col.mob-open .sb-ur,
+  nav#sbEl.sb.col.mob-open .ni-l,
+  nav#sbEl.sb.col.mob-open .ni-b{
+    width:auto !important;
+    max-width:100% !important;
+    opacity:1 !important;
+    transform:translateX(0) !important;
+    pointer-events:auto;
+    transition:
+      opacity .20s ease .115s,
+      transform .32s cubic-bezier(.22,1,.36,1) .115s !important;
+  }
+  nav#sbEl.sb.col.mob-open .ni-l{
+    animation:nexus-menu-label-in .32s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:.115s;
+  }
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(2) .ni-l{animation-delay:.135s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(3) .ni-l{animation-delay:.155s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(4) .ni-l{animation-delay:.175s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(5) .ni-l{animation-delay:.195s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(6) .ni-l{animation-delay:.215s}
+  nav#sbEl.sb.col.mob-open .ni:nth-of-type(7) .ni-l{animation-delay:.235s}
+
+  @keyframes nexus-menu-label-in{
+    from{opacity:0;transform:translateX(-10px)}
+    to{opacity:1;transform:translateX(0)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .sb,.sb.col,.sb::after,
+    nav#sbEl.sb.col.mob-open .sb-nm,
+    nav#sbEl.sb.col.mob-open .sb-sm,
+    nav#sbEl.sb.col.mob-open .sb-un,
+    nav#sbEl.sb.col.mob-open .sb-ur,
+    nav#sbEl.sb.col.mob-open .ni-l,
+    nav#sbEl.sb.col.mob-open .ni-b{
+      transition-duration:.01ms !important;
+      animation-duration:.01ms !important;
+    }
+  }
+}
+
+
+/* ── Acordeones móviles: crecimiento vertical controlado ──────────
+   Al abrir Contabilidad o Configuración las opciones nacen hacia abajo.
+   Si superan la pantalla, solo el menú se desliza suavemente: el rail azul,
+   la curva y el dashboard permanecen estables. */
+@media (max-width:768px){
+  nav#sbEl.sb.mob-open{
+    display:flex !important;
+    flex-direction:column !important;
+    overflow:hidden !important;
+  }
+  nav#sbEl.sb.mob-open .sb-nav{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+  }
+  nav#sbEl.sb.mob-open .sb-nav::-webkit-scrollbar{display:none}
+  nav#sbEl.sb.mob-open .sb-ft{flex:0 0 auto}
+  nav#sbEl.sb.mob-open #sbContab,
+  nav#sbEl.sb.mob-open #sbConfig{
+    max-height:0;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:
+      max-height .42s cubic-bezier(.22,1,.36,1),
+      opacity .18s ease,
+      transform .30s cubic-bezier(.22,1,.36,1) !important;
+  }
+  nav#sbEl.sb.mob-open #sbContab[style*="max-height: "]:not([style*="max-height: 0"]),
+  nav#sbEl.sb.mob-open #sbConfig[style*="max-height: "]:not([style*="max-height: 0"]){
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+/* ── El borde inferior acompaña submenús abiertos ──────────────────
+   Con un acordeón abierto se aplaza la curva inferior: el carril azul
+   y el panel blanco continúan rectos hasta el final visible del menú.
+   Al cerrarlo se recupera automáticamente la silueta curva normal. */
+@media (max-width:768px){
+  nav#sbEl.sb.mob-open.nx-accordion-open::before{
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H54 C76 0 100 19 100 45 V600 H0 Z' fill='white'/%3E%3C/svg%3E") !important;
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 600' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H54 C76 0 100 19 100 45 V600 H0 Z' fill='white'/%3E%3C/svg%3E") !important;
+  }
+  nav#sbEl.sb.mob-open::after{
+    transition:
+      transform .42s cubic-bezier(.22,1,.36,1) .015s,
+      bottom .34s cubic-bezier(.22,1,.36,1),
+      border-radius .34s cubic-bezier(.22,1,.36,1),
+      background .22s ease !important;
+  }
+  nav#sbEl.sb.mob-open.nx-accordion-open::after{
+    bottom:0;
+    border-radius:30px 30px 0 0;
+    background-image:linear-gradient(180deg,rgba(255,255,255,.995) 0%,rgba(248,250,252,.985) 100%);
+    box-shadow:
+      inset 7px 0 12px rgba(71,85,105,.18),
+      inset 0 1px 0 rgba(255,255,255,.98),
+      inset -1px 0 0 rgba(148,163,184,.07);
+  }
 }

@@ -6357,7 +6357,7 @@ function toggleConfig(){
   _configAbierto=!_configAbierto;
   const sb=document.getElementById('sbConfig');
   const icn=document.getElementById('icnConfig');
-  if(sb)sb.style.maxHeight=_configAbierto?'600px':'0';
+  moverAcordeonSidebar(sb,_configAbierto);
   if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
   // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
   if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
@@ -6384,11 +6384,31 @@ function navConfig(tabNum,el){
 }
 
 let _contabAbierto=false;
+function moverAcordeonSidebar(panel,abierto){
+  if(!panel)return;
+  panel.style.maxHeight=abierto ? panel.scrollHeight+'px' : '0';
+
+  // El fondo azul y el panel blanco prolongan su tramo vertical mientras
+  // exista un acordeón abierto; así el borde curvo no corta los nuevos ítems.
+  const sidebar=document.getElementById('sbEl');
+  if(sidebar){
+    requestAnimationFrame(function(){
+      sidebar.classList.toggle('nx-accordion-open',!!(_contabAbierto||_configAbierto));
+    });
+  }
+
+  if(!abierto)return;
+  // Muestra las nuevas opciones dentro de la barra sin desplazar el dashboard.
+  requestAnimationFrame(function(){
+    const primerItem=panel.querySelector('.ni');
+    if(primerItem)primerItem.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+}
 function toggleContab(){
   _contabAbierto=!_contabAbierto;
   const sb=document.getElementById('sbContab');
   const icn=document.getElementById('icnContab');
-  if(sb)sb.style.maxHeight=_contabAbierto?'400px':'0';
+  moverAcordeonSidebar(sb,_contabAbierto);
   if(icn)icn.style.transform=_contabAbierto?'rotate(180deg)':'';
   // El acordeón puede mover el .ni activo — el resorte lo sigue solo.
   if(typeof window.nxSidebarSpringSync==='function')window.nxSidebarSpringSync();
@@ -6457,7 +6477,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.78';
+const APP_VERSION='58.83';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13757,6 +13777,7 @@ setTimeout(verificarAutoFacturacion, 5000);
     cargarConReintento('parches-financiamiento.js');
     cargarConReintento('parches-vehiculos.js');
     cargarConReintento('parches-pos.js');
+    cargarConReintento('parches-pos-stitch-visual.js');
     cargarConReintento('parches-rifas.js');
     cargarConReintento('parches-panel-dueno.js');
   })();
