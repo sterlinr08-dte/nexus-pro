@@ -1,7 +1,15 @@
 {
-  "version": "58.82",
+  "version": "58.83",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.83",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA POS: Lista de artículos de Factura simplificada con separadores sutiles y menor peso visual.",
+        "MEJORA: Se eliminan tarjetas, sombras e iconografía sobredimensionada; Cobrar no tapa el último artículo."
+      ]
+    },
     {
       "version": "58.82",
       "fecha": "2026-09-21",

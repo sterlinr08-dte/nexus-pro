@@ -418,6 +418,107 @@
   #v-pos .nx-invoice-pro .docTbl td[data-l="Importe"] .imp{font-size:14px !important}
 }
 
+
+/* Factura: lista de artículos sobria y compacta. */
+#v-pos .nx-invoice-pro #facTabla{
+  margin-top:10px !important;
+  padding:0 0 94px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+}
+#v-pos .nx-invoice-pro .docTbl{
+  border-collapse:collapse !important;
+  border-spacing:0 !important;
+  background:#fff;
+  border:1px solid #edf1f6;
+  border-radius:12px;
+  overflow:hidden;
+}
+#v-pos .nx-invoice-pro .docTbl thead th{
+  padding:9px 8px !important;
+  border-bottom:1px solid #e5eaf1 !important;
+  background:#fafbfd;
+  color:#94a3b8 !important;
+}
+#v-pos .nx-invoice-pro .docTbl tbody tr{
+  filter:none !important;
+  transform:none !important;
+  transition:background 160ms ease;
+}
+#v-pos .nx-invoice-pro .docTbl tbody tr:hover{
+  transform:none !important;
+  filter:none !important;
+}
+#v-pos .nx-invoice-pro .docTbl tbody td{
+  padding:9px 8px !important;
+  border:0 !important;
+  border-bottom:1px solid #edf1f6 !important;
+  background:#fff !important;
+}
+#v-pos .nx-invoice-pro .docTbl tbody tr:last-child td{border-bottom:0 !important}
+#v-pos .nx-invoice-pro .docTbl tbody td:first-child,
+#v-pos .nx-invoice-pro .docTbl tbody td:last-child{
+  border-radius:0 !important;
+}
+#v-pos .nx-invoice-pro .docTbl .dnm{
+  font-size:12px !important;
+  font-weight:700 !important;
+}
+#v-pos .nx-invoice-pro .docTbl .dsub{margin-top:2px}
+#v-pos .nx-invoice-pro .docTbl .imp{
+  color:#0f172a !important;
+  font-size:12px;
+  font-weight:800 !important;
+}
+#v-pos .nx-invoice-pro .docTbl .stp{
+  border-color:#e5eaf1 !important;
+  background:#fafbfd !important;
+  box-shadow:none !important;
+}
+#v-pos .nx-invoice-pro .docTbl .del{
+  background:transparent !important;
+  color:#94a3b8 !important;
+}
+#v-pos .nx-invoice-pro .docTbl .cnt{
+  margin:0 !important;
+  padding:7px 2px 0 !important;
+  text-align:left;
+  font-size:10px;
+}
+@media(max-width:760px){
+  #v-pos .nx-invoice-pro .docTbl{
+    display:block;
+    border-radius:12px;
+    overflow:visible;
+    background:transparent;
+    border:0;
+  }
+  #v-pos .nx-invoice-pro .docTbl tbody{display:block}
+  #v-pos .nx-invoice-pro .docTbl tr{
+    display:block;
+    margin:0 !important;
+    padding:0 11px !important;
+    border:1px solid #edf1f6 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    background:#fff !important;
+  }
+  #v-pos .nx-invoice-pro .docTbl tr:first-child{border-radius:12px 12px 0 0 !important}
+  #v-pos .nx-invoice-pro .docTbl tr:last-child{border-radius:0 0 12px 12px !important}
+  #v-pos .nx-invoice-pro .docTbl tr+tr{border-top:0 !important}
+  #v-pos .nx-invoice-pro .docTbl td[data-l="Descripción"]{
+    margin:0 !important;
+    padding:10px 0 7px !important;
+    background:#fff !important;
+    border-bottom:1px solid #edf1f6 !important;
+  }
+  #v-pos .nx-invoice-pro .docTbl td{
+    padding:7px 0 !important;
+    border-bottom:1px solid #f1f4f8 !important;
+  }
+}
+
 /* Motion is deliberately short and can be disabled by the OS. */
 #v-pos .nxTShell .nxTKpi,
 #v-pos .nxTShell .nxApp,
