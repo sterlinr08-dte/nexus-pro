@@ -5,7 +5,7 @@
 --
 -- ATENCIÓN (flags para el dueño):
 --  * all_agentes, org_bancos, all_recibo_contador, all_secuencias_ncf comparan mi_organizacion() con la
---    organización de slug 'nexus-pro'. En STUDIO ese slug no existirá: ajustar el slug o la política.
+--    organización de slug 'nexus-pro' en la madre. Para STUDIO el literal ya se sustituyó por 'studio' (ver README).
 --  * mias_usuario_preferencias depende de mi_usuario_id() (incluida en 02_helpers.sql).
 
 -- ---------------------------------------------------------------- enable RLS
@@ -78,15 +78,15 @@ alter table public.saas_suscripciones enable row level security;
 -- ---------------------------------------------------------------- políticas
 create policy all_agentes on public.agentes as permissive for all to authenticated using (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
+  WHERE (organizaciones.slug = 'studio'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text)))));
+  WHERE (organizaciones.slug = 'studio'::text)))));
 create policy auditoria_por_org on public.auditoria as permissive for all to authenticated using (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion()))) with check (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion())));
 create policy org_bancos on public.bancos as permissive for all to authenticated using (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
+  WHERE (organizaciones.slug = 'studio'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text)))));
+  WHERE (organizaciones.slug = 'studio'::text)))));
 create policy org_delete_admin on public.organizaciones as permissive for delete to authenticated using ((mi_rol() = 'admin'::text));
 create policy org_insert_admin on public.organizaciones as permissive for insert to authenticated with check ((mi_rol() = 'admin'::text));
 create policy org_lectura_publica on public.organizaciones as permissive for select to public using (true);
@@ -156,9 +156,9 @@ create policy profiles_self_read on public.profiles as permissive for select to 
 create policy profiles_self_update on public.profiles as permissive for update to authenticated using ((id = auth.uid())) with check ((id = auth.uid()));
 create policy all_recibo_contador on public.recibo_contador as permissive for all to public using (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
+  WHERE (organizaciones.slug = 'studio'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text)))));
+  WHERE (organizaciones.slug = 'studio'::text)))));
 create policy rrhh_empleados_admin on public.rrhh_empleados as permissive for all to public using (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion()))) with check (((mi_rol() IS NOT NULL) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))));
 create policy rrhh_nlin_admin on public.rrhh_nomina_lineas as permissive for all to public using (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion()))) with check (((mi_rol() IS NOT NULL) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))));
 create policy rrhh_nominas_admin on public.rrhh_nominas as permissive for all to public using (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion()))) with check (((mi_rol() IS NOT NULL) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))));
@@ -166,8 +166,8 @@ create policy saas_pagos_admin on public.saas_pagos as permissive for all to pub
 create policy saas_sus_admin on public.saas_suscripciones as permissive for all to public using (((mi_rol() = 'admin'::text) AND (organizacion_id = mi_organizacion()))) with check (((mi_rol() = 'admin'::text) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))));
 create policy all_secuencias_ncf on public.secuencias_ncf as permissive for all to authenticated using (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
+  WHERE (organizaciones.slug = 'studio'::text))))) with check (((mi_rol() IS NOT NULL) AND (mi_organizacion() = ( SELECT organizaciones.id
    FROM organizaciones
-  WHERE (organizaciones.slug = 'nexus-pro'::text)))));
+  WHERE (organizaciones.slug = 'studio'::text)))));
 create policy mias_usuario_preferencias on public.usuario_preferencias as permissive for all to authenticated using ((usuario_id = mi_usuario_id())) with check ((usuario_id = mi_usuario_id()));
 create policy all_usuarios_sistema on public.usuarios_sistema as permissive for all to authenticated using ((mi_rol() = 'admin'::text)) with check ((mi_rol() = 'admin'::text));
