@@ -131,6 +131,79 @@
 #v-pos .nxAppIco{border-radius:12px}
 #v-pos .nxAppNom{color:#27364b}
 
+/* Facturas: lista de documentos con lectura rápida y acciones contenidas. */
+#nxFacHistM .nxPrForm{
+  width:min(94vw,560px) !important;
+  padding:0 !important;
+  overflow:hidden;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:20px !important;
+  background:#f8fafc;
+  box-shadow:0 22px 54px rgba(15,23,42,.18);
+}
+#nxFacHistM .mt{
+  min-height:62px;
+  padding:0 16px;
+  border-bottom:1px solid rgba(148,163,184,.16);
+  background:#fff;
+}
+#nxFacHistRows{
+  padding:4px 12px 10px;
+  background:#f8fafc;
+}
+#nxFacHistRows>div{
+  margin:8px 0;
+  padding:12px 11px !important;
+  border:1px solid rgba(148,163,184,.18) !important;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(15,23,42,.035);
+  transition:transform 180ms cubic-bezier(.22,1,.36,1),box-shadow 180ms ease,border-color 180ms ease;
+}
+#nxFacHistRows>div:hover{
+  transform:translateY(-1px);
+  border-color:rgba(37,99,235,.30) !important;
+  box-shadow:0 10px 20px rgba(15,23,42,.08);
+}
+#nxFacHistRows>div>div:first-child>div:first-child{
+  font-size:12px !important;
+  letter-spacing:-.01em;
+}
+#nxFacHistRows>div>div:first-child>div:last-child{
+  margin-top:3px;
+  line-height:1.4;
+  color:#64748b !important;
+}
+#nxFacHistRows>div>b{
+  min-width:76px;
+  padding:6px 8px;
+  border-radius:9px;
+  background:#eff6ff;
+  color:#1d4ed8;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+#nxFacHistRows>div .ab{
+  flex:0 0 30px;
+  width:30px !important;
+  height:30px !important;
+  border-radius:9px;
+}
+#nxFacHistNav{
+  display:flex;
+  justify-content:center;
+  padding:12px 14px 14px;
+  border-top:1px solid rgba(148,163,184,.15);
+  background:#fff;
+}
+#nxFacHistNav>div{margin-top:0 !important}
+@media(max-width:480px){
+  #nxFacHistM .nxPrForm{width:calc(100vw - 20px) !important;border-radius:16px !important}
+  #nxFacHistRows{padding-inline:9px}
+  #nxFacHistRows>div{gap:7px !important;padding:11px 9px !important}
+  #nxFacHistRows>div>b{min-width:66px;font-size:11.5px !important;padding:5px 6px}
+}
+
 /* Motion is deliberately short and can be disabled by the OS. */
 #v-pos .nxTShell .nxTKpi,
 #v-pos .nxTShell .nxApp,
