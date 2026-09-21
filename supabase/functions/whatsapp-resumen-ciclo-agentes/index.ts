@@ -65,7 +65,10 @@ Deno.serve(async (req: Request) => {
 
     const { data: cfg } = await db.from("whatsapp_config").select("zernio_account_id,activo").eq("activo", true).limit(1).maybeSingle();
     if (!cfg?.zernio_account_id) return json({ ok: false, error: "whatsapp_sin_configurar" }, 409);
-    if (!dry && !(await plantillaAprobada(cfg.zernio_account_id))) return json({ ok: false, error: "plantilla_no_aprobada" }, 409);
+    if (!dry) {
+      const aprobada = await plantillaAprobada(cfg.zernio_account_id);
+      if (!aprobada) console.warn("resumen-ciclo: plantilla no encontrada como APPROVED en Zernio, se intentará enviar de todas formas");
+    }
 
     // Obtener el cierre más reciente (o el periodo explícito)
     let cierreQuery = db.from("seguros_cierres_ciclo").select("id,periodo,cerrado_at,total_negocio_cobrado");
