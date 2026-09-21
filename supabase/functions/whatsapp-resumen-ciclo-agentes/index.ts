@@ -4,7 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2.112.2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ZERNIO_API_KEY = Deno.env.get("ZERNIO_API_KEY") ?? "";
-const TEMPLATE = "reporte_novedades_ciclo_v1";
+const TEMPLATE = "resumen_ciclo_agente";
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
 function json(body: unknown, status = 200) {
