@@ -375,6 +375,49 @@
   #v-pos .nx-invoice-pro .nxPpkIt{min-height:58px;padding:9px 10px !important}
 }
 
+
+/* Factura móvil: líneas agregadas legibles y sin quedar debajo de Cobrar. */
+#v-pos .nx-invoice-pro .nxFacProductLead{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  min-width:0;
+}
+#v-pos .nx-invoice-pro .nxFacProductIcon{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:linear-gradient(145deg,#eff6ff,#dbeafe);
+  color:#2563eb;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+#v-pos .nx-invoice-pro .nxFacProductIcon i{font-size:17px}
+#v-pos .nx-invoice-pro .nxFacProductInfo{min-width:0;flex:1}
+@media(max-width:760px){
+  #v-pos .nx-invoice-pro #facTabla{padding-bottom:94px !important}
+  #v-pos .nx-invoice-pro .docTbl tr{
+    overflow:hidden;
+    border-radius:16px !important;
+    padding:0 12px !important;
+    background:#fff;
+    box-shadow:0 8px 18px rgba(15,23,42,.075);
+  }
+  #v-pos .nx-invoice-pro .docTbl td[data-l="Descripción"]{
+    margin:0 -12px;
+    padding:13px 12px !important;
+    border-bottom:1px solid #e8eef6 !important;
+    background:linear-gradient(135deg,#fff 0%,#f8fbff 100%) !important;
+  }
+  #v-pos .nx-invoice-pro .docTbl td[data-l="Importe"]{
+    padding-top:11px !important;
+    border-top:1px solid #e8eef6 !important;
+  }
+  #v-pos .nx-invoice-pro .docTbl td[data-l="Importe"] .imp{font-size:14px !important}
+}
+
 /* Motion is deliberately short and can be disabled by the OS. */
 #v-pos .nxTShell .nxTKpi,
 #v-pos .nxTShell .nxApp,

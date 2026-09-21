@@ -1,7 +1,16 @@
 {
-  "version": "58.81",
+  "version": "58.82",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.82",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA POS: Factura móvil rediseñada en la lista real de artículos agregados.",
+        "FIX: La lista ahora deja espacio para que la barra Cobrar no tape el último artículo.",
+        "MEJORA: Cada artículo muestra icono, nombre, código y controles dentro de una tarjeta más clara."
+      ]
+    },
     {
       "version": "58.81",
       "fecha": "2026-09-21",
