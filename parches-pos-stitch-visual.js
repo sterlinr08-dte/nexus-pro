@@ -166,7 +166,7 @@
        garantiza que la mejora visual conserve prioridad sin tocar su lógica. */
     function priorizar(){
       var base=document.getElementById('nxPfCSS');
-      if(base&&style.parentNode)style.parentNode.appendChild(style);
+      if(base&&style.parentNode&&style.parentNode.lastElementChild!==style)style.parentNode.appendChild(style);
     }
     priorizar();
     new MutationObserver(priorizar).observe(document.head||document.documentElement,{childList:true});
