@@ -1,7 +1,16 @@
 {
-  "version": "58.77",
+  "version": "58.78",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.78",
+      "fecha": "2026-09-21",
+      "notas": [
+        "MEJORA: Se activa la nueva línea visual Stitch para Multiempresa y Punto de Venta.",
+        "FIX: La capa visual del POS se inserta después de sus estilos internos para que no quede oculta.",
+        "MEJORA: Hub Multiempresa, menú operativo, KPIs y accesos rápidos reciben jerarquía visual y transiciones ligeras."
+      ]
+    },
     {
       "version": "58.77",
       "fecha": "2026-09-20",
