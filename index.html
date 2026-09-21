@@ -4336,11 +4336,12 @@ function mostrarInstruccionesIOS(){
 // Clientes con base Supabase PROPIA (modelo "base por cliente"): el mismo index.html
 // se sirve en su dominio y aquí se elige la base por hostname. Cualquier host que no
 // esté en el mapa usa la base madre de NEXUS PRO (nexusprord.com) tal cual siempre.
+const NX_STUDIO_BASE = {url:'https://edbknlkjnlfmkkiizdbe.supabase.co', key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec'};
 const NX_BASES_POR_HOST = {
-  // STUDIO (POS) — proyecto Supabase propio. Se completa al crear el proyecto.
-  // 'studiord.net':            {url:'https://<ref>.supabase.co', key:'<anon key>'},
-  // 'www.studiord.net':        {url:'https://<ref>.supabase.co', key:'<anon key>'},
-  // 'studio.nexusprord.com':   {url:'https://<ref>.supabase.co', key:'<anon key>'},
+  // STUDIO (POS) — proyecto Supabase propio "STUDIO RD" (edbknlkjnlfmkkiizdbe).
+  'studiord.net':          NX_STUDIO_BASE,
+  'www.studiord.net':      NX_STUDIO_BASE,
+  'studio.nexusprord.com': NX_STUDIO_BASE,
 };
 const _nxBaseHost = NX_BASES_POR_HOST[String(location.hostname||'').toLowerCase()] || null;
 const SUPABASE_URL_FIXED = _nxBaseHost ? _nxBaseHost.url : 'https://tnwsgcxurfyuszxsewsn.supabase.co';
