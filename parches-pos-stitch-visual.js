@@ -291,6 +291,90 @@
   #v-pos .nx-invoice-pro .docTbl .imp{font-size:12px !important}
 }
 
+
+/* Factura > Buscar artículo: catálogo en lista de decisión rápida. */
+#v-pos .nx-invoice-pro .nxPpkInline{
+  margin-top:10px;
+  overflow:hidden;
+  border:1px solid rgba(148,163,184,.20);
+  border-radius:16px;
+  background:#f8fafc;
+  box-shadow:0 12px 30px rgba(15,23,42,.07);
+}
+#v-pos .nx-invoice-pro .nxPpkInline>.mt{
+  min-height:54px;
+  padding:0 14px;
+  border-bottom:1px solid rgba(148,163,184,.16);
+  background:#fff;
+}
+#v-pos .nx-invoice-pro #ppkList{
+  padding:8px !important;
+  background:#f8fafc;
+}
+#v-pos .nx-invoice-pro .nxPpkGrid{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+#v-pos .nx-invoice-pro .nxPpkWrap{
+  margin:0 !important;
+  overflow:hidden;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:13px;
+  background:#fff;
+  box-shadow:0 2px 7px rgba(15,23,42,.035);
+  transition:transform 180ms cubic-bezier(.22,1,.36,1),box-shadow 180ms ease,border-color 180ms ease;
+}
+#v-pos .nx-invoice-pro .nxPpkWrap:hover,
+#v-pos .nx-invoice-pro .nxPpkWrap.on{
+  transform:translateY(-1px);
+  border-color:rgba(37,99,235,.36);
+  box-shadow:0 10px 20px rgba(15,23,42,.09);
+}
+#v-pos .nx-invoice-pro .nxPpkIt{
+  min-height:62px;
+  padding:10px 11px !important;
+  background:#fff !important;
+}
+#v-pos .nx-invoice-pro .nxPpkIt>div:first-child>div:first-child{
+  color:#0f172a !important;
+  font-size:12.5px !important;
+  font-weight:800 !important;
+}
+#v-pos .nx-invoice-pro .nxPpkIt .nxPosStkB{
+  border-radius:999px;
+  padding:3px 6px;
+  font-size:8.5px;
+  letter-spacing:.02em;
+}
+#v-pos .nx-invoice-pro .nxPpkChev{
+  width:28px;
+  height:28px;
+  border-radius:9px;
+  background:#eff6ff;
+  color:#2563eb !important;
+}
+#v-pos .nx-invoice-pro .nxPpkDet{
+  border-top:1px solid rgba(148,163,184,.15);
+  background:#f8fafc;
+}
+#v-pos .nx-invoice-pro .nxPpkBox{
+  margin:9px !important;
+  border:1px solid rgba(148,163,184,.15);
+  border-radius:11px;
+  background:#fff;
+}
+#v-pos .nx-invoice-pro .nxPpkElegir{
+  min-height:38px !important;
+  border-radius:10px !important;
+  box-shadow:0 5px 12px rgba(37,99,235,.20);
+}
+@media(max-width:640px){
+  #v-pos .nx-invoice-pro .nxPpkInline{border-radius:14px}
+  #v-pos .nx-invoice-pro #ppkList{padding:7px !important}
+  #v-pos .nx-invoice-pro .nxPpkIt{min-height:58px;padding:9px 10px !important}
+}
+
 /* Motion is deliberately short and can be disabled by the OS. */
 #v-pos .nxTShell .nxTKpi,
 #v-pos .nxTShell .nxApp,
