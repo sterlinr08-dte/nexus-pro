@@ -1,7 +1,15 @@
 {
-  "version": "58.79",
+  "version": "58.80",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.80",
+      "fecha": "2026-09-21",
+      "notas": [
+        "CORREGIDO POS: La mejora ahora aplica a la lista principal de artículos de la pantalla Factura, no solo al historial.",
+        "MEJORA: Filas de factura con jerarquía visible, importes destacados y controles compactos sin cambiar cálculos ni cobro."
+      ]
+    },
     {
       "version": "58.79",
       "fecha": "2026-09-21",
