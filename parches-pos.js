@@ -121,8 +121,23 @@
   let _phQ = '', _phDesde = '', _phHasta = '', _phEstado = 'todas', _phSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [], _compraOperacionId = null;
-  let _compraVista = 'lista'; // 'lista' = historial de compras · 'nueva' = pantalla completa de nueva compra
+  let _compraVista = 'lista'; // 'lista' = historial de compras · 'nueva' = pantalla completa de nueva compra · 'cxp' = cuentas por pagar (compras_v2)
   let _cxpByProv = {}, _pagosProvByProv = {};
+  // Compras v2 (pos_config.compras_v2): moneda/tasa, ITBIS, gastos de importación prorrateados (costo
+  // desembarcado) y cuentas por pagar POR FACTURA. Con la bandera apagada nada de esto se usa.
+  let _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
+  let _cxpRows = [], _cxpFiltroProv = '', _cxpFiltroEstado = 'pendientes';
+  function cv2() { return !!(_posCfg && _posCfg.compras_v2); }
+  function r2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+  function fmt2(n) { return 'RD$ ' + r2(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtMon(n, mon) { return (mon && mon !== 'DOP' ? mon + ' ' : 'RD$ ') + r2(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function compGastosTotal(subtotal) {
+    const g = _compraGastos;
+    const imp = g.impuesto_modo === 'pct' ? r2(subtotal * (Number(g.impuesto_valor) || 0) / 100) : r2(Number(g.impuesto_valor) || 0);
+    const otros = r2((g.otros || []).reduce((s, o) => s + (Number(o.monto) || 0), 0));
+    const flete = r2(Number(g.flete) || 0);
+    return { flete: flete, impuesto: imp, otros: otros, total: r2(flete + imp + otros) };
+  }
   // ── Contabilidad ──
   let _ctaTab = 'resumen';
   let _cuentas = [], _asientos = [];
@@ -172,7 +187,7 @@
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0) }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -540,7 +555,7 @@
     if (_posTab === 'vender') pintarCarrito();
     if (_posTab === 'factura' || _posTab === 'prefactura') pintarFactura();
     // Pantalla completa de "Nueva compra": activar campos de dinero + pintar la lista de artículos
-    if (_posTab === 'compras' && _compraVista === 'nueva') { try { scanMoney(view); } catch (e) {} try { pintarCompraItems(); } catch (e) {} try { compBarraSync(); } catch (e) {} }
+    if (_posTab === 'compras' && _compraVista === 'nueva') { try { scanMoney(view); } catch (e) {} try { if (cv2()) compGastosPintarInputs(); } catch (e) {} try { pintarCompraItems(); } catch (e) {} try { compBarraSync(); } catch (e) {} }
     // NPGS §5: pintar la lupa colapsada DESPUÉS de inyectar el HTML — el <span> placeholder
     // recién existe en el DOM en este punto, no dentro de la función que arma el string.
     if (_posTab === 'notascredito') try { pintarLupaNC(); } catch (e) {}
@@ -6097,6 +6112,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function renderCompras() {
     try { window.nxPfEnsureCSS(); } catch (e) {}
     if (_compraVista === 'nueva') return renderCompraForm();
+    if (cv2() && _compraVista === 'cxp') return renderCxp();
     const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
     const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
     return `<div class="nxPf nxCompWrap">
@@ -6107,6 +6123,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosProveedores()"><i class="ti ti-building-warehouse"></i> Proveedores</button>
+        ${cv2() ? '<button class="btn bsm bghost" type="button" onclick="window.nxPosCxpAbrir()"><i class="ti ti-file-invoice"></i> Cuentas por pagar</button>' : ''}
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button>
       </div>
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody>${comprasHTML}</tbody></table></div>
@@ -6118,6 +6135,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // compArt y todos los campos se mantienen, así que nxPosGuardarCompra no cambia.
   window.nxPosNuevaCompra = function () {
     _compraItems = [];
+    _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
     _compraOperacionId = null;
     cerrarModal('nxPosCompra'); // por si quedó un overlay viejo de una versión anterior
     _compraVista = 'nueva';
@@ -6130,14 +6148,25 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   function renderCompraForm() {
+    const v2 = cv2();
     const card = (ico, titulo, cuerpo) => `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.06)"><div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:7px"><i class="ti ${ico}" style="color:#6d28d9"></i> ${titulo}</div>${cuerpo}</div>`;
+    const inp = 'padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;width:100%;box-sizing:border-box';
+    const monedaRow = v2 ? `<div class="fr-row"><div class="fr"><label>Moneda de la factura</label><select id="compMoneda" onchange="window.nxCompMonedaSync()"><option value="DOP">RD$ (pesos)</option><option value="USD">US$ (dólares)</option></select></div><div class="fr"><label>Tasa de cambio (RD$ por 1)</label><input id="compTasa" inputmode="decimal" value="1" placeholder="Ej: 61.80" oninput="window.nxCompMonedaSync()"></div></div>` : '';
+    const impChk = v2 ? `<label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;margin-left:16px"><input type="checkbox" id="compImp" style="width:18px;height:18px" onchange="window.nxCompGastoSync()"> Importación (ITBIS y gastos en aduana)</label>` : '';
+    const gastos = v2 ? `
+      <div class="fr-row"><div class="fr"><label>Flete / transporte (RD$)</label><input id="compGFlete" data-nx-money inputmode="decimal" placeholder="0" oninput="window.nxCompGastoSync()"></div><div class="fr"><label>Impuestos de aduana</label><div style="display:flex;gap:6px"><input id="compGImpVal" inputmode="decimal" placeholder="0" style="${inp};flex:1;min-width:0" oninput="window.nxCompGastoSync()"><select id="compGImpModo" style="${inp};width:82px;flex:0 0 auto" onchange="window.nxCompGastoSync()"><option value="pct">%</option><option value="monto">RD$</option></select></div></div></div>
+      <div style="font-size:11px;font-weight:700;color:#475569;margin:2px 0 6px">Otros gastos (agente aduanal, seguro, almacenaje…)</div>
+      <div id="compGOtros"></div>
+      <button class="btn bsm bghost" type="button" onclick="window.nxCompOtroAdd()" style="border-style:dashed"><i class="ti ti-plus"></i> Otro gasto</button>
+      <div id="compGResumen" style="margin-top:10px;padding:10px 12px;background:#faf5ff;border:1px solid #ede9fe;border-radius:10px;font-size:11px;color:#475569"></div>` : '';
     const datos = `
       <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><input type="hidden" id="compProv"><button type="button" id="compProvBtn" onclick="window.nxCompraProvBuscar()" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compProvTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar proveedor…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor" aria-label="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
       <div class="fr"><label>Empleado (quién compra)</label><input type="hidden" id="compEmp"><button type="button" id="compEmpBtn" onclick="window.nxCompraEmpBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compEmpTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar empleado…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
       <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Vencimiento (crédito)</label><input id="compVenc" type="date"></div></div>
+      ${monedaRow}
       <div class="fr-row"><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div></div>
       <div class="fr-row"><div class="fr"><label>Orden No.</label><input id="compOrden" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>Liquidación No.</label><input id="compLiq" class="no-upper" placeholder="Opcional"></div></div>
-      <div class="fr" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label></div>
+      <div class="fr" style="display:flex;align-items:flex-end;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label>${impChk}</div>
       ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}`;
     const articulos = `
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:10px">
@@ -6149,8 +6178,19 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
         <div style="display:flex;gap:6px"><input id="compCant" inputmode="numeric" value="1" placeholder="Cant." style="width:62px;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;text-align:center"><input id="compCosto" data-nx-money inputmode="numeric" placeholder="Costo unit." style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px"><button class="btn bc1 bsm" type="button" onclick="window.nxPosCompraAddItem()"><i class="ti ti-plus"></i> Agregar</button></div>
       </div>
-      <div id="compItemsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"></div>`;
-    const resumen = `
+      ${v2 ? '<div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 92px;gap:6px;padding:0 9px 4px;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px"><span>Artículo</span><span style="text-align:right">Factura</span><span style="text-align:right">Desembarcado</span></div>' : ''}
+      <div id="compItemsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"></div>
+      ${v2 ? '<div style="font-size:10px;color:#64748b;line-height:1.4;margin-top:6px">Costo unitario en RD$. <b>Desembarcado</b> = costo de factura + gastos de importación prorrateados por valor; es el costo con el que entra al inventario.</div>' : ''}`;
+    const resumen = v2 ? `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.06)">
+        <div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:10px;display:flex;align-items:center;gap:7px"><i class="ti ti-layout-grid" style="color:#6d28d9"></i> Resumen</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:8px"><span>Subtotal mercancía</span><b id="compSubtotal" style="color:#1e293b">RD$ 0.00</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#475569;margin-bottom:8px"><label for="compItbis">ITBIS <span id="compItbisHint" style="font-size:10px;color:#94a3b8">(de la factura)</span></label><input id="compItbis" data-nx-money inputmode="decimal" placeholder="0" oninput="window.nxCompGastoSync()" style="${inp};width:120px;text-align:right;font-weight:700"></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:8px"><span>Gastos de importación</span><b id="compGastosTot" style="color:#1e293b">RD$ 0.00</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:11px 14px;margin-bottom:8px"><div><div style="font-weight:700;color:#065f46;font-size:13px">Total desembarcado</div><div style="font-size:10px;color:#047857">entra al inventario a este costo</div></div><b id="compDesemb" style="font-size:20px;color:#065f46">RD$ 0.00</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b"><span id="compDeudaLbl">Se debe al proveedor</span><b id="compDeuda" style="color:#1e293b">RD$ 0.00</b></div>
+        <b id="compTotal" style="display:none">RD$ 0</b>
+      </div>` : `
       <div style="display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:11px 14px;margin-bottom:12px"><span style="font-weight:700;color:#065f46;font-size:14px">Total de la compra</span><b id="compTotal" style="font-size:20px;color:#065f46">RD$ 0</b></div>
       <div class="compResFoot" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bghost" type="button" onclick="window.nxPosCompraCancelar()">Cancelar</button><button class="btn bc1 bsm" type="button" onclick="window.nxPosGuardarCompra(1)"><i class="ti ti-printer"></i> Guardar e imprimir</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button></div>`;
     return `<div class="nxPf nxPrForm" style="max-width:880px;margin:0 auto;padding-bottom:28px">
@@ -6160,6 +6200,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       ${card('ti-clipboard-list', 'Datos de la compra', datos)}
       ${card('ti-package', 'Artículos', articulos)}
+      ${v2 ? card('ti-truck-delivery', 'Gastos de importación (liquidación de aduana)', gastos) : ''}
       ${resumen}
     </div>`;
   }
@@ -6314,10 +6355,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const esSerial = !!p.serial;
     if (esSerial && !_compraImeiBuf.length) { toast('err', 'Agrega al menos un IMEI', 'Escríbelo y toca +'); return; }
     const cant = esSerial ? _compraImeiBuf.length : (Number(String(val('compCant') || '1').replace(/[^0-9.]/g, '')) || 1);
-    const costo = parseMoney(val('compCosto')) || Number(p.costo || 0);
+    const costoIn = parseMoney(val('compCosto')) || Number(p.costo || 0);
+    // Compras v2: el costo se escribe en la moneda de la factura y se guarda en RD$ (× tasa).
+    const mon = cv2() ? (val('compMoneda') || 'DOP') : 'DOP';
+    const tasa = cv2() ? (Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1) : 1;
+    const costo = cv2() ? (mon === 'DOP' ? r2(costoIn) : r2(costoIn * tasa)) : costoIn;
     const ex = _compraItems.find(x => String(x.producto_id) === String(pid));
-    if (ex) { ex.cantidad += cant; ex.costo = costo; if (esSerial) ex.imeis = ((ex.imeis ? ex.imeis + '\n' : '') + _compraImeiBuf.join('\n')); }
-    else { const nuevo = { producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo }; if (esSerial) nuevo.imeis = _compraImeiBuf.join('\n'); _compraItems.push(nuevo); }
+    if (ex) { ex.cantidad += cant; ex.costo = costo; if (cv2()) ex.costo_original = costoIn; if (esSerial) ex.imeis = ((ex.imeis ? ex.imeis + '\n' : '') + _compraImeiBuf.join('\n')); }
+    else { const nuevo = { producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo }; if (cv2()) nuevo.costo_original = costoIn; if (esSerial) nuevo.imeis = _compraImeiBuf.join('\n'); _compraItems.push(nuevo); }
     _compraImeiBuf = []; pintarCompraImeiChips();
     const ar = document.getElementById('compArt'); if (ar) ar.value = '';
     window.nxCompraArtSync && window.nxCompraArtSync();
@@ -6332,7 +6377,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ar = document.getElementById('compArt'); if (ar) ar.value = it.producto_id;
     window.nxCompraArtCambio();
     const p = _prods.find(x => String(x.id) === String(it.producto_id));
-    const co = document.getElementById('compCosto'); if (co) co.value = Math.round(it.costo);
+    const co = document.getElementById('compCosto'); if (co) co.value = (cv2() && it.costo_original != null) ? it.costo_original : Math.round(it.costo);
     if (p && p.serial) {
       _compraImeiBuf = it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [];
       pintarCompraImeiChips();
@@ -6348,9 +6393,45 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
+    if (cv2()) { pintarCompraItemsV2(cont); return; }
     cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
+  }
+  // Compras v2: cada línea muestra costo de factura y costo desembarcado (gastos prorrateados por VALOR).
+  function pintarCompraItemsV2(cont) {
+    const mon = val('compMoneda') || 'DOP';
+    const subtotal = r2(_compraItems.reduce((s, it) => s + r2(it.costo * it.cantidad), 0));
+    const g = compGastosTotal(subtotal);
+    const esImp = !!(document.getElementById('compImp') && document.getElementById('compImp').checked);
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial;
+      const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [];
+      const importe = r2(it.costo * it.cantidad);
+      const gastoUnit = g.total > 0 ? (subtotal > 0 ? r2(g.total * (importe / subtotal) / it.cantidad) : r2(g.total / _compraItems.length / it.cantidad)) : 0;
+      const finalUnit = r2(it.costo + gastoUnit);
+      const orig = (mon !== 'DOP' && it.costo_original != null) ? ' · ' + fmtMon(it.costo_original, mon) : '';
+      return `<div style="padding:8px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 92px;gap:6px;align-items:center">
+          <div style="min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#64748b">${it.cantidad} und${orig}${ims.length ? ' · ' + ims.length + ' seriales' : ''}</div></div>
+          <div style="text-align:right;color:#475569">${fmt2(it.costo)}</div>
+          <div style="text-align:right;font-weight:800;color:${gastoUnit > 0 ? '#16a34a' : '#0f172a'}">${fmt2(finalUnit)}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="color:#94a3b8;font-size:10px">Importe factura ${fmt2(importe)}${gastoUnit > 0 ? ' · gasto/und ' + fmt2(gastoUnit) : ''}</span><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>
+        ${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    const itbis = r2(parseMoney(val('compItbis')));
+    const deuda = r2(subtotal + (esImp ? 0 : itbis));
+    set('compSubtotal', fmt2(subtotal)); set('compGastosTot', fmt2(g.total)); set('compDesemb', fmt2(subtotal + g.total)); set('compDeuda', fmt2(deuda)); set('compTotal', fmt(deuda));
+    set('compItbisHint', esImp ? '(pagado en aduana)' : '(de la factura)');
+    set('compDeudaLbl', esImp ? 'Se debe al proveedor (mercancía; ITBIS y gastos van a aduana)' : 'Se debe al proveedor (mercancía + ITBIS)');
+    const gr = document.getElementById('compGResumen');
+    if (gr) gr.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Factura${mon !== 'DOP' ? ' (' + mon + ' × ' + (Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1) + ')' : ''}</span><b style="color:#1e293b">${fmt2(subtotal)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span>Impuestos${_compraGastos.impuesto_modo === 'pct' ? ' ' + (Number(_compraGastos.impuesto_valor) || 0) + ' %' : ''}</span><b style="color:#1e293b">${fmt2(g.impuesto)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span>Flete + otros</span><b style="color:#1e293b">${fmt2(g.flete + g.otros)}</b></div>
+      <div style="display:flex;justify-content:space-between;color:#6d28d9;padding-top:4px;margin-top:4px;border-top:1px solid #ede9fe"><span>Total gastos${subtotal > 0 ? ' · ' + (g.total / subtotal * 100).toFixed(1) + ' % sobre factura' : ''}</span><b>${fmt2(g.total)}</b></div>`;
   }
   window.nxPosGuardarCompra = async function (imprimir) {
     if (!_compraItems.length) { toast('err', 'Agrega al menos un artículo'); return; }
@@ -6358,24 +6439,34 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const aCred = document.getElementById('compCred') && document.getElementById('compCred').checked;
     if (aCred && !provId) { toast('err', 'Para compra a crédito elige un proveedor'); return; }
     const provNom = provId ? ((_proveedores.find(p => String(p.id) === String(provId)) || {}).nombre || null) : null;
-    const subtotal = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
+    const v2 = cv2();
+    const subtotal = v2 ? r2(_compraItems.reduce((s, it) => s + r2(it.costo * it.cantidad), 0)) : _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const almCompra = _almacenes.length ? (val('compAlm') || _almacenSel || (almPrincipal() && almPrincipal().id) || null) : null;
     const empId = val('compEmp') || null;
     const empNom = empId ? ((_clientes.find(x => String(x.id) === String(empId)) || {}).nombre || null) : null;
-    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
+    // Compras v2: ITBIS, moneda/tasa, importación y gastos. Lo que se le debe al proveedor es la mercancía
+    // (+ ITBIS solo si viene en su factura). El servidor prorratea los gastos y asienta la contabilidad.
+    const esImp = v2 && !!(document.getElementById('compImp') && document.getElementById('compImp').checked);
+    const itbis = v2 ? r2(parseMoney(val('compItbis'))) : 0;
+    const mon = v2 ? (val('compMoneda') || 'DOP') : 'DOP';
+    const tasa = v2 ? (Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1) : 1;
+    const totalProv = v2 ? r2(subtotal + (esImp ? 0 : itbis)) : subtotal;
+    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: itbis, total: totalProv, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
+    if (v2) { body.moneda = mon; body.tasa = tasa; body.es_importacion = esImp; body.gastos = { flete: r2(_compraGastos.flete), impuesto_modo: _compraGastos.impuesto_modo, impuesto_valor: Number(_compraGastos.impuesto_valor) || 0, otros: (_compraGastos.otros || []).filter(o => (Number(o.monto) || 0) > 0).map(o => ({ concepto: String(o.concepto || '').trim(), monto: r2(o.monto) })) }; }
     try {
       if (!_compraOperacionId) {
         try { _compraOperacionId = crypto.randomUUID(); }
         catch (_) { _compraOperacionId = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); }
       }
-      const items = _compraItems.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, cantidad: Number(it.cantidad), costo: Number(it.costo), importe: Math.round(it.costo * it.cantidad), imeis: it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [] }));
+      const items = _compraItems.map(it => { const o = { producto_id: it.producto_id, nombre: it.nombre, cantidad: Number(it.cantidad), costo: Number(it.costo), importe: v2 ? r2(it.costo * it.cantidad) : Math.round(it.costo * it.cantidad), imeis: it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [] }; if (v2 && it.costo_original != null) o.costo_original = Number(it.costo_original); return o; });
       const r = await getAPI().post('rpc/pos_registrar_compra_atomica', { p_operacion_id: _compraOperacionId, p_compra: body, p_items: items });
       const core = Array.isArray(r) ? r[0] : r;
       const compra = core && core.compra; if (!core || core.ok !== true || !compra) throw new Error('COMPRA_ATOMICA_SIN_CONFIRMACION');
       _compraOperacionId = null;
-      if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
-      try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
-      toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
+      if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + totalProv; }
+      if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
+      toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
+      _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
       _compraItems = []; _compraVista = 'lista';
       await cargarComprasTab(); await cargarPOS();
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -6434,6 +6525,220 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       toast('ok', 'Compra eliminada', 'Stock y contabilidad revertidos');
       cerrarModal('nxPosCompraDet'); await cargarComprasTab(); await cargarPOS(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ══ COMPRAS v2 · Cuentas por pagar por factura, abono con cuenta bancaria, gastos de importación ══
+  // Todo esto solo se alcanza cuando cv2() es true (pos_config.compras_v2). Fuente de verdad: vista
+  // pos_cxp_v (saldo = total − abonos por factura) y RPC pos_banco_registrar_pago_proveedor.
+  function nxCxpEnsureCSS() {
+    if (document.getElementById('nxCxpCSS')) return;
+    const s = document.createElement('style'); s.id = 'nxCxpCSS';
+    s.textContent = `
+.nxCxp{max-width:880px;margin:0 auto;padding-bottom:28px}
+.nxCxpHead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.nxCxpTitle{font-size:18px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:8px;letter-spacing:-.02em}
+.nxCxpKpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.nxCxpKpi{background:#fff;border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.nxCxpKpi .l{font-size:9px;font-weight:800;letter-spacing:.4px;color:#64748b;text-transform:uppercase}
+.nxCxpKpi .v{font-size:15px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;font-family:var(--mono,ui-monospace,monospace)}
+.nxCxpKpi .s{font-size:9px;color:#64748b}
+.nxCxpKpi.bad{border-color:#fecaca}.nxCxpKpi.bad .l,.nxCxpKpi.bad .s{color:#b91c1c}.nxCxpKpi.bad .v{color:#dc2626}
+.nxCxpKpi.warn{border-color:#fde68a}.nxCxpKpi.warn .l,.nxCxpKpi.warn .s{color:#a16207}.nxCxpKpi.warn .v{color:#b45309}
+.nxCxpFiltros{display:flex;gap:6px;margin-bottom:10px}
+.nxCxpFiltros select{height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font:inherit;font-size:12px;color:#0f172a}
+.nxCxpFiltros select:first-child{flex:1;min-width:0}
+.nxCxpList{display:flex;flex-direction:column;gap:8px}
+.nxCxpCard{background:#fff;border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:11px 12px;display:flex;flex-direction:column;gap:8px}
+.nxCxpCard.bad{border-color:#fecaca}.nxCxpCard.warn{border-color:#fde68a}
+.nxCxpTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nxCxpProv{font-size:12px;font-weight:800;color:#1e293b}
+.nxCxpMeta{font-size:10px;color:#64748b;margin-top:2px}
+.nxCxpBadge{flex-shrink:0;padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:9px;font-weight:800;white-space:nowrap}
+.nxCxpBadge.bad{background:#fee2e2;color:#b91c1c}.nxCxpBadge.warn{background:#fef3c7;color:#a16207}.nxCxpBadge.ok{background:#dcfce7;color:#15803d}
+.nxCxpNums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.nxCxpNums span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}
+.nxCxpNums b{display:block;font-size:11px;font-weight:700;color:#475569;font-variant-numeric:tabular-nums;font-family:var(--mono,ui-monospace,monospace)}
+.nxCxpNums b.saldo{font-size:13px;font-weight:800;color:#0f172a}.nxCxpCard.bad b.saldo{color:#dc2626}.nxCxpCard.warn b.saldo{color:#b45309}
+.nxCxpFoot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;color:#64748b}
+.nxCxpAbonar{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 13px;border:0;border-radius:999px;background:#2563eb;color:#fff;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+.nxCxpAbonar:active{transform:translateY(1px)}
+.nxCxpActs{display:flex;gap:8px;margin-top:12px}
+.nxCxpActs .btn{flex:1;justify-content:center}
+.nxCxpNota{margin-top:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:9px 11px;font-size:10px;color:#1e40af;line-height:1.45}
+.nxCxpEmpty{text-align:center;color:#64748b;font-size:12px;padding:28px 12px;border:1px dashed #cbd5e1;border-radius:16px}
+.nxCxpAb .fr label{font-size:11px;font-weight:700;color:#475569}
+.nxCxpAbRes{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:11px 14px;margin:10px 0}
+@media(max-width:480px){.nxCxpKpi .v{font-size:13px}}`;
+    document.head.appendChild(s);
+  }
+  async function cargarCxp() {
+    try { _cxpRows = await getAPI().get('pos_cxp_v', 'select=*&order=vencimiento.asc.nullslast,fecha.asc') || []; } catch (e) { _cxpRows = []; }
+  }
+  window.nxPosCxpAbrir = async function (provId) {
+    _cxpFiltroProv = provId ? String(provId) : ''; _cxpFiltroEstado = 'pendientes';
+    _compraVista = 'cxp'; _posTab = 'compras';
+    const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    await cargarCxp();
+    const v2 = document.getElementById('v-pos'); if (v2 && _compraVista === 'cxp') renderPOS(v2);
+  };
+  window.nxPosCxpVolver = function () { _compraVista = 'lista'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxPosCxpFiltrar = function () { _cxpFiltroProv = val('cxpProv') || ''; _cxpFiltroEstado = val('cxpEstado') || 'pendientes'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  function cxpFiltradas() {
+    return _cxpRows.filter(r => (!_cxpFiltroProv || String(r.proveedor_id) === _cxpFiltroProv)
+      && (_cxpFiltroEstado === 'todas' || (_cxpFiltroEstado === 'pendientes' ? r.estado_pago !== 'pagada' : _cxpFiltroEstado === 'vencidas' ? r.tramo === 'vencida' : r.estado_pago === 'pagada')));
+  }
+  function cxpBadge(r) {
+    if (r.estado_pago === 'pagada') return '<span class="nxCxpBadge ok">PAGADA</span>';
+    const d = Number(r.dias_venc);
+    if (r.tramo === 'vencida') return `<span class="nxCxpBadge bad">VENCIDA ${Math.abs(d)} d</span>`;
+    if (r.tramo === 'por_vencer') return `<span class="nxCxpBadge warn">VENCE EN ${d} d</span>`;
+    return `<span class="nxCxpBadge">${r.dias_venc == null ? 'SIN VENCIMIENTO' : 'AL DÍA · ' + d + ' d'}</span>`;
+  }
+  function cxpEstadoTxt(r) { return r.estado_pago === 'pagada' ? 'Pagada' : r.estado_pago === 'parcial' ? 'Parcial' : 'Pendiente'; }
+  function renderCxp() {
+    nxCxpEnsureCSS();
+    const abiertas = _cxpRows.filter(r => r.estado_pago !== 'pagada');
+    const sum = a => a.reduce((s, r) => s + Number(r.saldo || 0), 0);
+    const venc = abiertas.filter(r => r.tramo === 'vencida'), prox = abiertas.filter(r => r.tramo === 'por_vencer');
+    const provs = []; const seen = {};
+    _cxpRows.forEach(r => { if (r.proveedor_id && !seen[r.proveedor_id]) { seen[r.proveedor_id] = 1; provs.push({ id: r.proveedor_id, nombre: r.proveedor_nombre || 'Proveedor' }); } });
+    provs.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+    const rows = cxpFiltradas();
+    const fD = d => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—';
+    const cards = rows.length ? rows.map(r => `<div class="nxCxpCard ${r.estado_pago === 'pagada' ? '' : r.tramo === 'vencida' ? 'bad' : r.tramo === 'por_vencer' ? 'warn' : ''}">
+        <div class="nxCxpTop"><div style="min-width:0"><div class="nxCxpProv">${esc(r.proveedor_nombre || 'Sin proveedor')}</div><div class="nxCxpMeta">Compra #${r.numero || ''}${r.notas && /^Factura /.test(r.notas) ? ' · ' + esc(r.notas.replace(/^Factura /, 'Fact. ')) : ''} · ${fD(r.fecha)}${r.moneda && r.moneda !== 'DOP' ? ' · ' + esc(r.moneda) : ''}${r.es_importacion ? ' · Importación' : ''}</div></div>${cxpBadge(r)}</div>
+        <div class="nxCxpNums"><div><span>Total</span><b>${fmt2(r.total)}</b></div><div><span>Pagado</span><b style="${Number(r.pagado) > 0 ? 'color:#16a34a' : ''}">${fmt2(r.pagado)}</b></div><div><span>Saldo</span><b class="saldo">${fmt2(r.saldo)}</b></div></div>
+        <div class="nxCxpFoot"><span>${r.vencimiento ? (r.tramo === 'vencida' ? 'Venció ' : 'Vence ') + fD(r.vencimiento) + ' · ' : ''}<b>${cxpEstadoTxt(r)}</b></span>${r.estado_pago !== 'pagada' ? `<button class="nxCxpAbonar" type="button" onclick="window.nxPosCxpAbonar('${r.compra_id}')"><i class="ti ti-plus"></i> Abonar</button>` : `<button class="btn bsm bghost" type="button" onclick="window.nxPosCompraVer('${r.compra_id}')"><i class="ti ti-receipt"></i> Ver</button>`}</div>
+      </div>`).join('') : '<div class="nxCxpEmpty">No hay facturas en este filtro.</div>';
+    return `<div class="nxPf nxCxp">
+      <div class="nxCxpHead"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpVolver()" aria-label="Volver a compras"><i class="ti ti-arrow-left"></i> Compras</button><div class="nxCxpTitle"><i class="ti ti-file-invoice" style="color:#6d28d9"></i> Cuentas por pagar</div></div>
+      <div class="nxCxpKpis">
+        <div class="nxCxpKpi"><div class="l">Debes</div><div class="v">${fmt(sum(abiertas))}</div><div class="s">${abiertas.length} factura${abiertas.length === 1 ? '' : 's'}</div></div>
+        <div class="nxCxpKpi bad"><div class="l">Vencido</div><div class="v">${fmt(sum(venc))}</div><div class="s">${venc.length} factura${venc.length === 1 ? '' : 's'}</div></div>
+        <div class="nxCxpKpi warn"><div class="l">Vence ≤ 7 d</div><div class="v">${fmt(sum(prox))}</div><div class="s">${prox.length} factura${prox.length === 1 ? '' : 's'}</div></div>
+      </div>
+      <div class="nxCxpFiltros"><select id="cxpProv" aria-label="Proveedor" onchange="window.nxPosCxpFiltrar()"><option value="">Todos los proveedores</option>${provs.map(p => `<option value="${p.id}"${String(p.id) === _cxpFiltroProv ? ' selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select><select id="cxpEstado" aria-label="Estado" onchange="window.nxPosCxpFiltrar()">${[['pendientes', 'Pendientes'], ['vencidas', 'Vencidas'], ['pagadas', 'Pagadas'], ['todas', 'Todas']].map(o => `<option value="${o[0]}"${o[0] === _cxpFiltroEstado ? ' selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+      <div class="nxCxpList">${cards}</div>
+      <div class="nxCxpActs"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpEstadoCuenta()"><i class="ti ti-printer"></i> Estado de cuenta</button><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button></div>
+      <div class="nxCxpNota">Los saldos se calculan por factura: total − abonos registrados. El estado (pendiente / parcial / pagada) y los días al vencimiento salen de la fecha de vencimiento de cada compra a crédito.</div>
+    </div>`;
+  }
+  window.nxPosCxpAbonar = async function (compraId) {
+    const r = _cxpRows.find(x => String(x.compra_id) === String(compraId)); if (!r) return;
+    let cuentas = [];
+    try { cuentas = await getAPI().get('pos_cuentas_bancarias', 'select=id,banco_nombre,alias,numero,predeterminada&activa=eq.true&order=predeterminada.desc,alias.asc') || []; } catch (e) {}
+    nxCxpEnsureCSS(); cerrarModal('nxCxpAb');
+    const fD = d => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—';
+    const ov = document.createElement('div'); ov.id = 'nxCxpAb'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm nxCxpAb" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-cash-banknote"></i> Abonar a factura</span><button class="nxBack" type="button" onclick="document.getElementById('nxCxpAb').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div class="nxCxpCard ${r.tramo === 'vencida' ? 'bad' : r.tramo === 'por_vencer' ? 'warn' : ''}" style="margin-bottom:12px">
+            <div class="nxCxpTop"><div><div class="nxCxpProv">${esc(r.proveedor_nombre || 'Sin proveedor')}</div><div class="nxCxpMeta">Compra #${r.numero || ''} · ${r.vencimiento ? (r.tramo === 'vencida' ? 'venció ' : 'vence ') + fD(r.vencimiento) : 'sin vencimiento'}</div></div>${cxpBadge(r)}</div>
+            <div class="nxCxpNums"><div><span>Total</span><b>${fmt2(r.total)}</b></div><div><span>Pagado</span><b style="color:#16a34a">${fmt2(r.pagado)}</b></div><div><span>Saldo</span><b class="saldo">${fmt2(r.saldo)}</b></div></div>
+          </div>
+          <div class="fr"><label>Monto a abonar</label><div style="display:flex;gap:6px"><input id="abMonto" data-nx-money inputmode="decimal" placeholder="0.00" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid #2563eb;border-radius:9px;font-size:18px;font-weight:800" oninput="window.nxPosCxpAbonoSync()"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpAbonoSaldoCompleto()">Saldo completo</button></div><div style="font-size:10px;color:#64748b;margin-top:4px">Máximo permitido: ${fmt2(r.saldo)} (no se puede abonar más que el saldo)</div></div>
+          <div class="fr-row"><div class="fr"><label>Fecha</label><input id="abFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Método</label><select id="abMetodo" onchange="window.nxPosCxpAbonoSync()"><option value="banco">Transferencia</option><option value="efectivo">Efectivo</option><option value="cheque">Cheque</option><option value="tarjeta">Tarjeta</option></select></div></div>
+          <div class="fr" id="abCuentaWrap"><label>Cuenta bancaria (de dónde sale)</label><select id="abCuenta">${cuentas.length ? cuentas.map(c => `<option value="${c.id}">${esc(c.banco_nombre || '')} · ${esc(c.alias || '')}${c.numero ? ' ····' + esc(String(c.numero).slice(-4)) : ''}${c.predeterminada ? ' (predeterminada)' : ''}</option>`).join('') : '<option value="">— No hay cuentas bancarias registradas —</option>'}</select>${cuentas.length ? '' : '<div style="font-size:10px;color:#b45309;margin-top:4px">Registra una cuenta en Banco para abonar por transferencia, o elige Efectivo.</div>'}</div>
+          <div class="fr"><label>Referencia / No. de transferencia</label><input id="abRef" class="no-upper" placeholder="Opcional"></div>
+          <div class="fr"><label>Nota (opcional)</label><input id="abNota" class="no-upper" placeholder="Ej.: segundo abono acordado"></div>
+          <div class="nxCxpAbRes"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:700;color:#065f46">Saldo después del abono</span><b id="abRestante" style="font-size:18px;color:#065f46">${fmt2(r.saldo)}</b></div><div style="font-size:10px;color:#047857;line-height:1.45;margin-top:4px">Se registra el pago a la factura, el movimiento en la cuenta bancaria y el asiento contable (D 2101 Cuentas por pagar · H 1102 Banco / 1101 Caja).</div></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxCxpAb').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosCxpAbonoGuardar('${r.compra_id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+    setTimeout(() => { const i = document.getElementById('abMonto'); if (i) i.focus(); }, 60);
+  };
+  window.nxPosCxpAbonoSaldoCompleto = function () {
+    const ov = document.getElementById('nxCxpAb'); if (!ov) return;
+    const btn = ov.querySelector('.fe .bc1'); const m = btn && /'([0-9a-f-]{36})'/.exec(btn.getAttribute('onclick') || '');
+    const r = m && _cxpRows.find(x => String(x.compra_id) === m[1]); if (!r) return;
+    const i = document.getElementById('abMonto'); if (i) { i.value = r2(r.saldo).toFixed(2); }
+    window.nxPosCxpAbonoSync();
+  };
+  window.nxPosCxpAbonoSync = function () {
+    const ov = document.getElementById('nxCxpAb'); if (!ov) return;
+    const btn = ov.querySelector('.fe .bc1'); const m = btn && /'([0-9a-f-]{36})'/.exec(btn.getAttribute('onclick') || '');
+    const r = m && _cxpRows.find(x => String(x.compra_id) === m[1]);
+    const monto = r2(parseMoney(val('abMonto')));
+    const rest = document.getElementById('abRestante'); if (rest && r) { const q = r2(Number(r.saldo) - monto); rest.textContent = fmt2(Math.max(0, q)); rest.style.color = q < -0.009 ? '#dc2626' : '#065f46'; }
+    const w = document.getElementById('abCuentaWrap'); if (w) w.style.display = val('abMetodo') === 'efectivo' ? 'none' : '';
+  };
+  window.nxPosCxpAbonoGuardar = async function (compraId) {
+    const r = _cxpRows.find(x => String(x.compra_id) === String(compraId)); if (!r) return;
+    const monto = r2(parseMoney(val('abMonto')));
+    if (!(monto > 0)) { toast('err', 'Pon el monto a abonar'); return; }
+    if (monto > Number(r.saldo) + 0.009) { toast('err', 'El abono excede el saldo', 'Máximo ' + fmt2(r.saldo)); return; }
+    const met = val('abMetodo') || 'banco';
+    const esEfe = met === 'efectivo';
+    const cuenta = esEfe ? null : (val('abCuenta') || null);
+    if (!esEfe && !cuenta) { toast('err', 'Elige la cuenta bancaria', 'O cambia el método a Efectivo'); return; }
+    const ref = (val('abRef') || '').trim(); const nota = (val('abNota') || '').trim();
+    const notaFinal = [met === 'cheque' ? 'Cheque' : met === 'tarjeta' ? 'Tarjeta' : '', nota].filter(Boolean).join(' · ');
+    const btn = document.querySelector('#nxCxpAb .fe .bc1'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Registrando…'; }
+    try {
+      await getAPI().post('rpc/pos_banco_registrar_pago_proveedor', { p_compra_id: compraId, p_monto: monto, p_metodo: esEfe ? 'efectivo' : 'banco', p_cuenta_id: cuenta, p_referencia: ref || null, p_nota: notaFinal || null, p_fecha: val('abFecha') || hoy() });
+      cerrarModal('nxCxpAb');
+      toast('ok', 'Abono registrado', fmt2(monto) + ' · ' + (r.proveedor_nombre || '') + ' · compra #' + (r.numero || ''));
+      await cargarCxp(); try { await cargarComprasTab(); } catch (e) {}
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) {
+      const msg = String(e && e.message || e);
+      toast('err', 'No se pudo registrar el abono', /EXCEDE_SALDO/.test(msg) ? 'El abono excede el saldo de la factura' : /CUENTA_INVALIDA/.test(msg) ? 'La cuenta bancaria no es válida' : /SIN_PERMISO/.test(msg) ? 'Tu rol no puede registrar pagos a proveedores' : msg);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar abono'; }
+    }
+  };
+  window.nxPosCxpEstadoCuenta = function () {
+    const rows = cxpFiltradas(); const e = empInfo();
+    const prov = _cxpFiltroProv ? (rows[0] && rows[0].proveedor_nombre) || (_proveedores.find(p => String(p.id) === _cxpFiltroProv) || {}).nombre || '' : '';
+    const fD = d => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—';
+    const tot = k => rows.reduce((s, r) => s + Number(r[k] || 0), 0);
+    const filas = rows.map(r => `<tr><td>#${r.numero || ''}</td><td>${prov ? '' : esc(r.proveedor_nombre || '') + '<br>'}${fD(r.fecha)}</td><td>${fD(r.vencimiento)}</td><td class="r">${fmt2(r.total)}</td><td class="r">${fmt2(r.pagado)}</td><td class="r"><b>${fmt2(r.saldo)}</b></td><td>${cxpEstadoTxt(r)}${r.tramo === 'vencida' ? ' · vencida ' + Math.abs(Number(r.dias_venc)) + ' d' : ''}</td></tr>`).join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta${prov ? ' · ' + esc(prov) : ''}</title>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:760px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:6px 5px;border-bottom:1px solid #eee;vertical-align:top}.r{text-align:right;font-variant-numeric:tabular-nums}.tot td{font-weight:800;border-top:2px solid #999}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body><div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#0f172a;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Cerrar</button><button onclick="window.print()" style="background:#fff;color:#0f172a;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Imprimir</button></div>
+      <h1>${esc(e.nom)}</h1><div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+      <div class="c" style="margin-top:8px"><b>ESTADO DE CUENTA — CUENTAS POR PAGAR</b></div>
+      <div class="muted c">${prov ? 'Proveedor: <b>' + esc(prov) + '</b> · ' : ''}Filtro: ${esc({ pendientes: 'Pendientes', vencidas: 'Vencidas', pagadas: 'Pagadas', todas: 'Todas' }[_cxpFiltroEstado] || '')} · ${fD(hoy())}</div>
+      <table><thead><tr><th>Compra</th><th>${prov ? 'Fecha' : 'Proveedor / fecha'}</th><th>Vence</th><th class="r">Total</th><th class="r">Pagado</th><th class="r">Saldo</th><th>Estado</th></tr></thead><tbody>${filas || '<tr><td colspan="7" class="c">Sin facturas</td></tr>'}<tr class="tot"><td colspan="3">TOTAL (${rows.length})</td><td class="r">${fmt2(tot('total'))}</td><td class="r">${fmt2(tot('pagado'))}</td><td class="r">${fmt2(tot('saldo'))}</td><td></td></tr></tbody></table>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+  // ── Gastos de importación en Nueva compra (v2) ──
+  window.nxCompGastoSync = function () {
+    if (!cv2()) return;
+    _compraGastos.flete = r2(parseMoney(val('compGFlete')));
+    _compraGastos.impuesto_modo = val('compGImpModo') === 'monto' ? 'monto' : 'pct';
+    _compraGastos.impuesto_valor = Number(String(val('compGImpVal') || '0').replace(/[^0-9.]/g, '')) || 0;
+    const rows = document.querySelectorAll('#compGOtros [data-otro]');
+    rows.forEach((row, i) => { if (_compraGastos.otros[i]) { const c = row.querySelector('[data-c]'), m = row.querySelector('[data-m]'); _compraGastos.otros[i].concepto = c ? c.value : ''; _compraGastos.otros[i].monto = r2(parseMoney(m ? m.value : 0)); } });
+    pintarCompraItems();
+  };
+  window.nxCompOtroAdd = function () { window.nxCompGastoSync(); _compraGastos.otros.push({ concepto: '', monto: 0 }); pintarCompGastosOtros(); const last = document.querySelector('#compGOtros [data-otro]:last-child [data-c]'); if (last) last.focus(); };
+  window.nxCompOtroDel = function (i) { window.nxCompGastoSync(); _compraGastos.otros.splice(i, 1); pintarCompGastosOtros(); pintarCompraItems(); };
+  function pintarCompGastosOtros() {
+    const box = document.getElementById('compGOtros'); if (!box) return;
+    const inp = 'padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;box-sizing:border-box;min-width:0';
+    box.innerHTML = _compraGastos.otros.map((o, i) => `<div data-otro style="display:grid;grid-template-columns:minmax(0,1fr) 104px 34px;gap:6px;align-items:center;margin-bottom:6px"><input data-c class="no-upper" value="${esc(o.concepto)}" placeholder="Concepto (agente aduanal, seguro…)" oninput="window.nxCompGastoSync()" style="${inp}"><input data-m data-nx-money inputmode="decimal" value="${o.monto ? o.monto : ''}" placeholder="Monto" oninput="window.nxCompGastoSync()" style="${inp};text-align:right"><button type="button" class="btn bsm bghost" aria-label="Quitar gasto" onclick="window.nxCompOtroDel(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>`).join('');
+    scanMoney(box);
+  };
+  // Al redibujar la pantalla, los inputs de gastos vuelven a nacer vacíos: se rellenan desde el estado.
+  function compGastosPintarInputs() {
+    const g = _compraGastos;
+    const f = document.getElementById('compGFlete'); if (f && g.flete) f.value = g.flete;
+    const m = document.getElementById('compGImpModo'); if (m) m.value = g.impuesto_modo;
+    const iv = document.getElementById('compGImpVal'); if (iv && g.impuesto_valor) iv.value = g.impuesto_valor;
+    pintarCompGastosOtros();
+  }
+  window.nxCompMonedaSync = function () {
+    if (!cv2()) return;
+    const mon = val('compMoneda') || 'DOP';
+    const tasa = Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1;
+    const co = document.getElementById('compCosto'); if (co) co.placeholder = mon === 'DOP' ? 'Costo unit.' : 'Costo unit. ' + mon;
+    _compraItems.forEach(it => { if (it.costo_original != null) it.costo = mon === 'DOP' ? r2(it.costo_original) : r2(it.costo_original * tasa); });
+    pintarCompraItems();
   };
 
   // Proveedores
@@ -6504,7 +6809,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">${kpi('Comprado (créd.)', fmt(totC), '#0f172a')}${kpi('Pagado', fmt(totP), '#059669')}${kpi('Saldo (CxP)', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}</div>
-          ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button aria-label="Registrar un pago al proveedor" class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px"><i class="ti ti-circle-check"></i> Sin deuda</div>'}
+          ${saldo > 0 && cv2() ? `<button class="btn bc1" type="button" style="width:100%;margin-bottom:10px" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-file-invoice"></i> Abonar por factura (Cuentas por pagar)</button>` : saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button aria-label="Registrar un pago al proveedor" class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px"><i class="ti ti-circle-check"></i> Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">COMPRAS A CRÉDITO (${compras.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${comprasHTML}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PAGOS (${pagos.length})</div>
@@ -6516,6 +6821,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     scanMoney(ov);
   };
   window.nxPosPagarProv = async function (id) {
+    if (cv2()) { cerrarModal('nxPosProv'); window.nxPosCxpAbrir(id); return; } // v2: se abona por factura desde Cuentas por pagar
     const monto = parseMoney(val('provPagoMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
     const metodo = val('provPagoMet') || 'Efectivo';
     try {
