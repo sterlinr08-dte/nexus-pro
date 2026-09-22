@@ -1,7 +1,17 @@
 {
-  "version": "58.83",
+  "version": "58.84",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.84",
+      "fecha": "2026-09-22",
+      "notas": [
+        "STUDIO: Compras v2 (ITBIS, costo desembarcado por gastos de importación y Cuentas por pagar por factura con abonos bancarios).",
+        "STUDIO: Financiamiento v2 (planes con interés plano o sobre saldo, solicitud y aprobación, contrato congelado con firma, mora por plan y cobro de cuotas con capital/interés/mora asentado en el servidor).",
+        "POS: línea gráfica única según DESIGN.md (Nexus Blue como único acento, Geist y JetBrains Mono, superficies de 16 px).",
+        "STUDIO vive solo en studiord.net (se retira el subdominio de nexusprord.com)."
+      ]
+    },
     {
       "version": "58.83",
       "fecha": "2026-09-21",
