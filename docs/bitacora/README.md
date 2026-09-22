@@ -1,3 +1,5 @@
+Punto de entrada de toda sesión: `AGENTS.md` en la raíz del repositorio (rama `main`).
+
 # Bitácora ChatGPT ↔ Claude — un archivo por entrada
 
 Reemplaza a `docs/BITACORA-CHATGPT-CLAUDE.md` (que queda **congelado** como archivo histórico, con

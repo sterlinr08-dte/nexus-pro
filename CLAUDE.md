@@ -2,6 +2,9 @@
 
 Este archivo es el **contexto de arranque obligatorio** para Claude y para cualquier sesión que trabaje en `sterlinr08-dte/nexus-pro`.
 
+**Punto de entrada fijo para toda IA:** `AGENTS.md` en la raíz de `main`
+(`https://github.com/sterlinr08-dte/nexus-pro/blob/main/AGENTS.md`). Ahí está el orden de lectura, dónde escribir y el estado vivo.
+
 ## Proyecto
 
 - Sistema: **NEXUS PRO Seguros**.
