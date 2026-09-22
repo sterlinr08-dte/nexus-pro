@@ -187,10 +187,11 @@
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
+    if (cv2fin()) { try { await finV2Cargar(); } catch (e) {} }
     _almacenes = alm || [];
     _prefs = prefs || [];
     _notasCred = notasCred || [];
@@ -545,7 +546,7 @@
     else if (_posTab === 'prefhist') body = renderPrefHist();
     else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
-    else if (_posTab === 'cuotas') body = renderCuotas();
+    else if (_posTab === 'cuotas') body = cv2fin() ? renderFinV2() : renderCuotas();
     else if (_posTab === 'apartados') body = renderApartados();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
@@ -562,7 +563,7 @@
     if (_posTab === 'prefhist') try { pintarLupaPH(); } catch (e) {}
     if (_posTab === 'productos') try { pintarLupaProd(); } catch (e) {}
     if (_posTab === 'reparaciones') try { pintarLupaRep(); } catch (e) {}
-    if (_posTab === 'cuotas') try { pintarLupaFin(); } catch (e) {}
+    if (_posTab === 'cuotas') try { if (cv2fin()) finV2PostRender(); else pintarLupaFin(); } catch (e) {}
     if (_posTab === 'ventas') try { pintarLupaHist(); } catch (e) {}
   }
 
@@ -2458,8 +2459,9 @@
           <div id="finBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 13px">
             <label style="display:flex;gap:7px;align-items:center;font-size:12px;font-weight:800;color:#1e40af;cursor:pointer"><input type="checkbox" id="finChk" style="width:16px;height:16px;accent-color:#2563eb" onchange="window.nxPosCobroCalc()"> Financiar el resto en CUOTAS</label>
             <div id="finCfg" style="display:none;margin-top:7px">
-              <div class="nxPgGrid"><div class="nxPgF"><label class="nxPgFl" for="finN"># de cuotas</label><input id="finN" inputmode="numeric" value="4" oninput="window.nxPosCobroCalc()"></div>
+              <div class="nxPgGrid" id="finLegacyCfg"><div class="nxPgF"><label class="nxPgFl" for="finN"># de cuotas</label><input id="finN" inputmode="numeric" value="4" oninput="window.nxPosCobroCalc()"></div>
               <div class="nxPgF"><label class="nxPgFl" for="finFrec">Frecuencia</label><select id="finFrec" onchange="window.nxPosCobroCalc()" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div></div>
+              <div id="finV2Cfg"></div>
               <div id="finPrev" style="font-size:11.5px;color:#1e40af;font-weight:800;margin-top:6px"></div>
             </div>
           </div>
@@ -2570,7 +2572,8 @@
       const fb = document.getElementById('finBox'), cfg = document.getElementById('finCfg'), chk = document.getElementById('finChk'), pv = document.getElementById('finPrev');
       if (fb) fb.style.display = (c.credito > 0 && cliId) ? '' : 'none';
       if (cfg) cfg.style.display = (chk && chk.checked) ? '' : 'none';
-      if (pv && chk && chk.checked) { const n = Math.max(1, parseInt(val('finN')) || 1); pv.textContent = n + ' cuota' + (n > 1 ? 's' : '') + ' de ' + fmt(Math.ceil(c.credito / n)) + ' · ' + (val('finFrec') || 'semanal'); }
+      if (cv2fin()) { finV2CobroCfg(c, !!(chk && chk.checked && c.credito > 0 && cliId)); }
+      else if (pv && chk && chk.checked) { const n = Math.max(1, parseInt(val('finN')) || 1); pv.textContent = n + ' cuota' + (n > 1 ? 's' : '') + ' de ' + fmt(Math.ceil(c.credito / n)) + ' · ' + (val('finFrec') || 'semanal'); }
     } catch (e) {}
   };
   // REGLAMENTOS.md §11: todo pie de acción necesita Cancelar — Cobrar solo tenía la ✕ del header.
@@ -2810,6 +2813,8 @@
         try { logAudit('POS_FIADO_CON_MORA', (_cl2 && _cl2.nombre || '') + ' · ' + _venc.n + ' cuota(s) vencida(s) por ' + fmt(_venc.monto) + ' · se le fiaron ' + fmt(c.credito), 'POS'); } catch (e) {}
       }
     }
+    // Financiamiento v2: plan, inicial mínima y primera cuota se validan ANTES de tocar pos_ventas.
+    if (cv2fin() && c.credito > 0 && cliId) { const _chkF = document.getElementById('finChk'); if (_chkF && _chkF.checked) { const _eF = finV2ValidarCobro(c); if (_eF) { toast('err', 'Financiamiento', _eF); return; } } }
     // A5: validar que la "Nota de crédito" usada como pago exista de verdad, sea de ESTE
     // cliente y esté disponible (no aplicada ya antes) — evita que se escriba cualquier
     // monto a mano y se cuele como pago sin respaldo.
@@ -2899,7 +2904,9 @@
       // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
       try {
         const finChk = document.getElementById('finChk');
-        if (finChk && finChk.checked && c.credito > 0 && cliId) {
+        if (finChk && finChk.checked && c.credito > 0 && cliId && cv2fin()) {
+          await finV2CrearDesdeVenta(venta.id);
+        } else if (finChk && finChk.checked && c.credito > 0 && cliId) {
           const n = Math.max(1, parseInt(val('finN')) || 1);
           const frec = val('finFrec') || 'semanal';
           const paso = frec === 'mensual' ? 30 : frec === 'quincenal' ? 15 : 7;
@@ -9207,6 +9214,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // se acumula por día), después de los días de gracia que él defina. 0% = mora desactivada.
   // Se calcula EN VIVO (nunca se guarda), igual que el resto de estados calculados de este módulo.
   function moraDeCuota(c) {
+    if (cv2fin()) return finV2MoraCuota(c);
     if (!_posCfg.mora_pct || c.pagado) return 0;
     const hoyK = hoyISOPos();
     const venc = String(c.fecha_venc || '').slice(0, 10);
@@ -9218,6 +9226,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Recalcula monto_pagado/pagado de CADA cuota sumando pos_fin_pagos (la fuente de verdad es el
   // ledger, nunca el booleano solo) — se corre después de cargar y después de cada pago nuevo.
   function resyncCuotasPagos() {
+    if (cv2fin()) return; // v2: monto_pagado/pagado los mantiene el servidor (pos_fin_recalcular_cuota)
     const porCuota = {};
     (_finPagos || []).forEach(p => { const k = String(p.cuota_id); porCuota[k] = (porCuota[k] || 0) + Number(p.monto || 0); });
     (_finCuotas || []).forEach(c => { c.monto_pagado = porCuota[String(c.id)] || 0; c.pagado = c.monto_pagado >= Number(c.monto || 0) - 0.01; });
@@ -10019,6 +10028,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     else if (accion === 'imprimir') window.nxFinContrato(id);
   };
   window.nxFinNuevo = function () {
+    if (cv2fin()) return window.nxFinV2Go('solicitud');
     toast('info', 'Cómo crear un préstamo', 'Los préstamos se crean al cobrar una venta — en Factura marca "Financiar el resto en CUOTAS" antes de cobrar.');
     window.nxPosTab('factura');
   };
@@ -10086,6 +10096,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     </div>`;
   }
   window.nxFinPlan = function (id) {
+    if (cv2fin()) return window.nxFinV2Go('detalle', id);
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const hoyK = hoyISOPos();
     const rows = cuotasDe(id).map(c => {
@@ -10103,6 +10114,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     document.body.appendChild(ov);
   };
   window.nxFinPagar = function (id) {
+    if (cv2fin()) return window.nxFinV2Cobrar(id);
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
     const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
@@ -10154,6 +10166,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
   window.nxFinContrato = function (id) {
+    if (cv2fin() && (finFinDe(id) || {}).contrato_texto) return window.nxFinV2Contrato(id);
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
     const rows = cuotasDe(id).map(c => `<tr><td>#${c.numero}</td><td>${String(c.fecha_venc).slice(0, 10)}</td><td style="text-align:right">${fmt(c.monto)}</td><td style="text-align:center">${c.pagado ? '<i class="ti ti-circle-check"></i> Pagada' : ''}</td></tr>`).join('');
@@ -11358,6 +11371,689 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function init() { inyectarCSS(); let n = 0; const t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  // FINANCIAMIENTO v2 (pos_config.financiamiento_v2 — STUDIO). Planes con interés (plano / sobre
+  // saldo, dos fases), solicitud → aprobación por RPC, contrato congelado + firma, mora por plan
+  // y cobro por RPC (pos_fin_registrar_pago_v2). El navegador NO inserta en pos_financiamientos /
+  // pos_fin_cuotas / pos_fin_pagos ni asienta: todo lo hace el servidor (migración
+  // supabase/studio/14_financiamiento_v2.sql). Con la bandera apagada nada de esto se alcanza.
+  // Línea gráfica: tokens --nx-* de DESIGN.md §7b (sin hex morados).
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  function cv2fin() { return !!(_posCfg && _posCfg.financiamiento_v2); }
+  let _finPlanes = [], _finSols = [], _finPerfiles = [], _finRefs = [], _finCtas = [];
+  let _finV2Vista = 'cartera', _finV2Sel = null, _finV2SolSel = null, _finV2Filtro = 'todos', _finV2Q = '';
+  let _finSolForm = null;   // borrador de solicitud en pantalla
+  let _finPlanEdit = null;  // plan en edición (null = nuevo)
+  let _finV2Cobro = null;   // {finId, cuotaId}
+  let _finV2Firma = null;   // canvas de firma de tienda
+
+  function finRpc(name, params) { return getAPI().post('rpc/' + name, params || {}).then(r => Array.isArray(r) ? r[0] : r); }
+  function finUuid() { try { return crypto.randomUUID(); } catch (_) { return '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0'); } }
+  function finNum(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')) || 0; }
+  function finPlanDe(f) { return f && f.plan_id ? (_finPlanes.find(p => String(p.id) === String(f.plan_id)) || null) : null; }
+  function finFinDe(id) { return _fins.find(x => String(x.id) === String(id)) || null; }
+  function finCuotaDe(id) { return _finCuotas.find(x => String(x.id) === String(id)) || null; }
+  function finFechaCorta(iso) { const s = String(iso || '').slice(0, 10); if (!s) return '—'; const m = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']; const d = new Date(s + 'T12:00:00'); return d.getDate() + ' ' + m[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + String(d.getFullYear()).slice(2) : ''); }
+  function finAddDias(iso, n) { const d = new Date(String(iso).slice(0, 10) + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+  function finAddMeses(iso, n) { const d = new Date(String(iso).slice(0, 10) + 'T12:00:00'); const dia = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); const ult = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(dia, ult)); return d.toISOString().slice(0, 10); }
+  function finFrecTxt(fr) { return fr === 'semanal' ? 'semanal' : fr === 'quincenal' ? 'quincenal' : 'mensual'; }
+  function finMetodoTxt(pl) { return pl.metodo === 'plano' ? 'interés plano' : 'interés sobre saldo'; }
+  function finMoraTxt(pl) { if (!pl || pl.mora_tipo === 'ninguna' || !Number(pl.mora_valor)) return 'sin mora'; return (pl.mora_tipo === 'fija' ? fmt2(pl.mora_valor) : (Number(pl.mora_valor) + ' % de la cuota')) + ' · ' + Number(pl.mora_dias_gracia || 0) + ' d gracia'; }
+  function finTasasTxt(pl) { const f1 = Number(pl.cuotas_fase1 || 0); return f1 > 0 && f1 < Number(pl.num_cuotas) ? (f1 + ' × ' + Number(pl.tasa1) + ' % + ' + (pl.num_cuotas - f1) + ' × ' + Number(pl.tasa2) + ' %') : (pl.num_cuotas + ' × ' + Number(pl.tasa1) + ' %'); }
+  // Misma fórmula que public.pos_fin_amortizacion (solo para previsualizar; la verdad la escribe el servidor)
+  function finV2Amortizar(capital, pl, primera) {
+    const n = Math.max(1, parseInt(pl.num_cuotas, 10) || 1); const f1 = Number(pl.cuotas_fase1 || 0);
+    const base = r2(capital / n); let saldo = r2(capital); const rows = [];
+    for (let i = 1; i <= n; i++) {
+      const cap = i === n ? r2(capital - base * (n - 1)) : base;
+      const tasa = (f1 > 0 && i > f1) ? Number(pl.tasa2 || 0) : Number(pl.tasa1 || 0);
+      const inte = pl.metodo === 'plano' ? r2(capital * tasa / 100) : r2(saldo * tasa / 100);
+      saldo = r2(saldo - cap);
+      const fecha = pl.frecuencia === 'semanal' ? finAddDias(primera, (i - 1) * 7) : pl.frecuencia === 'quincenal' ? finAddDias(primera, (i - 1) * 15) : finAddMeses(primera, i - 1);
+      rows.push({ numero: i, fecha_venc: fecha, capital: cap, interes: inte, cuota: r2(cap + inte), saldo: Math.max(saldo, 0) });
+    }
+    return rows;
+  }
+  // Pagos netos (pago − reversa) por cuota, separados en capital / interés / mora
+  function finPagosCuota(cid) {
+    const o = { principal: 0, interes: 0, mora: 0, total: 0 };
+    (_finPagos || []).forEach(p => {
+      if (String(p.cuota_id) !== String(cid)) return;
+      const s = p.tipo === 'reversa' ? -1 : 1;
+      o.principal += s * Number(p.monto_principal || 0); o.interes += s * Number(p.monto_interes || 0); o.mora += s * Number(p.monto_mora || 0); o.total += s * Number(p.monto || 0);
+    });
+    return o;
+  }
+  // Mora calculada en vivo con la regla del plan (espejo de pos_fin_mora_calculada)
+  function finV2MoraCalc(c, f) {
+    const pl = finPlanDe(f); const pg = finPagosCuota(c.id);
+    if (pg.principal + pg.interes >= Number(c.monto || 0) - 0.01) return 0;
+    const hoyK = hoyISOPos(); const venc = String(c.fecha_venc || '').slice(0, 10);
+    if (!venc) return 0;
+    if (pl) {
+      if (hoyK <= finAddDias(venc, Number(pl.mora_dias_gracia || 0))) return 0;
+      return pl.mora_tipo === 'fija' ? r2(pl.mora_valor) : pl.mora_tipo === 'pct' ? r2(Number(c.monto || 0) * Number(pl.mora_valor || 0) / 100) : 0;
+    }
+    if (!_posCfg.mora_pct) return 0;
+    if (hoyK <= finAddDias(venc, Number(_posCfg.mora_dias_gracia || 0))) return 0;
+    return r2(Number(c.monto || 0) * Number(_posCfg.mora_pct || 0) / 100);
+  }
+  // Mora PENDIENTE de una cuota (lo que aún se debe de mora)
+  function finV2MoraCuota(c) {
+    if (!c || c.pagado) return 0;
+    const f = finFinDe(c.financiamiento_id); const pg = finPagosCuota(c.id);
+    const total = c.mora_exenta ? pg.mora : Math.max(Number(c.mora_generada || 0), finV2MoraCalc(c, f));
+    return Math.max(r2(total - pg.mora), 0);
+  }
+  function finV2Pend(c) {
+    const pg = finPagosCuota(c.id);
+    const cap = Math.max(r2(Number(c.capital != null ? c.capital : c.monto) - pg.principal), 0);
+    const inte = Math.max(r2(Number(c.interes || 0) - pg.interes), 0);
+    const mora = finV2MoraCuota(c);
+    return { capital: cap, interes: inte, mora: mora, total: r2(cap + inte + mora), pagado: pg };
+  }
+  function finV2Atraso(c) { return c.pagado ? 0 : diasAtraso(c); }
+  function finV2EstadoFin(f) {
+    if (f.estado === 'cancelado') return { key: 'cancelado', label: 'CANCELADO', cls: 'gris' };
+    if (f.estado === 'castigado') return { key: 'castigado', label: 'CASTIGADO', cls: 'gris' };
+    if (f.estado === 'refinanciado') return { key: 'refinanciado', label: 'REFINANCIADO', cls: 'gris' };
+    if (f.estado === 'saldado') return { key: 'saldado', label: 'SALDADO', cls: 'ok' };
+    const cs = cuotasDe(f.id); const venc = cs.filter(c => !c.pagado && finV2Atraso(c) > 0);
+    if (venc.length) { const d = Math.max.apply(null, venc.map(finV2Atraso)); return { key: 'vencido', label: 'VENCIDA ' + d + ' d', cls: 'bad' }; }
+    const hoyK = hoyISOPos(); if (cs.some(c => !c.pagado && String(c.fecha_venc).slice(0, 10) === hoyK)) return { key: 'hoy', label: 'VENCE HOY', cls: 'warn' };
+    if (f.contrato_texto && !f.firma_cliente) return { key: 'sinfirma', label: 'SIN FIRMA', cls: 'info' };
+    return { key: 'aldia', label: 'AL DÍA', cls: 'ok' };
+  }
+  function finV2Kpis() {
+    const act = _fins.filter(f => f.estado === 'activo');
+    let capital = 0, interes = 0, vencido = 0; const hoyM = hoyISOPos().slice(0, 7); let cobradoMes = 0;
+    act.forEach(f => cuotasDe(f.id).forEach(c => { if (c.pagado) return; const p = finV2Pend(c); capital += p.capital; interes += p.interes; if (finV2Atraso(c) > 0) vencido += p.total; }));
+    (_finPagos || []).forEach(p => { if (String(p.fecha || p.created_at || '').slice(0, 7) === hoyM) cobradoMes += (p.tipo === 'reversa' ? -1 : 1) * Number(p.monto || 0); });
+    return { capital: r2(capital), interes: r2(interes), vencido: r2(vencido), cobradoMes: r2(cobradoMes), pendientes: _finSols.filter(s => s.estado === 'pendiente').length };
+  }
+  async function finV2Cargar() {
+    const g = (t, q) => getAPI().get(t, q).catch(() => null);
+    const [pl, so, pf, rf, ct] = await Promise.all([
+      g('pos_fin_planes', 'select=*&order=activo.desc,nombre.asc'),
+      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_fin_perfil', 'select=*&limit=3000'),
+      g('pos_fin_referencias', 'select=*&order=created_at.asc&limit=6000'),
+      g('pos_cuentas_bancarias', 'select=*&activa=eq.true&order=predeterminada.desc,alias.asc')
+    ]);
+    _finPlanes = pl || []; _finSols = so || []; _finPerfiles = pf || []; _finRefs = rf || []; _finCtas = ct || [];
+  }
+  async function finV2RecargarLedger() {
+    const g = (t, q) => getAPI().get(t, q).catch(() => null);
+    const [fins, fcuo, finpag, so] = await Promise.all([
+      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
+      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300')
+    ]);
+    if (fins) _fins = fins; if (fcuo) _finCuotas = fcuo; if (finpag) _finPagos = finpag; if (so) _finSols = so;
+  }
+  function finV2Repintar() { const el = document.getElementById('v-pos'); if (el) renderPOS(el); }
+  function finV2PostRender() {
+    try { const v = document.getElementById('v-pos'); if (v) scanMoney(v); } catch (e) {}
+    if (_finV2Vista === 'solicitud') { try { finSolPintarEstimado(); } catch (e) {} }
+  }
+  window.nxFinV2Go = function (vista, id) {
+    _finV2Vista = vista || 'cartera';
+    if (vista === 'detalle') _finV2Sel = id || _finV2Sel;
+    if (vista === 'aprobacion') _finV2SolSel = id || null;
+    if (vista === 'solicitud' && !_finSolForm) _finSolForm = { cliente_id: null, items: [], inicial: 0, inicial_metodo: 'efectivo', plan_id: (_finPlanes.find(p => p.activo) || {}).id || null, primera_fecha: finAddDias(hoyISOPos(), 30), perfil: {}, refs: [], notas: '' };
+    if (vista === 'planes') _finPlanEdit = null;
+    finV2Repintar();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  };
+  window.nxFinV2Filtro = function (k) { _finV2Filtro = k || 'todos'; finV2Repintar(); };
+  window.nxFinV2Buscar = function (v) { _finV2Q = v || ''; const el = document.getElementById('finV2Lista'); if (el) el.innerHTML = finV2ListaHTML(); };
+
+  function nxFinV2EnsureCSS() {
+    if (document.getElementById('nxFinV2CSS')) return;
+    const s = document.createElement('style'); s.id = 'nxFinV2CSS';
+    s.textContent = `
+.nxF2{max-width:920px;margin:0 auto;padding-bottom:32px;--f2-line:var(--nx-line-2,rgba(148,163,184,.18));--f2-ink:var(--nx-ink,#0f172a);--f2-steel:var(--nx-steel,#64748b);--f2-blue:var(--nx-blue,#2563eb);--f2-blue-l:var(--nx-blue-l,#eff6ff);--f2-mono:var(--nx-mono,ui-monospace,monospace)}
+.nxF2Head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.nxF2Head .ico{width:36px;height:36px;border-radius:10px;background:var(--f2-blue-l);display:flex;align-items:center;justify-content:center;color:var(--f2-blue);font-size:18px}
+.nxF2Head .t{font-size:17px;font-weight:800;color:var(--f2-ink);letter-spacing:-.2px;line-height:1.1}
+.nxF2Head .s{font-size:11px;color:var(--f2-steel);font-weight:600}
+.nxF2Back{width:40px;height:40px;border-radius:10px;border:1px solid var(--f2-line);background:#fff;display:flex;align-items:center;justify-content:center;color:#475569;cursor:pointer;flex-shrink:0}
+.nxF2Card{background:#fff;border:1px solid var(--f2-line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.nxF2Card .h{font-size:12px;font-weight:800;color:var(--f2-ink);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nxF2Lbl{font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--f2-steel);text-transform:uppercase}
+.nxF2Big{font-family:var(--f2-mono);font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;color:var(--f2-ink)}
+.nxF2Mono{font-family:var(--f2-mono);font-variant-numeric:tabular-nums;font-weight:600}
+.nxF2G3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:10px;border-top:1px solid #f1f5f9}
+.nxF2G2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.nxF2K{display:flex;flex-direction:column;gap:2px}.nxF2K span:first-child{font-size:10px;color:#94a3b8;font-weight:700}.nxF2K span:last-child{font-family:var(--f2-mono);font-size:12px;font-weight:600;color:var(--f2-ink)}
+.nxF2Btn{min-height:46px;border-radius:10px;border:1px solid var(--f2-line);background:#fff;color:var(--f2-ink);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;padding:0 12px;font-family:inherit}
+.nxF2Btn.p{background:var(--f2-blue);border-color:var(--f2-blue);color:#fff}.nxF2Btn.d{border-color:#fecaca;color:#b91c1c}.nxF2Btn.wa{background:#25d366;border-color:#25d366;color:#fff}
+.nxF2Btn:disabled{opacity:.5;cursor:not-allowed}
+.nxF2Chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
+.nxF2Chip{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--f2-line);background:#fff;color:#475569;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;font-family:inherit;flex-shrink:0}
+.nxF2Chip.on{border-color:var(--f2-blue);background:var(--f2-blue-l);color:#1d4ed8;font-weight:800}
+.nxF2Badge{flex-shrink:0;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800}
+.nxF2Badge.bad{background:#fee2e2;color:#b91c1c}.nxF2Badge.warn{background:#fef3c7;color:#b45309}.nxF2Badge.ok{background:#dcfce7;color:#15803d}.nxF2Badge.info{background:#dbeafe;color:#1d4ed8}.nxF2Badge.gris{background:#f1f5f9;color:#475569}
+.nxF2Row{background:#fff;border:1px solid var(--f2-line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;color:var(--f2-ink);cursor:pointer;margin-bottom:8px}
+.nxF2Row .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nxF2Row .who{display:flex;align-items:center;gap:10px;min-width:0}
+.nxF2Av{width:38px;height:38px;border-radius:12px;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--f2-blue-l);color:#1d4ed8}
+.nxF2Av.bad{background:#fee2e2;color:#b91c1c}.nxF2Av.ok{background:#dcfce7;color:#15803d}.nxF2Av.gris{background:#f1f5f9;color:#475569}
+.nxF2Row .nm{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxF2Row .ds{font-size:11px;color:var(--f2-steel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxF2Row .bot{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #f1f5f9;font-size:11px;color:var(--f2-steel);gap:8px}
+.nxF2Row .amt{font-family:var(--f2-mono);font-size:14px;font-weight:700;color:var(--f2-ink)}.nxF2Row .amt.bad{color:#b91c1c}.nxF2Row .amt.ok{color:#15803d}
+.nxF2F{display:flex;flex-direction:column;gap:5px}.nxF2F label{font-size:11px;font-weight:700;color:#475569}
+.nxF2F input,.nxF2F select,.nxF2F textarea{height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:var(--f2-ink);font-family:inherit;width:100%;box-sizing:border-box}
+.nxF2F textarea{height:auto;min-height:70px;padding:10px 12px}
+.nxF2F input.mono{font-family:var(--f2-mono);font-weight:600}
+.nxF2F input:focus,.nxF2F select:focus,.nxF2F textarea:focus{outline:none;border-color:var(--f2-blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.nxF2Note{background:#f8fafc;border-radius:10px;padding:10px 12px;font-size:11px;color:#475569;line-height:1.5}
+.nxF2Tbl{display:grid;grid-template-columns:22px 1fr 1fr 1fr 1fr;gap:6px;font-size:11px;font-family:var(--f2-mono);padding:5px 0;border-bottom:1px solid #f8fafc;align-items:center}
+.nxF2Tbl.hd{font-family:inherit;color:#94a3b8;font-weight:800;text-transform:uppercase;font-size:10px;border-bottom:1px solid #f1f5f9}
+.nxF2Tbl .r{text-align:right}.nxF2Tbl .m{color:var(--f2-steel)}.nxF2Tbl .b{font-weight:700}
+.nxF2Tbl6{grid-template-columns:22px 1fr 1fr 1fr 1fr 1fr}
+.nxF2Pick{position:relative}.nxF2PickList{position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid var(--f2-line);border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.10);max-height:260px;overflow:auto}
+.nxF2PickList button{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;padding:9px 12px;border:0;border-bottom:1px solid #f1f5f9;background:#fff;font-family:inherit;cursor:pointer}
+.nxF2PickList button b{font-size:12.5px;color:var(--f2-ink)}.nxF2PickList button small{font-size:10.5px;color:var(--f2-steel)}
+.nxF2Sel{display:flex;align-items:center;gap:10px;padding:10px;border:1.5px solid var(--f2-blue);border-radius:10px;background:var(--f2-blue-l)}
+.nxF2Item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid #f1f5f9;border-radius:10px}
+.nxF2Item .x{width:32px;height:32px;border-radius:8px;border:1px solid var(--f2-line);background:#fff;color:#94a3b8;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.nxF2Foot{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--f2-line);padding:10px 0 calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;margin-top:8px;z-index:5}
+.nxF2Pre{white-space:pre-wrap;font-size:11.5px;line-height:1.6;color:#334155;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:12px;max-height:220px;overflow:auto}
+.nxF2Sig{border:1px dashed #cbd5e1;border-radius:10px;padding:10px;min-height:96px;display:flex;flex-direction:column;gap:6px}
+.nxF2Sig.ok{border:1px solid #bbf7d0;background:#f0fdf4}.nxF2Sig img{max-height:48px;align-self:flex-start}
+.nxF2SigPad{border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;touch-action:none;width:100%;height:150px;display:block}
+.nxF2Meth{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.nxF2Meth button{height:44px;border-radius:10px;border:1px solid var(--f2-line);background:#fff;color:#475569;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+.nxF2Meth button.on{border:1.5px solid var(--f2-blue);background:var(--f2-blue-l);color:#1d4ed8;font-weight:800}
+.nxF2Line{display:flex;justify-content:space-between;font-size:12px}.nxF2Line span:first-child{color:var(--f2-steel)}
+.nxF2Line.tot{padding-top:6px;border-top:1px solid #e2e8f0}.nxF2Line.tot span{font-weight:800}
+.nxF2Steps{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#334155}.nxF2Steps div{display:flex;gap:8px;align-items:flex-start}
+.nxF2Steps i{width:20px;height:20px;border-radius:999px;background:var(--f2-blue-l);color:#1d4ed8;font-family:var(--f2-mono);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-style:normal}
+@media (max-width:640px){.nxF2Big{font-size:24px}}
+`;
+    document.head.appendChild(s);
+  }
+  function finV2HeaderHTML(t, s, back, extra) {
+    return `<div class="nxF2Head">${back ? `<button type="button" class="nxF2Back" aria-label="Volver" onclick="window.nxFinV2Go('${back}')"><i class="ti ti-arrow-left"></i></button>` : `<div class="ico"><i class="ti ti-calendar-dollar"></i></div>`}<div style="flex:1;min-width:0"><div class="t">${esc(t)}</div><div class="s">${esc(s || '')}</div></div>${extra || ''}</div>`;
+  }
+  function renderFinV2() {
+    nxFinV2EnsureCSS();
+    let body = '';
+    if (_finV2Vista === 'planes') body = finV2PlanesHTML();
+    else if (_finV2Vista === 'solicitud') body = finV2SolicitudHTML();
+    else if (_finV2Vista === 'aprobacion') body = finV2AprobacionHTML();
+    else if (_finV2Vista === 'detalle') body = finV2DetalleHTML();
+    else body = finV2CarteraHTML();
+    return `<div class="nxF2">${body}</div>`;
+  }
+
+  // ── Cartera ───────────────────────────────────────────────────────────────────────────────
+  function finV2Filtrados() {
+    const q = (_finV2Q || '').toLowerCase().trim();
+    return _fins.filter(f => {
+      const e = finV2EstadoFin(f).key;
+      if (_finV2Filtro === 'vencidos' && e !== 'vencido') return false;
+      if (_finV2Filtro === 'hoy' && e !== 'hoy') return false;
+      if (_finV2Filtro === 'sinfirma' && !(f.estado === 'activo' && f.contrato_texto && !f.firma_cliente)) return false;
+      if (_finV2Filtro === 'activos' && f.estado !== 'activo') return false;
+      if (_finV2Filtro === 'saldados' && f.estado !== 'saldado') return false;
+      if (!q) return true;
+      const info = finClienteInfo(f);
+      return [f.cliente_nombre, f.descripcion, f.codigo, info.cedula, info.telefono].join(' ').toLowerCase().includes(q);
+    });
+  }
+  function finV2RowHTML(f) {
+    const est = finV2EstadoFin(f); const cs = cuotasDe(f.id); const prox = cs.find(c => !c.pagado); const pag = cs.filter(c => c.pagado).length;
+    const av = finIniciales(f.cliente_nombre); const p = prox ? finV2Pend(prox) : null;
+    const avCls = est.cls === 'bad' ? 'bad' : est.key === 'saldado' ? 'ok' : est.cls === 'gris' ? 'gris' : '';
+    const sub = f.estado === 'saldado' ? (cs.length + '/' + cs.length + ' cuotas · interés cobrado ' + fmt2(cs.reduce((s, c) => s + finPagosCuota(c.id).interes, 0)))
+      : prox ? ('Cuota <b class="nxF2Mono">' + prox.numero + '/' + cs.length + '</b> · ' + (finV2Atraso(prox) > 0 ? 'venció ' : 'vence ') + finFechaCorta(prox.fecha_venc) + (p.mora > 0 ? ' · mora ' + fmt2(p.mora) : '') + (finPlanDe(f) ? ' · ' + finFrecTxt(finPlanDe(f).frecuencia) : ''))
+      : (pag + '/' + cs.length + ' cuotas');
+    return `<div class="nxF2Row" onclick="window.nxFinV2Go('detalle','${f.id}')" tabindex="0" onkeydown="if(event.key==='Enter'){this.click()}">
+      <div class="top"><div class="who"><div class="nxF2Av ${avCls}">${av.ini}</div><div style="min-width:0"><div class="nm">${esc(f.cliente_nombre || '')}</div><div class="ds">${esc(f.descripcion || '')} · ${esc(f.codigo || finRefCorta(f))}</div></div></div><span class="nxF2Badge ${est.cls}">${est.label}</span></div>
+      <div class="bot"><span>${sub}</span><span class="amt ${est.cls === 'bad' ? 'bad' : f.estado === 'saldado' ? 'ok' : ''}">${f.estado === 'saldado' ? '0' : p ? r2(p.total).toLocaleString('en-US') : '—'}</span></div>
+    </div>`;
+  }
+  function finV2ListaHTML() {
+    const l = finV2Filtrados();
+    if (!l.length) return `<div class="nxF2Card" style="align-items:center;text-align:center;color:var(--f2-steel);font-size:12px;padding:26px"><i class="ti ti-file-off" style="font-size:26px"></i>${_fins.length ? 'Ningún financiamiento coincide con este filtro.' : 'Aún no hay financiamientos. Crea la primera solicitud.'}</div>`;
+    return l.map(finV2RowHTML).join('');
+  }
+  function finV2CarteraHTML() {
+    const k = finV2Kpis();
+    const chips = [['todos', 'Todos', _fins.length], ['vencidos', 'Vencidos', _fins.filter(f => finV2EstadoFin(f).key === 'vencido').length], ['hoy', 'Vence hoy', _fins.filter(f => finV2EstadoFin(f).key === 'hoy').length], ['sinfirma', 'Sin firma', _fins.filter(f => f.estado === 'activo' && f.contrato_texto && !f.firma_cliente).length], ['activos', 'Activos', _fins.filter(f => f.estado === 'activo').length], ['saldados', 'Saldados', _fins.filter(f => f.estado === 'saldado').length]];
+    return finV2HeaderHTML('Financiamiento', 'Cartera activa · ' + (_fins.filter(f => f.estado === 'activo').length) + ' planes', null,
+      `<button type="button" class="nxF2Back" aria-label="Planes de financiamiento" onclick="window.nxFinV2Go('planes')"><i class="ti ti-adjustments-horizontal"></i></button>`) + `
+      <div class="nxF2Card"><div class="nxF2Lbl">Capital por cobrar</div><div class="nxF2Big">${fmt2(k.capital)}</div>
+        <div class="nxF2G3"><div class="nxF2K"><span>Interés por devengar</span><span>${r2(k.interes).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Vencido</span><span style="color:#b91c1c">${r2(k.vencido).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Cobrado este mes</span><span style="color:#15803d">${r2(k.cobradoMes).toLocaleString('en-US')}</span></div></div></div>
+      <div class="nxF2G2" style="margin-bottom:10px">
+        <button type="button" class="nxF2Btn p" onclick="window.nxFinV2Go('solicitud')"><i class="ti ti-plus"></i> Nueva solicitud</button>
+        <button type="button" class="nxF2Btn" onclick="window.nxFinV2Go('aprobacion')"><span class="nxF2Badge ${k.pendientes ? 'warn' : 'gris'}" style="font-family:var(--f2-mono)">${k.pendientes}</span> Por aprobar</button>
+      </div>
+      <div class="nxF2Chips">${chips.map(c => `<button type="button" class="nxF2Chip ${_finV2Filtro === c[0] ? 'on' : ''}" onclick="window.nxFinV2Filtro('${c[0]}')">${c[1]} · ${c[2]}</button>`).join('')}</div>
+      <div class="nxF2F" style="margin-bottom:8px"><input type="search" placeholder="Nombre, cédula, teléfono o código…" value="${esc(_finV2Q)}" oninput="window.nxFinV2Buscar(this.value)" autocomplete="off"></div>
+      <div id="finV2Lista">${finV2ListaHTML()}</div>
+      <div class="nxF2G2" style="margin-top:10px">
+        <button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinCarteraVencida()"><i class="ti ti-report-money" style="color:var(--f2-blue)"></i> Reporte de cartera</button>
+        <button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinV2Excel()"><i class="ti ti-file-spreadsheet" style="color:var(--f2-blue)"></i> Exportar Excel</button>
+      </div>`;
+  }
+  window.nxFinV2Excel = function () {
+    const lista = finV2Filtrados();
+    if (!lista.length) { toast('warn', 'Nada que exportar', 'No hay financiamientos en esta vista'); return; }
+    const filas = [['Código', 'Cliente', 'Cédula', 'Teléfono', 'Artículo', 'Plan', 'Capital', 'Interés total', 'Capital pendiente', 'Interés pendiente', 'Mora pendiente', 'Próximo vencimiento', 'Estado']];
+    lista.forEach(f => {
+      const info = finClienteInfo(f); const cs = cuotasDe(f.id); const prox = cs.find(c => !c.pagado); const pl = finPlanDe(f);
+      let cp = 0, ip = 0, mp = 0; cs.forEach(c => { if (c.pagado) return; const p = finV2Pend(c); cp += p.capital; ip += p.interes; mp += p.mora; });
+      filas.push([f.codigo || finRefCorta(f), f.cliente_nombre || '', info.cedula || '', info.telefono || '', f.descripcion || '', pl ? pl.nombre : '', r2(f.monto_financiado), r2(f.interes_total), r2(cp), r2(ip), r2(mp), prox ? String(prox.fecha_venc).slice(0, 10) : '', finV2EstadoFin(f).label]);
+    });
+    const csv = filas.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'financiamiento_' + hoyISOPos() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  // ── Planes ────────────────────────────────────────────────────────────────────────────────
+  function finV2PlanesHTML() {
+    const e = _finPlanEdit || { nombre: '', metodo: 'saldo', frecuencia: 'mensual', num_cuotas: 12, cuotas_fase1: 0, tasa1: 5, tasa2: 0, mora_tipo: 'pct', mora_valor: 2, mora_dias_gracia: 3, inicial_min_pct: 20 };
+    const ejemplo = (() => { try { const rows = finV2Amortizar(100000, e, hoyISOPos()); const it = rows.reduce((s, r) => s + r.interes, 0); return 'Ejemplo con RD$ 100,000 financiados: ' + e.num_cuotas + ' cuotas, interés total estimado <b class="nxF2Mono">' + fmt2(it) + '</b>, primera cuota ' + fmt2(rows[0].cuota) + '.'; } catch (x) { return ''; } })();
+    const cardPlan = p => `<div class="nxF2Card" style="${p.activo ? '' : 'opacity:.75'}">
+      <div class="h"><div><div style="font-size:14px">${esc(p.nombre)}</div><div style="font-size:11px;color:var(--f2-steel);font-weight:600">${finFrecTxt(p.frecuencia)} · ${finMetodoTxt(p)}</div></div><span class="nxF2Badge ${p.activo ? 'ok' : 'gris'}">${p.activo ? 'ACTIVO' : 'INACTIVO'}</span></div>
+      <div class="nxF2G3"><div class="nxF2K"><span>Cuotas · tasas</span><span>${finTasasTxt(p)}</span></div><div class="nxF2K"><span>Mora</span><span>${esc(finMoraTxt(p))}</span></div><div class="nxF2K"><span>Inicial mínima</span><span>${Number(p.inicial_min_pct || 0)} %</span></div></div>
+      <div style="display:flex;gap:6px;justify-content:flex-end"><button type="button" class="nxF2Btn" style="min-height:36px;font-size:11px" onclick="window.nxFinPlanEditar('${p.id}')"><i class="ti ti-pencil"></i> Editar</button><button type="button" class="nxF2Btn" style="min-height:36px;font-size:11px" onclick="window.nxFinPlanToggle('${p.id}')">${p.activo ? 'Desactivar' : 'Activar'}</button></div>
+    </div>`;
+    const sel = (id, opts, v) => `<select id="${id}" onchange="window.nxFinPlanCalc()">${opts.map(o => `<option value="${o[0]}" ${String(o[0]) === String(v) ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>`;
+    const inp = (id, v, extra) => `<input id="${id}" class="mono" inputmode="decimal" value="${esc(v)}" oninput="window.nxFinPlanCalc()" ${extra || ''}>`;
+    return finV2HeaderHTML('Planes de financiamiento', 'Interés y mora se definen aquí, una vez', 'cartera') +
+      (_finPlanes.length ? _finPlanes.map(cardPlan).join('') : '<div class="nxF2Note" style="margin-bottom:10px">Aún no hay planes. Crea el primero abajo.</div>') + `
+      <div class="nxF2Card"><div class="h">${_finPlanEdit ? 'Editar plan' : 'Nuevo plan'}${_finPlanEdit ? `<button type="button" class="nxF2Btn" style="min-height:32px;font-size:11px" onclick="window.nxFinPlanEditar(null)">Cancelar edición</button>` : ''}</div>
+        <div class="nxF2F"><label for="plNom">Nombre</label><input id="plNom" value="${esc(e.nombre)}" placeholder="Ej. Motores 12 meses"></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="plMet">Método de interés</label>${sel('plMet', [['saldo', 'Sobre saldo'], ['plano', 'Plano']], e.metodo)}</div><div class="nxF2F"><label for="plFrec">Frecuencia</label>${sel('plFrec', [['mensual', 'Mensual'], ['quincenal', 'Quincenal'], ['semanal', 'Semanal']], e.frecuencia)}</div></div>
+        <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2F"><label for="plN">Cuotas</label>${inp('plN', e.num_cuotas)}</div><div class="nxF2F"><label for="plF1">Fase 1 · cuotas</label>${inp('plF1', e.cuotas_fase1)}</div><div class="nxF2F"><label for="plT1">Tasa 1 %</label>${inp('plT1', e.tasa1)}</div></div>
+        <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2F"><label for="plT2">Tasa 2 %</label>${inp('plT2', e.tasa2)}</div><div class="nxF2F"><label for="plMora">Mora</label>${sel('plMora', [['pct', '% de cuota'], ['fija', 'Monto fijo'], ['ninguna', 'Ninguna']], e.mora_tipo)}</div><div class="nxF2F"><label for="plMoraV">Valor mora</label>${inp('plMoraV', e.mora_valor)}</div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="plGracia">Días de gracia</label>${inp('plGracia', e.mora_dias_gracia)}</div><div class="nxF2F"><label for="plIni">Inicial mínima (%)</label>${inp('plIni', e.inicial_min_pct)}</div></div>
+        <div class="nxF2Note" id="plEjemplo">${ejemplo}</div>
+        <button type="button" class="nxF2Btn p" onclick="window.nxFinPlanGuardar()"><i class="ti ti-device-floppy"></i> ${_finPlanEdit ? 'Guardar cambios' : 'Guardar plan'}</button>
+      </div>`;
+  }
+  function finPlanLeerForm() {
+    return { nombre: (val('plNom') || '').trim(), metodo: val('plMet') || 'saldo', frecuencia: val('plFrec') || 'mensual', num_cuotas: parseInt(val('plN'), 10) || 0, cuotas_fase1: parseInt(val('plF1'), 10) || 0, tasa1: finNum(val('plT1')), tasa2: finNum(val('plT2')), mora_tipo: val('plMora') || 'ninguna', mora_valor: finNum(val('plMoraV')), mora_dias_gracia: parseInt(val('plGracia'), 10) || 0, inicial_min_pct: finNum(val('plIni')) };
+  }
+  window.nxFinPlanCalc = function () {
+    const el = document.getElementById('plEjemplo'); if (!el) return;
+    try { const e = finPlanLeerForm(); if (!(e.num_cuotas > 0)) { el.textContent = ''; return; } const rows = finV2Amortizar(100000, e, hoyISOPos()); const it = rows.reduce((s, r) => s + r.interes, 0); el.innerHTML = 'Ejemplo con RD$ 100,000 financiados: ' + e.num_cuotas + ' cuotas, interés total estimado <b class="nxF2Mono">' + fmt2(it) + '</b>, primera cuota ' + fmt2(rows[0].cuota) + (e.cuotas_fase1 > 0 ? ', última ' + fmt2(rows[rows.length - 1].cuota) : '') + '.'; } catch (x) { el.textContent = ''; }
+  };
+  window.nxFinPlanEditar = function (id) { _finPlanEdit = id ? (_finPlanes.find(p => String(p.id) === String(id)) || null) : null; finV2Repintar(); };
+  window.nxFinPlanToggle = async function (id) {
+    const p = _finPlanes.find(x => String(x.id) === String(id)); if (!p) return;
+    try { await getAPI().patch('pos_fin_planes', 'id=eq.' + id, { activo: !p.activo }); p.activo = !p.activo; finV2Repintar(); } catch (e) { toast('err', 'No se pudo cambiar el plan', String(e && e.message || e)); }
+  };
+  window.nxFinPlanGuardar = async function () {
+    const e = finPlanLeerForm();
+    if (!e.nombre) { toast('err', 'Falta el nombre del plan'); return; }
+    if (!(e.num_cuotas >= 1 && e.num_cuotas <= 120)) { toast('err', 'Cuotas inválidas', 'Entre 1 y 120'); return; }
+    if (e.cuotas_fase1 < 0 || e.cuotas_fase1 > e.num_cuotas) { toast('err', 'Fase 1 inválida', 'No puede superar el total de cuotas'); return; }
+    if (e.mora_tipo === 'ninguna') e.mora_valor = 0;
+    try {
+      if (_finPlanEdit) { await getAPI().patch('pos_fin_planes', 'id=eq.' + _finPlanEdit.id, e); Object.assign(_finPlanEdit, e); toast('ok', 'Plan actualizado', e.nombre); }
+      else { const r = await getAPI().post('pos_fin_planes', Object.assign({ activo: true }, e)); if (r && r[0]) _finPlanes.push(r[0]); toast('ok', 'Plan creado', e.nombre); }
+      _finPlanEdit = null; try { await finV2Cargar(); } catch (x) {} finV2Repintar();
+    } catch (err) { toast('err', 'No se pudo guardar el plan', String(err && err.message || err)); }
+  };
+
+  // ── Solicitud ─────────────────────────────────────────────────────────────────────────────
+  function finPerfilDe(cliId) { return _finPerfiles.find(p => String(p.cliente_id) === String(cliId)) || null; }
+  function finRefsDe(cliId) { return _finRefs.filter(r => String(r.cliente_id) === String(cliId)); }
+  function finHistorialCli(cliId) {
+    const fs = _fins.filter(f => String(f.cliente_id) === String(cliId));
+    if (!fs.length) return { txt: 'Sin historial de crédito en STUDIO', ok: true };
+    const act = fs.filter(f => f.estado === 'activo'); const venc = act.filter(f => finV2EstadoFin(f).key === 'vencido');
+    if (venc.length) return { txt: venc.length + ' financiamiento(s) con cuotas vencidas', ok: false };
+    const sal = fs.filter(f => f.estado === 'saldado').length;
+    return { txt: (sal ? sal + ' saldado(s)' : '') + (act.length ? (sal ? ' · ' : '') + act.length + ' activo(s) al día' : ''), ok: true };
+  }
+  function finV2SolicitudHTML() {
+    const s = _finSolForm; const cli = s.cliente_id ? _clientes.find(c => String(c.id) === String(s.cliente_id)) : null;
+    const perfil = Object.assign({}, cli ? (finPerfilDe(cli.id) || {}) : {}, s.perfil || {});
+    const refs = (s.refs && s.refs.length) ? s.refs : (cli ? finRefsDe(cli.id).map(r => ({ nombre: r.nombre, telefono: r.telefono, parentesco: r.parentesco, id: r.id })) : []);
+    const planes = _finPlanes.filter(p => p.activo);
+    const hist = cli ? finHistorialCli(cli.id) : null;
+    const total = s.items.reduce((t, it) => t + r2(Number(it.precio) * Number(it.cantidad)), 0);
+    const itemHTML = (it, i) => `<div class="nxF2Item"><div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="display:flex;gap:6px;margin-top:4px"><input class="nxF2Mono" style="width:90px;height:34px;border:1px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px" inputmode="decimal" value="${esc(it.precio)}" aria-label="Precio" onchange="window.nxFinSolItem(${i},'precio',this.value)"><input class="nxF2Mono" style="width:54px;height:34px;border:1px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px" inputmode="numeric" value="${esc(it.cantidad)}" aria-label="Cantidad" onchange="window.nxFinSolItem(${i},'cantidad',this.value)"><input style="flex:1;min-width:0;height:34px;border:1px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px" placeholder="Serial (opcional)" value="${esc(it.serial || '')}" onchange="window.nxFinSolItem(${i},'serial',this.value)"></div></div><span class="nxF2Mono" style="font-size:13px">${r2(Number(it.precio) * Number(it.cantidad)).toLocaleString('en-US')}</span><button type="button" class="x" aria-label="Quitar" onclick="window.nxFinSolItemDel(${i})"><i class="ti ti-x"></i></button></div>`;
+    const refHTML = (r, i) => `<div class="nxF2Item"><div><div style="font-size:12px;font-weight:700">${esc(r.nombre)}</div><div style="font-size:11px;color:var(--f2-steel)">${esc(r.parentesco || '')}${r.parentesco ? ' · ' : ''}${esc(r.telefono || '')}</div></div><button type="button" class="x" aria-label="Quitar referencia" onclick="window.nxFinSolRefDel(${i})"><i class="ti ti-x"></i></button></div>`;
+    return finV2HeaderHTML('Nueva solicitud', 'Datos del cliente y del crédito', 'cartera') + `
+      <div class="nxF2Card"><div class="h">Cliente</div>
+        ${cli ? `<div class="nxF2Sel"><div class="nxF2Av" style="background:#fff">${finIniciales(cli.nombre).ini}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">${esc(cli.nombre)}</div><div style="font-size:11px;color:var(--f2-steel)">${esc([cli.cedula ? 'Cédula ' + cli.cedula : '', cli.telefono].filter(Boolean).join(' · '))}</div></div><button type="button" class="nxF2Btn" style="min-height:32px;font-size:11px" onclick="window.nxFinSolCliente(null)">Cambiar</button></div>
+        <div style="font-size:11px;font-weight:700;color:${hist.ok ? '#15803d' : '#b91c1c'}"><i class="ti ${hist.ok ? 'ti-check' : 'ti-alert-triangle'}"></i> Historial: ${esc(hist.txt)}</div>`
+        : `<div class="nxF2F nxF2Pick"><label for="solCliQ">Buscar cliente</label><input id="solCliQ" placeholder="Nombre, cédula o teléfono" autocomplete="off" oninput="window.nxFinSolCliBuscar(this.value)"><div class="nxF2PickList" id="solCliList" style="display:none"></div></div><div class="nxF2Note">¿Cliente nuevo? Créalo primero en <a href="#" onclick="event.preventDefault();window.nxPosTab('clientes')">Clientes</a> y vuelve aquí; el borrador se conserva.</div>`}
+      </div>
+      <div class="nxF2Card"><div class="h">Perfil crediticio</div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">Lugar de trabajo</label><input id="pfTrab" value="${esc(perfil.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">Ocupación</label><input id="pfOcu" value="${esc(perfil.ocupacion || '')}"></div>
+        <div class="nxF2F"><label for="pfIng">Ingreso mensual</label><input id="pfIng" class="mono" inputmode="decimal" value="${perfil.ingreso_mensual ? r2(perfil.ingreso_mensual).toLocaleString('en-US') : ''}" oninput="window.nxFinSolCalc()"></div><div class="nxF2F"><label for="pfTie">Tiempo laborando</label><input id="pfTie" value="${esc(perfil.tiempo_laborando || '')}"></div></div>
+        <div class="nxF2F"><label for="pfDir">Dirección</label><input id="pfDir" value="${esc(perfil.direccion || (cli && cli.direccion) || '')}"></div>
+      </div>
+      <div class="nxF2Card"><div class="h">Referencias <button type="button" class="nxF2Btn" style="min-height:30px;font-size:11px;color:#1d4ed8" onclick="window.nxFinSolRefAdd()">+ Agregar</button></div>
+        <div id="solRefs">${refs.length ? refs.map(refHTML).join('') : '<div class="nxF2Note">Sin referencias. Se recomiendan al menos dos.</div>'}</div>
+      </div>
+      <div class="nxF2Card"><div class="h">Artículos a financiar</div>
+        <div class="nxF2F nxF2Pick"><label for="solProdQ">Agregar artículo</label><input id="solProdQ" placeholder="Nombre o código del producto" autocomplete="off" oninput="window.nxFinSolProdBuscar(this.value)"><div class="nxF2PickList" id="solProdList" style="display:none"></div></div>
+        <div id="solItems">${s.items.length ? s.items.map(itemHTML).join('') : ''}</div>
+        <div class="nxF2Line tot"><span>Precio total</span><span class="nxF2Mono" id="solTotal">${fmt2(total)}</span></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="solIni">Inicial</label><input id="solIni" class="mono" inputmode="decimal" value="${s.inicial ? r2(s.inicial).toLocaleString('en-US') : ''}" oninput="window.nxFinSolCalc()"></div><div class="nxF2F"><label for="solIniMet">Inicial cobrada por</label><select id="solIniMet"><option value="efectivo" ${s.inicial_metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option><option value="transferencia" ${s.inicial_metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option><option value="tarjeta" ${s.inicial_metodo === 'tarjeta' ? 'selected' : ''}>Tarjeta</option></select></div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="solPlan">Plan</label><select id="solPlan" onchange="window.nxFinSolCalc()">${planes.length ? planes.map(p => `<option value="${p.id}" ${String(p.id) === String(s.plan_id) ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('') : '<option value="">Sin planes activos</option>'}</select></div><div class="nxF2F"><label for="solFecha">Primera cuota</label><input id="solFecha" type="date" value="${esc(s.primera_fecha)}" min="${hoyISOPos()}" onchange="window.nxFinSolCalc()"></div></div>
+        <div class="nxF2Note" id="solEstimado"></div>
+        <div class="nxF2F"><label for="solNotas">Notas</label><input id="solNotas" value="${esc(s.notas || '')}" placeholder="Opcional"></div>
+      </div>
+      <div class="nxF2Foot"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinSolDescartar()">Descartar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinSolEnviar()"><i class="ti ti-send"></i> Enviar a aprobación</button></div>`;
+  }
+  function finSolLeerForm() {
+    const s = _finSolForm; if (!s) return;
+    s.perfil = { lugar_trabajo: (val('pfTrab') || '').trim() || null, ocupacion: (val('pfOcu') || '').trim() || null, ingreso_mensual: finNum(val('pfIng')) || null, tiempo_laborando: (val('pfTie') || '').trim() || null, direccion: (val('pfDir') || '').trim() || null };
+    s.inicial = finNum(val('solIni')); s.inicial_metodo = val('solIniMet') || 'efectivo'; s.plan_id = val('solPlan') || s.plan_id; s.primera_fecha = val('solFecha') || s.primera_fecha; s.notas = (val('solNotas') || '').trim();
+  }
+  function finSolPintarEstimado() {
+    const s = _finSolForm; const el = document.getElementById('solEstimado'); if (!s || !el) return;
+    const total = s.items.reduce((t, it) => t + r2(Number(it.precio) * Number(it.cantidad)), 0); const tEl = document.getElementById('solTotal'); if (tEl) tEl.textContent = fmt2(total);
+    const pl = _finPlanes.find(p => String(p.id) === String(val('solPlan') || s.plan_id)); const ini = finNum(val('solIni')); const cap = r2(total - ini); const fecha = val('solFecha') || s.primera_fecha;
+    if (!pl || !(total > 0)) { el.innerHTML = 'Agrega artículos y elige un plan para ver la cuota estimada.'; return; }
+    if (!(cap > 0)) { el.innerHTML = '<span style="color:#b91c1c">La inicial no puede ser igual o mayor al precio.</span>'; return; }
+    const minIni = r2(total * Number(pl.inicial_min_pct || 0) / 100);
+    const rows = finV2Amortizar(cap, pl, fecha); const it = rows.reduce((x, r) => x + r.interes, 0); const cuotaMax = Math.max.apply(null, rows.map(r => r.cuota));
+    const ing = finNum(val('pfIng')); const carga = ing > 0 ? Math.round(cuotaMax / ing * 100) : null;
+    el.innerHTML = `<div class="nxF2Line"><span>Capital financiado</span><span class="nxF2Mono">${r2(cap).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Interés estimado (${rows.length} cuotas)</span><span class="nxF2Mono">${r2(it).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Primera cuota · última</span><span class="nxF2Mono">${r2(rows[0].cuota).toLocaleString('en-US')} · ${r2(rows[rows.length - 1].cuota).toLocaleString('en-US')}</span></div>${ini < minIni - 0.01 ? `<div class="nxF2Line" style="color:#b91c1c"><span style="color:#b91c1c">Inicial mínima del plan</span><span class="nxF2Mono">${r2(minIni).toLocaleString('en-US')} (${Number(pl.inicial_min_pct)} %)</span></div>` : ''}${carga !== null ? `<div class="nxF2Line tot"><span>Cuota máx. vs ingreso</span><span class="nxF2Badge ${carga > 40 ? 'bad' : carga > 30 ? 'warn' : 'ok'}" style="font-family:var(--f2-mono)">${carga} %</span></div>` : ''}`;
+  }
+  window.nxFinSolCalc = function () { finSolPintarEstimado(); };
+  window.nxFinSolCliBuscar = function (q) {
+    const box = document.getElementById('solCliList'); if (!box) return; q = String(q || '').toLowerCase().trim();
+    if (q.length < 2) { box.style.display = 'none'; return; }
+    const l = _clientes.filter(c => (c.nombre + ' ' + (c.cedula || '') + ' ' + (c.telefono || '')).toLowerCase().includes(q)).slice(0, 8);
+    box.innerHTML = l.length ? l.map(c => `<button type="button" onclick="window.nxFinSolCliente('${c.id}')"><b>${esc(c.nombre)}</b><small>${esc([c.cedula, c.telefono].filter(Boolean).join(' · ') || 'Sin cédula ni teléfono')}</small></button>`).join('') : '<button type="button" disabled><small>Sin coincidencias</small></button>';
+    box.style.display = '';
+  };
+  window.nxFinSolCliente = function (id) { finSolLeerForm(); _finSolForm.cliente_id = id; _finSolForm.perfil = {}; _finSolForm.refs = []; finV2Repintar(); };
+  window.nxFinSolProdBuscar = function (q) {
+    const box = document.getElementById('solProdList'); if (!box) return; q = String(q || '').toLowerCase().trim();
+    if (q.length < 2) { box.style.display = 'none'; return; }
+    const l = _prods.filter(p => p.tipo !== 'servicio' && (p.nombre + ' ' + (p.codigo || '') + ' ' + (p.marca || '')).toLowerCase().includes(q)).slice(0, 8);
+    box.innerHTML = l.length ? l.map(p => `<button type="button" onclick="window.nxFinSolProdAdd('${p.id}')"><b>${esc(p.nombre)}</b><small>${fmt2(p.precio_credito || p.precio)} · stock ${Number(p.stock || 0)}${p.serial ? ' · requiere serial (IMEI)' : ''}</small></button>`).join('') : '<button type="button" disabled><small>Sin coincidencias</small></button>';
+    box.style.display = '';
+  };
+  window.nxFinSolProdAdd = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (p.serial) { toast('warn', 'Artículo con IMEI', 'Los artículos con serial obligatorio todavía se financian desde Factura (reserva de IMEI). Este flujo acepta el serial como texto.'); }
+    finSolLeerForm(); _finSolForm.items.push({ producto_id: p.id, nombre: p.nombre, precio: r2(p.precio_credito || p.precio), cantidad: 1, serial: '' }); finV2Repintar();
+  };
+  window.nxFinSolItem = function (i, k, v) { const it = _finSolForm && _finSolForm.items[i]; if (!it) return; it[k] = k === 'serial' ? String(v || '').trim() : (finNum(v) || (k === 'cantidad' ? 1 : 0)); finSolPintarEstimado(); };
+  window.nxFinSolItemDel = function (i) { finSolLeerForm(); _finSolForm.items.splice(i, 1); finV2Repintar(); };
+  window.nxFinSolRefAdd = function () {
+    const nombre = prompt('Nombre de la referencia'); if (!nombre) return;
+    const telefono = prompt('Teléfono') || ''; const parentesco = prompt('Parentesco o relación (ej. hermana, compañero de trabajo)') || '';
+    finSolLeerForm(); if (!_finSolForm.refs.length && _finSolForm.cliente_id) _finSolForm.refs = finRefsDe(_finSolForm.cliente_id).map(r => ({ nombre: r.nombre, telefono: r.telefono, parentesco: r.parentesco, id: r.id }));
+    _finSolForm.refs.push({ nombre: nombre.trim(), telefono: telefono.trim(), parentesco: parentesco.trim() }); finV2Repintar();
+  };
+  window.nxFinSolRefDel = function (i) { finSolLeerForm(); if (!_finSolForm.refs.length && _finSolForm.cliente_id) _finSolForm.refs = finRefsDe(_finSolForm.cliente_id).map(r => ({ nombre: r.nombre, telefono: r.telefono, parentesco: r.parentesco, id: r.id })); const r = _finSolForm.refs.splice(i, 1)[0]; if (r && r.id) getAPI().del('pos_fin_referencias', 'id=eq.' + r.id).catch(() => {}); finV2Repintar(); };
+  window.nxFinSolDescartar = function () { if (_finSolForm && (_finSolForm.items.length || _finSolForm.cliente_id) && !confirm('¿Descartar esta solicitud?')) return; _finSolForm = null; window.nxFinV2Go('cartera'); };
+  window.nxFinSolEnviar = async function () {
+    finSolLeerForm(); const s = _finSolForm;
+    if (!s.cliente_id) { toast('err', 'Falta el cliente'); return; }
+    if (!s.items.length) { toast('err', 'Agrega al menos un artículo'); return; }
+    const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id) && p.activo); if (!pl) { toast('err', 'Elige un plan activo'); return; }
+    const total = r2(s.items.reduce((t, it) => t + r2(Number(it.precio) * Number(it.cantidad)), 0));
+    if (!(total > 0) || s.items.some(it => !(Number(it.precio) > 0) || !(Number(it.cantidad) > 0))) { toast('err', 'Revisa precios y cantidades'); return; }
+    if (s.inicial < 0 || s.inicial >= total) { toast('err', 'Inicial inválida', 'Debe ser menor que el precio total'); return; }
+    const minIni = r2(total * Number(pl.inicial_min_pct || 0) / 100);
+    if (s.inicial < minIni - 0.01) { toast('err', 'Inicial menor al mínimo del plan', 'Mínimo ' + fmt2(minIni) + ' (' + Number(pl.inicial_min_pct) + ' %)'); return; }
+    if (!s.primera_fecha || s.primera_fecha < hoyISOPos()) { toast('err', 'Primera cuota inválida', 'No puede ser anterior a hoy'); return; }
+    const btns = document.querySelectorAll('.nxF2Foot button'); btns.forEach(b => b.disabled = true);
+    try {
+      const perfilPrev = finPerfilDe(s.cliente_id);
+      const perfilBody = Object.assign({ cliente_id: s.cliente_id }, s.perfil, { updated_at: new Date().toISOString() });
+      if (perfilPrev) await getAPI().patch('pos_fin_perfil', 'id=eq.' + perfilPrev.id, perfilBody); else await getAPI().post('pos_fin_perfil', perfilBody);
+      const nuevas = (s.refs || []).filter(r => !r.id && r.nombre);
+      if (nuevas.length) await getAPI().post('pos_fin_referencias', nuevas.map(r => ({ cliente_id: s.cliente_id, nombre: r.nombre, telefono: r.telefono || null, parentesco: r.parentesco || null })));
+      const r = await getAPI().post('pos_fin_solicitudes', { cliente_id: s.cliente_id, items: s.items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: r2(it.precio), cantidad: Number(it.cantidad), serial: it.serial || null })), precio_total: total, inicial: r2(s.inicial), inicial_metodo: s.inicial_metodo, plan_id: pl.id, primera_fecha: s.primera_fecha, estado: 'pendiente', notas: s.notas || null, creado_por_nombre: nomAdmin() });
+      const sol = r && r[0];
+      try { window.logAudit && window.logAudit('POS_FIN_SOLICITUD', (sol && sol.codigo || '') + ' · ' + fmt2(total) + ' · inicial ' + fmt2(s.inicial) + ' · ' + pl.nombre, 'Financiamiento'); } catch (e) {}
+      _finSolForm = null; await finV2Cargar();
+      toast('ok', 'Solicitud enviada', (sol && sol.codigo ? sol.codigo + ' · ' : '') + 'pendiente de aprobación');
+      window.nxFinV2Go('aprobacion', sol && sol.id);
+    } catch (e) { btns.forEach(b => b.disabled = false); toast('err', 'No se pudo enviar la solicitud', String(e && e.message || e)); }
+  };
+
+  // ── Aprobación ────────────────────────────────────────────────────────────────────────────
+  function finV2AprobacionHTML() {
+    const pend = _finSols.filter(s => s.estado === 'pendiente');
+    const sel = _finV2SolSel ? _finSols.find(s => String(s.id) === String(_finV2SolSel)) : null;
+    if (sel) return finV2SolDetalleHTML(sel);
+    const otras = _finSols.filter(s => s.estado !== 'pendiente').slice(0, 20);
+    const row = s => { const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></div><div class="bot"><span>${pl ? esc(pl.nombre) : ''} · inicial ${r2(s.inicial).toLocaleString('en-US')} · ${finFechaCorta(s.created_at)}</span><span class="amt">${r2(s.precio_total - s.inicial).toLocaleString('en-US')}</span></div></div>`; };
+    return finV2HeaderHTML('Solicitudes', pend.length + ' pendiente(s) de aprobación', 'cartera') + (pend.length ? pend.map(row).join('') : '<div class="nxF2Note" style="margin-bottom:10px">No hay solicitudes pendientes.</div>') + (otras.length ? '<div class="nxF2Lbl" style="margin:12px 0 8px">Decididas recientes</div>' + otras.map(row).join('') : '');
+  }
+  function finV2SolDetalleHTML(s) {
+    const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cli = _clientes.find(c => String(c.id) === String(s.cliente_id)) || {};
+    const perfil = finPerfilDe(s.cliente_id) || {}; const refs = finRefsDe(s.cliente_id); const hist = finHistorialCli(s.cliente_id);
+    const cap = r2(s.precio_total - s.inicial); const rows = pl ? finV2Amortizar(cap, pl, s.primera_fecha) : []; const it = rows.reduce((x, r) => x + r.interes, 0); const cuotaMax = rows.length ? Math.max.apply(null, rows.map(r => r.cuota)) : 0;
+    const ing = Number(perfil.ingreso_mensual || 0); const carga = ing > 0 ? Math.round(cuotaMax / ing * 100) : null;
+    const pendiente = s.estado === 'pendiente';
+    return finV2HeaderHTML('Solicitud ' + (s.codigo || ''), (s.cliente_nombre || '') + ' · ' + finFechaCorta(s.created_at) + (s.creado_por_nombre ? ' por ' + s.creado_por_nombre : ''), 'aprobacion', `<span class="nxF2Badge ${pendiente ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'}">${String(s.estado).toUpperCase()}</span>`) + `
+      <div class="nxF2Card"><div class="h"><div><div style="font-size:13px">${esc((s.items || []).map(i => i.nombre + (Number(i.cantidad) > 1 ? ' × ' + i.cantidad : '')).join(', '))}</div><div style="font-size:11px;color:var(--f2-steel);font-weight:600">Precio ${r2(s.precio_total).toLocaleString('en-US')} · inicial ${r2(s.inicial).toLocaleString('en-US')} (${esc(s.inicial_metodo)}) · ${pl ? esc(pl.nombre) : 'plan no disponible'}</div></div><span class="nxF2Mono" style="font-size:16px;font-weight:700">${r2(cap).toLocaleString('en-US')}</span></div>
+        <div class="nxF2G3"><div class="nxF2K"><span>Ingreso</span><span>${ing ? r2(ing).toLocaleString('en-US') : '—'}</span></div><div class="nxF2K"><span>Cuota máx.</span><span>${r2(cuotaMax).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Carga</span><span style="color:${carga === null ? 'inherit' : carga > 40 ? '#b91c1c' : carga > 30 ? '#b45309' : '#15803d'}">${carga === null ? '—' : carga + ' %'}</span></div></div>
+        <div style="font-size:11px;color:var(--f2-steel)">${esc([perfil.lugar_trabajo, perfil.ocupacion, perfil.tiempo_laborando].filter(Boolean).join(' · ') || 'Sin perfil crediticio')}${cli.cedula ? ' · cédula ' + esc(cli.cedula) : ''}</div>
+        <div style="font-size:11px;font-weight:700;color:${hist.ok ? '#15803d' : '#b91c1c'}"><i class="ti ${hist.ok ? 'ti-check' : 'ti-alert-triangle'}"></i> ${refs.length} referencia(s) · ${esc(hist.txt)}</div>
+        ${refs.length ? `<div style="font-size:11px;color:var(--f2-steel)">${refs.map(r => esc(r.nombre + (r.parentesco ? ' (' + r.parentesco + ')' : '') + (r.telefono ? ' ' + r.telefono : ''))).join(' · ')}</div>` : ''}
+        ${s.notas ? `<div class="nxF2Note">${esc(s.notas)}</div>` : ''}
+      </div>
+      ${pl ? `<div class="nxF2Card"><div class="h">Tabla de amortización<span style="font-size:10px;color:var(--f2-steel);font-weight:700">${finMetodoTxt(pl)} · ${finTasasTxt(pl)}</span></div>
+        <div class="nxF2Tbl hd"><span>#</span><span>Vence</span><span class="r">Capital</span><span class="r">Interés</span><span class="r">Cuota</span></div>
+        ${rows.map(r => `<div class="nxF2Tbl"><span>${r.numero}</span><span>${finFechaCorta(r.fecha_venc)}</span><span class="r">${r.capital.toLocaleString('en-US')}</span><span class="r m">${r.interes.toLocaleString('en-US')}</span><span class="r b">${r.cuota.toLocaleString('en-US')}</span></div>`).join('')}
+        <div class="nxF2Line tot"><span>Capital ${r2(cap).toLocaleString('en-US')} · interés ${r2(it).toLocaleString('en-US')}</span><span class="nxF2Mono">Total ${r2(cap + it).toLocaleString('en-US')}</span></div>
+        <div style="font-size:10px;color:var(--f2-steel);line-height:1.5">Los intereses se reconocen al cobrar cada cuota. La cuenta por cobrar solo lleva el capital. Mora: ${esc(finMoraTxt(pl))}.</div>
+      </div>` : ''}
+      ${pendiente ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura en el POS: inicial ${r2(s.inicial).toLocaleString('en-US')} cobrada ${s.inicial_metodo === 'efectivo' ? 'en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y crédito ${r2(cap).toLocaleString('en-US')} al cliente.</span></div><div><i>2</i><span>El servidor genera el plan y las ${pl ? pl.num_cuotas : ''} cuotas con capital e interés.</span></div><div><i>3</i><span>Se congela el contrato y queda listo el link de firma (se envía solo cuando tú lo decides).</span></div></div>
+        <div class="nxF2F"><label for="apNota">Nota del aprobador (opcional)</label><input id="apNota" placeholder="Ej. Verificado por teléfono con referencia"></div></div>
+      <div class="nxF2Foot"><button type="button" class="nxF2Btn d" style="flex:1" onclick="window.nxFinSolRechazar('${s.id}')">Rechazar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinSolAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y facturar</button></div>`
+      : `<div class="nxF2Card"><div class="h">Decisión</div><div style="font-size:12px;color:#334155">${esc(s.estado === 'aprobada' ? 'Aprobada' : 'Rechazada')} ${s.decidido_en ? 'el ' + finFechaCorta(s.decidido_en) : ''}${s.motivo_rechazo ? ' · ' + esc(s.motivo_rechazo) : ''}${s.nota_aprobador ? ' · ' + esc(s.nota_aprobador) : ''}</div>${s.financiamiento_id ? `<button type="button" class="nxF2Btn" onclick="window.nxFinV2Go('detalle','${s.financiamiento_id}')">Ver financiamiento</button>` : ''}</div>`}`;
+  }
+  window.nxFinSolRechazar = async function (id) {
+    const motivo = prompt('Motivo del rechazo'); if (!motivo || motivo.trim().length < 3) { if (motivo !== null) toast('err', 'Escribe un motivo'); return; }
+    try { await finRpc('pos_fin_rechazar_solicitud', { p_solicitud_id: id, p_motivo: motivo.trim() }); await finV2Cargar(); toast('ok', 'Solicitud rechazada'); window.nxFinV2Go('aprobacion'); }
+    catch (e) { toast('err', 'No se pudo rechazar', String(e && e.message || e)); }
+  };
+  window.nxFinSolAprobar = async function (id) {
+    const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return;
+    if (!puedeVerMin()) { toast('err', 'Solo admin o gerente pueden aprobar'); return; }
+    if (s.inicial > 0 && s.inicial_metodo === 'efectivo' && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja para recibir la inicial en efectivo'); return; }
+    }
+    if (!confirm('Aprobar la solicitud ' + (s.codigo || '') + ' de ' + (s.cliente_nombre || '') + '.\nSe facturará ahora y se creará el financiamiento. ¿Continuar?')) return;
+    const btns = document.querySelectorAll('.nxF2Foot button'); btns.forEach(b => b.disabled = true);
+    try {
+      const r = await finRpc('pos_fin_aprobar_solicitud', { p_solicitud_id: id, p_nota: (val('apNota') || '').trim() || null, p_operacion_id: finUuid(), p_caja_id: (_caja && _caja.id) || null, p_almacen_id: (_almacenes.length && _almacenSel) ? _almacenSel : null });
+      if (!r || r.ok !== true) throw new Error('Sin confirmación del servidor');
+      try { window.logAudit && window.logAudit('POS_FIN_APROBADA', (s.codigo || '') + ' → ' + (r.codigo || '') + ' · factura ' + (r.numero_factura || '') + ' · ' + (s.cliente_nombre || ''), 'Financiamiento'); } catch (e) {}
+      await Promise.all([finV2RecargarLedger(), finV2Cargar()]);
+      try { const pr = await getAPI().get('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'); if (pr) _prods = pr; const st = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000'); if (st) { _stockAlmRows = {}; st.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } } catch (e) {}
+      toast('ok', 'Aprobada y facturada', (r.codigo || '') + ' · factura ' + (r.numero_factura || ''));
+      window.nxFinV2Go('detalle', r.financiamiento_id);
+    } catch (e) { btns.forEach(b => b.disabled = false); toast('err', 'No se pudo aprobar', finErrTxt(e)); }
+  };
+  function finErrTxt(e) {
+    const m = String(e && e.message || e || '');
+    const map = { FIN_CAJA_CERRADA: 'La caja está cerrada', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor al mínimo del plan', FIN_PLAN_INVALIDO: 'El plan no existe o está inactivo', FIN_SOLICITUD_NO_PENDIENTE: 'La solicitud ya fue decidida', FIN_PAGO_EXCEDE_SALDO: 'El monto supera lo pendiente de la cuota', FIN_NO_ACTIVO: 'El financiamiento no está activo', FIN_APROBAR_SIN_PERMISO: 'Solo admin o gerente pueden aprobar', FIN_REVERSA_SIN_PERMISO: 'Solo admin o gerente pueden reversar', FIN_CONDONAR_SIN_PERMISO: 'Solo admin o gerente pueden condonar mora', VENTA_ITEM_INVALIDO: 'Algún artículo no existe o está inactivo', INVENTARIO_SIN_STOCK: 'No hay stock suficiente', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta bancaria activa' };
+    for (const k in map) if (m.indexOf(k) >= 0) return map[k];
+    return m.slice(0, 160);
+  }
+
+  // ── Detalle del financiamiento ────────────────────────────────────────────────────────────
+  function finV2DetalleHTML() {
+    const f = finFinDe(_finV2Sel); if (!f) return finV2HeaderHTML('Financiamiento', 'No encontrado', 'cartera');
+    const pl = finPlanDe(f); const est = finV2EstadoFin(f); const cs = cuotasDe(f.id); const prox = cs.find(c => !c.pagado); const cli = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {};
+    const venta = f.venta_id ? (_ventas || []).find(v => String(v.id) === String(f.venta_id)) : null;
+    const pagos = (_finPagos || []).filter(p => String(p.financiamiento_id) === String(f.id)).slice().sort((a, b) => String(b.created_at || b.fecha).localeCompare(String(a.created_at || a.fecha)));
+    let capPend = 0, intPend = 0, moraPend = 0; cs.forEach(c => { if (c.pagado) return; const p = finV2Pend(c); capPend += p.capital; intPend += p.interes; moraPend += p.mora; });
+    const puedeFirmaLink = !!(f.firma_token && !f.firma_cliente && cli.telefono);
+    const cuotaRow = c => { const p = finV2Pend(c); const at = finV2Atraso(c); const st = c.pagado ? '<span class="nxF2Badge ok">PAGADA</span>' : at > 0 ? `<span class="nxF2Badge bad">${at} d</span>` : (p.pagado.total > 0 ? '<span class="nxF2Badge warn">PARCIAL</span>' : '<span class="nxF2Badge gris">PEND.</span>'); return `<div class="nxF2Tbl nxF2Tbl6"><span>${c.numero}</span><span>${finFechaCorta(c.fecha_venc)}</span><span class="r">${r2(c.capital != null ? c.capital : c.monto).toLocaleString('en-US')}</span><span class="r m">${r2(c.interes || 0).toLocaleString('en-US')}</span><span class="r ${p.mora > 0 ? 'b' : 'm'}" style="${p.mora > 0 ? 'color:#b91c1c' : ''}">${c.pagado ? r2(finPagosCuota(c.id).mora).toLocaleString('en-US') : r2(p.mora).toLocaleString('en-US')}</span><span class="r">${st}</span></div>`; };
+    const pagoRow = p => `<div class="nxF2Item" style="border-color:${p.tipo === 'reversa' ? '#fecaca' : '#f1f5f9'}"><div><div style="font-size:12px;font-weight:700">${p.tipo === 'reversa' ? 'Reversa' : 'Pago'} · cuota ${(finCuotaDe(p.cuota_id) || {}).numero || '?'} · ${esc(p.metodo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div><div style="font-size:11px;color:var(--f2-steel)">${finFechaCorta(p.fecha)} · capital ${r2(p.monto_principal).toLocaleString('en-US')} · interés ${r2(p.monto_interes || 0).toLocaleString('en-US')} · mora ${r2(p.monto_mora).toLocaleString('en-US')}${p.motivo_reversa ? ' · ' + esc(p.motivo_reversa) : ''}</div></div><div style="display:flex;align-items:center;gap:6px"><span class="nxF2Mono" style="font-size:13px;${p.tipo === 'reversa' ? 'color:#b91c1c' : ''}">${p.tipo === 'reversa' ? '−' : ''}${r2(p.monto).toLocaleString('en-US')}</span>${p.tipo === 'pago' && f.estado === 'activo' && puedeVerMin() && !pagos.some(x => x.tipo === 'reversa' && String(x.reversa_de_id) === String(p.id)) ? `<button type="button" class="x" aria-label="Reversar pago" title="Reversar" onclick="window.nxFinV2Reversar('${p.id}')"><i class="ti ti-arrow-back-up"></i></button>` : ''}</div></div>`;
+    return finV2HeaderHTML((f.codigo || finRefCorta(f)), (f.cliente_nombre || '') + ' · ' + (f.descripcion || '') + (venta ? ' · factura ' + (venta.numero_factura || venta.numero) : ''), 'cartera', `<span class="nxF2Badge ${est.cls}">${est.label}</span>`) + `
+      <div class="nxF2Card"><div class="nxF2Lbl">Capital pendiente</div><div class="nxF2Big">${fmt2(capPend)}</div>
+        <div class="nxF2G3"><div class="nxF2K"><span>Interés pendiente</span><span>${r2(intPend).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Mora pendiente</span><span style="color:${moraPend > 0 ? '#b91c1c' : 'inherit'}">${r2(moraPend).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Plan</span><span style="font-family:inherit">${pl ? esc(pl.nombre) : 'Sin plan (legado)'}</span></div></div>
+        <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2K"><span>Precio</span><span>${r2(f.monto_total).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Inicial</span><span>${r2(f.inicial).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Capital · interés</span><span>${r2(f.monto_financiado).toLocaleString('en-US')} · ${r2(f.interes_total || 0).toLocaleString('en-US')}</span></div></div>
+        ${f.estado === 'activo' && prox ? `<button type="button" class="nxF2Btn p" onclick="window.nxFinV2Cobrar('${f.id}')"><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero} · ${fmt2(finV2Pend(prox).total)}</button>` : ''}
+      </div>
+      <div class="nxF2Card"><div class="h">Cuotas <span style="font-size:10px;color:var(--f2-steel);font-weight:700">${cs.filter(c => c.pagado).length}/${cs.length} pagadas</span></div>
+        <div class="nxF2Tbl nxF2Tbl6 hd"><span>#</span><span>Vence</span><span class="r">Capital</span><span class="r">Interés</span><span class="r">Mora</span><span class="r">Estado</span></div>
+        ${cs.map(cuotaRow).join('')}
+        ${prox && finV2Pend(prox).mora > 0 && puedeVerMin() ? `<button type="button" class="nxF2Btn" style="min-height:40px;font-size:12px" onclick="window.nxFinV2Condonar('${prox.id}')"><i class="ti ti-eraser"></i> Condonar mora de la cuota ${prox.numero}</button>` : ''}
+      </div>
+      ${f.contrato_texto ? `<div class="nxF2Card"><div class="h">${esc(f.contrato_titulo || 'Contrato')} <span style="font-size:10px;color:var(--f2-steel);font-weight:700">Congelado ${finFechaCorta(f.contrato_en)} · v${f.contrato_version || 1}</span></div>
+        <div class="nxF2Pre">${esc(f.contrato_texto)}</div>
+        <button type="button" class="nxF2Btn" style="min-height:40px;font-size:12px;color:#1d4ed8" onclick="window.nxFinV2Contrato('${f.id}')"><i class="ti ti-printer"></i> Ver completo · imprimir</button>
+        <div class="nxF2G2">
+          <div class="nxF2Sig ${f.firma_cliente ? 'ok' : ''}"><span class="nxF2Lbl" style="color:${f.firma_cliente ? '#15803d' : ''}">Cliente</span>${f.firma_cliente ? `<img src="${f.firma_cliente}" alt="Firma del cliente"><span style="font-size:10px;color:var(--f2-steel)">${finFechaCorta(f.firma_cliente_en)}${f.firma_cliente_tel ? ' · ' + esc(f.firma_cliente_tel) : ''}</span>` : '<span style="font-size:11px;color:var(--f2-steel);line-height:1.4">Pendiente. Firma desde su teléfono con el link.</span>'}</div>
+          <div class="nxF2Sig ${f.firma_tienda ? 'ok' : ''}"><span class="nxF2Lbl" style="color:${f.firma_tienda ? '#15803d' : ''}">Tienda</span>${f.firma_tienda ? `<img src="${f.firma_tienda}" alt="Firma de la tienda"><span style="font-size:10px;color:var(--f2-steel)">${esc(f.firma_tienda_por || '')} · ${finFechaCorta(f.firma_tienda_en)}</span>` : `<button type="button" class="nxF2Btn" style="min-height:36px;font-size:11px" onclick="window.nxFinV2FirmarTienda('${f.id}')"><i class="ti ti-signature"></i> Firmar</button>`}</div>
+        </div>
+        ${!f.firma_cliente ? `<button type="button" class="nxF2Btn wa" ${puedeFirmaLink ? '' : 'disabled'} onclick="window.nxFinV2LinkFirma('${f.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar link de firma por WhatsApp</button><div style="font-size:10px;color:var(--f2-steel);line-height:1.5">${puedeFirmaLink ? 'Abre WhatsApp con el mensaje listo; tú decides si lo envías. El link abre el contrato congelado y guarda la firma con fecha, hora y teléfono.' : (!cli.telefono ? 'El cliente no tiene teléfono registrado.' : 'Sin token de firma.')}${f.firma_token_vence ? ' Vence ' + finFechaCorta(f.firma_token_vence) + '.' : ''}</div>` : ''}
+      </div>` : ''}
+      ${pagos.length ? `<div class="nxF2Card"><div class="h">Pagos</div>${pagos.map(pagoRow).join('')}</div>` : ''}
+      <div class="nxF2Card"><div class="h">Trazabilidad</div><div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#475569">
+        <div class="nxF2Line"><span>Creado</span><span class="nxF2Mono" style="color:#94a3b8">${finFechaCorta(f.created_at)}</span></div>
+        ${f.solicitud_id ? `<div class="nxF2Line"><span>Solicitud</span><a href="#" onclick="event.preventDefault();window.nxFinV2Go('aprobacion','${f.solicitud_id}')">${esc(((_finSols.find(x => String(x.id) === String(f.solicitud_id)) || {}).codigo) || 'ver')}</a></div>` : ''}
+        ${venta ? `<div class="nxF2Line"><span>Factura</span><span class="nxF2Mono">${esc(venta.numero_factura || venta.numero)}</span></div>` : ''}
+        ${f.contrato_en ? `<div class="nxF2Line"><span>Contrato congelado</span><span class="nxF2Mono" style="color:#94a3b8">${finFechaCorta(f.contrato_en)}</span></div>` : ''}
+      </div></div>`;
+  }
+  window.nxFinV2Contrato = function (id) {
+    const f = finFinDe(id); if (!f) return;
+    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const firmas = `<div class="fir"><div>${f.firma_tienda ? '<img src="' + f.firma_tienda + '" style="max-height:60px"><br>' : ''}Por ${esc(empNom())}${f.firma_tienda_por ? ' · ' + esc(f.firma_tienda_por) : ''}</div><div>${f.firma_cliente ? '<img src="' + f.firma_cliente + '" style="max-height:60px"><br>' : ''}${esc(f.cliente_nombre || '')}${f.firma_cliente_en ? ' · ' + new Date(f.firma_cliente_en).toLocaleString('es-DO') : ' (pendiente de firma)'}</div></div>`;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${firmas}<script>window.print();</` + `script></body></html>`);
+    w.document.close();
+  };
+  window.nxFinV2LinkFirma = function (id) {
+    const f = finFinDe(id); if (!f || !f.firma_token) return;
+    const cli = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {}; const num = waNum(cli.telefono); if (!num) { toast('err', 'El cliente no tiene teléfono válido'); return; }
+    const link = location.origin + '/firma-financiamiento.html?t=' + encodeURIComponent(f.firma_token);
+    const msg = 'Hola ' + (f.cliente_nombre || '') + ', gracias por tu compra en ' + empNom() + '. Aquí está tu contrato de financiamiento ' + (f.codigo || '') + ' para que lo revises y firmes desde tu teléfono:\n' + link + '\n\nEl link es personal y vence ' + (f.firma_token_vence ? 'el ' + new Date(f.firma_token_vence).toLocaleDateString('es-DO') : 'pronto') + '.';
+    try { window.logAudit && window.logAudit('POS_FIN_LINK_FIRMA', (f.codigo || '') + ' · ' + (f.cliente_nombre || '') + ' · abierto en WhatsApp', 'Financiamiento'); } catch (e) {}
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
+  };
+  window.nxFinV2FirmarTienda = function (id) {
+    const f = finFinDe(id); if (!f) return;
+    cerrarModal('nxFinM');
+    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-signature"></i> Firma de la tienda</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Firma con el dedo o el mouse. Se guarda con tu nombre (${esc(nomAdmin())}) y la hora.</div>
+      <canvas id="finSigPad" class="nxF2SigPad" width="640" height="300"></canvas>
+      <div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinV2FirmaLimpiar()">Limpiar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinV2FirmaGuardar('${f.id}')"><i class="ti ti-check"></i> Guardar firma</button></div></div>`;
+    document.body.appendChild(ov); nxFinV2EnsureCSS();
+    const cv = document.getElementById('finSigPad'); const ctx = cv.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
+    let dib = false, trazos = 0; const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; };
+    cv.addEventListener('pointerdown', e => { dib = true; trazos++; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => { if (!dib) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    const up = () => { dib = false; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    _finV2Firma = { cv: cv, ctx: ctx, trazos: () => trazos, reset: () => { trazos = 0; } };
+  };
+  window.nxFinV2FirmaLimpiar = function () { if (!_finV2Firma) return; _finV2Firma.ctx.clearRect(0, 0, _finV2Firma.cv.width, _finV2Firma.cv.height); _finV2Firma.reset(); };
+  window.nxFinV2FirmaGuardar = async function (id) {
+    if (!_finV2Firma || _finV2Firma.trazos() < 1) { toast('err', 'Firma vacía'); return; }
+    try {
+      const png = _finV2Firma.cv.toDataURL('image/png');
+      await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { firma_tienda: png, firma_tienda_por: nomAdmin(), firma_tienda_en: new Date().toISOString() });
+      const f = finFinDe(id); if (f) { f.firma_tienda = png; f.firma_tienda_por = nomAdmin(); f.firma_tienda_en = new Date().toISOString(); }
+      cerrarModal('nxFinM'); toast('ok', 'Firma guardada'); finV2Repintar();
+    } catch (e) { toast('err', 'No se pudo guardar la firma', String(e && e.message || e)); }
+  };
+  window.nxFinV2Condonar = async function (cuotaId) {
+    const motivo = prompt('Motivo de la condonación de mora'); if (!motivo || motivo.trim().length < 3) { if (motivo !== null) toast('err', 'Escribe un motivo'); return; }
+    try { const m = await finRpc('pos_fin_condonar_mora', { p_cuota_id: cuotaId, p_motivo: motivo.trim() }); await finV2RecargarLedger(); toast('ok', 'Mora condonada', fmt2(m)); finV2Repintar(); }
+    catch (e) { toast('err', 'No se pudo condonar', finErrTxt(e)); }
+  };
+  window.nxFinV2Reversar = async function (pagoId) {
+    const p = (_finPagos || []).find(x => String(x.id) === String(pagoId)); if (!p) return;
+    const motivo = prompt('Motivo de la reversa del pago de ' + fmt2(p.monto)); if (!motivo || motivo.trim().length < 3) { if (motivo !== null) toast('err', 'Escribe un motivo'); return; }
+    try { await finRpc('pos_fin_reversar_pago', { p_pago_id: pagoId, p_motivo: motivo.trim(), p_operacion_id: finUuid() }); await finV2RecargarLedger(); toast('ok', 'Pago reversado', fmt2(p.monto)); finV2Repintar(); }
+    catch (e) { toast('err', 'No se pudo reversar', finErrTxt(e)); }
+  };
+
+  // ── Cobro de cuota (RPC) ──────────────────────────────────────────────────────────────────
+  window.nxFinV2Cobrar = function (finId, cuotaId) {
+    const f = finFinDe(finId); if (!f) return;
+    const c = cuotaId ? finCuotaDe(cuotaId) : cuotasDe(finId).find(x => !x.pagado); if (!c) { toast('info', 'Sin cuotas pendientes'); return; }
+    const p = finV2Pend(c); const at = finV2Atraso(c); const pl = finPlanDe(f);
+    _finV2Cobro = { finId: finId, cuotaId: c.id, metodo: 'efectivo', pend: p };
+    cerrarModal('nxFinM'); nxFinV2EnsureCSS();
+    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${c.numero} de ${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(f.cliente_nombre || '')} · ${esc(f.descripcion || '')} · ${at > 0 ? 'venció ' : 'vence '}${finFechaCorta(c.fecha_venc)}${at > 0 ? ' · ' + at + ' días de atraso' : ''}${pl ? ' · gracia ' + Number(pl.mora_dias_gracia || 0) + ' d' : ''}</div>
+      <div class="nxF2Note" style="margin-bottom:10px"><div class="nxF2Line"><span>Capital</span><span class="nxF2Mono">${r2(p.capital).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Interés</span><span class="nxF2Mono">${r2(p.interes).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Mora${pl ? ' (' + esc(finMoraTxt(pl)) + ')' : ''}</span><span class="nxF2Mono" style="${p.mora > 0 ? 'color:#b91c1c' : ''}">${r2(p.mora).toLocaleString('en-US')}</span></div><div class="nxF2Line tot"><span>Total de la cuota</span><span class="nxF2Mono" style="font-size:15px">${r2(p.total).toLocaleString('en-US')}</span></div>${p.pagado.total > 0 ? `<div style="font-size:10px;color:#b45309;margin-top:4px">Ya abonó ${fmt2(p.pagado.total)} a esta cuota.</div>` : ''}</div>
+      <div class="nxF2F"><label for="fpMonto">Monto recibido</label><div style="display:flex;gap:6px"><input id="fpMonto" class="mono" inputmode="decimal" value="${r2(p.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}" style="font-size:18px;font-weight:700;color:#2563eb;border-color:#2563eb"><button type="button" class="nxF2Btn" style="min-height:44px;font-size:11px;color:#1d4ed8" onclick="document.getElementById('fpMonto').value='${r2(p.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}'">Cuota completa</button></div><div style="font-size:10px;color:#64748b">Un abono parcial cubre primero la mora, luego el interés y por último el capital.</div></div>
+      <div class="nxF2F" style="margin-top:10px"><label>Método</label><div class="nxF2Meth" id="fpMet"><button type="button" class="on" data-m="efectivo" onclick="window.nxFinV2Met('efectivo')">Efectivo</button><button type="button" data-m="transferencia" onclick="window.nxFinV2Met('transferencia')">Transferencia</button><button type="button" data-m="tarjeta" onclick="window.nxFinV2Met('tarjeta')">Tarjeta</button></div><div id="fpCajaInfo" style="font-size:11px;font-weight:700;margin-top:4px;color:${_caja && _caja.id ? '#15803d' : '#b91c1c'}"><i class="ti ${_caja && _caja.id ? 'ti-check' : 'ti-alert-triangle'}"></i> ${_caja && _caja.id ? 'Caja abierta' : 'Caja cerrada: ábrela para cobrar en efectivo'}</div></div>
+      <div class="nxF2G2" style="margin-top:10px"><div class="nxF2F" id="fpCtaBox" style="display:none"><label for="fpCta">Cuenta bancaria</label><select id="fpCta">${_finCtas.map(x => `<option value="${x.id}">${esc(x.alias || x.banco_nombre)}</option>`).join('') || '<option value="">Sin cuentas activas</option>'}</select></div><div class="nxF2F"><label for="fpRef">Referencia</label><input id="fpRef" placeholder="N.º transferencia / voucher"></div></div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button type="button" class="nxF2Btn" style="flex:1" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button type="button" class="nxF2Btn p" style="flex:2" id="fpGo" onclick="window.nxFinV2CobrarGo()"><i class="ti ti-check"></i> Registrar cobro</button></div></div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxFinV2Met = function (m) { if (!_finV2Cobro) return; _finV2Cobro.metodo = m; document.querySelectorAll('#fpMet button').forEach(b => b.classList.toggle('on', b.getAttribute('data-m') === m)); const cb = document.getElementById('fpCtaBox'); if (cb) cb.style.display = (m === 'transferencia' || m === 'tarjeta') ? '' : 'none'; const ci = document.getElementById('fpCajaInfo'); if (ci) ci.style.display = m === 'efectivo' ? '' : 'none'; };
+  window.nxFinV2CobrarGo = async function () {
+    const st = _finV2Cobro; if (!st) return; const f = finFinDe(st.finId); const c = finCuotaDe(st.cuotaId); if (!f || !c) return;
+    const monto = r2(finNum(val('fpMonto')));
+    if (!(monto > 0)) { toast('err', 'Monto inválido', 'Debe ser mayor a 0'); return; }
+    if (monto > st.pend.total + 0.01) { toast('err', 'Monto muy alto', 'Lo pendiente de esta cuota es ' + fmt2(st.pend.total)); return; }
+    if (st.metodo === 'efectivo') {
+      if (!(_caja && _caja.id)) { try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {} }
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar en efectivo'); return; }
+    }
+    const cta = (st.metodo !== 'efectivo') ? (val('fpCta') || null) : null;
+    if (st.metodo !== 'efectivo' && _finCtas.length && !cta) { toast('err', 'Elige la cuenta bancaria'); return; }
+    const btn = document.getElementById('fpGo'); if (btn) btn.disabled = true;
+    try {
+      const metodoTxt = st.metodo === 'efectivo' ? 'Efectivo' : st.metodo === 'tarjeta' ? 'Tarjeta' : 'Transferencia';
+      const pagoId = await finRpc('pos_fin_registrar_pago_v2', { p_financiamiento_id: f.id, p_cuota_id: c.id, p_monto: monto, p_metodo: metodoTxt, p_referencia: (val('fpRef') || '').trim() || null, p_operacion_id: finUuid(), p_created_by_name: nomAdmin(), p_cuenta_bancaria_id: cta });
+      await finV2RecargarLedger();
+      const c2 = finCuotaDe(c.id); const f2 = finFinDe(f.id);
+      try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · ' + (f.codigo || '') + ' · cuota ' + c.numero + '/' + f.cuotas_total + ' · ' + fmt2(monto) + ' · ' + metodoTxt + ((c2 && c2.pagado) ? '' : ' (parcial)'), 'Financiamiento'); } catch (e) {}
+      cerrarModal('nxFinM'); toast('ok', (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', fmt2(monto) + ((f2 && f2.estado === 'saldado') ? ' · ¡PLAN SALDADO!' : ''));
+      _finV2Vista = 'detalle'; _finV2Sel = f.id; finV2Repintar();
+      try { if (typeof _cajaTot !== 'undefined' && _caja) _cajaTot = await totalesCaja(_caja); } catch (e) {}
+    } catch (e) { if (btn) btn.disabled = false; toast('err', 'No se pudo registrar el cobro', finErrTxt(e)); }
+  };
+
+  // ── Venta a crédito desde Factura: plan + primera cuota, creación por RPC ──────────────────
+  function finV2CobroCfg(c, activo) {
+    const box = document.getElementById('finV2Cfg'); const leg = document.getElementById('finLegacyCfg'); const pv = document.getElementById('finPrev');
+    if (leg) leg.style.display = 'none';
+    if (!box) return;
+    if (!activo) { box.innerHTML = ''; if (pv) pv.textContent = ''; return; }
+    const planes = _finPlanes.filter(p => p.activo);
+    if (!box.innerHTML) {
+      _finV2Cobro = null;
+      box.innerHTML = `<div class="nxPgGrid"><div class="nxPgF"><label class="nxPgFl" for="finV2Plan">Plan</label><select id="finV2Plan" onchange="window.nxPosCobroCalc()" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit">${planes.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('') || '<option value="">Sin planes activos</option>'}</select></div><div class="nxPgF"><label class="nxPgFl" for="finV2Fecha">Primera cuota</label><input id="finV2Fecha" type="date" value="${finAddDias(hoyISOPos(), 30)}" min="${hoyISOPos()}" onchange="window.nxPosCobroCalc()" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"></div></div>`;
+    }
+    const pl = _finPlanes.find(p => String(p.id) === String(val('finV2Plan'))); const fecha = val('finV2Fecha') || finAddDias(hoyISOPos(), 30);
+    if (pv) {
+      if (!pl) { pv.innerHTML = '<span style="color:#dc2626">No hay planes activos: créalos en Cuotas → Planes.</span>'; return; }
+      const rows = finV2Amortizar(c.credito, pl, fecha); const it = rows.reduce((s, r) => s + r.interes, 0); const minIni = r2(c.total * Number(pl.inicial_min_pct || 0) / 100); const ini = r2(c.total - c.credito);
+      pv.innerHTML = rows.length + ' cuota' + (rows.length > 1 ? 's' : '') + ' ' + finFrecTxt(pl.frecuencia) + (rows.length > 1 ? 'es' : '') + ' · 1.ª ' + fmt2(rows[0].cuota) + (rows.length > 1 ? ' · última ' + fmt2(rows[rows.length - 1].cuota) : '') + ' · interés ' + fmt2(it) + (ini < minIni - 0.01 ? '<br><span style="color:#dc2626">Inicial mínima del plan: ' + fmt2(minIni) + ' (' + Number(pl.inicial_min_pct) + ' %)</span>' : '');
+    }
+  }
+  function finV2ValidarCobro(c) {
+    const pl = _finPlanes.find(p => String(p.id) === String(val('finV2Plan')) && p.activo); if (!pl) return 'Elige un plan de financiamiento activo';
+    const fecha = val('finV2Fecha'); if (!fecha || fecha < hoyISOPos()) return 'La primera cuota no puede ser anterior a hoy';
+    const minIni = r2(c.total * Number(pl.inicial_min_pct || 0) / 100); if (r2(c.total - c.credito) < minIni - 0.01) return 'La inicial es menor al mínimo del plan (' + fmt2(minIni) + ')';
+    return null;
+  }
+  async function finV2CrearDesdeVenta(ventaId) {
+    const planId = val('finV2Plan'); const fecha = val('finV2Fecha');
+    try {
+      const finId = await finRpc('pos_fin_crear_financiamiento_v2', { p_venta_id: ventaId, p_plan_id: planId, p_primera_fecha: fecha, p_solicitud_id: null, p_descripcion: null });
+      await finV2RecargarLedger();
+      const f = finFinDe(finId); const pl = finPlanDe(f);
+      try { window.logAudit && window.logAudit('POS_FINANCIAMIENTO', (f && f.cliente_nombre || '') + ' · ' + (f && f.codigo || '') + ' · ' + fmt2(f && f.monto_financiado) + ' · ' + (pl && pl.nombre || ''), 'POS'); } catch (e) {}
+      toast('ok', 'Financiamiento creado', (f && f.codigo ? f.codigo + ' · ' : '') + (f ? f.cuotas_total + ' cuotas · 1.ª ' + fmt2(f.cuota_monto) : ''));
+    } catch (e) { toast('err', 'La venta se registró pero el plan de cuotas falló', finErrTxt(e) + '. Crea el financiamiento desde Cuotas.'); }
+  }
+
 })();
 
 /* ── Señal: parches.js terminó de aplicar estilos (para ocultar el splash/loader) ── */
