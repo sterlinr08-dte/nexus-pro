@@ -6611,7 +6611,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxCxpFoot"><span>${r.vencimiento ? (r.tramo === 'vencida' ? 'Venció ' : 'Vence ') + fD(r.vencimiento) + ' · ' : ''}<b>${cxpEstadoTxt(r)}</b></span>${r.estado_pago !== 'pagada' ? `<button class="nxCxpAbonar" type="button" onclick="window.nxPosCxpAbonar('${r.compra_id}')"><i class="ti ti-plus"></i> Abonar</button>` : `<button class="btn bsm bghost" type="button" onclick="window.nxPosCompraVer('${r.compra_id}')"><i class="ti ti-receipt"></i> Ver</button>`}</div>
       </div>`).join('') : '<div class="nxCxpEmpty">No hay facturas en este filtro.</div>';
     return `<div class="nxPf nxCxp">
-      <div class="nxCxpHead"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpVolver()" aria-label="Volver a compras"><i class="ti ti-arrow-left"></i> Compras</button><div class="nxCxpTitle"><i class="ti ti-file-invoice" style="color:#6d28d9"></i> Cuentas por pagar</div></div>
+      <div class="nxCxpHead"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpVolver()" aria-label="Volver a compras"><i class="ti ti-arrow-left"></i> Compras</button><div class="nxCxpTitle"><i class="ti ti-file-invoice" style="color:#2563eb"></i> Cuentas por pagar</div></div>
       <div class="nxCxpKpis">
         <div class="nxCxpKpi"><div class="l">Debes</div><div class="v">${fmt(sum(abiertas))}</div><div class="s">${abiertas.length} factura${abiertas.length === 1 ? '' : 's'}</div></div>
         <div class="nxCxpKpi bad"><div class="l">Vencido</div><div class="v">${fmt(sum(venc))}</div><div class="s">${venc.length} factura${venc.length === 1 ? '' : 's'}</div></div>

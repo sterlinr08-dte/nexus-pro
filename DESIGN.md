@@ -62,6 +62,29 @@ NEXUS PRO is a professional insurance operations dashboard with **Daily App Bala
 - No mount animations that repeatedly replay during routine data updates.
 
 
+## 7b. Single Graphic Line — implementation contract (POS, 2026-09-22)
+The owner decided that this file is the **only** graphic line of the product. It is materialized in code as
+CSS custom properties injected by `parches-pos-stitch-visual.js` (layer `#nxLineaUnicaCSS`), scoped to
+`#v-pos`, `#v-multiempresa`, POS modals (`.modal.nxPrForm`, `.nxPf`) and `body.org-tienda`. Seguros views are
+outside that scope on purpose (FOUC rollback history on iPhone).
+
+| Token | Value | Role |
+|---|---|---|
+| `--nx-bg` | #F8FAFC | page canvas |
+| `--nx-surface` | #FFFFFF | cards, modals, top bar |
+| `--nx-ink` / `--nx-steel` / `--nx-mute` | #0F172A / #64748B / #94A3B8 | text hierarchy |
+| `--nx-line` / `--nx-line-2` | rgba(148,163,184,.12 / .18) | separators / card borders |
+| `--nx-blue` / `--nx-blue-d` / `--nx-blue-l` / `--nx-blue-b` | #2563EB / #1D4ED8 / #EFF6FF / #BFDBFE | the single accent |
+| `--nx-r` / `--nx-r-md` / `--nx-r-sm` | 16px / 12px / 10px | surfaces / bars / buttons & inputs |
+| `--nx-font` | Geist, Segoe UI, system-ui | all text (Google Fonts, `display=optional`, loaded when the POS opens) |
+| `--nx-mono` (also `--mono`) | JetBrains Mono, ui-monospace | amounts, dates, references, serials |
+
+Rules the layer enforces: legacy purple/indigo (`#6d28d9`, `#7c3aed`, `#4f46e5`, tints) is remapped to
+Nexus Blue everywhere in the POS; `.bc1` and the sticky action bar (`.fbP`) are Nexus Blue; white cards get
+16px radius; inputs focus with a 3px rgba(37,99,235,.12) halo; buttons lift 1px on pointer hover and press 1px.
+New POS code must use the tokens directly instead of hex literals. The Stitch design system
+"NEXUS PRO · POS (DESIGN.md)" (project *POS Dominicana*) mirrors these values so generated screens match.
+
 ## 8. Multiempresa POS Profile
 - **Atmosphere:** an operational workspace for daily sales: balanced density (6/10), structured asymmetry (5/10), and restrained motion (5/10). The Multiempresa hub is the administrative launcher; the POS shell is the focused work area.
 - **POS canvas:** Slate White (#F8FAFC) behind Pure Surface (#FFFFFF). **Nexus Blue** (#2563EB) remains the only structural accent for the quick-sale action, focus states and the navigation shell.

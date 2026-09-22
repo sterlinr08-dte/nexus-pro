@@ -550,11 +550,105 @@
 `;
     (document.head||document.documentElement).appendChild(style);
 
-    /* nxPfEnsureCSS se crea al abrir el POS. Reinsertar nuestra capa después
+    /* ── Línea gráfica única del POS (DESIGN.md, decisión del dueño 22-sep-2026) ──
+       Tokens Nexus + Geist/JetBrains Mono + un solo acento (Nexus Blue). Cubre #v-pos,
+       el hub Multiempresa y los modales del POS (clases nxPrForm/nxPf) aunque cuelguen
+       de body. Seguros no se toca: nada aquí aplica fuera de esos ámbitos. Solo CSS. */
+    var linea=document.createElement('style');
+    linea.id='nxLineaUnicaCSS';
+    linea.textContent=`
+#v-pos,#v-multiempresa,.nxPf,.modal.nxPrForm,body.org-tienda{
+  --nx-bg:#f8fafc;--nx-surface:#ffffff;--nx-ink:#0f172a;--nx-steel:#64748b;--nx-mute:#94a3b8;
+  --nx-line:rgba(148,163,184,.12);--nx-line-2:rgba(148,163,184,.18);
+  --nx-blue:#2563eb;--nx-blue-d:#1d4ed8;--nx-blue-l:#eff6ff;--nx-blue-b:#bfdbfe;
+  --nx-r:16px;--nx-r-md:12px;--nx-r-sm:10px;
+  --nx-font:'Geist','Segoe UI',system-ui,-apple-system,sans-serif;
+  --nx-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mono:var(--nx-mono);
+}
+/* Tipografía: una sola familia; montos y referencias en mono tabular. */
+#v-pos,#v-multiempresa,.nxPf,.modal.nxPrForm,body.org-tienda .overlay .modal{font-family:var(--nx-font)}
+body:not(.tema-premium) .nxPf{font-family:var(--nx-font);--pf-purple:var(--nx-blue);--pf-purple-l:var(--nx-blue-l);--pf-bg:var(--nx-bg);--pf-line:var(--nx-line-2);--pf-txt:var(--nx-ink);--pf-txt2:var(--nx-steel);--pf-txt3:var(--nx-mute)}
+#v-pos .kpitile .v,#v-pos .nxTKpiV,.nxPf .ser,.modal.nxPrForm .ser,#v-pos [data-nx-money],.modal.nxPrForm [data-nx-money],.nxPf [data-nx-money],
+#v-pos [style*="var(--mono"],.modal.nxPrForm [style*="var(--mono"],.nxPf [style*="var(--mono"]{font-family:var(--nx-mono) !important;font-variant-numeric:tabular-nums}
+/* Superficies: blanco puro, borde susurro, radio 16. */
+#v-pos .kpitile,#v-pos .nxPf .card,.modal.nxPf .card{border-radius:var(--nx-r);border-color:var(--nx-line-2);background:var(--nx-surface)}
+#v-pos div[style*="background:#fff"][style*="border-radius:14px"],#v-pos div[style*="background:#fff"][style*="border-radius:12px"],
+.modal.nxPrForm div[style*="background:#fff"][style*="border-radius:14px"]{border-radius:var(--nx-r) !important;border-color:var(--nx-line-2) !important}
+#v-pos .tw,.modal.nxPrForm .tw{border-radius:var(--nx-r);border-color:var(--nx-line-2)}
+.overlay .modal.nxPrForm,.overlay .modal.nxPf{border-radius:20px;border:1px solid var(--nx-line-2);box-shadow:0 22px 54px rgba(15,23,42,.18)}
+@media(max-width:480px){.overlay .modal.nxPrForm,.overlay .modal.nxPf{border-radius:16px}}
+/* Un solo acento: Nexus Blue. El morado heredado se reasigna sin tocar plantillas. */
+#v-pos .bc1,.modal.nxPrForm .bc1,.nxPf .bc1,body.org-tienda .bc1{background:var(--nx-blue);border-color:var(--nx-blue);color:#fff}
+#v-pos .bc1:hover,.modal.nxPrForm .bc1:hover,.nxPf .bc1:hover,body.org-tienda .bc1:hover{background:var(--nx-blue-d);border-color:var(--nx-blue-d);color:#fff}
+#v-pos .btn:hover,.modal.nxPrForm .btn:hover,.nxPf .btn:hover,body.org-tienda .btn:hover{border-color:var(--nx-blue);color:var(--nx-blue-d);background:var(--nx-blue-l)}
+#v-pos .btn,.modal.nxPrForm .btn,.nxPf .btn,body.org-tienda .btn,#v-pos button,#v-pos select,#v-pos input,.modal.nxPrForm button,.modal.nxPrForm select,.modal.nxPrForm input{font-family:var(--nx-font)}
+#v-pos .btn,.modal.nxPrForm .btn,.nxPf .btn,body.org-tienda .btn{border-radius:var(--nx-r-sm);transition:transform 160ms cubic-bezier(.22,1,.36,1),background 160ms ease,border-color 160ms ease,color 160ms ease}
+@media(hover:hover){#v-pos .btn:hover,.modal.nxPrForm .btn:hover,.nxPf .btn:hover,body.org-tienda .btn:hover{transform:translateY(-1px)}}
+#v-pos .btn:active,.modal.nxPrForm .btn:active,.nxPf .btn:active,body.org-tienda .btn:active{transform:translateY(1px)}
+#v-pos [style*="color:#6d28d9"],.modal.nxPrForm [style*="color:#6d28d9"],.nxPf [style*="color:#6d28d9"],
+#v-pos [style*="color:#7c3aed"],.modal.nxPrForm [style*="color:#7c3aed"],.nxPf [style*="color:#7c3aed"],
+#v-pos [style*="color:#4f46e5"],.modal.nxPrForm [style*="color:#4f46e5"],.nxPf [style*="color:#4f46e5"],
+#v-pos [style*="color: #6d28d9"],.modal.nxPrForm [style*="color: #6d28d9"]{color:var(--nx-blue) !important}
+#v-pos [style*="background:#6d28d9"],.modal.nxPrForm [style*="background:#6d28d9"],.nxPf [style*="background:#6d28d9"],
+#v-pos [style*="background:#7c3aed"],.modal.nxPrForm [style*="background:#7c3aed"],
+#v-pos [style*="background:#4f46e5"],.modal.nxPrForm [style*="background:#4f46e5"]{background:var(--nx-blue) !important}
+#v-pos [style*="linear-gradient(135deg,#6d28d9,#4f46e5)"],.modal.nxPrForm [style*="linear-gradient(135deg,#6d28d9,#4f46e5)"],
+#v-pos [style*="linear-gradient(145deg,#818cf8,#4f46e5)"],.modal.nxPrForm [style*="linear-gradient(145deg,#818cf8,#4f46e5)"]{background:linear-gradient(135deg,var(--nx-blue),var(--nx-blue-d)) !important}
+#v-pos [style*="background:#f5f3ff"],.modal.nxPrForm [style*="background:#f5f3ff"],.nxPf [style*="background:#f5f3ff"],
+#v-pos [style*="background:#ede9fe"],.modal.nxPrForm [style*="background:#ede9fe"],
+#v-pos [style*="background:#eef2ff"],.modal.nxPrForm [style*="background:#eef2ff"],
+#v-pos [style*="background:#faf5ff"],.modal.nxPrForm [style*="background:#faf5ff"]{background:var(--nx-blue-l) !important}
+#v-pos [style*="#ddd6fe"],.modal.nxPrForm [style*="#ddd6fe"],#v-pos [style*="#ede9fe"],.modal.nxPrForm [style*="#ede9fe"]{border-color:var(--nx-blue-b) !important}
+#v-pos .ser,.modal.nxPrForm .ser,.nxPf .ser{color:var(--nx-blue-d)}
+#v-pos .nxFP-hero,#v-pos .nxFP-hA{background:linear-gradient(120deg,#1e40af,#1d4ed8 55%,#2563eb)}
+#v-pos .nxFP-qico.primary,#v-pos .nxFP-pgBtns button.on{background:var(--nx-blue);border-color:var(--nx-blue);box-shadow:0 4px 12px rgba(37,99,235,.22)}
+#v-pos .nxFP-ref,#v-pos .nxFP-emptyIco{background:var(--nx-blue-l);color:var(--nx-blue-d)}
+#v-pos .nxFP-gVal.accent,#v-pos .nxFP-menuPop button i,#v-pos .nxFP-tRef,#v-pos .nxFP-cobSideRow.big b{color:var(--nx-blue-d)}
+#v-pos .nxFP-cobEvent:before{background:var(--nx-blue)}
+#v-pos .nxFP-tAcc button:hover,#v-pos .nxFP-pgBtns button:hover:not(:disabled):not(.on){background:var(--nx-blue-l);color:var(--nx-blue-d);border-color:var(--nx-blue-b)}
+#v-pos .nxFP-hAR .nxFP-hAst:nth-child(4) .nxFP-hAsi{background:linear-gradient(140deg,#60a5fa,#2563eb)}
+/* Formularios: foco azul sin halo neón; radios medianos. */
+#v-pos .fr input,#v-pos .fr select,#v-pos .fr textarea,.modal.nxPrForm .fr input,.modal.nxPrForm .fr select,.modal.nxPrForm .fr textarea{border-radius:var(--nx-r-sm);border-color:#e2e8f0;background:#fff;font-family:var(--nx-font)}
+#v-pos .fr input:focus,#v-pos .fr select:focus,#v-pos .fr textarea:focus,.modal.nxPrForm .fr input:focus,.modal.nxPrForm .fr select:focus,.modal.nxPrForm .fr textarea:focus{border-color:var(--nx-blue);box-shadow:0 0 0 3px rgba(37,99,235,.12);background:#fff}
+#v-pos .fr label,.modal.nxPrForm .fr label{color:var(--nx-steel);font-family:var(--nx-font)}
+/* Barra fija de acción (Cobrar / Guardar compra): la acción principal es azul, no negra. */
+body.org-tienda .fbP,#v-pos .fbP,.fbP{background:var(--nx-blue,#2563eb);border-radius:var(--nx-r-md,12px)}
+body.org-tienda .fbP:active,#v-pos .fbP:active,.fbP:active{background:var(--nx-blue-d,#1d4ed8)}
+.fbC,.fbG{border-radius:var(--nx-r-md,12px)}
+/* Pestañas y chips del POS. */
+#v-pos .nxPosTab.on{background:var(--nx-blue)}
+#v-pos .nxPpkChip,.modal.nxPrForm .nxPpkChip{border-radius:999px}
+/* Accesibilidad: foco visible en la línea Nexus. */
+#v-pos :focus-visible,.modal.nxPrForm :focus-visible,.nxPf :focus-visible{outline:2px solid var(--nx-blue);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){#v-pos .btn,.modal.nxPrForm .btn,.nxPf .btn,body.org-tienda .btn{transition-duration:.01ms !important;transform:none !important}}
+`;
+    (document.head||document.documentElement).appendChild(linea);
+
+    /* Tipografías de la línea única, solo cuando el POS entra en escena. display=optional:
+       si la fuente no está lista en el primer pintado se usa la del sistema y no hay salto. */
+    function ensureFonts(){
+      if(document.getElementById('nxLineaUnicaFonts'))return;
+      var l=document.createElement('link');l.id='nxLineaUnicaFonts';l.rel='stylesheet';
+      l.href='https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=optional';
+      (document.head||document.documentElement).appendChild(l);
+    }
+    try{
+      if(document.body&&(document.body.classList.contains('org-tienda')||document.querySelector('#v-pos.on')))ensureFonts();
+      ['nxAbrirPOS','nxAbrirMultiempresa'].forEach(function(fn){
+        var orig=window[fn];
+        if(typeof orig==='function'&&!orig.__nxLineaFonts){
+          var w=function(){ensureFonts();return orig.apply(this,arguments)};
+          w.__nxLineaFonts=true;window[fn]=w;
+        }
+      });
+    }catch(e){}
+
+    /* nxPfEnsureCSS se crea al abrir el POS. Reinsertar nuestras capas después
        garantiza que la mejora visual conserve prioridad sin tocar su lógica. */
     function priorizar(){
       var base=document.getElementById('nxPfCSS');
-      if(base&&style.parentNode&&style.parentNode.lastElementChild!==style)style.parentNode.appendChild(style);
+      if(base&&style.parentNode&&style.parentNode.lastElementChild!==linea){style.parentNode.appendChild(style);style.parentNode.appendChild(linea);}
     }
     priorizar();
     new MutationObserver(priorizar).observe(document.head||document.documentElement,{childList:true});
