@@ -1,7 +1,15 @@
 {
-  "version": "58.84",
+  "version": "58.85",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.85",
+      "fecha": "2026-09-22",
+      "notas": [
+        "STUDIO sale de NEXUS PRO: studiord.net se sirve desde su propio repositorio (sterlinr08-dte/studio-rd) y su propio Worker studio-rd.",
+        "Se retira de index.html el mapa de bases Supabase por dominio; NEXUS PRO usa solo su base madre."
+      ]
+    },
     {
       "version": "58.84",
       "fecha": "2026-09-22",
