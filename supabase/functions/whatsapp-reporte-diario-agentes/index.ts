@@ -39,6 +39,19 @@ function ventanaHoyRD(now = new Date()) {
   const fin = new Date(ini.getTime() + 86400000);
   return { ini: ini.toISOString(), fin: fin.toISOString() };
 }
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+// Ciclos anteriores al actual (20 → 20), del más reciente al más viejo. «2026-08» = 20-ago → 20-sep.
+function ciclosAnteriores(periodo: string, n: number) {
+  const [y, m] = periodo.split("-").map(Number);
+  const out: { periodo: string; etiqueta: string }[] = [];
+  for (let i = 1; i <= n; i++) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    const mi = d.getUTCMonth();
+    out.push({ periodo: `${d.getUTCFullYear()}-${String(mi + 1).padStart(2, "0")}`, etiqueta: `${MESES[mi]}-${MESES[(mi + 1) % 12]}` });
+  }
+  return out;
+}
+const CICLOS_HISTORIAL = 6;
 function totalFactura(f: any) {
   return Math.max(0, (Number(f.prima_base) || 0) + (Number(f.prima_deps) || 0));
 }
@@ -224,11 +237,24 @@ Deno.serve(async (req: Request) => {
         ? `${fmtMonto(acumulado)} (Efectivo RD$ ${fmtMonto(dg.efectivo)} / Banco RD$ ${fmtMonto(dg.banco)})`
         : fmtMonto(acumulado);
 
+      // Cobrado por ciclo anterior (decisión del dueño 26-sep-2026). Se omiten los ciclos viejos en cero.
+      const previos = ciclosAnteriores(periodo, CICLOS_HISTORIAL);
+      const cobradosPrevios = await Promise.all(previos.map(async (c) => {
+        const { data, error } = await db.rpc("seguros_resumen_ciclo_agente_core", { p_agente_id: a.id, p_periodo: c.periodo });
+        const r = Array.isArray(data) ? data[0] : data;
+        return { ...c, cobrado: error ? null : Number(r?.cobrado_validado) || 0 };
+      }));
+      while (cobradosPrevios.length && cobradosPrevios[cobradosPrevios.length - 1].cobrado === 0) cobradosPrevios.pop();
+      const historial = cobradosPrevios.filter((c) => c.cobrado !== null).map((c) => `${c.etiqueta} RD$ ${fmtMonto(c.cobrado)}`);
+      const cobradoCiclo = historial.length
+        ? `${fmtMonto(row?.cobrado_validado || 0)} · Ciclos anteriores: ${historial.join(" · ")}`
+        : fmtMonto(row?.cobrado_validado || 0);
+
       const variables = [
         String(a.nom || "Agente"),
         fecha,
         custodia,
-        fmtMonto(row?.cobrado_validado || 0),
+        cobradoCiclo,
         String(pendientes.length),
         compactar(pendientes.map((x:any) => `${x.c.nom || "Sin nombre"} — Cédula ${cedula(x.c)} — RD$ ${fmtMonto(x.monto)} pendiente`)),
         String(atrasados.length),
@@ -240,7 +266,7 @@ Deno.serve(async (req: Request) => {
       ].map(limpiarParam);
 
       if (dry) {
-        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, efectivo:Number(dg?.efectivo)||0, banco:Number(dg?.banco)||0, custodia, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
+        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, efectivo:Number(dg?.efectivo)||0, banco:Number(dg?.banco)||0, custodia, cobrado_ciclo:cobradoCiclo, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
         continue;
       }
 
