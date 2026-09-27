@@ -210,18 +210,24 @@ Deno.serve(async (req: Request) => {
       const nuevos = cartera.filter((c: any) => c.created_at && c.created_at >= hoy.ini && c.created_at < hoy.fin);
       const proceso = cartera.filter((c: any) => c.estado_cliente === "EN_PROCESO");
 
-      const [{ data: acumulado, error: acErr }, { data: resumen, error: rsErr }] = await Promise.all([
+      const [{ data: acumulado, error: acErr }, { data: resumen, error: rsErr }, { data: desglose }] = await Promise.all([
         db.rpc("seguros_acumulado_validado_agente", { p_agente_id: a.id }),
-        db.rpc("seguros_resumen_ciclo_agente_core", { p_agente_id: a.id, p_periodo: periodo })
+        db.rpc("seguros_resumen_ciclo_agente_core", { p_agente_id: a.id, p_periodo: periodo }),
+        db.rpc("seguros_custodia_desglose_agente", { p_agente_id: a.id })
       ]);
       if (acErr) throw new Error(`acumulado ${a.nom}: ${acErr.message}`);
       if (rsErr) throw new Error(`ciclo ${a.nom}: ${rsErr.message}`);
       const row = Array.isArray(resumen) ? resumen[0] : resumen;
+      // Desglose efectivo/banco dentro de la misma variable {{3}}; si falla, solo el total.
+      const dg = Array.isArray(desglose) ? desglose[0] : desglose;
+      const custodia = dg && Number(dg.total) === Number(acumulado)
+        ? `${fmtMonto(acumulado)} (Efectivo RD$ ${fmtMonto(dg.efectivo)} / Banco RD$ ${fmtMonto(dg.banco)})`
+        : fmtMonto(acumulado);
 
       const variables = [
         String(a.nom || "Agente"),
         fecha,
-        fmtMonto(acumulado),
+        custodia,
         fmtMonto(row?.cobrado_validado || 0),
         String(pendientes.length),
         compactar(pendientes.map((x:any) => `${x.c.nom || "Sin nombre"} — Cédula ${cedula(x.c)} — RD$ ${fmtMonto(x.monto)} pendiente`)),
@@ -234,7 +240,7 @@ Deno.serve(async (req: Request) => {
       ].map(limpiarParam);
 
       if (dry) {
-        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
+        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, efectivo:Number(dg?.efectivo)||0, banco:Number(dg?.banco)||0, custodia, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
         continue;
       }
 
