@@ -124,6 +124,7 @@ Deno.serve(async (req: Request) => {
     const dry = body?.dry === true;
     const forzar = body?.forzar === true;
     const soloAgenteId = body?.solo_agente_id ? String(body.solo_agente_id) : null;
+    const soloAdmin = body?.solo_admin === true;   // pruebas: solo la copia al administrador, no al agente
 
     const { data: cfg } = await db.from("whatsapp_config").select("zernio_account_id,activo").eq("activo", true).limit(1).maybeSingle();
     if (!cfg?.zernio_account_id) return json({ ok:false, error:"whatsapp_sin_configurar" }, 409);
@@ -150,6 +151,37 @@ Deno.serve(async (req: Request) => {
       facPorCliente.get(k)!.push(f);
     }
     for (const arr of facPorCliente.values()) arr.sort((a,b) => String(a.periodo||"").localeCompare(String(b.periodo||"")) || String(a.created_at||"").localeCompare(String(b.created_at||"")));
+
+    // El administrador recibe, además del suyo, una copia del reporte de cada agente (decisión del dueño 27-sep-2026).
+    const admins = (agentes || []).filter((x: any) => String(x.cargo || "").toUpperCase() === "ADMIN" && tel(x.tel));
+
+    // Envía el reporte de «origen» a «destino». referencia_id = agente del reporte cuando es una copia al admin,
+    // así el control de «ya enviado hoy» distingue el reporte propio de cada copia.
+    async function entregar(destino: any, origen: any, variables: string[]) {
+      const esCopia = String(destino.id) !== String(origen.id);
+      const base = { agente_id: destino.id, referencia_id: esCopia ? origen.id : null, tipo: "reporte_diario_agente", plantilla_nombre: TEMPLATE, plantilla_variables: variables };
+      const telefono = tel(destino.tel);
+      if (!telefono) {
+        await db.from("whatsapp_mensajes").insert({ ...base, estado: "error", error_detalle: "agente sin WhatsApp registrado" });
+        return { agente: origen.nom, destino: destino.nom, ok: false, motivo: "sin_whatsapp" };
+      }
+      if (!forzar) {
+        let q = db.from("whatsapp_mensajes").select("id").eq("agente_id", destino.id).eq("plantilla_nombre", TEMPLATE).eq("estado", "enviado").gte("created_at", hoy.ini).lt("created_at", hoy.fin);
+        q = esCopia ? q.eq("referencia_id", origen.id) : q.is("referencia_id", null);
+        const { data: ya } = await q.limit(1);
+        if (ya?.length) return { agente: origen.nom, destino: destino.nom, ok: true, skip: true, motivo: "ya_enviado_hoy" };
+      }
+      let r;
+      try { r = await enviar(telefono, cfg.zernio_account_id, variables); }
+      catch (e) { r = { ok:false, status:0, data:{ error:e instanceof Error ? e.message : String(e) } }; }
+      if (r.ok) {
+        const msgId = r.data?.data?.messageId ?? r.data?.messageId ?? null;
+        await db.from("whatsapp_mensajes").insert({ ...base, estado: "enviado", zernio_message_id: msgId });
+        return { agente: origen.nom, destino: destino.nom, ok: true, messageId: msgId };
+      }
+      await db.from("whatsapp_mensajes").insert({ ...base, estado: "error", error_detalle: JSON.stringify(r.data) });
+      return { agente: origen.nom, destino: destino.nom, ok: false, status: r.status, detalle: r.data };
+    }
 
     const resultados: any[] = [];
     for (const a of (agentes || [])) {
@@ -206,28 +238,11 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      const telefono = tel(a.tel);
-      if (!telefono) {
-        await db.from("whatsapp_mensajes").insert({ agente_id:a.id, tipo:"reporte_diario_agente", plantilla_nombre:TEMPLATE, plantilla_variables:variables, estado:"error", error_detalle:"agente sin WhatsApp registrado" });
-        resultados.push({ agente:a.nom, ok:false, motivo:"sin_whatsapp" });
-        continue;
-      }
-
-      if (!forzar) {
-        const { data: ya } = await db.from("whatsapp_mensajes").select("id").eq("agente_id", a.id).eq("plantilla_nombre", TEMPLATE).eq("estado", "enviado").gte("created_at", hoy.ini).lt("created_at", hoy.fin).limit(1);
-        if (ya?.length) { resultados.push({ agente:a.nom, ok:true, skip:true, motivo:"ya_enviado_hoy" }); continue; }
-      }
-
-      let r;
-      try { r = await enviar(telefono, cfg.zernio_account_id, variables); }
-      catch (e) { r = { ok:false, status:0, data:{ error:e instanceof Error ? e.message : String(e) } }; }
-      if (r.ok) {
-        const msgId = r.data?.data?.messageId ?? r.data?.messageId ?? null;
-        await db.from("whatsapp_mensajes").insert({ agente_id:a.id, tipo:"reporte_diario_agente", plantilla_nombre:TEMPLATE, plantilla_variables:variables, estado:"enviado", zernio_message_id:msgId });
-        resultados.push({ agente:a.nom, ok:true, messageId:msgId });
-      } else {
-        await db.from("whatsapp_mensajes").insert({ agente_id:a.id, tipo:"reporte_diario_agente", plantilla_nombre:TEMPLATE, plantilla_variables:variables, estado:"error", error_detalle:JSON.stringify(r.data) });
-        resultados.push({ agente:a.nom, ok:false, status:r.status, detalle:r.data });
+      // 1) El reporte propio de cada agente (el admin también recibe el suyo).
+      if (!soloAdmin) resultados.push(await entregar(a, a, variables));
+      // 2) Copia al administrador del reporte de cada agente que no es admin (p. ej. ROBINSON).
+      if (String(a.cargo || "").toUpperCase() !== "ADMIN") {
+        for (const ad of admins) resultados.push(await entregar(ad, a, variables));
       }
     }
 
