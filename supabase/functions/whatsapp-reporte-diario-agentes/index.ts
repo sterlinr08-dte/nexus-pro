@@ -56,7 +56,12 @@ function detalleProceso(c: any) {
   if (p.length) return `Pendiente: ${p.join(", ")}`;
   return String(c.motivo_proceso || c.nota_proceso || "En proceso").trim();
 }
-function compactar(lineas: string[], maxChars = 620) {
+// Meta rechaza (#132018) parámetros de plantilla con saltos de línea, tabulaciones o más de 4 espacios
+// seguidos. Las listas van en una sola línea separadas por «•» y cada variable se limpia antes de enviar.
+function limpiarParam(v: unknown) {
+  return String(v ?? "").replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim() || "-";
+}
+function compactar(lineas: string[], maxChars = 240) {
   if (!lineas.length) return "Sin casos pendientes";
   const out: string[] = [];
   let usados = 0;
@@ -71,7 +76,7 @@ function compactar(lineas: string[], maxChars = 620) {
     out.push(linea);
     usados += linea.length + 1;
   }
-  return out.join("\n");
+  return out.join(" ");
 }
 
 async function cargarTodos(tabla: string, columnas: string) {
@@ -194,7 +199,7 @@ Deno.serve(async (req: Request) => {
         compactar(nuevos.map((c:any) => `${c.nom || "Sin nombre"} — Cédula ${cedula(c)}`)),
         String(proceso.length),
         compactar(proceso.map((c:any) => `${c.nom || "Sin nombre"} — Cédula ${cedula(c)} — ${detalleProceso(c)}`))
-      ];
+      ].map(limpiarParam);
 
       if (dry) {
         resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
