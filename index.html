@@ -4,6 +4,20 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
+<!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
+     personales (sendDefaultPii:false). El loader es chico y baja el SDK completo solo cuando ocurre un error. -->
+<script>
+window.sentryOnLoad=function(){
+  Sentry.init({
+    environment:/nexusprord\.com$/.test(location.hostname)?'produccion':'pruebas',
+    sendDefaultPii:false,
+    // No reportar errores de extensiones del navegador ni de páginas abiertas en local.
+    denyUrls:[/extensions\//i,/^chrome:\/\//i,/^safari-(web-)?extension:/i],
+    beforeSend:function(e){ if(!/nexusprord\.com$/.test(location.hostname)) return null; return e; }
+  });
+};
+</script>
+<script src="https://js.sentry-cdn.com/5098ab16199d3d25eeb535dd70f88e2c.min.js" crossorigin="anonymous"></script>
 
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
 <meta name="application-name" content="NEXUS PRO"/>
