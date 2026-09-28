@@ -29,15 +29,19 @@
 
 <!-- Manifest para Android/Chrome -->
 <link rel="manifest" href="manifest.json"/>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"/>
+<!-- Íconos y letras sin bloquear el primer pintado (prueba de velocidad 28-sep-2026) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"/></noscript>
 <!-- Plus Jakarta Sans: excepción deliberada, SOLO para el Splash (pedido explícito
      del dueño, 1-ago-2026) — cargada aquí en <head> porque el splash aparece antes
      de que nxPfEnsureCSS() (que ya carga esta misma fuente para el POS) corra. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'"/>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"/></noscript>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 /* ── Barra de scroll visible (estilizada) ── */
@@ -286,7 +290,7 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(109,40,217,.15) transparent;background:transparent}
 #nxBgPhoto{position:fixed;inset:0;z-index:-1;
-  background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center;background-repeat:no-repeat}
+  background-image:url(/bg-office-mobile.jpg);background-image:image-set(url(/bg-office-mobile.webp) type("image/webp"),url(/bg-office-mobile.jpg) type("image/jpeg"));background-size:cover;background-position:center;background-repeat:no-repeat}
 @media(min-width:900px){#nxBgPhoto{background-image:url(/bg-office-desktop.jpg)}}
 body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
 /* html,body{background:var(--bg0)} (arriba) le pone a <html> un fondo EXPLÍCITO — eso
@@ -2801,7 +2805,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 <div id="loginScreen">
 <div class="lwrap">
 <div class="lbox">
-  <img class="llogomark" src="logo-nexus-pro-mark.png" alt="NEXUS PRO — Multiempresa · POS · ERP" width="756" height="224" loading="eager"/>
+  <img class="llogomark" src="logo-nexus-pro-mark.webp" alt="NEXUS PRO — Multiempresa · POS · ERP" width="756" height="224" loading="eager"/>
   <div class="lshield"><i class="ti ti-shield-check"></i></div>
   <div class="lh">Bienvenido de nuevo</div>
   <div class="lver">Inicia sesión para continuar</div>
