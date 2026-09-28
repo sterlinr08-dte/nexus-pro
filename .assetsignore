@@ -7,3 +7,9 @@
 .claude/
 skills-lock.json
 .assetsignore
+
+# Nunca servir el repositorio interno ni cachés locales: .git expondría todo el código e historial
+# (nexusprord.com/.git/config respondía 200) y su paquete puede superar el límite de 25 MiB por archivo.
+.git
+.git/
+.wrangler/
