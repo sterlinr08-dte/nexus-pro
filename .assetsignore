@@ -13,3 +13,12 @@ skills-lock.json
 .git
 .git/
 .wrangler/
+
+# Documentación interna, SQL, funciones del servidor y scripts: nunca se sirven en el sitio (auditoría 28-sep-2026).
+docs/
+supabase/
+scripts/
+blueprints/
+*.md
+wrangler.jsonc
+.gitignore
