@@ -3,6 +3,18 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<!-- ═══ TEMA «GLASS OSCURO» (58.89, 29-sep-2026) — clase en <html> ANTES del primer pintado (sin FOUC) ═══
+     Lee el espejo local del tema del usuario (localStorage 'nx_tema', lo escribe aplicarTema) y pone
+     html.tema-glass-oscuro de inmediato. Sin preferencia guardada = tema por defecto (glass-oscuro).
+     Las reglas viven en el bloque style#nxTemaGlassOscuro al final del <head>, todas bajo html.tema-glass-oscuro.
+     INTERRUPTOR GENERAL: NX_TEMA_GLASS_OSCURO=false → nadie lo ve, el tema por defecto vuelve a «clasico»
+     y la opción desaparece de Configuración. En un solo equipo: localStorage.setItem('nx_tgo_off','1'). -->
+<script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true;(function(){var d=document.documentElement,t=null;
+try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;}catch(e){}
+window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
+if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
+if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
+d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');})();</script>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
 <!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
      personales (sendDefaultPii:false). El loader es chico y baja el SDK completo solo cuando ocurre un error. -->
@@ -3109,8 +3121,183 @@ html.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(255,
   html.nx-ig #nxIG *,html.nx-ig #nxIG *:before,html.nx-ig #nxIG *:after{animation:none!important;transition:none!important}
 }
 </style>
+<!-- Tema «Glass oscuro» (58.89): ver el comentario de script#nxTemaGlassOscuroOn al inicio del <head>. -->
+<style id="nxTemaGlassOscuro">
+/* ═══ TEMA «GLASS OSCURO» (58.89) — lenguaje del Inicio glass (#nxIG) extendido a toda la app ═══
+   · Todas las reglas cuelgan de html.tema-glass-oscuro (la pone script#nxTemaGlassOscuroOn antes del primer pintado).
+   · Escena fija solo con degradados (html::before, sin foto ni filter), menú lateral y barra superior de cristal
+     oscuro, contenido transparente; tarjetas, KPI, tablas, formularios y modales en BLANCO con texto carbón;
+     un solo acento: azul NEXUS #2563EB. No se tocan parches-whatsapp-* (el Buzón conserva su look claro legible).
+   · Móvil / modo liviano / prefers-reduced-transparency: sin desenfoque, cristal = pizarra sólida.
+   · Apagar: NX_TEMA_GLASS_OSCURO=false en el <head> (todos) o localStorage nx_tgo_off='1' (un equipo). */
+/* ── tokens ── */
+html.tema-glass-oscuro{
+  --tgo-blue:#2563EB;--tgo-blue-d:#1D4ED8;--tgo-blue-l:#EFF6FF;--tgo-ink:#0F172A;--tgo-steel:#64748B;
+  --tgo-tx:#F8FAFC;--tgo-tx2:#CBD5E1;--tgo-tx3:#94A3B8;
+  --tgo-glass:rgba(15,23,42,.70);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.10);
+  --tgo-card-shadow:0 10px 30px -12px rgba(2,6,23,.45);--tgo-panel-shadow:0 30px 60px -30px rgba(2,6,23,.6);
+  --tgo-blur:blur(26px) saturate(1.2);
+  /* acento único del sistema → azul NEXUS */
+  --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(37,99,235,.08);
+  --gradient-primary:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);
+  --sidebar-active:rgba(37,99,235,.9);
+  background:#0B1220!important;
+}
+/* ── escena fija desenfocada (solo CSS, sin foto ni filter: degradados suaves = «desenfoque» sin costo en iPhone) ── */
+html.tema-glass-oscuro::before{
+  content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(34% 30% at 12% 16%,rgba(147,197,253,.34),transparent 70%),
+    radial-gradient(22% 26% at 30% 12%,rgba(191,219,254,.22),transparent 70%),
+    radial-gradient(24% 12% at 62% 4%,rgba(248,250,252,.16),transparent 72%),
+    radial-gradient(22% 10% at 84% 5%,rgba(248,250,252,.12),transparent 72%),
+    radial-gradient(30% 42% at 90% 36%,rgba(100,116,139,.42),transparent 72%),
+    radial-gradient(14% 22% at 66% 44%,rgba(74,222,128,.10),transparent 72%),
+    radial-gradient(120% 46% at 50% 108%,rgba(2,6,23,.85),transparent 72%),
+    linear-gradient(180deg,#3B4A63 0%,#26334A 48%,#141C2E 100%);
+}
+html.tema-glass-oscuro #nxBgPhoto{display:none!important}
+html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
+/* splash y cargador: misma escena (sin salto de color al entrar a la app) */
+html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#141C2E radial-gradient(60% 50% at 30% 20%,rgba(147,197,253,.18),transparent 70%)!important}
+html.tema-glass-oscuro .nxs-badge i{color:#60A5FA}
+/* login: tarjeta de cristal oscuro con el acento azul */
+html.tema-glass-oscuro .lbox{background:rgba(15,23,42,.78)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
+
+/* ── menú lateral: cristal oscuro, ítem activo = píldora azul ── */
+html.tema-glass-oscuro body nav#sbEl.sb .ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-i{background:transparent!important;box-shadow:none!important;color:#CBD5E1!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni-i::after,html.tema-glass-oscuro body nav#sbEl.sb .ti::after,html.tema-glass-oscuro .tnav .ti::after{display:none!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni:hover .ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni-l{color:#E2E8F0!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l{color:#fff!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ss{color:#94A3B8!important}
+html.tema-glass-oscuro body nav#sbEl.sb .sb-nm,html.tema-glass-oscuro body nav#sbEl.sb .sb-un{color:#F8FAFC!important}
+html.tema-glass-oscuro body nav#sbEl.sb .sb-sm,html.tema-glass-oscuro body nav#sbEl.sb .sb-ur{color:#94A3B8!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni-b{background:rgba(255,255,255,.12)!important;color:#E2E8F0!important}
+html.tema-glass-oscuro body nav#sbEl.sb .ni i.ti-chevron-down{color:#94A3B8!important;background:none!important;box-shadow:none!important}
+html.tema-glass-oscuro body nav#sbEl.sb .sb-mk{background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.8)!important}
+html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
+@media (hover:hover){html.tema-glass-oscuro body nav#sbEl.sb .ni:hover{background:rgba(255,255,255,.06)!important;box-shadow:none!important}}
+@media (min-width:769px){
+  html.tema-glass-oscuro body nav#sbEl.sb,html.tema-glass-oscuro body.tema-glass nav#sbEl.sb{
+    margin:12px 0 12px 12px!important;height:calc(100% - 24px)!important;border-radius:24px!important;
+    background:var(--tgo-glass)!important;border:1px solid var(--tgo-line)!important;box-shadow:var(--tgo-panel-shadow)!important;
+    -webkit-backdrop-filter:var(--tgo-blur)!important;backdrop-filter:var(--tgo-blur)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body nav#sbEl.sb::after{display:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{background:transparent!important;border-color:var(--tgo-line)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:var(--tgo-glass-2)!important;border:1px solid var(--tgo-line)!important;box-shadow:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.on{background:transparent!important;background-image:none!important}
+  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on{background:var(--tgo-blue)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:8px!important;right:8px!important;width:auto!important;border-radius:14px!important;border:0!important;
+    background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.75)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni{margin-left:8px!important;margin-right:8px!important;border-radius:14px!important}
+}
+@media (max-width:768px){
+  /* carril: misma silueta (máscara existente), ahora pizarra oscura; panel que se abre: cristal oscuro sólido (el panel con alfa dejaba ver la pantalla detrás en Chromium) */
+  html.tema-glass-oscuro body nav#sbEl.sb{box-shadow:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#1E293B 0%,#0F172A 100%)!important;background-size:auto!important;background-position:0 0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open.nx-accordion-open::after{
+    background-image:linear-gradient(180deg,#121A2C 0%,#0B1220 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l{background:rgba(37,99,235,.22)!important;box-shadow:none!important;border-color:transparent!important}
+}
+
+/* ── barra superior: cristal oscuro, íconos claros ── */
+html.tema-glass-oscuro body .tnav{background:var(--tgo-glass)!important;border:1px solid var(--tgo-line)!important;box-shadow:var(--tgo-panel-shadow)!important;
+  -webkit-backdrop-filter:var(--tgo-blur)!important;backdrop-filter:var(--tgo-blur)!important}
+html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
+html.tema-glass-oscuro body .tnav .tn-b,html.tema-glass-oscuro body .tnav .tn-tog{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.12)!important;color:#E2E8F0!important;box-shadow:none!important;filter:none!important}
+html.tema-glass-oscuro body .tnav .tn-tog::after,html.tema-glass-oscuro body .tnav .tn-b::after,html.tema-glass-oscuro body .tnav .tn-b::before,html.tema-glass-oscuro body .tnav .tn-tog::before{display:none!important}
+html.tema-glass-oscuro body .tnav .ti{background:none!important;box-shadow:none!important;color:#E2E8F0!important}
+html.tema-glass-oscuro body .tnav .tn-b-primary{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro body .tnav .tn-b-primary .ti{color:#fff!important}
+html.tema-glass-oscuro body .tnav kbd{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.3)!important;color:#fff!important}
+@media (hover:hover){html.tema-glass-oscuro body .tnav .tn-b:hover{background:rgba(255,255,255,.14)!important}}
+
+/* ── superficies: tarjetas, KPI, tablas, formularios y modales en BLANCO con texto carbón ── */
+html.tema-glass-oscuro .nc,html.tema-glass-oscuro .kpi,html.tema-glass-oscuro .kg>div,html.tema-glass-oscuro .modal{
+  background:#fff!important;border-color:rgba(15,23,42,.06)!important;box-shadow:var(--tgo-card-shadow)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--tgo-ink)}
+html.tema-glass-oscuro .nc{border-radius:16px!important}
+html.tema-glass-oscuro .tw{background:#fff!important;border-color:#E2E8F0!important}
+html.tema-glass-oscuro thead th{background:#F8FAFC!important;color:#64748B!important}
+html.tema-glass-oscuro tbody td{color:#0F172A}
+/* modales: hoja blanca sobre un velo oscuro desenfocado */
+html.tema-glass-oscuro .overlay{background:rgba(2,6,23,.55)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+html.tema-glass-oscuro .modal{border-radius:20px!important}
+/* acento único azul */
+html.tema-glass-oscuro .bc1{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro .bc1:hover{background:var(--tgo-blue-d)!important;border-color:var(--tgo-blue-d)!important}
+
+/* ── Inicio glass: la escena global reemplaza la sombra propia del #nxIG ── */
+html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important}
+
+/* ── móvil / modo liviano: sin desenfoque, cristal = pizarra sólida ── */
+@media (max-width:768px){
+  html.tema-glass-oscuro body .tnav{background:rgba(15,23,42,.92)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  html.tema-glass-oscuro body .tnav,html.tema-glass-oscuro body nav#sbEl.sb{background:#0F172A!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html.tema-glass-oscuro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(2,6,23,.72)!important}
+}
+
+/* ── íconos de menú y barra: sin el «vidrio» de 2 px que dibujaba un disco oscuro sobre el cristal ── */
+html.tema-glass-oscuro body nav#sbEl.sb .ti,html.tema-glass-oscuro body .tnav .ti{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro body .tnav #btnRefrescar{background:rgba(255,255,255,.08)!important;background-image:none!important}
+
+/* ── textos que se apoyan directo sobre la escena (títulos de página y de sección fuera de tarjeta) ── */
+html.tema-glass-oscuro #cnt .nxCrmHead h1,html.tema-glass-oscuro #cnt .nxSf .sf-fantitle h2{color:#F8FAFC!important}
+html.tema-glass-oscuro #cnt .nxCrmHead p,html.tema-glass-oscuro #cnt .nxSf .sf-fansub,html.tema-glass-oscuro #cnt .nxSf .sf-fancnt{color:#CBD5E1!important}
+html.tema-glass-oscuro #cnt .nxCrmTag{background:rgba(37,99,235,.22)!important;color:#DBEAFE!important;border-color:rgba(147,197,253,.3)!important}
+
+/* ── tokens de módulos: grises legibles sobre blanco y acento azul ── */
+html.tema-glass-oscuro .nxSf{--sf-tx2:#475569;--sf-tx3:#64748B;--sf-primary:#2563EB;--sf-primary-d:#1D4ED8}
+html.tema-glass-oscuro #cnt #v-clientes,html.tema-glass-oscuro #cnt #v-facturas,html.tema-glass-oscuro #cnt #v-cliente360,html.tema-glass-oscuro #cnt #v-polizas,
+html.tema-glass-oscuro #cnt #v-rep-agente,html.tema-glass-oscuro #cnt #v-rep-plan,html.tema-glass-oscuro #cnt #v-rep-empresa,html.tema-glass-oscuro #cnt #v-rep-aging{
+  --pill-bg:#EEF2F7;--pill-hi:#FFFFFF;--pill-lo:rgba(15,23,42,.14);--pill-accent:#1D4ED8;--nm-tx2:#475569;--nm-accent:#1D4ED8}
+html.tema-glass-oscuro .modal,html.tema-glass-oscuro #mAbono .modal{--nm-tx2:#556070!important;--nm-accent:#1D4ED8!important}
+html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{color:#B45309!important}
+
+/* ── tarjetas que eran vidrio claro translúcido (pensado para la foto clara) → blanco sólido ── */
+html.tema-glass-oscuro #cnt .nxSf .sf-kpi,
+html.tema-glass-oscuro #cnt #v-crm .nxCrmHomeHead,html.tema-glass-oscuro #cnt #v-crm .nxCrmKpi,html.tema-glass-oscuro #cnt #v-crm .nxCrmAtt,
+html.tema-glass-oscuro #cnt #v-crm .nxCrmPanel,html.tema-glass-oscuro #cnt #v-crm .nxProsCol,html.tema-glass-oscuro #cnt #v-crm .nxCrmEmpty{
+  background:#fff!important;background-image:none!important;border-color:rgba(15,23,42,.06)!important;box-shadow:var(--tgo-card-shadow)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro #cnt #v-crm .nxOpsTask{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* controles segmentados del CRM sobre la escena: carril de cristal oscuro, activo blanco */
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(15,23,42,.62)!important;border-color:var(--tgo-line)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button:not(.on),html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button:not(.on){color:#CBD5E1!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch{background:#fff!important}
+
+/* ── botón flotante móvil: acento azul único ── */
+html.tema-glass-oscuro body .nx-fab{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:0 12px 28px -10px rgba(37,99,235,.75)!important}
+html.tema-glass-oscuro body .nx-fab .ti{background:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro body .nx-fab .ti::after{display:none!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on .n{background:rgba(37,99,235,.12)!important;color:#1D4ED8!important}
+/* menú del botón flotante: hoja blanca (como los modales) */
+html.tema-glass-oscuro body .mobile-more-sheet-clean{background:#fff!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:rgba(15,23,42,.08)!important}
+html.tema-glass-oscuro body .nx-menu-backdrop.open{background:rgba(2,6,23,.55)!important}
+/* Inicio glass: rótulos pequeños que una regla global de <small> dejaba en gris oscuro sobre el cristal */
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small{color:#94A3B8!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#64748B}
+/* POS: rótulos de sección del menú oscuro del POS (36 % de opacidad no se leía) */
+html.tema-glass-oscuro #cnt .nxTSec{color:rgba(231,234,242,.62)!important}
+/* acento único: botones principales que traían degradado morado */
+html.tema-glass-oscuro #cnt .btn.bxl,html.tema-glass-oscuro .overlay .btn.bxl,
+html.tema-glass-oscuro #cnt #v-crm button.primary,html.tema-glass-oscuro .nxCrmBtn.primary,html.tema-glass-oscuro .nxOpsFoot .primary,html.tema-glass-oscuro .nxOpsCheck[aria-pressed=true]{
+  background:var(--tgo-blue)!important;background-image:none!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro .cfg-indicator{background:var(--tgo-blue)!important;background-image:none!important}
+html.tema-glass-oscuro .cfg-tab.active-tab i{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro .cfg-tab.active-tab span{color:var(--tgo-blue-d)!important}
+</style>
 </head>
 <body>
+<script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
+(function(){var t=document.documentElement.getAttribute('data-nx-tema');if(t==='premium')document.body.classList.add('tema-premium');else if(t==='glass')document.body.classList.add('tema-glass');
+else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#0B1220');}})();</script>
 
 <!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
      dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
@@ -6501,10 +6688,17 @@ let _sistemaPlegado = false;
 
 // ── TABS de Configuración con animación ────────────────────────────
 // ── SISTEMA DE TEMAS VISUALES ──────────────────────────────────────
-function aplicarTema(tema){
-  const body=document.body;
+// Tema por defecto: lo decide el script#nxTemaGlassOscuroOn del <head> (glass-oscuro, o clasico si el interruptor
+// NX_TEMA_GLASS_OSCURO está apagado). Mismo valor aquí, en cargarTemaGuardado, en el picker y en el botón.
+function nxTemaDefecto(){return window.NX_TEMA_DEFECTO||'clasico';}
+// guardar===false: aplicar sin escribir la preferencia en la base (al cargar la sesión: solo se guarda lo que el
+// usuario elige; antes cada carga re-guardaba el tema y podía pisar las preferencias si la base aún no respondía).
+function aplicarTema(tema,guardar){
+  const body=document.body, html=document.documentElement;
+  if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
+  html.classList.remove('tema-glass-oscuro');
   let temaReal=tema;
   // AUTO: seguir preferencia del dispositivo
   if(tema==='auto'){
@@ -6513,13 +6707,19 @@ function aplicarTema(tema){
   }
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
+  else if(temaReal==='glass-oscuro')html.classList.add('tema-glass-oscuro'); // vive en <html>: el <head> la pone antes de pintar
   // clasico = sin clase (diseño por defecto)
+  html.setAttribute('data-nx-tema',temaReal);
+  // Espejo local del tema: SOLO para pintar el primer cuadro (login, splash, recarga) con el tema correcto antes de
+  // que llegue la preferencia de la base, que sigue siendo la fuente de verdad.
+  try{localStorage.setItem('nx_tema',tema);}catch(e){}
+  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#0B1220':'#1e3a6e');}catch(e){}
   // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
   // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
   const iconTop=document.getElementById('iconDarkMode');
-  if(iconTop)iconTop.className='ti '+(temaReal==='premium'?'ti-sun':'ti-moon');
+  if(iconTop)iconTop.className='ti '+((temaReal==='premium'||temaReal==='glass-oscuro')?'ti-sun':'ti-moon');
   // Guardar preferencia
-  nxPrefSet('tema',tema);   // preferencia -> base, no navegador
+  if(guardar!==false)nxPrefSet('tema',tema);   // preferencia -> base, no navegador
   // Actualizar selección visual en el panel
   document.querySelectorAll('.tema-opcion').forEach(o=>{
     o.classList.toggle('tema-sel',o.dataset.tema===tema);
@@ -6588,9 +6788,9 @@ function enviarCoberturasWA(cid){
   if(typeof nxAbrirWhatsAppDeCliente==='function')nxAbrirWhatsAppDeCliente(cid);
 }
 function cargarTemaGuardado(){
-  // El tema vive en la base (ver PREFERENCIAS DEL USUARIO), así que solo se puede aplicar
-  // DESPUÉS de entrar. La pantalla de login siempre se ve con el tema base: es el costo de
-  // no guardar nada en el navegador, y se decidió a propósito.
+  // El tema vive en la base (ver PREFERENCIAS DEL USUARIO) y es la fuente de verdad. Desde 58.89 hay además un
+  // espejo local ('nx_tema', solo lectura en el <head>) para pintar login, splash y el primer cuadro con el tema
+  // del equipo sin esperar a la base; al llegar la preferencia real se aplica esa.
   // Rescate por única vez: quien había prendido el botón viejo de "Modo oscuro" (preferencia
   // suelta "dark", ya retirada) pero JAMÁS tocó el picker nuevo de Ajustes, no debe perder su
   // preferencia en silencio — se migra a "premium" una sola vez, mismo criterio que ya se usó
@@ -6598,17 +6798,29 @@ function cargarTemaGuardado(){
   // guardado), NO que valga "clasico" — si se comparara contra el valor, alguien que SÍ eligió
   // "Clásico" a propósito en Ajustes (dejando el "dark" viejo sin tocar) se vería forzado de
   // vuelta a oscuro cada vez que entra, revirtiendo su elección real sin que lo pidiera.
+  // 58.89: mientras la base no ha respondido (primer llamado desde iniciarApp) se usa el espejo local del tema,
+  // el mismo que ya pintó el <head>: así no hay un cambio de tema a mitad de la carga.
+  if(!_prefsListas){let t=null;try{t=localStorage.getItem('nx_tema');}catch(e){}aplicarTema(t||nxTemaDefecto(),false);return;}
   const nuncaTocado=!(_prefs&&Object.prototype.hasOwnProperty.call(_prefs,'tema'));
-  let tema=nxPref('tema','clasico');
+  let tema=nxPref('tema',nxTemaDefecto());
   if(nuncaTocado&&nxPref('dark',false)===true){tema='premium';nxPrefSet('tema',tema);}
-  aplicarTema(tema);
+  // 58.89 — «Glass oscuro» por defecto para todos (pedido del dueño 29-sep-2026), UNA sola vez por usuario: hasta hoy
+  // cada carga guardaba 'clasico' aunque nadie lo eligiera, así que 'clasico' guardado no distingue una elección real.
+  // Quien tenga 'clasico' pasa una vez a glass-oscuro; premium/glass/auto se respetan. Después de esta marca, lo que el
+  // usuario elija en Configuración (incluido Clásico) se queda.
+  if(window.NX_TEMA_GLASS_OSCURO&&!nxPref('tema_glass_oscuro_v1',false)){
+    if(tema==='clasico'){tema='glass-oscuro';if(!nuncaTocado)nxPrefSet('tema',tema);}
+    nxPrefSet('tema_glass_oscuro_v1',true);
+  }
+  aplicarTema(tema,false);
 }
 
 function rApariencia(){
   const cont=document.getElementById('cfgApariencia');
   if(!cont)return;
-  const temaActual=nxPref('tema','clasico');
+  const temaActual=nxPref('tema',nxTemaDefecto());
   const temas=[
+    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro, tarjetas blancas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0B1220,#26334A 60%,#2563EB)'}]:[]),
     {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
     {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
@@ -6918,7 +7130,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.88';
+const APP_VERSION='58.89';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7355,7 +7567,9 @@ document.addEventListener('click',e=>{
 // (ni viceversa) — un usuario podía terminar con los dos prendidos a la vez, pisándose
 // entre sí. Se retiró: ahora hay UN SOLO interruptor, UNA sola preferencia ("tema").
 function toggleDarkMode(){
-  aplicarTema(nxPref('tema','clasico')==='premium' ? 'clasico' : 'premium');
+  // Oscuro (premium o glass oscuro) → Clásico; claro → el oscuro del sistema (glass oscuro si está encendido).
+  const real=document.documentElement.getAttribute('data-nx-tema')||nxPref('tema',nxTemaDefecto());
+  aplicarTema((real==='premium'||real==='glass-oscuro')?'clasico':(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'));
 }
 
 // ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────

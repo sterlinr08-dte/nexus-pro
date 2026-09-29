@@ -1,7 +1,16 @@
 {
-  "version": "58.88",
+  "version": "58.89",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.89",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Nuevo tema «Glass oscuro» en todo el sistema y como tema por defecto: fondo oscuro desenfocado, menú lateral y barra superior de cristal oscuro, tarjetas, tablas, formularios y ventanas en blanco, y un solo acento azul NEXUS.",
+        "Sin saltos al cargar: el tema se aplica antes del primer pintado (también en el inicio de sesión y la pantalla de carga) y no cambia a mitad de la carga.",
+        "Se puede volver a Clásico, Premium Dark, Liquid Glass o Automático en Configuración → Apariencia; la elección se guarda y se respeta."
+      ]
+    },
     {
       "version": "58.88",
       "fecha": "2026-09-29",
