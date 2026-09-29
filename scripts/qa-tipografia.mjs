@@ -24,7 +24,7 @@ async function contexto(browser, width, sesion) {
   page.on('console', m => { if (m.type() === 'error') { const t = m.text(); if (/Failed to load resource|net::ERR|favicon|tabler|googleapis|sentry|emailjs/i.test(t)) return; errs.push('console: ' + t); } });
   page.on('dialog', d => d.dismiss().catch(() => {}));
   const externas = [];
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async r => { const u = r.request().url(); externas.push(u); if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); } return r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); });
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async r => { try { const u = r.request().url(); externas.push(u); if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); } return r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); } catch (e) { /* contexto ya cerrado */ } });
   // Primer pintado: la familia del <body> en DOMContentLoaded, antes de que corra ningún parche diferido.
   await page.addInitScript(() => {
     document.addEventListener('DOMContentLoaded', () => {

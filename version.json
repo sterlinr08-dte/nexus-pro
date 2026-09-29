@@ -1,7 +1,16 @@
 {
-  "version": "58.87",
+  "version": "58.88",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.88",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Inicio con el diseño glass oscuro aprobado: paneles de cristal, tarjetas blancas con mini gráficas y un solo acento azul NEXUS.",
+        "Mismas cifras del Inicio anterior (por cobrar, atrasadas, cobrado del ciclo, activos, prima mensual), más cobrado hoy, cobros por día del ciclo 20 → 20, prospectos, agenda del CRM y cobranza por agente (solo administrador).",
+        "Sin saltos al cargar: la pantalla aparece con sus medidas finales y solo se llenan los números. Se puede apagar al instante y volver al Inicio anterior."
+      ]
+    },
     {
       "version": "58.87",
       "fecha": "2026-09-29",

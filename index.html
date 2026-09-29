@@ -2891,6 +2891,224 @@ html:not(.nx-tipo-off) body #v-dashboard .dhero-s{text-transform:none!important}
   window.addEventListener('load',todas);
 })();
 </script>
+<!-- ═══ INICIO GLASS OSCURO (58.88, 29-sep-2026; diseño aprobado por el dueño: versión OSCURA) ═══
+     Capa AISLADA y reversible, SOLO para la vista Inicio (#v-dashboard). Todas las reglas cuelgan de
+     html.nx-ig + #nxIG / #v-dashboard.nxInicioGlass: ninguna otra pantalla, ni el menú, ni la barra superior cambian.
+       · Sin fuentes web (usa la tipografía Apple ya aplicada), sin librerías: gráficas en SVG en línea.
+       · Sin repintado tardío: el esqueleto (#nxIG) está escrito en el HTML con sus medidas finales y rDash() /
+         rChartCobros() solo llenan números (mismas variables que el Inicio clásico, que se sigue calculando oculto).
+       · El fondo oscuro vive dentro de #nxIG: al salir del Inicio se va con la vista (no toca <body>).
+     CÓMO APAGARLA: poner NX_INICIO_GLASS=false aquí abajo (todos) o, en un dispositivo, en la consola
+     localStorage.setItem('nx_inicio_glass_off','1') y recargar (localStorage.removeItem para volver).
+     Sin html.nx-ig, #nxIG queda oculto y el Inicio clásico se ve exactamente como antes. -->
+<script id="nxInicioGlassOn">var NX_INICIO_GLASS=true;try{if(NX_INICIO_GLASS&&localStorage.getItem('nx_inicio_glass_off')!=='1')document.documentElement.classList.add('nx-ig');}catch(e){if(NX_INICIO_GLASS)document.documentElement.classList.add('nx-ig');}</script>
+<style id="nxInicioGlass">
+html:not(.nx-ig) #nxIG{display:none!important}
+html.nx-ig #v-dashboard.nxInicioGlass>:not(#nxIG):not(#nxDetallesCobroV1):not(#nxDCBotonVolver){display:none!important}
+html.nx-ig #nxIG{
+  --ig-blue:#2563EB;--ig-blue-d:#1D4ED8;--ig-blue-l:#EFF6FF;--ig-blue-b:#BFDBFE;--ig-ink:#0F172A;--ig-steel:#64748B;--ig-mute:#94A3B8;
+  --ig-glass:rgba(15,23,42,.70);--ig-glass2:rgba(255,255,255,.06);--ig-line:rgba(255,255,255,.10);--ig-ok:#16A34A;--ig-bad:#DC2626;
+  --ig-shade:rgba(9,14,28,.72);
+  position:relative;color:#fff;background:var(--ig-shade);
+  /* La sombra sin desenfoque tapa el relleno de .content (el contenedor la recorta): fondo oscuro de borde a borde
+     SOLO mientras se ve el Inicio, sin tocar <body> ni #nxBgPhoto. */
+  box-shadow:0 0 0 48px var(--ig-shade);
+  min-height:calc(100vh - 96px);min-height:calc(100dvh - 96px);
+  padding:4px 0 calc(8px + env(safe-area-inset-bottom,0px));
+  font-feature-settings:"tnum" 1;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+}
+html.nx-ig #nxIG *{box-sizing:border-box}
+/* Reglas globales del sistema que NO deben entrar al Inicio glass: mayúsculas heredadas de body/button/h2,
+   bordes/sombras de botón «semi-glass» (parches-seguros-base) y fondos claros de aside. */
+html.nx-ig #nxIG,html.nx-ig #nxIG *{text-transform:none!important}
+html.nx-ig #nxIG button,html.nx-ig #nxIG button:hover,html.nx-ig #nxIG button:active,html.nx-ig #nxIG button:focus{border:0!important;box-shadow:none!important;border-radius:0!important;background:none!important;min-height:0;text-shadow:none!important}
+html.nx-ig #nxIG svg{display:block!important;vertical-align:initial!important}
+html.nx-ig #nxIG svg.nxIG-i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+html.nx-ig #nxIG h2,html.nx-ig #nxIG h3,html.nx-ig #nxIG h4,html.nx-ig #nxIG p{margin:0}
+html.nx-ig #nxIG button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+html.nx-ig #nxIG [role=button]{cursor:pointer;-webkit-tap-highlight-color:transparent}
+html.nx-ig #nxIG :focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
+/* ── estructura ── */
+html.nx-ig #nxIG .nxIG-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:1100px){html.nx-ig #nxIG .nxIG-grid{grid-template-columns:minmax(0,1fr) 288px;gap:16px;align-items:start}}
+html.nx-ig #nxIG .nxIG-glass{background:var(--ig-glass)!important;-webkit-backdrop-filter:blur(26px) saturate(1.2);backdrop-filter:blur(26px) saturate(1.2);border:1px solid var(--ig-line)!important;border-radius:24px;box-shadow:0 30px 60px -30px rgba(2,6,23,.6)!important;min-width:0}
+html.nx-ig #nxIG .nxIG-main{padding:22px 22px 24px;display:flex;flex-direction:column;gap:16px;container-type:inline-size}
+html.nx-ig #nxIG .nxIG-side{padding:18px;display:flex;flex-direction:column;gap:14px}
+/* ── cabecera ── */
+html.nx-ig #nxIG .nxIG-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;min-height:58px}
+html.nx-ig #nxIG .nxIG-hi{min-width:0;flex:1 1 260px}
+html.nx-ig #nxIG .nxIG-hi .nxIG-h{font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.022em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-hi p{font-size:14px;line-height:20px;height:20px;color:#CBD5E1;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-hi p b{color:#fff;font-weight:600}
+html.nx-ig #nxIG .nxIG-search{flex:0 1 320px;min-width:0;height:44px;border-radius:999px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.14)!important;display:flex;align-items:center;gap:10px;padding:0 16px;color:#94A3B8;font-size:14px;text-align:left;transition:background .16s ease}
+html.nx-ig #nxIG .nxIG-search span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-search svg{width:16px;height:16px}
+@media (hover:hover){html.nx-ig #nxIG .nxIG-search:hover{background:rgba(255,255,255,.12)!important}}
+/* ── tarjetas blancas ── */
+html.nx-ig #nxIG .nxIG-card{background:#fff;color:var(--ig-ink);border-radius:18px;padding:16px;box-shadow:0 10px 30px -12px rgba(2,6,23,.45);min-width:0;transition:transform .16s cubic-bezier(.22,1,.36,1)}
+@media (hover:hover){html.nx-ig #nxIG .nxIG-card[role=button]:hover,html.nx-ig #nxIG .nxIG-cyc:hover{transform:translateY(-1px)}}
+html.nx-ig #nxIG .nxIG-card[role=button]:active,html.nx-ig #nxIG .nxIG-cyc:active{transform:translateY(1px)}
+html.nx-ig #nxIG .nxIG-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@container (min-width:640px){html.nx-ig #nxIG .nxIG-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}}
+html.nx-ig #nxIG .nxIG-kt{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;font-size:13px;line-height:20px;height:44px;color:var(--ig-steel);font-weight:600}
+html.nx-ig #nxIG .nxIG-kt>span:first-child{max-width:100%}
+@container (min-width:820px){html.nx-ig #nxIG .nxIG-kt{flex-direction:row;justify-content:space-between;align-items:center;height:22px;gap:6px}}
+html.nx-ig #nxIG .nxIG-kt>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+html.nx-ig #nxIG .nxIG-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap;flex:none}
+html.nx-ig #nxIG .nxIG-chip:empty{visibility:hidden}
+html.nx-ig #nxIG .nxIG-chip:empty:before{content:"\00a0"}
+html.nx-ig #nxIG .nxIG-chip.up{background:#DCFCE7;color:#15803D}html.nx-ig #nxIG .nxIG-chip.dn{background:#FEE2E2;color:#B91C1C}html.nx-ig #nxIG .nxIG-chip.bl{background:var(--ig-blue-l);color:var(--ig-blue)}
+html.nx-ig #nxIG .nxIG-kv{font-family:var(--nx-sf-display,-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif);font-weight:700;font-size:24px;line-height:30px;height:30px;margin-top:8px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-kv.largo{font-size:19px}
+html.nx-ig #nxIG .nxIG-viz{height:34px;margin-top:10px;display:flex;align-items:flex-end;gap:5px}
+html.nx-ig #nxIG .nxIG-viz i{flex:1;border-radius:4px;background:var(--ig-blue-b);min-height:3px}
+html.nx-ig #nxIG .nxIG-viz i.h{background:var(--ig-blue)}
+html.nx-ig #nxIG .nxIG-viz.r i{background:#FECACA}html.nx-ig #nxIG .nxIG-viz.r i.h{background:var(--ig-bad)}
+html.nx-ig #nxIG .nxIG-viz.p{align-items:center}
+html.nx-ig #nxIG .nxIG-ks{font-size:12px;line-height:16px;height:16px;color:var(--ig-steel);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden;flex:1}
+html.nx-ig #nxIG .nxIG-bar i{display:block;height:100%;width:0;background:#fff;border-radius:999px;transition:width .42s cubic-bezier(.22,1,.36,1)}
+html.nx-ig #nxIG .nxIG-card .nxIG-bar{background:var(--ig-blue-l)}html.nx-ig #nxIG .nxIG-card .nxIG-bar i{background:var(--ig-blue)}
+/* ── gráfica + ciclo ── */
+html.nx-ig #nxIG .nxIG-row2{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@container (min-width:640px){html.nx-ig #nxIG .nxIG-row2{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr)}}
+html.nx-ig #nxIG .nxIG-ct{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;min-height:40px}
+html.nx-ig #nxIG .nxIG-ct b{display:block;font-size:15px;line-height:20px;font-weight:700}
+html.nx-ig #nxIG .nxIG-ct small{display:block;font-size:12px;line-height:16px;height:16px;color:var(--ig-steel);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-ct>div{min-width:0}
+html.nx-ig #nxIG .nxIG-pill{font-size:12px;line-height:18px;border:1px solid #E2E8F0;border-radius:999px;padding:5px 11px;color:var(--ig-steel);font-weight:600;white-space:nowrap;flex:none}
+html.nx-ig #nxIG .nxIG-plot{position:relative;height:150px;margin-top:10px}
+html.nx-ig #nxIG .nxIG-plot svg{width:100%;height:150px}
+html.nx-ig #nxIG .nxIG-tip{position:absolute;top:0;transform:translate(-50%,0);background:var(--ig-blue);color:#fff;font-size:12px;line-height:16px;font-weight:700;border-radius:999px;padding:4px 10px;white-space:nowrap;pointer-events:none}
+html.nx-ig #nxIG .nxIG-dot{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;border:3px solid var(--ig-blue);pointer-events:none}
+html.nx-ig #nxIG .nxIG-tip[hidden],html.nx-ig #nxIG .nxIG-dot[hidden]{display:none}
+html.nx-ig #nxIG .nxIG-ax{display:flex;justify-content:space-between;font-size:12px;line-height:16px;height:16px;color:var(--ig-mute);margin-top:4px}
+html.nx-ig #nxIG .nxIG-cyc{container-type:inline-size;border-radius:18px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;position:relative;overflow:hidden;min-height:196px;color:#fff;
+  background:linear-gradient(160deg,#1D4ED8 0%,#1E3A8A 60%,#172554 100%);box-shadow:0 10px 30px -12px rgba(2,6,23,.6);transition:transform .16s cubic-bezier(.22,1,.36,1)}
+html.nx-ig #nxIG .nxIG-cyc:before{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+html.nx-ig #nxIG .nxIG-cyc:after{content:"";position:absolute;right:30px;bottom:-80px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+html.nx-ig #nxIG .nxIG-cyc>*{position:relative;z-index:1}
+html.nx-ig #nxIG .nxIG-lb{font-size:12px;line-height:16px;color:#BFDBFE;font-weight:600;text-transform:uppercase!important;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html.nx-ig #nxIG .nxIG-split>div{min-width:0}
+html.nx-ig #nxIG .nxIG-split b{display:block;font-size:22px;line-height:28px;height:28px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-split b.largo{font-size:18px}
+@container (max-width:300px){html.nx-ig #nxIG .nxIG-split{grid-template-columns:minmax(0,1fr);gap:8px}}
+html.nx-ig #nxIG .nxIG-split span,html.nx-ig #nxIG .nxIG-cyc .nxIG-bt{display:block;font-size:12px;line-height:16px;color:#DBEAFE;min-height:16px}
+html.nx-ig #nxIG .nxIG-cyc .nxIG-bt{margin-top:6px}
+/* ── secciones ── */
+html.nx-ig #nxIG .nxIG-sec{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;line-height:20px;min-height:44px;margin-bottom:-8px}
+html.nx-ig #nxIG .nxIG-sec>span:first-child{border-left:3px solid var(--ig-blue);padding-left:9px}
+html.nx-ig #nxIG .nxIG-sec button{color:#93C5FD!important;font-size:13px;font-weight:600;min-height:44px;padding:0 4px 0 12px}
+html.nx-ig #nxIG .nxIG-pros{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@container (min-width:640px){html.nx-ig #nxIG .nxIG-pros{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
+html.nx-ig #nxIG .nxIG-pc{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:98px}
+html.nx-ig #nxIG .nxIG-pc>div:first-child{min-width:0}
+html.nx-ig #nxIG .nxIG-pc h4{font-size:15px;line-height:20px;font-weight:700;white-space:nowrap}
+html.nx-ig #nxIG .nxIG-pc p{font-size:12px;line-height:16px;color:var(--ig-steel);margin-top:4px}
+html.nx-ig #nxIG .nxIG-tag{display:inline-block;margin-top:10px;font-size:12px;line-height:16px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--ig-blue-l);color:var(--ig-blue)}
+html.nx-ig #nxIG .nxIG-stack{display:flex;flex:none}
+html.nx-ig #nxIG .nxIG-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#BFDBFE,#2563EB);border:2px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;flex:none;letter-spacing:0}
+html.nx-ig #nxIG .nxIG-stack .nxIG-av{width:36px;height:36px;font-size:12px;margin-left:-6px;border:2px solid #fff;color:#1E3A8A;background:linear-gradient(135deg,#DBEAFE,#93C5FD)}
+html.nx-ig #nxIG .nxIG-stack .nxIG-av:first-child{margin-left:0}
+html.nx-ig #nxIG .nxIG-pc.hl{background:var(--ig-blue);color:#fff}html.nx-ig #nxIG .nxIG-pc.hl p{color:#DBEAFE}html.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:rgba(255,255,255,.2);color:#fff}html.nx-ig #nxIG .nxIG-pc.hl .nxIG-stack .nxIG-av{border-color:var(--ig-blue);background:#fff}
+html.nx-ig #nxIG .nxIG-adm{display:none}
+html.nx-ig #nxIG[data-admin="1"] .nxIG-adm{display:flex}
+html.nx-ig #nxIG .nxIG-agts{display:none;grid-template-columns:minmax(0,1fr);gap:10px}
+html.nx-ig #nxIG[data-admin="1"] .nxIG-agts{display:grid}
+@container (min-width:640px){html.nx-ig #nxIG .nxIG-agts{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
+html.nx-ig #nxIG .nxIG-ag{container-type:inline-size;padding:16px;min-height:80px;display:flex;align-items:center}
+html.nx-ig #nxIG .nxIG-agi{flex:1;min-width:0;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+@container (max-width:259px){html.nx-ig #nxIG .nxIG-agi{grid-template-columns:40px minmax(0,1fr)}html.nx-ig #nxIG .nxIG-amt{grid-column:1/-1;text-align:left!important}}
+html.nx-ig #nxIG .nxIG-ag .nxIG-meta{min-width:0}
+html.nx-ig #nxIG .nxIG-ag .nxIG-meta b{display:block;font-size:14px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-ag small{display:block;font-size:12px;line-height:16px;color:var(--ig-steel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-amt{font-weight:700;font-size:15px;line-height:20px;text-align:right;white-space:nowrap;min-width:0}
+html.nx-ig #nxIG .nxIG-amt>span{display:inline-block}
+html.nx-ig #nxIG .nxIG-amt small{display:block;font-weight:500}
+html.nx-ig #nxIG .nxIG-amt small.neg{color:var(--ig-bad)}
+html.nx-ig #nxIG .nxIG-msg{font-size:13px;line-height:18px;color:#CBD5E1;padding:14px 4px;grid-column:1/-1}
+/* ── accesos rápidos (las mismas fichas .qa del Inicio clásico, movidas aquí; fila de alto fijo) ── */
+html.nx-ig #nxIG .nxIG-acc{height:60px;overflow:hidden}
+html.nx-ig #nxIG .nxIG-acc .qa-g{display:flex!important;grid-template-columns:none!important;gap:8px!important;margin:0!important;max-width:none!important;overflow-x:auto;overflow-y:hidden;height:60px;padding:0 0 8px!important;align-items:center!important;justify-content:flex-start!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+html.nx-ig #nxIG .nxIG-acc .qa-g::-webkit-scrollbar{display:none}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa{flex:none!important;display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;height:44px!important;min-height:44px!important;padding:0 14px 0 6px!important;border-radius:999px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:none!important;overflow:visible!important;animation:none!important;transform:none!important;text-align:left!important}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa:active{transform:translateY(1px)!important}
+@media (hover:hover){html.nx-ig #nxIG .nxIG-acc .qa-g .qa:hover{background:rgba(255,255,255,.14)!important}}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa .qa-i{margin:0!important;display:block!important;perspective:none!important;line-height:0}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa i.qa-ico{width:32px!important;height:32px!important;min-width:32px!important;font-size:16px!important;border-radius:50%!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:none!important}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa i.qa-ico::after,html.nx-ig #nxIG .nxIG-acc .qa-g .qa i.qa-ico::before{display:none!important}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa .qa-l{font-size:12px!important;line-height:18px!important;color:#E2E8F0!important;font-weight:600!important;text-transform:uppercase!important;letter-spacing:.02em!important;white-space:nowrap!important;padding:0!important;background:none!important;box-shadow:none!important;border:0!important;max-width:none!important}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qa>span[style*="absolute"]{top:-6px!important;right:-2px!important;font-size:12px!important;line-height:14px!important}
+html.nx-ig #nxIG .nxIG-acc .qa-g .qaSolicitBadge{font-size:12px!important}
+/* ── columna derecha ── */
+html.nx-ig #nxIG .nxIG-prof{display:flex;gap:12px;align-items:center;min-height:48px}
+html.nx-ig #nxIG .nxIG-prof .nxIG-av{width:46px;height:46px;font-size:14px}
+html.nx-ig #nxIG .nxIG-prof>div:last-child{min-width:0}
+html.nx-ig #nxIG .nxIG-prof b{display:block;font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-prof small{display:block;color:var(--ig-mute);font-size:12px;line-height:16px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ig-glass2);border:1px solid var(--ig-line);border-radius:16px;padding:4px;text-align:center}
+html.nx-ig #nxIG .nxIG-stats>button{min-height:56px;padding:6px 2px;border-radius:12px!important;display:flex;flex-direction:column;align-items:center;justify-content:center}
+html.nx-ig #nxIG .nxIG-stats>button+button{border-left:1px solid var(--ig-line)!important;border-radius:0!important}
+html.nx-ig #nxIG .nxIG-stats b{font-size:16px;line-height:20px;display:block}
+html.nx-ig #nxIG .nxIG-stats b.bad{color:#FCA5A5}
+html.nx-ig #nxIG .nxIG-stats small{color:var(--ig-mute);font-size:12px;line-height:16px}
+html.nx-ig #nxIG .nxIG-prima{font-size:12px;line-height:16px;color:#CBD5E1;padding:0 4px;min-height:16px}
+html.nx-ig #nxIG .nxIG-prima b{color:#fff;font-weight:600}
+html.nx-ig #nxIG .nxIG-cal{background:var(--ig-glass2);border:1px solid var(--ig-line);border-radius:16px;padding:10px 12px 12px}
+html.nx-ig #nxIG .nxIG-calh{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}
+html.nx-ig #nxIG .nxIG-calh button{width:44px;height:44px;display:grid;place-items:center;color:var(--ig-mute)!important;border-radius:12px!important}
+html.nx-ig #nxIG .nxIG-calh button svg{width:16px;height:16px}
+html.nx-ig #nxIG .nxIG-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:12px;color:#CBD5E1;height:218px;align-content:start}
+html.nx-ig #nxIG .nxIG-days span{height:28px;display:grid;place-items:center;border-radius:999px}
+html.nx-ig #nxIG .nxIG-days .d{color:#64748B;font-weight:700}
+html.nx-ig #nxIG .nxIG-days .o{color:#475569}
+html.nx-ig #nxIG .nxIG-days .c{box-shadow:inset 0 0 0 1px rgba(147,197,253,.55)}
+html.nx-ig #nxIG .nxIG-days .g{background:rgba(22,163,74,.22);color:#86EFAC;font-weight:700}
+html.nx-ig #nxIG .nxIG-days .t{background:var(--ig-blue);color:#fff;font-weight:700}
+html.nx-ig #nxIG .nxIG-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;line-height:16px;color:var(--ig-mute);margin-top:8px}
+html.nx-ig #nxIG .nxIG-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px}
+html.nx-ig #nxIG .nxIG-agenda{display:flex;flex-direction:column;gap:10px}
+html.nx-ig #nxIG .nxIG-it{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--ig-glass2)!important;border:1px solid var(--ig-line)!important;border-radius:14px!important;padding:9px 12px;min-height:66px;text-align:left;width:100%;color:#fff!important}
+html.nx-ig #nxIG .nxIG-it .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+html.nx-ig #nxIG .nxIG-it .ic.b{background:rgba(37,99,235,.22);color:#93C5FD}html.nx-ig #nxIG .nxIG-it .ic.g{background:rgba(22,163,74,.2);color:#86EFAC}html.nx-ig #nxIG .nxIG-it .ic.a{background:rgba(217,119,6,.22);color:#FCD34D}
+html.nx-ig #nxIG .nxIG-it>div{min-width:0}
+html.nx-ig #nxIG .nxIG-it small{display:block;font-size:12px;line-height:14px;color:var(--ig-mute);font-weight:700;text-transform:uppercase!important;letter-spacing:.04em}
+html.nx-ig #nxIG .nxIG-it b{font-size:13px;line-height:17px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-it p{font-size:12px;line-height:16px;color:var(--ig-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig #nxIG .nxIG-it time{font-size:12px;line-height:16px;color:#CBD5E1;white-space:nowrap;text-align:right}
+html.nx-ig #nxIG .nxIG-it time em{display:block;font-style:normal;font-weight:600}
+html.nx-ig #nxIG .nxIG-it time.bad{color:#FCA5A5}
+html.nx-ig #nxIG .nxIG-agenda .nxIG-msg{min-height:66px;display:flex;align-items:center;padding:0 4px}
+/* esqueleto: «—» y barras tenues mientras llegan los datos; mismas medidas que el contenido final */
+html.nx-ig #nxIG .nxIG-sk{background:linear-gradient(90deg,rgba(148,163,184,.14),rgba(148,163,184,.26),rgba(148,163,184,.14));background-size:200% 100%;animation:nxIGsk 1.4s ease-in-out infinite;border-radius:8px;color:transparent!important}
+html.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.11),rgba(255,255,255,.05));background-size:200% 100%}
+@keyframes nxIGsk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+/* ── celular ── */
+@media (max-width:768px){
+  html.nx-ig #nxIG .nxIG-main{padding:16px 12px 18px;border-radius:20px;gap:14px}
+  html.nx-ig #nxIG .nxIG-glass{background:rgba(15,23,42,.80)!important}
+  html.nx-ig #nxIG .nxIG-kpis{gap:10px}
+  html.nx-ig #nxIG .nxIG-ax span:nth-child(2n){display:none}
+  html.nx-ig #nxIG .nxIG-side{padding:14px;border-radius:20px}
+  html.nx-ig #nxIG .nxIG-hi{flex-basis:100%}
+  html.nx-ig #nxIG .nxIG-hi .nxIG-h{font-size:24px;white-space:normal;overflow-wrap:anywhere} /* el nombre se escribe antes de mostrar la app: no provoca salto */
+  html.nx-ig #nxIG .nxIG-hi p{font-size:13px;white-space:normal;height:auto;min-height:36px;line-height:18px}
+  html.nx-ig #nxIG .nxIG-search{flex:1 1 100%}
+  html.nx-ig #nxIG .nxIG-card{padding:14px 10px}
+  html.nx-ig #nxIG .nxIG-kv{font-size:18px}
+  html.nx-ig #nxIG .nxIG-kv.largo{font-size:15px}
+  html.nx-ig #nxIG .nxIG-ct{flex-direction:column;gap:8px}
+  html.nx-ig #nxIG .nxIG-plot,html.nx-ig #nxIG .nxIG-plot svg{height:130px}
+  html.nx-ig #nxIG .nxIG-split b{font-size:19px}
+  html.nx-ig #nxIG .nxIG-split b.largo{font-size:16px}
+  html.nx-ig #nxIG .nxIG-cyc{min-height:0}
+  html.nx-ig #nxIG .nxIG-stats b{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){
+  html.nx-ig #nxIG *,html.nx-ig #nxIG *:before,html.nx-ig #nxIG *:after{animation:none!important;transition:none!important}
+}
+</style>
 </head>
 <body>
 
@@ -3297,7 +3515,75 @@ html:not(.nx-tipo-off) body #v-dashboard .dhero-s{text-transform:none!important}
       <div class="content" id="cnt">
 
         <!-- DASHBOARD -->
-        <div class="view on" id="v-dashboard">
+        <div class="view on nxInicioGlass" id="v-dashboard">
+          <!-- INICIO GLASS (58.88): esqueleto con medidas finales; lo llenan rDash()/rChartCobros() vía nxIGPintar()/nxIGCiclo().
+               Oculto si html no tiene .nx-ig (interruptor en <head>, id="nxInicioGlassOn"). -->
+          <div id="nxIG" class="nxIG" data-admin="0">
+            <div class="nxIG-grid">
+              <section class="nxIG-main nxIG-glass" aria-label="Resumen del día">
+                <div class="nxIG-head">
+                  <div class="nxIG-hi"><div class="nxIG-h" id="nxIGHola" role="heading" aria-level="2">Hola</div><p id="nxIGSub"><span class="nxIG-sk">cargando el resumen del día</span></p></div>
+                  <button type="button" class="nxIG-search" onclick="abrirGlobalSearch()" aria-label="Buscar cliente, póliza o cédula"><svg class="nxIG-i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Buscar cliente, póliza o cédula…</span></button>
+                </div>
+                <div class="nxIG-kpis">
+                  <div class="nxIG-card" id="nxIGk1" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Cobrado hoy — ver el historial de pagos">
+                    <div class="nxIG-kt"><span>Cobrado hoy</span><span class="nxIG-chip bl" id="nxIGk1c"></span></div><div class="nxIG-kv" id="nxIGk1v"><span class="nxIG-sk">RD$ 0,000</span></div><div class="nxIG-viz" id="nxIGk1z"></div><div class="nxIG-ks" id="nxIGk1s">últimos 7 días</div></div>
+                  <div class="nxIG-card" id="nxIGk2" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Por cobrar — ir a Cobros">
+                    <div class="nxIG-kt"><span>Por cobrar</span><span class="nxIG-chip dn" id="nxIGk2c"></span></div><div class="nxIG-kv" id="nxIGk2v"><span class="nxIG-sk">RD$ 0,000</span></div><div class="nxIG-viz p"><div class="nxIG-bar"><i id="nxIGk2b"></i></div></div><div class="nxIG-ks" id="nxIGk2s">&nbsp;</div></div>
+                  <div class="nxIG-card" id="nxIGk3" role="button" tabindex="0" onclick="nav('clientes',null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Clientes activos — ir a Clientes">
+                    <div class="nxIG-kt"><span>Clientes activos</span><span class="nxIG-chip bl" id="nxIGk3c"></span></div><div class="nxIG-kv" id="nxIGk3v"><span class="nxIG-sk">000</span></div><div class="nxIG-viz p"><div class="nxIG-bar"><i id="nxIGk3b"></i></div></div><div class="nxIG-ks" id="nxIGk3s">&nbsp;</div></div>
+                  <div class="nxIG-card" id="nxIGk4" role="button" tabindex="0" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Facturas atrasadas — ver la lista">
+                    <div class="nxIG-kt"><span>Atrasadas</span><span class="nxIG-chip dn" id="nxIGk4c"></span></div><div class="nxIG-kv" id="nxIGk4v"><span class="nxIG-sk">00</span></div><div class="nxIG-viz r" id="nxIGk4z"></div><div class="nxIG-ks" id="nxIGk4s">facturas de meses anteriores</div></div>
+                </div>
+                <div class="nxIG-row2">
+                  <div class="nxIG-card" id="nxIGch" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Cobros del ciclo — ver el historial de pagos">
+                    <div class="nxIG-ct"><div><b>Cobros del ciclo</b><small id="nxIGchs">Lo cobrado cada día del ciclo 20 → 20</small></div><span class="nxIG-pill" id="nxIGchp">ciclo 20 → 20</span></div>
+                    <div class="nxIG-plot" id="nxIGchPlot"><svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-hidden="true"><g stroke="#EEF2F7" stroke-width="1" vector-effect="non-scaling-stroke"><line x1="0" y1="20" x2="600" y2="20" vector-effect="non-scaling-stroke"/><line x1="0" y1="70" x2="600" y2="70" vector-effect="non-scaling-stroke"/><line x1="0" y1="120" x2="600" y2="120" vector-effect="non-scaling-stroke"/></g><g id="nxIGchG"></g></svg><span class="nxIG-dot" id="nxIGchDot" hidden></span><span class="nxIG-tip" id="nxIGchTip" hidden></span></div>
+                    <div class="nxIG-ax" id="nxIGchAx"><span>&nbsp;</span></div>
+                  </div>
+                  <div class="nxIG-cyc" id="nxIGcy" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Ciclo actual — ver el historial de pagos">
+                    <div class="nxIG-lb" id="nxIGcyl">Ciclo actual</div>
+                    <div class="nxIG-split"><div><b id="nxIGcy1"><span class="nxIG-sk">RD$ 00,000</span></b><span>cobrado en el ciclo</span></div><div><b id="nxIGcy2"><span class="nxIG-sk">RD$ 00,000</span></b><span id="nxIGcy2s">ciclo anterior, mismo día</span></div></div>
+                    <div><div class="nxIG-bar"><i id="nxIGcyb"></i></div><span class="nxIG-bt" id="nxIGcybt">&nbsp;</span></div>
+                  </div>
+                </div>
+                <div class="nxIG-sec"><span>Prospectos</span><button type="button" onclick="nxIGIrProspectos()">ver todos</button></div>
+                <div class="nxIG-pros" id="nxIGpros">
+                  <div class="nxIG-card nxIG-pc" role="button" tabindex="0" onclick="nxIGIrProspectos()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"><div><h4>Nuevo · <span id="nxIGp1">–</span></h4><p>sin contactar</p><span class="nxIG-tag">Nuevo</span></div><div class="nxIG-stack" id="nxIGp1a"></div></div>
+                  <div class="nxIG-card nxIG-pc hl" role="button" tabindex="0" onclick="nxIGIrProspectos()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"><div><h4>Cotizado · <span id="nxIGp2">–</span></h4><p>esperando respuesta</p><span class="nxIG-tag">Cotizado</span></div><div class="nxIG-stack" id="nxIGp2a"></div></div>
+                  <div class="nxIG-card nxIG-pc" role="button" tabindex="0" onclick="nxIGIrProspectos()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"><div><h4>Documentos · <span id="nxIGp3">–</span></h4><p>en trámite</p><span class="nxIG-tag">Documentos</span></div><div class="nxIG-stack" id="nxIGp3a"></div></div>
+                </div>
+                <div class="nxIG-sec nxIG-adm"><span>Cobranza por agente</span><button type="button" onclick="nav('rep-agente',null)">ver cierre</button></div>
+                <div class="nxIG-agts" id="nxIGagts">
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
+                </div>
+                <div class="nxIG-sec"><span>Accesos rápidos</span></div>
+                <div class="nxIG-acc" id="nxIGacc"></div>
+              </section>
+              <div class="nxIG-side nxIG-glass" role="complementary" aria-label="Tu día">
+                <div class="nxIG-prof"><div class="nxIG-av" id="nxIGav">··</div><div><b id="nxIGnom">&nbsp;</b><small id="nxIGrol">&nbsp;</small></div></div>
+                <div class="nxIG-stats">
+                  <button type="button" onclick="nav('polizas',null)"><b id="nxIGs1">–</b><small>Vencidas</small></button>
+                  <button type="button" onclick="nav('polizas',null)"><b id="nxIGs2">–</b><small id="nxIGs2l">Por vencer</small></button>
+                  <button type="button" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)"><b id="nxIGs3">–</b><small>En proceso</small></button>
+                </div>
+                <div class="nxIG-prima" id="nxIGprima">&nbsp;</div>
+                <div class="nxIG-cal">
+                  <div class="nxIG-calh"><button type="button" onclick="nxIGCal(-1)" aria-label="Mes anterior"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span id="nxIGcalT">&nbsp;</span><button type="button" onclick="nxIGCal(1)" aria-label="Mes siguiente"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
+                  <div class="nxIG-days" id="nxIGdays"></div>
+                  <div class="nxIG-leg"><span><i style="background:#2563EB"></i>Hoy</span><span><i style="background:#16A34A"></i>Con cobros</span><span><i style="background:transparent;box-shadow:inset 0 0 0 1px #93C5FD"></i>Corte (20)</span></div>
+                </div>
+                <div class="nxIG-sec"><span>Agenda</span><button type="button" onclick="nxIGIrAgenda()">ver todo</button></div>
+                <div class="nxIG-agenda" id="nxIGagenda">
+                  <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
+                  <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
+                  <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="alertasBanner"></div>
           <div id="dashHero"></div>
           <div class="qa-g">
@@ -6632,7 +6918,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.87';
+const APP_VERSION='58.88';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8418,6 +8704,7 @@ async function iniciarApp(){
   await nxCargarOrg(); // multi-empresa: organización del usuario (login o sesión restaurada)
   await nxLoginRevelar(); // el escudo se abre antes de revelar la app (no-op si no había login visible)
   document.getElementById('loginScreen').style.display='none';
+  try{nxIGPreparar();}catch(e){} // Inicio glass: rol y saludo en el esqueleto ANTES de mostrar la app (sin saltos)
   document.getElementById('app').style.display='flex';
   document.getElementById('sbAv').textContent=inits(sesion.nom);
   document.getElementById('sbNom').textContent=sesion.nom.split(' ')[0];
@@ -8878,6 +9165,7 @@ function verificarAlertas(){
   const urgentes=act.filter(c=>{const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=7;});
   const proximas=act.filter(c=>{const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>7&&d<=CFG.alertaDias;});
   const vencidas=act.filter(c=>new Date(c.fecha_fin)<new Date());
+  window.__nxAlertasCnt={vencidas:vencidas.length,urgentes:urgentes.length,proximas:proximas.length};
   let html='';
   if(vencidas.length)html+=`<div class="alert-banner"><i class="ti ti-alert-circle"></i> <strong>${vencidas.length} póliza${vencidas.length>1?'s':''} vencida${vencidas.length>1?'s':''}</strong> — Requieren acción inmediata. <button class="btn bsm bc3" onclick="nav('polizas',null)" style="margin-left:auto">Ver pólizas</button></div>`;
   if(urgentes.length)html+=`<div class="alert-banner warn"><i class="ti ti-alert-triangle"></i> <strong>${urgentes.length} póliza${urgentes.length>1?'s':''}</strong> vence${urgentes.length>1?'n':''} en menos de 7 días. <button class="btn bsm bc4" onclick="nav('polizas',null)" style="margin-left:auto">Revisar</button></div>`;
@@ -9000,10 +9288,12 @@ function rDash(){
     <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:15px">${fmt(prima)}</div><div class="ks">cartera activa · ${ef}% efectividad</div></div>
     <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" ${_kb}><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
   // KPI de utilidad — SOLO VISIBLE PARA ADMIN
+  let _igUtil=null;
   if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
     const utilidad=prima-costoTotal;
     const margen=prima>0?Math.round(utilidad/prima*100):0;
+    _igUtil={utilidad,margen};
     document.getElementById('kpiG').innerHTML+=`<div class="kpi k3" style="border-top:none;border-left:3px solid #059669;position:relative"><div style="position:absolute;top:8px;right:8px;background:#ede9fe;color:#6d28d9;font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;letter-spacing:.3px">ADMIN</div><i class="ti ti-trending-up ki"></i><div class="kl">UTILIDAD BRUTA</div><div class="kv v3" style="font-size:13px">${fmt(utilidad)}</div><div class="ks">Margen ${margen}%</div></div>`;
   }
   const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];
@@ -9012,11 +9302,16 @@ function rDash(){
   const aMax=Math.max(...ST.agentes.map(a=>act.filter(c=>c.agente_id===a.id).reduce((s,c)=>s+(c.pagado||0),0)),1);
   document.getElementById('bAgt').innerHTML=ST.agentes.slice(0,5).map((a,i)=>{const c2=act.filter(c=>c.agente_id===a.id).reduce((s,c)=>s+(c.pagado||0),0);return`<div class="br-r"><div class="br-l" style="font-size:9px">${a.nom.split(' ')[0]}</div><div class="br-t"><div class="br-f" style="width:${Math.round(c2/aMax*100)}%;background:${ph[i%3]}"></div></div><div class="br-v">${fmt(c2)}</div></div>`;}).join('')||'<div class="empty">Sin agentes</div>';
   // Pólizas por vencer
-  const venc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=CFG.alertaDias;}).slice(0,6);
+  const vencTodas=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=CFG.alertaDias;});
+  const venc=vencTodas.slice(0,6);
   document.getElementById('dashVenc').innerHTML=venc.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PÓLIZA</th><th>PLAN</th><th>VENCE</th><th>DÍAS</th></tr></thead><tbody>${venc.map(c=>{const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);const ep=getEstPol(c);return`<tr><td style="font-weight:700">${c.nom}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${c.fecha_fin}</td><td><span class="badge ${ep.badge}">${d} días</span></td></tr>`;}).join('')}</tbody></table></div>`:`<div class="empty">No hay pólizas por vencer en ${CFG.alertaDias} días ✓</div>`;
   // Saldos pendientes
   const pends=act.filter(c=>pendTot(c)>0).slice(0,6);
   document.getElementById('dashD').innerHTML=pends.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PLAN</th><th>PRIMA</th><th>PENDIENTE</th><th>ESTADO</th></tr></thead><tbody>${pends.map(c=>`<tr><td style="font-weight:700;font-size:11px">${c.nom}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3);font-weight:700">${fmt(pend(c))}</td><td>${estB(c)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><i class="ti ti-circle-check" style="font-size:22px;color:var(--c1);display:block;margin-bottom:6px"></i>TODOS AL DÍA</div>`;
+  // Inicio glass (58.88): recibe EXACTAMENTE los valores de arriba; no recalcula dinero.
+  try{if(typeof nxIGPintar==='function')nxIGPintar({pd,conSaldo,atrasadas,act:act.length,inh,prima,ef,
+    enProceso:ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length,porVencer:vencTodas.length,
+    util:_igUtil,mcKey:_mcKey});}catch(e){console.error('[Inicio glass]',e);}
   rChartCobros();
   rWidgetProceso();
 }
@@ -9115,6 +9410,7 @@ async function rChartCobros(){
       const _mm=_kcs.closest('.dhero-m'); if(_mm)_mm.setAttribute('aria-label',`Cobrado en el ciclo actual: ${fmt(cobCiclo)}, ${arriba?'por encima':'por debajo'} del ciclo anterior (${fmt(antMismoDia)} al mismo día). Ver el historial de pagos`);
     } else _kcs.textContent=`día ${diaActual+1} del ciclo`;
   }
+  try{if(typeof nxIGCiclo==='function')nxIGCiclo({abonos,mc,diaActual,cobCiclo,antMismoDia});}catch(e){console.error('[Inicio glass]',e);}
   const vals=meses.map(m=>m.total);
   const max=Math.max(...vals,1);
   // Dimensiones del SVG
@@ -9154,6 +9450,234 @@ async function rChartCobros(){
   </div>
   <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--tx2)">Ciclo en curso (va por el día ${diaActual+1}): <strong style="color:var(--c1);font-family:var(--mono)">${fmt(cobCiclo)}</strong></div>`;
   cont.innerHTML=svg;
+}
+
+// ── INICIO GLASS OSCURO (58.88) ──────────────────────────────────────────────
+// Solo PINTA. Los números llegan de rDash() / rChartCobros() / verificarAlertas() (las mismas variables del Inicio
+// clásico, que se sigue calculando oculto debajo). No se calcula dinero de otra forma: «Cobrado hoy», la gráfica
+// diaria y el calendario agrupan por día (fechaRD) la MISMA lista de abonos que rChartCobros ya descarga, y su
+// suma dentro del ciclo es el mismo «Cobrado» del ciclo. Lecturas extra, de solo lectura y ya existentes en la app:
+// crm_prospectos y crm_tareas (mismas consultas del CRM) y la RPC seguros_resumen_ciclo_admin (la del reporte
+// Ciclo 20→20; solo admin). Apagado: interruptor en <head> (id="nxInicioGlassOn").
+const _nxIG={porDia:null,nDia:null,calOff:0,crm:null,crmTs:0,crmP:null,agt:null,agtErr:false,agtTs:0,agtPer:'',agtP:null,hoyCobros:null};
+const NX_IG_TIPO={seguimiento:'Seguimiento',documento:'Documento',cobro:'Cobro',afiliacion:'Afiliación',renovacion:'Renovación',otro:'Otro'};
+function nxIGOn(){return document.documentElement.classList.contains('nx-ig')&&!!document.getElementById('nxIG');}
+function nxIGSet(id,html){const e=document.getElementById(id);if(e&&e.innerHTML!==html)e.innerHTML=html;return e;}
+function nxIGIni(nom){return String(nom||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'··';}
+const nxIGMes3=m=>MESES[m-1].slice(0,3).toLowerCase();
+function nxIGFechaCorta(iso){const p=String(iso).split('-');return (+p[2])+' '+nxIGMes3(+p[1]);}
+function nxIGSumaDias(iso,d){return new Date(Date.parse(iso+'T12:00:00Z')+d*86400000).toISOString().slice(0,10);}
+function nxIGLargo(id,txt){const e=document.getElementById(id);if(e)e.classList.toggle('largo',String(txt).length>10);}
+function nxIGBarras(vals,hoyIdx){
+  const max=Math.max(...vals,0);
+  return vals.map((v,i)=>`<i class="${i===hoyIdx&&v>0?'h':''}" style="height:${max>0?Math.max(8,Math.round(v/max*100)):8}%"></i>`).join('');
+}
+const nxIGPl=(n,s,p)=>n+' '+(n===1?s:(p||s+'s'));
+
+function nxIGPintar(d){
+  if(!nxIGOn())return;
+  const esAdmin=nxIGPreparar();
+  // Accesos rápidos: se MUEVE la misma grilla .qa-g del Inicio clásico (las fichas que agregan los parches siguen
+  // llegando ahí); no se duplica ninguna acción. Si se apaga la capa, basta recargar: el HTML la trae en su sitio.
+  const acc=document.getElementById('nxIGacc'),qg=document.querySelector('#v-dashboard .qa-g');
+  if(acc&&qg&&qg.parentElement!==acc)acc.appendChild(qg);
+  // KPI Por cobrar (= «Por cobrar» del Inicio clásico) + efectividad (= la del KPI Prima mensual)
+  const vPd=fmt(d.pd);nxIGSet('nxIGk2v',vPd);nxIGLargo('nxIGk2v',vPd);
+  nxIGSet('nxIGk2c',d.conSaldo?escHtml(nxIGPl(d.conSaldo,'cliente')):'');
+  const b2=document.getElementById('nxIGk2b');if(b2)b2.style.width=Math.max(0,Math.min(100,d.ef))+'%';
+  nxIGSet('nxIGk2s',`${d.ef}% de efectividad de cobro`);
+  // KPI Clientes activos (= «Activos») con los que están al día (activos sin saldo)
+  const alDia=Math.max(0,d.act-d.conSaldo),pAl=d.act?Math.round(alDia/d.act*100):0;
+  nxIGSet('nxIGk3v',String(d.act));
+  nxIGSet('nxIGk3c',d.act?pAl+'% al día':'');
+  const b3=document.getElementById('nxIGk3b');if(b3)b3.style.width=pAl+'%';
+  nxIGSet('nxIGk3s',`${alDia} al día · ${nxIGPl(d.inh,'inhabilitado')}`);
+  // KPI Atrasadas (= «Atrasadas»): mismas facturas, contadas por período para las barras
+  nxIGSet('nxIGk4v',String(d.atrasadas));
+  const porPer={};(ST.facturas||[]).forEach(f=>{if(f.periodo<d.mcKey&&f.estado!=='Pagado'&&f.estado!=='Anulada')porPer[f.periodo]=(porPer[f.periodo]||0)+1;});
+  const pers=Object.keys(porPer).sort();
+  nxIGSet('nxIGk4c',pers.length?escHtml(nxIGPl(pers.length,'mes','meses')):'');
+  const ult=pers.slice(-7),vals=ult.map(k=>porPer[k]);while(vals.length<7)vals.unshift(0);
+  nxIGSet('nxIGk4z',nxIGBarras(vals,6));
+  document.getElementById('nxIGk4z').title=ult.map(k=>k+': '+porPer[k]).join(' · ');
+  // Columna derecha: conteos de verificarAlertas() / rDash()
+  const al=window.__nxAlertasCnt||{vencidas:0};
+  const s1=nxIGSet('nxIGs1',String(al.vencidas||0));if(s1)s1.classList.toggle('bad',(al.vencidas||0)>0);
+  nxIGSet('nxIGs2',String(d.porVencer));
+  nxIGSet('nxIGs2l',escHtml(`Vencen ≤${CFG.alertaDias} d`));
+  nxIGSet('nxIGs3',String(d.enProceso));
+  nxIGSet('nxIGprima',`Prima mensual <b>${fmt(d.prima)}</b> · cartera activa`+(d.util?` · Utilidad bruta <b>${fmt(d.util.utilidad)}</b> (margen ${d.util.margen}%)`:''));
+  nxIGCalPintar();
+  nxIGCargarCrm(false);
+  if(esAdmin)nxIGCargarAgentes(d.mcKey,false);
+}
+
+// Sesión en el esqueleto (rol, saludo, perfil): se llama al mostrar la app (iniciarApp) y en cada rDash.
+function nxIGPreparar(){
+  if(!nxIGOn())return false;
+  const esAdmin=sesion?.rol==='admin';
+  document.getElementById('nxIG').dataset.admin=esAdmin?'1':'0';
+  const nom=String(sesion?.nom||'').trim(),h=new Date().getHours();
+  nxIGSet('nxIGHola',escHtml((h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+(nom?', '+nom.split(/\s+/)[0]:'')));
+  nxIGSet('nxIGav',escHtml(nxIGIni(nom)));
+  nxIGSet('nxIGnom',escHtml(nom||'Usuario'));
+  const rol=String(sesion?.rol||''),org=sesion?.org?.nombre||'';
+  nxIGSet('nxIGrol',escHtml([rol==='admin'?'Administrador':(rol?rol.charAt(0).toUpperCase()+rol.slice(1):''),org].filter(Boolean).join(' · '))||'&nbsp;');
+  return esAdmin;
+}
+
+// Serie diaria del ciclo 20→20 con los abonos que rChartCobros ya trajo (sin otra consulta).
+function nxIGCiclo(c){
+  if(!nxIGOn())return;
+  const porDia={},nDia={};
+  (c.abonos||[]).forEach(a=>{if(!a.fecha)return;const iso=fechaRD(a.fecha);if(!iso)return;porDia[iso]=(porDia[iso]||0)+(Number(a.monto)||0);nDia[iso]=(nDia[iso]||0)+1;});
+  _nxIG.porDia=porDia;_nxIG.nDia=nDia;
+  const hoy=hoyRD();
+  _nxIG.hoyCobros=nDia[hoy]||0;
+  // Cobrado hoy + últimos 7 días
+  const cobHoy=porDia[hoy]||0,vHoy=fmt(cobHoy);
+  nxIGSet('nxIGk1v',vHoy);nxIGLargo('nxIGk1v',vHoy);
+  nxIGSet('nxIGk1c',_nxIG.hoyCobros?escHtml(nxIGPl(_nxIG.hoyCobros,'pago')):'');
+  const siete=[];for(let i=6;i>=0;i--)siete.push(porDia[nxIGSumaDias(hoy,-i)]||0);
+  nxIGSet('nxIGk1z',nxIGBarras(siete,6));
+  // Ciclo actual
+  const ini=cicloInicio(c.mc.anio,c.mc.mes);let nm=c.mc.mes+1,na=c.mc.anio;if(nm>12){nm=1;na++;}
+  const fin=cicloInicio(na,nm),N=Math.max(2,diasEntre(ini,fin));
+  const dia=Math.max(0,Math.min(N-1,c.diaActual));
+  const serie=[];for(let i=0;i<N;i++)serie.push(porDia[nxIGSumaDias(ini,i)]||0);
+  let hasta=dia;serie.forEach((v,i)=>{if(v>0&&i>hasta)hasta=i;});
+  const dib=serie.slice(0,hasta+1),max=Math.max(...dib,0);
+  const X=i=>i/(N-1)*600,Y=v=>140-(max>0?v/max*120:0);
+  let dPath='M'+X(0).toFixed(1)+' '+Y(dib[0]).toFixed(1);
+  for(let i=1;i<dib.length;i++){const x0=X(i-1),x1=X(i),y0=Y(dib[i-1]),y1=Y(dib[i]),m=(x1-x0)/2;dPath+=` C${(x0+m).toFixed(1)} ${y0.toFixed(1)} ${(x1-m).toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;}
+  const area=dPath+` L${X(dib.length-1).toFixed(1)} 150 L0 150Z`;
+  nxIGSet('nxIGchG',`<defs><linearGradient id="nxIGgrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2563EB" stop-opacity=".18"/><stop offset="1" stop-color="#2563EB" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#nxIGgrad)"/><path d="${dPath}" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`);
+  const dot=document.getElementById('nxIGchDot'),tip=document.getElementById('nxIGchTip'),plot=document.getElementById('nxIGchPlot');
+  if(dot&&tip&&plot){
+    if(max>0){
+      const im=dib.indexOf(max),lx=X(im)/6,hp=plot.clientHeight||150,ty=Y(max)/150*hp;
+      dot.style.left=lx+'%';dot.style.top=ty+'px';dot.hidden=false;
+      tip.textContent=fmt(max)+' · '+nxIGFechaCorta(nxIGSumaDias(ini,im));
+      tip.hidden=false;
+      const pw=plot.clientWidth||600,tw=tip.offsetWidth||120,px=lx/100*pw;
+      tip.style.left=Math.max(tw/2,Math.min(pw-tw/2,px))+'px';tip.style.top=(ty-34>=0?ty-34:ty+12)+'px';
+    }else{dot.hidden=true;tip.hidden=true;}
+  }
+  const marcas=[0,Math.round(N/4),Math.round(N/2),Math.round(3*N/4),N];
+  nxIGSet('nxIGchAx',marcas.map(i=>`<span>${nxIGFechaCorta(nxIGSumaDias(ini,i))}</span>`).join(''));
+  nxIGSet('nxIGchp',`${nxIGFechaCorta(ini)} – ${nxIGFechaCorta(fin)}`);
+  nxIGSet('nxIGchs',max>0?`Lo cobrado cada día del ${nxIGFechaCorta(ini)} al ${nxIGFechaCorta(fin)}`:'Todavía no hay cobros registrados en este ciclo');
+  nxIGSet('nxIGcyl',escHtml(`Ciclo actual · día ${dia+1} de ${N}`));
+  const v1=fmt(c.cobCiclo),v2=fmt(c.antMismoDia);
+  nxIGSet('nxIGcy1',v1);nxIGSet('nxIGcy2',v2);
+  document.getElementById('nxIGcy1').classList.toggle('largo',v1.length>10||v2.length>10);
+  document.getElementById('nxIGcy2').classList.toggle('largo',v1.length>10||v2.length>10);
+  let cmp='';
+  if(c.antMismoDia>0){const dif=Math.round((c.cobCiclo-c.antMismoDia)/c.antMismoDia*100);cmp=` · ${dif>=0?'▲':'▼'} ${Math.abs(dif)}%`;}
+  nxIGSet('nxIGcy2s',escHtml(`ciclo anterior al día ${dia+1}${cmp}`));
+  // Meta: solo si el dueño la configuró (Configuración → Metas mensuales, «Meta cobros»). Si no, avance del ciclo.
+  let meta=0;try{meta=Number(JSON.parse(localStorage.getItem('nx_metas')||'{}').cobros)||0;}catch(e){}
+  const bar=document.getElementById('nxIGcyb');
+  if(meta>0){const p=Math.min(100,Math.round(c.cobCiclo/meta*100));if(bar)bar.style.width=p+'%';nxIGSet('nxIGcybt',escHtml(`${p}% de la meta mensual de ${fmt(meta)}`));}
+  else{if(bar)bar.style.width=Math.round((dia+1)/N*100)+'%';const f=N-dia-1;nxIGSet('nxIGcybt',escHtml(f>0?`Faltan ${nxIGPl(f,'día')} para el corte del ${nxIGFechaCorta(fin)}`:`Hoy es el último día antes del corte del ${nxIGFechaCorta(fin)}`));}
+  nxIGSub();
+  nxIGCalPintar();
+}
+
+function nxIGSub(){
+  const t=_nxIG.crm&&_nxIG.crm.tareas;
+  if(_nxIG.hoyCobros==null&&!t)return;
+  const hoy=hoyRD();
+  const seg=t?t.filter(x=>x.vence_en&&fechaRD(x.vence_en)===hoy).length:null;
+  const cob=_nxIG.hoyCobros==null?'…':nxIGPl(_nxIG.hoyCobros,'cobro');
+  nxIGSet('nxIGSub',`Hoy llevas <b>${cob}</b>`+(seg==null?'':` y tienes <b>${nxIGPl(seg,'seguimiento')}</b> para hoy`));
+}
+
+function nxIGCal(delta){_nxIG.calOff+=delta;nxIGCalPintar();}
+function nxIGCalPintar(){
+  const box=document.getElementById('nxIGdays');if(!box)return;
+  const hoy=hoyRD(),p=hoy.split('-');
+  let y=+p[0],m=+p[1]+_nxIG.calOff;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}
+  nxIGSet('nxIGcalT',`${MESES[m-1]} ${y}`);
+  const primero=new Date(Date.UTC(y,m-1,1)),dow=(primero.getUTCDay()+6)%7,diasMes=new Date(Date.UTC(y,m,0)).getUTCDate(),diasAnt=new Date(Date.UTC(y,m-1,0)).getUTCDate();
+  const pd=_nxIG.porDia||{};
+  let h='<span class="d">L</span><span class="d">M</span><span class="d">M</span><span class="d">J</span><span class="d">V</span><span class="d">S</span><span class="d">D</span>';
+  for(let i=0;i<42;i++){
+    const n=i-dow+1;
+    if(n<1){h+=`<span class="o">${diasAnt+n}</span>`;continue;}
+    if(n>diasMes){h+=`<span class="o">${n-diasMes}</span>`;continue;}
+    const iso=`${y}-${String(m).padStart(2,'0')}-${String(n).padStart(2,'0')}`,cl=[];
+    if(iso===hoy)cl.push('t');else if(pd[iso]>0)cl.push('g');
+    if(n===20)cl.push('c');
+    const tt=pd[iso]>0?` title="${escHtml('Cobrado '+fmt(pd[iso]))}"`:'';
+    h+=`<span${cl.length?` class="${cl.join(' ')}"`:''}${tt}>${n}</span>`;
+  }
+  nxIGSet('nxIGdays',h);
+}
+
+// CRM: mismas tablas y filtros que parches-crm.js (prospectos abiertos y tareas pendientes), solo lectura.
+function nxIGCargarCrm(force){
+  if(_nxIG.crmP)return;
+  if(!force&&_nxIG.crm&&Date.now()-_nxIG.crmTs<90000){nxIGPintarCrm();return;}
+  _nxIG.crmP=Promise.allSettled([
+    API.get('crm_prospectos','select=id,nombre,etapa,etapa_cambiada_en&etapa=in.(nuevo,cotizado,documentos)&order=etapa_cambiada_en.desc&limit=1000'),
+    API.get('crm_tareas','estado=eq.pendiente&select=id,cliente_id,asignado_agente_id,vence_en,titulo,tipo,prioridad,estado&limit=5000')
+  ]).then(([p,t])=>{
+    _nxIG.crm={pros:p.status==='fulfilled'?(p.value||[]):null,tareas:t.status==='fulfilled'?(t.value||[]):null};
+    _nxIG.crmTs=Date.now();
+  }).finally(()=>{_nxIG.crmP=null;try{nxIGPintarCrm();}catch(e){console.error('[Inicio glass]',e);}});
+}
+function nxIGPintarCrm(){
+  if(!nxIGOn()||!_nxIG.crm)return;
+  const pros=_nxIG.crm.pros;
+  [['nuevo',1],['cotizado',2],['documentos',3]].forEach(([et,k])=>{
+    const l=pros?pros.filter(x=>x.etapa===et):null;
+    nxIGSet('nxIGp'+k,l?String(l.length):'–');
+    nxIGSet('nxIGp'+k+'a',l?l.slice(0,2).map(x=>`<div class="nxIG-av" title="${escHtml(x.nombre||'')}">${escHtml(nxIGIni(x.nombre))}</div>`).join(''):'');
+  });
+  const t=_nxIG.crm.tareas,box=document.getElementById('nxIGagenda');
+  if(box){
+    if(!t)nxIGSet('nxIGagenda','<div class="nxIG-msg">La agenda del CRM no está disponible ahora.</div>');
+    else if(!t.length)nxIGSet('nxIGagenda','<div class="nxIG-msg">No hay seguimientos pendientes. La cartera está al día.</div>');
+    else{
+      const hoy=hoyRD(),ico={renovacion:['b','<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'],cobro:['g','<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/>'],documento:['a','<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>']};
+      const orden=t.slice().sort((a,b)=>{if(!a.vence_en&&!b.vence_en)return 0;if(!a.vence_en)return 1;if(!b.vence_en)return -1;return String(a.vence_en).localeCompare(String(b.vence_en));});
+      nxIGSet('nxIGagenda',orden.slice(0,3).map(x=>{
+        const c=(ST.clientes||[]).find(k=>String(k.id)===String(x.cliente_id));
+        const [cl,svg]=ico[x.tipo]||['b','<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'];
+        const iso=x.vence_en?fechaRD(x.vence_en):'';
+        const cuando=!iso?'sin fecha':iso<hoy?nxIGFechaCorta(iso)+'<em>vencida</em>':iso===hoy?'hoy':nxIGFechaCorta(iso);
+        const cid=c?String(c.id).replace(/[^\w-]/g,''):'';
+        return `<button type="button" class="nxIG-it" onclick="nxIGAbrirTarea('${cid}')" aria-label="${escHtml((NX_IG_TIPO[x.tipo]||'Seguimiento')+': '+(x.titulo||'')+(c?' — '+c.nom:''))}"><div class="ic ${cl}"><svg class="nxIG-i" viewBox="0 0 24 24">${svg}</svg></div><div><small>${escHtml(NX_IG_TIPO[x.tipo]||'Seguimiento')}</small><b>${escHtml(x.titulo||'Tarea')}</b><p>${escHtml(c?c.nom:'Sin cliente')}</p></div><time class="${iso&&iso<hoy?'bad':''}">${cuando}</time></button>`;
+      }).join(''));
+    }
+  }
+  nxIGSub();
+}
+function nxIGAbrirTarea(cid){if(cid&&typeof window.nxCrmAbrirCliente==='function')window.nxCrmAbrirCliente(cid);else nav('crm',null);}
+function nxIGIrProspectos(){nav('crm',null);try{if(window.nxCrm)window.nxCrm.tab('prospectos');}catch(e){}}
+function nxIGIrAgenda(){nav('crm',null);try{if(window.nxCrm)window.nxCrm.tab('panel');if(typeof window.nxCrmIr==='function')window.nxCrmIr('agenda');}catch(e){}}
+
+// Cobranza por agente (solo admin): la RPC del reporte «Ciclo 20→20». Cobrado validado y saldo tal cual los da el
+// servidor; aquí no se suma ni se reconstruye custodia. Una transferencia entre agentes no es un cobro nuevo.
+function nxIGCargarAgentes(per,force){
+  if(_nxIG.agtP)return;
+  if(!force&&_nxIG.agtPer===per&&(_nxIG.agt||_nxIG.agtErr)&&Date.now()-_nxIG.agtTs<120000){nxIGPintarAgentes();return;}
+  _nxIG.agtP=API.post('rpc/seguros_resumen_ciclo_admin',{p_periodo:per})
+    .then(r=>{_nxIG.agt=Array.isArray(r)?r:[];_nxIG.agtErr=false;},()=>{_nxIG.agt=null;_nxIG.agtErr=true;})
+    .finally(()=>{_nxIG.agtP=null;_nxIG.agtPer=per;_nxIG.agtTs=Date.now();try{nxIGPintarAgentes();}catch(e){console.error('[Inicio glass]',e);}});
+}
+function nxIGPintarAgentes(){
+  if(!nxIGOn()||sesion?.rol!=='admin')return;
+  const num=v=>{const n=Number(v);return isFinite(n)?n:0;};
+  if(_nxIG.agtErr){nxIGSet('nxIGagts','<div class="nxIG-msg">No se pudo consultar el ciclo por agente. Ábrelo en «ver cierre».</div>');return;}
+  const rows=(_nxIG.agt||[]).slice().sort((a,b)=>num(b.cobrado_validado)-num(a.cobrado_validado)||num(b.saldo_final)-num(a.saldo_final)).slice(0,3);
+  if(!rows.length){nxIGSet('nxIGagts','<div class="nxIG-msg">Sin agentes en este ciclo.</div>');return;}
+  nxIGSet('nxIGagts',rows.map(r=>{
+    const cob=num(r.cobrado_validado),sal=num(r.saldo_final),nom=String(r.agente||'Agente');
+    const sub=!cob&&!sal?'sin movimiento':sal<0?`<small class="neg">saldo ${fmt(sal)}</small>`:`${fmt(sal)} en poder`;
+    return `<div class="nxIG-card nxIG-ag" role="button" tabindex="0" onclick="nav('rep-agente',null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="${escHtml(nom+': cobró '+fmt(cob)+' en el ciclo')}"><div class="nxIG-agi"><div class="nxIG-av">${escHtml(nxIGIni(nom))}</div><div class="nxIG-meta"><b>${escHtml(nom.split(/\s+/).slice(0,2).join(' '))}</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span>${fmt(cob)}</span>${sub.startsWith('<small')?sub:`<small>${sub}</small>`}</div></div></div>`;
+  }).join(''));
 }
 
 // ── CLIENTES ─────────────────────────────────────────────────────────────────
@@ -13550,6 +14074,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       sesion = JSON.parse(s);
       // Restaurar sesión directamente sin mostrar el login (evita el parpadeo)
       document.getElementById('loginScreen').style.display = 'none';
+      try{nxIGPreparar();}catch(e){} // Inicio glass: rol y saludo en el esqueleto antes de mostrar la app
       document.getElementById('app').style.display = 'flex';
       document.getElementById('sbAv').textContent = inits(sesion.nom);
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];

@@ -54,11 +54,21 @@ function seedPros() {
 }
 seedPros();
 
+// Inicio glass (58.88): abonos fechados alrededor de HOY (mediodía RD = 16:00Z) para llenar «Cobrado hoy», la gráfica
+// diaria del ciclo 20→20 y el calendario; incluye uno de hace 40 días (ciclo anterior).
+const abonoDia = (d, monto, n) => ({ id: uuid(800 + n), cliente_id: CLI[n % CLI.length].id, monto, fecha: new Date(Date.now() + d * 86400000).toISOString().slice(0, 10) + 'T16:00:00Z', metodo: 'Efectivo', created_at: now() });
+const ABONOS = [abonoDia(0, 1500, 1), abonoDia(0, 2500, 2), abonoDia(-1, 3000, 3), abonoDia(-3, 8000, 4), abonoDia(-8, 4000, 5), abonoDia(-40, 5000, 6)];
+// RPC del reporte Ciclo 20→20 (solo admin en el servidor real): mismas columnas que seguros_resumen_ciclo_admin.
+const CICLO_ADMIN = [
+  { agente_id: AG[1].id, agente: 'Robinson Perez', cargo: 'AGENTE', cobrado_validado: 25000, transferido_confirmado: 20000, recibido_confirmado: 0, entregado_admin_directo: 0, saldo_final: 5000, diferencia_reconciliacion: 0, historico_aproximado: false, total_negocio_cobrado_ciclo: 65000 },
+  { agente_id: AG[0].id, agente: 'Esterlin Espinal', cargo: 'ADMIN', cobrado_validado: 40000, transferido_confirmado: 0, recibido_confirmado: 20000, entregado_admin_directo: 0, saldo_final: 60000, diferencia_reconciliacion: 0, historico_aproximado: false, total_negocio_cobrado_ciclo: 65000 },
+  { agente_id: AG[2].id, agente: 'Maria Gomez', cargo: 'AGENTE', cobrado_validado: 0, transferido_confirmado: 0, recibido_confirmado: 0, entregado_admin_directo: 0, saldo_final: 0, diferencia_reconciliacion: 0, historico_aproximado: false, total_negocio_cobrado_ciclo: 65000 },
+];
 const DB = {
   clientes: CLI, agentes: AG, facturas: FAC,
   usuarios_sistema: [{ id: uuid(1), nom: 'Esterlin Espinal', rol: 'admin', login: 'admin', activo: true, organizacion_id: uuid(9) }, { id: uuid(2), nom: 'Robinson Perez', rol: 'agente', login: 'robinson', activo: true, organizacion_id: uuid(9) }],
   organizaciones: [{ id: uuid(9), slug: 'nexus-pro', nombre: 'NEXUS PRO Seguros', tipo: 'seguros' }],
-  configuracion: [], empresas: [], abonos: [], auditoria: [], prestamos: [], usuario_preferencias: [],
+  configuracion: [], empresas: [], abonos: ABONOS, auditoria: [], prestamos: [], usuario_preferencias: [],
   get crm_tareas() { return TAREAS; }, set crm_tareas(v) { TAREAS = v; },
   get crm_actividades() { return ACTS; }, set crm_actividades(v) { ACTS = v; },
   get crm_prospectos() { return PROS; }, set crm_prospectos(v) { PROS = v; },
@@ -136,6 +146,7 @@ async function rest(req, res, u) {
       if (t.estado !== 'completada') { t.estado = 'completada'; t.completada_en = now(); t.updated_at = now(); ACTS.push({ id: uuid(seq++), cliente_id: t.cliente_id, tipo: 'nota', titulo: ('Tarea completada: ' + t.titulo).slice(0, 160), detalle: null, resultado: null, proxima_accion_en: null, creado_por: null, created_at: now(), updated_at: now() }); }
       return json(res, [{ tarea_id: t.id, actividad_id: null }]);
     }
+    if (fn === 'seguros_resumen_ciclo_admin' || fn === 'seguros_cierre_ciclo_admin') return json(res, fn === 'seguros_cierre_ciclo_admin' ? [] : CICLO_ADMIN.map(r => ({ ...r, periodo: b.p_periodo })));
     return json(res, null);
   }
   const table = parts[0];
