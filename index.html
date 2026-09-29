@@ -3146,7 +3146,7 @@ html.tema-glass-oscuro{
   --tgo-tx:#F8FAFC;--tgo-tx2:#D6D3D1;--tgo-tx3:#A8A29E;
   --tgo-glass:rgba(38,34,32,.62);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.08);
   --tgo-solid:#26221F;--tgo-solid-2:#1C1917;
-  --tgo-card-shadow:0 10px 30px -12px rgba(20,14,10,.45);--tgo-panel-shadow:0 30px 60px -30px rgba(20,14,10,.65);
+  --tgo-card-shadow:0 8px 22px -12px rgba(20,14,10,.40);--tgo-panel-shadow:0 24px 48px -30px rgba(20,14,10,.55);
   --tgo-blur:blur(26px) saturate(1.2);
   /* acento único del sistema → azul NEXUS */
   --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(37,99,235,.08);
@@ -3166,10 +3166,13 @@ html.tema-glass-oscuro::before{
     radial-gradient(120% 50% at 50% 110%,rgba(16,12,10,.80),transparent 72%),
     linear-gradient(180deg,#5A4C42 0%,#3A312B 46%,#221C18 100%);
 }
+/* La foto viene YA desenfocada en el archivo (desenfoque 18 px + saturación 1.05 horneados con Pillow, 17 KB / 9 KB):
+   sin filter en CSS, la capa fija no se vuelve a desenfocar en cada cuadro. Capas propias (will-change) para que el
+   desplazamiento no repinte el fondo. */
+html.tema-glass-oscuro::before{will-change:transform}
 html.tema-glass-oscuro::after{
-  content:'';position:fixed;inset:-48px;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease;will-change:opacity;
   background:linear-gradient(180deg,rgba(28,22,18,.48) 0%,rgba(22,17,14,.62) 55%,rgba(16,12,10,.74) 100%),url(assets/fondo-oficina.webp) center/cover no-repeat;
-  -webkit-filter:blur(18px) saturate(1.05);filter:blur(18px) saturate(1.05);
 }
 @media (max-width:768px){html.tema-glass-oscuro::after{background:linear-gradient(180deg,rgba(28,22,18,.52) 0%,rgba(22,17,14,.64) 55%,rgba(16,12,10,.76) 100%),url(assets/fondo-oficina-movil.webp) center/cover no-repeat}}
 html.tema-glass-oscuro.tgo-foto::after{opacity:1}
@@ -3250,7 +3253,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
     position:fixed!important;left:100px!important;top:auto!important;bottom:12px!important;width:256px!important;z-index:1100!important;
     max-height:calc(100vh - 24px)!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overflow-x:hidden!important;
     padding:40px 8px 8px!important;border-radius:20px!important;background:linear-gradient(180deg,#322C28,#26211E)!important;border:1px solid rgba(255,255,255,.10)!important;
-    box-shadow:0 30px 60px -24px rgba(0,0,0,.7)!important;
+    box-shadow:0 20px 40px -24px rgba(0,0,0,.6)!important;
     transition:opacity .15s ease,visibility .15s ease!important;scrollbar-width:thin}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{
     position:absolute;top:14px;left:18px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A8A29E}
@@ -3295,8 +3298,10 @@ html.tema-glass-oscuro body .tnav .tn-b:focus-visible,html.tema-glass-oscuro bod
 html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
 @media (min-width:769px){
   html.tema-glass-oscuro body .main{position:relative!important;isolation:isolate;margin:12px 12px 12px 12px!important;border-radius:24px!important;overflow:hidden!important}
+  /* Panel principal: tinte cálido SIN backdrop-filter (el fondo ya viene desenfocado; desenfocar en vivo un panel de
+     pantalla completa era lo más caro al desplazar). */
   html.tema-glass-oscuro body .main::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:24px;border:1px solid var(--tgo-line);
-    background:var(--tgo-glass);box-shadow:var(--tgo-panel-shadow);-webkit-backdrop-filter:var(--tgo-blur);backdrop-filter:var(--tgo-blur)}
+    background:rgba(38,34,32,.66);box-shadow:0 24px 48px -30px rgba(20,14,10,.55)}
   html.tema-glass-oscuro body .tnav{height:auto!important;min-height:72px!important;margin:0!important;padding:18px 20px 10px 26px!important;
     background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:12px!important}
   html.tema-glass-oscuro body .tnav .tn-tog{display:none!important} /* el riel no se colapsa: no hay nada que abrir */
@@ -3336,7 +3341,9 @@ html.tema-glass-oscuro .bc1{background:var(--tgo-blue)!important;border-color:va
 html.tema-glass-oscuro .bc1:hover{background:var(--tgo-blue-d)!important;border-color:var(--tgo-blue-d)!important}
 
 /* ── Inicio glass: la escena global reemplaza la sombra propia del #nxIG ── */
-html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(38,34,32,.62);--ig-line:rgba(255,255,255,.08)}
+html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(38,34,32,.66);--ig-line:rgba(255,255,255,.08)}
+/* sin desenfoque en vivo en los paneles del Inicio: el fondo ya viene desenfocado */
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 @media (min-width:769px){
   /* dentro del panel principal: el panel izquierdo del Inicio se funde con él; su buscador es el de la cabecera (una sola vez) */
   html.tema-glass-oscuro.nx-ig #nxIG .nxIG-main.nxIG-glass{background:transparent!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-top:4px}
@@ -3401,6 +3408,95 @@ html.tema-glass-oscuro #cnt #v-crm button.primary,html.tema-glass-oscuro .nxCrmB
 html.tema-glass-oscuro .cfg-indicator{background:var(--tgo-blue)!important;background-image:none!important}
 html.tema-glass-oscuro .cfg-tab.active-tab i{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
 html.tema-glass-oscuro .cfg-tab.active-tab span{color:var(--tgo-blue-d)!important}
+
+/* ═══ 58.91 — PASADA DE AJUSTES (auditoría de todas las pantallas, pestañas y modales a 390/1280) ═══ */
+/* Contraste AA sobre blanco: variantes oscuras de los colores semánticos (mismo tono, sin cambiar diseño) */
+html.tema-glass-oscuro .nxSf{--sf-tx3:#5B6576;--sf-err:#DC2626;--sf-ok-d:#047857}
+html.tema-glass-oscuro body #sbEl .sb-av{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro .notif-badge{background:#DC2626!important}
+html.tema-glass-oscuro.nx-ig #nxIG #nxIGav{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#A39B96}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ax span{color:#5B6576}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl{background:var(--tgo-blue-d)!important}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl p{color:#EFF6FF}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:#1E40AF!important;color:#fff!important}
+html.tema-glass-oscuro .ncf-badge,html.tema-glass-oscuro .nxCobCard .cbBdg.parcial,html.tema-glass-oscuro .nxSL-section-count:not(.nxSL-count-blue){color:#92400E!important}
+html.tema-glass-oscuro .nxCobCard .cbV.gray{color:#64748B}
+html.tema-glass-oscuro .nxCobCard .cbBtn.cobrar,html.tema-glass-oscuro #cnt .btn.bc5,html.tema-glass-oscuro #cnt .btn.bsm.bc5{background:#15803D!important;border-color:#15803D!important;color:#fff!important}
+html.tema-glass-oscuro .nxAvBtn.wa{background:#15803D!important;background-image:none!important}
+html.tema-glass-oscuro .nxAvAv{background:var(--tgo-blue)!important}
+html.tema-glass-oscuro #cnt .nxft-tab.nxft-add,html.tema-glass-oscuro #cnt .nxSL-action-green{background:#047857!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .sf-btn.ok,html.tema-glass-oscuro #cnt .sf-btn.ok i{color:#047857!important}
+html.tema-glass-oscuro #v-cliente360 .c360-rinfo span{color:#475569}
+html.tema-glass-oscuro #v-cliente360 .c360-head b,html.tema-glass-oscuro #v-cliente360 .nxSf{--sf-err:#DC2626}
+html.tema-glass-oscuro #cnt .nxFP-dlbl,html.tema-glass-oscuro #cnt .nxFP-dsub,html.tema-glass-oscuro #cnt .nxFP-topSub,html.tema-glass-oscuro #cnt .nxFP-listHead span{color:#5B6576!important}
+html.tema-glass-oscuro #cnt .nxAppSecT{color:#5B6576!important}
+/* colores escritos a mano (style=) dentro de superficies blancas → su variante AA */
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:#059669"],[style*="color: rgb(5, 150, 105)"],[style*="color: #059669"],[style*="color: rgb(5, 150, 105)"],[style*="color:#10b981"],[style*="color: rgb(16, 185, 129)"],[style*="color:#10B981"],[style*="color: rgb(16, 185, 129)"],[style*="color:#00e5c7"],[style*="color: rgb(0, 229, 199)"],[style*="color:#16a34a"],[style*="color: rgb(22, 163, 74)"]){color:#047857!important}
+html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi,.nxSf .sf-kpi) :is([style*="color:#d97706"],[style*="color: rgb(217, 119, 6)"],[style*="color: #d97706"],[style*="color: rgb(217, 119, 6)"],[style*="color:#f59e0b"],[style*="color: rgb(245, 158, 11)"],[style*="color:#fbbf24"],[style*="color: rgb(251, 191, 36)"],[style*="color:#f97316"],[style*="color: rgb(249, 115, 22)"]){color:#B45309!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:#ef4444"],[style*="color: rgb(239, 68, 68)"],[style*="color:#f43f5e"],[style*="color: rgb(244, 63, 94)"]){color:#DC2626!important}
+html.tema-glass-oscuro :is(.nc,.modal,.overlay,.tw,.kpi,.nxSf .sf-kpi) :is([style*="color:#94a3b8"],[style*="color: rgb(148, 163, 184)"],[style*="color: #94a3b8"],[style*="color: rgb(148, 163, 184)"],[style*="color:#94A3B8"],[style*="color: rgb(148, 163, 184)"],[style*="color:#98a2b3"],[style*="color: rgb(152, 162, 179)"]){color:#64748B!important}
+html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) :is([style*="color:#8b5cf6"],[style*="color: rgb(139, 92, 246)"],[style*="color:#7c3aed"],[style*="color: rgb(124, 58, 237)"],[style*="color:#6d28d9"],[style*="color: rgb(109, 40, 217)"]){color:var(--tgo-blue-d)!important}
+html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) [style*="color:#0891b2"],[style*="color: rgb(8, 145, 178)"]{color:#0E7490!important}
+/* restos morados/navy de temas anteriores → acento azul único */
+html.tema-glass-oscuro .cs-h{background:linear-gradient(135deg,#1D4ED8,#2563EB)!important}
+html.tema-glass-oscuro .nxnov-filter.on{border-color:rgba(37,99,235,.2)!important;background:rgba(37,99,235,.08)!important;color:#1D4ED8!important}
+html.tema-glass-oscuro #cnt .btn.bc2{background:rgba(37,99,235,.08)!important;border-color:rgba(37,99,235,.3)!important;color:#1D4ED8!important}
+html.tema-glass-oscuro #cnt .nxCrmLink:not(.primary):not([style*="color:#fff"]):not([style*="color: rgb(255, 255, 255)"]){color:#1D4ED8!important}
+html.tema-glass-oscuro .nxCrmLink:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]){background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .nxCrmLink.primary,html.tema-glass-oscuro .nxCrmLink.primary{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border-color:var(--tgo-blue)!important}
+html.tema-glass-oscuro .badge.bC2{color:#1D4ED8}
+/* Avisos (Facturas) y encabezados sueltos que caen sobre la escena */
+html.tema-glass-oscuro #cnt #v-facturas > .ch .ct,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct,html.tema-glass-oscuro #cnt .view > .ch .ct{color:#F8FAFC!important}
+html.tema-glass-oscuro #cnt #v-facturas > .ch .ct-s,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct-s,html.tema-glass-oscuro #cnt .view > .ch .ct-s{color:#D6D3D1!important}
+/* Cliente 360: tablas y vacíos de las pestañas quedaban sobre la escena (texto oscuro sobre oscuro) */
+html.tema-glass-oscuro #v-cliente360 .c360-tbl{background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--tgo-card-shadow)}
+html.tema-glass-oscuro #v-cliente360 .c360-tbl th{color:#5B6576;background:#F8FAFC}
+html.tema-glass-oscuro #v-cliente360 .c360-tbl td{color:#1E293B}
+html.tema-glass-oscuro #v-cliente360 .c360-empty-tab{color:#E7E5E4}
+/* textos cortados con «…» donde sí hay espacio: 2 líneas (perfil del Inicio, títulos de la agenda, prospectos, KPI de Cliente 360) */
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it b{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ks{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html.tema-glass-oscuro #cnt #v-crm .nxProsMeta{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .sub,html.tema-glass-oscuro #v-cliente360 .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .sf-kpi .sub{white-space:normal!important;overflow:visible!important}
+/* foco visible y consistente (teclado) en todo el contenido; sin anillo al hacer clic */
+html.tema-glass-oscuro #cnt :is(button,[role=button],a,.btn,.nxft-tab,input,select,textarea):focus-visible,html.tema-glass-oscuro .overlay :is(button,[role=button],a,.btn,input,select,textarea):focus-visible{outline:2px solid #2563EB!important;outline-offset:2px!important}
+/* selects nativos: fondo y texto explícitos (Windows modo oscuro) */
+html.tema-glass-oscuro #cnt select,html.tema-glass-oscuro .overlay select{background-color:#fff;color:#0F172A}
+/* barras de desplazamiento discretas sobre el cristal */
+html.tema-glass-oscuro body .content{scrollbar-color:rgba(255,255,255,.22) transparent;scrollbar-width:thin}
+html.tema-glass-oscuro body .content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)!important}
+/* toques sin retraso de doble toque */
+html.tema-glass-oscuro body :is(button,[role=button],.ni,.btn){touch-action:manipulation}
+/* grises de módulos (Novedades, reporte Ciclo 20→20, Préstamos) un paso más oscuros sobre blanco */
+html.tema-glass-oscuro :is(.nxnov-title p,.nxnov-kpi span,.nxnov-seg,.nxnov-filter:not(.on),.nxnov-meta,.nxnov-detail,.nxnov-age,.nxnov-field label,.nxC20Tab:not(.on)){color:#475569!important}
+html.tema-glass-oscuro :is(.nxnov-seg,.nxnov-filter) span{color:inherit}
+html.tema-glass-oscuro #cnt :is(.nxFP-navItem:not(.on):not(.active),.nxFP-sideBack,.nxFP-side span){color:#475569!important}
+html.tema-glass-oscuro #cnt #v-prestamos p{color:#475569}
+html.tema-glass-oscuro .nxSf .fc-av{background:linear-gradient(135deg,#DC2626,#B91C1C)!important}
+html.tema-glass-oscuro #cnt .nxOpsDue.bad{color:#B91C1C!important}
+html.tema-glass-oscuro .modal .badge.bC4,html.tema-glass-oscuro #cnt .badge.bC4{color:#B45309}
+html.tema-glass-oscuro .modal .btn.bc4,html.tema-glass-oscuro .modal .btn.bc4 i{color:#B45309!important}
+html.tema-glass-oscuro .modal [style*="color:#94a3b8"],[style*="color: rgb(148, 163, 184)"],html.tema-glass-oscuro .modal [style*="color: #94a3b8"],[style*="color: rgb(148, 163, 184)"]{color:#64748B!important}
+html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) :is([style*="color:#fff"],[style*="color: #fff"],[style*="color:#ffffff"],[style*="color: rgb(255, 255, 255)"])[style*="background:#f59e0b"]{background:#B45309!important}
+html.tema-glass-oscuro .overlay .btn.bc5{background:#15803D!important;border-color:#15803D!important}
+html.tema-glass-oscuro{--c4:#B45309;--c5:#047857}
+/* Botones con color propio (style=) que el relieve «píldora» de Facturas/Clientes/Pólizas tapaba: el texto blanco quedaba
+   sobre gris (invisible). Recuperan su color, en la variante AA. */
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#059669"],[style*="rgb(5, 150, 105)"],[style*="#10b981"],[style*="rgb(16, 185, 129)"],[style*="#16a34a"],[style*="rgb(22, 163, 74)"],[style*="#25D366"],[style*="rgb(37, 211, 102)"],[style*="#25d366"],[style*="rgb(37, 211, 102)"],[style*="#128C7E"],[style*="rgb(18, 140, 126)"]){background:#15803D!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#2563eb"],[style*="rgb(37, 99, 235)"],[style*="#2563EB"],[style*="rgb(37, 99, 235)"],[style*="#3b82f6"],[style*="rgb(59, 130, 246)"],[style*="#6d28d9"],[style*="rgb(109, 40, 217)"],[style*="#7c3aed"],[style*="rgb(124, 58, 237)"],[style*="#8b5cf6"],[style*="rgb(139, 92, 246)"]){background:var(--tgo-blue)!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#dc2626"],[style*="rgb(220, 38, 38)"],[style*="#ef4444"],[style*="rgb(239, 68, 68)"]){background:#DC2626!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]) i{color:#fff!important}
+html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{color:#92400E!important}
+/* títulos largos en la cabecera móvil: 2 líneas en vez de «…» */
+@media (max-width:768px){
+  html.tema-glass-oscuro body .tnav #pttl{font-size:15px!important;line-height:1.15!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  html.tema-glass-oscuro #cnt #v-facturas .nxft-tab{white-space:normal!important;line-height:1.15;text-align:center}
+}
+html.tema-glass-oscuro #cnt :is(.nxFP-hAsl,.nxFP-hAl){color:#5B6576!important}
+/* Buzón (sin tocar parches-whatsapp-*): solo dos rótulos que quedaban por debajo de 3:1 */
+html.tema-glass-oscuro #v-waInbox .nxCrmHomeBadge{color:#047857!important}
+html.tema-glass-oscuro #v-waInbox .nxWaListCount{color:#5B6576!important}
 </style>
 </head>
 <body>
@@ -9883,6 +9979,30 @@ function nxIGPreparar(){
 }
 
 // Serie diaria del ciclo 20→20 con los abonos que rChartCobros ya trajo (sin otra consulta).
+// Punto y etiqueta de la gráfica acumulada del ciclo: i = día del ciclo (0…). Sin argumento válido → último día.
+function nxIGChPunto(i){
+  const ch=_nxIG.ch,dot=document.getElementById('nxIGchDot'),tip=document.getElementById('nxIGchTip'),plot=document.getElementById('nxIGchPlot');
+  if(!ch||!dot||!tip||!plot)return;
+  if(!(ch.max>0)){dot.hidden=true;tip.hidden=true;return;}
+  i=Math.max(0,Math.min(ch.acum.length-1,i|0));
+  const lx=ch.X(i)/6,hp=plot.clientHeight||150,ty=ch.Y(ch.acum[i])/150*hp;
+  dot.style.left=lx+'%';dot.style.top=ty+'px';dot.hidden=false;
+  const del=ch.serie[i]||0;
+  tip.textContent=fmt(ch.acum[i])+' · '+nxIGFechaCorta(nxIGSumaDias(ch.ini,i))+(del>0?' (+'+fmt(del)+')':'');
+  tip.hidden=false;
+  const pw=plot.clientWidth||600,tw=tip.offsetWidth||120,px=lx/100*pw;
+  tip.style.left=Math.max(tw/2,Math.min(pw-tw/2,px))+'px';tip.style.top=(ty-34>=0?ty-34:ty+12)+'px';
+}
+// Mouse o dedo sobre la gráfica: muestra el acumulado y lo cobrado ese día; al salir vuelve al total. Un toque en la
+// gráfica solo muestra la etiqueta (el resto de la tarjeta sigue abriendo el historial de pagos).
+function nxIGChEventos(){
+  const plot=document.getElementById('nxIGchPlot');if(!plot||plot.__nxIGch)return;plot.__nxIGch=1;
+  const idx=(ev)=>{const ch=_nxIG.ch;if(!ch)return -1;const r=plot.getBoundingClientRect();const f=Math.max(0,Math.min(1,(ev.clientX-r.left)/(r.width||1)));return Math.round(f*(ch.N-1));};
+  plot.addEventListener('pointermove',ev=>{const i=idx(ev);if(i>=0)nxIGChPunto(i);});
+  plot.addEventListener('pointerdown',ev=>{const i=idx(ev);if(i>=0)nxIGChPunto(i);});
+  plot.addEventListener('pointerleave',()=>{const ch=_nxIG.ch;if(ch)nxIGChPunto(ch.acum.length-1);});
+  plot.addEventListener('click',ev=>{ev.stopPropagation();});
+}
 function nxIGCiclo(c){
   if(!nxIGOn())return;
   const porDia={},nDia={};
@@ -9902,27 +10022,23 @@ function nxIGCiclo(c){
   const dia=Math.max(0,Math.min(N-1,c.diaActual));
   const serie=[];for(let i=0;i<N;i++)serie.push(porDia[nxIGSumaDias(ini,i)]||0);
   let hasta=dia;serie.forEach((v,i)=>{if(v>0&&i>hasta)hasta=i;});
-  const dib=serie.slice(0,hasta+1),max=Math.max(...dib,0);
+  // 58.91: línea ACUMULADA del ciclo (total corrido día a día): con pocos cobros la diaria se veía en picos. El último
+  // punto = suma de los mismos abonos del ciclo = «cobrado en el ciclo». El monto de cada día va en la etiqueta
+  // (pasar el mouse o tocar la gráfica).
+  const acum=[];serie.slice(0,hasta+1).reduce((s,v)=>{s+=v;acum.push(s);return s;},0);
+  const max=acum.length?acum[acum.length-1]:0;
   const X=i=>i/(N-1)*600,Y=v=>140-(max>0?v/max*120:0);
-  let dPath='M'+X(0).toFixed(1)+' '+Y(dib[0]).toFixed(1);
-  for(let i=1;i<dib.length;i++){const x0=X(i-1),x1=X(i),y0=Y(dib[i-1]),y1=Y(dib[i]),m=(x1-x0)/2;dPath+=` C${(x0+m).toFixed(1)} ${y0.toFixed(1)} ${(x1-m).toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;}
-  const area=dPath+` L${X(dib.length-1).toFixed(1)} 150 L0 150Z`;
+  let dPath='M'+X(0).toFixed(1)+' '+Y(acum[0]||0).toFixed(1);
+  for(let i=1;i<acum.length;i++){const x0=X(i-1),x1=X(i),y0=Y(acum[i-1]),y1=Y(acum[i]),m=(x1-x0)/2;dPath+=` C${(x0+m).toFixed(1)} ${y0.toFixed(1)} ${(x1-m).toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;}
+  const area=dPath+` L${X(acum.length-1).toFixed(1)} 150 L0 150Z`;
   nxIGSet('nxIGchG',`<defs><linearGradient id="nxIGgrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2563EB" stop-opacity=".18"/><stop offset="1" stop-color="#2563EB" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#nxIGgrad)"/><path d="${dPath}" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`);
-  const dot=document.getElementById('nxIGchDot'),tip=document.getElementById('nxIGchTip'),plot=document.getElementById('nxIGchPlot');
-  if(dot&&tip&&plot){
-    if(max>0){
-      const im=dib.indexOf(max),lx=X(im)/6,hp=plot.clientHeight||150,ty=Y(max)/150*hp;
-      dot.style.left=lx+'%';dot.style.top=ty+'px';dot.hidden=false;
-      tip.textContent=fmt(max)+' · '+nxIGFechaCorta(nxIGSumaDias(ini,im));
-      tip.hidden=false;
-      const pw=plot.clientWidth||600,tw=tip.offsetWidth||120,px=lx/100*pw;
-      tip.style.left=Math.max(tw/2,Math.min(pw-tw/2,px))+'px';tip.style.top=(ty-34>=0?ty-34:ty+12)+'px';
-    }else{dot.hidden=true;tip.hidden=true;}
-  }
+  _nxIG.ch={ini,N,serie,acum,max,X,Y};
+  nxIGChPunto(acum.length-1);
+  nxIGChEventos();
   const marcas=[0,Math.round(N/4),Math.round(N/2),Math.round(3*N/4),N];
   nxIGSet('nxIGchAx',marcas.map(i=>`<span>${nxIGFechaCorta(nxIGSumaDias(ini,i))}</span>`).join(''));
   nxIGSet('nxIGchp',`${nxIGFechaCorta(ini)} – ${nxIGFechaCorta(fin)}`);
-  nxIGSet('nxIGchs',max>0?`Lo cobrado cada día del ${nxIGFechaCorta(ini)} al ${nxIGFechaCorta(fin)}`:'Todavía no hay cobros registrados en este ciclo');
+  nxIGSet('nxIGchs',max>0?`Acumulado del ${nxIGFechaCorta(ini)} al ${nxIGFechaCorta(fin)}`:'Todavía no hay cobros registrados en este ciclo');
   nxIGSet('nxIGcyl',escHtml(`Ciclo actual · día ${dia+1} de ${N}`));
   const v1=fmt(c.cobCiclo),v2=fmt(c.antMismoDia);
   nxIGSet('nxIGcy1',v1);nxIGSet('nxIGcy2',v2);

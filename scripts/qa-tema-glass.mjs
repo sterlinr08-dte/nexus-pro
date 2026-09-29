@@ -37,7 +37,7 @@ const MEDIR = () => {
       const cs = getComputedStyle(a);
       if (/gradient/.test(cs.backgroundImage) && !/url\(/.test(cs.backgroundImage)) {
         const cc = (cs.backgroundImage.match(/rgba?\([^)]+\)/g) || []).map(parse).filter(Boolean);
-        if (cc.length) { const m = cc.reduce((s, c) => ({ r: s.r + c.r / cc.length, g: s.g + c.g / cc.length, b: s.b + c.b / cc.length, a: s.a + c.a / cc.length }), { r: 0, g: 0, b: 0, a: 0 }); capas.push(m); if (m.a >= 0.99) break; }
+        if (cc.length) { const sa = cc.reduce((s, c) => s + c.a, 0) || 1; const m = cc.reduce((s, c) => ({ r: s.r + c.r * c.a / sa, g: s.g + c.g * c.a / sa, b: s.b + c.b * c.a / sa, a: s.a + c.a / cc.length }), { r: 0, g: 0, b: 0, a: 0 }); /* promedio ponderado por opacidad: «transparent» no oscurece */ capas.push(m); if (m.a >= 0.99) break; }
       }
       const bg = parse(cs.backgroundColor); if (bg && bg.a > 0) { capas.push(bg); if (bg.a >= 0.99) break; }
     }
@@ -49,7 +49,7 @@ const MEDIR = () => {
   window.__tgo = {
     // Todo texto visible: casos «ilegibles» = oscuro sobre oscuro o claro sobre claro con contraste < 3.
     textos(raiz) {
-      const root = document.querySelector(raiz) || document.body, r = { total: 0, bajo45: 0, oscuroSobreOscuro: [], claroSobreClaro: [] };
+      const root = document.querySelector(raiz) || document.body, r = { total: 0, bajo45: 0, bajo3: [], oscuroSobreOscuro: [], claroSobreClaro: [] };
       root.querySelectorAll('*').forEach(el => {
         if (el.closest('svg') || /^(SCRIPT|STYLE|svg|path|CANVAS|IMG|BR|OPTION|I)$/i.test(el.tagName) || el.closest('.ti')) return;
         if (![...el.childNodes].some(n => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.textContent))) return; // sin letras ni cifras (emoji, «·») no cuenta
@@ -57,6 +57,7 @@ const MEDIR = () => {
         const m = medir(el); if (!m) return; r.total++;
         const grande = m.fs >= 24 || (m.fs >= 18.66 && m.fw >= 700);
         if (m.r < (grande ? 3 : 4.5)) r.bajo45++;
+        if (m.r < 3) r.bajo3.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
         if (m.r < 3 && m.lt < 0.2 && m.lb < 0.2) r.oscuroSobreOscuro.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
         if (m.r < 3 && m.lt > 0.6 && m.lb > 0.6) r.claroSobreClaro.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
       });
@@ -145,7 +146,8 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const s = await page.evaluate(() => window.__tgo.superficies());
     const c = await page.evaluate(() => window.__tgo.campos('#cnt'));
     const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
-    res[nom] = { textos: t.total, bajo45: t.bajo45, ilegibles: t.oscuroSobreOscuro.length + t.claroSobreClaro.length, superficies: s.n, campos: c.n };
+    res[nom] = { textos: t.total, bajo45: t.bajo45, bajo3: t.bajo3.length, ilegibles: t.oscuroSobreOscuro.length + t.claroSobreClaro.length, superficies: s.n, campos: c.n };
+    if (tema === 'glass-oscuro') ok(t.bajo3.length === 0, `${tag} ${nom}: ningún texto por debajo de 3:1`, t.bajo3.slice(0, 5));
     if (tema === 'glass-oscuro') {
       ok(t.oscuroSobreOscuro.length === 0 && t.claroSobreClaro.length === 0, `${tag} ${nom}: sin texto oscuro sobre oscuro ni blanco sobre blanco (${t.total} textos)`, { oscuro: t.oscuroSobreOscuro.slice(0, 5), claro: t.claroSobreClaro.slice(0, 5) });
       ok(s.malos.length === 0, `${tag} ${nom}: superficies principales ≥4.5:1 (${s.n} medidas)`, s.malos.slice(0, 6));
@@ -161,7 +163,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const t = await page.evaluate(() => window.__tgo.textos('.overlay.open'));
     const c = await page.evaluate(() => window.__tgo.campos('.overlay.open'));
     const s = await page.evaluate(() => window.__tgo.superficies());
-    res[nom] = { textos: t.total, bajo45: t.bajo45, ilegibles: t.oscuroSobreOscuro.length + t.claroSobreClaro.length, campos: c.n };
+    res[nom] = { textos: t.total, bajo45: t.bajo45, bajo3: t.bajo3.length, ilegibles: t.oscuroSobreOscuro.length + t.claroSobreClaro.length, campos: c.n };
     if (tema === 'glass-oscuro') {
       ok(abierto && t.total > 5 && t.oscuroSobreOscuro.length === 0 && t.claroSobreClaro.length === 0, `${tag} ${nom}: abierto y legible (${t.total} textos)`, { abierto, t: t.oscuroSobreOscuro.concat(t.claroSobreClaro).slice(0, 5) });
       ok(c.malos.length === 0 && s.malos.length === 0, `${tag} ${nom}: campos y rótulos ≥4.5:1 (${c.n} campos)`, { c: c.malos.slice(0, 5), s: s.malos.slice(0, 5) });
@@ -210,7 +212,9 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const suma = (o, k) => Object.entries(o).filter(([n]) => n in c && n in g).reduce((s, [, v]) => s + v[k], 0);
     const cmp = { glassBajo45: suma(g, 'bajo45'), clasicoBajo45: suma(c, 'bajo45'), glassIlegibles: suma(g, 'ilegibles'), clasicoIlegibles: suma(c, 'ilegibles'), textos: suma(g, 'textos') };
     resumen.comparacion = cmp;
+    cmp.glassBajo3 = suma(g, 'bajo3'); cmp.clasicoBajo3 = suma(c, 'bajo3');
     ok(cmp.glassBajo45 <= cmp.clasicoBajo45 && cmp.glassIlegibles <= cmp.clasicoIlegibles, `1280-admin: textos bajo 4.5:1 glass-oscuro ${cmp.glassBajo45} ≤ clásico ${cmp.clasicoBajo45}; ilegibles ${cmp.glassIlegibles} ≤ ${cmp.clasicoIlegibles} (de ${cmp.textos})`, cmp);
+    ok(cmp.glassBajo45 <= 20 && cmp.glassBajo3 === 0, `1280-admin (58.91): meta de contraste — bajo 4.5:1 = ${cmp.glassBajo45} (≤20) y bajo 3:1 = ${cmp.glassBajo3} (0)`, cmp);
   }
 
   // 3) Migración única: 'clasico' guardado antes de 58.89 (sin marca) → pasa a glass-oscuro una vez, sin cambio visible.
@@ -351,6 +355,15 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     });
     ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '24px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} ítems de 48 px sin texto`, riel);
     ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 48 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = cuadro azul 48×48, avatar al pie`, riel);
+    // Gráfica «Cobros del ciclo» acumulada (58.91): último punto = cobrado en el ciclo; etiqueta del día al pasar el mouse.
+    const gr = await page.evaluate(() => { const ch = _nxIG.ch, d = (t) => String(t || '').replace(/[^\d]/g, ''); return { ultimo: ch && ch.acum[ch.acum.length - 1], monotona: ch && ch.acum.every((v, i, a) => !i || v >= a[i - 1]), suma: ch && ch.serie.slice(0, ch.acum.length).reduce((s, v) => s + v, 0), ciclo: d(document.getElementById('nxIGcy1').textContent), tip: document.getElementById('nxIGchTip').textContent, sub: document.getElementById('nxIGchs').textContent }; });
+    ok(gr.ultimo > 0 && String(Math.round(gr.ultimo)) === gr.ciclo && gr.monotona && gr.ultimo === gr.suma && /Acumulado/.test(gr.sub), `1280 gráfica acumulada: último punto ${gr.ultimo} = «cobrado en el ciclo» ${gr.ciclo}, sin bajadas`, gr);
+    const bx = await page.evaluate(() => { const b = document.getElementById('nxIGchPlot').getBoundingClientRect(), ch = _nxIG.ch; let i = ch.serie.findIndex(v => v > 0); return { x: b.left + (i / (ch.N - 1)) * b.width, y: b.top + b.height / 2, i, dia: ch.serie[i], acum: ch.acum[i] }; });
+    await page.mouse.move(bx.x, bx.y); await sleep(250);
+    const tipD = await page.evaluate(() => document.getElementById('nxIGchTip').textContent);
+    ok(/\(\+RD\$/.test(tipD) && tipD.replace(/\s/g, '').includes(String(bx.acum.toLocaleString('en-US'))), `1280 al pasar el mouse la etiqueta muestra acumulado y lo cobrado ese día: «${tipD}»`, { tipD, bx });
+    await page.mouse.move(700, 700); await sleep(200);
+    ok(await page.evaluate(() => document.getElementById('nxIGchTip').textContent) === gr.tip, '1280 al salir de la gráfica vuelve al total del ciclo');
     // Tooltip con hover y con foco de teclado
     const itemSel = '#sbEl .ni[onclick^="nav(\'facturas\'"]';
     await page.hover(itemSel); await sleep(300);
@@ -427,7 +440,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const archivo = width < 500 ? 'fondo-oficina-movil.webp' : 'fondo-oficina.webp';
     const kb = Math.round(fs.statSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'assets', archivo)).size / 1024);
     ok(antes.dcl && antes.dcl.grad && antes.dcl.antes === '0' && !antes.dcl.clase && fa && fa.visible, `${width} primer pintado: degradado cálido visible y la foto oculta hasta cargar (la app ya estaba en pantalla con el degradado)`, { antes, fa });
-    ok(despues.clase && despues.op === '1' && despues.img && /blur\(18px\)/.test(despues.filtro) && fotos.some(u => u.includes(archivo)), `${width} la foto ${archivo} (${kb} KB) entra con fundido, desenfocada (${despues.filtro})`, { despues, fotos });
+    ok(despues.clase && despues.op === '1' && despues.img && despues.filtro === 'none' && fotos.some(u => u.includes(archivo)), `${width} la foto ${archivo} (${kb} KB, desenfoque ya horneado en el archivo: sin filter en CSS) entra con fundido`, { despues, fotos });
     const dcls = despues.cls - (fa ? fa.cls : 0);
     ok(fa && JSON.stringify(fa.rects) === JSON.stringify(despues.rects) && dcls < 0.001, `${width} la foto no mueve nada: mismas medidas de panel/menú/contenido/cabecera antes y después, desplazamiento acumulado (CLS) al entrar la foto ${dcls.toFixed(4)}`, { antes: fa, despues: despues.rects, dcls });
     ok(kb < (width < 500 ? 90 : 200), `${width} peso de ${archivo}: ${kb} KB`);
