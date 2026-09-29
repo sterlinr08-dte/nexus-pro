@@ -3493,7 +3493,20 @@ html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{colo
   html.tema-glass-oscuro body .tnav #pttl{font-size:15px!important;line-height:1.15!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   html.tema-glass-oscuro #cnt #v-facturas .nxft-tab{white-space:normal!important;line-height:1.15;text-align:center}
 }
-html.tema-glass-oscuro #cnt :is(.nxFP-hAsl,.nxFP-hAl){color:#5B6576!important}
+/* Financiamiento: en escritorio los rótulos Prestado/Cobrado/Vencido/Clientes van sobre el héroe morado (blanco, como
+   siempre); solo en ≤640 px van en tarjetas blancas → gris AA. Las 4 cifras no caben en 2 columnas con el riel a 390 px:
+   ≤480 px van en una columna (sin ancho mínimo que las saque del héroe). */
+@media (max-width:640px){
+  html.tema-glass-oscuro #cnt .nxFP-hAst .nxFP-hAsl{color:#5B6576!important}
+  html.tema-glass-oscuro #cnt :is(.nxFP-hAL,.nxFP-hAR){min-width:0!important}
+  html.tema-glass-oscuro #cnt .nxFP-hAst{min-width:0}
+  html.tema-glass-oscuro #cnt .nxFP-hAst > div:last-child{min-width:0}
+  html.tema-glass-oscuro #cnt .nxFP-hAsv{overflow-wrap:anywhere}
+}
+@media (max-width:480px){html.tema-glass-oscuro #cnt .nxFP-hAR{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
+/* barra inferior propia de Financiamiento (≤900 px): sobre la escena oscura el blanco al 82 % se volvía gris → casi opaca */
+html.tema-glass-oscuro .nxFP-dock{background:rgba(255,255,255,.96)!important}
+html.tema-glass-oscuro .nxFP-dockBtn:not(.on){color:#475569!important}
 /* Buzón (sin tocar parches-whatsapp-*): solo dos rótulos que quedaban por debajo de 3:1 */
 html.tema-glass-oscuro #v-waInbox .nxCrmHomeBadge{color:#047857!important}
 html.tema-glass-oscuro #v-waInbox .nxWaListCount{color:#5B6576!important}

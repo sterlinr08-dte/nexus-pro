@@ -17,6 +17,7 @@ const BASE = 'http://127.0.0.1:8942';
 const OUT = (process.env.QA_OUT || path.join(os.tmpdir(), 'qa-tema-glass')) + path.sep; fs.mkdirSync(OUT, { recursive: true });
 // Íconos Tabler reales en las capturas si hay copia local (opcional): QA_TABLER=/ruta con tabler-icons.min.css y fonts/.
 const TABLER = process.env.QA_TABLER || '';
+const PFX = process.env.QA_PFX || 'v3-'; // prefijo de las capturas
 let pass = 0, fail = 0; const resumen = { contraste: {}, primerPintado: {} };
 const ok = (c, m, extra) => { if (c) { pass++; console.log('PASS  ' + m); } else { fail++; console.log('FAIL  ' + m + (extra !== undefined ? ' :: ' + JSON.stringify(extra).slice(0, 700) : '')); } };
 const qa = (p) => new Promise((r) => http.get(BASE + '/__qa/' + p, (res) => { let s = ''; res.on('data', c => s += c); res.on('end', () => { try { r(JSON.parse(s)); } catch (e) { r(s); } }); }));
@@ -153,7 +154,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(s.malos.length === 0, `${tag} ${nom}: superficies principales ≥4.5:1 (${s.n} medidas)`, s.malos.slice(0, 6));
       ok(c.malos.length === 0, `${tag} ${nom}: campos legibles (${c.n})`, c.malos.slice(0, 5));
       ok(sw[0] <= sw[1], `${tag} ${nom}: sin desborde horizontal`, sw);
-      if (capturar && shot) await page.screenshot({ path: OUT + `v2-${shot}-${width}${rol === 'agente' ? '-agente' : ''}.png` });
+      if (capturar && shot) await page.screenshot({ path: OUT + PFX + `${shot}-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
   }
   // Modal (Nuevo cliente) y modal de abono: hoja blanca legible.
@@ -167,7 +168,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     if (tema === 'glass-oscuro') {
       ok(abierto && t.total > 5 && t.oscuroSobreOscuro.length === 0 && t.claroSobreClaro.length === 0, `${tag} ${nom}: abierto y legible (${t.total} textos)`, { abierto, t: t.oscuroSobreOscuro.concat(t.claroSobreClaro).slice(0, 5) });
       ok(c.malos.length === 0 && s.malos.length === 0, `${tag} ${nom}: campos y rótulos ≥4.5:1 (${c.n} campos)`, { c: c.malos.slice(0, 5), s: s.malos.slice(0, 5) });
-      if (capturar && nom === 'modal') await page.screenshot({ path: OUT + `v2-modal-${width}${rol === 'agente' ? '-agente' : ''}.png` });
+      if (capturar && nom === 'modal') await page.screenshot({ path: OUT + PFX + `modal-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
     await page.evaluate(() => document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open')));
   }
@@ -271,7 +272,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(real === esperado && e.attr === esperado && e.mirror === t && sel === t && sw[0] <= sw[1], `${width} Apariencia → ${t}: clases, espejo y selección correctos (se ve ${real})`, { real, attr: e.attr, mirror: e.mirror, sel, sw });
       if (t === 'glass-oscuro') ok(s.malos.length === 0, `${width} Apariencia → ${t}: rótulos legibles tras el cambio`, s.malos.slice(0, 5));
     }
-    if (width === 1280) await page.screenshot({ path: OUT + 'v2-config-apariencia-1280.png' });
+    if (width === 1280) await page.screenshot({ path: OUT + PFX + 'config-apariencia-1280.png' });
     await sleep(1300);
     ok((await prefs('admin')).tema === 'glass-oscuro', `${width} Apariencia: la elección se guarda en la base (usuario_preferencias)`);
     // Botón de la barra superior: oscuro ⇄ clásico, mismo sistema de temas.
@@ -304,12 +305,12 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     // Cabecera móvil mínima: menú + título + campana (+ actualizar, que ya estaba); sin barra inferior.
     const cab = await page.evaluate(() => { const t = document.querySelector('.tnav'); const vis = [...t.querySelectorAll('button,[role=button],.pttl')].filter(e => e.offsetParent && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0).map(e => e.id || e.className.split(' ').slice(0, 2).join('.') || e.tagName); const bb = [...document.querySelectorAll('.mobile-bottom-nav-clean,[class*=bottom-nav]')].filter(e => e.offsetParent && e.getBoundingClientRect().height > 0).length; return { vis, alto: Math.round(t.getBoundingClientRect().height), titulo: document.getElementById('pttl').innerText, bb }; });
     ok(cab.vis.includes('tn-tog') && cab.vis.includes('pttl') && cab.vis.some(v => /notif-bell/.test(v)) && cab.alto <= 76 && cab.bb === 0, `390 cabecera mínima: menú + título «${cab.titulo}» + campana (${cab.vis.join(', ')}; ${cab.alto} px) y sin barra inferior`, cab);
-    await page.screenshot({ path: OUT + 'v2-inicio-390.png' });
+    await page.screenshot({ path: OUT + PFX + 'inicio-390.png' });
     await page.evaluate(() => toggleSB()); await sleep(1200);
     const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const a = getComputedStyle(document.getElementById('sbEl'), '::after').backgroundImage; return { r, a }; });
     const abierto = await page.evaluate(() => document.getElementById('sbEl').classList.contains('mob-open') && getComputedStyle(document.querySelector('#sbEl .ni .ni-l')).display !== 'none');
     ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(42, 37, 34\)/.test(sb.a), `390 cajón móvil de siempre: abre con nombres, grafito sólido y ${sb.r.total} rótulos legibles`, sb);
-    await page.screenshot({ path: OUT + 'v2-menu-390.png' });
+    await page.screenshot({ path: OUT + PFX + 'menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
     const fab = await page.$('.nx-fab');
     if (fab) {
@@ -317,7 +318,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       await fab.click(); await sleep(700);
       const hoja = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? { bg: getComputedStyle(s).backgroundColor, t: window.__tgo.textos('.mobile-more-sheet-clean.open') } : null; });
       ok(bg === 'rgb(37, 99, 235)' && hoja && hoja.bg === 'rgb(255, 255, 255)' && hoja.t.oscuroSobreOscuro.length + hoja.t.claroSobreClaro.length === 0, `390 botón flotante azul NEXUS y su menú en hoja blanca legible`, { bg, hoja });
-      await page.screenshot({ path: OUT + 'v2-fab-menu-390.png' });
+      await page.screenshot({ path: OUT + PFX + 'fab-menu-390.png' });
     }
     ok(V.errs.length === 0, '390 menú/botón flotante: sin errores de consola', V.errs.slice(0, 4));
     await V.ctx.close();
@@ -331,7 +332,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     await sleep(9000);
     const lg = await lp.evaluate(() => ({ vis: getComputedStyle(document.getElementById('loginScreen')).display !== 'none', box: getComputedStyle(document.querySelector('.lbox')).backgroundColor }));
     ok(sp.cls && sp.splash === 'rgb(34, 28, 24)' && lg.vis && /rgba\(38, 34, 32/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
-    await lp.screenshot({ path: OUT + 'v2-login-390.png' });
+    await lp.screenshot({ path: OUT + PFX + 'login-390.png' });
     await ctx.close();
   }
 
@@ -377,7 +378,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     await page.click('#niContab'); await sleep(700);
     const fl = await page.evaluate(() => { const f = document.getElementById('sbContab'), r = f.getBoundingClientRect(), cs = getComputedStyle(f); const it = f.querySelector('.ni'); return { vis: cs.visibility, pos: cs.position, left: Math.round(r.left), top: Math.round(r.top), bottom: Math.round(r.bottom), h: innerHeight, conNombre: getComputedStyle(it.querySelector('.ni-l')).display !== 'none', nav: Math.round(document.getElementById('sbEl').getBoundingClientRect().width) }; });
     ok(fl.vis === 'visible' && fl.pos === 'fixed' && fl.left >= 88 && fl.top >= 0 && fl.bottom <= fl.h && fl.conNombre && fl.nav === 76, `1280 Contabilidad abre un panel flotante junto al riel (x=${fl.left}, ${fl.top}–${fl.bottom}) con nombres; el riel no se ensancha`, fl);
-    await page.screenshot({ path: OUT + 'v2-menu-flyout-1280.png' });
+    await page.screenshot({ path: OUT + PFX + 'menu-flyout-1280.png' });
     await page.click('#niAdmin2'); await sleep(700);
     const dos = await page.evaluate(() => [getComputedStyle(document.getElementById('sbContab')).visibility, getComputedStyle(document.getElementById('sbConfig')).visibility]);
     ok(dos[0] === 'hidden' && dos[1] === 'visible', '1280 un panel a la vez: abrir Configuración cierra Contabilidad', dos);
@@ -408,7 +409,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(await page.evaluate((c) => (0, eval)(c), chk), `1280 la acción ${f} funciona desde la cabecera`);
       await page.keyboard.press('Escape'); await page.evaluate(() => { try { cerrarGlobalSearch(); } catch (e) {} document.getElementById('notifPanel').classList.remove('show'); }); await sleep(300);
     }
-    await page.screenshot({ path: OUT + 'v2-inicio-1280-cabecera.png' });
+    await page.screenshot({ path: OUT + PFX + 'inicio-1280-cabecera.png' });
     ok(R.errs.length === 0, '1280 riel/paneles/cabecera: sin errores de consola', R.errs.slice(0, 5));
     await R.ctx.close();
   }
