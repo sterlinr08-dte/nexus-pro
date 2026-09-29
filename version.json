@@ -1,7 +1,18 @@
 {
-  "version": "58.85",
+  "version": "58.86",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.86",
+      "fecha": "2026-09-29",
+      "notas": [
+        "CRM: la ficha del cliente abre en Cliente 360 con historial de seguimiento y tareas (antes no se llegaba a ella).",
+        "CRM: agenda unificada en un solo archivo (parches-crm.js), tareas hechas/deshechas con Deshacer, buscador de cliente al crear tareas, filtro Mis tareas/Todas, búsqueda y botón Actualizar.",
+        "CRM: «Seguimientos vencidos» se cuenta sobre todas las tareas pendientes (antes solo sobre 8) y las fechas usan la hora de Santo Domingo.",
+        "CRM: nueva sección Prospectos (Nuevo → Cotizado → Documentos → Emitida | Perdida) con motivo de pérdida y vínculo al cliente al emitir; requiere aplicar la migración crm_prospectos.",
+        "CRM móvil: textos mínimos de 12 px, botones de 44 px, Escape cierra ventanas y sin diálogos nativos."
+      ]
+    },
     {
       "version": "58.85",
       "fecha": "2026-09-22",
