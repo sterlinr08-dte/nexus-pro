@@ -51,11 +51,8 @@ window.sentryOnLoad=function(){
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"/></noscript>
-<!-- Plus Jakarta Sans: excepción deliberada, SOLO para el Splash (pedido explícito
-     del dueño, 1-ago-2026) — cargada aquí en <head> porque el splash aparece antes
-     de que nxPfEnsureCSS() (que ya carga esta misma fuente para el POS) corra. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'"/>
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"/></noscript>
+<!-- Tipografía Apple (29-sep-2026): ya no se descarga Plus Jakarta Sans (antes excepción del Splash, 1-ago-2026).
+     Todo NEXUS PRO, Splash incluido, usa la fuente del sistema (SF Pro en Apple) — ver #nxTipoApple al final del <head>. -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 /* ── Barra de scroll visible (estilizada) ── */
@@ -2756,6 +2753,144 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 .tema-opcion.tema-sel{border-color:var(--c1) !important;box-shadow:0 4px 16px rgba(15,23,42,.25)}
 .tema-opcion:hover{transform:translateY(-2px)}
 </style>
+<!-- ═══ TIPOGRAFÍA APPLE (29-sep-2026, pedido del dueño: «todo el sistema completo con fuente y el tamaño y
+     los números») ═══
+     Una sola capa, aplicada desde el primer pintado (está en <head>, antes de <body>, sin fuentes web):
+       · Fuente: SF Pro a través de la pila del sistema (-apple-system). En Windows cae en Segoe UI y en
+         Android en Roboto. No se descarga ninguna fuente, así que no hay FOUC ni saltos al cargar.
+       · Números: SF Pro con cifras tabulares (tnum), no monoespaciada. Solo NCF, IMEI/seriales, folios y
+         bloques de código usan --nx-code (monoespaciada real).
+       · Tamaños: escala inspirada en Apple (tokens --nx-fs-*) aplicada a las piezas genéricas, piso de 11 px.
+     CÓMO APAGARLA: borrar el <script id="nxTipoAppleOff">, el <style id="nxTipoApple"> y el <script id="nxTipoAppleMin">, o en un
+     dispositivo concreto ejecutar en la consola localStorage.setItem('nx_tipo_off','1') y recargar
+     (se vuelve con localStorage.removeItem('nx_tipo_off')). Ambos ponen/actúan sobre html.nx-tipo-off. -->
+<script id="nxTipoAppleOff">try{if(localStorage.getItem('nx_tipo_off')==='1')document.documentElement.classList.add('nx-tipo-off');}catch(e){}</script>
+<style id="nxTipoApple">
+/* 1) Tokens. html:not(.nx-tipo-off) pesa más que :root, así que redefine --ff/--mono sin tocar el :root original. */
+html:not(.nx-tipo-off){
+  --nx-sf-text:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,system-ui,sans-serif;
+  --nx-sf-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,system-ui,sans-serif;
+  --nx-sf-num:var(--nx-sf-text);            /* montos, fechas y conteos: SF con cifras tabulares */
+  --nx-code:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace; /* solo NCF, IMEI, folios, código */
+  --ff:var(--nx-sf-text);
+  --mono:var(--nx-sf-num);
+  --nx-font:var(--nx-sf-text);
+  --nx-mono:var(--nx-sf-num);
+  /* Escala (px / interlineado / peso / tracking) */
+  --nx-fs-large:28px;   /* Large Title  28/34 700 -0.022em */
+  --nx-fs-title1:24px;  /* Title 1      24/30 600 -0.019em */
+  --nx-fs-title2:20px;  /* Title 2      20/25 600 -0.017em */
+  --nx-fs-title3:17px;  /* Title 3      17/22 600 -0.012em */
+  --nx-fs-body:15px;    /* Body         15/1.45 400 (16 en campos móviles) */
+  --nx-fs-callout:14px; /* Callout      14/1.4 */
+  --nx-fs-subhead:13px; /* Subhead      13/1.35 */
+  --nx-fs-footnote:12px;/* Footnote     12/1.35 */
+  --nx-fs-caption:11px; /* Caption      11/1.3, mayúsculas +0.06em (nunca menos de 11) */
+  font-family:var(--nx-sf-text);
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+/* 2) Familia en TODO el sistema. Muchas capas escriben su fuente a mano (Plus Jakarta Sans, Geist, Segoe UI…);
+   esta regla las alcanza a todas. Solo quedan fuera los íconos Tabler (.ti) y la lista de código del punto 3. */
+html:not(.nx-tipo-off) body,
+html:not(.nx-tipo-off) body *:not(.ti){
+  font-family:var(--nx-sf-text)!important;
+}
+/* Buzón WhatsApp: sus capas fijan la fuente con #v-waInbox{…!important}; se alcanza aquí sin editarlas. */
+html:not(.nx-tipo-off) body #v-waInbox,
+html:not(.nx-tipo-off) body #v-waInbox *:not(.ti){
+  font-family:var(--nx-sf-text)!important;
+}
+/* 3) Monoespaciada real, solo donde el ancho fijo ayuda a leer: NCF, IMEI/seriales, folios, código.
+   Misma especificidad que el punto 2 y va después, así que gana. Un style= con var(--mono,monospace) NO entra
+   aquí (--mono ahora es SF tabular); solo font-family:monospace explícito o var(--nx-code). */
+html:not(.nx-tipo-off) body :is(code,pre,kbd,samp,.nx-code,.ncf-badge,.nxRA-folio,[style*="font-family:monospace"],[style*="font-family: monospace"],[style*="--nx-code"]){
+  font-family:var(--nx-code)!important;
+  font-variant-numeric:tabular-nums slashed-zero;
+}
+/* 4) Escala en las piezas genéricas del sistema. */
+html:not(.nx-tipo-off) body{font-size:var(--nx-fs-body)}
+html:not(.nx-tipo-off) :where(h1){font-family:var(--nx-sf-display);font-size:var(--nx-fs-large);line-height:1.2;font-weight:700;letter-spacing:-.022em}
+html:not(.nx-tipo-off) :where(h2){font-family:var(--nx-sf-display);font-size:var(--nx-fs-title1);line-height:1.25;font-weight:600;letter-spacing:-.019em}
+html:not(.nx-tipo-off) :where(h3){font-size:var(--nx-fs-title2);line-height:1.25;font-weight:600;letter-spacing:-.017em}
+html:not(.nx-tipo-off) :where(h4){font-size:var(--nx-fs-title3);line-height:1.3;font-weight:600;letter-spacing:-.012em}
+html:not(.nx-tipo-off) :where(p,li,textarea){line-height:1.45}
+/* Título de página (barra superior) — Title 3 */
+html:not(.nx-tipo-off) body #pttl{font-size:var(--nx-fs-title3)!important;font-weight:600!important;letter-spacing:.01em!important;line-height:1.2!important;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Tarjetas y KPI */
+html:not(.nx-tipo-off) body .ct{font-size:var(--nx-fs-body)!important;font-weight:600!important;letter-spacing:-.005em!important}
+html:not(.nx-tipo-off) body .kl{font-size:var(--nx-fs-caption)!important;font-weight:600!important;letter-spacing:.06em!important}
+html:not(.nx-tipo-off) body .kv{font-size:var(--nx-fs-title2)!important;font-weight:700!important;letter-spacing:-.017em!important;line-height:1.1!important}
+html:not(.nx-tipo-off) body .ks{font-size:var(--nx-fs-footnote)!important}
+/* Tablas: encabezado Caption en mayúsculas, celdas Subhead */
+html:not(.nx-tipo-off) body table{font-size:var(--nx-fs-subhead)}
+html:not(.nx-tipo-off) body thead th{font-size:var(--nx-fs-caption)!important;font-weight:600!important;letter-spacing:.06em!important;line-height:1.3}
+/* Etiquetas de formulario, campos y botones */
+html:not(.nx-tipo-off) body .fr label{font-size:var(--nx-fs-caption)!important;font-weight:600!important;letter-spacing:.06em!important}
+html:not(.nx-tipo-off) body :is(.fr input,.fr select,.fr textarea){font-size:var(--nx-fs-body)!important}
+html:not(.nx-tipo-off) body .btn{font-size:var(--nx-fs-subhead)!important;letter-spacing:0!important}
+/* Modales */
+html:not(.nx-tipo-off) body .mt{font-size:var(--nx-fs-title3)!important;font-weight:600!important;letter-spacing:-.012em!important;line-height:1.3!important}
+/* Avisos (toast) */
+html:not(.nx-tipo-off) body .toast{font-size:var(--nx-fs-footnote)!important}
+html:not(.nx-tipo-off) body .toast .ti-t{font-size:var(--nx-fs-subhead)!important;font-weight:600!important}
+html:not(.nx-tipo-off) body .toast .ti-m{font-size:var(--nx-fs-footnote)!important;line-height:1.4!important}
+/* Cifras grandes del inicio: SF Display con tracking cerrado */
+html:not(.nx-tipo-off) body :is(.dhero-big,.kv,h1,h2){font-family:var(--nx-sf-display)!important}
+/* Accesos rápidos del Inicio: con el piso de 11 px, «MULTIEMPRESA» y «CONTABILIDAD» no cabían en la píldora
+   (ya se salían 7 px con 9.5 px). Tracking 0, peso 600 y 4 px más por lado dentro del hueco de 8 px de la rejilla. */
+html:not(.nx-tipo-off) body #v-dashboard .qa-g .qa-l{letter-spacing:0!important;font-weight:600!important;padding:3px 4px!important;max-width:calc(100% + 8px)!important}
+/* Pie de las cifras del héroe del Inicio («0 inhabilitados»): a 11 px en mayúsculas la palabra larga pasaba 6 px
+   del ancho de su columna en 390 px. Como en iOS, la nota al pie va en tipo oración (mismo texto, solo estilo). */
+html:not(.nx-tipo-off) body #v-dashboard .dhero-s{text-transform:none!important}
+/* Móvil / iOS: los campos deben tener ≥16 px o Safari hace zoom al enfocarlos. */
+@media (max-width:768px){
+  /* Buzón WhatsApp móvil: las 5 mini-tarjetas KPI miden ~47 px y sus rótulos estaban a 6.6 px. Con el piso de
+     11 px no caben enteros: se cortan con «…» dentro de la tarjeta en vez de salirse (cifra e ícono intactos). */
+  html:not(.nx-tipo-off) body #v-waInbox .nxWaProKpi .l{display:block;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  html:not(.nx-tipo-off) body :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea){font-size:16px!important}
+}
+</style>
+<!-- Piso de 11 px: el sistema tiene ~1.200 tamaños escritos a mano por debajo de 11 px (8–10.5 px) repartidos
+     entre index.html y las capas. En vez de editar cada uno, este script los sube a 11 px en las hojas de estilo
+     y en los style= a medida que aparecen. Corre con MutationObserver (antes del siguiente pintado), así que
+     no hay salto visible. No toca textos, datos ni lógica. Se apaga con html.nx-tipo-off. -->
+<script id="nxTipoAppleMin">
+(function(){
+  var H=document.documentElement;
+  if(H.classList.contains('nx-tipo-off')||!window.MutationObserver)return;
+  var MIN=11,RX=/^(\d*\.?\d+)px$/;
+  function fix(st){
+    if(!st)return;
+    var v=st.getPropertyValue('font-size'),m=v&&RX.exec(v.trim());
+    if(m&&parseFloat(m[1])<MIN)st.setProperty('font-size',MIN+'px',st.getPropertyPriority('font-size'));
+  }
+  function reglas(rs){if(!rs)return;for(var i=0;i<rs.length;i++){var r=rs[i];if(r.style)fix(r.style);if(r.cssRules)reglas(r.cssRules);}}
+  function hoja(s){if(!s||s.__nxTipo)return;try{reglas(s.cssRules);s.__nxTipo=1;}catch(e){}}
+  function nodo(n){
+    if(n.nodeType!==1)return;
+    var t=n.tagName;
+    if(t==='STYLE'){hoja(n.sheet);return;}
+    if(t==='LINK'){if(n.sheet)hoja(n.sheet);n.addEventListener('load',function(){hoja(n.sheet);});return;}
+    if(n.hasAttribute('style'))fix(n.style);
+    if(n.firstElementChild){var l=n.querySelectorAll('[style*="font"]');for(var i=0;i<l.length;i++)fix(l[i].style);}
+  }
+  function todas(){var ss=document.styleSheets;for(var i=0;i<ss.length;i++)hoja(ss[i]);}
+  new MutationObserver(function(ms){
+    for(var i=0;i<ms.length;i++){
+      var m=ms[i];
+      if(m.type==='attributes'){fix(m.target.style);continue;}
+      if(m.target.tagName==='STYLE')hoja(m.target.sheet);
+      for(var j=0;j<m.addedNodes.length;j++)nodo(m.addedNodes[j]);
+    }
+  }).observe(H,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+  todas();
+  document.addEventListener('DOMContentLoaded',todas);
+  window.addEventListener('load',todas);
+})();
+</script>
 </head>
 <body>
 
@@ -6497,7 +6632,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.86';
+const APP_VERSION='58.87';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

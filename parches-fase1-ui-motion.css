@@ -13,7 +13,7 @@
 }
 
 html{
-  font-family:Geist,"Segoe UI",system-ui,-apple-system,sans-serif;
+  font-family:var(--ff);
   color:var(--nx-ui-ink);
 }
 /* body, .main y #app DEBEN quedarse sin fondo opaco para que

@@ -1599,7 +1599,7 @@
     await liberarReservasImeisVencidas();
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
-    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span></span><span style="display:flex;align-items:center;gap:6px;flex:none">${colorSelectHTML('serCol_' + r.id, r.color || '')}<button class="btn bsm bghost" type="button" title="Guardar color" aria-label="Guardar color de ${esc(r.serial)}" onclick="window.nxSerialColorSet('${r.id}','${pid}')"><i class="ti ti-check"></i></button><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')" title="Eliminar" aria-label="Eliminar ${esc(r.serial)}"><i class="ti ti-minus" style="color:#dc2626"></i></button></span></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
+    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font-family:var(--nx-code,ui-monospace,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span></span><span style="display:flex;align-items:center;gap:6px;flex:none">${colorSelectHTML('serCol_' + r.id, r.color || '')}<button class="btn bsm bghost" type="button" title="Guardar color" aria-label="Guardar color de ${esc(r.serial)}" onclick="window.nxSerialColorSet('${r.id}','${pid}')"><i class="ti ti-check"></i></button><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')" title="Eliminar" aria-label="Eliminar ${esc(r.serial)}"><i class="ti ti-minus" style="color:#dc2626"></i></button></span></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
     // REGLAMENTO DE INVENTARIO: el stock del artículo debe ser igual a la cuenta de IMEI disponibles.
     // Si no coinciden (un descuadre de antes de esta regla), se avisa y se ofrece cuadrarlo.
     const disp = rows.length;
@@ -1711,7 +1711,7 @@
     const almFiltro = _almacenes.length ? '&almacen_id=eq.' + _almacenSel : '';
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible' + almFiltro + '&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
-    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
+    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--nx-code,ui-monospace,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
     const facSerBuscador = rows.length > 1 ? '<div style="margin-bottom:7px">' + posBuscador({ id: 'nxFacSerQ', inputmode: 'numeric', placeholder: 'Buscar IMEI…', oninput: 'window.nxFacSerFiltrar(this.value)' }) + '</div>' : '';
     const ov = document.createElement('div'); ov.id = 'nxFacSer'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
@@ -1848,7 +1848,7 @@
     }
     const filas = _secuencias.map(s => `<tr>
         <td><b>${esc(s.nombre || s.tipo)}</b></td>
-        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px;color:var(--pf-purple)">${esc(secEjemplo(s))}</td>
+        <td style="text-align:center;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px;color:var(--pf-purple)">${esc(secEjemplo(s))}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" title="Historial" aria-label="Historial" onclick="window.nxSecHistorial('${s.id}')"><i class="ti ti-history"></i></button> <button class="btn bsm bc1" title="Editar" aria-label="Editar" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
     return ajCard('ti-list-numbers', 'purple', 'Secuencias de documentos', 'El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).') +
@@ -1888,7 +1888,7 @@
     let list = window._secHistAll || [];
     if (q) list = list.filter(x => ((x.numero || '') + ' ' + (x.doc || '') + ' ' + (x.detalle || '')).toLowerCase().includes(q));
     const filas = list.slice(0, 300).map(x => `<tr>
-        <td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px;white-space:nowrap">${esc(x.numero || '')}</td>
+        <td style="font-weight:700;color:#6d28d9;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px;white-space:nowrap">${esc(x.numero || '')}</td>
         <td style="font-size:11px;color:#475569">${esc(x.doc)}</td>
         <td style="font-size:11.5px">${esc(x.detalle || '')}</td>
         <td style="text-align:right;white-space:nowrap;font-size:11px">${x.monto != null ? fmt(x.monto) : (x.fecha ? fechaDMY(x.fecha) : '')}</td>
@@ -1914,7 +1914,7 @@
       try {
         const cols = ['numero', f[2]].concat(f[3] ? [f[3]] : []).concat(['created_at']).filter(Boolean).join(',');
         const rows = await getAPI().get(f[0], 'select=' + cols + '&numero=not.is.null&order=created_at.desc&limit=100') || [];
-        filas = rows.length ? rows.map(r => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px">${esc(r.numero || '')}</td><td>${esc(r[f[2]] || '')}</td><td style="text-align:right">${f[3] ? fmt(r[f[3]]) : (r.created_at ? fechaDMY(r.created_at) : '')}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#475569;padding:16px;font-size:12px">Sin documentos generados todavía.</td></tr>';
+        filas = rows.length ? rows.map(r => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px">${esc(r.numero || '')}</td><td>${esc(r[f[2]] || '')}</td><td style="text-align:right">${f[3] ? fmt(r[f[3]]) : (r.created_at ? fechaDMY(r.created_at) : '')}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#475569;padding:16px;font-size:12px">Sin documentos generados todavía.</td></tr>';
       } catch (e) { filas = '<tr><td colspan="3" style="text-align:center;color:#dc2626;padding:16px;font-size:12px">No se pudo cargar el historial</td></tr>'; }
     }
     cerrarModal('nxSecHist');
@@ -2144,7 +2144,7 @@
       const bajo = restante <= 10;
       return `<tr${s.activo === false ? ' style="opacity:.5"' : ''}>
         <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:var(--pf-txt3)">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
-        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
+        <td style="text-align:center;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
         <td style="text-align:right;color:${bajo ? 'var(--pf-red)' : 'var(--pf-txt2)'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' <i class="ti ti-alert-triangle"></i>' : ''}</td>
         <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar secuencia NCF" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`;
@@ -3429,9 +3429,8 @@
   // premium): Plus Jakarta Sans + paleta azul/blanco/gris/verde, con namespace .nxPf propio.
   function nxPfEnsureCSS() {
     if (document.getElementById('nxPfCSS')) return;
-    const link = document.createElement('link'); link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
-    document.head.appendChild(link);
+    // Tipografía Apple (29-sep-2026): ya no se descarga Plus Jakarta Sans; la capa #nxTipoApple de
+    // index.html pone la fuente del sistema (SF Pro en Apple) en todo NEXUS PRO.
     const st = document.createElement('style'); st.id = 'nxPfCSS';
     st.textContent = `
 .nxPf{--pf-blue:#2563eb;--pf-blue-d:#1d4ed8;--pf-blue-l:#eff6ff;--pf-green:#16a34a;--pf-green-l:#f0fdf4;--pf-red:#dc2626;--pf-red-l:#fef2f2;--pf-red-b:#fecaca;--pf-orange:#d97706;--pf-orange-l:#fffbeb;--pf-purple:#7c3aed;--pf-purple-l:#f5f3ff;--pf-bg:#f5f7fa;--pf-panel:#fff;--pf-line:#e8ebf0;--pf-txt:#0f172a;--pf-txt2:#64748b;--pf-txt3:#94a3b8;--pf-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);--pf-pill-bg:#dde1e6;--pf-pill-hi:#f2f4f7;--pf-pill-lo:rgba(30,41,59,.20);--pf-pill-accent:#1ca2a4;font-family:'Plus Jakarta Sans',var(--ff);background:var(--pf-bg);color:var(--pf-txt);display:flex;flex-direction:column}
@@ -6354,7 +6353,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxCompraImeiDel = function (i) { _compraImeiBuf.splice(i, 1); pintarCompraImeiChips(); const cc = document.getElementById('compCant'); if (cc) cc.value = _compraImeiBuf.length || '0'; };
   function pintarCompraImeiChips() {
     const box = document.getElementById('compImeiChips'); if (!box) return;
-    box.innerHTML = _compraImeiBuf.map((s, i) => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)} <i class="ti ti-x" style="cursor:pointer;color:#dc2626" role="button" tabindex="0" aria-label="Quitar el IMEI ${esc(s)}" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" onclick="window.nxCompraImeiDel(${i})"></i></span>`).join('') + (_compraImeiBuf.length ? ` <span style="font-size:9px;color:#475569;align-self:center;font-weight:700">${_compraImeiBuf.length} IMEI</span>` : '');
+    box.innerHTML = _compraImeiBuf.map((s, i) => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--nx-code,ui-monospace,monospace)">${esc(s)} <i class="ti ti-x" style="cursor:pointer;color:#dc2626" role="button" tabindex="0" aria-label="Quitar el IMEI ${esc(s)}" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" onclick="window.nxCompraImeiDel(${i})"></i></span>`).join('') + (_compraImeiBuf.length ? ` <span style="font-size:9px;color:#475569;align-self:center;font-weight:700">${_compraImeiBuf.length} IMEI</span>` : '');
   }
   window.nxPosCompraAddItem = function () {
     const pid = val('compArt'); if (!pid) { toast('err', 'Elige un artículo'); return; }
@@ -6426,7 +6425,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="text-align:right;font-weight:800;color:${gastoUnit > 0 ? '#16a34a' : '#0f172a'}">${fmt2(finalUnit)}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="color:#94a3b8;font-size:10px">Importe factura ${fmt2(importe)}${gastoUnit > 0 ? ' · gasto/und ' + fmt2(gastoUnit) : ''}</span><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>
-        ${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}
+        ${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--nx-code,ui-monospace,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}
       </div>`;
     }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const itbis = r2(parseMoney(val('compItbis')));
@@ -8485,7 +8484,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const alm = r.almacen_id ? almNombre(r.almacen_id) : '';
       return `<div style="border:1px solid #e8edf3;border-radius:11px;padding:11px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <div style="font-family:var(--mono,monospace);font-weight:800;color:#1e293b;font-size:13px">${esc(r.serial)}</div>
+          <div style="font-family:var(--nx-code,ui-monospace,monospace);font-weight:800;color:#1e293b;font-size:13px">${esc(r.serial)}</div>
           <span style="font-size:9px;font-weight:800;color:${vendido ? '#dc2626' : '#16a34a'};background:${vendido ? '#fef2f2' : '#f0fdf4'};padding:2px 8px;border-radius:6px">${vendido ? 'VENDIDO' : 'DISPONIBLE'}</span>
         </div>
         <div style="font-size:11.5px;color:#475569;margin-top:2px">${esc(prod ? prod.nombre : 'Producto')}${alm ? ' · ' + esc(alm) : ''}</div>
@@ -9360,11 +9359,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Multiempresa): fuente + CSS .nxFP-* en un solo lugar (patrón nxBuscaEnsureCSS, ver CLAUDE.md)
   // para que no falte si el usuario entra a un módulo antes que al otro. Idempotente.
   window.nxFPEnsureCSS = function () {
-    if (!document.getElementById('nxFinFontLink')) {
-      const l = document.createElement('link'); l.id = 'nxFinFontLink'; l.rel = 'stylesheet';
-      l.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
-      document.head.appendChild(l);
-    }
+    // Tipografía Apple (29-sep-2026): sin descarga de Plus Jakarta Sans (ver #nxTipoApple en index.html).
     if (document.getElementById('nxFPCSS')) return;
     const st = document.createElement('style'); st.id = 'nxFPCSS';
     st.textContent = '.nxFP,.nxFP *{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}' +

@@ -1,7 +1,16 @@
 {
-  "version": "58.86",
+  "version": "58.87",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.87",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Tipografía Apple en todo el sistema: SF Pro (fuente del sistema en iPhone y Mac), sin descargar fuentes web y aplicada desde el primer pintado.",
+        "Números al estilo Apple: montos, fechas y conteos con cifras tabulares de SF Pro; solo NCF, IMEI/seriales y folios siguen en monoespaciada.",
+        "Tamaños al estilo Apple: títulos, tarjetas, KPI, tablas, formularios, botones, modales y avisos con una escala única; ningún texto por debajo de 11 px y campos de 16 px en el celular (sin zoom en iPhone)."
+      ]
+    },
     {
       "version": "58.86",
       "fecha": "2026-09-29",

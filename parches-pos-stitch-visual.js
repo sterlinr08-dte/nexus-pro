@@ -551,7 +551,8 @@
     (document.head||document.documentElement).appendChild(style);
 
     /* ── Línea gráfica única del POS (DESIGN.md, decisión del dueño 22-sep-2026) ──
-       Tokens Nexus + Geist/JetBrains Mono + un solo acento (Nexus Blue). Cubre #v-pos,
+       Tokens Nexus + tipografía Apple (29-sep-2026: SF Pro vía la pila del sistema, definida en
+       #nxTipoApple de index.html; antes Geist/JetBrains Mono) + un solo acento (Nexus Blue). Cubre #v-pos,
        el hub Multiempresa y los modales del POS (clases nxPrForm/nxPf) aunque cuelguen
        de body. Seguros no se toca: nada aquí aplica fuera de esos ámbitos. Solo CSS. */
     var linea=document.createElement('style');
@@ -562,11 +563,11 @@
   --nx-line:rgba(148,163,184,.12);--nx-line-2:rgba(148,163,184,.18);
   --nx-blue:#2563eb;--nx-blue-d:#1d4ed8;--nx-blue-l:#eff6ff;--nx-blue-b:#bfdbfe;
   --nx-r:16px;--nx-r-md:12px;--nx-r-sm:10px;
-  --nx-font:'Geist','Segoe UI',system-ui,-apple-system,sans-serif;
-  --nx-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --nx-font:var(--nx-sf-text,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);
+  --nx-mono:var(--nx-sf-num,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace);
   --mono:var(--nx-mono);
 }
-/* Tipografía: una sola familia; montos y referencias en mono tabular. */
+/* Tipografía: una sola familia (SF Pro); montos y referencias en números tabulares, no monoespaciada. */
 #v-pos,#v-multiempresa,.nxPf,.modal.nxPrForm,body.org-tienda .overlay .modal{font-family:var(--nx-font)}
 body:not(.tema-premium) .nxPf{font-family:var(--nx-font);--pf-purple:var(--nx-blue);--pf-purple-l:var(--nx-blue-l);--pf-bg:var(--nx-bg);--pf-line:var(--nx-line-2);--pf-txt:var(--nx-ink);--pf-txt2:var(--nx-steel);--pf-txt3:var(--nx-mute)}
 #v-pos .kpitile .v,#v-pos .nxTKpiV,.nxPf .ser,.modal.nxPrForm .ser,#v-pos [data-nx-money],.modal.nxPrForm [data-nx-money],.nxPf [data-nx-money],
@@ -625,14 +626,10 @@ body.org-tienda .fbP:active,#v-pos .fbP:active,.fbP:active{background:var(--nx-b
 `;
     (document.head||document.documentElement).appendChild(linea);
 
-    /* Tipografías de la línea única, solo cuando el POS entra en escena. display=optional:
-       si la fuente no está lista en el primer pintado se usa la del sistema y no hay salto. */
-    function ensureFonts(){
-      if(document.getElementById('nxLineaUnicaFonts'))return;
-      var l=document.createElement('link');l.id='nxLineaUnicaFonts';l.rel='stylesheet';
-      l.href='https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=optional';
-      (document.head||document.documentElement).appendChild(l);
-    }
+    /* Tipografía Apple (29-sep-2026): ya no se descargan Geist ni JetBrains Mono. La fuente es la
+       del sistema (SF Pro en iPhone/Mac) y está puesta desde el primer pintado por #nxTipoApple.
+       ensureFonts queda como no-op para no romper los envoltorios de nxAbrirPOS/nxAbrirMultiempresa. */
+    function ensureFonts(){}
     try{
       if(document.body&&(document.body.classList.contains('org-tienda')||document.querySelector('#v-pos.on')))ensureFonts();
       ['nxAbrirPOS','nxAbrirMultiempresa'].forEach(function(fn){
