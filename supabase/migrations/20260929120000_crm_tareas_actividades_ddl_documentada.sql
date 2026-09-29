@@ -1,5 +1,5 @@
 -- ============================================================================
--- NO APLICADA — pendiente de publicación autorizada por el dueño.
+-- APLICADA el 29-sep-2026 13:00 UTC en tnwsgcxurfyuszxsewsn con autorización del dueño (no-op: los objetos ya existían).
 -- ============================================================================
 -- NEXUS PRO CRM · DDL documentada de crm_actividades y crm_tareas (29-sep-2026)
 --

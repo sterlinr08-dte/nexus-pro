@@ -1,5 +1,5 @@
 -- ============================================================================
--- NO APLICADA — pendiente de publicación autorizada por el dueño.
+-- APLICADA el 29-sep-2026 13:00 UTC en tnwsgcxurfyuszxsewsn con autorización del dueño.
 -- ============================================================================
 -- NEXUS PRO CRM · Embudo de prospectos (29-sep-2026, v58.86)
 --
