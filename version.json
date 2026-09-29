@@ -1,7 +1,16 @@
 {
-  "version": "58.89",
+  "version": "58.90",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.90",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Glass oscuro más cerca de la referencia: menú de solo íconos flotante (el nombre aparece al pasar el mouse), Contabilidad y Configuración se abren en un panel al lado, y el usuario abajo.",
+        "Sin barra de arriba en computadora: título, búsqueda, notificaciones y demás botones quedan en la cabecera del panel principal (cada uno una sola vez). En el celular, cabecera mínima con menú, título y campana.",
+        "Cristal en gris cálido y foto real de oficina desenfocada de fondo, que aparece suavemente sin mover nada de la pantalla."
+      ]
+    },
     {
       "version": "58.89",
       "fecha": "2026-09-29",

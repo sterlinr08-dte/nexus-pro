@@ -1,4 +1,4 @@
-// QA del tema «Glass oscuro» (58.89, 29-sep-2026): app real (index.html + cadena de parches) contra la REST simulada de
+// QA del tema «Glass oscuro» (58.89 + v2 58.90, 29-sep-2026): app real (index.html + cadena de parches) contra la REST simulada de
 // scripts/qa-crm-mock-server.js. A 390 y 1280 px, admin y agente:
 //  · primer pintado: cuadro a cuadro (requestAnimationFrame) desde que existe <body> hasta 6 s después de cargar, el tema
 //    visible nunca cambia (usuario nuevo → glass-oscuro; usuario con 'clasico' → clásico; premium; migración única);
@@ -30,7 +30,7 @@ const MEDIR = () => {
   const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
   const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   // Escena: en glass-oscuro, tono medio del fondo fijo; en los temas claros, blanco (foto clara / fondo blanco).
-  const escenaDe = () => document.documentElement.classList.contains('tema-glass-oscuro') ? { r: 46, g: 59, b: 83, a: 1 } : document.body.classList.contains('tema-premium') ? { r: 11, g: 18, b: 32, a: 1 } : { r: 255, g: 255, b: 255, a: 1 };
+  const escenaDe = () => document.documentElement.classList.contains('tema-glass-oscuro') ? { r: 58, g: 48, b: 42, a: 1 } : document.body.classList.contains('tema-premium') ? { r: 11, g: 18, b: 32, a: 1 } : { r: 255, g: 255, b: 255, a: 1 };
   const fondo = (el) => {
     const capas = [];
     for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
@@ -151,7 +151,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(s.malos.length === 0, `${tag} ${nom}: superficies principales ≥4.5:1 (${s.n} medidas)`, s.malos.slice(0, 6));
       ok(c.malos.length === 0, `${tag} ${nom}: campos legibles (${c.n})`, c.malos.slice(0, 5));
       ok(sw[0] <= sw[1], `${tag} ${nom}: sin desborde horizontal`, sw);
-      if (capturar && shot) await page.screenshot({ path: OUT + `${shot}-${width}${rol === 'agente' ? '-agente' : ''}.png` });
+      if (capturar && shot) await page.screenshot({ path: OUT + `v2-${shot}-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
   }
   // Modal (Nuevo cliente) y modal de abono: hoja blanca legible.
@@ -165,7 +165,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     if (tema === 'glass-oscuro') {
       ok(abierto && t.total > 5 && t.oscuroSobreOscuro.length === 0 && t.claroSobreClaro.length === 0, `${tag} ${nom}: abierto y legible (${t.total} textos)`, { abierto, t: t.oscuroSobreOscuro.concat(t.claroSobreClaro).slice(0, 5) });
       ok(c.malos.length === 0 && s.malos.length === 0, `${tag} ${nom}: campos y rótulos ≥4.5:1 (${c.n} campos)`, { c: c.malos.slice(0, 5), s: s.malos.slice(0, 5) });
-      if (capturar && nom === 'modal') await page.screenshot({ path: OUT + `modal-${width}${rol === 'agente' ? '-agente' : ''}.png` });
+      if (capturar && nom === 'modal') await page.screenshot({ path: OUT + `v2-modal-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
     await page.evaluate(() => document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open')));
   }
@@ -184,7 +184,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const A = await abrir(browser, { width, rol });
     let e = await estadoTema(A.page);
     resumen.primerPintado[tag + ' nuevo'] = { dcl: e.dcl, cuerpo: e.cuerpo, cuadros: e.cuadros.map(c => c.t + '@' + c.ms) };
-    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(11, 18, 32\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
+    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(27, 23, 21\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
     ok(e.cuadros.length === 1 && e.cuadros[0].t === 'glass-oscuro', `${tag} nuevo: ningún cuadro con otro tema durante la carga (${e.cuadros.length} estado)`, e.cuadros);
     ok(e.html && e.attr === 'glass-oscuro' && e.mirror === 'glass-oscuro', `${tag} nuevo: tras cargar sigue glass-oscuro y el espejo local quedó escrito`, { html: e.html, attr: e.attr, mirror: e.mirror });
     await sleep(1200); const pa = await prefs(rol);
@@ -267,7 +267,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(real === esperado && e.attr === esperado && e.mirror === t && sel === t && sw[0] <= sw[1], `${width} Apariencia → ${t}: clases, espejo y selección correctos (se ve ${real})`, { real, attr: e.attr, mirror: e.mirror, sel, sw });
       if (t === 'glass-oscuro') ok(s.malos.length === 0, `${width} Apariencia → ${t}: rótulos legibles tras el cambio`, s.malos.slice(0, 5));
     }
-    if (width === 1280) await page.screenshot({ path: OUT + 'config-apariencia-1280.png' });
+    if (width === 1280) await page.screenshot({ path: OUT + 'v2-config-apariencia-1280.png' });
     await sleep(1300);
     ok((await prefs('admin')).tema === 'glass-oscuro', `${width} Apariencia: la elección se guarda en la base (usuario_preferencias)`);
     // Botón de la barra superior: oscuro ⇄ clásico, mismo sistema de temas.
@@ -296,11 +296,16 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const { page } = V;
     await ir(page, "nav('dashboard',null)");
     const liv = await page.evaluate(() => ({ nc: getComputedStyle(document.querySelector('.nc') || document.body).backdropFilter, tnav: getComputedStyle(document.querySelector('.tnav')).backgroundColor }));
-    ok(/none/.test(liv.nc) && /0\.9[0-9]|rgb\(/.test(liv.tnav), `390 modo liviano: tarjetas sin desenfoque y barra superior casi sólida (${liv.tnav})`, liv);
+    ok(/none/.test(liv.nc) && /0\.9[0-9]|rgb\(/.test(liv.tnav), `390 modo liviano: tarjetas sin desenfoque y cabecera casi sólida (${liv.tnav})`, liv);
+    // Cabecera móvil mínima: menú + título + campana (+ actualizar, que ya estaba); sin barra inferior.
+    const cab = await page.evaluate(() => { const t = document.querySelector('.tnav'); const vis = [...t.querySelectorAll('button,[role=button],.pttl')].filter(e => e.offsetParent && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0).map(e => e.id || e.className.split(' ').slice(0, 2).join('.') || e.tagName); const bb = [...document.querySelectorAll('.mobile-bottom-nav-clean,[class*=bottom-nav]')].filter(e => e.offsetParent && e.getBoundingClientRect().height > 0).length; return { vis, alto: Math.round(t.getBoundingClientRect().height), titulo: document.getElementById('pttl').innerText, bb }; });
+    ok(cab.vis.includes('tn-tog') && cab.vis.includes('pttl') && cab.vis.some(v => /notif-bell/.test(v)) && cab.alto <= 76 && cab.bb === 0, `390 cabecera mínima: menú + título «${cab.titulo}» + campana (${cab.vis.join(', ')}; ${cab.alto} px) y sin barra inferior`, cab);
+    await page.screenshot({ path: OUT + 'v2-inicio-390.png' });
     await page.evaluate(() => toggleSB()); await sleep(1200);
     const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const a = getComputedStyle(document.getElementById('sbEl'), '::after').backgroundImage; return { r, a }; });
-    ok(sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(18, 26, 44\)/.test(sb.a), `390 menú lateral abierto: panel de cristal oscuro sólido y ${sb.r.total} rótulos legibles`, sb);
-    await page.screenshot({ path: OUT + 'menu-390.png' });
+    const abierto = await page.evaluate(() => document.getElementById('sbEl').classList.contains('mob-open') && getComputedStyle(document.querySelector('#sbEl .ni .ni-l')).display !== 'none');
+    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(42, 37, 34\)/.test(sb.a), `390 cajón móvil de siempre: abre con nombres, grafito sólido y ${sb.r.total} rótulos legibles`, sb);
+    await page.screenshot({ path: OUT + 'v2-menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
     const fab = await page.$('.nx-fab');
     if (fab) {
@@ -308,7 +313,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       await fab.click(); await sleep(700);
       const hoja = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? { bg: getComputedStyle(s).backgroundColor, t: window.__tgo.textos('.mobile-more-sheet-clean.open') } : null; });
       ok(bg === 'rgb(37, 99, 235)' && hoja && hoja.bg === 'rgb(255, 255, 255)' && hoja.t.oscuroSobreOscuro.length + hoja.t.claroSobreClaro.length === 0, `390 botón flotante azul NEXUS y su menú en hoja blanca legible`, { bg, hoja });
-      await page.screenshot({ path: OUT + 'fab-menu-390.png' });
+      await page.screenshot({ path: OUT + 'v2-fab-menu-390.png' });
     }
     ok(V.errs.length === 0, '390 menú/botón flotante: sin errores de consola', V.errs.slice(0, 4));
     await V.ctx.close();
@@ -321,11 +326,113 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const sp = await lp.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), splash: document.getElementById('nxSplash') ? getComputedStyle(document.getElementById('nxSplash')).backgroundColor : null }));
     await sleep(9000);
     const lg = await lp.evaluate(() => ({ vis: getComputedStyle(document.getElementById('loginScreen')).display !== 'none', box: getComputedStyle(document.querySelector('.lbox')).backgroundColor }));
-    ok(sp.cls && sp.splash === 'rgb(20, 28, 46)' && lg.vis && /rgba\(15, 23, 42/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
-    await lp.screenshot({ path: OUT + 'login-390.png' });
+    ok(sp.cls && sp.splash === 'rgb(34, 28, 24)' && lg.vis && /rgba\(38, 34, 32/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
+    await lp.screenshot({ path: OUT + 'v2-login-390.png' });
     await ctx.close();
   }
 
+  // 9) v2 (58.90): riel solo de íconos con tooltips, paneles flotantes, cabecera dentro del panel (sin barra), foto.
+  {
+    await qa('tema/none');
+    const R = await abrir(browser, { width: 1280, rol: 'admin' });
+    const { page } = R;
+    await ir(page, "nav('dashboard',null)");
+    // Riel
+    const riel = await page.evaluate(() => {
+      const sb = document.getElementById('sbEl'), b = sb.getBoundingClientRect();
+      const items = [...sb.querySelectorAll('.ni')].filter(n => !n.closest('#sbContab,#sbConfig') && n.offsetParent && getComputedStyle(n).display !== 'none');
+      const conNombre = items.filter(n => getComputedStyle(n.querySelector('.ni-l') || n).display !== 'none' && n.querySelector('.ni-l'));
+      const sinAria = items.filter(n => !(n.getAttribute('aria-label') || '').trim());
+      const on = sb.querySelector('.spring-ind'), onR = on.getBoundingClientRect();
+      const av = sb.querySelector('.sb-av').getBoundingClientRect();
+      return { w: Math.round(b.width), left: Math.round(b.left), top: Math.round(b.top), bottom: Math.round(innerHeight - b.bottom), radius: getComputedStyle(sb, '::before').borderRadius, n: items.length, conNombre: conNombre.length, sinAria: sinAria.length,
+        cuadros: items.every(n => { const r = n.getBoundingClientRect(); return Math.round(r.width) === 48 && Math.round(r.height) === 48; }),
+        activo: { w: Math.round(onR.width), h: Math.round(onR.height), bg: getComputedStyle(on).backgroundColor }, avatarAbajo: Math.round(b.bottom - av.bottom) < 40 };
+    });
+    ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '24px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} ítems de 48 px sin texto`, riel);
+    ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 48 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = cuadro azul 48×48, avatar al pie`, riel);
+    // Tooltip con hover y con foco de teclado
+    const itemSel = '#sbEl .ni[onclick^="nav(\'facturas\'"]';
+    await page.hover(itemSel); await sleep(300);
+    const tip = await page.evaluate((s) => { const n = document.querySelector(s), a = getComputedStyle(n, '::after'); return { op: a.opacity, txt: a.content, label: n.getAttribute('aria-label'), pos: a.position }; }, itemSel);
+    ok(tip.op === '1' && tip.txt.replace(/"/g, '') === tip.label && tip.label.length > 2, `1280 tooltip al pasar el mouse: «${tip.label}»`, tip);
+    await page.mouse.move(700, 400); await page.keyboard.press('Tab'); await page.focus('#sbEl .ni[onclick^="nav(\'clientes\'"]'); await sleep(600);
+    const tipF = await page.evaluate(() => { const n = document.activeElement; return { fv: n.matches(':focus-visible'), op: getComputedStyle(n, '::after').opacity, label: n.getAttribute('aria-label') }; });
+    ok(tipF.fv && tipF.op === '1', `1280 tooltip con foco de teclado (:focus-visible) en «${tipF.label}»`, tipF);
+    // Paneles flotantes
+    await page.mouse.move(700, 400);
+    await page.click('#niContab'); await sleep(700);
+    const fl = await page.evaluate(() => { const f = document.getElementById('sbContab'), r = f.getBoundingClientRect(), cs = getComputedStyle(f); const it = f.querySelector('.ni'); return { vis: cs.visibility, pos: cs.position, left: Math.round(r.left), top: Math.round(r.top), bottom: Math.round(r.bottom), h: innerHeight, conNombre: getComputedStyle(it.querySelector('.ni-l')).display !== 'none', nav: Math.round(document.getElementById('sbEl').getBoundingClientRect().width) }; });
+    ok(fl.vis === 'visible' && fl.pos === 'fixed' && fl.left >= 88 && fl.top >= 0 && fl.bottom <= fl.h && fl.conNombre && fl.nav === 76, `1280 Contabilidad abre un panel flotante junto al riel (x=${fl.left}, ${fl.top}–${fl.bottom}) con nombres; el riel no se ensancha`, fl);
+    await page.screenshot({ path: OUT + 'v2-menu-flyout-1280.png' });
+    await page.click('#niAdmin2'); await sleep(700);
+    const dos = await page.evaluate(() => [getComputedStyle(document.getElementById('sbContab')).visibility, getComputedStyle(document.getElementById('sbConfig')).visibility]);
+    ok(dos[0] === 'hidden' && dos[1] === 'visible', '1280 un panel a la vez: abrir Configuración cierra Contabilidad', dos);
+    await page.keyboard.press('Escape'); await sleep(500);
+    ok(await page.evaluate(() => getComputedStyle(document.getElementById('sbConfig')).visibility === 'hidden'), '1280 Escape cierra el panel flotante');
+    await page.click('#niContab'); await sleep(600); await page.mouse.click(900, 500); await sleep(600);
+    ok(await page.evaluate(() => getComputedStyle(document.getElementById('sbContab')).visibility === 'hidden'), '1280 tocar fuera cierra el panel flotante');
+    await page.click('#niContab'); await sleep(600);
+    await page.click('#sbContab .ni[onclick^="nav(\'comisiones\'"]'); await sleep(1200);
+    const nv = await page.evaluate(() => ({ on: document.getElementById('v-comisiones').classList.contains('on'), cerrado: getComputedStyle(document.getElementById('sbContab')).visibility === 'hidden', padre: getComputedStyle(document.getElementById('niContab')).backgroundColor }));
+    ok(nv.on && nv.cerrado && nv.padre === 'rgb(37, 99, 235)', '1280 elegir «Comisiones» en el panel navega, cierra el panel y marca en azul el ícono de Contabilidad', nv);
+    // Sin barra superior: la cabecera es la primera fila del panel principal; cada acción una sola vez y alcanzable.
+    await ir(page, "nav('dashboard',null)");
+    const ACC = ['refrescarDatos', 'abrirLog', 'toggleNotif', 'toggleDarkMode', 'abrirGlobalSearch', 'instalarApp', 'abrirBackup', 'desconectar'];
+    const cab = await page.evaluate((ACC) => {
+      const t = document.querySelector('.tnav'), m = document.querySelector('.main'), tr = t.getBoundingClientRect(), mr = m.getBoundingClientRect();
+      const vis = (e) => e.offsetParent && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden' && e.getBoundingClientRect().width > 0;
+      const r = {};
+      ACC.forEach(f => { const els = [...document.querySelectorAll(`#app [onclick*="${f}("]`)].filter(vis); const alcanzable = els.filter(e => { const b = e.getBoundingClientRect(); const x = b.left + b.width / 2, y = b.top + b.height / 2; const top = document.elementFromPoint(x, y); return top && (top === e || e.contains(top)); }); r[f] = [els.length, alcanzable.length]; });
+      const searchIG = [...document.querySelectorAll('#nxIG .nxIG-search')].filter(vis).length;
+      return { r, searchIG, dentro: tr.top >= mr.top && tr.left >= mr.left && tr.right <= mr.right + 1, fondo: getComputedStyle(t).backgroundColor, borde: getComputedStyle(t).borderTopWidth, mainBg: getComputedStyle(m, '::before').backgroundColor, radio: getComputedStyle(m).borderTopLeftRadius, tog: getComputedStyle(document.querySelector('.tn-tog')).display, titulo: document.getElementById('pttl').innerText, tituloFs: getComputedStyle(document.getElementById('pttl')).fontSize };
+    }, ACC);
+    const unaVez = ACC.every(f => cab.r[f][0] === 1 && cab.r[f][1] === 1);
+    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(38, 34, 32/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
+    ok(unaVez && cab.searchIG === 0, `1280 cada acción de la antigua barra aparece UNA vez y se puede tocar: ${ACC.map(f => f + ' ' + cab.r[f][0]).join(', ')}`, cab.r);
+    for (const [f, sel, chk] of [['toggleNotif', '.tnav .notif-bell', "document.getElementById('notifPanel').classList.contains('show')"], ['abrirGlobalSearch', '.tnav .tn-b-primary', "document.getElementById('gsOverlay').classList.contains('show')"]]) {
+      await page.click(sel); await sleep(500);
+      ok(await page.evaluate((c) => (0, eval)(c), chk), `1280 la acción ${f} funciona desde la cabecera`);
+      await page.keyboard.press('Escape'); await page.evaluate(() => { try { cerrarGlobalSearch(); } catch (e) {} document.getElementById('notifPanel').classList.remove('show'); }); await sleep(300);
+    }
+    await page.screenshot({ path: OUT + 'v2-inicio-1280-cabecera.png' });
+    ok(R.errs.length === 0, '1280 riel/paneles/cabecera: sin errores de consola', R.errs.slice(0, 5));
+    await R.ctx.close();
+  }
+  // 10) Foto de fondo: el degradado se ve desde el primer pintado; la foto entra con fundido sin mover nada.
+  for (const width of [390, 1280]) {
+    await qa('tema/none');
+    const ctx = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 800 }, isMobile: width < 500, hasTouch: width < 500 });
+    const page = await ctx.newPage(); const fotos = [];
+    // Se retrasa la foto 7 s (app ya pintada) para ver el marcador de posición y medir justo el cambio de la foto.
+    await page.route(/fondo-oficina/, async r => { await sleep(7000); fotos.push(r.request().url()); return r.continue(); });
+    await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async r => { try { const u = r.request().url(); if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); } return r.fulfill({ status: 200, body: '' }); } catch (e) {} });
+    await page.addInitScript(({ id }) => {
+      localStorage.setItem('nx_auth_mode', 'legacy');
+      sessionStorage.setItem('nx_sesion', JSON.stringify({ id, nom: 'Esterlin Espinal', rol: 'admin', cargo: 'ADMIN', organizacion_id: '00000000-0000-4000-8000-000000000009', inicio: Date.now() }));
+      sessionStorage.setItem('nx_sesion_actividad', String(Date.now())); sessionStorage.setItem('nx_ya_saludo', '1');
+      window.__cls = 0; try { new PerformanceObserver(l => { l.getEntries().forEach(e => { if (!e.hadRecentInput) window.__cls += e.value; }); }).observe({ type: 'layout-shift', buffered: true }); } catch (e) {}
+      const medidas = () => ['.main', '#sbEl', '#cnt', '.tnav'].map(s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; });
+      let prev = null; const vig = () => { const h = document.documentElement; if (h && h.classList.contains('tgo-foto')) { window.__fotoAntes = prev; return; } if (document.body && document.getElementById('app')) prev = { rects: medidas(), cls: window.__cls, visible: getComputedStyle(document.getElementById('app')).display !== 'none' }; requestAnimationFrame(vig); }; requestAnimationFrame(vig); // último cuadro SIN foto
+      document.addEventListener('DOMContentLoaded', () => { const b = getComputedStyle(document.documentElement, '::before'), a = getComputedStyle(document.documentElement, '::after'); window.__fotoDCL = { grad: /gradient/.test(b.backgroundImage), antes: a.opacity, clase: document.documentElement.classList.contains('tgo-foto') }; }, { once: true });
+    }, { id: ID.admin });
+    await page.goto(BASE + '/index.html', { waitUntil: 'load' });
+    await page.waitForFunction(() => typeof ST !== 'undefined' && (ST.clientes || []).length > 0, null, { timeout: 25000 });
+    await sleep(600);
+    const antes = await page.evaluate(() => ({ dcl: window.__fotoDCL, clase: document.documentElement.classList.contains('tgo-foto') }));
+    await page.waitForFunction(() => document.documentElement.classList.contains('tgo-foto'), null, { timeout: 15000 }).catch(() => {});
+    await sleep(900);
+    const fa = await page.evaluate(() => window.__fotoAntes);
+    const despues = await page.evaluate(() => { const a = getComputedStyle(document.documentElement, '::after'); return { clase: document.documentElement.classList.contains('tgo-foto'), op: a.opacity, img: /fondo-oficina/.test(a.backgroundImage), filtro: a.filter, cls: window.__cls, rects: ['.main', '#sbEl', '#cnt', '.tnav'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; }) }; });
+    const archivo = width < 500 ? 'fondo-oficina-movil.webp' : 'fondo-oficina.webp';
+    const kb = Math.round(fs.statSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'assets', archivo)).size / 1024);
+    ok(antes.dcl && antes.dcl.grad && antes.dcl.antes === '0' && !antes.dcl.clase && fa && fa.visible, `${width} primer pintado: degradado cálido visible y la foto oculta hasta cargar (la app ya estaba en pantalla con el degradado)`, { antes, fa });
+    ok(despues.clase && despues.op === '1' && despues.img && /blur\(18px\)/.test(despues.filtro) && fotos.some(u => u.includes(archivo)), `${width} la foto ${archivo} (${kb} KB) entra con fundido, desenfocada (${despues.filtro})`, { despues, fotos });
+    const dcls = despues.cls - (fa ? fa.cls : 0);
+    ok(fa && JSON.stringify(fa.rects) === JSON.stringify(despues.rects) && dcls < 0.001, `${width} la foto no mueve nada: mismas medidas de panel/menú/contenido/cabecera antes y después, desplazamiento acumulado (CLS) al entrar la foto ${dcls.toFixed(4)}`, { antes: fa, despues: despues.rects, dcls });
+    ok(kb < (width < 500 ? 90 : 200), `${width} peso de ${archivo}: ${kb} KB`);
+    await ctx.close();
+  }
   await browser.close();
   fs.writeFileSync(OUT + 'resumen-tema-glass.json', JSON.stringify(resumen, null, 1));
   console.log('\nComparación de contraste (1280 admin): ' + JSON.stringify(resumen.comparacion));

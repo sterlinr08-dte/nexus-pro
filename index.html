@@ -14,7 +14,12 @@ try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1
 window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
-d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');})();</script>
+d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');
+/* Foto de fondo (58.90): se pide aquí mismo, solo con este tema; mientras llega se ve el degradado del CSS y, al
+   terminar de cargar, html.tgo-foto la muestra con un fundido (capa fija: no mueve nada de la página). */
+window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;var i=new Image();i.onload=function(){d.classList.add('tgo-foto');};
+i.src=(window.innerWidth<=768?'assets/fondo-oficina-movil.webp':'assets/fondo-oficina.webp');};
+if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
 <!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
      personales (sendDefaultPii:false). El loader es chico y baja el SDK completo solo cuando ocurre un error. -->
@@ -3123,46 +3128,59 @@ html.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(255,
 </style>
 <!-- Tema «Glass oscuro» (58.89): ver el comentario de script#nxTemaGlassOscuroOn al inicio del <head>. -->
 <style id="nxTemaGlassOscuro">
-/* ═══ TEMA «GLASS OSCURO» (58.89) — lenguaje del Inicio glass (#nxIG) extendido a toda la app ═══
+/* ═══ TEMA «GLASS OSCURO» (58.89; v2 58.90 más cerca del reel) — lenguaje del Inicio glass en toda la app ═══
    · Todas las reglas cuelgan de html.tema-glass-oscuro (la pone script#nxTemaGlassOscuroOn antes del primer pintado).
-   · Escena fija solo con degradados (html::before, sin foto ni filter), menú lateral y barra superior de cristal
-     oscuro, contenido transparente; tarjetas, KPI, tablas, formularios y modales en BLANCO con texto carbón;
-     un solo acento: azul NEXUS #2563EB. No se tocan parches-whatsapp-* (el Buzón conserva su look claro legible).
-   · Móvil / modo liviano / prefers-reduced-transparency: sin desenfoque, cristal = pizarra sólida.
+   · Fondo: degradado cálido inmediato (html::before) + foto propia assets/fondo-oficina*.webp desenfocada con velo
+     cálido (html::after) que aparece con fundido cuando termina de cargar (clase html.tgo-foto; sin saltos de diseño).
+   · Escritorio (≥769 px): riel flotante SOLO de íconos (76 px, 24 px de radio), activo = cuadro azul, nombre en
+     tooltip (hover/foco/toque largo), Contabilidad y Configuración abren un panel flotante al lado; SIN barra superior:
+     sus acciones son la fila de cabecera del panel principal de cristal (.main). Móvil (≤768 px): el cajón de siempre
+     y una cabecera mínima (menú + título + campana + actualizar), sin barra inferior.
+   · Cristal grafito cálido rgba(38,34,32,.62), bordes rgba(255,255,255,.08); tarjetas, KPI, tablas, formularios y
+     modales en BLANCO con texto carbón; un solo acento: azul NEXUS #2563EB. Sin tocar parches-whatsapp-*.
+   · Móvil / modo liviano / prefers-reduced-transparency: sin desenfoque, cristal = grafito sólido.
    · Apagar: NX_TEMA_GLASS_OSCURO=false en el <head> (todos) o localStorage nx_tgo_off='1' (un equipo). */
 /* ── tokens ── */
 html.tema-glass-oscuro{
   --tgo-blue:#2563EB;--tgo-blue-d:#1D4ED8;--tgo-blue-l:#EFF6FF;--tgo-ink:#0F172A;--tgo-steel:#64748B;
-  --tgo-tx:#F8FAFC;--tgo-tx2:#CBD5E1;--tgo-tx3:#94A3B8;
-  --tgo-glass:rgba(15,23,42,.70);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.10);
-  --tgo-card-shadow:0 10px 30px -12px rgba(2,6,23,.45);--tgo-panel-shadow:0 30px 60px -30px rgba(2,6,23,.6);
+  --tgo-tx:#F8FAFC;--tgo-tx2:#D6D3D1;--tgo-tx3:#A8A29E;
+  --tgo-glass:rgba(38,34,32,.62);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.08);
+  --tgo-solid:#26221F;--tgo-solid-2:#1C1917;
+  --tgo-card-shadow:0 10px 30px -12px rgba(20,14,10,.45);--tgo-panel-shadow:0 30px 60px -30px rgba(20,14,10,.65);
   --tgo-blur:blur(26px) saturate(1.2);
   /* acento único del sistema → azul NEXUS */
   --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(37,99,235,.08);
   --gradient-primary:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);
   --sidebar-active:rgba(37,99,235,.9);
-  background:#0B1220!important;
+  background:#1B1715!important;
 }
-/* ── escena fija desenfocada (solo CSS, sin foto ni filter: degradados suaves = «desenfoque» sin costo en iPhone) ── */
+/* ── escena: degradado cálido inmediato (marcador de posición) + foto real desenfocada que entra con fundido ── */
 html.tema-glass-oscuro::before{
   content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
   background:
-    radial-gradient(34% 30% at 12% 16%,rgba(147,197,253,.34),transparent 70%),
-    radial-gradient(22% 26% at 30% 12%,rgba(191,219,254,.22),transparent 70%),
-    radial-gradient(24% 12% at 62% 4%,rgba(248,250,252,.16),transparent 72%),
-    radial-gradient(22% 10% at 84% 5%,rgba(248,250,252,.12),transparent 72%),
-    radial-gradient(30% 42% at 90% 36%,rgba(100,116,139,.42),transparent 72%),
-    radial-gradient(14% 22% at 66% 44%,rgba(74,222,128,.10),transparent 72%),
-    radial-gradient(120% 46% at 50% 108%,rgba(2,6,23,.85),transparent 72%),
-    linear-gradient(180deg,#3B4A63 0%,#26334A 48%,#141C2E 100%);
+    radial-gradient(34% 46% at 10% 30%,rgba(255,238,214,.22),transparent 70%),
+    radial-gradient(18% 12% at 58% 24%,rgba(255,210,150,.16),transparent 72%),
+    radial-gradient(18% 12% at 74% 24%,rgba(255,210,150,.14),transparent 72%),
+    radial-gradient(26% 50% at 92% 44%,rgba(120,84,58,.40),transparent 72%),
+    radial-gradient(16% 24% at 36% 40%,rgba(120,150,90,.12),transparent 72%),
+    radial-gradient(120% 50% at 50% 110%,rgba(16,12,10,.80),transparent 72%),
+    linear-gradient(180deg,#5A4C42 0%,#3A312B 46%,#221C18 100%);
 }
+html.tema-glass-oscuro::after{
+  content:'';position:fixed;inset:-48px;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  background:linear-gradient(180deg,rgba(28,22,18,.48) 0%,rgba(22,17,14,.62) 55%,rgba(16,12,10,.74) 100%),url(assets/fondo-oficina.webp) center/cover no-repeat;
+  -webkit-filter:blur(18px) saturate(1.05);filter:blur(18px) saturate(1.05);
+}
+@media (max-width:768px){html.tema-glass-oscuro::after{background:linear-gradient(180deg,rgba(28,22,18,.52) 0%,rgba(22,17,14,.64) 55%,rgba(16,12,10,.76) 100%),url(assets/fondo-oficina-movil.webp) center/cover no-repeat}}
+html.tema-glass-oscuro.tgo-foto::after{opacity:1}
+@media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
 html.tema-glass-oscuro #nxBgPhoto{display:none!important}
 html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
 /* splash y cargador: misma escena (sin salto de color al entrar a la app) */
-html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#141C2E radial-gradient(60% 50% at 30% 20%,rgba(147,197,253,.18),transparent 70%)!important}
+html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#221C18 radial-gradient(60% 50% at 20% 30%,rgba(255,238,214,.16),transparent 70%)!important}
 html.tema-glass-oscuro .nxs-badge i{color:#60A5FA}
 /* login: tarjeta de cristal oscuro con el acento azul */
-html.tema-glass-oscuro .lbox{background:rgba(15,23,42,.78)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
+html.tema-glass-oscuro .lbox{background:rgba(38,34,32,.80)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
 
 /* ── menú lateral: cristal oscuro, ítem activo = píldora azul ── */
 html.tema-glass-oscuro body nav#sbEl.sb .ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-i{background:transparent!important;box-shadow:none!important;color:#CBD5E1!important}
@@ -3177,43 +3195,130 @@ html.tema-glass-oscuro body nav#sbEl.sb .ni-b{background:rgba(255,255,255,.12)!i
 html.tema-glass-oscuro body nav#sbEl.sb .ni i.ti-chevron-down{color:#94A3B8!important;background:none!important;box-shadow:none!important}
 html.tema-glass-oscuro body nav#sbEl.sb .sb-mk{background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.8)!important}
 html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
-@media (hover:hover){html.tema-glass-oscuro body nav#sbEl.sb .ni:hover{background:rgba(255,255,255,.06)!important;box-shadow:none!important}}
+@media (hover:hover){html.tema-glass-oscuro body nav#sbEl.sb .ni:not(.on):hover{background:rgba(255,255,255,.07)!important;box-shadow:none!important}}
+/* ── ESCRITORIO: riel flotante solo de íconos (misma nav#sbEl, mismos ítems y orden; sin segundo menú) ── */
 @media (min-width:769px){
-  html.tema-glass-oscuro body nav#sbEl.sb,html.tema-glass-oscuro body.tema-glass nav#sbEl.sb{
-    margin:12px 0 12px 12px!important;height:calc(100% - 24px)!important;border-radius:24px!important;
-    background:var(--tgo-glass)!important;border:1px solid var(--tgo-line)!important;box-shadow:var(--tgo-panel-shadow)!important;
-    -webkit-backdrop-filter:var(--tgo-blur)!important;backdrop-filter:var(--tgo-blur)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body nav#sbEl.sb::after{display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{background:transparent!important;border-color:var(--tgo-line)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:var(--tgo-glass-2)!important;border:1px solid var(--tgo-line)!important;box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on{background:transparent!important;background-image:none!important}
-  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on{background:var(--tgo-blue)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:8px!important;right:8px!important;width:auto!important;border-radius:14px!important;border:0!important;
-    background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.75)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni{margin-left:8px!important;margin-right:8px!important;border-radius:14px!important}
+  /* El cristal vive en ::before: sin backdrop-filter en la nav, los paneles flotantes y tooltips (position:fixed)
+     se ubican respecto a la ventana y no quedan recortados. */
+  html.tema-glass-oscuro body nav#sbEl.sb,html.tema-glass-oscuro body nav#sbEl.sb.col,html.tema-glass-oscuro body.tema-glass nav#sbEl.sb{
+    width:76px!important;min-width:76px!important;flex:0 0 76px!important;margin:12px 0 12px 12px!important;height:calc(100% - 24px)!important;
+    border-radius:24px!important;border:0!important;background:transparent!important;box-shadow:none!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important;position:relative!important;z-index:60!important;
+    isolation:isolate;transition:none!important;padding-top:0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::before{
+    content:''!important;display:block!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;z-index:-1!important;
+    border-radius:24px;border:1px solid var(--tgo-line);background:var(--tgo-glass)!important;box-shadow:var(--tgo-panel-shadow);
+    -webkit-mask-image:none!important;mask-image:none!important;-webkit-filter:none!important;filter:none!important;
+    -webkit-backdrop-filter:var(--tgo-blur);backdrop-filter:var(--tgo-blur)}
+  html.tema-glass-oscuro body nav#sbEl.sb::after{display:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-top{justify-content:center!important;padding:16px 0 10px!important;background:transparent!important;border:0!important;margin:0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-top>:not(.sb-mk){display:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-mk{width:40px!important;height:40px!important;border-radius:12px!important;margin:0!important;font-size:19px}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none;padding:4px 0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav::-webkit-scrollbar{display:none}
+  /* secciones: el orden se mantiene; el rótulo pasa a una línea fina */
+  html.tema-glass-oscuro body nav#sbEl.sb .ss{height:1px!important;min-height:0!important;margin:10px 20px!important;padding:0!important;overflow:hidden!important;
+    color:transparent!important;background:var(--tgo-line)!important;font-size:0!important}
+  /* ítems del riel: cuadro de 48 px, solo ícono */
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
+    width:48px!important;height:48px!important;min-height:48px!important;margin:4px auto!important;padding:0!important;gap:0!important;
+    justify-content:center!important;align-items:center!important;border-radius:14px!important;position:relative!important;
+    transform:none!important;overflow:visible!important;background-image:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i){display:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *) .ni-i{margin:0!important;font-size:19px!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b{display:none!important} /* conteos: siguen en cada pantalla */
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
+  /* activo: cuadro azul (el indicador de resorte existente, ahora cuadrado y centrado) */
+  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:50%!important;right:auto!important;width:48px!important;margin-left:-24px!important;border-radius:14px!important;
+    border:0!important;background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.8)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.on{background:transparent!important}
+  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue)!important}
+  /* activo dentro de un panel flotante: se ilumina el ícono padre y el indicador se esconde */
+  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) .spring-ind,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) .spring-ind{opacity:0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2{background:var(--tgo-blue)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab .ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2 .ni-i{color:#fff!important}
+  /* tooltip con el nombre (hover y foco de teclado). position:fixed sin «top»: queda centrado en su ítem */
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u::after{
+    content:attr(aria-label);position:fixed;left:100px;z-index:1200;pointer-events:none;opacity:0;transform:translateX(-4px);
+    transition:opacity .12s ease,transform .12s ease;white-space:nowrap;padding:7px 11px;border-radius:10px;
+    background:rgba(28,25,23,.96);color:#F8FAFC;font-size:13px;font-weight:600;line-height:18px;letter-spacing:0;text-transform:none;
+    border:1px solid var(--tgo-line);box-shadow:0 12px 28px -12px rgba(0,0,0,.6);display:block!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):hover::after,html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):focus-visible::after,
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.tgo-tip::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u:hover::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u:focus-visible::after{opacity:1;transform:none}
+  /* paneles flotantes de Contabilidad y Configuración (los mismos acordeones, abiertos al lado del riel) */
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{
+    position:fixed!important;left:100px!important;top:auto!important;bottom:12px!important;width:256px!important;z-index:1100!important;
+    max-height:calc(100vh - 24px)!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overflow-x:hidden!important;
+    padding:40px 8px 8px!important;border-radius:20px!important;background:linear-gradient(180deg,#322C28,#26211E)!important;border:1px solid rgba(255,255,255,.10)!important;
+    box-shadow:0 30px 60px -24px rgba(0,0,0,.7)!important;
+    transition:opacity .15s ease,visibility .15s ease!important;scrollbar-width:thin}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{
+    position:absolute;top:14px;left:18px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#A8A29E}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before{content:'Contabilidad'}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{content:'Configuración'}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height:0"],
+  html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height:0"]{opacity:0;visibility:hidden;pointer-events:none}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni{
+    height:40px!important;min-height:40px!important;margin:2px 0!important;padding:0 12px!important;gap:10px!important;justify-content:flex-start!important;
+    border-radius:12px!important;transform:none!important;background-image:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni .ni-l,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni .ni-l{display:block!important;opacity:1!important;width:auto!important;max-width:none!important;margin:0!important;
+    color:#E7E5E4!important;font-size:14px!important;text-transform:none!important;transform:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none!important;padding:0!important;box-shadow:none!important;border:0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni.on,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni.on{background:var(--tgo-blue)!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni.on .ni-l,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni.on .ni-l{color:#fff!important}
+  /* usuario al pie del riel: solo el avatar (toque = cerrar sesión, como siempre) */
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{margin-top:auto!important;flex:0 0 auto;background:transparent!important;border:0!important;padding:10px 0 14px!important;display:flex;justify-content:center}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{margin:0!important;padding:0!important;width:44px!important;height:44px!important;min-height:44px;border-radius:50%!important;
+    justify-content:center!important;background:transparent!important;border:0!important;box-shadow:none!important;position:relative;transform:none!important;opacity:1!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-u>div:not(.sb-av){display:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .sb-av{width:40px!important;height:40px!important;margin:0!important;font-size:14px!important;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
 }
 @media (max-width:768px){
   /* carril: misma silueta (máscara existente), ahora pizarra oscura; panel que se abre: cristal oscuro sólido (el panel con alfa dejaba ver la pantalla detrás en Chromium) */
   html.tema-glass-oscuro body nav#sbEl.sb{box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#1E293B 0%,#0F172A 100%)!important;background-size:auto!important;background-position:0 0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#332D29 0%,#221D1A 100%)!important;background-size:auto!important;background-position:0 0!important}
   html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open.nx-accordion-open::after{
-    background-image:linear-gradient(180deg,#121A2C 0%,#0B1220 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
+    background-image:linear-gradient(180deg,#2A2522 0%,#1C1917 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l{background:rgba(37,99,235,.22)!important;box-shadow:none!important;border-color:transparent!important}
 }
 
-/* ── barra superior: cristal oscuro, íconos claros ── */
-html.tema-glass-oscuro body .tnav{background:var(--tgo-glass)!important;border:1px solid var(--tgo-line)!important;box-shadow:var(--tgo-panel-shadow)!important;
-  -webkit-backdrop-filter:var(--tgo-blur)!important;backdrop-filter:var(--tgo-blur)!important}
+/* ── SIN BARRA SUPERIOR (escritorio): el panel principal de cristal (.main) lleva arriba una fila de cabecera con el
+   título, la píldora de búsqueda y las mismas acciones de la barra (mismo <header class="tnav">, sin duplicar nada) ── */
+html.tema-glass-oscuro body .tnav .ti{background:none!important;box-shadow:none!important;color:#E7E5E4!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro body .tnav .ti::after,html.tema-glass-oscuro body .tnav .tn-tog::after,html.tema-glass-oscuro body .tnav .tn-b::after,html.tema-glass-oscuro body .tnav .tn-b::before,html.tema-glass-oscuro body .tnav .tn-tog::before{display:none!important}
+html.tema-glass-oscuro body .tnav .tn-b,html.tema-glass-oscuro body .tnav .tn-tog{background:rgba(255,255,255,.08)!important;background-image:none!important;border:1px solid rgba(255,255,255,.12)!important;
+  color:#E7E5E4!important;box-shadow:none!important;filter:none!important}
+html.tema-glass-oscuro body .tnav #btnRefrescar{background:rgba(255,255,255,.08)!important;background-image:none!important;color:#E7E5E4!important;box-shadow:none!important}
+@media (hover:hover){html.tema-glass-oscuro body .tnav .tn-b:hover,html.tema-glass-oscuro body .tnav .tn-tog:hover{background:rgba(255,255,255,.15)!important}}
+html.tema-glass-oscuro body .tnav .tn-b:focus-visible,html.tema-glass-oscuro body .tnav .tn-tog:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
 html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
-html.tema-glass-oscuro body .tnav .tn-b,html.tema-glass-oscuro body .tnav .tn-tog{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.12)!important;color:#E2E8F0!important;box-shadow:none!important;filter:none!important}
-html.tema-glass-oscuro body .tnav .tn-tog::after,html.tema-glass-oscuro body .tnav .tn-b::after,html.tema-glass-oscuro body .tnav .tn-b::before,html.tema-glass-oscuro body .tnav .tn-tog::before{display:none!important}
-html.tema-glass-oscuro body .tnav .ti{background:none!important;box-shadow:none!important;color:#E2E8F0!important}
-html.tema-glass-oscuro body .tnav .tn-b-primary{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
-html.tema-glass-oscuro body .tnav .tn-b-primary .ti{color:#fff!important}
-html.tema-glass-oscuro body .tnav kbd{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.3)!important;color:#fff!important}
-@media (hover:hover){html.tema-glass-oscuro body .tnav .tn-b:hover{background:rgba(255,255,255,.14)!important}}
+@media (min-width:769px){
+  html.tema-glass-oscuro body .main{position:relative!important;isolation:isolate;margin:12px 12px 12px 12px!important;border-radius:24px!important;overflow:hidden!important}
+  html.tema-glass-oscuro body .main::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:24px;border:1px solid var(--tgo-line);
+    background:var(--tgo-glass);box-shadow:var(--tgo-panel-shadow);-webkit-backdrop-filter:var(--tgo-blur);backdrop-filter:var(--tgo-blur)}
+  html.tema-glass-oscuro body .tnav{height:auto!important;min-height:72px!important;margin:0!important;padding:18px 20px 10px 26px!important;
+    background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:12px!important}
+  html.tema-glass-oscuro body .tnav .tn-tog{display:none!important} /* el riel no se colapsa: no hay nada que abrir */
+  html.tema-glass-oscuro body .tnav #pttl{font-size:22px!important;font-weight:700!important;letter-spacing:-.01em!important;line-height:1.2!important}
+  html.tema-glass-oscuro body .tnav .tn-r{gap:8px!important;align-items:center!important}
+  html.tema-glass-oscuro body .tnav .tn-b{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;border-radius:999px!important;justify-content:center!important}
+  /* búsqueda global: píldora ancha como en la referencia (misma acción ⌘K) */
+  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary{order:-1;width:clamp(200px,24vw,320px)!important;justify-content:flex-start!important;padding:0 8px 0 16px!important;gap:10px!important;
+    background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.14)!important;color:#D6D3D1!important}
+  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary::after{content:'Buscar cliente, póliza o cédula…';display:block!important;flex:1;min-width:0;text-align:left;
+    font-size:14px;font-weight:400;color:#D6D3D1;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary .ti{color:#D6D3D1!important}
+  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary kbd{order:2;background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.2)!important;color:#E7E5E4!important;font-size:11px!important}
+  html.tema-glass-oscuro body .tnav .notif-badge{box-shadow:0 0 0 2px #2A2522}
+  html.tema-glass-oscuro body .content{padding-top:8px!important}
+}
+/* MÓVIL: cabecera mínima de cristal (menú + título + campana + actualizar), fija arriba; sin barra inferior */
+@media (max-width:768px){
+  html.tema-glass-oscuro body .tnav{background:rgba(38,34,32,.94)!important;border:1px solid var(--tgo-line)!important;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html.tema-glass-oscuro body .tnav .pttl{display:block!important;flex:1 1 auto;min-width:0;max-width:none!important;font-size:17px!important;font-weight:700!important;overflow:hidden;text-overflow:ellipsis}
+}
 
 /* ── superficies: tarjetas, KPI, tablas, formularios y modales en BLANCO con texto carbón ── */
 html.tema-glass-oscuro .nc,html.tema-glass-oscuro .kpi,html.tema-glass-oscuro .kg>div,html.tema-glass-oscuro .modal{
@@ -3224,27 +3329,31 @@ html.tema-glass-oscuro .tw{background:#fff!important;border-color:#E2E8F0!import
 html.tema-glass-oscuro thead th{background:#F8FAFC!important;color:#64748B!important}
 html.tema-glass-oscuro tbody td{color:#0F172A}
 /* modales: hoja blanca sobre un velo oscuro desenfocado */
-html.tema-glass-oscuro .overlay{background:rgba(2,6,23,.55)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+html.tema-glass-oscuro .overlay{background:rgba(20,15,12,.55)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
 html.tema-glass-oscuro .modal{border-radius:20px!important}
 /* acento único azul */
 html.tema-glass-oscuro .bc1{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
 html.tema-glass-oscuro .bc1:hover{background:var(--tgo-blue-d)!important;border-color:var(--tgo-blue-d)!important}
 
 /* ── Inicio glass: la escena global reemplaza la sombra propia del #nxIG ── */
-html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important}
-
-/* ── móvil / modo liviano: sin desenfoque, cristal = pizarra sólida ── */
-@media (max-width:768px){
-  html.tema-glass-oscuro body .tnav{background:rgba(15,23,42,.92)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(38,34,32,.62);--ig-line:rgba(255,255,255,.08)}
+@media (min-width:769px){
+  /* dentro del panel principal: el panel izquierdo del Inicio se funde con él; su buscador es el de la cabecera (una sola vez) */
+  html.tema-glass-oscuro.nx-ig #nxIG .nxIG-main.nxIG-glass{background:transparent!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-top:4px}
+  html.tema-glass-oscuro.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(255,255,255,.05)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
+  html.tema-glass-oscuro.nx-ig #nxIG .nxIG-search{display:none!important}
 }
+@media (max-width:768px){html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{background:rgba(38,34,32,.86)!important}}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .d{color:#A8A29E}
+
+/* ── transparencia reducida: sin desenfoque, cristal = grafito sólido ── */
 @media (prefers-reduced-transparency:reduce){
-  html.tema-glass-oscuro body .tnav,html.tema-glass-oscuro body nav#sbEl.sb{background:#0F172A!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-  html.tema-glass-oscuro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(2,6,23,.72)!important}
+  html.tema-glass-oscuro body .tnav,html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body .main::before,html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{background:var(--tgo-solid)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html.tema-glass-oscuro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(20,15,12,.74)!important}
 }
 
 /* ── íconos de menú y barra: sin el «vidrio» de 2 px que dibujaba un disco oscuro sobre el cristal ── */
 html.tema-glass-oscuro body nav#sbEl.sb .ti,html.tema-glass-oscuro body .tnav .ti{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-html.tema-glass-oscuro body .tnav #btnRefrescar{background:rgba(255,255,255,.08)!important;background-image:none!important}
 
 /* ── textos que se apoyan directo sobre la escena (títulos de página y de sección fuera de tarjeta) ── */
 html.tema-glass-oscuro #cnt .nxCrmHead h1,html.tema-glass-oscuro #cnt .nxSf .sf-fantitle h2{color:#F8FAFC!important}
@@ -3267,7 +3376,7 @@ html.tema-glass-oscuro #cnt #v-crm .nxCrmPanel,html.tema-glass-oscuro #cnt #v-cr
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html.tema-glass-oscuro #cnt #v-crm .nxOpsTask{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 /* controles segmentados del CRM sobre la escena: carril de cristal oscuro, activo blanco */
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(15,23,42,.62)!important;border-color:var(--tgo-line)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(38,34,32,.66)!important;border-color:var(--tgo-line)!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button:not(.on),html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button:not(.on){color:#CBD5E1!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch{background:#fff!important}
 
@@ -3279,10 +3388,10 @@ html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on .n{background:rgba(37,99,235,.12)!important;color:#1D4ED8!important}
 /* menú del botón flotante: hoja blanca (como los modales) */
 html.tema-glass-oscuro body .mobile-more-sheet-clean{background:#fff!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:rgba(15,23,42,.08)!important}
-html.tema-glass-oscuro body .nx-menu-backdrop.open{background:rgba(2,6,23,.55)!important}
+html.tema-glass-oscuro body .nx-menu-backdrop.open{background:rgba(20,15,12,.55)!important}
 /* Inicio glass: rótulos pequeños que una regla global de <small> dejaba en gris oscuro sobre el cristal */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small{color:#94A3B8!important}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#64748B}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#8A837E}
 /* POS: rótulos de sección del menú oscuro del POS (36 % de opacidad no se leía) */
 html.tema-glass-oscuro #cnt .nxTSec{color:rgba(231,234,242,.62)!important}
 /* acento único: botones principales que traían degradado morado */
@@ -3297,7 +3406,7 @@ html.tema-glass-oscuro .cfg-tab.active-tab span{color:var(--tgo-blue-d)!importan
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
 (function(){var t=document.documentElement.getAttribute('data-nx-tema');if(t==='premium')document.body.classList.add('tema-premium');else if(t==='glass')document.body.classList.add('tema-glass');
-else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#0B1220');}})();</script>
+else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#1B1715');}})();</script>
 
 <!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
      dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
@@ -3668,6 +3777,39 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       window.nxSidebarSpringSync(true);
       document.body.classList.add('spring-nav');
       window.addEventListener('resize', function(){ window.nxSidebarSpringSync(true); });
+    })();
+    </script>
+    <script id="nxTgoRail">
+    /* Tema Glass oscuro (58.90): el menú es un riel de íconos en escritorio. Aquí solo va lo que el CSS no puede:
+       nombre accesible (aria-label, que además alimenta el tooltip) en cada ítem —útil en todos los temas—, y en
+       el riel: cerrar el panel flotante de Contabilidad/Configuración al elegir, al tocar fuera o con Escape; uno a la
+       vez; tooltip con toque largo en pantallas táctiles. No cambia la navegación ni los acordeones existentes. */
+    (function(){
+      var sb=document.getElementById('sbEl'),navEl=document.getElementById('sbNav');if(!sb||!navEl)return;
+      function etiquetar(){try{
+        sb.querySelectorAll('.ni').forEach(function(n){var l=n.querySelector('.ni-l');var t=l?l.textContent.replace(/\s+/g,' ').trim():'';if(t&&n.getAttribute('aria-label')!==t)n.setAttribute('aria-label',t);});
+        var u=sb.querySelector('.sb-u');if(u){var nom=(document.getElementById('sbNom')||{}).textContent||'';var e='Cerrar sesión'+(nom&&!/cargando/i.test(nom)?' · '+nom.trim():'');if(u.getAttribute('aria-label')!==e)u.setAttribute('aria-label',e);}
+        var mk=sb.querySelector('.sb-mk');if(mk&&!mk.getAttribute('aria-label'))mk.setAttribute('aria-label','NEXUS PRO');
+      }catch(e){}}
+      etiquetar();
+      try{new MutationObserver(etiquetar).observe(sb,{childList:true,subtree:true,characterData:true});}catch(e){}
+      function riel(){return document.documentElement.classList.contains('tema-glass-oscuro')&&window.innerWidth>768;}
+      function abiertoC(){try{return !!_contabAbierto;}catch(e){return false;}}
+      function abiertoS(){try{return !!_configAbierto;}catch(e){return false;}}
+      function cerrar(excepto){try{if(excepto!=='c'&&abiertoC())toggleContab();if(excepto!=='s'&&abiertoS())toggleConfig();}catch(e){}}
+      document.addEventListener('click',function(ev){
+        if(!riel())return;var t=ev.target;
+        if(t.closest('#niContab')){cerrar('c');return;}
+        if(t.closest('#niAdmin2')){cerrar('s');return;}
+        if(t.closest('#sbContab .ni,#sbConfig .ni')){setTimeout(function(){cerrar();},0);return;}
+        if(t.closest('#sbContab,#sbConfig'))return;
+        if(abiertoC()||abiertoS())cerrar();
+      },true);
+      document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&riel()&&(abiertoC()||abiertoS()))cerrar();});
+      var tmr=null,tipEl=null;
+      navEl.addEventListener('touchstart',function(ev){if(!riel())return;var n=ev.target.closest('.ni');if(!n)return;clearTimeout(tmr);
+        tmr=setTimeout(function(){if(tipEl)tipEl.classList.remove('tgo-tip');tipEl=n;n.classList.add('tgo-tip');setTimeout(function(){n.classList.remove('tgo-tip');},1600);},450);},{passive:true});
+      ['touchend','touchmove','touchcancel'].forEach(function(k){navEl.addEventListener(k,function(){clearTimeout(tmr);},{passive:true});});
     })();
     </script>
     <div class="main">
@@ -6707,13 +6849,13 @@ function aplicarTema(tema,guardar){
   }
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
-  else if(temaReal==='glass-oscuro')html.classList.add('tema-glass-oscuro'); // vive en <html>: el <head> la pone antes de pintar
+  else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
   // clasico = sin clase (diseño por defecto)
   html.setAttribute('data-nx-tema',temaReal);
   // Espejo local del tema: SOLO para pintar el primer cuadro (login, splash, recarga) con el tema correcto antes de
   // que llegue la preferencia de la base, que sigue siendo la fuente de verdad.
   try{localStorage.setItem('nx_tema',tema);}catch(e){}
-  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#0B1220':'#1e3a6e');}catch(e){}
+  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#1B1715':'#1e3a6e');}catch(e){}
   // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
   // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
   const iconTop=document.getElementById('iconDarkMode');
@@ -7130,7 +7272,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.89';
+const APP_VERSION='58.90';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
