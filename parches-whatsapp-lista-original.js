@@ -28,6 +28,9 @@
 #v-waInbox .nxWaRow.nxWaSwiping{transition:none}
 #v-waInbox .nxWaRow.nxWaSnap{transition:transform .18s ease}
 #v-waInbox .nxWaRow .nxWaWho b{font-weight:600}
+#v-waInbox .nxWaRow .nxWaWho span span{display:inline}
+#v-waInbox .nxWaListTools input::placeholder{text-transform:none}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTag:not(.ok):not(.err):not(.warn){background:rgba(147,179,221,.16)!important;color:#BFDBFE!important}
 #v-waInbox .nxWaRow.nxWaUnread .nxWaWho b{font-weight:800}
 #v-waInbox .nxWaRow.nxWaUnread .nxWaTime{color:#2563eb}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow.nxWaUnread .nxWaTime{color:#60A5FA!important}
@@ -70,27 +73,27 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
 }
 .nxWaListMenu{position:fixed;z-index:100320;min-width:224px;max-width:min(92vw,300px);padding:6px;border-radius:14px;background:rgba(14,28,52,.94);border:1px solid rgba(147,179,221,.22);box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;font-family:inherit;text-transform:none;animation:nxWaLmIn .14s ease both}
 .nxWaListMenu .cab{padding:8px 12px 6px;font-size:11px;color:#9FB3D1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nxWaListMenu button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#F1F5F9;font:inherit;font-size:13px;text-align:left;cursor:pointer;text-transform:none}
+.nxWaListMenu button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0!important;border-radius:10px;background:transparent!important;box-shadow:none!important;color:#F1F5F9;font:inherit;font-size:13px;text-align:left;cursor:pointer;text-transform:none}
 .nxWaListMenu button i.ti{font-size:17px;color:#BFDBFE;width:20px;text-align:center;background:none!important;box-shadow:none!important;filter:none!important;-webkit-text-fill-color:currentColor!important}
-.nxWaListMenu button:hover,.nxWaListMenu button:focus-visible{background:rgba(255,255,255,.08);outline:none}
-.nxWaListMenu button:active{background:rgba(255,255,255,.14)}
+.nxWaListMenu button:hover,.nxWaListMenu button:focus-visible{background:rgba(255,255,255,.08)!important;outline:none}
+.nxWaListMenu button:active{background:rgba(255,255,255,.14)!important}
 .nxWaListMenu button .sub{margin-left:auto;font-size:14px;color:#9FB3D1}
 .nxWaListMenu button.rojo{color:#FCA5A5}
 @keyframes nxWaLmIn{from{opacity:0;transform:scale(.96) translateY(4px)}to{opacity:1;transform:none}}
 .nxWaEmojiPanel{position:fixed;z-index:100330;width:340px;max-width:calc(100vw - 16px);height:330px;display:flex;flex-direction:column;border-radius:16px;background:rgba(14,28,52,.96);border:1px solid rgba(147,179,221,.22);box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;overflow:hidden;text-transform:none;animation:nxWaLmIn .14s ease both}
 .nxWaEmojiPanel.abajo{left:0!important;width:100%!important;max-width:none;border-radius:16px 16px 0 0;height:300px}
 .nxWaEmojiPanel .cab{display:flex;align-items:center;gap:6px;padding:8px 8px 4px}
-.nxWaEmojiPanel .cab input{flex:1;min-width:0;height:34px;border:0;border-radius:10px;padding:0 12px;background:rgba(255,255,255,.08);color:#F1F5F9;font:inherit;font-size:13px;outline:none;text-transform:none}
-.nxWaEmojiPanel .cab input::placeholder{color:#9FB3D1}
-.nxWaEmojiPanel .cab .cerrar{width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:#BFDBFE;font-size:16px;cursor:pointer}
+.nxWaEmojiPanel .cab input{flex:1;min-width:0;height:34px!important;border:0!important;border-radius:10px!important;padding:0 12px!important;background:rgba(255,255,255,.08)!important;color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9!important;box-shadow:none!important;font:inherit;font-size:14px!important;outline:none;text-transform:none!important}
+.nxWaEmojiPanel .cab input::placeholder{color:#9FB3D1!important;text-transform:none!important}
+.nxWaEmojiPanel .cab .cerrar{width:34px;height:34px;border:0!important;border-radius:10px;background:transparent!important;box-shadow:none!important;color:#BFDBFE;font-size:16px;cursor:pointer}
 .nxWaEmojiPanel .cats{display:flex;gap:2px;padding:0 6px 4px}
-.nxWaEmojiPanel .cats button{flex:1;height:32px;border:0;border-radius:9px;background:transparent;color:#9FB3D1;font-size:16px;cursor:pointer}
+.nxWaEmojiPanel .cats button{flex:1;height:32px;border:0!important;border-radius:9px;background:transparent!important;box-shadow:none!important;color:#9FB3D1;font-size:16px;cursor:pointer}
 .nxWaEmojiPanel .cats button i.ti{background:none!important;box-shadow:none!important;filter:none!important;-webkit-text-fill-color:currentColor!important;color:inherit!important}
-.nxWaEmojiPanel .cats button.on{background:rgba(37,99,235,.35);color:#fff}
+.nxWaEmojiPanel .cats button.on{background:rgba(37,99,235,.35)!important;color:#fff}
 .nxWaEmojiPanel .grid{flex:1;overflow-y:auto;padding:4px 8px 10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:2px;align-content:start;overscroll-behavior:contain}
 .nxWaEmojiPanel .grid .tit{grid-column:1/-1;padding:8px 4px 2px;font-size:11px;font-weight:700;color:#9FB3D1}
-.nxWaEmojiPanel .grid button{height:38px;border:0;border-radius:9px;background:transparent;font-size:24px;line-height:1;cursor:pointer;padding:0}
-.nxWaEmojiPanel .grid button:hover,.nxWaEmojiPanel .grid button:focus-visible{background:rgba(255,255,255,.1);outline:none}
+.nxWaEmojiPanel .grid button{height:38px;border:0!important;border-radius:9px;background:transparent!important;box-shadow:none!important;font-size:24px;line-height:1;cursor:pointer;padding:0}
+.nxWaEmojiPanel .grid button:hover,.nxWaEmojiPanel .grid button:focus-visible{background:rgba(255,255,255,.1)!important;outline:none}
 .nxWaEmojiPanel .grid .vacio{grid-column:1/-1;padding:24px 8px;text-align:center;font-size:12px;color:#9FB3D1}
 @media(prefers-reduced-motion:reduce){.nxWaListMenu,.nxWaEmojiPanel{animation:none!important}#v-waInbox .nxWaRow.nxWaSnap{transition:none!important}}
 `;
@@ -163,8 +166,13 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrarMenu();cerrarEmoji();}});
 
   /* ── Gestos sobre las filas: pulsación larga (520 ms), clic derecho y deslizar en móvil ── */
-  let g=null,suprimir=null;
+  // El gesto se identifica por el id del hilo, no por el nodo: la lista se vuelve a pintar entera
+  // con cada evento de Realtime o del polling y el nodo original puede quedar suelto a mitad del gesto.
+  // Tras una pulsación larga o un deslizamiento, el navegador dispara un «click» al soltar: se
+  // traga ese primer click (no hay pointerdown nuevo en medio) para que no abra el chat ni toque el menú.
+  let g=null,tragarClick=false;
   const filaDe=t=>t&&t.closest?t.closest('#nxWaLista .nxWaRow'):null;
+  const filaPorId=id=>id?document.querySelector('#nxWaLista .nxWaRow[data-hilo="'+id+'"]'):null;
   function bgSwipe(row,lado){
     const wrap=row.parentElement;if(!wrap||!wrap.classList.contains('nxWaRowWrap'))return null;
     let bg=$('.nxWaSwipeBg',wrap);
@@ -180,33 +188,35 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
     setTimeout(()=>{row.classList.remove('nxWaSnap');if(bg)bg.remove();},220);
   }
   document.addEventListener('pointerdown',e=>{
+    tragarClick=false;
     if(e.button!==0&&e.pointerType==='mouse')return;
     const row=filaDe(e.target);if(!row)return;
     if(e.target.closest('button,a,input'))return;
-    g={row,x0:e.clientX,y0:e.clientY,dx:0,modo:null,id:e.pointerId,timer:null};
-    g.timer=setTimeout(()=>{if(!g||g.row!==row||g.modo)return;g.modo='lp';suprimir=row;abrirMenu(row,e.clientX,e.clientY);try{navigator.vibrate&&navigator.vibrate(12);}catch(_e){}},520);
+    const hid=row.dataset.hilo;
+    g={hid,x0:e.clientX,y0:e.clientY,dx:0,modo:null,id:e.pointerId,timer:null};
+    g.timer=setTimeout(()=>{if(!g||g.hid!==hid||g.modo)return;g.modo='lp';tragarClick=true;const r=filaPorId(hid);if(r)abrirMenu(r,e.clientX,e.clientY);try{navigator.vibrate&&navigator.vibrate(12);}catch(_e){}},520);
   },true);
   document.addEventListener('pointermove',e=>{
     if(!g||e.pointerId!==g.id)return;
     const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
     if(!g.modo){
       if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)&&(movil()||e.pointerType==='touch')&&soporta().archivar!==undefined){
-        g.modo='swipe';clearTimeout(g.timer);g.row.classList.add('nxWaSwiping');
-        try{g.row.setPointerCapture(e.pointerId);}catch(_e){}
+        g.modo='swipe';clearTimeout(g.timer);
       }else if(Math.abs(dx)>8||Math.abs(dy)>8){clearTimeout(g.timer);if(g.modo!=='lp')g=null;return;}
     }
     if(g&&g.modo==='swipe'){
       e.preventDefault();
+      const row=filaPorId(g.hid);if(!row)return;
+      row.classList.add('nxWaSwiping');
       const max=120;g.dx=Math.max(-max,Math.min(max,dx));
-      g.row.style.transform='translateX('+g.dx+'px)';
-      const bg=bgSwipe(g.row,g.dx<0?'der':'izq');if(bg)bg.style.opacity=String(Math.min(1,Math.abs(g.dx)/60));
+      row.style.transform='translateX('+g.dx+'px)';
+      const bg=bgSwipe(row,g.dx<0?'der':'izq');if(bg)bg.style.opacity=String(Math.min(1,Math.abs(g.dx)/60));
     }
   },{passive:false,capture:true});
   async function terminarSwipe(cancelado){
     const s=g;g=null;if(!s)return;clearTimeout(s.timer);
     if(s.modo!=='swipe')return;
-    const row=s.row,h=hiloDe(row);suprimir=row;
-    setTimeout(()=>{if(suprimir===row)suprimir=null;},400);
+    const row=filaPorId(s.hid);if(!row)return;const h=hiloDe(row);tragarClick=true;
     if(cancelado||Math.abs(s.dx)<80||!h){limpiarSwipe(row);return;}
     if(s.dx<0){
       if(!soporta().archivar){limpiarSwipe(row);return;}
@@ -223,8 +233,8 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
   document.addEventListener('pointerup',e=>{if(g&&e.pointerId===g.id)terminarSwipe(false);},true);
   document.addEventListener('pointercancel',e=>{if(g&&e.pointerId===g.id)terminarSwipe(true);},true);
   document.addEventListener('click',e=>{
-    const row=filaDe(e.target);
-    if(suprimir&&row===suprimir){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();suprimir=null;}
+    if(!tragarClick)return;
+    tragarClick=false;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
   },true);
   document.addEventListener('contextmenu',e=>{
     const row=filaDe(e.target);if(!row)return;
@@ -307,12 +317,18 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
   const recientes=()=>{try{return JSON.parse(localStorage.getItem('nxWaEmojiRecientes')||'[]').filter(x=>typeof x==='string').slice(0,32);}catch(e){return [];}};
   const recordar=e=>{try{const r=[e].concat(recientes().filter(x=>x!==e)).slice(0,32);localStorage.setItem('nxWaEmojiRecientes',JSON.stringify(r));}catch(_e){}};
   function cerrarEmoji(){const p=$('.nxWaEmojiPanel');if(p)p.remove();}
+  // Último cursor conocido del campo (se pierde el foco al tocar el botón de emoji); si el campo
+  // nunca tuvo foco con este texto, el emoji va al final, como en WhatsApp.
+  let cursor=null;
+  document.addEventListener('focusout',e=>{const t=e.target;if(t&&t.id==='nxWaTexto')cursor={s:t.selectionStart,e:t.selectionEnd,v:t.value};},true);
   function insertarEmoji(e){
     const inp=$('#nxWaTexto');if(!inp)return;
-    const start=Number.isFinite(inp.selectionStart)?inp.selectionStart:inp.value.length;
-    const end=Number.isFinite(inp.selectionEnd)?inp.selectionEnd:start;
+    let start=inp.value.length,end=start;
+    if(document.activeElement===inp&&Number.isFinite(inp.selectionStart)){start=inp.selectionStart;end=inp.selectionEnd;}
+    else if(cursor&&cursor.v===inp.value&&Number.isFinite(cursor.s)){start=cursor.s;end=cursor.e;}
     inp.value=inp.value.slice(0,start)+e+inp.value.slice(end);
     const pos=start+e.length;try{inp.setSelectionRange(pos,pos);}catch(_e){}
+    cursor={s:pos,e:pos,v:inp.value};
     try{window.nxWaTextoInput?.(inp);}catch(_e){}
     inp.dispatchEvent(new Event('input',{bubbles:true}));
     recordar(e);
