@@ -4348,7 +4348,7 @@ html.tema-glass-oscuro .nxBusca.nxBusca-c:not(.open) .nxBusca-lupa{color:var(--n
 .nxbp-aura i:nth-child(5){left:95%;top:35%;--nxbp-r:-1.8s;width:4px;height:4px}
 @keyframes nxbpFlota{0%,100%{transform:translate3d(0,0,0);opacity:.15}50%{transform:translate3d(2px,-7px,0);opacity:.6}}
 /* aviso Esc: solo escritorio con puntero fino; flota bajo la píldora sin ocupar sitio */
-.nxbp-esc{display:none;position:absolute;left:14px;top:calc(100% + 6px);align-items:center;gap:6px;font-size:11px;line-height:1;color:var(--nxbp-ph);white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(-3px);transition:opacity .25s ease .25s,transform .25s ease .25s;z-index:2}
+.nxbp-esc{display:none;position:absolute;left:12px;top:calc(100% + 5px);align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:7px;background:var(--nxbp-fondo);font-size:11px;line-height:1;color:var(--nxbp-ph);white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(-3px);transition:opacity .25s ease .25s,transform .25s ease .25s;z-index:2} /* con fondo propio: se lee aunque debajo haya texto (Auditoría) */
 .nxbp-esc kbd{font:inherit;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid var(--nxbp-ph);color:var(--nxbp-tx)}
 @media(hover:hover) and (pointer:fine) and (min-width:769px){.nxbp-esc{display:inline-flex}.nxbp-marco.open .nxbp-esc{opacity:1;transform:none}}
 /* tema oscuro: gana a las reglas !important de campos del bloque del tema */
