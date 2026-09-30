@@ -1,7 +1,56 @@
 {
-  "version": "58.88",
+  "version": "58.93",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.93",
+      "fecha": "2026-09-30",
+      "notas": [
+        "iPhone: la barra lateral de íconos ya no se muestra; la pantalla usa todo el ancho. Todas las secciones siguen en el menú ☰ de arriba y en el botón flotante. Búsqueda, notificaciones, menús y ventanas también usan todo el ancho.",
+        "Préstamos en iPhone: la barra de abajo usa todo el ancho y sus 5 botones ya no se montan.",
+        "iPhone: al final de cada pantalla queda espacio para que el botón flotante no tape los últimos botones (Configuración, Inicio, reportes).",
+        "iPhone: Roles y permisos se lee bien (antes las palabras se partían letra por letra) y los botones largos ya no se cortan (Buscar actualizaciones, Foto / archivo, Recibo de pago, Bancos, Cliente 360).",
+        "Registrar pago: los botones Cancelar y Registrar abono quedan fijos abajo, visibles aunque el teclado esté abierto.",
+        "El título de arriba dice WHATSAPP en el Buzón y los títulos largos se achican para caber; en el Buzón las 5 cifras se deslizan de lado sin cortar los nombres.",
+        "Entrada al sistema en iPhone: el botón Entrar al sistema se ve sin bajar; campos en gris cálido con texto de ejemplo más legible.",
+        "Tema oscuro: íconos planos y modernos (sin bolas 3D con brillo): ícono de línea en un círculo con tinte suave del color de su significado; avatares con iniciales planos."
+      ]
+    },
+    {
+      "version": "58.92",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Arreglo: en el chat de WhatsApp las burbujas, la barra de escribir y el aviso de 24 horas ahora se ven oscuros y se leen bien con el tema Glass oscuro."
+      ]
+    },
+    {
+      "version": "58.91",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Glass oscuro en todas las pantallas: Clientes, Facturas, CRM, Cliente 360, Financiamiento, Configuración, Buzón y Contabilidad ahora se ven en cristal oscuro, igual que el panel derecho del Inicio.",
+        "Ventanas y formularios oscuros: campos con fondo oscuro, letra clara y borde visible; menús, avisos y listas también.",
+        "En el Inicio, las tarjetas de cifras, la gráfica del ciclo y los prospectos pasan a cristal oscuro; el recuadro azul del ciclo actual se queda como acento.",
+        "Se mantienen los colores de siempre para avisar: verde (al día), ámbar (atención), rojo (vencido) y azul (acción)."
+      ]
+    },
+    {
+      "version": "58.90",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Glass oscuro más cerca de la referencia: menú de solo íconos flotante (el nombre aparece al pasar el mouse), Contabilidad y Configuración se abren en un panel al lado, y el usuario abajo.",
+        "Sin barra de arriba en computadora: título, búsqueda, notificaciones y demás botones quedan en la cabecera del panel principal (cada uno una sola vez). En el celular, cabecera mínima con menú, título y campana.",
+        "Cristal en gris cálido y foto real de oficina desenfocada de fondo, que aparece suavemente sin mover nada de la pantalla."
+      ]
+    },
+    {
+      "version": "58.89",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Nuevo tema «Glass oscuro» en todo el sistema y como tema por defecto: fondo oscuro desenfocado, menú lateral y barra superior de cristal oscuro, tarjetas, tablas, formularios y ventanas en blanco, y un solo acento azul NEXUS.",
+        "Sin saltos al cargar: el tema se aplica antes del primer pintado (también en el inicio de sesión y la pantalla de carga) y no cambia a mitad de la carga.",
+        "Se puede volver a Clásico, Premium Dark, Liquid Glass o Automático en Configuración → Apariencia; la elección se guarda y se respeta."
+      ]
+    },
     {
       "version": "58.88",
       "fecha": "2026-09-29",

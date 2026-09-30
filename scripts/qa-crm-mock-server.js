@@ -156,6 +156,8 @@ async function rest(req, res, u) {
   if (req.method === 'POST') {
     const b = await body(req); const rows = Array.isArray(b) ? b : [b];
     LOG.push({ m: 'POST', t: table, b });
+    // Tema glass oscuro (58.89): usuario_preferencias se guarda con UPSERT (on_conflict=usuario_id), como PostgREST.
+    if (table === 'usuario_preferencias') { rows.forEach(r => { const ex = DB.usuario_preferencias.find(x => x.usuario_id === r.usuario_id); if (ex) Object.assign(ex, r); else DB.usuario_preferencias.push({ ...r }); }); return json(res, null, 201); }
     const out = rows.map(r => { const row = { id: uuid(seq++), created_at: now(), updated_at: now(), ...r }; if (table === 'crm_prospectos') triggerPros(row, null); if (table === 'crm_prospectos_historial') { row.fecha = row.fecha || now(); if (row.tipo !== 'nota') throw new Error('42501 row-level security'); } DB[table].push(row); return row; });
     return json(res, out, 201);
   }
@@ -181,6 +183,11 @@ const server = http.createServer(async (req, res) => {
       const [, , cmd, val] = u.pathname.split('/');
       if (cmd === 'prospectos') { prospectosActivos = val === '1'; if (val === 'reset') { prospectosActivos = true; seedPros(); } return json(res, { prospectosActivos }); }
       if (cmd === 'orgtipo') { DB.organizaciones[0].tipo = val || 'seguros'; return json(res, DB.organizaciones[0]); }
+      // /__qa/tema/<valor>: preferencia 'tema' de los dos usuarios de prueba ('none' = sin preferencia guardada;
+      // '<tema>-viejo' = guardada antes de 58.89, sin la marca de la migración única a glass-oscuro;
+      // 'legacydark' = solo el botón viejo de «Modo oscuro», sin 'tema').
+      if (cmd === 'tema') { const viejo = /-viejo$/.test(val || ''), t = String(val || '').replace(/-viejo$/, ''); DB.usuario_preferencias = val === 'none' ? [] : val === 'legacydark' ? [uuid(1), uuid(2)].map(id => ({ usuario_id: id, datos: { dark: true } })) : [uuid(1), uuid(2)].map(id => ({ usuario_id: id, datos: viejo ? { tema: t } : { tema: t, tema_glass_oscuro_v1: true } })); return json(res, DB.usuario_preferencias); }
+      if (cmd === 'prefs') return json(res, DB.usuario_preferencias);
       if (cmd === 'fallar') { fallarSiguientePatch = val === '1'; return json(res, { fallarSiguientePatch }); }
       if (cmd === 'log') return json(res, LOG);
       if (cmd === 'estado') return json(res, { tareas: TAREAS, pros: PROS, hist: HIST, acts: ACTS });

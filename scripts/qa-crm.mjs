@@ -29,7 +29,8 @@ async function abrirApp(browser, { width, rol, nom }) {
     sessionStorage.setItem('nx_sesion_actividad', String(Date.now())); sessionStorage.setItem('nx_ya_saludo', '1');
   }, { rol, nom });
   await page.goto(BASE + '/index.html', { waitUntil: 'load' });
-  await page.waitForSelector('#nxCrmNav', { timeout: 20000 });
+  // 58.93: en el celular no hay barra lateral a la vista (el ítem vive en el cajón que abre ☰): basta con que exista.
+  await page.waitForSelector('#nxCrmNav', { state: page.viewportSize().width < 769 ? 'attached' : 'visible', timeout: 20000 });
   await page.waitForFunction(() => typeof window.nxCrm === 'object' && typeof ST !== 'undefined' && (ST.clientes || []).length > 0, null, { timeout: 20000 });
   await sleep(600);
   return { ctx, page, errs, dialogs };
