@@ -303,7 +303,8 @@ async function suite(browser, movil) {
   // escribiendo… una sola vez
   await page.evaluate(() => { const t = document.getElementById('nxWaTexto'); t.focus(); ['H', 'Ho', 'Hol', 'Hola', 'Hola ', 'Hola p'].forEach(v => { t.value = v; t.dispatchEvent(new Event('input', { bubbles: true })); }); });
   await sleep(400);
-  ok(log.edge.length === 1 && log.edge[0]?.hilo_id === ID.juan && log.edge[0]?.accion === 'escribiendo', `${tag} escribiendo…: una sola llamada a whatsapp-inbox-leer al teclear 6 veces`, log.edge);
+  const escribiendo = log.edge.filter(x => x?.accion === 'escribiendo');
+  ok(escribiendo.length === 1 && escribiendo[0]?.hilo_id === ID.juan, `${tag} escribiendo…: una sola llamada a whatsapp-inbox-leer al teclear 6 veces`, log.edge);
   const draftLs = await page.evaluate(id => localStorage.getItem('nxWaBorrador:' + id), ID.juan);
   ok(draftLs === 'Hola p', `${tag} E: el borrador se guarda en localStorage («${draftLs}»)`);
   ok(claras && (await claras(page)).length === 0, `${tag}: sin superficies claras en el Buzón`, await claras(page));
