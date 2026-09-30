@@ -3763,6 +3763,12 @@ html.tema-glass-oscuro #cnt .nxSL-hist-tab{background:rgba(255,255,255,.06)!impo
 html.tema-glass-oscuro #cnt .nxSL-hist-tab:hover{background:rgba(255,255,255,.12)!important}
 html.tema-glass-oscuro #cnt .nxSL-hist-tab-active{background:var(--tgo-blue)!important;color:#fff!important}
 html.tema-glass-oscuro #cnt .nxSL-hist-table tbody tr:hover{background:rgba(255,255,255,.04)!important}
+/* 58.98: la tabla del Historial de entregas trae background:#fff propio (parches-seguros-base.js:5629) y quedaba blanca con texto claro */
+html.tema-glass-oscuro #cnt :is(.nxSL-hist-table,.nxSL-table){background:transparent!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-hist-table,.nxSL-table) thead th{background:rgba(255,255,255,.06)!important;color:#E2E8F0!important;border-bottom-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-hist-table,.nxSL-table) tbody td{border-bottom-color:rgba(255,255,255,.08)!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-hist-table,.nxSL-table) tbody td:not(.nxSL-hist-monto):not(.nxSL-hist-fecha):not(.nxSL-hist-ref){color:#F1F5F9!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-table-wrap{border-color:var(--tgo-edge)!important}
 html.tema-glass-oscuro #cnt .nxSL-pay-merged{border-top-color:var(--tgo-edge)!important}
 html.tema-glass-oscuro #cnt .nxSL-section-historial .nxSL-section-title i{color:#E2E8F0}
 html.tema-glass-oscuro #cnt .nxSL-section-historial{border-left-color:#BCC7D6!important}
@@ -8628,7 +8634,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.97';
+const APP_VERSION='58.98';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
