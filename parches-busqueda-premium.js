@@ -11,8 +11,9 @@
      línea (nxBuscaLupa / nxBuscaClear) porque esta capa maneja abrir, limpiar y cerrar.
    · Montaje automático (MutationObserver) sobre: .nxBusca.nxBusca-c (Clientes, Pólizas, Facturas, Cobros, Pagos,
      Auditoría, Solicitudes/pendientes, Préstamos, Vehículos, Consultorio, POS, Rifas…), #factQ (barra estática de
-     Facturas en modo rueda), #c360Q (Cliente 360), #nxCrmQ y #nxCrmQPros (CRM). Nunca dentro de #v-waInbox
-     (el Buzón de WhatsApp se conecta aparte con montar()).
+     Facturas en modo rueda), #c360Q (Cliente 360), #nxCrmQ y #nxCrmQPros (CRM). EXCLUIR (#v-waInbox, [data-nxbp-no],
+     ventanas de elegir registro) solo frena el montaje automático: montar() a mano sí monta ahí (el Buzón de WhatsApp
+     lo conecta parches-whatsapp-lista-original.js sobre #nxWaVisualSearch, con flotar:true).
    · Resorte propio (rAF, semi-implícito, interrumpible: si se vuelve a tocar a mitad de camino cambia el objetivo y
      conserva la velocidad). Abrir: respuesta .42 s, amortiguación .72 (sobrepaso ≈ 5 %). Cerrar: .26 s, crítico (sin
      rebote: la salida es más rápida que la entrada). Solo anima width/left del marco y la opacidad del contenido.
@@ -29,10 +30,11 @@
      visible, Enter no se toca (los campos ya lo neutralizan en línea; no hay <form>).
 
    API global (window.nxBusquedaPremium):
-     montar(campo, {boton?, contenedor?, placeholder?, anchoMax?, enLinea?, alAbrir?, alCerrar?, alBuscar?}) → instancia
+     montar(campo, {boton?, contenedor?, placeholder?, anchoMax?, enLinea?, flotar?, alAbrir?, alCerrar?, alBuscar?}) → instancia
        campo: <input> o selector. boton: lupa ya existente que se reutiliza (se mueve dentro del marco).
        contenedor: elemento/selector de la fila sobre la que flota en móvil (por defecto, el padre real de la lupa).
-       enLinea:true fuerza crecer en línea también en móvil. alBuscar(valor) se llama en cada `input`.
+       enLinea:true fuerza crecer en línea también en móvil; flotar:true fuerza flotar sobre la fila también en
+       escritorio (filas estrechas, ej. la cabecera de la lista del Buzón). alBuscar(valor) se llama en cada `input`.
      instancia(campo) → instancia o null · desmontar(campo) → devuelve el DOM a como estaba
      montarTodo(raiz?) → monta lo que encuentre por los selectores automáticos · SELECTORES (array, editable)
      instancia: abrir({foco}), cerrar({foco}), alternar(), desmontar(), abierto, input, marco, wrap, lupa, x
@@ -195,7 +197,7 @@
     var ccs = getComputedStyle(cont), padL = parseFloat(ccs.paddingLeft) || 0, padR = parseFloat(ccs.paddingRight) || 0;
     // Flota (en vez de crecer en línea) en el celular y también cuando la fila es una cuadrícula CSS (sus celdas no
     // crecen con el contenido: la píldora quedaría atrapada en la celda, ej. filtros de Auditoría).
-    var superponer = !this.o.enLinea && (movil() || /grid/.test(ccs.display));
+    var superponer = !!this.o.flotar || (!this.o.enLinea && (movil() || /grid/.test(ccs.display)));
     if (!this.superpuesto) {
       var mr = marco.getBoundingClientRect(), cr = cont.getBoundingClientRect();
       this.x0 = mr.left - cr.left - (parseFloat(ccs.borderLeftWidth) || 0);
@@ -379,7 +381,6 @@
     input = resolver(input);
     if (!input || input.tagName !== 'INPUT' || input.type === 'hidden') return null;
     var ya = instancia(input); if (ya) return ya;
-    if (input.closest(API.EXCLUIR)) return null;
     podar();
     try { return new Instancia(input, o); } catch (e) { try { console.warn('[busqueda-premium] no se pudo montar', input.id || input, e); } catch (e2) {} return null; }
   }
@@ -391,7 +392,7 @@
       if (raiz.nodeType === 1 && raiz.matches(sel)) lista.push(raiz);
       if (raiz.querySelectorAll) Array.prototype.push.apply(lista, raiz.querySelectorAll(sel));
     } catch (e) { return; }
-    lista.forEach(function (inp) { montar(inp); });
+    lista.forEach(function (inp) { if (!inp.closest(API.EXCLUIR)) montar(inp); });   // la exclusión solo aplica al montaje automático
   }
 
   // Esc: cierra lo abierto. Si el foco estaba dentro, se detiene ahí (el resto de la app no ve ese Esc; el siguiente
