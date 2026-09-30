@@ -1,7 +1,17 @@
 {
-  "version": "58.90",
+  "version": "58.91",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.91",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Glass oscuro en todas las pantallas: Clientes, Facturas, CRM, Cliente 360, Financiamiento, Configuración, Buzón y Contabilidad ahora se ven en cristal oscuro, igual que el panel derecho del Inicio.",
+        "Ventanas y formularios oscuros: campos con fondo oscuro, letra clara y borde visible; menús, avisos y listas también.",
+        "En el Inicio, las tarjetas de cifras, la gráfica del ciclo y los prospectos pasan a cristal oscuro; el recuadro azul del ciclo actual se queda como acento.",
+        "Se mantienen los colores de siempre para avisar: verde (al día), ámbar (atención), rojo (vencido) y azul (acción)."
+      ]
+    },
     {
       "version": "58.90",
       "fecha": "2026-09-29",
