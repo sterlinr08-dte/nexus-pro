@@ -25,9 +25,9 @@ i.src=(window.innerWidth<=768?'assets/fondo-oficina-movil.webp':'assets/fondo-of
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
-<script id="nxIconosPlanos">/* 58.92 — (a) íconos: el coloreado por nombre de parches-seguros-base (degradado + brillo con estilo en línea
+<script id="nxIconosPlanos">/* 58.93 — (a) íconos: el coloreado por nombre de parches-seguros-base (degradado + brillo con estilo en línea
    !important, que ninguna hoja de estilos puede cambiar) se apaga allí con su propia bandera y vive aquí con la misma
-   lógica, pero SOLO fuera del tema «Glass oscuro»; en ese tema los íconos son planos (style#nxIphone5892). Al cambiar
+   lógica, pero SOLO fuera del tema «Glass oscuro»; en ese tema los íconos son planos (style#nxIphone5893). Al cambiar
    de tema en vivo se aplica o se quita solo. (b) Título de la barra del celular: el Buzón no pasa por nav() y dejaba el
    título anterior; y los títulos largos se achican hasta caber (mín. 11 px) en vez de cortarse. */
 window.__NX_ICON_COLOR__=true;
@@ -4093,32 +4093,35 @@ html.tema-glass-oscuro #cnt .nxSL-empty-soft{color:#D6D3D1!important}
 /* Configuración: nombre de las pestañas (la regla base lo fija con !important) */
 html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{color:#D6D3D1!important}
 </style>
-<!-- 58.92 (30-sep-2026) — Ajustes de iPhone + íconos planos del tema oscuro. Ver docs/bitacora/2026-09-30-*-claude.md.
+<!-- 58.93 (30-sep-2026) — Ajustes de iPhone (sin barra lateral en el celular) + íconos planos del tema oscuro. Ver docs/bitacora/2026-09-30-*-claude.md.
      Solo diseño: nada de Supabase, pagos, Realtime ni lógica. Las reglas de diseño viven dentro de @media(max-width:768px)
      (la computadora no cambia); los íconos planos cuelgan de html.tema-glass-oscuro. Para deshacer: borrar este <style>
      y el <script id="nxIconosPlanos"> del <head>. -->
-<style id="nxIphone5892">
+<style id="nxIphone5893">
 @media(max-width:768px){
-  /* ── 1. Ventanas, búsqueda, notificaciones y menú del botón flotante: nunca debajo del riel (76 px, z 10700) ──
-     Antes: .overlay.open empezaba en left:76px (parches-contenido-movil-ajuste) y el riel seguía tocable a su lado;
-     la búsqueda (z 700), las notificaciones (z 500, left 50) y la hoja del botón flotante (z 9001, left 12) quedaban
-     DEBAJO del riel. Ahora: el velo de las ventanas cubre el riel (y lo apaga) y el contenido empieza después de él. */
-  html body .overlay.open{left:0!important;padding-left:calc(var(--nx-rail,76px) + 8px + env(safe-area-inset-left,0px))!important}
-  html body .gs-overlay{z-index:10702!important;padding:calc(72px + env(safe-area-inset-top,0px)) 8px 8px calc(var(--nx-rail,76px) + 8px)!important}
+  /* ── 1. Sin barra lateral en el celular (pedido del dueño, 30-sep-2026: «ocultar por completo la barra lateral») ──
+     El riel fijo de 76 px (nav#sbEl, z 10700) se esconde del todo mientras está cerrado: fuera de pantalla, invisible
+     y sin toques. El mismo nav#sbEl sigue siendo el cajón que abre ☰ en la barra de arriba (con TODOS sus destinos) y
+     el botón flotante mantiene su menú. Todo lo que se corría 76 px por el riel usa ahora el ancho completo:
+     contenido, barra de arriba, ventanas, búsqueda, notificaciones, hojas y la barra de Préstamos. */
+  html body nav#sbEl.sb:not(.mob-open){visibility:hidden!important;transform:translateX(-100%)!important;pointer-events:none!important;box-shadow:none!important;transition:transform .25s ease,visibility 0s linear .25s!important}
+  html body nav#sbEl.sb.mob-open{visibility:visible!important;transform:none!important;transition:transform .25s ease,width .3s cubic-bezier(.22,1,.36,1)!important}
+  html body .main{margin-left:0!important;width:100%!important;flex:0 0 100%!important}
+  /* ventanas y velos que parches-contenido-movil-ajuste corría a left:76px */
+  html body .overlay.open{left:0!important;padding-left:calc(8px + env(safe-area-inset-left,0px))!important}
+  html body .mbbOv,html body .nbfOv,html body .swal-overlay,html body .acc-backdrop,html body .cs-overlay{left:0!important}
+  html body .cs-panel{left:0!important;width:100vw!important}
+  /* búsqueda (z 700), notificaciones (z 500) y hoja del botón flotante: ancho completo con 8 px de margen */
+  html body .gs-overlay{z-index:10702!important;padding:calc(72px + env(safe-area-inset-top,0px)) 8px 8px!important}
   html body .gs-overlay .gs-box{max-width:none}
-  html body .notif-panel{position:fixed!important;top:calc(70px + env(safe-area-inset-top,0px))!important;left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important;width:auto!important;max-height:calc(100dvh - 86px - env(safe-area-inset-top,0px))!important;z-index:10702!important}
+  html body .notif-panel{position:fixed!important;top:calc(70px + env(safe-area-inset-top,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-height:calc(100dvh - 86px - env(safe-area-inset-top,0px))!important;z-index:10702!important}
   html body .nx-menu-backdrop{z-index:10701!important}
-  html body .mobile-more-sheet-clean{z-index:10702!important;left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
+  html body .mobile-more-sheet-clean{z-index:10702!important;left:8px!important;right:8px!important}
   html body .nx-fab.open{z-index:10703!important}
-  /* Con cualquier ventana u hoja abierta, el riel no responde a toques (el cajón abierto sí). */
-  body:has(.overlay.open,.notif-panel.show,.mbbOv,.nbfOv,.swal-overlay,.cs-overlay.show,.gs-overlay.show,.nx-menu-backdrop.open,.nx-menu-editor,.nxFP-dockSheet.open) #sbEl:not(.mob-open){pointer-events:none}
-  /* ── 2. Préstamos: la barra inferior y su hoja empiezan después del riel ── */
-  html body .nxFP-dock{left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
-  html body .nxFP-dockSheet{left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
-  /* 5 botones en 283–346 px: cada columna mide lo que su rótulo (11 px es el mínimo del sistema) y, si no alcanza,
-     se encogen todas un poco (puntos suspensivos) en vez de montarse unas sobre otras. */
-  html body .nxFP-dock{grid-template-columns:repeat(5,minmax(0,auto))!important;justify-content:space-between}
-  html body .nxFP-dockBtn{min-width:0;padding:0 1px}
+  /* ── 2. Préstamos: 5 botones en la barra inferior sin montarse (11 px es el mínimo de letra del sistema) ── */
+  html body .nxFP-dock{left:8px!important;right:8px!important;grid-template-columns:repeat(5,minmax(0,auto))!important;justify-content:space-between}
+  html body .nxFP-dockSheet{left:8px!important;right:8px!important}
+  html body .nxFP-dockBtn{min-width:0;padding:0 2px}
   html body .nxFP-dockBtn>span:not(.nxFP-dockBadge):not(#tgo){letter-spacing:-.2px!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   html body .cfg-tabs-bar{scroll-padding-inline:8px}
   /* ── 3. Botón flotante (58 px, 18 px del borde): espacio al final de la página para que lo último suba por encima ── */
@@ -4173,9 +4176,10 @@ html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cf
   html.tema-glass-oscuro #loginScreen .lfr input:focus{border-color:#60A5FA!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important}
   html.tema-glass-oscuro #loginScreen .lfr input::placeholder{color:#A8A29E!important;opacity:1}
   html.tema-glass-oscuro #loginScreen .lfi i{color:#A8A29E!important}
+  html.tema-glass-oscuro #loginScreen .lchk input{background-color:#1F1B19!important;border-color:#8A837E!important}
 }
 
-/* ═══ Íconos planos del tema oscuro (58.92, pedido del dueño: «quita esos iconos 3D y ponlos contemporáneos») ═══
+/* ═══ Íconos planos del tema oscuro (58.93, pedido del dueño: «quita esos iconos 3D y ponlos contemporáneos») ═══
    Antes: esferas de degradado con brillo (::after), sombras internas y reflejos (parches-seguros-base:
    nx-dashboard-icons-3d-css + el coloreado por nombre con estilo en línea !important, que en este tema ya no se
    aplica: ver script#nxIconosPlanos). Ahora: ícono de línea Tabler en un círculo con tinte translúcido del color de
@@ -8085,7 +8089,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.92';
+const APP_VERSION='58.93';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
