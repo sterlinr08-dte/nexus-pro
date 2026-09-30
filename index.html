@@ -4162,6 +4162,9 @@ html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaProKpi,.nxWaUhdKpiIcon) i.t
   html body .cfg-tabs-bar{scroll-padding-inline:8px}
   /* ── 3. Botón flotante (58 px, 18 px del borde): espacio al final de la página para que lo último suba por encima ── */
   html body .content{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+  /* mismo margen lateral que pone después parches-fase1-ui-motion.css (16 px): así el primer cuadro ya tiene el ancho
+     final y el Inicio no salta cuando llega esa hoja */
+  .content{padding-inline:16px;min-width:0}
   /* ── 4. Textos cortados ── */
   /* Roles y permisos: una columna por permiso cuando no caben (antes 3 columnas de 66 px → letra por letra). */
   html body .role-perms{grid-template-columns:repeat(auto-fill,minmax(132px,1fr))!important}
@@ -4191,9 +4194,8 @@ html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaProKpi,.nxWaUhdKpiIcon) i.t
   /* ── 5. Registrar pago: la fila Cancelar / Registrar abono queda pegada abajo (visible con el teclado abierto) ── */
   html body #mAbono.overlay.open .modal{overflow-x:clip!important;overflow-y:visible!important}
   html body #mAbono .modal>.fe{position:sticky;bottom:0;z-index:3;background:inherit;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-bottom:0}
-  /* ── 8. Toques de al menos 44 px: botones de la barra y botones de acción ── */
+  /* ── 8. Toques de al menos 44 px: botones de la barra (los botones ya tienen 44 px por parches-fase1-ui-motion) ── */
   html body .tnav .tn-tog,html body .tnav .tn-r>#btnRefrescar,html body .tnav .tn-r>.notif-bell{flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important}
-  html body .btn{min-height:40px}
   html body #loginScreen .lchk{min-height:44px}
 }
 /* ── 7. Entrada en iPhone de pantalla baja: «Entrar al sistema» sin desplazar ── */
