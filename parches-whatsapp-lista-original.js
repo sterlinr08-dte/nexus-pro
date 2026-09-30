@@ -3,6 +3,11 @@
    selector de emojis completo, sonido/vibración/contador del título al llegar mensajes y
    arreglo de la cabecera de la lista en escritorio. Los datos los pinta el núcleo
    (parches-whatsapp-inbox.js: nxWaHiloAccion, nxWaHilos, eventos nxwa:lista / nxwa:mensaje).
+   Buscador de la lista (58.94): #nxWaVisualSearch (parches-whatsapp-visual.js: filtra filas y busca por contenido
+   de mensajes) se monta sobre la Búsqueda «Premium» (parches-busqueda-premium.js, montar() a mano: el Buzón queda
+   fuera del automontaje) reutilizando como lupa el botón .nxWaSearchToggle de parches-whatsapp-visual-v4.js, cuyo
+   plegado propio (nxWaSearchFolded) se neutraliza aquí. Mismo input, mismos listeners; nxWaVisualClearSearch() sigue
+   limpiando (y refresca el punto de «búsqueda activa»). Se vuelve a montar si la cabecera se reconstruye.
    No toca Supabase directamente ni la conversación abierta. */
 (function(){
   'use strict';
@@ -71,6 +76,23 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
 @media(max-width:760px){
   #v-waInbox .nxWaListTools:not(.nxWaSearchFolded) .nxWaSoundToggle{display:none}
   #v-waInbox .nxWaSoundToggle{width:30px;height:30px;flex-basis:30px;border-radius:10px}
+}
+/* 58.94: buscador de la lista = Búsqueda premium (círculo de 44 px con la lupa, a la derecha de la campana; abierto flota
+   sobre la cabecera). La lupa es el .nxWaSearchToggle de visual-v4 movido dentro del marco: aquí se le quitan los tamaños,
+   fondos y display:none que le ponían visual-v4 / inbox-uhd / compact-mobile / el tema oscuro de index.html (todos con
+   !important, por eso estos también). Paleta del Buzón: --nxbp-acento #2563EB y --nxbp-fondo rgba(14,28,52,.82) ya vienen
+   de html.tema-glass-oscuro en style#nxBusquedaPremiumCSS. */
+#v-waInbox .nxWaListTools{--nxbp-d:44px}
+#v-waInbox .nxWaListTools .nxbp-marco,#v-waInbox .nxWaListTools .nxbp-hueco{order:20}
+#v-waInbox .nxWaListTools .nxbp-marco .nxWaSearchToggle{display:grid!important;place-items:center!important;width:calc(var(--nxbp-d) - 4px)!important;height:calc(var(--nxbp-d) - 4px)!important;flex:0 0 auto!important;min-width:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;color:var(--nxbp-acento)!important;font-size:19px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco .nxWaSearchToggle{background:transparent!important;border:0!important;color:var(--nxbp-acento)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco input.nxBusca-in{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--nxbp-tx)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco input.nxBusca-in::placeholder{color:var(--nxbp-ph)!important}
+#v-waInbox .nxWaListTools.nxWaBpLista .nxWaSearch.nxbp-oculto{display:none!important}
+@media(max-width:760px){
+  /* visual-v4 quita nxWaSearchFolded al escribir y escondía el título y la campana: con el componente ya no aplica */
+  #v-waInbox .nxWaListTools.nxWaBpLista:not(.nxWaSearchFolded) .nxWaListCaption{display:flex!important}
+  #v-waInbox .nxWaListTools.nxWaBpLista:not(.nxWaSearchFolded) .nxWaSoundToggle{display:grid}
 }
 .nxWaListMenu{position:fixed;z-index:100320;min-width:224px;max-width:min(92vw,300px);padding:6px;border-radius:14px;background:rgba(14,28,52,.94);border:1px solid rgba(147,179,221,.22);box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;font-family:inherit;text-transform:none;animation:nxWaLmIn .14s ease both}
 .nxWaListMenu .cab{padding:8px 12px 6px;font-size:11px;color:#9FB3D1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -305,6 +327,31 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
     tools.appendChild(b);
   }
 
+  /* ── Buscador de la lista sobre la Búsqueda premium ── */
+  let bpEspera=0;
+  function envolverClear(){
+    const f=window.nxWaVisualClearSearch;if(typeof f!=='function'||f.__nxWaBp)return;
+    const w=function(){const r=f.apply(this,arguments);const i=$('#nxWaVisualSearch'),BP=window.nxBusquedaPremium,ins=i&&BP&&BP.instancia(i);if(ins&&typeof ins.refrescarX==='function')ins.refrescarX();return r;};
+    w.__nxWaBp=1;window.nxWaVisualClearSearch=w;
+  }
+  function ensureBusquedaPremium(){
+    const tools=$('#v-waInbox .nxWaListTools'),input=tools&&$('#nxWaVisualSearch',tools);if(!tools||!input)return;
+    const BP=window.nxBusquedaPremium;
+    if(!BP||typeof BP.montar!=='function'){
+      if(!bpEspera)bpEspera=setInterval(()=>{const B=window.nxBusquedaPremium;if(B&&typeof B.montar==='function'){clearInterval(bpEspera);bpEspera=0;queue();}},250);
+      return;
+    }
+    envolverClear();
+    if(movil())tools.classList.add('nxWaSearchFolded');   // visual-v4 muestra el título y la campana solo con esta clase
+    if(BP.instancia(input)){tools.classList.add('nxWaBpLista');return;}   // ya montado en esta cabecera
+    const toggle=$('.nxWaSearchToggle',tools);
+    if(toggle)toggle.onclick=null;   // el plegado propio de visual-v4 lo sustituye el componente (abrir/cerrar/foco)
+    tools.classList.add('nxWaBpLista');
+    const ins=BP.montar(input,{boton:toggle||undefined,contenedor:tools,flotar:true});
+    if(!ins){tools.classList.remove('nxWaBpLista');return;}
+    input.addEventListener('input',()=>{if(movil())tools.classList.add('nxWaSearchFolded');});   // visual-v4 la quita al escribir
+  }
+
   /* ── Selector de emojis ── */
   const CATS=[
     ['recientes','ti-clock','Recientes',''],
@@ -388,7 +435,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
   window.nxWaEmojiCerrar=cerrarEmoji;
 
   let queued=false;
-  function enhance(){queued=false;css();ensureSoundToggle();}
+  function enhance(){queued=false;css();ensureSoundToggle();ensureBusquedaPremium();}
   function queue(){if(queued)return;queued=true;requestAnimationFrame(enhance);}
   function start(){
     css();queue();

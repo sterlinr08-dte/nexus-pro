@@ -10,7 +10,10 @@
 //  · aviso «escribiendo…» (Edge whatsapp-inbox-leer) UNA sola vez al teclear varias veces seguidas;
 //  · contador «(N)» en el título con la pestaña sin foco; sonido/vibración solo para hilos no silenciados;
 //  · polling de respaldo cuando el canal Realtime no queda SUBSCRIBED, y se apaga al recuperarlo;
-//  · búsqueda de chats por contenido de mensajes (whatsapp_hilo_mensajes cuerpo=ilike);
+//  · buscador de la lista sobre la Búsqueda premium (58.94): círculo ≤ 52 px con UNA lupa a la derecha de la campana; al
+//    tocarlo el campo #nxWaVisualSearch queda enfocado y la píldora pasa del 60 % del ancho de la cabecera en < 600 ms;
+//    escribir filtra las filas y con 3+ letras consulta whatsapp_hilo_mensajes (cuerpo=ilike); ✕ limpia y luego cierra;
+//    Esc cierra; toque fuera cierra conservando el texto (punto de «búsqueda activa»); nxWaVisualClearSearch() limpia;
 //  · cabecera de la lista en 1280 sin montarse; texto natural (sin mayúsculas forzadas); sin superficies claras;
 //  · hilos sin las columnas nuevas (fijado_at/archivado_at/silenciado_hasta/ultimo_mensaje_*): sin errores y sin opciones huérfanas.
 // Uso: PORT=8963 node scripts/qa-crm-mock-server.js &   PORT=8963 QA_OUT=/ruta node scripts/qa-whatsapp-lista.mjs
@@ -244,19 +247,62 @@ async function suite(browser, movil) {
   const g2 = log.hilosGet; await sleep(2200);
   ok(rt2.estado === 'SUBSCRIBED' && !rt2.polling && log.hilosGet - g2 === 0, `${tag} G: al suscribir el canal se detiene el polling`, rt2);
 
-  // H. búsqueda por contenido de mensajes
-  if (movil) { await page.click('#v-waInbox .nxWaSearchToggle'); await sleep(250); }
-  await page.fill('#nxWaVisualSearch', 'secreto'); await sleep(900);
+  // H. buscador de la lista = Búsqueda premium (círculo → píldora) + búsqueda por contenido de mensajes
+  await page.evaluate(() => document.querySelector('#v-waInbox .nxWaListCol')?.scrollIntoView({ block: 'start' })); await sleep(300);
+  const filasVis = () => page.evaluate(() => [...document.querySelectorAll('#nxWaLista .nxWaRow')].filter(r => r.style.display !== 'none').length);
+  const medir = () => page.evaluate(() => {
+    const tools = document.querySelector('#v-waInbox .nxWaListTools'), m = tools && tools.querySelector('.nxbp-marco'), inp = document.getElementById('nxWaVisualSearch'); if (!tools || !m || !inp) return null;
+    const vis = el => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'; };
+    const mr = m.getBoundingClientRect(), tr = tools.getBoundingClientRect(), cap = tools.querySelector('.nxWaListCaption'), bell = tools.querySelector('.nxWaSoundToggle'), lupa = m.querySelector('.nxBusca-lupa'), caja = m.querySelector('.nxBusca'), c = cap.getBoundingClientRect(), b = bell.getBoundingClientRect();
+    return { w: Math.round(mr.width), h: Math.round(mr.height), toolsW: tools.clientWidth, abierto: m.classList.contains('open'), conTexto: m.classList.contains('nxbp-con-texto'), dentro: m.contains(inp), toggleEnMarco: !!m.querySelector('.nxWaSearchToggle.nxBusca-lupa'), lupasVisibles: [...tools.querySelectorAll('i.ti-search')].filter(i => vis(i.closest('button,label') || i)).length, lupasDom: tools.querySelectorAll('.nxBusca-lupa').length, foco: document.activeElement === inp, focoLupa: document.activeElement === lupa, expanded: lupa?.getAttribute('aria-expanded'), bg: getComputedStyle(caja).backgroundColor, borde: getComputedStyle(caja).borderTopColor, lupaColor: getComputedStyle(lupa).color, captionVis: vis(cap), bellVis: vis(bell), captionDesv: cap.classList.contains('nxbp-desvanecido'), solapa: !(c.right <= mr.left || mr.right <= c.left || c.bottom <= mr.top || mr.bottom <= c.top), derechaDeCampana: mr.left >= b.right - 1, enCabecera: mr.top >= tr.top - 1 && mr.bottom <= tr.bottom + 1 && mr.left >= tr.left - 1 && mr.right <= tr.right + 1, labelOculto: getComputedStyle(tools.querySelector('.nxWaSearch')).display === 'none', valor: inp.value, bCabe: cap.querySelector('b').scrollWidth <= cap.querySelector('b').clientWidth + 1 };
+  });
+  const esperar = async (cond, lim = 600) => { const t0 = Date.now(); let m; do { m = await medir(); if (m && cond(m)) return { ms: Date.now() - t0, m }; await sleep(30); } while (Date.now() - t0 < lim); return { ms: Date.now() - t0, m }; };
+  let m0 = await medir();
+  ok(m0 && !m0.abierto && m0.w <= 52 && m0.w >= 40 && m0.h <= 52 && m0.dentro && m0.toggleEnMarco && m0.expanded === 'false', `${tag} H: cerrado = círculo ≤ 52 px (${m0?.w}×${m0?.h}) con la lupa de visual-v4 dentro del marco premium`, m0);
+  ok(m0 && m0.lupasVisibles === 1 && m0.lupasDom === 1 && m0.labelOculto, `${tag} H: una sola lupa en la cabecera (el campo viejo .nxWaSearch queda oculto)`, m0);
+  ok(m0 && m0.captionVis && m0.bellVis && !m0.solapa && m0.derechaDeCampana && m0.enCabecera && m0.bCabe, `${tag} H: círculo a la derecha de la campana, dentro de la cabecera, sin montarse sobre «Conversaciones»`, m0);
+  ok(m0 && /rgba?\(14, 28, 52/.test(m0.bg) && /rgb\(37, 99, 235\)/.test(m0.borde) && /rgb\(37, 99, 235\)/.test(m0.lupaColor), `${tag} H: paleta azul del Buzón (cristal rgba(14,28,52,.82), acento #2563EB) sin heredar el fondo/borde de .nxWaSearch`, m0);
+  await page.screenshot({ path: OUT + `inbox-${tag}-cerrado.png` });
+  const nF0 = await filasVis();
+  await page.click('#v-waInbox .nxWaListTools .nxBusca-lupa', { noWaitAfter: true });
+  let ab = await esperar(m => m.abierto && m.w > 0.6 * m.toolsW);
+  ok(ab.m && ab.m.abierto && ab.m.w > 0.6 * ab.m.toolsW && ab.ms < 600, `${tag} H: al tocar, la píldora pasa del 60 % del ancho de la cabecera en ${ab.ms} ms (${ab.m?.w}/${ab.m?.toolsW})`, ab.m);
+  ok(ab.m && ab.m.foco && ab.m.expanded === 'true' && ab.m.captionDesv && ab.m.enCabecera, `${tag} H: el campo queda enfocado, aria-expanded=true y el título se desvanece bajo la píldora`, ab.m);
+  await sleep(500); await page.screenshot({ path: OUT + `inbox-${tag}-abierto.png` });
+  await page.keyboard.type('secreto'); await sleep(900);
   const bus = await page.evaluate(() => ({ vis: [...document.querySelectorAll('#nxWaLista .nxWaRow')].filter(r => r.style.display !== 'none').map(r => r.dataset.hilo), hit: [...document.querySelectorAll('#nxWaLista .nxWaRow.nxWaHitMsg')].map(r => r.dataset.hilo), marca: (r => r && getComputedStyle(r.querySelector('.nxWaWho b'), ':after').content)(document.querySelector('#nxWaLista .nxWaRow.nxWaHitMsg')) }));
-  ok(bus.vis.length === 1 && bus.vis[0] === ID.miguel && bus.hit[0] === ID.miguel && /en mensajes/.test(bus.marca), `${tag} H: «secreto» encuentra el chat por contenido y lo marca «en mensajes»`, bus);
+  ok(nF0 > 1 && bus.vis.length === 1 && bus.vis[0] === ID.miguel && bus.hit[0] === ID.miguel && /en mensajes/.test(bus.marca), `${tag} H: escribir filtra (${nF0} → ${bus.vis.length}) y «secreto» encuentra el chat por contenido, marcado «en mensajes»`, bus);
   ok(log.msgs.some(u => /cuerpo=ilike\.\*secreto\*/.test(u) && /select=hilo_id/.test(u)), `${tag} H: consulta whatsapp_hilo_mensajes?cuerpo=ilike.*secreto*&select=hilo_id`, log.msgs.slice(-3));
-  await page.fill('#nxWaVisualSearch', ''); await sleep(300);
-  if (movil) { await page.click('#v-waInbox .nxWaSearchClear').catch(() => {}); await sleep(200); }
+  const m1 = await medir();
+  ok(m1 && m1.abierto && m1.captionVis && m1.bellVis, `${tag} H: al escribir, la cabecera no pierde el título ni la campana (plegado de visual-v4 neutralizado)`, m1);
+  await page.click('#v-waInbox .nxWaListTools .nxBusca-x', { noWaitAfter: true }); await sleep(250);
+  const m2 = await medir(), nF2 = await filasVis();
+  ok(m2 && m2.valor === '' && m2.abierto && m2.foco && nF2 === nF0, `${tag} H: ✕ limpia el texto (filas ${nF2}/${nF0}) y sigue abierta y enfocada`, m2);
+  await page.click('#v-waInbox .nxWaListTools .nxBusca-x', { noWaitAfter: true });
+  let ce = await esperar(m => !m.abierto && m.w <= 52, 900);
+  ok(ce.m && !ce.m.abierto && ce.m.w <= 52 && ce.m.captionVis && ce.m.bellVis, `${tag} H: ✕ con el campo vacío cierra (círculo de ${ce.m?.w} px en ${ce.ms} ms)`, ce.m);
+  await page.click('#v-waInbox .nxWaListTools .nxBusca-lupa', { noWaitAfter: true });
+  ab = await esperar(m => m.abierto && m.w > 0.6 * m.toolsW);
+  await page.keyboard.press('Escape');
+  ce = await esperar(m => !m.abierto && m.w <= 52, 900);
+  ok(ab.m?.abierto && ce.m && !ce.m.abierto && ce.m.w <= 52 && ce.m.focoLupa, `${tag} H: Esc cierra y devuelve el foco a la lupa`, ce.m);
+  await page.click('#v-waInbox .nxWaListTools .nxBusca-lupa', { noWaitAfter: true });
+  ab = await esperar(m => m.abierto && m.w > 0.6 * m.toolsW);
+  await page.keyboard.type('luisa'); await sleep(700);
+  const nLuisa = await filasVis();
+  await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));   // toque fuera
+  ce = await esperar(m => !m.abierto && m.w <= 52, 900);
+  ok(ab.m?.abierto && nLuisa === 1 && ce.m && !ce.m.abierto && ce.m.conTexto && ce.m.valor === 'luisa' && (await filasVis()) === 1, `${tag} H: toque fuera cierra conservando «luisa» (1 fila) con el punto de búsqueda activa`, ce.m);
+  await page.screenshot({ path: OUT + `inbox-${tag}-filtro-activo.png` });
+  await page.evaluate(() => nxWaVisualClearSearch()); await sleep(200);
+  const m3 = await medir();
+  ok(m3 && m3.valor === '' && !m3.conTexto && !m3.abierto && (await filasVis()) === nF0, `${tag} H: nxWaVisualClearSearch() sigue limpiando (filas ${nF0}) y apaga el punto`, m3);
+  ok(m3 && m3.lupasVisibles === 1 && m3.lupasDom === 1, `${tag} H: sigue habiendo una sola lupa tras abrir/cerrar varias veces`, m3);
 
-  // I. cabecera de la lista (1280)
+  // I. cabecera de la lista (1280): título en su sitio, sin lupa duplicada ni barra de búsqueda de segunda fila
   if (!movil) {
-    const cab2 = await page.evaluate(() => { const c = document.querySelector('#v-waInbox .nxWaListCaption').getBoundingClientRect(), s = document.querySelector('#v-waInbox .nxWaSearch input').getBoundingClientRect(), t = document.querySelector('#v-waInbox .nxWaSearchToggle'); const b = document.querySelector('#v-waInbox .nxWaListCaption b'); return { solapa: !(c.right <= s.left || s.right <= c.left || c.bottom <= s.top || s.bottom <= c.top), toggle: t && getComputedStyle(t).display, bCabe: b.scrollWidth <= b.clientWidth + 1, inputW: s.width }; });
-    ok(!cab2.solapa && cab2.toggle === 'none' && cab2.bCabe && cab2.inputW > 200, `1280 I: «Conversaciones» y el buscador no se montan; sin lupa duplicada`, cab2);
+    const cab2 = await medir();
+    ok(cab2 && !cab2.solapa && cab2.bCabe && cab2.labelOculto && cab2.lupasVisibles === 1 && cab2.enCabecera, `1280 I: «Conversaciones» y el círculo del buscador no se montan; sin lupa duplicada; sin barra vieja de segunda fila`, cab2);
   }
 
   // C. deslizar en móvil: archivar; toque abre; desplazamiento vertical no archiva

@@ -182,10 +182,11 @@ async function probarModulo(page, w, nom, js, campo, filas, oculto, texto, titul
       if (SOLO && SOLO !== nom) continue;
       try { await probarModulo(page, w, nom, js, campo, filas, oculto, texto, titulo, errs); } catch (e) { ok(false, `${nom} ${w}: excepción en la prueba`, String(e.message || e)); }
     }
-    // El Buzón de WhatsApp no se toca: ningún marco dentro de #v-waInbox
+    // El Buzón de WhatsApp queda fuera del automontaje: el único marco dentro de #v-waInbox es el que monta a mano
+    // parches-whatsapp-lista-original.js sobre #nxWaVisualSearch (QA propia en scripts/qa-whatsapp-lista.mjs)
     await ir(page, "nav('waInbox',null)"); await sleep(800);
-    const wa = await page.evaluate(() => ({ marcos: document.querySelectorAll('#v-waInbox .nxbp-marco').length, lupas: document.querySelectorAll('#v-waInbox .nxBusca-c').length }));
-    ok(wa.marcos === 0, `${w}: el Buzón de WhatsApp queda intacto (0 marcos premium dentro de #v-waInbox)`, wa);
+    const wa = await page.evaluate(() => { const inp = document.getElementById('nxWaVisualSearch'); return { marcos: document.querySelectorAll('#v-waInbox .nxbp-marco').length, lupas: document.querySelectorAll('#v-waInbox .nxBusca-c').length, propio: !!(inp && inp.closest('.nxbp-marco')), campo: !!inp }; });
+    ok(wa.marcos === (wa.campo ? 1 : 0) && wa.lupas === wa.marcos && (!wa.campo || wa.propio), `${w}: en el Buzón de WhatsApp solo se monta el buscador de la lista (${wa.marcos} marco, sin automontaje)`, wa);
     ok(errs.length === 0, `${w}: sin errores de consola`, errs.slice(0, 5));
     // Secuencia de 6 fotogramas de la apertura en Clientes (resorte 6× más lento para verlo cuadro a cuadro)
     if (w === 390 && !SOLO) {
