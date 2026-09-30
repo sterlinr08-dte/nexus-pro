@@ -4577,6 +4577,8 @@ html.tema-glass-oscuro{
   --nx-mc-blur:blur(28px) saturate(140%);
 }
 html.tema-glass-oscuro.nx-mc-open{--nx-mc-w:288px}
+/* 58.98 — píldora del ítem activo (pedido del dueño: «redondearlo»): misma geometría para activo, hover y pressed */
+html.tema-glass-oscuro{--nx-mc-pill:linear-gradient(180deg,#3B82F6 0%,#2563EB 100%);--nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -8px rgba(37,99,235,.9);--nx-mc-r:14px}
 /* en los demás temas las piezas propias no existen visualmente (el JS las crea una sola vez; el tema puede cambiar en vivo) */
 html:not(.tema-glass-oscuro) .nx-mc-tg,html:not(.tema-glass-oscuro) .nx-mc-search,html:not(.tema-glass-oscuro) .nx-mc-out{display:none!important}
 /* ── piezas que pone parches-menu-cristal.js (chevron del canto, buscador, salida) ── */
@@ -4636,12 +4638,16 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
     transition:padding var(--nx-mc-dur) var(--nx-mc-ease)}
   html.tema-glass-oscuro body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
   html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ss{text-align:left;padding-left:22px!important}
-  /* ítems: fila de borde a borde (48 px), ícono en la columna de 76 px; la etiqueta se revela al expandir */
+  /* ítems (58.98): píldora redondeada dentro del panel. Riel: cuadro 48×48 centrado (margen 14); expandido: 44 px de alto con
+     10 px a cada lado (paso de fila constante: 52 px, el ícono no se mueve: 14+5+19 = 10+9+19 = 38). Activo, hover y pressed
+     comparten radio y márgenes. El alto y el padding cambian al instante (el indicador de resorte los mide al toque); solo el
+     margen lateral y el ancho acompañan al panel con la misma curva. */
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
-    width:100%!important;box-sizing:border-box;height:48px!important;min-height:48px!important;margin:2px 0!important;padding:0 16px 0 19px!important;gap:14px!important;
-    justify-content:flex-start!important;border-radius:0!important;transition:background .15s ease}
+    width:auto!important;box-sizing:border-box;height:48px!important;min-height:48px!important;margin:2px 14px!important;padding:0 12px 0 5px!important;gap:14px!important;
+    justify-content:flex-start!important;border:0!important;border-radius:var(--nx-mc-r)!important;transition:background .15s ease,margin var(--nx-mc-dur) var(--nx-mc-ease)} /* border:0 — parches-sidebar-curva pone un borde transparente de 1 px que corría ícono y contador 1 px */
+  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){height:44px!important;min-height:44px!important;margin:4px 10px!important;padding:0 12px 0 9px!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):active{background:rgba(255,255,255,.1)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline-offset:-3px!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline-offset:2px!important;border-radius:var(--nx-mc-r)}
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{
     display:block!important;flex:0 0 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;
     font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;line-height:1;color:#E2E8F0!important;
@@ -4654,11 +4660,15 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i):not(.ni-l):not(.ni-b){display:none!important}
   /* contadores existentes (Clientes, Pólizas, Solicitudes): visibles al expandir solo si la pantalla no los tiene apagados */
   html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b:not([style*="display: none"]):not([style*="display:none"]){
-    display:inline-flex!important;align-items:center;justify-content:center;margin-left:auto!important;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:10px;
+    display:inline-flex!important;align-items:center;justify-content:center;margin:0 0 0 auto!important;min-width:20px;height:20px;padding:0 6px!important;box-sizing:border-box;border-radius:10px;
     background:#EF4444!important;color:#fff!important;font-size:11px!important;font-weight:700;line-height:1;opacity:0;animation:nxMcIn .26s ease .16s forwards}
   @keyframes nxMcIn{to{opacity:1}}
-  /* activo: barra sólida de acento de borde a borde (el indicador de resorte existente, ahora sin radio ni margen) */
-  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:0!important;right:0!important;width:auto!important;margin:0!important;border-radius:0!important;background:var(--tgo-blue)!important;box-shadow:none!important}
+  /* activo (58.98): píldora azul con degradado sutil, brillo interior arriba y halo; es el indicador de resorte existente (se mueve
+     entre ítems con su física) y sus lados siguen al panel con la misma curva que el ancho. Sin resorte activo, .ni.on lleva lo mismo. */
+  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:14px!important;right:14px!important;width:auto!important;margin:0!important;border-radius:var(--nx-mc-r)!important;
+    background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important;transition:left var(--nx-mc-dur) var(--nx-mc-ease),right var(--nx-mc-dur) var(--nx-mc-ease),opacity .15s}
+  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .spring-ind{left:10px!important;right:10px!important}
+  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
   /* tooltips del riel: no cuando las etiquetas están a la vista */
   html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .sb-u::after{display:none!important}
@@ -4716,15 +4726,16 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
   html.tema-glass-oscuro body nav#sbEl.sb .ss{height:auto!important;margin:6px 0 2px!important;padding:14px 0 6px 22px!important;position:relative;overflow:visible!important;text-align:left;
     color:#BCC7D6!important;background:none!important;font-family:inherit!important;font-size:11px!important;font-weight:600;letter-spacing:.12em!important;text-transform:uppercase;line-height:1;white-space:nowrap}
   html.tema-glass-oscuro body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
-  /* filas: 48 px, ícono (círculo de 36) a la izquierda, etiqueta normal de 14 px; activo = barra azul de borde a borde */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni{position:relative;height:48px!important;min-height:48px!important;margin:1px 0!important;padding:0 16px 0 70px!important;gap:8px!important;
-    border-radius:0!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;transform:none!important;align-items:center}
+  /* filas: 48 px, ícono (círculo de 36) a la izquierda, etiqueta normal de 14 px; activo (58.98) = píldora azul con 12 px a cada lado,
+     radio 14 (el ícono sigue en x=18 y el texto en x=70: 12+6 y 12+58) */
+  html.tema-glass-oscuro body nav#sbEl.sb .ni{position:relative;height:48px!important;min-height:48px!important;margin:1px 12px!important;padding:0 12px 0 58px!important;gap:8px!important;
+    border-radius:var(--nx-mc-r)!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;transform:none!important;align-items:center}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni{height:44px!important;min-height:44px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ni-i{position:absolute!important;left:18px!important;top:50%!important;width:36px!important;height:36px!important;min-width:36px!important;margin:-18px 0 0!important;
+  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ni-i{position:absolute!important;left:6px!important;top:50%!important;width:36px!important;height:36px!important;min-width:36px!important;margin:-18px 0 0!important;
     font-size:20px!important;background:transparent!important;border-radius:50%!important;box-shadow:none!important;color:#E2E8F0!important;display:flex!important;align-items:center;justify-content:center}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni>i.ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni>i.ni-i{font-size:18px!important;left:10px!important}
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni>i.ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni>i.ni-i{font-size:18px!important;left:0!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni:active{background:rgba(255,255,255,.08)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on{background:var(--tgo-blue)!important;background-image:none!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni.on,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on{background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on>i.ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:transparent!important;color:#fff!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-l,html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on .ni-l{
     font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;line-height:1.2!important;color:#E2E8F0!important;
@@ -8628,7 +8639,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.97';
+const APP_VERSION='58.98';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

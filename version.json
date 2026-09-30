@@ -1,7 +1,14 @@
 {
-  "version": "58.97",
+  "version": "58.98",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.98",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Menú lateral (tema oscuro): el módulo activo ya no es una barra de borde a borde sino una píldora azul redondeada dentro del panel, con brillo y halo suaves; en el riel de solo íconos es un cuadro redondeado. Pasar el mouse o tocar los demás módulos usa la misma forma."
+      ]
+    },
     {
       "version": "58.97",
       "fecha": "2026-09-30",

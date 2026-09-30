@@ -406,11 +406,11 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       const on = sb.querySelector('.spring-ind'), onR = on.getBoundingClientRect();
       const av = sb.querySelector('.sb-av').getBoundingClientRect();
       return { w: Math.round(b.width), left: Math.round(b.left), top: Math.round(b.top), bottom: Math.round(innerHeight - b.bottom), radius: getComputedStyle(sb, '::before').borderRadius, n: items.length, conNombre: conNombre.length, sinAria: sinAria.length,
-        cuadros: items.every(n => { const r = n.getBoundingClientRect(); return Math.round(r.width) === 76 && Math.round(r.height) === 48; }), // 30-sep: filas de borde a borde (76×48)
+        cuadros: items.every(n => { const r = n.getBoundingClientRect(); return Math.round(r.width) === 48 && Math.round(r.height) === 48; }), // 58.98: cuadros redondeados de 48×48 (píldora)
         activo: { w: Math.round(onR.width), h: Math.round(onR.height), bg: getComputedStyle(on).backgroundColor }, avatarAbajo: Math.round(b.bottom - av.bottom) < 40 };
     });
-    ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '26px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} filas de 76×48 sin texto visible`, riel);
-    ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 76 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = barra azul de borde a borde 76×48, avatar al pie`, riel);
+    ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '26px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} cuadros de 48×48 sin texto visible`, riel);
+    ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 48 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = cuadro azul redondeado 48×48, avatar al pie`, riel);
     // Gráfica «Cobros del ciclo» acumulada (58.91): último punto = cobrado en el ciclo; etiqueta del día al pasar el mouse.
     const gr = await page.evaluate(() => { const ch = _nxIG.ch, d = (t) => String(t || '').replace(/[^\d]/g, ''); return { ultimo: ch && ch.acum[ch.acum.length - 1], monotona: ch && ch.acum.every((v, i, a) => !i || v >= a[i - 1]), suma: ch && ch.serie.slice(0, ch.acum.length).reduce((s, v) => s + v, 0), ciclo: d(document.getElementById('nxIGcy1').textContent), tip: document.getElementById('nxIGchTip').textContent, sub: document.getElementById('nxIGchs').textContent }; });
     ok(gr.ultimo > 0 && String(Math.round(gr.ultimo)) === gr.ciclo && gr.monotona && gr.ultimo === gr.suma && /Acumulado/.test(gr.sub), `1280 gráfica acumulada: último punto ${gr.ultimo} = «cobrado en el ciclo» ${gr.ciclo}, sin bajadas`, gr);
