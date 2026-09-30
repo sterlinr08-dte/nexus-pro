@@ -1,7 +1,16 @@
 {
-  "version": "58.95",
+  "version": "58.96",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.96",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Menú lateral de cristal (tema oscuro): panel translúcido con desenfoque, borde de luz, líneas divisorias que se desvanecen, rótulos de sección y el módulo activo como barra azul de borde a borde. El botón redondo del canto expande el riel de solo íconos a menú con nombres y lo contrae; el sistema recuerda cómo lo dejaste.",
+        "Arriba del menú: escudo NEXUS PRO y píldora BUSCAR… que abre la búsqueda global; abajo, tu tarjeta de usuario con salida.",
+        "iPhone: el menú ☰ usa el mismo cristal y líneas, entra deslizando desde la izquierda y se cierra tocando fuera o arrastrando."
+      ]
+    },
     {
       "version": "58.95",
       "fecha": "2026-09-30",
