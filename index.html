@@ -4226,7 +4226,11 @@ html.tema-glass-oscuro{--ico-b:147,197,253;--ico-g:74,222,128;--ico-a:251,191,36
 /* base de la hoja (.ti: esfera morado→cian con brillo): solo se cambian las propiedades que esa base pone, para que
    los contextos que ya la anulan (riel, botones, tablas…) sigan igual */
 html.tema-glass-oscuro :where(.ti){background:rgba(var(--ico-b),.16);color:rgb(var(--ico-b));box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-html.tema-glass-oscuro .ti::after,html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b::after{content:none!important;background:none!important}
+html.tema-glass-oscuro .ti::after{content:none!important;background:none!important}
+/* brillo de vidrio de los botones redondos de la barra (el ::after de .tn-b-primary es el texto «Buscar…»: se queda) */
+html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b:not(.tn-b-primary)::after{background:none!important;box-shadow:none!important}
+/* avatares sobre la tarjeta azul destacada de Prospectos: tinte blanco para que se lean sobre el azul */
+html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.2)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
 /* contenedores con color de significado: el tono sale de su clase */
 html.tema-glass-oscuro .ic-tone,
 html.tema-glass-oscuro .sf-kpi .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi,html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxFP-dico i.ti,
@@ -4254,7 +4258,8 @@ html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:n
 html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-avring{box-shadow:inset 0 0 0 1px rgba(var(--ico-a),.35)}
 html.tema-glass-oscuro .nxSf .fc-av:not(#tgo){border-radius:50%!important;background:rgba(var(--ico-r),.18)!important;color:#FECACA!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av:not(#tgo){background:rgba(var(--ico-a),.18)!important;color:#FDE68A!important}
-html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(var(--ico-b),.18)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(59,130,246,.32)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro #nxIG .nxIG-prof .nxIG-av:not(#tgo){background:#2563EB!important;color:#fff!important}
 html.tema-glass-oscuro .cli-row .av{box-shadow:none!important}
 </style>
 </head>
