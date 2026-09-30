@@ -3249,7 +3249,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
     justify-content:center!important;align-items:center!important;border-radius:14px!important;position:relative!important;
     transform:none!important;overflow:visible!important;background-image:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i){display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *) .ni-i{margin:0!important;font-size:19px!important}
+  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *) .ni-i{margin:0!important;font-size:23px!important;width:38px!important;height:38px!important;min-width:38px!important} /* 30-sep: ícono 19→23 px, círculo 30→38 px (cuadro de 48 px, riel de 76 px sin cambio) */
   html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b{display:none!important} /* conteos: siguen en cada pantalla */
   html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
   /* activo: cuadro azul (el indicador de resorte existente, ahora cuadrado y centrado) */
@@ -3283,8 +3283,9 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height:0"],
   html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height:0"]{opacity:0;visibility:hidden;pointer-events:none}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni{
-    height:40px!important;min-height:40px!important;margin:2px 0!important;padding:0 12px!important;gap:10px!important;justify-content:flex-start!important;
-    border-radius:12px!important;transform:none!important;background-image:none!important}
+    height:44px!important;min-height:44px!important;margin:2px 0!important;padding:0 12px!important;gap:10px!important;justify-content:flex-start!important;
+    border-radius:12px!important;transform:none!important;background-image:none!important} /* 30-sep: 40→44 px de alto por ítem */
+  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni .ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni .ni-i{font-size:17px!important;width:32px!important;height:32px!important;min-width:32px!important} /* 30-sep: ícono 15→17 px */
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni .ni-l,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni .ni-l{display:block!important;opacity:1!important;width:auto!important;max-width:none!important;margin:0!important;
     color:#E2E8F0!important;font-size:14px!important;text-transform:none!important;transform:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none!important;padding:0!important;box-shadow:none!important;border:0!important}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni.on,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni.on{background:var(--tgo-blue)!important}
@@ -3304,6 +3305,8 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
     background-image:linear-gradient(180deg,#13233D 0%,#0B1628 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
+  /* 30-sep: íconos del cajón ☰ un poco más presentes: 15→18 px en un círculo de 30→36 px, centrado donde estaba (parches-sidebar-curva los pone en absoluto: left 15/-15 → 12/-18); la fila sigue en 44 px */
+  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ni-i{width:36px!important;height:36px!important;min-width:36px!important;font-size:18px!important;left:12px!important;margin-top:-18px!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l{background:rgba(37,99,235,.22)!important;box-shadow:none!important;border-color:transparent!important}
 }
 
@@ -3508,7 +3511,7 @@ html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl{background:var(--tgo-blue-d)!impo
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:#1E40AF!important;color:#fff!important}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-stack .nxIG-av{border-color:var(--tgo-blue-d)}
 /* rótulos pequeños que una regla global de <small> dejaba en gris oscuro sobre el cristal */
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card small{color:#94A3B8!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it p{color:#A8B5C7!important} /* 30-sep: #94A3B8→#A8B5C7 (4.45→5.5:1 sobre las tarjetas de la agenda) */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#A39B96}
 html.tema-glass-oscuro.nx-ig #nxIG #nxIGav{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
 
@@ -3769,7 +3772,7 @@ html.tema-glass-oscuro #cnt .nxC20Tabs{background:rgba(255,255,255,.06)!importan
 html.tema-glass-oscuro #cnt .nxC20Tab.on{background:var(--tgo-blue)!important;color:#fff!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt .nxC20Title b:not(.tgo-x),html.tema-glass-oscuro #cnt .nxC20Kpi .v,html.tema-glass-oscuro #cnt .nxC20Agt:not(.tgo-x):not(tgo-x){color:#F1F5F9!important}
 html.tema-glass-oscuro #cnt .nxC20Title span:not(.tgo-x),html.tema-glass-oscuro #cnt .nxC20Status:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro #cnt .nxC20Kpi .l,html.tema-glass-oscuro #cnt .nxC20Kpi .s,html.tema-glass-oscuro #cnt .nxC20Cargo:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro #cnt .nxC20Empty:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro #cnt .nxC20Load:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro #cnt .nxC20Note:not(.tgo-x):not(tgo-x){color:#CBD5E1!important}
-html.tema-glass-oscuro #cnt .nxC20Table th{background:rgba(255,255,255,.05)!important;color:#94A3B8!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxC20Table th{background:rgba(255,255,255,.05)!important;color:#A8B5C7!important;border-color:var(--tgo-edge)!important} /* 30-sep: #94A3B8→#A8B5C7 (4.3→5.3:1) */
 html.tema-glass-oscuro #cnt .nxC20Table td{color:#E2E8F0!important;border-color:rgba(255,255,255,.07)!important}
 html.tema-glass-oscuro #cnt .nxC20Pos{color:#4ADE80!important}html.tema-glass-oscuro #cnt .nxC20Neg{color:#FCA5A5!important}
 html.tema-glass-oscuro #cnt .nxC20Badge{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important;border-color:rgba(147,197,253,.3)!important}
@@ -4284,7 +4287,7 @@ html.tema-glass-oscuro .nxSf .fc-av:not(#tgo){border-radius:50%!important;backgr
 html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av:not(#tgo){background:rgba(245,158,11,.2)!important;color:#FDE68A!important}
 html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(59,130,246,.32)!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro #nxIG .nxIG-prof .nxIG-av:not(#tgo){background:#2563EB!important;color:#fff!important}
-html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.2)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
+html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.1)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important} /* 30-sep: .2→.1 (4.45→5.7:1) */
 html.tema-glass-oscuro :is(.cli-row,#cnt) .av{box-shadow:none!important;background-image:none!important}
 html.tema-glass-oscuro nav#sbEl .sb-av{box-shadow:none!important;background-image:none!important}
 /* logo del riel: cuadro azul plano sin brillo */
@@ -4294,6 +4297,45 @@ html.tema-glass-oscuro .nxOptIco.logo{box-shadow:none!important}
 html.tema-glass-oscuro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.28)!important;box-shadow:none!important;color:#93C5FD!important}
 html.tema-glass-oscuro #loginScreen .lshield::before{display:none!important}
 html.tema-glass-oscuro #loginScreen .lshield i{filter:none!important;color:#93C5FD!important}
+</style>
+<!-- Legibilidad del tema Glass oscuro (30-sep-2026): correcciones de contraste medidas con scripts/qa-legibilidad.mjs
+     (fondo REAL muestreado detrás de cada texto, WCAG ≥4.5:1 en texto normal). Solo html.tema-glass-oscuro; nada del Buzón
+     (#v-waInbox). Para deshacer: borrar este <style>. Ver docs/bitacora/2026-09-30-*-claude.md. -->
+<style id="nxLegibilidad">
+/* Solicitudes: nota «Tip: al cobrar con Depósito/Transferencia…» — era tinta azul marino sobre una nota clara semitransparente
+   (1.2–1.5:1) y, por el display:flex de la nota, el texto se partía en tres columnas alrededor del <strong> */
+html.tema-glass-oscuro #cnt .nxSL-recibir-note{display:block!important;background:rgba(59,130,246,.14)!important;border-color:rgba(147,197,253,.30)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro #cnt .nxSL-recibir-note strong{color:#fff!important}
+html.tema-glass-oscuro #cnt .nxSL-recibir-note i{float:left;margin:1px 8px 0 0;color:#93C5FD!important}
+/* Registrar pago: subtítulo de la cabecera azul (opacidad .85 → 4.25:1) */
+html.tema-glass-oscuro #mAbono .aboSub{opacity:1!important;color:#F8FAFC!important}
+/* Chips con iniciales (agente, responsable): la paleta por hash tiene tonos (teal #0d9488) a 3.7:1 con la letra blanca →
+   velo oscuro del 22 % sobre el color del chip (identidad intacta, ≥5:1). El velo es una sombra interna SIN difuminar (no un
+   degradado ni un brillo): así sigue contando como ícono plano para qa-iphone */
+html.tema-glass-oscuro .nxOptIco:not(.logo){box-shadow:inset 0 0 0 200px rgba(0,0,0,.22)!important}
+/* Roles y permisos: inicial del rol sobre el color del rol (verde #059669 3.8:1, ámbar #f59e0b 2.2:1) → velo del 35 % */
+html.tema-glass-oscuro #rolesContent .role-h>div:first-child{box-shadow:inset 0 0 0 200px rgba(0,0,0,.35)!important}
+/* Changelog: etiquetas de versión sobre degradados rojo/violeta/verde (3–4.1:1) → velo del 30 % */
+html.tema-glass-oscuro #changelogList span[style*="background"]{box-shadow:inset 0 0 0 200px rgba(0,0,0,.30)!important}
+/* Clientes: iniciales azules (#60A5FA) sobre el tinte teal del avatar activo (4.1:1) → azul más claro. El color viene en línea
+   como var(--c1) (y la regla [style*="color:var(--c1)"] del tema lo reafirma): se redefine la variable solo en ese avatar */
+html.tema-glass-oscuro #cnt .cli-row .av{--c1:#93C5FD}
+/* Botones: el brillo superior de vidrio (.btn::before, parches-seguros-base: blanco al 22 % en la mitad de arriba) aclaraba el fondo
+   del rótulo blanco (azul 5.2 → 4.5:1, verde 5.0 → 4.3:1, ámbar/gris 3.8–4.4:1). En el tema oscuro los botones van planos, como los íconos 58.93 */
+html.tema-glass-oscuro .btn::before{display:none!important}
+/* Clientes: rótulos de las columnas de la fila (Vigencia, Prima…) y cabeceras de tabla sobre el cristal más claro (4.3:1) */
+html.tema-glass-oscuro #cnt .cr-field .lb{color:#A8B5C7!important}
+/* Reportes (agente/plan/empresa): tarjetas .sm — la cifra .smv seguía en tinta oscura (#1e293b, 1.0–1.4:1); las que llevan color
+   en línea (var(--c1)/--c3) usan aquí tonos más claros; los rótulos .sml pasan a #B4C0D0 (3.6–3.8 → ≥4.9:1 sobre .nc) */
+html.tema-glass-oscuro #cnt .sm{--c1:#93C5FD;--c2:#C4B5FD;--c3:#FCA5A5;--c4:#FDE68A;--c5:#86EFAC}
+html.tema-glass-oscuro #cnt .sm .smv:not([style*="color"]){color:#F1F5F9!important}
+html.tema-glass-oscuro #cnt .sm .smv[style*="#1d4ed8"]{color:#93C5FD!important}
+html.tema-glass-oscuro #cnt .sm .sml{color:#B4C0D0!important}
+/* Paginador de tablas (Aging): «Mostrando 15 de 16» en #475569 (1.9:1) */
+html.tema-glass-oscuro #cnt .nxPager-info{color:#94A3B8!important}
+/* POS: título del panel «Últimas ventas» en tinta oscura (1.0:1) */
+html.tema-glass-oscuro .nxTPanelH b{color:#F1F5F9!important}
+html.tema-glass-oscuro .nxTPanelH small{color:#A8B5C7!important}
 </style>
 </head>
 <body>
