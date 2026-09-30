@@ -21,7 +21,7 @@ d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-gla
    decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
 window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;
 var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add('tgo-foto');};
-i.src=(window.innerWidth<=768?'assets/fondo-oficina-movil.webp':'assets/fondo-oficina.webp');};
+i.src=(window.innerWidth<=768?'assets/fondo-login-movil.webp':'assets/fondo-login.webp');};
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
@@ -3158,19 +3158,13 @@ html.tema-glass-oscuro{
   --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(37,99,235,.08);
   --gradient-primary:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);
   --sidebar-active:rgba(37,99,235,.9);
-  background:#1B1715!important;
+  background:#08101C!important;
 }
 /* ── escena: degradado cálido inmediato (marcador de posición) + foto real desenfocada que entra con fundido ── */
 html.tema-glass-oscuro::before{
   content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
-  background:
-    radial-gradient(34% 46% at 10% 30%,rgba(255,238,214,.22),transparent 70%),
-    radial-gradient(18% 12% at 58% 24%,rgba(255,210,150,.16),transparent 72%),
-    radial-gradient(18% 12% at 74% 24%,rgba(255,210,150,.14),transparent 72%),
-    radial-gradient(26% 50% at 92% 44%,rgba(120,84,58,.40),transparent 72%),
-    radial-gradient(16% 24% at 36% 40%,rgba(120,150,90,.12),transparent 72%),
-    radial-gradient(120% 50% at 50% 110%,rgba(16,12,10,.80),transparent 72%),
-    linear-gradient(180deg,#5A4C42 0%,#3A312B 46%,#221C18 100%);
+  /* 58.92: escena azul noche como el login (marcador mientras llega la foto) */
+  background:radial-gradient(60% 50% at 50% 40%,rgba(37,99,235,.10),transparent 70%),linear-gradient(180deg,#0B1628 0%,#08101C 60%,#050A14 100%);
 }
 /* La foto viene YA desenfocada en el archivo (desenfoque 18 px + saturación 1.05 horneados con Pillow, 17 KB / 9 KB):
    sin filter en CSS, la capa fija no se vuelve a desenfocar en cada cuadro. Capas propias (will-change) para que el
@@ -3179,14 +3173,15 @@ html.tema-glass-oscuro::before{will-change:transform}
 /* La capa de la foto no tiene imagen hasta html.tgo-foto (así el CSS no la descarga ni la pinta durante la carga) */
 html.tema-glass-oscuro::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
 html.tema-glass-oscuro.tgo-foto::after{opacity:1;will-change:opacity;
-  background:linear-gradient(180deg,rgba(28,22,18,.48) 0%,rgba(22,17,14,.62) 55%,rgba(16,12,10,.74) 100%),url(assets/fondo-oficina.webp) center/cover no-repeat;
+  /* 58.92: mismo fondo que la pantalla de inicio de sesión (login-bg.jpg, nítido) con el mismo velo azul noche */
+  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%),linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%),url(assets/fondo-login.webp) center/cover no-repeat;
 }
-@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:linear-gradient(180deg,rgba(28,22,18,.52) 0%,rgba(22,17,14,.64) 55%,rgba(16,12,10,.76) 100%),url(assets/fondo-oficina-movil.webp) center/cover no-repeat}}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%),linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%),url(assets/fondo-login-movil.webp) center/cover no-repeat}}
 @media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
 html.tema-glass-oscuro #nxBgPhoto{display:none!important}
 html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
 /* splash y cargador: misma escena (sin salto de color al entrar a la app) */
-html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#221C18 radial-gradient(60% 50% at 20% 30%,rgba(255,238,214,.16),transparent 70%)!important}
+html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#08101C radial-gradient(60% 50% at 50% 40%,rgba(37,99,235,.12),transparent 70%)!important}
 html.tema-glass-oscuro .nxs-badge i{color:#60A5FA}
 /* login: tarjeta de cristal oscuro con el acento azul */
 html.tema-glass-oscuro .lbox{background:rgba(38,34,32,.80)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
@@ -4108,12 +4103,14 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdHeroIcon{background:rgba(37,
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdHeroIcon i.ti{color:#93C5FD!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdChevron{color:var(--wa-sub)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaProKpi,.nxWaUhdKpiIcon) i.ti{color:#93C5FD!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKicker"],[class*="Eyebrow"]){background:rgba(37,99,235,.18)!important;background-image:none!important;border:1px solid rgba(147,197,253,.28)!important;color:#93C5FD!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKicker"],[class*="Eyebrow"]) i{color:#93C5FD!important}
 </style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
 (function(){var t=document.documentElement.getAttribute('data-nx-tema');if(t==='premium')document.body.classList.add('tema-premium');else if(t==='glass')document.body.classList.add('tema-glass');
-else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#1B1715');}})();</script>
+else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#08101C');}})();</script>
 
 <!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
      dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
@@ -7562,7 +7559,7 @@ function aplicarTema(tema,guardar){
   // Espejo local del tema: SOLO para pintar el primer cuadro (login, splash, recarga) con el tema correcto antes de
   // que llegue la preferencia de la base, que sigue siendo la fuente de verdad.
   try{localStorage.setItem('nx_tema',tema);}catch(e){}
-  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#1B1715':'#1e3a6e');}catch(e){}
+  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#08101C':'#1e3a6e');}catch(e){}
   // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
   // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
   const iconTop=document.getElementById('iconDarkMode');
