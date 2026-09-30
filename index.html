@@ -25,6 +25,57 @@ i.src=(window.innerWidth<=768?'assets/fondo-oficina-movil.webp':'assets/fondo-of
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
+<script id="nxIconosPlanos">/* 58.92 — (a) íconos: el coloreado por nombre de parches-seguros-base (degradado + brillo con estilo en línea
+   !important, que ninguna hoja de estilos puede cambiar) se apaga allí con su propia bandera y vive aquí con la misma
+   lógica, pero SOLO fuera del tema «Glass oscuro»; en ese tema los íconos son planos (style#nxIphone5892). Al cambiar
+   de tema en vivo se aplica o se quita solo. (b) Título de la barra del celular: el Buzón no pasa por nav() y dejaba el
+   título anterior; y los títulos largos se achican hasta caber (mín. 11 px) en vez de cortarse. */
+window.__NX_ICON_COLOR__=true;
+(function(){
+  var H=document.documentElement;
+  var SKIP='.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,.sm,.nc,.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.sb-av,.nx-fab,.lshield';
+  function oscuro(){return H.classList.contains('tema-glass-oscuro');}
+  function hue(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return h%360;}
+  function colorear(){
+    if(oscuro())return;
+    var l=document.querySelectorAll('i.ti:not([data-nxc])');
+    for(var i=0;i<l.length;i++){var el=l[i];el.setAttribute('data-nxc','1');
+      var m=(el.className||'').match(/ti-[a-z0-9]+(?:-[a-z0-9]+)*/);if(!m)continue;var n=m[0];
+      if(n==='ti-search'||n==='ti-search-off')continue;
+      try{if(getComputedStyle(el).position==='absolute')continue;}catch(e){}
+      try{if(el.closest(SKIP))continue;}catch(e){}
+      var hu=hue(n);el.setAttribute('data-nxc','2');
+      el.style.setProperty('background','linear-gradient(145deg,hsl('+hu+',70%,48%),hsl('+((hu+22)%360)+',75%,60%))','important');
+      el.style.setProperty('box-shadow','0 4px 10px hsla('+hu+',70%,45%,.34), inset 0 2.5px 3px rgba(255,255,255,.72), inset 0 -3px 6px hsla('+hu+',70%,28%,.32)','important');}
+  }
+  function planos(){var l=document.querySelectorAll('i.ti[data-nxc]');for(var i=0;i<l.length;i++){var el=l[i];
+    if(el.getAttribute('data-nxc')==='2'){el.style.removeProperty('background');el.style.removeProperty('box-shadow');}el.removeAttribute('data-nxc');}}
+  var pend=null,mo=null,era=null;
+  function sched(){if(pend||oscuro())return;pend=setTimeout(function(){pend=null;colorear();},200);}
+  function sync(){var o=oscuro();if(o===era)return;era=o;
+    if(o){if(mo){mo.disconnect();mo=null;}planos();}
+    else{if(!mo){try{mo=new MutationObserver(sched);mo.observe(H,{childList:true,subtree:true});}catch(e){}}sched();}}
+  try{new MutationObserver(sync).observe(H,{attributes:true,attributeFilter:['class']});}catch(e){}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();
+})();
+(function(){
+  function movil(){return window.innerWidth<=768;}
+  function ajustar(){var t=document.getElementById('pttl');if(!t)return;t.style.removeProperty('font-size');
+    if(!movil()||!t.offsetWidth)return;var fs=parseFloat(getComputedStyle(t).fontSize)||15;
+    while(fs>11&&(t.scrollWidth>t.clientWidth+1||t.scrollHeight>t.clientHeight+1)){fs-=1;t.style.setProperty('font-size',fs+'px','important');}}
+  function vistaActiva(){try{var v=document.querySelector('.view.on');if(!v||!v.id)return;var k=v.id.slice(2);
+    if(typeof TITLES==='object'&&TITLES[k]){var t=document.getElementById('pttl');if(t&&t.textContent!==TITLES[k])t.textContent=TITLES[k];}}catch(e){}}
+  function iniciar(){var t=document.getElementById('pttl');if(!t)return;
+    try{if(typeof TITLES==='object'&&!TITLES.waInbox)TITLES.waInbox='WHATSAPP';}catch(e){}
+    new MutationObserver(ajustar).observe(t,{childList:true,characterData:true,subtree:true});
+    // Vistas que se abren sin nav() (Buzón): se mira solo la clase de cada .view (no todo el contenido).
+    var mv=new MutationObserver(vistaActiva),vistos=new WeakSet();
+    function engancha(){document.querySelectorAll('.view').forEach(function(v){if(!vistos.has(v)){vistos.add(v);mv.observe(v,{attributes:true,attributeFilter:['class']});}});}
+    engancha();var p=document.getElementById('cnt');if(p)new MutationObserver(engancha).observe(p,{childList:true});
+    var rz=null;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(ajustar,150);},{passive:true});
+    ajustar();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar,{once:true});else iniciar();
+})();</script>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
 <!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
      personales (sendDefaultPii:false). El loader es chico y baja el SDK completo solo cuando ocurre un error. -->
@@ -4042,6 +4093,128 @@ html.tema-glass-oscuro #cnt .nxSL-empty-soft{color:#D6D3D1!important}
 /* Configuración: nombre de las pestañas (la regla base lo fija con !important) */
 html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{color:#D6D3D1!important}
 </style>
+<!-- 58.92 (30-sep-2026) — Ajustes de iPhone + íconos planos del tema oscuro. Ver docs/bitacora/2026-09-30-*-claude.md.
+     Solo diseño: nada de Supabase, pagos, Realtime ni lógica. Las reglas de diseño viven dentro de @media(max-width:768px)
+     (la computadora no cambia); los íconos planos cuelgan de html.tema-glass-oscuro. Para deshacer: borrar este <style>
+     y el <script id="nxIconosPlanos"> del <head>. -->
+<style id="nxIphone5892">
+@media(max-width:768px){
+  /* ── 1. Ventanas, búsqueda, notificaciones y menú del botón flotante: nunca debajo del riel (76 px, z 10700) ──
+     Antes: .overlay.open empezaba en left:76px (parches-contenido-movil-ajuste) y el riel seguía tocable a su lado;
+     la búsqueda (z 700), las notificaciones (z 500, left 50) y la hoja del botón flotante (z 9001, left 12) quedaban
+     DEBAJO del riel. Ahora: el velo de las ventanas cubre el riel (y lo apaga) y el contenido empieza después de él. */
+  html body .overlay.open{left:0!important;padding-left:calc(var(--nx-rail,76px) + 8px + env(safe-area-inset-left,0px))!important}
+  html body .gs-overlay{z-index:10702!important;padding:calc(72px + env(safe-area-inset-top,0px)) 8px 8px calc(var(--nx-rail,76px) + 8px)!important}
+  html body .gs-overlay .gs-box{max-width:none}
+  html body .notif-panel{position:fixed!important;top:calc(70px + env(safe-area-inset-top,0px))!important;left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important;width:auto!important;max-height:calc(100dvh - 86px - env(safe-area-inset-top,0px))!important;z-index:10702!important}
+  html body .nx-menu-backdrop{z-index:10701!important}
+  html body .mobile-more-sheet-clean{z-index:10702!important;left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
+  html body .nx-fab.open{z-index:10703!important}
+  /* Con cualquier ventana u hoja abierta, el riel no responde a toques (el cajón abierto sí). */
+  body:has(.overlay.open,.notif-panel.show,.mbbOv,.nbfOv,.swal-overlay,.cs-overlay.show,.gs-overlay.show,.nx-menu-backdrop.open,.nx-menu-editor,.nxFP-dockSheet.open) #sbEl:not(.mob-open){pointer-events:none}
+  /* ── 2. Préstamos: la barra inferior y su hoja empiezan después del riel ── */
+  html body .nxFP-dock{left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
+  html body .nxFP-dockSheet{left:calc(var(--nx-rail,76px) + 8px)!important;right:8px!important}
+  /* 5 botones en 283–346 px: cada columna mide lo que su rótulo (11 px es el mínimo del sistema) y, si no alcanza,
+     se encogen todas un poco (puntos suspensivos) en vez de montarse unas sobre otras. */
+  html body .nxFP-dock{grid-template-columns:repeat(5,minmax(0,auto))!important;justify-content:space-between}
+  html body .nxFP-dockBtn{min-width:0;padding:0 1px}
+  html body .nxFP-dockBtn>span:not(.nxFP-dockBadge):not(#tgo){letter-spacing:-.2px!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body .cfg-tabs-bar{scroll-padding-inline:8px}
+  /* ── 3. Botón flotante (58 px, 18 px del borde): espacio al final de la página para que lo último suba por encima ── */
+  html body .content{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+  /* ── 4. Textos cortados ── */
+  /* Roles y permisos: una columna por permiso cuando no caben (antes 3 columnas de 66 px → letra por letra). */
+  html body .role-perms{grid-template-columns:repeat(auto-fill,minmax(132px,1fr))!important}
+  html body .role-perm{min-height:40px}
+  html body .role-perm span{overflow-wrap:normal!important;word-break:normal!important}
+  html body .role-h{flex-wrap:wrap;row-gap:8px}
+  /* Botones: el rótulo largo baja a una segunda línea en vez de cortarse (fuera de tablas). */
+  html body .btn:not(td .btn,th .btn){white-space:normal!important;line-height:1.2;text-align:center}
+  html body :where(.btn:not(td .btn,th .btn)){min-width:min-content}
+  /* Bancos: Editar / Desactivar / Eliminar pasan a dos filas cuando no caben en una (antes 3 columnas cortadas). */
+  html body .bcoActions{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))!important}
+  /* Cliente 360: acciones de la ficha en dos líneas si hace falta (antes «NUEVO PRÉSTAMO» cortado). */
+  html body #v-cliente360 .sf-actions .sf-btn:not(#tgo){white-space:normal!important;line-height:1.15;text-align:left;height:auto;min-height:44px}
+  /* Opciones con palomita (Método, Estado, Prioridad…): la palomita va en la esquina, por fuera del texto (antes
+     tapaba la última letra de «Efectivo», «Activo», «Media»). */
+  html body .nxOptGrid .nxOptChip .nxOptOk{top:-6px!important;right:-6px!important;box-shadow:0 0 0 2px var(--nx-ok-ring,rgba(0,0,0,.25))}
+  html body .nxOptGrid .nxOptChip{overflow:visible!important}
+  /* Nuevo cliente → dependientes: el campo de nombre puede encogerse (el selector ya no se sale). */
+  html body #mCli #dN{min-width:0!important}
+  html body #mCli #dR{width:96px!important;flex:0 0 96px;min-width:0}
+  /* Buzón: las 5 cifras en una tira que se desliza (antes 5 columnas de 45 px cortaban los rótulos). Solo desde
+     esta capa; los archivos parches-whatsapp-* no se tocan. */
+  html body #v-waInbox .nxWaProGrid{grid-template-columns:repeat(5,minmax(96px,1fr))!important;overflow-x:auto!important;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  html body #v-waInbox .nxWaProGrid::-webkit-scrollbar{display:none}
+  html body #v-waInbox .nxWaProKpi{scroll-snap-align:start;min-width:0}
+  html body #v-waInbox .nxWaProKpi .l:not(#tgo){white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:10px!important}
+  /* ── 5. Registrar pago: la fila Cancelar / Registrar abono queda pegada abajo (visible con el teclado abierto) ── */
+  html body #mAbono.overlay.open .modal{overflow-x:clip!important;overflow-y:visible!important}
+  html body #mAbono .modal>.fe{position:sticky;bottom:0;z-index:3;background:inherit;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-bottom:0}
+  /* ── 8. Toques de al menos 44 px: botones de la barra y botones de acción ── */
+  html body .tnav .tn-tog,html body .tnav .tn-r>#btnRefrescar,html body .tnav .tn-r>.notif-bell{flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important}
+  html body .btn{min-height:40px}
+  html body #loginScreen .lchk{min-height:44px}
+}
+/* ── 7. Entrada en iPhone de pantalla baja: «Entrar al sistema» sin desplazar ── */
+@media(max-width:768px) and (max-height:760px){
+  html body #loginScreen .lbox{padding-top:20px}
+  html body #loginScreen .llogomark{margin-bottom:14px}
+  html body #loginScreen .lshield{width:64px;height:64px;margin-bottom:12px;font-size:28px}
+  html body #loginScreen .lver{margin-bottom:16px}
+  html body #loginScreen .lfr{margin-bottom:12px}
+  html body #loginScreen .lrow{margin-bottom:12px;gap:4px}
+}
+@media(max-width:768px){
+  /* Campos del login del tema oscuro: mismo gris cálido que los campos del resto del sistema (antes azul marino
+     #0F172A sobre la tarjeta gris cálida) y texto de ejemplo ≥4.5:1 (antes #64748B, 3.7:1). */
+  html.tema-glass-oscuro #loginScreen .lfr input{background:#1F1B19!important;border-color:#8A837E!important;color:#F5F5F4!important}
+  html.tema-glass-oscuro #loginScreen .lfr input:focus{border-color:#60A5FA!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important}
+  html.tema-glass-oscuro #loginScreen .lfr input::placeholder{color:#A8A29E!important;opacity:1}
+  html.tema-glass-oscuro #loginScreen .lfi i{color:#A8A29E!important}
+}
+
+/* ═══ Íconos planos del tema oscuro (58.92, pedido del dueño: «quita esos iconos 3D y ponlos contemporáneos») ═══
+   Antes: esferas de degradado con brillo (::after), sombras internas y reflejos (parches-seguros-base:
+   nx-dashboard-icons-3d-css + el coloreado por nombre con estilo en línea !important, que en este tema ya no se
+   aplica: ver script#nxIconosPlanos). Ahora: ícono de línea Tabler en un círculo con tinte translúcido del color de
+   significado (fondo al 16 %, borde al 28 %, ícono en el tono claro), sin degradados, brillos ni sombras. */
+html.tema-glass-oscuro{--ico-b:147,197,253;--ico-g:74,222,128;--ico-a:251,191,36;--ico-r:252,165,165;--ico-v:196,181,253}
+/* base de la hoja (.ti: esfera morado→cian con brillo): solo se cambian las propiedades que esa base pone, para que
+   los contextos que ya la anulan (riel, botones, tablas…) sigan igual */
+html.tema-glass-oscuro :where(.ti){background:rgba(var(--ico-b),.16);color:rgb(var(--ico-b));box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+html.tema-glass-oscuro .ti::after,html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b::after{content:none!important;background:none!important}
+/* contenedores con color de significado: el tono sale de su clase */
+html.tema-glass-oscuro .ic-tone,
+html.tema-glass-oscuro .sf-kpi .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi,html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxFP-dico i.ti,
+html.tema-glass-oscuro .nxFP-emptyIco i.ti,html.tema-glass-oscuro .nxFP-sideLogo i.ti,html.tema-glass-oscuro .nxFP-qico,
+html.tema-glass-oscuro .nxSL-head-icon,html.tema-glass-oscuro .nxSL-head-icon i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti,html.tema-glass-oscuro .nxSL-recibir-note i.ti,
+html.tema-glass-oscuro .nxCrmHomeBadge i.ti,html.tema-glass-oscuro #v-waInbox .nxWaUhdHeroIcon i.ti,html.tema-glass-oscuro .echip i.ti,
+html.tema-glass-oscuro .overlay :is(.aboShield,.aboAv,.aboFact,.aboLnk,.aboNote,.aboToggleIc,.aboSummaryIc) i.ti,
+html.tema-glass-oscuro #v-dashboard .qa i.qa-ico,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .ct>i.ti{
+  --t:var(--ico-b);background:rgba(var(--t),.16)!important;background-image:none!important;border:1px solid rgba(var(--t),.28)!important;color:rgb(var(--t))!important;
+  box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:none!important;text-shadow:none!important;animation:none!important}
+html.tema-glass-oscuro .sf-kpi.ok .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-circle-check,html.tema-glass-oscuro .aboSummaryIc i.ti,html.tema-glass-oscuro #v-waInbox .nxWaUhdHeroIcon i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti-cash{--t:var(--ico-g)}
+html.tema-glass-oscuro .sf-kpi.warn .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi.warn,html.tema-glass-oscuro .nxFP-hAsi.warn i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-clock-hour-4,html.tema-glass-oscuro .aboNote i.ti{--t:var(--ico-a)}
+html.tema-glass-oscuro .sf-kpi.err .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-alert-triangle{--t:var(--ico-r)}
+html.tema-glass-oscuro .sf-kpi.purple .ic i.ti{--t:var(--ico-v)}
+html.tema-glass-oscuro .overlay .aboShield i.ti{--t:255,255,255}
+html.tema-glass-oscuro .nxSf .fc-ico i.ti{background:none!important;border:0!important}
+html.tema-glass-oscuro .nxSf .fc-ico.wa i.ti{--t:var(--ico-g)}
+/* el ícono dentro de un contenedor ya teñido no lleva su propio círculo */
+html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxSL-head-icon i.ti{background:none!important;border:0!important}
+/* «Atención prioritaria»: triángulo de aviso en ámbar */
+html.tema-glass-oscuro .nxSf .sf-sec-h i.ti-alert-triangle,html.tema-glass-oscuro .nxSf i.ti-alert-triangle:not(.sf-kpi i){--t:var(--ico-a);background:rgba(var(--t),.16)!important;border:1px solid rgba(var(--t),.28)!important;color:rgb(var(--t))!important;box-shadow:none!important}
+/* Avatares con iniciales: círculo plano teñido, letras claras, sin brillo ni sombra */
+html.tema-glass-oscuro .nxSf .fc-avwrap{filter:none!important}
+html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(var(--ico-r),.35)}
+html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-avring{box-shadow:inset 0 0 0 1px rgba(var(--ico-a),.35)}
+html.tema-glass-oscuro .nxSf .fc-av:not(#tgo){border-radius:50%!important;background:rgba(var(--ico-r),.18)!important;color:#FECACA!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av:not(#tgo){background:rgba(var(--ico-a),.18)!important;color:#FDE68A!important}
+html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(var(--ico-b),.18)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .cli-row .av{box-shadow:none!important}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -7912,7 +8085,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.91';
+const APP_VERSION='58.92';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

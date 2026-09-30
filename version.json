@@ -1,7 +1,20 @@
 {
-  "version": "58.91",
+  "version": "58.92",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.92",
+      "fecha": "2026-09-30",
+      "notas": [
+        "iPhone: la búsqueda, las notificaciones, el menú del botón flotante y las ventanas ya no quedan debajo de la barra de íconos de la izquierda; mientras una ventana está abierta esa barra no se puede tocar por error.",
+        "iPhone: al final de cada pantalla queda espacio para que el botón flotante no tape los últimos botones (Configuración, Inicio, reportes).",
+        "iPhone: Roles y permisos se lee bien (antes las palabras se partían letra por letra) y los botones largos ya no se cortan (Buscar actualizaciones, Foto / archivo, Recibo de pago, Bancos, Cliente 360).",
+        "Registrar pago: los botones Cancelar y Registrar abono quedan fijos abajo, visibles aunque el teclado esté abierto.",
+        "El título de arriba dice WHATSAPP en el Buzón y los títulos largos se achican para caber; en el Buzón las 5 cifras se deslizan de lado sin cortar los nombres.",
+        "Entrada al sistema en iPhone: el botón Entrar al sistema se ve sin bajar; campos en gris cálido con texto de ejemplo más legible.",
+        "Tema oscuro: íconos planos y modernos (sin bolas 3D con brillo): ícono de línea en un círculo con tinte suave del color de su significado; avatares con iniciales planos."
+      ]
+    },
     {
       "version": "58.91",
       "fecha": "2026-09-30",
