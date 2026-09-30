@@ -25,6 +25,9 @@
 }
 @media(min-width:761px){.nxWaGlobalFloatMenuHidden{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important}}
 @media(prefers-reduced-motion:reduce){.nxWaGlobalFloatMenuHidden{transition:none!important}}
+/* 58.94: espejo estable en <body> del estado «chat abierto en el celular» (lo pone sync()); así el
+   botón flotante queda oculto aunque la detección por geometría falle en algún cuadro. */
+@media(max-width:760px){body.nxWaChatOpen .nx-fab:not(.open){opacity:0!important;visibility:hidden!important;pointer-events:none!important}}
 `;
     document.head.appendChild(s);
   }
@@ -38,7 +41,11 @@
   function isCandidate(el){
     if(!el||el.closest('#v-waInbox'))return false;
     const icon=el.querySelector?.('.ti-menu-2');
-    if(!icon||!visible(el))return false;
+    // 58.94 · causa del parpadeo: una vez oculto por esta misma capa, visible(el) daba false, el
+    // candidato se perdia, se le quitaba la clase y reaparecia hasta el siguiente ciclo del temporizador
+    // (~700 ms visible / ~700 ms oculto). Un boton que YA lleva nuestra clase sigue siendo candidato.
+    if(!icon)return false;
+    if(!el.classList.contains('nxWaGlobalFloatMenuHidden')&&!visible(el))return false;
     const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
     // El umbral estaba en 52px y el boton real ronda los 50: se quedaba fuera por un
     // par de pixeles, no se reconocia como candidato y por eso nunca se ocultaba al
@@ -56,6 +63,8 @@
   }
 
   function findTarget(){
+    const fab=$('.nx-fab');
+    if(fab&&isCandidate(fab))return fab;
     const nodes=$$('button,a,[role="button"]');
     const xs=nodes.filter(isCandidate);
     if(!xs.length)return null;
@@ -76,6 +85,7 @@
   function sync(){
     queued=false;css();
     const hide=chatOpen();
+    if(document.body)document.body.classList.toggle('nxWaChatOpen',hide);
     let target=lastTarget&&lastTarget.isConnected?lastTarget:null;
     if(!target||!isCandidate(target))target=findTarget();
     if(lastTarget&&lastTarget!==target)lastTarget.classList.remove('nxWaGlobalFloatMenuHidden');

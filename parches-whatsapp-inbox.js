@@ -104,6 +104,18 @@
   // de adivinar CUÁNTO puede tardar cada adjunto: reacciona a CUALQUIER cambio real de altura del
   // contenedor, venga de una imagen, un video, una fuente que carga tarde, etc.
   let nxWaMsgsResizeObs = null;
+  // Conversación abierta (58.94): divisor de no leídos, historial hacia atrás, contador de nuevos,
+  // audio en curso y estado anterior de cada mensaje (para animar solo el paso a leído).
+  const noLeidosAlAbrir = new Map();
+  const antiguosPorHilo = new Map();
+  const historialCompleto = new Set();
+  let cargandoAntiguos = null;
+  let nuevosSinVer = 0;
+  let idsRenderPrevio = new Set();
+  let ultimoCreatedRender = '';
+  const estadoPrevioMsg = new Map();
+  let audioActivo = null;
+  const LIMITE_MENSAJES = 200;
 
   function css() {
     if ($('#nxWaInboxCss')) return;
@@ -300,6 +312,114 @@
   #v-waInbox .nxWaContactsFoot::-webkit-scrollbar{display:none}
   #v-waInbox .nxWaContactsFoot button{flex:0 0 auto}
 }
+/* ── 58.94 · conversación como el WhatsApp original ──
+   El núcleo pinta él mismo hora, estado, separadores de día, divisor de no leídos, colas y agrupación
+   (antes lo hacía parches-whatsapp-visual-v7 emparejando burbujas por índice con un segundo fetch).
+   Colores con variables --wa-* (las define el tema Glass oscuro en index.html) y valor de reserva claro.
+   Los !important de aquí solo vencen reglas !important de capas posteriores (replica-referencia,
+   aura-*, burbuja-fit-final) sobre radios/pie/adjuntos; no se editan esas capas por trabajo paralelo. */
+#v-waInbox .nxWaBubWrap.in{padding-left:8px;box-sizing:border-box}
+#v-waInbox .nxWaBubWrap.out{padding-right:8px;box-sizing:border-box}
+#v-waInbox .nxWaBubWrap.nxWaHasReaction{margin-bottom:12px!important}
+/* mensaje corto: texto y hora en la misma línea; si no caben, la hora baja a la derecha (como WhatsApp) */
+#v-waInbox .nxWaBubWrap .nxWaBub.nxWaRefShort{flex-wrap:wrap;row-gap:1px}
+#v-waInbox .nxWaBubWrap .nxWaBub.nxWaRefShort .nxWaMsgMeta{margin-left:auto!important}
+#v-waInbox .nxWaBubWrap .nxWaBub.in{border-radius:18px!important}
+#v-waInbox .nxWaBubWrap .nxWaBub.out{border-radius:18px!important}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.in{border-bottom-left-radius:4px!important}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.out{border-bottom-right-radius:4px!important}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub{overflow:visible!important}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.in::before,#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.out::before{content:"";position:absolute;bottom:0;width:10px;height:14px;background:inherit;border:0;box-shadow:none;pointer-events:none;z-index:0}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.in::before{left:-8px;clip-path:path('M10 0 C10 7 6 12 0 14 L10 14 Z')}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.out::before{right:-8px;clip-path:path('M0 0 C0 7 4 12 10 14 L0 14 Z')}
+#v-waInbox .nxWaDaySep,#v-waInbox .nxWaUnreadSep{align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:24px;margin:6px auto 2px;padding:0 10px;border-radius:8px;background:var(--wa-sep,rgba(255,255,255,.82));color:var(--wa-sub,#5b6b82);font-size:10px;font-weight:700;line-height:1;white-space:nowrap;box-shadow:0 1px .5px rgba(11,20,26,.13);user-select:none;-webkit-user-select:none;text-transform:none}
+#v-waInbox .nxWaUnreadSep{align-self:stretch;width:auto;margin:8px 0 4px;background:var(--wa-head,#e8f0fb);color:var(--wa-sub,#5b6b82)}
+#v-waInbox .nxWaMsgMeta{display:flex;align-items:center;justify-content:flex-end;gap:3px;min-height:11px;margin-top:3px;font-size:9px;line-height:1;color:#7b8798;font-weight:600;white-space:nowrap;user-select:none;-webkit-user-select:none}
+#v-waInbox .nxWaMsgState{display:inline-flex;align-items:center;gap:3px}
+#v-waInbox .nxWaMsgCheck{font-style:normal;font-size:11px;line-height:1;letter-spacing:-3px;padding-right:3px;font-weight:700}
+#v-waInbox .nxWaBub .nxWaMsgMeta .nxWaMsgState .nxWaMsgCheck{color:inherit!important}
+#v-waInbox .nxWaBub .nxWaMsgMeta .nxWaMsgState.st-leido .nxWaMsgCheck{color:#53bdeb!important}
+#v-waInbox .nxWaMsgState.st-fallido{color:#f87171;font-weight:800}
+#v-waInbox .nxWaMsgState.st-fallido .nxWaMsgCheck{letter-spacing:0;padding:0;width:12px;height:12px;border-radius:50%;background:#dc2626;color:#fff;display:inline-grid;place-items:center;font-size:9px}
+#v-waInbox .nxWaMsgMeta .nxWaRetry{margin-left:4px;border:0;background:rgba(220,38,38,.16);color:#fca5a5;border-radius:999px;padding:3px 8px;font:inherit;font-size:9px;font-weight:800;cursor:pointer}
+#v-waInbox .nxWaStar{font-size:9px;color:inherit;opacity:.85;margin-right:1px}
+@keyframes nxWaCheckRead{0%{transform:scale(1);opacity:.55}45%{transform:scale(1.5)}70%{transform:scale(.94)}100%{transform:scale(1);opacity:1}}
+#v-waInbox .nxWaMsgState.nxWaCheckJustRead .nxWaMsgCheck{display:inline-block;animation:nxWaCheckRead .5s cubic-bezier(.2,1.5,.3,1) both}
+#v-waInbox .nxWaFwd{display:flex;align-items:center;gap:4px;margin:0 0 3px;font-size:9px;font-style:italic;font-weight:600;opacity:.75;white-space:nowrap}
+#v-waInbox .nxWaFwd i{font-size:11px}
+/* cita con miniatura */
+#v-waInbox .nxWaQuote.hasThumb{display:flex;align-items:center;gap:8px;white-space:normal}
+#v-waInbox .nxWaQuote .nxWaQuoteTx{min-width:0;flex:1}
+#v-waInbox .nxWaQuoteThumb{width:42px;height:42px;border-radius:8px;object-fit:cover;flex:none;display:grid;place-items:center;background:rgba(0,0,0,.25);color:inherit;font-size:18px}
+/* adjuntos */
+#v-waInbox .nxWaBub .nxWaCard{display:flex;align-items:center;gap:10px;min-width:200px;max-width:100%;padding:8px 10px;border-radius:12px;background:rgba(0,0,0,.16);color:inherit;text-decoration:none;white-space:normal;cursor:pointer;margin-bottom:4px}
+#cnt #v-waInbox .nxWaMsgs .nxWaBubWrap .nxWaBub.nxWaMediaBub a.nxWaCard,#cnt #v-waInbox .nxWaMsgs .nxWaBubWrap .nxWaBub.nxWaMediaBub a.nxWaCard *{color:inherit!important;font-weight:inherit;text-decoration:none!important}
+#v-waInbox .nxWaCard .nxWaCardIco{width:40px;height:40px;border-radius:12px;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.14);font-size:20px}
+#v-waInbox .nxWaCard .nxWaCardTx{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+#v-waInbox .nxWaCard .nxWaCardTx b{display:block;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaCard .nxWaCardTx span{display:block;font-size:9.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-waInbox .nxWaCard .nxWaCardAct{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);font-size:16px}
+#v-waInbox .nxWaLocCard{flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;min-width:220px}
+#v-waInbox .nxWaLocMap{position:relative;height:96px;background-color:#1e3a5f;background-image:linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(35deg,transparent 46%,rgba(255,255,255,.14) 47%,rgba(255,255,255,.14) 53%,transparent 54%);background-size:18px 18px,18px 18px,100% 100%;display:grid;place-items:center}
+#v-waInbox .nxWaLocMap i{font-size:34px;color:#f87171;filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+#v-waInbox .nxWaLocCard .nxWaCardTx{padding:8px 10px}
+#v-waInbox .nxWaLocCard .nxWaCardTx em{font-style:normal;font-size:9.5px;font-weight:700;opacity:.9;margin-top:2px}
+#v-waInbox .nxWaContactCard{flex-wrap:wrap}
+#v-waInbox .nxWaContactCard .nxWaCardIco{border-radius:50%;font-size:12px;font-weight:800;letter-spacing:.02em}
+#v-waInbox .nxWaContactBtn{flex:1 1 100%;margin-top:2px;border:0;border-radius:10px;padding:8px;background:rgba(255,255,255,.14);color:inherit;font:inherit;font-size:10.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+#v-waInbox .nxWaVideoWrap{position:relative;display:block;max-width:100%}
+#v-waInbox .nxWaVideoWrap video{max-height:240px;border-radius:12px;background:#000}
+#v-waInbox .nxWaVideoExpand{position:absolute;top:6px;right:6px;width:30px;height:30px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:14px}
+#v-waInbox .nxWaBub img.nxWaImg{cursor:zoom-in}
+#cnt #v-waInbox .nxWaMsgs .nxWaBubWrap .nxWaBub.nxWaMediaBub.nxWaStickerBub{background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+#v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.nxWaStickerBub::before{display:none}
+#v-waInbox .nxWaBub img.nxWaSticker{width:160px;max-width:160px;height:auto;border-radius:0;display:block;cursor:default}
+#v-waInbox .nxWaBub.nxWaStickerBub .nxWaMsgMeta{padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.35);color:#e5e7eb;width:max-content;margin-left:auto}
+/* reproductor de audio */
+#v-waInbox .nxWaAudio{display:flex;align-items:center;gap:8px;min-width:230px;max-width:100%;padding:4px 2px 2px;white-space:normal}
+#v-waInbox .nxWaBub .nxWaAudio audio{display:none!important}
+#v-waInbox .nxWaAudioMic{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.14);font-size:17px;position:relative}
+#v-waInbox .nxWaAudioMic i{color:inherit}
+#v-waInbox .nxWaAudioPlay{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:inherit;display:grid;place-items:center;font-size:16px;cursor:pointer;padding:0}
+#v-waInbox .nxWaAudioBar{position:relative;flex:1;min-width:90px;height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+#v-waInbox .nxWaAudioBar::before{content:"";position:absolute;left:0;right:0;height:4px;border-radius:999px;background:rgba(255,255,255,.28)}
+#v-waInbox .nxWaAudioFill{position:absolute;left:0;height:4px;border-radius:999px;background:currentColor;width:0;opacity:.9}
+#v-waInbox .nxWaAudioKnob{position:absolute;left:0;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transform:translateX(-50%)}
+#v-waInbox .nxWaAudioTime{font-size:9px;font-weight:700;min-width:30px;text-align:right;font-variant-numeric:tabular-nums;opacity:.9}
+#v-waInbox .nxWaAudioRate{flex:none;border:0;border-radius:999px;padding:3px 7px;background:rgba(255,255,255,.18);color:inherit;font:inherit;font-size:9px;font-weight:800;cursor:pointer}
+/* historial hacia atrás y contador de nuevos */
+#v-waInbox .nxWaOlderWrap{position:sticky;top:0;height:0;overflow:visible;align-self:center;z-index:2;pointer-events:none}
+#v-waInbox .nxWaOlder{display:none;align-items:center;gap:6px;transform:translate(-50%,6px);margin-left:0;position:absolute;left:0;top:0;padding:5px 10px;border-radius:999px;background:var(--wa-head,#fff);color:var(--wa-sub,#475569);font-size:9.5px;font-weight:700;white-space:nowrap;box-shadow:0 4px 12px -6px rgba(0,0,0,.5)}
+#v-waInbox .nxWaOlder.on{display:inline-flex}
+#v-waInbox .nxWaOlder i{animation:nxWaSpinOlder .8s linear infinite}
+@keyframes nxWaSpinOlder{to{transform:rotate(360deg)}}
+/* cabecera: teléfono formateado y estado de la ventana */
+#v-waInbox .nxWaHeadSub{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:0;min-width:0;white-space:normal;line-height:1.25}
+#v-waInbox .nxWaHeadTel{flex:none;white-space:nowrap}
+#v-waInbox .nxWaHeadWin{display:inline-flex;align-items:center;gap:3px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
+#v-waInbox .nxWaHeadWin i{font-size:10px}
+#v-waInbox .nxWaHeadWin.ok i{color:#4ade80}
+#v-waInbox .nxWaHeadWin.off i{color:#fbbf24}
+/* visor a pantalla completa */
+.nxWaLb{position:fixed;inset:0;z-index:100600;background:rgba(3,8,16,.96);display:flex;flex-direction:column;color:#e5e7eb;font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;animation:nxWaLbIn .16s ease both;text-transform:none}
+@keyframes nxWaLbIn{from{opacity:0}to{opacity:1}}
+.nxWaLbTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 8px;flex:none}
+.nxWaLbInfo{min-width:0;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxWaLbInfo span{display:block;font-size:9.5px;font-weight:600;opacity:.7;margin-top:2px}
+.nxWaLbActs{display:flex;gap:6px;flex:none}
+.nxWaLbBtn{width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;display:grid;place-items:center;font-size:18px;cursor:pointer;text-decoration:none}
+.nxWaLbStage{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.nxWaLbStage img,.nxWaLbStage video{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;-webkit-user-drag:none}
+.nxWaLbStage img{cursor:zoom-in}
+.nxWaLbStage.zoomed img{cursor:grab}
+.nxWaLbNav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;font-size:20px;cursor:pointer;z-index:2}
+.nxWaLbNav.prev{left:10px}.nxWaLbNav.next{right:10px}
+.nxWaLbNav[disabled]{opacity:.25;pointer-events:none}
+.nxWaLbFoot{flex:none;padding:8px 14px max(12px,env(safe-area-inset-bottom));text-align:center;font-size:11px}
+.nxWaLbCaption{max-height:64px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.nxWaLbCount{font-size:9.5px;opacity:.65;margin-top:4px}
+@media(max-width:760px){.nxWaLbNav{display:none}}
+@media(prefers-reduced-motion:reduce){.nxWaLb,#v-waInbox .nxWaMsgState.nxWaCheckJustRead .nxWaMsgCheck,#v-waInbox .nxWaOlder i{animation:none!important}}
     `; document.head.appendChild(s);
   }
 
@@ -401,6 +521,7 @@
     if (hiloAbiertoId) await cargarMensajes(hiloAbiertoId);
     pintar();
   }
+  window.nxWaRecargar = () => cargar();
   function api() { try { return getAPI(); } catch (e) { return null; } }
 
   async function urlFirmada(path) {
@@ -468,9 +589,17 @@
     try {
       let datos;
       try {
-        datos = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.desc,id.desc&limit=200&select=*`) || [];
+        datos = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&order=created_at.desc,id.desc&limit=${LIMITE_MENSAJES}&select=*`) || [];
         datos = datos.slice().reverse();
-        for (const m of datos) { if (m.media_path) m._url = await urlFirmada(m.media_path); }
+        if (datos.length < LIMITE_MENSAJES) historialCompleto.add(hiloId);
+        // Los mensajes más antiguos que el agente ya trajo con el scroll hacia arriba se conservan
+        // a través de cada refresco de Realtime (que solo vuelve a pedir la ventana más reciente).
+        const antiguos = antiguosPorHilo.get(hiloId);
+        if (antiguos && antiguos.length && datos.length) {
+          const corte = datos[0].created_at;
+          datos = antiguos.filter(a => a.created_at < corte).concat(datos);
+        }
+        for (const m of datos) { if (m.media_path && !m._url) m._url = await urlFirmada(m.media_path); }
       } catch (e) { return false; }
       if (solicitudVigentePorHilo.get(hiloId) !== miToken || hiloAbiertoId !== hiloId) return false; // superada por una carga mas nueva de ESTE hilo, o el usuario ya cambio de hilo
       mensajes = datos;
@@ -534,8 +663,124 @@
     return lista.slice().sort((a, b) => (hiloFijado(b) - hiloFijado(a)) || (t(b.fijado_at) - t(a.fijado_at)) || (t(b.ultimo_mensaje_at) - t(a.ultimo_mensaje_at)));
   }
   let mostrarArchivados = false;
+  // ── Conversación abierta (58.94) ──────────────────────────────────────
+  function metaDe(m) { const x = m && m.meta; return x && typeof x === 'object' && !Array.isArray(x) ? x : {}; }
+  function horaMsg(iso) {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleTimeString('es-DO', { hour: 'numeric', minute: '2-digit' }).replace(/\s+/g, ' ').trim(); } catch (e) { return ''; }
+  }
+  function diaKey(iso) {
+    const d = new Date(iso); if (isNaN(d)) return '';
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function etiquetaDia(iso) {
+    const d = new Date(iso); if (isNaN(d)) return '';
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dia = new Date(d); dia.setHours(0, 0, 0, 0);
+    const dif = Math.round((hoy - dia) / 86400000);
+    if (dif === 0) return 'Hoy';
+    if (dif === 1) return 'Ayer';
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+    if (dif > 1 && dif < 7) { try { return cap(d.toLocaleDateString('es-DO', { weekday: 'long' })); } catch (e) {} }
+    try { return d.toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/\s+de\s+/g, ' '); } catch (e) { return diaKey(iso); }
+  }
+  function estadoInfo(est) {
+    const e = String(est || '').toLowerCase();
+    if (e === 'enviando') return { cls: 'st-enviando', txt: 'Enviando', glifo: '○' };
+    if (e === 'enviado') return { cls: 'st-enviado', txt: 'Enviado', glifo: '✓' };
+    if (e === 'entregado') return { cls: 'st-entregado', txt: 'Entregado', glifo: '✓✓' };
+    if (e === 'leido') return { cls: 'st-leido', txt: 'Leído', glifo: '✓✓' };
+    if (e === 'fallido') return { cls: 'st-fallido', txt: 'No enviado', glifo: '!' };
+    return null;
+  }
+  function soloDigitos(v) { return String(v || '').replace(/\D/g, ''); }
+  function formatearTelefono(e164) {
+    const s = String(e164 || '');
+    if (!s || /^bsid:/i.test(s)) return 'Sin número';
+    const d = soloDigitos(s);
+    if (d.length === 11 && d[0] === '1') return `+1 ${d.slice(1, 4)}-${d.slice(4, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+    return s.startsWith('+') ? s : '+' + d;
+  }
+  // Escapa primero y solo después convierte URLs, wa.me y teléfonos en enlaces (target=_blank, rel=noopener).
+  // Un teléfono abre wa.me, que parches-whatsapp-enrutamiento-nexus redirige al propio Buzón.
+  function linkify(texto) {
+    const e = esc(texto);
+    const re = /(https?:\/\/[^\s<]+|www\.[^\s<]+|\+?\d[\d\s().-]{7,}\d)/g;
+    return e.replace(re, (m) => {
+      let cola = '';
+      const mt = /[.,;:!?)]+$/.exec(m);
+      if (mt && /^https?:|^www\./i.test(m)) { cola = mt[0]; m = m.slice(0, -cola.length); }
+      if (/^https?:|^www\./i.test(m)) {
+        const href = /^www\./i.test(m) ? 'https://' + m : m;
+        return `<a href="${href}" target="_blank" rel="noopener">${m}</a>${cola}`;
+      }
+      const d = soloDigitos(m);
+      if (d.length < 10 || d.length > 15) return m;
+      return `<a href="https://wa.me/${d}" class="nxWaTel" target="_blank" rel="noopener">${m}</a>`;
+    });
+  }
+  function esCuerpoGenerico(m) {
+    const t = String(m.cuerpo || '').trim();
+    return !t || /^\[?(imagen|foto|audio|video|documento|sticker|ubicaci[oó]n|contacto|contenido de whatsapp no visible)\]?$/i.test(t);
+  }
+  function etiquetaTipo(m) {
+    const t = m.tipo_contenido;
+    if (t === 'imagen') return '📷 Foto';
+    if (t === 'video') return '🎥 Video';
+    if (t === 'audio') return '🎤 Mensaje de voz';
+    if (t === 'sticker') return 'Sticker';
+    if (t === 'ubicacion') return '📍 Ubicación';
+    if (t === 'contacto') return '👤 Contacto';
+    if (t === 'documento' || m.media_path) return '📄 ' + (nombreArchivo(m) || 'Documento');
+    return '';
+  }
+  function nombreArchivo(m) {
+    const md = metaDe(m).media || {};
+    if (md.nombre) return String(md.nombre);
+    const c = String(m.cuerpo || '').trim();
+    if (c && /\.[a-z0-9]{2,5}$/i.test(c) && !/\s{2,}/.test(c) && c.length < 120) return c;
+    const p = String(m.media_path || '').split('/').pop() || '';
+    return p.replace(/^\d{10,}[-_]/, '');
+  }
+  function tamanoLegible(n) {
+    n = Number(n); if (!n || n < 0) return '';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+    return (n / 1024 / 1024).toFixed(1).replace(/\.0$/, '') + ' MB';
+  }
+  function iconoArchivo(nombre, mime) {
+    const ext = (String(nombre || '').split('.').pop() || '').toLowerCase();
+    const mm = String(mime || '').toLowerCase();
+    if (ext === 'pdf' || mm.includes('pdf')) return ['ti-file-type-pdf', 'PDF'];
+    if (/^docx?$/.test(ext) || mm.includes('word')) return ['ti-file-type-doc', 'Word'];
+    if (/^xlsx?$/.test(ext) || mm.includes('sheet') || mm.includes('excel')) return ['ti-file-type-xls', 'Excel'];
+    if (/^pptx?$/.test(ext) || mm.includes('presentation')) return ['ti-file-type-ppt', 'PowerPoint'];
+    if (ext === 'zip' || mm.includes('zip')) return ['ti-file-zip', 'ZIP'];
+    if (ext === 'csv') return ['ti-file-spreadsheet', 'CSV'];
+    if (ext === 'txt' || mm.startsWith('text/')) return ['ti-file-text', 'Texto'];
+    return ['ti-file', ext ? ext.toUpperCase() : 'Archivo'];
+  }
+  function ubicacionDe(m) {
+    const u = metaDe(m).ubicacion;
+    if (u && isFinite(Number(u.lat)) && isFinite(Number(u.lng))) return { lat: Number(u.lat), lng: Number(u.lng), nombre: u.nombre || '', direccion: u.direccion || '' };
+    const mt = /(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/.exec(String(m.cuerpo || ''));
+    if (!mt) return null;
+    const resto = String(m.cuerpo || '').replace(mt[0], '').replace(/^[\s:·|-]+|[\s:·|-]+$/g, '').replace(/\s+/g, ' ');
+    return { lat: Number(mt[1]), lng: Number(mt[2]), nombre: resto && !/^ubicaci[oó]n$/i.test(resto) ? resto : '', direccion: '' };
+  }
+  function contactoDe(m) {
+    const c = (metaDe(m).contactos || [])[0];
+    if (c && (c.nombre || (c.telefonos || []).length)) return { nombre: c.nombre || 'Contacto', telefono: (c.telefonos || [])[0] || '' };
+    const cuerpo = String(m.cuerpo || '').trim();
+    const tel = /\+?\d[\d\s().-]{7,}\d/.exec(cuerpo);
+    const nombre = cuerpo.replace(tel ? tel[0] : '', '').replace(/^contacto\s*[:·-]?\s*/i, '').replace(/[\s:·()|-]+$/g, '').replace(/^[\s:·()|-]+/g, '').trim();
+    if (!tel && !nombre) return null;
+    return { nombre: nombre || 'Contacto', telefono: tel ? tel[0] : '' };
+  }
   function resumenMensaje(m) {
     if (!m) return '';
+    if (m.tipo_contenido && m.tipo_contenido !== 'text' && esCuerpoGenerico(m)) return etiquetaTipo(m) || 'Mensaje';
     if (m.cuerpo) {
       // Antes era un slice(0,120) seco: cortaba a media palabra y sin puntos
       // suspensivos, asi que el citado terminaba en cosas como "...PUEDES CON" y
@@ -561,7 +806,11 @@
     borradoresPorHilo.set(hiloAbiertoId, inp.value || '');
   }
   function cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera) {
-    return `<div class="nxWaHead"><div class="nxWaHeadMain"><button class="nxWaHeadAct nxWaBackMob" onclick="nxWaCerrarDetalleMob()"><i class="ti ti-arrow-left"></i></button><div class="nxWaHeadAvatar">${esc(inicialesCabecera || '?')}</div><div class="nxWaHeadText"><span class="nxWaHeadName">${nombreCabecera}</span><span class="nxWaHeadSub">${esc(subCabecera || '')}</span></div></div><button class="nxWaHeadAct" onclick="nxWaToggleBuscar()" title="Buscar en este chat"><i class="ti ti-search"></i></button></div>`;
+    // subCabecera: texto plano (cargando) o {telefono, ventanaAbierta}
+    const sub = subCabecera && typeof subCabecera === 'object'
+      ? `<span class="nxWaHeadTel">${esc(formatearTelefono(subCabecera.telefono))}</span><span class="nxWaHeadWin ${subCabecera.ventanaAbierta ? 'ok' : 'off'}"><i class="ti ${subCabecera.ventanaAbierta ? 'ti-circle-check' : 'ti-clock'}"></i>${subCabecera.ventanaAbierta ? 'ventana abierta' : 'solo plantilla'}</span>`
+      : esc(subCabecera || '');
+    return `<div class="nxWaHead"><div class="nxWaHeadMain"><button class="nxWaHeadAct nxWaBackMob" onclick="nxWaCerrarDetalleMob()" aria-label="Volver a conversaciones"><i class="ti ti-arrow-left"></i></button><div class="nxWaHeadAvatar">${esc(inicialesCabecera || '?')}</div><div class="nxWaHeadText"><span class="nxWaHeadName">${nombreCabecera}</span><span class="nxWaHeadSub">${sub}</span></div></div><button class="nxWaHeadAct" onclick="nxWaToggleBuscar()" title="Buscar en este chat"><i class="ti ti-search"></i></button></div>`;
   }
   function barraBusquedaChat() {
     if (!busquedaChat.activa) return '';
@@ -1118,55 +1367,130 @@
     // datos desactualizados mientras ese await todavia no dejaba arrancar la recarga real.
     const miToken = marcarSolicitudCarga(id);
     const h = hilos.find(x => x.id === id);
+    // El contador de no leídos se guarda ANTES de ponerlo a 0: con él se pinta el divisor
+    // «N mensajes no leídos» y se hace el scroll inicial hasta ahí.
+    noLeidosAlAbrir.clear();
+    noLeidosAlAbrir.set(id, { n: Number(h?.no_leidos_count) || 0, ancla: null, hecho: false });
+    nuevosSinVer = 0; idsRenderPrevio = new Set(); audioActivo = null;
     // whatsapp_hilos no tiene policy de UPDATE para authenticated a proposito (todo escribe via
     // RPC/service role) -- un PATCH directo aqui lo bloquearia RLS en silencio.
     if (h && h.no_leidos_count) { h.no_leidos_count = 0; try { await api().post('rpc/whatsapp_marcar_hilo_leido', { p_hilo_id: id }); } catch (e) {} }
+    confirmarLecturaAlCliente(id);
     await cargarMensajes(id, miToken);
     pintarLista(); pintarDetalle();
     asegurarScrollFondoInicial(id);
   };
 
-  function burbujaMedia(m) {
+  // Confirmación de lectura hacia el cliente (Edge whatsapp-inbox-leer): marca leído y pide a Zernio
+  // el «read» del último entrante para que el cliente vea ✓✓ azul. No bloquea la UI y tolera que la
+  // función aún no exista (404/500): la RPC local de arriba ya dejó el hilo leído en NEXUS.
+  function confirmarLecturaAlCliente(hiloId) {
+    const A = api(); if (!A?.url || !hiloId) return;
+    try {
+      fetch(`${A.url}/functions/v1/whatsapp-inbox-leer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
+        body: JSON.stringify({ hilo_id: hiloId, accion: 'leer' })
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  function mediaEnBurbuja(m) {
+    const t = m.tipo_contenido;
+    if (t === 'ubicacion') {
+      const u = ubicacionDe(m);
+      if (!u) return '';
+      const href = `https://maps.google.com/?q=${u.lat},${u.lng}`;
+      const coords = `${u.lat.toFixed(5)}, ${u.lng.toFixed(5)}`;
+      return `<a class="nxWaCard nxWaLocCard" href="${href}" target="_blank" rel="noopener"><span class="nxWaLocMap"><i class="ti ti-map-pin-filled"></i></span><span class="nxWaCardTx"><b>${esc(u.nombre || 'Ubicación')}</b><span>${esc(u.direccion || coords)}</span><em>Abrir en Google Maps</em></span></a>`;
+    }
+    if (t === 'contacto') {
+      const c = contactoDe(m);
+      if (!c) return '';
+      const d = soloDigitos(c.telefono);
+      return `<div class="nxWaCard nxWaContactCard"><span class="nxWaCardIco">${esc(iniciales(c.nombre))}</span><span class="nxWaCardTx"><b>${esc(c.nombre)}</b><span>${esc(c.telefono ? formatearTelefono(c.telefono) : 'Sin teléfono')}</span></span>${d ? `<button type="button" class="nxWaContactBtn" onclick="nxWaMensajeAContacto('${d}')"><i class="ti ti-brand-whatsapp"></i> Mensaje</button>` : ''}</div>`;
+    }
     if (!m.media_path) return '';
-    if (!m._url) return '<div style="font-size:10px;color:#94a3b8">📎 Adjunto no disponible</div>';
-    if (m.tipo_contenido === 'imagen') return `<img src="${m._url}" onload="nxWaMediaLoaded()" onclick="window.open('${m._url}','_blank')">`;
-    if (m.tipo_contenido === 'audio') return `<audio controls src="${m._url}" style="width:220px"></audio>`;
-    if (m.tipo_contenido === 'video') return `<video controls src="${m._url}" onloadedmetadata="nxWaMediaLoaded()" style="max-width:220px"></video>`;
-    return `<a href="${m._url}" target="_blank">📎 Ver documento</a>`;
+    if (!m._url) return '<div class="nxWaCard"><span class="nxWaCardIco"><i class="ti ti-paperclip"></i></span><span class="nxWaCardTx"><b>Adjunto no disponible</b></span></div>';
+    const url = esc(m._url), id = esc(m.id);
+    if (t === 'sticker') return `<img class="nxWaSticker" src="${url}" alt="Sticker" onload="nxWaMediaLoaded()">`;
+    if (t === 'imagen') return `<img class="nxWaImg" src="${url}" alt="Imagen" onload="nxWaMediaLoaded()" onclick="nxWaVerMedia('${id}')">`;
+    if (t === 'video') return `<span class="nxWaVideoWrap"><video controls playsinline preload="metadata" src="${url}" onloadedmetadata="nxWaMediaLoaded()"></video><button type="button" class="nxWaVideoExpand" aria-label="Ver a pantalla completa" onclick="nxWaVerMedia('${id}')"><i class="ti ti-arrows-maximize"></i></button></span>`;
+    if (t === 'audio') {
+      const md = metaDe(m).media || {};
+      const voz = !md.nombre;
+      return `<div class="nxWaAudio${voz ? ' voz' : ''}" data-id="${id}" data-src="${url}">${voz ? '<span class="nxWaAudioMic"><i class="ti ti-microphone"></i></span>' : ''}<button type="button" class="nxWaAudioPlay" aria-label="Reproducir"><i class="ti ti-player-play-filled"></i></button><div class="nxWaAudioBar" role="slider" aria-label="Posición"><div class="nxWaAudioFill"></div><div class="nxWaAudioKnob"></div></div><span class="nxWaAudioTime">--:--</span><button type="button" class="nxWaAudioRate" aria-label="Velocidad">1x</button><audio preload="metadata" src="${url}"></audio></div>`;
+    }
+    const md = metaDe(m).media || {};
+    const nombre = nombreArchivo(m) || 'Documento';
+    const [ico, tipo] = iconoArchivo(nombre, md.mime);
+    const tam = tamanoLegible(md.tamano);
+    return `<a class="nxWaCard nxWaDoc" href="${url}" target="_blank" rel="noopener" download="${esc(nombre)}"><span class="nxWaCardIco"><i class="ti ${ico}"></i></span><span class="nxWaCardTx"><b>${esc(nombre)}</b><span>${esc([tipo, tam].filter(Boolean).join(' · '))}</span></span><span class="nxWaCardAct"><i class="ti ti-download"></i></span></a>`;
   }
 
-  function estadoMsg(m) {
-    if (m.direccion !== 'out') return '';
-    if (m.estado === 'fallido') return '<span style="color:#b91c1c">No enviado</span>';
-    if (m.estado === 'enviando') return '<span>⏱ enviando</span>';
-    if (m.estado === 'leido') return '<span style="color:#2563eb">✓✓</span>';
-    if (m.estado === 'entregado') return '<span>✓✓</span>';
-    return '<span>✓</span>';
+  function citaHtml(q) {
+    if (!q) return '';
+    let thumb = '';
+    if (q.tipo_contenido === 'imagen' && q._url) thumb = `<img class="nxWaQuoteThumb" src="${esc(q._url)}" alt="">`;
+    else if (q.tipo_contenido === 'video') thumb = '<div class="nxWaQuoteThumb"><i class="ti ti-video"></i></div>';
+    else if (q.tipo_contenido === 'sticker' && q._url) thumb = `<img class="nxWaQuoteThumb" src="${esc(q._url)}" alt="">`;
+    return `<div class="nxWaQuote${thumb ? ' hasThumb' : ''}" onclick="nxWaIrAMensaje('${esc(q.id)}')"><div class="nxWaQuoteTx"><b>${esc(autorMensaje(q))}</b><span>${esc(resumenMensaje(q))}</span></div>${thumb}</div>`;
   }
 
-  function renderBurbuja(m, idx, porId) {
-    const prev = mensajes[idx - 1];
-    const samePrev = prev && prev.direccion === m.direccion;
+  function metaHtml(m) {
+    const star = m.destacado_at ? '<i class="ti ti-star-filled nxWaStar"></i>' : '';
+    let estado = '';
+    if (m.direccion === 'out') {
+      const inf = estadoInfo(m.estado);
+      if (inf) {
+        const antes = estadoPrevioMsg.get(String(m.id));
+        estadoPrevioMsg.set(String(m.id), m.estado);
+        const recienLeido = m.estado === 'leido' && antes && antes !== 'leido';
+        const titulo = inf.txt + (m.estado === 'fallido' && m.error_detalle ? ' · ' + String(m.error_detalle).slice(0, 160) : '');
+        estado = `<span class="nxWaMsgState ${inf.cls}${recienLeido ? ' nxWaCheckJustRead' : ''}" title="${esc(titulo)}" aria-label="${esc(inf.txt)}"><i class="nxWaMsgCheck">${inf.glifo}</i>${m.estado === 'fallido' ? `<span>No enviado</span><button type="button" class="nxWaRetry" onclick="nxWaReintentarMensaje('${esc(m.id)}')">Reintentar</button>` : ''}</span>`;
+      }
+    }
+    return `<div class="nxWaMsgMeta">${star}<span class="nxWaMsgTime">${esc(horaMsg(m.created_at))}</span>${estado}</div>`;
+  }
+
+  function reaccionHtml(m) {
+    const ag = m.reaccion_agente || '', cl = m.reaccion_cliente || '';
+    if (!ag && !cl) return '';
+    return `<span class="nxWaReactionBadge">${cl ? `<span class="cl">${esc(cl)}</span>` : ''}${ag ? `<span class="ag">${esc(ag)}</span>` : ''}</span>`;
+  }
+
+  // Pinta un mensaje con su separador de día y, si toca, el divisor de no leídos delante.
+  // `lista` son los mensajes visibles (sin ocultos) en orden cronológico.
+  function renderBurbuja(m, idx, lista, porId, anclaNoLeidos, nNoLeidos) {
+    const prev = lista[idx - 1], next = lista[idx + 1];
+    const dia = diaKey(m.created_at);
+    const mismoDiaPrev = !!prev && diaKey(prev.created_at) === dia;
+    const samePrev = mismoDiaPrev && prev.direccion === m.direccion;
+    const sameNext = !!next && next.direccion === m.direccion && diaKey(next.created_at) === dia;
+    const sep = mismoDiaPrev ? '' : `<div class="nxWaDaySep">${esc(etiquetaDia(m.created_at))}</div>`;
+    const unread = anclaNoLeidos && String(m.id) === anclaNoLeidos ? `<div class="nxWaUnreadSep">${nNoLeidos === 1 ? '1 mensaje no leído' : nNoLeidos + ' mensajes no leídos'}</div>` : '';
     const q = m.responde_a_id ? porId.get(String(m.responde_a_id)) : null;
     const hit = busquedaChat.ids.includes(String(m.id)) ? ' hit' : '';
-    const quote = q ? `<div class="nxWaQuote" onclick="nxWaIrAMensaje('${q.id}')"><b>${esc(autorMensaje(q))}</b><span>${esc(resumenMensaje(q))}</span></div>` : '';
-    const cuerpo = m.cuerpo ? esc(m.cuerpo) : '';
-    const fallo = m.direccion === 'out' && m.estado === 'fallido';
-    const retry = fallo ? `<button class="nxWaRetry" onclick="nxWaReintentarMensaje('${m.id}')">Reintentar</button>` : '';
-    // CUIDADO: la burbuja usa white-space:pre-wrap, asi que la indentacion de ESTE
-    // template se DIBUJA en pantalla. Cuando estaba partido en varias lineas, el salto
-    // y los 8 espacios de delante del cuerpo salian como una sangria en la primera
-    // linea del mensaje, y el salto de detras como un hueco antes de la hora. Por eso
-    // la burbuja va en UNA sola linea: no es estilo, es correccion. No la partas.
-    return `<div id="nxWaMsg-${esc(m.id)}" class="nxWaBubWrap ${m.direccion} ${samePrev ? 'same-prev' : 'diff-prev'}" onpointerdown="nxWaSwipeStart(event,'${esc(m.id)}')" onpointermove="nxWaSwipeMove(event)" onpointerup="nxWaSwipeEnd(event)" ontouchstart="nxWaLongStart(event,'${esc(m.id)}')" ontouchend="nxWaLongEnd()" ontouchmove="nxWaLongEnd()">
-      <div class="nxWaBub ${m.direccion}${hit}"><button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>${quote}${burbujaMedia(m)}${cuerpo}<div class="nxWaBubMeta">${retry}${estadoMsg(m)}</div></div>
-    </div>`;
+    const t = m.tipo_contenido || 'text';
+    const conMedia = t !== 'text';
+    const texto = (!conMedia || !esCuerpoGenerico(m)) && m.cuerpo && !(t === 'documento' && String(m.cuerpo).trim() === nombreArchivo(m)) ? String(m.cuerpo).replace(/^\s*\n\s*/, '').replace(/\s*\n\s*$/, '') : '';
+    const corto = !conMedia && !q && texto && texto.length <= 28 && !/\n/.test(texto) && m.estado !== 'fallido' && !m.reenviado;
+    const cls = ['nxWaBub', m.direccion, hit.trim(), corto ? 'nxWaRefShort' : '', t === 'sticker' ? 'nxWaStickerBub' : '', conMedia ? 'nxWaMediaBub' : ''].filter(Boolean).join(' ');
+    const fwd = m.reenviado ? '<div class="nxWaFwd"><i class="ti ti-corner-up-right"></i>Reenviado</div>' : '';
+    const cuerpo = texto ? `<span class="nxWaMsgText">${linkify(texto)}</span>` : '';
+    const wrapCls = ['nxWaBubWrap', m.direccion, samePrev ? 'same-prev' : 'diff-prev', sameNext ? '' : 'nxWaTail', (m.reaccion_agente || m.reaccion_cliente) ? 'nxWaHasReaction' : ''].filter(Boolean).join(' ');
+    // CUIDADO: la burbuja usa white-space:pre-wrap, asi que la indentacion de ESTE template se
+    // DIBUJA en pantalla. Todo lo que va dentro de .nxWaBub se concatena sin saltos ni sangria.
+    // data-nx-wa-ref-text="1": replica-referencia no vuelve a envolver el texto (ya va en .nxWaMsgText).
+    return `${sep}${unread}<div id="nxWaMsg-${esc(m.id)}" class="${wrapCls}" onpointerdown="nxWaSwipeStart(event,'${esc(m.id)}')" onpointermove="nxWaSwipeMove(event)" onpointerup="nxWaSwipeEnd(event)" ontouchstart="nxWaLongStart(event,'${esc(m.id)}')" ontouchend="nxWaLongEnd()" ontouchmove="nxWaLongEnd()"><div class="${cls}" data-nx-wa-ref-text="1" data-nx-wa-msg-id="${esc(m.id)}" data-nx-wa-estado="${esc(m.estado || '')}"><button class="nxWaBubMenu" onclick="nxWaMsgMenu(event,'${esc(m.id)}')"><i class="ti ti-chevron-down"></i></button>${fwd}${citaHtml(q)}${mediaEnBurbuja(m)}${cuerpo}${metaHtml(m)}</div>${reaccionHtml(m)}</div>`;
   }
+
+  function mensajesVisibles() { return mensajes.filter(m => !m.oculto_at); }
 
   function recomputarBusqueda() {
     const q = String(busquedaChat.q || '').trim().toLowerCase();
     if (!q) { busquedaChat.ids = []; busquedaChat.idx = 0; return; }
-    busquedaChat.ids = mensajes.filter(m => String(m.cuerpo || '').toLowerCase().includes(q)).map(m => String(m.id));
+    busquedaChat.ids = mensajesVisibles().filter(m => String(m.cuerpo || '').toLowerCase().includes(q)).map(m => String(m.id));
     if (busquedaChat.idx >= busquedaChat.ids.length) busquedaChat.idx = Math.max(0, busquedaChat.ids.length - 1);
   }
 
@@ -1191,9 +1515,66 @@
     if (!box || !hiloId) return;
     box.onscroll = () => {
       if (Date.now() < nxWaIgnorarScrollHasta) return;
-      if (chatEstaAlFondo(box)) hilosPegadosAlFondo.add(hiloId);
+      if (chatEstaAlFondo(box)) { hilosPegadosAlFondo.add(hiloId); if (nuevosSinVer) { nuevosSinVer = 0; actualizarContadorNuevos(); } }
       else hilosPegadosAlFondo.delete(hiloId);
+      if (box.scrollTop < 120 && !hilosConScrollInicial.has(hiloId) && !box.classList.contains('prep-bottom') && !$('#v-waInbox')?.classList.contains('nxWaBottomPreparing')) cargarAntiguos(hiloId);
     };
+  }
+  // Historial hacia atrás: al llegar arriba se piden 100 mensajes anteriores al primero cargado
+  // (cursor created_at=lt.) y se conserva la posición de lectura.
+  async function cargarAntiguos(hiloId) {
+    if (cargandoAntiguos || historialCompleto.has(hiloId) || mensajesHiloId !== hiloId || hiloAbiertoId !== hiloId || !mensajes.length) return;
+    const A = api(); if (!A?.get) return;
+    const primero = mensajes[0];
+    cargandoAntiguos = hiloId;
+    $('#nxWaMsgsBox .nxWaOlder')?.classList.add('on');
+    try {
+      let datos = await A.get('whatsapp_hilo_mensajes', `hilo_id=eq.${hiloId}&created_at=lt.${encodeURIComponent(primero.created_at)}&order=created_at.desc,id.desc&limit=100&select=*`) || [];
+      if (datos.length < 100) historialCompleto.add(hiloId);
+      datos = datos.slice().reverse();
+      for (const m of datos) { if (m.media_path) m._url = await urlFirmada(m.media_path); }
+      if (mensajesHiloId !== hiloId || hiloAbiertoId !== hiloId) return;
+      const ya = new Set(mensajes.map(m => String(m.id)));
+      const nuevos = datos.filter(m => !ya.has(String(m.id)));
+      if (!nuevos.length) return;
+      antiguosPorHilo.set(hiloId, nuevos.concat(antiguosPorHilo.get(hiloId) || []));
+      mensajes = nuevos.concat(mensajes);
+      const box = $('#nxWaMsgsBox');
+      const altoPrevio = box ? box.scrollHeight : 0, topPrevio = box ? box.scrollTop : 0;
+      hilosPegadosAlFondo.delete(hiloId);
+      pintarDetalle();
+      const nuevoBox = $('#nxWaMsgsBox');
+      if (nuevoBox) { nxWaIgnorarScrollHasta = Date.now() + 300; nuevoBox.scrollTop = nuevoBox.scrollHeight - altoPrevio + topPrevio; }
+    } catch (e) { console.error('[WA Inbox] mensajes anteriores', e);
+    } finally {
+      cargandoAntiguos = null;
+      $('#nxWaMsgsBox .nxWaOlder')?.classList.remove('on');
+    }
+  }
+  function actualizarContadorNuevos() {
+    window.__nxWaNuevosSinVer = nuevosSinVer;
+    try { if (typeof window.nxWaLatestSync === 'function') window.nxWaLatestSync(); } catch (e) {}
+  }
+  // Scroll inicial hasta el divisor «N mensajes no leídos» (si quedó fuera de la vista) una vez que
+  // parches-whatsapp-scroll-estable soltó el anclaje al fondo.
+  function programarScrollADivisor(hiloId) {
+    const nl = noLeidosAlAbrir.get(hiloId);
+    if (!nl || !nl.n || nl.hecho) return;
+    nl.hecho = true;
+    let intentos = 0;
+    const paso = () => {
+      if (hiloAbiertoId !== hiloId) return;
+      const root = $('#v-waInbox'), box = $('#nxWaMsgsBox'), sep = box && box.querySelector('.nxWaUnreadSep');
+      const preparando = !box || !sep || hilosConScrollInicial.has(hiloId) || box.classList.contains('prep-bottom') || (root && root.classList.contains('nxWaBottomPreparing'));
+      if (preparando) { if (++intentos < 40) setTimeout(paso, 100); return; }
+      const arriba = sep.offsetTop - box.scrollTop;
+      if (arriba < 8) {
+        hilosPegadosAlFondo.delete(hiloId);
+        nxWaIgnorarScrollHasta = Date.now() + 400;
+        box.scrollTop = Math.max(0, sep.offsetTop - 10);
+      }
+    };
+    setTimeout(paso, 120);
   }
   // El contenedor de mensajes es un nodo NUEVO en cada render (pintarDetalle reescribe todo
   // #nxWaDetalle.innerHTML) -- así que el observer viejo queda huérfano y hay que reconectar uno
@@ -1224,6 +1605,7 @@
     setTimeout(mostrar, 60);
     setTimeout(mostrar, 180);
     setTimeout(mostrar, 420);
+    setTimeout(() => programarScrollADivisor(hiloId), 480);
   }
   window.nxWaMediaLoaded = function () {
     if (!hiloAbiertoId || (!hilosConScrollInicial.has(hiloAbiertoId) && !hilosPegadosAlFondo.has(hiloAbiertoId))) return;
@@ -1256,8 +1638,8 @@
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
     const ventanaAbierta = h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000;
-    const nombreCabecera = esc(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || '');
-    const subCabecera = `${h?.telefono_e164 || ''}${h?.telefono_e164 ? ' · ' : ''}${ventanaAbierta ? 'ventana abierta' : 'solo plantilla/recordatorio'}`;
+    const nombreCabecera = esc(cliente?.nom || h?.nombre_perfil || formatearTelefono(h?.telefono_e164) || '');
+    const subCabecera = { telefono: h?.telefono_e164 || '', ventanaAbierta: !!ventanaAbierta };
     const inicialesCabecera = iniciales(cliente?.nom || h?.nombre_perfil || h?.telefono_e164 || 'WA');
 
     // "mensajes" es un estado global compartido por TODOS los hilos -- solo es seguro pintarlo
@@ -1292,7 +1674,31 @@
 
     recomputarBusqueda();
     const porId = new Map(mensajes.map(m => [String(m.id), m]));
-    const filas = mensajes.map((m, i) => renderBurbuja(m, i, porId)).join('') || '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
+    const visibles = mensajesVisibles();
+    // Divisor de no leídos: anclado al primer mensaje entrante de los N que había sin leer al abrir;
+    // el ancla se conserva entre repintados aunque lleguen mensajes nuevos.
+    const nl = noLeidosAlAbrir.get(hiloAbiertoId);
+    let ancla = null;
+    if (nl && nl.n > 0) {
+      if (nl.ancla && visibles.some(m => String(m.id) === nl.ancla)) ancla = nl.ancla;
+      else {
+        let c = 0;
+        for (let i = visibles.length - 1; i >= 0; i--) { if (visibles[i].direccion === 'in') { c++; ancla = String(visibles[i].id); if (c === nl.n) break; } }
+        nl.ancla = ancla;
+      }
+    }
+    // Contador de nuevos: mensajes entrantes que llegan mientras el agente lee más arriba.
+    // (solo cuentan los que llegan al final: los antiguos que se prependen con el scroll hacia arriba, no)
+    if (ultimoRenderHiloId === hiloAbiertoId && idsRenderPrevio.size && ultimoCreatedRender) {
+      const nuevosIn = visibles.filter(m => m.direccion === 'in' && !idsRenderPrevio.has(String(m.id)) && String(m.created_at) > ultimoCreatedRender).length;
+      if (nuevosIn && !estabaAlFondo) nuevosSinVer += nuevosIn;
+    }
+    if (estabaAlFondo) nuevosSinVer = 0;
+    idsRenderPrevio = new Set(visibles.map(m => String(m.id)));
+    ultimoCreatedRender = visibles.length ? String(visibles[visibles.length - 1].created_at) : '';
+    const cargando = cargandoAntiguos === hiloAbiertoId ? ' on' : '';
+    const older = historialCompleto.has(hiloAbiertoId) && !cargando ? '' : `<div class="nxWaOlderWrap"><span class="nxWaOlder${cargando}"><i class="ti ti-loader-2"></i>Cargando mensajes anteriores…</span></div>`;
+    const filas = visibles.length ? older + visibles.map((m, i) => renderBurbuja(m, i, visibles, porId, ancla, nl ? nl.n : 0)).join('') : '<div class="nxWaEmpty">Sin mensajes todavía.</div>';
     const borrador = borradoresPorHilo.get(hiloAbiertoId) || valorPrevio || '';
     const resp = respuestaActiva ? `<div class="nxWaReplyBar"><div class="tx"><b>Respondiendo a ${esc(respuestaActiva.autor || 'Cliente')}</b><span>${esc(respuestaActiva.texto || '')}</span></div><button onclick="nxWaCancelarRespuesta()">×</button></div>` : '';
     if (scrollInicial) cont.classList.add('prep-bottom'); else cont.classList.remove('prep-bottom');
@@ -1316,6 +1722,7 @@
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
     if (nuevoBox) vigilarScrollManual(nuevoBox, hiloAbiertoId);
     if (nuevoBox) vigilarAlturaMensajes(nuevoBox, hiloAbiertoId);
+    if (nuevoBox) { prepararAudios(nuevoBox); actualizarContadorNuevos(); }
     if (scrollInicial || pegadoAlFondo) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');
@@ -1367,6 +1774,7 @@
   window.nxWaCerrarDetalleMob = function () {
     guardarBorradorActual();
     hiloAbiertoId = null; respuestaActiva = null; mensajes = []; mensajesHiloId = null;
+    noLeidosAlAbrir.clear(); nuevosSinVer = 0; idsRenderPrevio = new Set(); audioActivo = null; actualizarContadorNuevos();
     pintarLista(); pintarDetalle();
     // "nxWaChatOpen" es una marca separada de un parche visual anterior (parches-whatsapp-
     // visual.js) que oculta la lista y muestra el detalle en el celular -- este botón nativo de
@@ -1506,6 +1914,176 @@
     await enviarTextoWhatsApp(String(m.cuerpo), m.responde_a_id || null, id);
   };
 
+  // ── API para las capas del menú de mensaje (destacar / borrar para mí) ──
+  window.nxWaMarcarDestacado = function (id, destacadoAt) {
+    const m = mensajes.find(x => String(x.id) === String(id)); if (!m) return;
+    m.destacado_at = destacadoAt || null;
+    pintarDetalle();
+  };
+  window.nxWaMarcarOculto = function (id) {
+    const m = mensajes.find(x => String(x.id) === String(id)); if (!m) return;
+    m.oculto_at = new Date().toISOString();
+    pintarDetalle();
+  };
+  window.nxWaMensajeCargado = function (id) { return mensajes.find(x => String(x.id) === String(id)) || null; };
+
+  // «Mensaje» en una tarjeta de contacto: hilo existente con ese número, si no el cliente con ese
+  // teléfono, y si no hay ninguno se muestra el número (copiado al portapapeles).
+  window.nxWaMensajeAContacto = async function (tel) {
+    const d = soloDigitos(tel); if (!d) return;
+    const coincide = v => { const x = soloDigitos(v); return x && (x === d || x.endsWith(d) || d.endsWith(x)) && Math.min(x.length, d.length) >= 10; };
+    const h = hilos.find(x => coincide(x.telefono_e164));
+    if (h) { await window.nxWaAbrirHilo(h.id); return; }
+    const c = clientes().find(x => coincide(x.wa) || coincide(x.tel));
+    if (c && c.id) { await window.nxAbrirWhatsAppDeCliente(c.id); return; }
+    try { await navigator.clipboard.writeText('+' + d); } catch (e) {}
+    try { toast('info', 'Sin conversación con ese número', formatearTelefono('+' + d) + ' · copiado'); } catch (e) {}
+  };
+
+  // ── Reproductor de audio (sobre el <audio> oculto de cada nota) ──
+  function fmtSeg(s) { s = Math.max(0, Math.round(Number(s) || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function pintarProgresoAudio(w, a) {
+    const dur = isFinite(a.duration) && a.duration > 0 ? a.duration : 0;
+    const f = dur ? Math.min(1, a.currentTime / dur) : 0;
+    const fill = w.querySelector('.nxWaAudioFill'), knob = w.querySelector('.nxWaAudioKnob'), t = w.querySelector('.nxWaAudioTime');
+    if (fill) fill.style.width = (f * 100) + '%';
+    if (knob) knob.style.left = (f * 100) + '%';
+    if (t) t.textContent = (a.paused && !a.currentTime) ? (dur ? fmtSeg(dur) : '--:--') : fmtSeg(a.currentTime);
+  }
+  function prepararAudios(box) {
+    box.querySelectorAll('.nxWaAudio').forEach(w => {
+      const a = w.querySelector('audio'); if (!a || a.dataset.nxWaAudioOk) return;
+      a.dataset.nxWaAudioOk = '1';
+      const id = w.dataset.id;
+      const sync = () => pintarProgresoAudio(w, a);
+      a.addEventListener('loadedmetadata', sync);
+      a.addEventListener('durationchange', sync);
+      a.addEventListener('timeupdate', () => { sync(); if (audioActivo && audioActivo.id === id) { audioActivo.t = a.currentTime; audioActivo.playing = !a.paused; } });
+      a.addEventListener('play', () => { w.classList.add('playing'); const i = w.querySelector('.nxWaAudioPlay i'); if (i) i.className = 'ti ti-player-pause-filled'; box.querySelectorAll('.nxWaAudio audio').forEach(o => { if (o !== a && !o.paused) o.pause(); }); audioActivo = { id, t: a.currentTime, playing: true, rate: a.playbackRate }; });
+      a.addEventListener('pause', () => { w.classList.remove('playing'); const i = w.querySelector('.nxWaAudioPlay i'); if (i) i.className = 'ti ti-player-play-filled'; if (audioActivo && audioActivo.id === id) audioActivo.playing = false; });
+      a.addEventListener('ended', () => { a.currentTime = 0; sync(); if (audioActivo && audioActivo.id === id) audioActivo = null; });
+      // Un repintado (Realtime) destruye el nodo: la nota que sonaba sigue desde donde iba.
+      if (audioActivo && audioActivo.id === id) {
+        a.playbackRate = audioActivo.rate || 1;
+        const r = w.querySelector('.nxWaAudioRate'); if (r) r.textContent = (audioActivo.rate || 1) + 'x';
+        const reanudar = () => { try { a.currentTime = audioActivo.t || 0; } catch (e) {} sync(); if (audioActivo.playing) a.play().catch(() => {}); };
+        if (a.readyState >= 1) reanudar(); else a.addEventListener('loadedmetadata', reanudar, { once: true });
+      } else if (a.readyState >= 1) sync();
+    });
+  }
+  function audioDesde(el) { const w = el.closest('.nxWaAudio'); return w ? { w, a: w.querySelector('audio') } : null; }
+  function manejarClickAudio(e) {
+    const play = e.target.closest('#nxWaMsgsBox .nxWaAudioPlay');
+    if (play) { e.preventDefault(); e.stopPropagation(); const x = audioDesde(play); if (!x?.a) return; if (x.a.paused) x.a.play().catch(() => { try { toast('err', 'No se pudo reproducir el audio'); } catch (_e) {} }); else x.a.pause(); return; }
+    const rate = e.target.closest('#nxWaMsgsBox .nxWaAudioRate');
+    if (rate) { e.preventDefault(); e.stopPropagation(); const x = audioDesde(rate); if (!x?.a) return; const r = x.a.playbackRate >= 2 ? 1 : x.a.playbackRate >= 1.5 ? 2 : 1.5; x.a.playbackRate = r; rate.textContent = r + 'x'; if (audioActivo && audioActivo.id === x.w.dataset.id) audioActivo.rate = r; }
+  }
+  let arrastreAudio = null;
+  function manejarBarraAudio(e) {
+    const bar = e.target.closest('#nxWaMsgsBox .nxWaAudioBar'); if (!bar) return;
+    e.stopPropagation(); e.preventDefault();
+    const x = audioDesde(bar); if (!x?.a) return;
+    const mover = ev => {
+      const r = bar.getBoundingClientRect(); const f = Math.min(1, Math.max(0, (ev.clientX - r.left) / Math.max(1, r.width)));
+      const dur = isFinite(x.a.duration) && x.a.duration > 0 ? x.a.duration : 0;
+      if (dur) { try { x.a.currentTime = f * dur; } catch (_e) {} }
+      const fill = x.w.querySelector('.nxWaAudioFill'), knob = x.w.querySelector('.nxWaAudioKnob');
+      if (fill) fill.style.width = (f * 100) + '%'; if (knob) knob.style.left = (f * 100) + '%';
+      const t = x.w.querySelector('.nxWaAudioTime'); if (t && dur) t.textContent = fmtSeg(f * dur);
+    };
+    mover(e);
+    try { bar.setPointerCapture(e.pointerId); } catch (_e) {}
+    arrastreAudio = { bar, mover, id: e.pointerId };
+  }
+  function moverBarraAudio(e) { if (arrastreAudio && e.pointerId === arrastreAudio.id) { e.stopPropagation(); arrastreAudio.mover(e); } }
+  function soltarBarraAudio(e) { if (arrastreAudio && e.pointerId === arrastreAudio.id) { e.stopPropagation(); arrastreAudio = null; } }
+
+  // ── Visor a pantalla completa (imagen / video) con pinch, doble toque, deslizar y descarga ──
+  function mediaDelHilo() {
+    return mensajesVisibles().filter(m => (m.tipo_contenido === 'imagen' || m.tipo_contenido === 'video') && m._url).map(m => ({ id: String(m.id), url: m._url, tipo: m.tipo_contenido, quien: autorMensaje(m), hora: `${etiquetaDia(m.created_at)} · ${horaMsg(m.created_at)}`, caption: !esCuerpoGenerico(m) ? String(m.cuerpo || '') : '' }));
+  }
+  window.nxWaVerMedia = function (id) {
+    const items = mediaDelHilo();
+    const i = items.findIndex(x => x.id === String(id));
+    if (i < 0) return;
+    window.nxWaLightbox(items, i);
+  };
+  window.nxWaLightbox = function (items, indice) {
+    if (!items || !items.length) return;
+    document.querySelectorAll('.nxWaLb').forEach(x => x.remove());
+    let idx = Math.max(0, Math.min(indice || 0, items.length - 1));
+    const lb = document.createElement('div'); lb.className = 'nxWaLb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', 'Visor de multimedia');
+    lb.innerHTML = `<div class="nxWaLbTop"><div class="nxWaLbInfo"></div><div class="nxWaLbActs"><a class="nxWaLbBtn nxWaLbDown" download target="_blank" rel="noopener" aria-label="Descargar" title="Descargar"><i class="ti ti-download"></i></a><button type="button" class="nxWaLbBtn nxWaLbClose" aria-label="Cerrar"><i class="ti ti-x"></i></button></div></div><div class="nxWaLbStage"><button type="button" class="nxWaLbNav prev" aria-label="Anterior"><i class="ti ti-chevron-left"></i></button><button type="button" class="nxWaLbNav next" aria-label="Siguiente"><i class="ti ti-chevron-right"></i></button></div><div class="nxWaLbFoot"><div class="nxWaLbCaption"></div><div class="nxWaLbCount"></div></div>`;
+    const stage = lb.querySelector('.nxWaLbStage'), info = lb.querySelector('.nxWaLbInfo'), cap = lb.querySelector('.nxWaLbCaption'), cnt = lb.querySelector('.nxWaLbCount'), down = lb.querySelector('.nxWaLbDown');
+    let scale = 1, tx = 0, ty = 0, media = null;
+    const aplicar = () => { if (media) media.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; stage.classList.toggle('zoomed', scale > 1); };
+    const cerrar = () => { lb.remove(); document.removeEventListener('keydown', teclas); };
+    const teclas = e => { if (e.key === 'Escape') cerrar(); else if (e.key === 'ArrowLeft') ir(-1); else if (e.key === 'ArrowRight') ir(1); };
+    async function mostrar() {
+      const it = items[idx];
+      scale = 1; tx = 0; ty = 0;
+      stage.querySelectorAll('img,video').forEach(x => x.remove());
+      let url = it.url;
+      if (!url && typeof it.cargar === 'function') { try { url = await it.cargar(); it.url = url; } catch (e) {} }
+      if (it.tipo === 'video') { media = document.createElement('video'); media.controls = true; media.playsInline = true; media.autoplay = true; media.src = url || ''; }
+      else { media = document.createElement('img'); media.alt = 'Imagen'; media.draggable = false; media.src = url || ''; }
+      stage.appendChild(media); aplicar();
+      info.innerHTML = `${esc(it.quien || '')}<span>${esc(it.hora || '')}</span>`;
+      cap.textContent = it.caption || ''; cap.style.display = it.caption ? '' : 'none';
+      cnt.textContent = `${idx + 1} / ${items.length}`;
+      down.href = url || '#'; down.setAttribute('download', (it.tipo === 'video' ? 'video-' : 'imagen-') + (it.id || idx));
+      lb.querySelector('.nxWaLbNav.prev').disabled = idx <= 0;
+      lb.querySelector('.nxWaLbNav.next').disabled = idx >= items.length - 1;
+    }
+    function ir(d) { const n = idx + d; if (n < 0 || n >= items.length) return; idx = n; mostrar(); }
+    lb.querySelector('.nxWaLbClose').onclick = cerrar;
+    lb.querySelector('.nxWaLbNav.prev').onclick = e => { e.stopPropagation(); ir(-1); };
+    lb.querySelector('.nxWaLbNav.next').onclick = e => { e.stopPropagation(); ir(1); };
+    lb.querySelector('.nxWaLbTop').addEventListener('click', e => { if (e.target === e.currentTarget) cerrar(); });
+    // Gestos: 1 dedo = deslizar (cambiar / cerrar hacia abajo) o mover la imagen ampliada; 2 dedos = pinch; doble toque = 2.5x.
+    const punteros = new Map(); let inicio = null, pinch = null, ultimoTap = 0;
+    stage.addEventListener('pointerdown', e => {
+      if (e.target.closest('.nxWaLbNav') || (media && media.tagName === 'VIDEO' && e.target === media)) return;
+      punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { stage.setPointerCapture(e.pointerId); } catch (_e) {}
+      if (punteros.size === 1) inicio = { x: e.clientX, y: e.clientY, tx, ty, t: Date.now(), movido: false };
+      else if (punteros.size === 2) { const [a, b] = [...punteros.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: scale }; inicio = null; }
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!punteros.has(e.pointerId)) return;
+      punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && punteros.size === 2) { const [a, b] = [...punteros.values()]; scale = Math.min(4, Math.max(1, pinch.s * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinch.d))); if (scale === 1) { tx = 0; ty = 0; } aplicar(); return; }
+      if (!inicio) return;
+      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) inicio.movido = true;
+      if (scale > 1) { tx = inicio.tx + dx; ty = inicio.ty + dy; aplicar(); }
+      else if (media && media.tagName !== 'VIDEO') { media.style.transform = `translate(${dx}px,${Math.max(0, dy)}px)`; media.style.opacity = String(Math.max(.35, 1 - Math.max(0, dy) / 300)); }
+    });
+    const soltar = e => {
+      if (!punteros.has(e.pointerId)) return;
+      punteros.delete(e.pointerId);
+      if (punteros.size < 2) pinch = null;
+      if (!inicio) return;
+      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y, dt = Date.now() - inicio.t;
+      const tap = !inicio.movido && dt < 350;
+      inicio = null;
+      if (media) media.style.opacity = '';
+      if (tap) { const ahora = Date.now(); if (ahora - ultimoTap < 320 && media && media.tagName !== 'VIDEO') { scale = scale > 1 ? 1 : 2.5; tx = 0; ty = 0; aplicar(); ultimoTap = 0; } else ultimoTap = ahora; return; }
+      if (scale > 1) return;
+      if (dy > 110 && Math.abs(dx) < 80) { cerrar(); return; }
+      if (Math.abs(dx) > 60 && Math.abs(dy) < 90) { ir(dx < 0 ? 1 : -1); return; }
+      aplicar();
+    };
+    stage.addEventListener('pointerup', soltar);
+    stage.addEventListener('pointercancel', soltar);
+    stage.addEventListener('dblclick', e => { if (media && media.tagName !== 'VIDEO') { scale = scale > 1 ? 1 : 2.5; tx = 0; ty = 0; aplicar(); } });
+    stage.addEventListener('wheel', e => { if (!media || media.tagName === 'VIDEO') return; e.preventDefault(); scale = Math.min(4, Math.max(1, scale - Math.sign(e.deltaY) * .25)); if (scale === 1) { tx = 0; ty = 0; } aplicar(); }, { passive: false });
+    document.addEventListener('keydown', teclas);
+    document.body.appendChild(lb);
+    mostrar();
+    return lb;
+  };
+
   window.nxWaEnviar = async function () {
     const inp = $('#nxWaTexto'); if (!inp) return;
     const texto = inp.value.trim(); if (!texto) return;
@@ -1612,6 +2190,14 @@
 
   function start() {
     css(); ensureMenu(); patchNav(); iniciarRealtime();
+    // Controles del reproductor de audio: en fase de captura para que el arrastre de la barra no
+    // dispare el «deslizar para responder» ni la pulsación larga de la burbuja (atributos en línea).
+    document.addEventListener('click', manejarClickAudio, true);
+    document.addEventListener('pointerdown', manejarBarraAudio, true);
+    document.addEventListener('pointermove', moverBarraAudio, true);
+    document.addEventListener('pointerup', soltarBarraAudio, true);
+    document.addEventListener('pointercancel', soltarBarraAudio, true);
+    document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('#nxWaMsgsBox .nxWaAudio,#nxWaMsgsBox .nxWaVideoWrap')) e.stopPropagation(); }, { capture: true, passive: true });
     let n = 0; const t = () => { n++; if (envolverRegAbono() || n > 120) return; setTimeout(t, 250); };
     t();
   }

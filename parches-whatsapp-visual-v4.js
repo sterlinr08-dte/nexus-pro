@@ -32,6 +32,8 @@
 #v-waInbox .nxWaLatest{position:absolute;right:18px;bottom:70px;z-index:6;width:34px;height:34px;border:1px solid rgba(148,163,184,.22);border-radius:50%;background:rgba(255,255,255,.90);color:#2563eb;display:grid;place-items:center;box-shadow:0 10px 22px -14px rgba(15,23,42,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:0;pointer-events:none;transform:translateY(5px);transition:opacity .15s ease,transform .15s ease;cursor:pointer}
 #v-waInbox .nxWaLatest.show{opacity:1;pointer-events:auto;transform:none}
 #v-waInbox .nxWaLatest i{font-size:15px}
+#v-waInbox .nxWaLatestCount{position:absolute;top:-7px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#2563eb;color:#fff;font-size:9.5px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 2px rgba(10,22,40,.9)}
+#v-waInbox .nxWaLatestCount:empty{display:none}
 #v-waInbox .nxWaEmpty.nxWaEmptyPolished{display:grid;place-items:center;align-content:center;gap:7px;min-height:160px;color:#64748b}
 #v-waInbox .nxWaEmpty.nxWaEmptyPolished:before{content:"\ea4a";font-family:"tabler-icons";width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(37,99,235,.07);color:#2563eb;font-size:17px}
 body.tema-premium #v-waInbox .nxWaListCaption b{color:#f8fafc}
@@ -101,18 +103,19 @@ body.tema-premium #v-waInbox .nxWaSearchToggle,body.tema-premium #v-waInbox .nxW
     const root=v(),detail=root&&$('.nxWaDetailCol',root),box=root&&$('#nxWaMsgsBox',root);if(!detail)return;
     let b=$('.nxWaLatest',detail);
     if(!b){
-      b=document.createElement('button');b.type='button';b.className='nxWaLatest';b.setAttribute('aria-label','Ir al último mensaje');b.innerHTML='<i class="ti ti-chevron-down"></i>';detail.appendChild(b);
+      b=document.createElement('button');b.type='button';b.className='nxWaLatest';b.setAttribute('aria-label','Ir al último mensaje');b.innerHTML='<i class="ti ti-chevron-down"></i><span class="nxWaLatestCount"></span>';detail.appendChild(b);
       b.onclick=()=>{const x=$('#nxWaMsgsBox',detail);if(x)x.scrollTo({top:x.scrollHeight,behavior:'smooth'});};
     }
     if(!box){b.classList.remove('show');return;}
+    // Contador de mensajes nuevos llegados mientras el agente lee más arriba (lo lleva el núcleo en
+    // window.__nxWaNuevosSinVer y avisa con window.nxWaLatestSync).
+    const sync=()=>{const n=Number(window.__nxWaNuevosSinVer)||0;const c=$('.nxWaLatestCount',b);if(c)c.textContent=n?String(n):'';const d=box.scrollHeight-box.scrollTop-box.clientHeight;b.classList.toggle('show',d>90||n>0);};
+    window.nxWaLatestSync=sync;
     if(!box.dataset.nxWaV4Scroll){
       box.dataset.nxWaV4Scroll='1';
-      const sync=()=>{const d=box.scrollHeight-box.scrollTop-box.clientHeight;b.classList.toggle('show',d>90);};
       box.addEventListener('scroll',sync,{passive:true});
       requestAnimationFrame(sync);
-    }else{
-      const d=box.scrollHeight-box.scrollTop-box.clientHeight;b.classList.toggle('show',d>90);
-    }
+    }else sync();
   }
 
   function polishEmpty(){
