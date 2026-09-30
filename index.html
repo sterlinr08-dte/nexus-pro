@@ -4042,22 +4042,63 @@ html.tema-glass-oscuro #cnt .nxSL-empty-soft{color:#D6D3D1!important}
 /* Configuración: nombre de las pestañas (la regla base lo fija con !important) */
 html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{color:#D6D3D1!important}
 
-/* 58.92 (30-sep-2026, arreglo urgente) — chat de WhatsApp legible en Glass oscuro: burbujas, barra de escribir y aviso de 24 h
-   (las capas parches-whatsapp-* pintan burbujas claras con !important; el tema ya ponía el texto claro). */
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out{background:#2563EB!important;background-image:none!important;border:1px solid rgba(147,197,253,.35)!important;color:#F8FAFC!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in{background:rgba(30,58,138,.45)!important;background-image:none!important;border:1px solid rgba(147,197,253,.22)!important;color:#F5F5F4!important;box-shadow:none!important}
+/* 58.92 (30-sep-2026) — Buzón de WhatsApp con la paleta del WhatsApp original en modo oscuro (pedido del dueño).
+   Arregla además el chat ilegible de 58.91 (las capas parches-whatsapp-* pintan burbujas claras con !important).
+   Solo colores: todas las funciones y acciones (responder, reaccionar, adjuntar, audio, plantillas, buscar, menú) siguen igual. */
+html.tema-glass-oscuro body #cnt #v-waInbox{--wa-bg:#0B141A;--wa-panel:#111B21;--wa-head:#202C33;--wa-in:#202C33;--wa-out:#005C4B;--wa-input:#2A3942;--wa-txt:#E9EDEF;--wa-sub:#8696A0;--wa-green:#00A884;--wa-check:#53BDEB;--wa-sep:#182229;--wa-line:rgba(134,150,160,.15)}
+/* columnas */
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaDetailCol,.nxWaDetalle){background:var(--wa-bg)!important;background-image:none!important;border-color:var(--wa-line)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs{background-color:var(--wa-bg)!important;background-image:radial-gradient(rgba(134,150,160,.07) 1px,transparent 1.4px),radial-gradient(rgba(134,150,160,.05) 1px,transparent 1.4px)!important;background-size:22px 22px,22px 22px!important;background-position:0 0,11px 11px!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaListCol,.nxWaCol:not(.nxWaDetailCol)){background:var(--wa-panel)!important;background-image:none!important;border-color:var(--wa-line)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaListTools,.nxWaListScroll){background:transparent!important;background-image:none!important}
+/* cabecera del chat */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaHead{background:var(--wa-head)!important;background-image:none!important;border:0!important;border-bottom:1px solid var(--wa-line)!important;box-shadow:none!important;color:var(--wa-txt)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaHeadName,.nxWaHeadName *){color:var(--wa-txt)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaHeadSub,.nxWaHeadSub *){color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaHead :is(button,.nxWaHeadAct,.nxWaIconBtn,.nxWaChatHeadBtn,.nxWaBackMob){background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaHead :is(button,.nxWaHeadAct,.nxWaIconBtn,.nxWaChatHeadBtn,.nxWaBackMob) i{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaHeadAvatar,.nxWaAv){background:#6A7175!important;background-image:none!important;color:#E9EDEF!important;box-shadow:none!important;border:0!important}
+/* burbujas */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out{background:var(--wa-out)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:0 1px .5px rgba(11,20,26,.13)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in{background:var(--wa-in)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:0 1px .5px rgba(11,20,26,.13)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub :is(.nxWaMsgText,p,span:not(.ti),b,strong,em){color:inherit!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub a{color:#93C5FD!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta){color:#DBEAFE!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in :is(.nxWaMsgMeta,.nxWaBubMeta){color:#C7D2FE!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta) .ti-checks{color:#BFDBFE!important}
-html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaComposer .nxWaRefTextPill){background:rgba(255,255,255,.07)!important;background-image:none!important;border:1px solid rgba(255,255,255,.14)!important;color:#D6D3D1!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRefClosedPill *{color:#D6D3D1!important}
-html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaRefTextPill) :is(input,textarea)::placeholder{color:#A8A29E!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada{background:rgba(245,158,11,.10)!important;background-image:none!important;border:1px solid rgba(251,191,36,.28)!important;color:#FDE68A!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada :is(span,p,div,b):not(.nxWaTplBtn):not(.nxWaTplBtn *){color:#FDE68A!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt{background:rgba(255,255,255,.08)!important;background-image:none!important;border:1px solid rgba(255,255,255,.16)!important;color:#F5F5F4!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt i{color:#F5F5F4!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub a{color:var(--wa-check)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta){color:rgba(233,237,239,.6)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in :is(.nxWaMsgMeta,.nxWaBubMeta){color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta) .ti-checks{color:var(--wa-check)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaQuote{background:rgba(0,0,0,.2)!important;border-left:4px solid var(--wa-green)!important;color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaDaySep{background:var(--wa-sep)!important;color:var(--wa-sub)!important;box-shadow:none!important;border:0!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgMenu,.nxWaMsgDrop){background:#233138!important;background-image:none!important;border-color:transparent!important;color:var(--wa-txt)!important;box-shadow:0 2px 5px rgba(11,20,26,.26)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgMenu,.nxWaMsgDrop) :is(i,span,button){color:var(--wa-txt)!important}
+/* respuesta y barra de escribir */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaReplyBar{background:var(--wa-head)!important;background-image:none!important;border-color:var(--wa-line)!important;color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaComposer{background:var(--wa-head)!important;background-image:none!important;border:0!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaComposer .nxWaRefTextPill){background:var(--wa-input)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaRefTextPill) :is(input,textarea){color:var(--wa-txt)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRefClosedPill *{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaRefTextPill) :is(input,textarea)::placeholder{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaComposer :is(.nxWaRefClosedPill,.nxWaRefTextPill) :is(button,i,img,svg){color:var(--wa-sub)!important;background:transparent!important;background-image:none!important;box-shadow:none!important;filter:grayscale(1) brightness(1.25)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaComposer :is(.nxWaEnviar,button:last-child){background:var(--wa-green)!important;background-image:none!important;border:0!important;color:#fff!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaComposer :is(.nxWaEnviar,button:last-child) :is(i,img,svg){color:#fff!important;filter:none!important}
+/* aviso de 24 horas y plantillas */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada{background:var(--wa-sep)!important;background-image:none!important;border:0!important;color:var(--wa-sub)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada :is(span,p,div,b):not(.nxWaTplBtn):not(.nxWaTplBtn *){color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt){background:var(--wa-green)!important;background-image:none!important;color:#111B21!important;border:0!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt) i{color:#111B21!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt{background:var(--wa-input)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt i{color:var(--wa-txt)!important}
+/* lista de chats */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow{background:transparent!important;background-image:none!important;border:0!important;border-bottom:1px solid var(--wa-line)!important;border-radius:0!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow:hover{background:var(--wa-head)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow.on{background:var(--wa-input)!important;border-color:var(--wa-line)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow b{color:var(--wa-txt)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow span:not(.nxWaBadge):not(.nxWaTime):not(.nxWaTag){color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTime{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaBadge{background:var(--wa-green)!important;background-image:none!important;color:#111B21!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaSearchBar,.nxWaListTools input,.nxWaSearchBar input){background:var(--wa-head)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaSearchBar,.nxWaListTools) input::placeholder{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaFiltro{background:var(--wa-head)!important;background-image:none!important;border:0!important;color:var(--wa-sub)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaFiltro.on{background:rgba(0,168,132,.18)!important;color:#00D9A5!important}
 </style>
 </head>
 <body>
