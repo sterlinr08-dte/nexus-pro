@@ -3141,8 +3141,9 @@ html.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(255,
      tooltip (hover/foco/toque largo), Contabilidad y Configuración abren un panel flotante al lado; SIN barra superior:
      sus acciones son la fila de cabecera del panel principal de cristal (.main). Móvil (≤768 px): el cajón de siempre
      y una cabecera mínima (menú + título + campana + actualizar), sin barra inferior.
-   · Cristal grafito cálido rgba(38,34,32,.62), bordes rgba(255,255,255,.08); tarjetas, KPI, tablas, formularios y
-     modales en BLANCO con texto carbón; un solo acento: azul NEXUS #2563EB. Sin tocar parches-whatsapp-*.
+   · Cristal grafito cálido rgba(38,34,32,.62), bordes rgba(255,255,255,.08); un solo acento: azul NEXUS #2563EB.
+     58.91: tarjetas, KPI, tablas, formularios, modales, menús y avisos también en cristal oscuro con texto claro
+     (antes blancos), como el panel derecho del Inicio — ver «TODO OSCURO» más abajo. Sin tocar parches-whatsapp-*.
    · Móvil / modo liviano / prefers-reduced-transparency: sin desenfoque, cristal = grafito sólido.
    · Apagar: NX_TEMA_GLASS_OSCURO=false en el <head> (todos) o localStorage nx_tgo_off='1' (un equipo). */
 /* ── tokens ── */
@@ -3330,23 +3331,129 @@ html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
   html.tema-glass-oscuro body .tnav .pttl{display:block!important;flex:1 1 auto;min-width:0;max-width:none!important;font-size:17px!important;font-weight:700!important;overflow:hidden;text-overflow:ellipsis}
 }
 
-/* ── superficies: tarjetas, KPI, tablas, formularios y modales en BLANCO con texto carbón ── */
-html.tema-glass-oscuro .nc,html.tema-glass-oscuro .kpi,html.tema-glass-oscuro .kg>div,html.tema-glass-oscuro .modal{
-  background:#fff!important;border-color:rgba(15,23,42,.06)!important;box-shadow:var(--tgo-card-shadow)!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--tgo-ink)}
+/* ═══ 58.91 — TODO OSCURO: el lenguaje del panel derecho del Inicio (cristal grafito, bordes finos claros, texto
+   claro) en TODAS las pantallas, tarjetas, pestañas, filtros, tablas, listas, vacíos, modales, hojas, formularios,
+   menús y avisos. Mismos colores de significado en su variante clara (verde ok, ámbar aviso, rojo peligro, azul
+   acento). Todo cuelga de html.tema-glass-oscuro: Clásico/Premium/Glass claro y los interruptores no cambian.
+   · Superficie de tarjeta (--tgo-card): blanco al 6 % dentro del panel principal (escritorio); en el celular, que no
+     tiene panel principal, grafito al 80 % (como los paneles del Inicio en el celular).
+   · Superficie interna (--tgo-sub): blanco al 6 % sobre lo que haya debajo (tarjeta dentro de tarjeta, filas, chips).
+   · Campos: relleno oscuro, texto #F5F5F4, marcador #A8A29E (≥4.5:1), borde #8A837E (≥3:1), anillo azul al enfocar.
+   · Especificidad: donde un módulo usa #id (+!important), la regla del tema suma :not(#tgo) (un id que no existe)
+     en vez de pelear con más !important. ═══ */
+html.tema-glass-oscuro{
+  color-scheme:dark;
+  --tgo-card:rgba(255,255,255,.06);--tgo-sub:rgba(255,255,255,.06);--tgo-well:rgba(0,0,0,.18);--tgo-hover:rgba(255,255,255,.10);
+  --tgo-edge:rgba(255,255,255,.10);--tgo-edge-2:rgba(255,255,255,.16);
+  --tgo-sheet:linear-gradient(180deg,#322C28 0%,#26211E 100%);--tgo-sheet-solid:#2A2522;
+  --tgo-field:#1F1B19;--tgo-field-edge:#8A837E;--tgo-ph:#A8A29E;--tgo-focus:#60A5FA;
+  --tgo-t1:#F5F5F4;--tgo-t2:#D6D3D1;--tgo-t3:#A8A29E;
+  --tgo-ok:#4ADE80;--tgo-ok-l:rgba(34,197,94,.16);--tgo-warn:#FBBF24;--tgo-warn-l:rgba(245,158,11,.16);
+  --tgo-err:#FCA5A5;--tgo-err-s:#F87171;--tgo-err-l:rgba(239,68,68,.18);--tgo-info:#93C5FD;--tgo-info-l:rgba(59,130,246,.20);
+  /* tokens del sistema (los usan cientos de estilos escritos a mano: style="background:var(--bg3)") */
+  --bg0:#221D1A;--bg1:rgba(255,255,255,.06);--bg2:#1F1B19;--bg3:rgba(255,255,255,.05);--bg4:rgba(255,255,255,.08);
+  --tx1:#F5F5F4;--tx2:#D6D3D1;--tx3:#A8A29E;--border:rgba(255,255,255,.10);--border-light:rgba(255,255,255,.06);
+  --c1:#60A5FA;--c2:#93C5FD;--c3:#FCA5A5;--c4:#FBBF24;--c5:#4ADE80;
+  --shadow-sm:none;--shadow:0 8px 22px -14px rgba(0,0,0,.5);--shadow-md:0 12px 28px -16px rgba(0,0,0,.55);--shadow-lg:0 20px 44px -20px rgba(0,0,0,.6);
+  color:#F5F5F4;
+}
+@media (max-width:768px){html.tema-glass-oscuro{--tgo-card:rgba(38,34,32,.80)}}
+html.tema-glass-oscuro body{color:#F5F5F4}
+
+/* ── tarjetas, KPI, paneles ── */
+html.tema-glass-oscuro .nc,html.tema-glass-oscuro .kpi,html.tema-glass-oscuro .kg>div,html.tema-glass-oscuro .cfg-panel .nc{
+  background:var(--tgo-card)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--tgo-t1)}
 html.tema-glass-oscuro .nc{border-radius:16px!important}
-html.tema-glass-oscuro .tw{background:#fff!important;border-color:#E2E8F0!important}
-html.tema-glass-oscuro thead th{background:#F8FAFC!important;color:#64748B!important}
-html.tema-glass-oscuro tbody td{color:#0F172A}
-/* modales: hoja blanca sobre un velo oscuro desenfocado */
-html.tema-glass-oscuro .overlay{background:rgba(20,15,12,.55)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
-html.tema-glass-oscuro .modal{border-radius:20px!important}
-/* acento único azul */
+html.tema-glass-oscuro .nc.p1,html.tema-glass-oscuro .nc.p2,html.tema-glass-oscuro .nc.p3,html.tema-glass-oscuro .nc.p4,html.tema-glass-oscuro .nc.p5{border-top-width:3px!important}
+html.tema-glass-oscuro .nc.p2{border-top-color:#60A5FA!important}html.tema-glass-oscuro .nc.p3{border-top-color:#F87171!important}
+html.tema-glass-oscuro .nc.p4{border-top-color:#FBBF24!important}html.tema-glass-oscuro .nc.p5{border-top-color:#4ADE80!important}
+html.tema-glass-oscuro .kpi .kv{color:var(--tgo-t1)!important}html.tema-glass-oscuro .kpi .kl{color:var(--tgo-t2)!important}html.tema-glass-oscuro .kpi .ks{color:var(--tgo-t3)!important}
+html.tema-glass-oscuro .ct,html.tema-glass-oscuro .mt,html.tema-glass-oscuro #cnt h1,html.tema-glass-oscuro #cnt h2,html.tema-glass-oscuro #cnt h3,html.tema-glass-oscuro #cnt h4,
+html.tema-glass-oscuro .overlay h2,html.tema-glass-oscuro .overlay h3,html.tema-glass-oscuro .overlay h4{color:var(--tgo-t1)}
+html.tema-glass-oscuro .ct-s,html.tema-glass-oscuro .kp-l{color:var(--tgo-t3)!important}
+html.tema-glass-oscuro .div,html.tema-glass-oscuro hr{border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt :is(p,small,label,li,dt,dd){border-color:var(--tgo-edge)}
+
+/* ── tablas ── */
+html.tema-glass-oscuro .tw{background:var(--tgo-card)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro .nc .tw,html.tema-glass-oscuro .modal .tw{background:transparent!important}
+html.tema-glass-oscuro thead th,html.tema-glass-oscuro table th{background:rgba(255,255,255,.05)!important;color:var(--tgo-t3)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro tbody td{color:var(--tgo-t1);border-color:rgba(255,255,255,.07)!important;background-color:transparent}
+html.tema-glass-oscuro tbody tr{border-color:rgba(255,255,255,.07)!important;background-color:transparent}
+html.tema-glass-oscuro tbody tr:hover td,html.tema-glass-oscuro tbody tr:hover{background-color:rgba(255,255,255,.04)!important}
+html.tema-glass-oscuro tfoot td,html.tema-glass-oscuro tfoot th{background:rgba(255,255,255,.05)!important;color:var(--tgo-t1)!important;border-color:var(--tgo-edge)!important}
+
+/* ── botones ── */
+html.tema-glass-oscuro .btn{background:rgba(255,255,255,.07);border-color:var(--tgo-edge-2);color:#E7E5E4}
+html.tema-glass-oscuro .btn:hover{background:rgba(255,255,255,.13);border-color:rgba(147,197,253,.5);color:#fff}
+html.tema-glass-oscuro .btn.bghost,html.tema-glass-oscuro .bghost{background:rgba(255,255,255,.06)!important;border-color:var(--tgo-edge-2)!important;color:var(--tgo-t2)!important}
+html.tema-glass-oscuro .btn.bghost i,html.tema-glass-oscuro .btn.bsm.bghost i{color:var(--tgo-t2)!important}
+html.tema-glass-oscuro .btn.bghost:hover{background:rgba(255,255,255,.12)!important;color:#fff!important}
+html.tema-glass-oscuro .bc2,html.tema-glass-oscuro #cnt .btn.bc2{background:rgba(59,130,246,.16)!important;border-color:rgba(147,197,253,.35)!important;color:var(--tgo-info)!important}
+html.tema-glass-oscuro .bc4,html.tema-glass-oscuro .btn.bc4,html.tema-glass-oscuro .btn.bc4 i,html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i,html.tema-glass-oscuro .modal .btn.bc4,html.tema-glass-oscuro .modal .btn.bc4 i{color:var(--tgo-warn)!important}
+html.tema-glass-oscuro .bc4{background:rgba(245,158,11,.14)!important;border-color:rgba(251,191,36,.35)!important}
+html.tema-glass-oscuro .bdis{background:var(--tgo-err-l)!important;border-color:rgba(248,113,113,.4)!important;color:var(--tgo-err)!important}
+html.tema-glass-oscuro .bwa,html.tema-glass-oscuro .btn.bwa{background:var(--tgo-ok-l)!important;border-color:rgba(74,222,128,.35)!important;color:var(--tgo-ok)!important}
+html.tema-glass-oscuro .btn.bwa i{color:var(--tgo-ok)!important}
 html.tema-glass-oscuro .bc1{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
 html.tema-glass-oscuro .bc1:hover{background:var(--tgo-blue-d)!important;border-color:var(--tgo-blue-d)!important}
+html.tema-glass-oscuro .bc3{background:#DC2626!important;border-color:#DC2626!important;color:#fff!important}
+html.tema-glass-oscuro .bc5,html.tema-glass-oscuro #cnt .btn.bc5,html.tema-glass-oscuro #cnt .btn.bsm.bc5,html.tema-glass-oscuro .overlay .btn.bc5{background:#15803D!important;border-color:#15803D!important;color:#fff!important}
+html.tema-glass-oscuro .btn.bc1 i,html.tema-glass-oscuro .btn.bc3 i,html.tema-glass-oscuro .btn.bc5 i{color:#fff!important}
+
+/* ── insignias ── */
+html.tema-glass-oscuro .badge{background:rgba(255,255,255,.08)!important;box-shadow:none!important}
+html.tema-glass-oscuro .bC1,html.tema-glass-oscuro .badge.bC1,html.tema-glass-oscuro .bC2,html.tema-glass-oscuro .badge.bC2{color:var(--tgo-info)!important}
+html.tema-glass-oscuro .bC3,html.tema-glass-oscuro .bCoff,html.tema-glass-oscuro .badge.bC3{color:var(--tgo-err)!important}
+html.tema-glass-oscuro .bC4,html.tema-glass-oscuro .badge.bC4,html.tema-glass-oscuro .modal .badge.bC4,html.tema-glass-oscuro #cnt .badge.bC4{color:var(--tgo-warn)!important}
+html.tema-glass-oscuro .bC5,html.tema-glass-oscuro .badge.bC5,html.tema-glass-oscuro .bC6{color:var(--tgo-ok)!important}
+html.tema-glass-oscuro .bCg{color:var(--tgo-t2)!important}html.tema-glass-oscuro .bC7{color:#F9A8D4!important}
+html.tema-glass-oscuro .ncf-badge{background:var(--tgo-warn-l)!important;color:var(--tgo-warn)!important;border-color:rgba(251,191,36,.3)!important}
+
+/* ── campos (inputs, selects, textareas, fechas) ── */
+html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif-panel,.mobile-more-sheet-clean,.nxFP) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=button]):not([type=submit]),select,textarea):not(#tgo){
+  background-color:var(--tgo-field)!important;color:var(--tgo-t1)!important;-webkit-text-fill-color:var(--tgo-t1);border:1px solid var(--tgo-field-edge)!important;box-shadow:none!important;caret-color:#93C5FD}
+html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif-panel,.nxFP) :is(input,textarea)::placeholder{color:var(--tgo-ph)!important;-webkit-text-fill-color:var(--tgo-ph);opacity:1}
+html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif-panel,.nxFP) :is(input,select,textarea):not(#tgo):focus{border-color:var(--tgo-focus)!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important;outline:none!important}
+html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) :is(input,select,textarea):disabled{opacity:.6}
+/* select: flecha clara (el sistema dibuja la suya en background-image con !important) */
+html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) select:not(#tgo){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23D6D3D1' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important}
+html.tema-glass-oscuro select option,html.tema-glass-oscuro select optgroup{background:#26211E;color:#F5F5F4}
+/* campos «transparentes» dentro de un buscador con marco propio: sin segundo marco */
+html.tema-glass-oscuro :is(#app,.overlay) :is(.nxBusca,.nxCrmSearch,.gs-input-wrap) input:not(#tgo):not(#tgo2):not(#tgo3){background-color:transparent!important;border:0!important;box-shadow:none!important}
+html.tema-glass-oscuro input[type=checkbox],html.tema-glass-oscuro input[type=radio]{accent-color:#3B82F6}
+html.tema-glass-oscuro #cnt .fr label,html.tema-glass-oscuro .overlay .fr label,html.tema-glass-oscuro .overlay .modal label{color:var(--tgo-t2)!important}
+/* selector de fecha nativo: ícono claro */
+html.tema-glass-oscuro input::-webkit-calendar-picker-indicator{filter:invert(.85)}
+
+/* ── modales y hojas: cristal grafito sólido sobre el velo ── */
+html.tema-glass-oscuro .overlay{background:rgba(12,9,7,.62)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+html.tema-glass-oscuro .overlay .modal:not(#tgo),html.tema-glass-oscuro .modal:not(#tgo),html.tema-glass-oscuro .nxCrmDialog,html.tema-glass-oscuro .cs-panel{
+  --nm-bg:#2A2522;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F5F5F4;--nm-tx2:#D6D3D1;--nm-accent:#93C5FD;
+  --pill-bg:rgba(255,255,255,.05);--pill-hi:rgba(255,255,255,.08);--pill-lo:rgba(0,0,0,.30);--pill-accent:#93C5FD;
+  background:var(--tgo-sheet)!important;border:1px solid rgba(255,255,255,.12)!important;color:var(--tgo-t1)!important;
+  box-shadow:0 30px 70px -24px rgba(0,0,0,.75)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro .modal{border-radius:20px!important}
+html.tema-glass-oscuro .modal .mt,html.tema-glass-oscuro .overlay .mt{color:var(--tgo-t1)!important}
+/* botones y chips neumórficos de los modales (--nm-*): elevado = blanco al 7 % con borde fino */
+html.tema-glass-oscuro .overlay .modal .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl):not(.bwa):not(.bc4):not(.bc2):not([style*="background:#"]):not([style*="background: rgb"]):not(#tgo){
+  background:rgba(255,255,255,.07)!important;border:1px solid var(--tgo-edge-2)!important;color:#E7E5E4!important;box-shadow:none!important}
+html.tema-glass-oscuro .overlay .modal .btn.bwa:not(#tgo){box-shadow:none!important}
+html.tema-glass-oscuro .overlay :is(.nxOptChip,.esel,.aboNote,.aboFact,.aboQbtn,.aboAv,#abonoI):not(#tgo){background:rgba(255,255,255,.06)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;color:var(--tgo-t1)}
+html.tema-glass-oscuro .overlay .nxOptChip.on:not(#tgo){background:rgba(37,99,235,.28)!important;border-color:rgba(147,197,253,.6)!important;color:#fff!important}
+/* menú del botón flotante (celular): hoja oscura */
+html.tema-glass-oscuro body .mobile-more-sheet-clean{background:var(--tgo-sheet)!important;background-image:var(--tgo-sheet)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:rgba(255,255,255,.12)!important;color:var(--tgo-t1)}
+html.tema-glass-oscuro body .nx-menu-backdrop.open{background:rgba(12,9,7,.62)!important}
+/* acento único */
+html.tema-glass-oscuro #cnt .btn.bxl,html.tema-glass-oscuro .overlay .btn.bxl,
+html.tema-glass-oscuro #cnt #v-crm button.primary,html.tema-glass-oscuro .nxCrmBtn.primary,html.tema-glass-oscuro .nxOpsFoot .primary,html.tema-glass-oscuro .nxOpsCheck[aria-pressed=true]{
+  background:var(--tgo-blue)!important;background-image:none!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro .cfg-indicator{background:var(--tgo-blue)!important;background-image:none!important}
+html.tema-glass-oscuro .cs-h{background:linear-gradient(135deg,#1D4ED8,#2563EB)!important}
 
 /* ── Inicio glass: la escena global reemplaza la sombra propia del #nxIG ── */
-html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(38,34,32,.66);--ig-line:rgba(255,255,255,.08)}
+html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(38,34,32,.66);--ig-line:rgba(255,255,255,.08);--ig-steel:#A8A29E;--ig-mute:#A8A29E;--ig-ink:#F5F5F4}
 /* sin desenfoque en vivo en los paneles del Inicio: el fondo ya viene desenfocado */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 @media (min-width:769px){
@@ -3357,11 +3464,34 @@ html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!impo
 }
 @media (max-width:768px){html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{background:rgba(38,34,32,.86)!important}}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .d{color:#A8A29E}
+/* 58.91: KPI, gráfica y prospectos del Inicio en cristal como el panel derecho (el azul «Ciclo actual» sigue de acento) */
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card{background:rgba(255,255,255,.06);color:#F5F5F4;box-shadow:inset 0 0 0 1px var(--ig-line)}
+@media (hover:hover){html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card[role=button]:hover{background:rgba(255,255,255,.09)}}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-chip.up{background:rgba(34,197,94,.18);color:#86EFAC}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-chip.dn{background:rgba(239,68,68,.2);color:#FCA5A5}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-chip.bl{background:rgba(59,130,246,.22);color:#BFDBFE}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-viz i{background:rgba(147,197,253,.30)}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-viz i.h{background:#3B82F6}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-viz.r i{background:rgba(248,113,113,.32)}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-viz.r i.h{background:#EF4444}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card .nxIG-bar{background:rgba(255,255,255,.12)}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card .nxIG-bar i{background:#3B82F6}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pill{border-color:rgba(255,255,255,.16);color:#D6D3D1}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ax span{color:#A8A29E}
+html.tema-glass-oscuro.nx-ig #nxIG #nxIGch line,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-plot line{stroke:rgba(255,255,255,.10)!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-dot{background:#26211E}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-tag{background:rgba(59,130,246,.22);color:#BFDBFE}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stack .nxIG-av{border-color:#3A332F;color:#1E3A8A}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ag small.neg,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-amt small.neg{color:#FCA5A5}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl{background:var(--tgo-blue-d)!important;border-color:transparent}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl p{color:#EFF6FF}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:#1E40AF!important;color:#fff!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-stack .nxIG-av{border-color:var(--tgo-blue-d)}
+/* rótulos pequeños que una regla global de <small> dejaba en gris oscuro sobre el cristal */
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card small{color:#A8A29E!important}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#A39B96}
+html.tema-glass-oscuro.nx-ig #nxIG #nxIGav{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
 
 /* ── transparencia reducida: sin desenfoque, cristal = grafito sólido ── */
 @media (prefers-reduced-transparency:reduce){
   html.tema-glass-oscuro body .tnav,html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body .main::before,html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{background:var(--tgo-solid)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-  html.tema-glass-oscuro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(20,15,12,.74)!important}
+  html.tema-glass-oscuro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(12,9,7,.80)!important}
 }
 
 /* ── íconos de menú y barra: sin el «vidrio» de 2 px que dibujaba un disco oscuro sobre el cristal ── */
@@ -3369,148 +3499,388 @@ html.tema-glass-oscuro body nav#sbEl.sb .ti,html.tema-glass-oscuro body .tnav .t
 
 /* ── textos que se apoyan directo sobre la escena (títulos de página y de sección fuera de tarjeta) ── */
 html.tema-glass-oscuro #cnt .nxCrmHead h1,html.tema-glass-oscuro #cnt .nxSf .sf-fantitle h2{color:#F8FAFC!important}
-html.tema-glass-oscuro #cnt .nxCrmHead p,html.tema-glass-oscuro #cnt .nxSf .sf-fansub,html.tema-glass-oscuro #cnt .nxSf .sf-fancnt{color:#CBD5E1!important}
+html.tema-glass-oscuro #cnt .nxCrmHead p,html.tema-glass-oscuro #cnt .nxSf .sf-fansub,html.tema-glass-oscuro #cnt .nxSf .sf-fancnt{color:#D6D3D1!important}
 html.tema-glass-oscuro #cnt .nxCrmTag{background:rgba(37,99,235,.22)!important;color:#DBEAFE!important;border-color:rgba(147,197,253,.3)!important}
+html.tema-glass-oscuro #cnt #v-facturas > .ch .ct,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct,html.tema-glass-oscuro #cnt .view > .ch .ct{color:#F8FAFC!important}
+html.tema-glass-oscuro #cnt #v-facturas > .ch .ct-s,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct-s,html.tema-glass-oscuro #cnt .view > .ch .ct-s{color:#D6D3D1!important}
 
-/* ── tokens de módulos: grises legibles sobre blanco y acento azul ── */
-html.tema-glass-oscuro .nxSf{--sf-tx2:#475569;--sf-tx3:#64748B;--sf-primary:#2563EB;--sf-primary-d:#1D4ED8}
+/* ── fichas de Seguros (.nxSf: Clientes, Pólizas, Cliente 360, Contabilidad, reportes): mismos tokens, valor oscuro ── */
+html.tema-glass-oscuro .nxSf{--sf-bg:rgba(255,255,255,.04);--sf-card:var(--tgo-card);--sf-line:rgba(255,255,255,.10);--sf-primary:#3B82F6;--sf-primary-l:rgba(59,130,246,.20);--sf-primary-d:#93C5FD;
+  --sf-ok:#22C55E;--sf-ok-l:rgba(34,197,94,.16);--sf-ok-d:#4ADE80;--sf-warn:#F59E0B;--sf-warn-l:rgba(245,158,11,.16);--sf-warn-d:#FBBF24;
+  --sf-err:#EF4444;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F5F5F4;--sf-tx2:#D6D3D1;--sf-tx3:#A8A29E;--sf-elev:none;--sf-elev-sm:none}
+html.tema-glass-oscuro #cnt .nxSf .sf-kpi,html.tema-glass-oscuro .nxSf .sf-kpi{background:var(--tgo-card)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro .nxSf .sf-kpi .ic,html.tema-glass-oscuro #cnt .nxSf .sf-kpis .ic{background:rgba(59,130,246,.20)!important;color:#93C5FD!important}
+html.tema-glass-oscuro .nxSf .sf-kpi.ok .ic{background:rgba(34,197,94,.16)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .nxSf .sf-kpi.warn .ic{background:rgba(245,158,11,.16)!important;color:#FBBF24!important}
+html.tema-glass-oscuro .nxSf .sf-kpi.err .ic{background:rgba(239,68,68,.18)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxSf .sf-kpi.purple .ic{background:rgba(59,130,246,.20)!important;color:#93C5FD!important}
+html.tema-glass-oscuro .nxSf .cli-ref{color:#93C5FD}
+html.tema-glass-oscuro .nxSf :is(.sf-head,.sf-panel,.sf-tl-b){background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxSf .sf-panel .sf-tl-b,html.tema-glass-oscuro .nxSf .sf-head .sf-btn,html.tema-glass-oscuro .nxSf .sf-panel .sf-panel{background:var(--tgo-sub)!important}
+html.tema-glass-oscuro .nxSf .sf-head{border-top-width:4px!important}
+html.tema-glass-oscuro .nxSf .sf-head.u-ok{border-top-color:#22C55E!important}html.tema-glass-oscuro .nxSf .sf-head.u-warn{border-top-color:#F59E0B!important}html.tema-glass-oscuro .nxSf .sf-head.u-err{border-top-color:#EF4444!important}
+html.tema-glass-oscuro .nxSf .sf-btn{background:rgba(255,255,255,.07)!important;border-color:var(--tgo-edge-2)!important;color:#E7E5E4!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxSf .sf-btn.primary{background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro .nxSf .sf-btn.ok,html.tema-glass-oscuro #cnt .sf-btn.ok,html.tema-glass-oscuro #cnt .sf-btn.ok i{background:var(--tgo-ok-l)!important;border-color:rgba(74,222,128,.3)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .nxSf .sf-tl-dot{box-shadow:0 3px 7px rgba(0,0,0,.35),0 0 0 3px #2F2926}
+html.tema-glass-oscuro .nxSf .sf-tl-item::before{background:rgba(255,255,255,.12)}
+html.tema-glass-oscuro .nxSf .sf-qa-tile{background:var(--tgo-sub)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .nxSf .nxFsel{background-color:var(--tgo-field)!important;border-color:var(--tgo-field-edge)!important;color:#F5F5F4!important}
+/* Atención prioritaria (Clientes): tarjetas de cristal con el tinte de su estado */
+html.tema-glass-oscuro .nxSf .sf-fancard{background:radial-gradient(120% 90% at 100% 0%,rgba(239,68,68,.20),transparent 55%),radial-gradient(120% 90% at 0% 100%,rgba(239,68,68,.12),transparent 65%),#2E2724!important;
+  border:1px solid rgba(248,113,113,.28)!important;box-shadow:0 12px 24px -14px rgba(0,0,0,.6)!important}
+html.tema-glass-oscuro .nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,rgba(245,158,11,.20),transparent 55%),radial-gradient(120% 90% at 0% 100%,rgba(245,158,11,.12),transparent 65%),#2E2724!important;border-color:rgba(251,191,36,.28)!important}
+html.tema-glass-oscuro .nxSf .sf-fancard::before{background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.10) 48%,rgba(255,255,255,.02) 56%,transparent 65%)}
+html.tema-glass-oscuro .nxSf .fc-days{background:#DC2626}html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-days{background:#B45309}
+html.tema-glass-oscuro .nxSf :is(.fc-ico,.fc-ficha,.fc-pill,.fc-reason){background:rgba(255,255,255,.08)!important;color:#E7E5E4}
+html.tema-glass-oscuro .nxSf .fc-ico.wa{color:#4ADE80}html.tema-glass-oscuro .nxSf .fc-ico.call{color:#93C5FD}
+html.tema-glass-oscuro .nxSf .fc-pill{color:#FCA5A5}html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-pill{color:#FBBF24}
+html.tema-glass-oscuro .nxSf .fc-av{background:linear-gradient(135deg,#DC2626,#B91C1C)!important}html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av{background:linear-gradient(135deg,#D97706,#B45309)!important}
+/* pestañas y botones «píldora» de Clientes/Facturas/Pólizas/Cliente 360/reportes (tokens --pill-* y --nm-*) */
 html.tema-glass-oscuro #cnt #v-clientes,html.tema-glass-oscuro #cnt #v-facturas,html.tema-glass-oscuro #cnt #v-cliente360,html.tema-glass-oscuro #cnt #v-polizas,
 html.tema-glass-oscuro #cnt #v-rep-agente,html.tema-glass-oscuro #cnt #v-rep-plan,html.tema-glass-oscuro #cnt #v-rep-empresa,html.tema-glass-oscuro #cnt #v-rep-aging{
-  --pill-bg:#EEF2F7;--pill-hi:#FFFFFF;--pill-lo:rgba(15,23,42,.14);--pill-accent:#1D4ED8;--nm-tx2:#475569;--nm-accent:#1D4ED8}
-html.tema-glass-oscuro .modal,html.tema-glass-oscuro #mAbono .modal{--nm-tx2:#556070!important;--nm-accent:#1D4ED8!important}
-html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{color:#B45309!important}
+  --pill-bg:rgba(255,255,255,.05);--pill-hi:rgba(255,255,255,.07);--pill-lo:rgba(0,0,0,.30);--pill-accent:#93C5FD;
+  --nm-bg:#2A2522;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F5F5F4;--nm-tx2:#D6D3D1;--nm-accent:#93C5FD}
+/* pestañas (todas las .nxft-tabs): carril de cristal, activa = píldora azul */
+html.tema-glass-oscuro #cnt .nxft-tabs:not(#tgo){background:rgba(255,255,255,.05)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxft-tab:not(.nxft-add):not(.nxft-alert):not(#tgo){background:transparent!important;color:#D6D3D1!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxft-tab:not(.nxft-add):not(#tgo):hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .nxft-tab.is-active:not(.nxft-add):not(#tgo){background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;box-shadow:0 6px 16px -8px rgba(37,99,235,.7)!important}
+html.tema-glass-oscuro #cnt .nxft-tab.nxft-alert:not(.is-active):not(#tgo){background:rgba(239,68,68,.16)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxft-tab .nxft-cnt:not(#tgo){background:rgba(255,255,255,.12)!important;color:inherit!important}
+html.tema-glass-oscuro #cnt .nxft-tab.is-active .nxft-cnt:not(#tgo){background:rgba(255,255,255,.22)!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .nxft-tab.nxft-add,html.tema-glass-oscuro #cnt .nxSL-action-green{background:#047857!important;background-image:none!important;color:#fff!important}
+/* botones pequeños «píldora» de las tablas (Editar, WhatsApp, PDF…) */
+html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging) .btn.bsm:not(.bc1):not(.bc3):not(.bc5):not([style*="color:#fff"]):not([style*="color: rgb(255, 255, 255)"]):not(#tgo){
+  background:rgba(255,255,255,.07)!important;background-image:none!important;border:1px solid var(--tgo-edge-2)!important;box-shadow:none!important;color:#E7E5E4!important}
+html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1:not(#tgo){background:rgba(59,130,246,.18)!important;border:1px solid rgba(147,197,253,.35)!important;box-shadow:none!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1 i{color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bwa:not(#tgo),html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bwa i{color:#4ADE80!important}
+html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc4:not(#tgo),html.tema-glass-oscuro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc4 i{color:#FBBF24!important}
+/* filtros tipo chip (nfcBtn), buscador con lupa, orden y vista */
+html.tema-glass-oscuro .nfcBtn:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border:1px solid var(--tgo-edge-2)!important;color:#E7E5E4!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro .nfcBtn:not(#tgo):hover{background:rgba(255,255,255,.12)!important;border-color:rgba(147,197,253,.45)!important}
+html.tema-glass-oscuro .nfcBtn *{color:inherit}
+html.tema-glass-oscuro :is(.nfcMenu,.nfcPop,.nfcList,.nfcDrop){background:var(--tgo-sheet)!important;border-color:rgba(255,255,255,.12)!important;color:#F5F5F4!important}
+html.tema-glass-oscuro .nxBusca{background:var(--tgo-field)!important;border-color:var(--tgo-field-edge)!important}
+html.tema-glass-oscuro .nxBusca-in{color:#F5F5F4!important}html.tema-glass-oscuro .nxBusca-lupa{color:#D6D3D1!important}
+html.tema-glass-oscuro .nxBusca-x{background:rgba(255,255,255,.12)!important;color:#E7E5E4!important}
+html.tema-glass-oscuro .nxBusca:focus-within{border-color:var(--tgo-focus)!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important}
+html.tema-glass-oscuro #cnt .nxVistaTog{background:rgba(255,255,255,.05)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxVistaTog button{color:#D6D3D1!important;background:transparent!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxVistaTog button:is(.on,.is-active,.active,[aria-pressed=true]){background:var(--tgo-blue)!important;color:#fff!important}
+/* cabecera de Clientes (pulso) */
+html.tema-glass-oscuro #cnt .nxCrmPulse>div{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxCrmPulse b{color:#93C5FD!important}html.tema-glass-oscuro #cnt .nxCrmPulse span{color:#D6D3D1!important}
+/* tokens --sf-* también fuera de .nxSf (varios módulos los usan con respaldo blanco: var(--sf-card,#fff)) */
+html.tema-glass-oscuro{--sf-bg:rgba(255,255,255,.04);--sf-card:var(--tgo-card);--sf-line:rgba(255,255,255,.10);--sf-primary:#3B82F6;--sf-primary-l:rgba(59,130,246,.20);--sf-primary-d:#93C5FD;
+  --sf-ok-l:rgba(34,197,94,.16);--sf-ok-d:#4ADE80;--sf-warn-l:rgba(245,158,11,.16);--sf-warn-d:#FBBF24;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F5F5F4;--sf-tx2:#D6D3D1;--sf-tx3:#A8A29E}
 
-/* ── tarjetas que eran vidrio claro translúcido (pensado para la foto clara) → blanco sólido ── */
-html.tema-glass-oscuro #cnt .nxSf .sf-kpi,
+/* ── Cliente 360 ── */
+html.tema-glass-oscuro #v-cliente360 .c360-side,html.tema-glass-oscuro #v-cliente360 .c360-empty{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #v-cliente360 .c360-row:hover{background:rgba(255,255,255,.06)!important}
+html.tema-glass-oscuro #v-cliente360 .c360-row.on{background:rgba(59,130,246,.20)!important}
+html.tema-glass-oscuro #v-cliente360 .c360-rinfo b{color:#F5F5F4}html.tema-glass-oscuro #v-cliente360 .c360-rinfo span{color:#D6D3D1}
+html.tema-glass-oscuro #v-cliente360 .c360-back{background:rgba(255,255,255,.07)!important;border:1px solid var(--tgo-edge-2)!important;color:#E7E5E4!important;box-shadow:none!important}
+html.tema-glass-oscuro #v-cliente360 .sf-ava{background:rgba(59,130,246,.22)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #v-cliente360 .c360-tbl{background:var(--tgo-card);border:1px solid var(--tgo-edge);border-radius:14px;overflow:hidden}
+html.tema-glass-oscuro #v-cliente360 .c360-tbl th{color:#A8A29E;background:rgba(255,255,255,.05)}
+html.tema-glass-oscuro #v-cliente360 .c360-tbl td{color:#F5F5F4}
+html.tema-glass-oscuro #v-cliente360 .c360-empty-tab{color:#E7E5E4}
+html.tema-glass-oscuro #v-cliente360.nxCrm #c360TabsBar{background:rgba(38,34,32,.92)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #v-cliente360.nxCrm #c360TabsBar .is-active{background:var(--tgo-blue)!important;color:#fff!important}
+
+/* ── Clientes/Ficha en modo CRM y tarjetas CRM compartidas ── */
+html.tema-glass-oscuro #cnt .nxCrmCard,html.tema-glass-oscuro #v-clientes.nxCrm .clilist .clirow{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxCrmTitle h3,html.tema-glass-oscuro #cnt .nxCrmField b,html.tema-glass-oscuro #cnt .nxCrmAmount,html.tema-glass-oscuro #cnt .nxCrmDep .txt b{color:#F5F5F4}
+html.tema-glass-oscuro #cnt .nxCrmField small,html.tema-glass-oscuro #cnt .nxCrmHint,html.tema-glass-oscuro #cnt .nxCrmDep .txt span{color:#D6D3D1}
+html.tema-glass-oscuro #cnt .nxCrmField,html.tema-glass-oscuro #cnt .nxCrmDep{border-color:var(--tgo-edge)}
+html.tema-glass-oscuro #cnt .nxCrmAmount.debt{color:#FCA5A5}
+html.tema-glass-oscuro .nxCrmState{background:var(--tgo-ok-l)!important;color:#4ADE80!important}html.tema-glass-oscuro .nxCrmState.warn{background:var(--tgo-warn-l)!important;color:#FBBF24!important}html.tema-glass-oscuro .nxCrmState.err{background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxCrmActs button{background:rgba(255,255,255,.07);border-color:var(--tgo-edge-2);color:#BFDBFE}
+html.tema-glass-oscuro #cnt .nxCrmActs .pay{background:var(--tgo-blue);border-color:var(--tgo-blue);color:#fff}html.tema-glass-oscuro #cnt .nxCrmActs .wa{background:#15803D;border-color:#15803D;color:#fff}
+html.tema-glass-oscuro .nxCrmAv{background:rgba(59,130,246,.22)!important;background-image:none!important;color:#BFDBFE!important}
+html.tema-glass-oscuro .nxCrmIncluded{background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .nxCrmEmpty,html.tema-glass-oscuro .nxOpsEmpty{background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.18)!important;color:#D6D3D1!important}
+
+/* ── Panel CRM (#v-crm): tokens oscuros + superficies de cristal ── */
+html.tema-glass-oscuro #cnt #v-crm{--crm-b:#2563EB;--crm-b2:#93C5FD;--crm-b3:#2563EB;--crm-ok:#4ADE80;--crm-warn:#FBBF24;--crm-danger:#FCA5A5;--crm-bg:transparent;--crm-card:var(--tgo-card);--crm-line:rgba(255,255,255,.12);--crm-tx:#F5F5F4;--crm-muted:#D6D3D1;background:transparent!important;color:#F5F5F4}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmHomeHead,html.tema-glass-oscuro #cnt #v-crm .nxCrmKpi,html.tema-glass-oscuro #cnt #v-crm .nxCrmAtt,
-html.tema-glass-oscuro #cnt #v-crm .nxCrmPanel,html.tema-glass-oscuro #cnt #v-crm .nxProsCol,html.tema-glass-oscuro #cnt #v-crm .nxCrmEmpty{
-  background:#fff!important;background-image:none!important;border-color:rgba(15,23,42,.06)!important;box-shadow:var(--tgo-card-shadow)!important;
+html.tema-glass-oscuro #cnt #v-crm .nxCrmPanel,html.tema-glass-oscuro #cnt #v-crm .nxProsCol{
+  background:var(--tgo-card)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-html.tema-glass-oscuro #cnt #v-crm .nxOpsTask{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-/* controles segmentados del CRM sobre la escena: carril de cristal oscuro, activo blanco */
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(38,34,32,.66)!important;border-color:var(--tgo-line)!important}
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button:not(.on),html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button:not(.on){color:#CBD5E1!important}
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch{background:#fff!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmHomeHead:before{background:var(--tgo-blue)}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmHomeHead h1{color:#F8FAFC}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmHomeBadge{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important;border-color:rgba(147,197,253,.3)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmKpi:after{background:rgba(147,197,253,.08)}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmAtt .ic{background:rgba(59,130,246,.2)!important;color:#93C5FD!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmAtt.warn .ic{background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmAtt.err .ic{background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt #v-crm :is(.nxCrmRow,.nxCrmQuick button,.nxProsCard,.nxOpsTask,.nxCrmTL li,.nxProsPend){background:rgba(255,255,255,.06)!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:#F5F5F4}
+html.tema-glass-oscuro #cnt #v-crm .nxOpsTask:hover,html.tema-glass-oscuro #cnt #v-crm .nxCrmRow:hover{background:rgba(255,255,255,.10)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxOpsTask.is-overdue{background:linear-gradient(90deg,rgba(239,68,68,.16),rgba(255,255,255,.05))!important;border-left:4px solid #EF4444!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsCard.is-stale{background:linear-gradient(90deg,rgba(245,158,11,.16),rgba(255,255,255,.05) 40%)!important;border-left:4px solid #F59E0B!important}
+html.tema-glass-oscuro #cnt #v-crm :is(.nxCrmTopActs button:not(.primary),.nxCrmLink:not(.primary),.nxProsBtn:not(.primary)){background:rgba(255,255,255,.07)!important;border:1px solid var(--tgo-edge-2)!important;color:#BFDBFE!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsBtn.wa{color:#4ADE80!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(255,255,255,.05)!important;border-color:var(--tgo-edge)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button:not(.on),html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button:not(.on){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button.on{background:var(--tgo-blue)!important;color:#fff!important;box-shadow:0 6px 16px -8px rgba(37,99,235,.7)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on .n{background:rgba(255,255,255,.22)!important;color:#fff!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch{background:var(--tgo-field)!important;border-color:var(--tgo-field-edge)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch i,html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch button{color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmVal{background:rgba(255,255,255,.08)!important;border-color:var(--tgo-edge)!important;color:#F5F5F4}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmVal.debt{background:var(--tgo-err-l)!important;color:#FCA5A5!important;border-color:rgba(248,113,113,.3)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmAviso{background:var(--tgo-warn-l)!important;border-color:rgba(251,191,36,.3)!important;color:#FCD34D!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsColH .n{background:rgba(59,130,246,.22)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsCol.e-nuevo .nxProsColH h3 i{color:#93C5FD}html.tema-glass-oscuro #cnt #v-crm .nxProsCol.e-cotizado .nxProsColH h3 i{color:#93C5FD}
+html.tema-glass-oscuro #cnt #v-crm .nxProsCol.e-documentos .nxProsColH h3 i{color:#FBBF24}html.tema-glass-oscuro #cnt #v-crm .nxProsCol.e-emitida .nxProsColH h3 i{color:#4ADE80}
+html.tema-glass-oscuro #cnt #v-crm .nxProsDias{background:rgba(255,255,255,.08)!important;border-color:var(--tgo-edge)!important;color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsCard.is-stale .nxProsDias{background:var(--tgo-warn-l)!important;color:#FBBF24!important;border-color:rgba(251,191,36,.3)!important}
+html.tema-glass-oscuro #cnt #v-crm .nxProsPend i{color:#A8A29E}
+html.tema-glass-oscuro .nxOpsTask span,html.tema-glass-oscuro .nxOpsFilter,html.tema-glass-oscuro .nxCrmTL li small,html.tema-glass-oscuro #cnt #v-crm .nxProsMeta,html.tema-glass-oscuro #cnt #v-crm .nxProsPend p{color:#D6D3D1!important}
+html.tema-glass-oscuro .nxOpsTask.is-done b{color:#A8A29E}
+html.tema-glass-oscuro .nxOpsCheck:not([aria-pressed=true]){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:var(--tgo-edge-2)!important;color:#D6D3D1!important}
+html.tema-glass-oscuro .nxOpsDue{background:rgba(255,255,255,.08)!important;border-color:var(--tgo-edge)!important;color:#D6D3D1!important}
+html.tema-glass-oscuro .nxOpsDue.bad,html.tema-glass-oscuro #cnt .nxOpsDue.bad{background:var(--tgo-err-l)!important;border-color:rgba(248,113,113,.3)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxOpsDue.hoy{background:var(--tgo-warn-l)!important;border-color:rgba(251,191,36,.3)!important;color:#FBBF24!important}
+html.tema-glass-oscuro .nxOpsMore{color:#93C5FD!important;border-color:rgba(255,255,255,.2)!important}
+html.tema-glass-oscuro #cnt .nxCrmLink:not(.primary):not([style*="color:#fff"]):not([style*="color: rgb(255, 255, 255)"]){color:#BFDBFE!important}
+html.tema-glass-oscuro .nxCrmLink:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]){background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .nxCrmLink.primary,html.tema-glass-oscuro .nxCrmLink.primary{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border-color:var(--tgo-blue)!important}
+/* diálogos del CRM (tarea, prospecto, etapa…) */
+html.tema-glass-oscuro .nxCrmModal{background:rgba(12,9,7,.62)!important}
+html.tema-glass-oscuro .nxCrmDialog>p,html.tema-glass-oscuro .nxCrmDialog .nxCrmSub,html.tema-glass-oscuro .nxOpsField label,html.tema-glass-oscuro .nxCrmPickList button span,html.tema-glass-oscuro .nxCrmPickList .vacio{color:#D6D3D1!important}
+html.tema-glass-oscuro .nxCrmDialog h2,html.tema-glass-oscuro .nxCrmDialog h3,html.tema-glass-oscuro .nxCrmSec h4{color:#F5F5F4!important}
+html.tema-glass-oscuro :is(.nxOpsFoot button,.nxCrmBtn):not(.primary):not(.danger){background:rgba(255,255,255,.07)!important;border-color:var(--tgo-edge-2)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro :is(.nxCrmPickList,.nxCrmPickList button,.nxCrmOpciones button,.nxCrmChipsEt button:not(.on)){background:#2A2522!important;border-color:var(--tgo-edge-2)!important;color:#F5F5F4!important}
+html.tema-glass-oscuro :is(.nxCrmPickList button:hover,.nxCrmPickList button.is-hl,.nxCrmPickList button:focus,.nxCrmOpciones button:hover){background:rgba(59,130,246,.2)!important}
+html.tema-glass-oscuro .nxCrmOpciones button i{color:#93C5FD}html.tema-glass-oscuro .nxCrmOpciones button.perdida i{color:#FCA5A5}
+html.tema-glass-oscuro .nxCrmPickSel{color:#4ADE80}html.tema-glass-oscuro .nxCrmPick>i{color:#A8A29E}
+html.tema-glass-oscuro .nxCrmLost{background:var(--tgo-err-l)!important;border-color:rgba(248,113,113,.3)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxCrmLink2{color:#93C5FD!important}
+html.tema-glass-oscuro .nxOpsFoot{background:linear-gradient(180deg,rgba(38,33,30,0),#26211E 35%)!important}
+
+/* ── Configuración ── */
+html.tema-glass-oscuro .cfg-tabs-bar{background:rgba(255,255,255,.05)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro .cfg-tab{color:#D6D3D1!important;background:none!important}
+html.tema-glass-oscuro .cfg-tab:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+html.tema-glass-oscuro .cfg-tab.active-tab{background:transparent!important;box-shadow:none!important}
+html.tema-glass-oscuro .cfg-tab.active-tab i{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro .cfg-tab.active-tab span{color:#93C5FD!important}
+html.tema-glass-oscuro .cfg-tab{max-width:none!important;flex:0 0 auto!important;padding:4px 6px!important}
+html.tema-glass-oscuro .cfg-tab span{max-width:none!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important;display:block!important}
+html.tema-glass-oscuro .tema-opcion{border-color:var(--tgo-edge-2)!important}
+html.tema-glass-oscuro .tema-opcion.tema-sel{border-color:#60A5FA!important;box-shadow:0 0 0 2px rgba(96,165,250,.35)!important}
+
+/* ── menús, avisos, búsqueda global, notificaciones ── */
+html.tema-glass-oscuro .toast{background:#2A2522!important;color:#F5F5F4!important;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 36px -14px rgba(0,0,0,.7)!important}
+html.tema-glass-oscuro .toast .ti-ic{background:rgba(255,255,255,.08)!important;box-shadow:none!important}
+html.tema-glass-oscuro .toast.ok .ti-ic{color:#4ADE80}html.tema-glass-oscuro .toast.er .ti-ic,html.tema-glass-oscuro .toast.err .ti-ic{color:#FCA5A5}
+html.tema-glass-oscuro .toast .ti-x{color:#A8A29E}html.tema-glass-oscuro .toast *{border-color:var(--tgo-edge)}
+html.tema-glass-oscuro :is(.acc-menu,.notif-panel,.gs-panel,.dropdown,.menu,.nxFP-menuPop){background:var(--tgo-sheet)!important;border:1px solid rgba(255,255,255,.12)!important;color:#F5F5F4!important;box-shadow:0 20px 44px -18px rgba(0,0,0,.75)!important}
+html.tema-glass-oscuro .acc-menu button{color:#F5F5F4}html.tema-glass-oscuro .acc-menu button:hover{background:rgba(255,255,255,.08)}
+html.tema-glass-oscuro .acc-menu-hd{color:#A8A29E}html.tema-glass-oscuro .acc-menu .am-sep{background:var(--tgo-edge)}
+html.tema-glass-oscuro .gs-input{background:transparent!important;color:#F5F5F4!important;border-bottom-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .gs-item{border-bottom-color:rgba(255,255,255,.06)}
+html.tema-glass-oscuro .gs-item:hover,html.tema-glass-oscuro .gs-item.selected{background:rgba(59,130,246,.18)}
+html.tema-glass-oscuro .gs-item-icon,html.tema-glass-oscuro .gs-item-type{background:rgba(255,255,255,.08)!important;color:#D6D3D1}
+html.tema-glass-oscuro .gs-item-ttl{color:#F5F5F4}html.tema-glass-oscuro .gs-item-sub{color:#D6D3D1}
+html.tema-glass-oscuro .notif-panel *{border-color:rgba(255,255,255,.08)}
+
+/* ── Solicitudes / pagos por validar ── */
+html.tema-glass-oscuro #cnt :is(.nxSL-section,.nxSL-head,.nxSL-stat,.nxSL-empty-soft,.nxSL-transfer-stat,.nxSL-recibir-body,.nxSL-table-wrap,.nxSL-hist-table-wrap){background:var(--tgo-card)!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxSL-section .nxSL-stat,html.tema-glass-oscuro #cnt .nxSL-head .nxSL-stat,html.tema-glass-oscuro #cnt .nxSL-section :is(.nxSL-empty-soft,.nxSL-recibir-body,.nxSL-table-wrap,.nxSL-hist-table-wrap){background:rgba(255,255,255,.05)!important}
+html.tema-glass-oscuro #cnt .nxSL-section{border-left-width:4px!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-title,.nxSL-stat-val){color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-sub,.nxSL-stat-lbl,.nxSL-loading,.nxSL-empty,.nxSL-tx-fecha,.nxSL-tx-ref,.nxSL-muted,.nxSL-transfer-hist-title,.nxSL-hist-fecha,.nxSL-hist-ref,.nxSL-pay-note,.nxSL-pay-merged-label,.nxSL-pay-wait,.nxSL-section-sub){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt .nxSL-recibir-text{color:#BBF7D0!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-count-blue,.nxSL-tag-direct,.nxSL-btn-conf,.nxSL-hist-conf,.nxSL-pay-btn.validar){background:rgba(59,130,246,.2)!important;color:#BFDBFE!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxSL-section-pend.nxSL-section-payval .nxSL-section-count{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt .nxSL-section-count:not(.nxSL-count-blue){background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-tag-fisico,.nxSL-btn-dep,.nxSL-hist-tipo-entrega,.nxSL-hist-dep,.nxSL-hist-acept,.nxSL-pay-btn.voucher){background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-btn-anu,.nxSL-hist-rech){background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-tipo-transf{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-transfer-stat-lbl,.nxSL-transfer-stat-val,.nxSL-pay-amt){color:#93C5FD!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-monto{color:#4ADE80!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-tab{background:rgba(255,255,255,.06)!important;color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-tab:hover{background:rgba(255,255,255,.12)!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-tab-active{background:var(--tgo-blue)!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .nxSL-hist-table tbody tr:hover{background:rgba(255,255,255,.04)!important}
+html.tema-glass-oscuro #cnt .nxSL-pay-merged{border-top-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxSL-section-historial .nxSL-section-title i{color:#D6D3D1}
+html.tema-glass-oscuro #cnt .nxSL-section-historial{border-left-color:#A8A29E!important}
+html.tema-glass-oscuro #cnt :is(.nxSL-section-dep,.nxSL-section-transfer) .nxSL-section-title i{color:#93C5FD}
+html.tema-glass-oscuro #cnt .nxSL-action-blue{background:var(--tgo-blue)!important}
+html.tema-glass-oscuro .ncf-badge,html.tema-glass-oscuro .nxCobCard .cbBdg.parcial,html.tema-glass-oscuro .nxSL-section-count:not(.nxSL-count-blue){color:#FBBF24!important}
+
+/* ── Cobros (tarjetas de cobranza) ── */
+html.tema-glass-oscuro #cnt .nxCobCard{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxCobCard.u-crit{border-left-color:#F43F5E!important}html.tema-glass-oscuro #cnt .nxCobCard.u-warn{border-left-color:#F59E0B!important}html.tema-glass-oscuro #cnt .nxCobCard.u-ok{border-left-color:#22C55E!important}
+html.tema-glass-oscuro #cnt .nxCobCard .cbNm{color:#F5F5F4}html.tema-glass-oscuro #cnt .nxCobCard :is(.cbAg,.cbAl){color:#D6D3D1}
+html.tema-glass-oscuro #cnt .nxCobCard .cbDiv{background:var(--tgo-edge)}
+html.tema-glass-oscuro #cnt .nxCobCard .cbV.red{color:#FCA5A5}html.tema-glass-oscuro #cnt .nxCobCard .cbV.gray{color:#A8A29E}
+html.tema-glass-oscuro #cnt .nxCobCard .cbBdg.plan{background:rgba(59,130,246,.2);color:#BFDBFE}
+html.tema-glass-oscuro #cnt .nxCobCard .cbBdg.parcial{background:var(--tgo-warn-l)}
+html.tema-glass-oscuro #cnt .nxCobCard .cbBdg.pend{background:var(--tgo-err-l);color:#FCA5A5}
+html.tema-glass-oscuro #cnt .nxCobCard .cbBdg.aldia{background:var(--tgo-ok-l);color:#4ADE80}
+html.tema-glass-oscuro #cnt .nxCobCard .cbBtn.wa{background:rgba(255,255,255,.07);color:#4ADE80;border-color:rgba(74,222,128,.4)}
+html.tema-glass-oscuro .nxCobCard .cbBtn.cobrar{background:#15803D!important;border-color:#15803D!important;color:#fff!important}
+/* ── reporte Ciclo 20→20 y Novedades de clientes ── */
+html.tema-glass-oscuro #cnt :is(.nxC20Kpi,.nxC20Note){background:var(--tgo-sub)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxC20Tabs{background:rgba(255,255,255,.06)!important}
+html.tema-glass-oscuro #cnt .nxC20Tab.on{background:var(--tgo-blue)!important;color:#fff!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt :is(.nxC20Title b,.nxC20Kpi .v,.nxC20Agt){color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt :is(.nxC20Title span,.nxC20Status,.nxC20Kpi .l,.nxC20Kpi .s,.nxC20Cargo,.nxC20Empty,.nxC20Load,.nxC20Note){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt .nxC20Table th{background:rgba(255,255,255,.05)!important;color:#A8A29E!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxC20Table td{color:#E7E5E4!important;border-color:rgba(255,255,255,.07)!important}
+html.tema-glass-oscuro #cnt .nxC20Pos{color:#4ADE80!important}html.tema-glass-oscuro #cnt .nxC20Neg{color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxC20Badge{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important;border-color:rgba(147,197,253,.3)!important}
+html.tema-glass-oscuro #cnt .nxC20Badge.ok{background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro #cnt .nxC20Badge.warn{background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt .nxC20Badge.err{background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxnov-hero{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro :is(.nxnov-kpi,.nxnov-card,.nxnov-item){background:rgba(255,255,255,.06)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxnov-segments{background:rgba(255,255,255,.06)!important}
+html.tema-glass-oscuro .nxnov-seg-thumb{background:var(--tgo-blue)!important;box-shadow:none!important}
+html.tema-glass-oscuro :is(.nxnov-title h3,.nxnov-kpi b){color:#F5F5F4!important}
+html.tema-glass-oscuro :is(.nxnov-title p,.nxnov-kpi span,.nxnov-seg,.nxnov-filter:not(.on),.nxnov-meta,.nxnov-detail,.nxnov-age,.nxnov-field label,.nxC20Tab:not(.on)){color:#D6D3D1!important}
+html.tema-glass-oscuro :is(.nxnov-seg.on,.nxnov-seg.is-active,.nxnov-seg[aria-selected=true]){color:#fff!important}
+html.tema-glass-oscuro :is(.nxnov-seg,.nxnov-filter) span{color:inherit}
+html.tema-glass-oscuro .nxnov-filter:not(.on){background:rgba(255,255,255,.06)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .nxnov-filter.on{border-color:rgba(147,197,253,.4)!important;background:rgba(59,130,246,.22)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro .nxnov-new{background:var(--tgo-blue)!important}
+
+/* ── Financiamiento / Préstamos (.nxFP): tokens neumórficos --nf-* y superficies en cristal; el héroe morado se queda ── */
+html.tema-glass-oscuro .nxFPShell{--nf-bg:rgba(255,255,255,.06);--nf-shd:rgba(0,0,0,.40);--nf-shl:rgba(255,255,255,.03);--nf-ink:#F5F5F4;--nf-ink2:#D6D3D1;--nf-ink3:#A8A29E;
+  --nf-ac1:#2563EB;--nf-ac2:#1D4ED8;--nf-glass-bg:rgba(38,34,32,.86);--nf-glass-hi:rgba(255,255,255,.10);--nf-glass-shadow:0 24px 56px rgba(0,0,0,.35);
+  --nf-convex:none;--nf-convex-sm:none;--nf-concave:inset 0 0 0 1px rgba(255,255,255,.08);background:transparent!important;color:#F5F5F4}
+html.tema-glass-oscuro #cnt :is(.nxFP-card,.nxFP-kpi,.nxFP-dcard,.nxFP-qbtn,.nxFP-empty,.nxFP-tblWrap,.nxFP-cobSide,.nxFP-repCard):not(#tgo){background:var(--tgo-card)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxFP-empty{border-style:dashed!important;border-color:rgba(255,255,255,.2)!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-cardNom,.nxFP-kpiVal,.nxFP-dval,.nxFP-tNom,.nxFP-tSaldo,.nxFP-cobSideRow b,.nxFP-repTit,.nxFP-legN,.nxFP-topTitle,.nxFP-empty h3){color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-cardMeta,.nxFP-kpiLbl,.nxFP-kpiSub,.nxFP-tSub,.nxFP-tDiasV,.nxFP-tProxCuota,.nxFP-tVencido,.nxFP-cobSideTit,.nxFP-cobSideRow,.nxFP-cobEvent,.nxFP-cobEmpty,.nxFP-tDias,.nxFP-tUlt,.nxFP-pgInfo,.nxFP-repTit span,.nxFP-repLegTop,.nxFP-legRow,.nxFP-repPerNote,.nxFP-empty p,.nxFP-qbtn span,.nxFP-dlbl,.nxFP-dsub,.nxFP-topSub,.nxFP-listHead span){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-tDiasV.late,.nxFP-tVencido.late,.nxFP-tDias.bad,.nxFP-cobSideRow.crit b,.nxFP-cobSideRow.crit span i){color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxFP-tbl thead th{background:rgba(255,255,255,.05)!important;color:#A8A29E!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #cnt .nxFP-tbl tbody td{color:#E7E5E4!important;border-color:rgba(255,255,255,.07)!important}
+html.tema-glass-oscuro #cnt .nxFP-tbl tbody tr:hover{background:rgba(255,255,255,.04)!important}
+html.tema-glass-oscuro #cnt .nxFP-tRef{color:#93C5FD!important}
+html.tema-glass-oscuro #cnt .nxFP-cobSideRow.big b{color:#93C5FD!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-badge,.nxFP-tBadge).activo,html.tema-glass-oscuro #cnt :is(.nxFP-tBadge).aldia{background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-badge,.nxFP-tBadge).pagado{background:rgba(59,130,246,.2)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-badge.vencido,.nxFP-tBadge.porvencer,.nxFP-tBadge.morareciente,.nxFP-tBadge.alta){background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-badge.en_mora,.nxFP-tBadge.vencido,.nxFP-tBadge.critico){background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxFP-badge.cancelado{background:rgba(255,255,255,.08)!important;color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt .nxFP-dico,html.tema-glass-oscuro #cnt .nxFP-emptyIco{background:rgba(59,130,246,.2)!important;color:#93C5FD!important}
+html.tema-glass-oscuro #cnt .nxFP-dico.green{background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro #cnt .nxFP-dico.red{background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt .nxFP-dico.amber{background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt .nxFP-dico.blue{background:rgba(59,130,246,.2)!important;color:#93C5FD!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-topActions button:not(.prim),.nxFP-burger,.nxFP-tAcc button,.nxFP-pgBtns button:not(.on),.nxFP-topbar > button){background:rgba(255,255,255,.07)!important;border:1px solid var(--tgo-edge-2)!important;color:#E7E5E4!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-topActions button.prim,.nxFP-pgBtns button.on){background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxFP-repPer{background:rgba(255,255,255,.06)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxFP-perBtn{color:#D6D3D1!important}html.tema-glass-oscuro #cnt .nxFP-perBtn.on{background:var(--tgo-blue)!important;color:#fff!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt .nxFP-cobSideDiv{background:var(--tgo-edge)!important}html.tema-glass-oscuro #cnt .nxFP-cobEvent{border-left-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .nxFP-menuPop button{color:#F5F5F4!important}html.tema-glass-oscuro .nxFP-menuPop button:hover{background:rgba(255,255,255,.08)!important}html.tema-glass-oscuro .nxFP-menuPop button i{color:#93C5FD!important}
+/* mini-cifras dentro del héroe morado: cristal oscuro con texto claro (antes tarjetas blancas) */
+html.tema-glass-oscuro #cnt .nxFP-hAst{background:rgba(20,16,40,.38)!important;box-shadow:none!important;border:1px solid rgba(255,255,255,.14)}
+html.tema-glass-oscuro #cnt .nxFP-hAst .nxFP-hAsl{color:#E0E7FF!important}html.tema-glass-oscuro #cnt .nxFP-hAst .nxFP-hAsv{color:#fff!important}
+/* barra lateral del módulo (cristal): sobre el grafito */
+html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-navItem.on,html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-navItem.on i{color:#93C5FD!important}
+html.tema-glass-oscuro #cnt :is(.nxFP-navItem:not(.on):not(.active),.nxFP-sideBack,.nxFP-side span){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-prestamos p{color:#D6D3D1}
+/* barra inferior propia de Financiamiento (≤900 px) */
+html.tema-glass-oscuro .nxFP-dock{background:rgba(38,34,32,.96)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .nxFP-dockBtn:not(.on){color:#D6D3D1!important}
+html.tema-glass-oscuro .nxFP-dockSheet{background:var(--tgo-sheet)!important;color:#F5F5F4!important}
+
+/* ── POS / Ventas (.nxPf): tokens oscuros como en Premium, en gris cálido ── */
+html.tema-glass-oscuro body .nxPf{--pf-blue:#3B82F6;--pf-blue-d:#93C5FD;--pf-blue-l:rgba(59,130,246,.2);--pf-green:#22C55E;--pf-green-l:rgba(34,197,94,.16);--pf-red:#F87171;--pf-red-l:rgba(239,68,68,.18);--pf-red-b:rgba(248,113,113,.35);
+  --pf-orange:#FBBF24;--pf-orange-l:rgba(245,158,11,.16);--pf-purple:#93C5FD;--pf-purple-l:rgba(59,130,246,.2);--pf-bg:transparent;--pf-panel:var(--tgo-card);--pf-line:rgba(255,255,255,.10);
+  --pf-txt:#F5F5F4;--pf-txt2:#D6D3D1;--pf-txt3:#A8A29E;--pf-shadow:none;--pf-pill-bg:rgba(255,255,255,.05);--pf-pill-hi:rgba(255,255,255,.08);--pf-pill-lo:rgba(0,0,0,.3);--pf-pill-accent:#93C5FD;
+  --nx-bg:transparent;--nx-ink:#F5F5F4;--nx-steel:#D6D3D1;--nx-mute:#A8A29E;--nx-line:rgba(255,255,255,.10);--nx-line-2:rgba(255,255,255,.10);--nx-blue-l:rgba(59,130,246,.2)}
+html.tema-glass-oscuro #cnt :is(.nxTShell){background:transparent!important}
+html.tema-glass-oscuro #cnt #v-pos,html.tema-glass-oscuro #cnt #v-multiempresa{--nx-bg:transparent;--nx-surface:var(--tgo-card);--nx-ink:#F5F5F4;--nx-steel:#D6D3D1;--nx-mute:#A8A29E;--nx-line:rgba(255,255,255,.10);--nx-line-2:rgba(255,255,255,.10);
+  --nx-blue-l:rgba(59,130,246,.2);--nx-blue-b:rgba(147,197,253,.35);--nx-blue-d:#93C5FD}
+html.tema-glass-oscuro #cnt #v-pos :is(.nxIniHi,.nxTKpiV,.nxTTopBiz,.nxAppNom,.nxTPanelT,.nxTTitle){color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt #v-pos :is(.nxIniBiz,.nxTKpiL,.nxTKpiS){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-pos :is(.nxTPanel,.kpitile){background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-pos .nxAppIco:is([style*="#2563eb"],[style*="#2563EB"]){background:rgba(59,130,246,.22)!important}
+html.tema-glass-oscuro #cnt #v-pos .nxTMain > :is(.nxTBurger,.nxTSearchBtnM){color:#E7E5E4!important}
+html.tema-glass-oscuro #cnt :is(.nxTKpis,.nxTKpi,.nxApp,.nxTBurger,.nxTSearchBtnM):not(#tgo){background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important;color:#F5F5F4}
+html.tema-glass-oscuro #cnt .nxTKpis .nxTKpi{background:rgba(255,255,255,.05)!important}
+html.tema-glass-oscuro #cnt .nxTSec{color:rgba(231,229,228,.72)!important}
+html.tema-glass-oscuro #cnt .nxAppSecT{color:#D6D3D1!important}
 
 /* ── botón flotante móvil: acento azul único ── */
 html.tema-glass-oscuro body .nx-fab{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:0 12px 28px -10px rgba(37,99,235,.75)!important}
 html.tema-glass-oscuro body .nx-fab .ti{background:none!important;box-shadow:none!important;color:#fff!important}
 html.tema-glass-oscuro body .nx-fab .ti::after{display:none!important}
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)!important;color:#DBEAFE!important}
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on .n{background:rgba(37,99,235,.12)!important;color:#1D4ED8!important}
-/* menú del botón flotante: hoja blanca (como los modales) */
-html.tema-glass-oscuro body .mobile-more-sheet-clean{background:#fff!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:rgba(15,23,42,.08)!important}
-html.tema-glass-oscuro body .nx-menu-backdrop.open{background:rgba(20,15,12,.55)!important}
-/* Inicio glass: rótulos pequeños que una regla global de <small> dejaba en gris oscuro sobre el cristal */
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-prof small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stats small,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-it small{color:#94A3B8!important}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#8A837E}
-/* POS: rótulos de sección del menú oscuro del POS (36 % de opacidad no se leía) */
-html.tema-glass-oscuro #cnt .nxTSec{color:rgba(231,234,242,.62)!important}
-/* acento único: botones principales que traían degradado morado */
-html.tema-glass-oscuro #cnt .btn.bxl,html.tema-glass-oscuro .overlay .btn.bxl,
-html.tema-glass-oscuro #cnt #v-crm button.primary,html.tema-glass-oscuro .nxCrmBtn.primary,html.tema-glass-oscuro .nxOpsFoot .primary,html.tema-glass-oscuro .nxOpsCheck[aria-pressed=true]{
-  background:var(--tgo-blue)!important;background-image:none!important;border-color:var(--tgo-blue)!important;color:#fff!important}
-html.tema-glass-oscuro .cfg-indicator{background:var(--tgo-blue)!important;background-image:none!important}
-html.tema-glass-oscuro .cfg-tab.active-tab i{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
-html.tema-glass-oscuro .cfg-tab.active-tab span{color:var(--tgo-blue-d)!important}
-
-/* ═══ 58.91 — PASADA DE AJUSTES (auditoría de todas las pantallas, pestañas y modales a 390/1280) ═══ */
-/* Contraste AA sobre blanco: variantes oscuras de los colores semánticos (mismo tono, sin cambiar diseño) */
-html.tema-glass-oscuro .nxSf{--sf-tx3:#5B6576;--sf-err:#DC2626;--sf-ok-d:#047857}
 html.tema-glass-oscuro body #sbEl .sb-av{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
 html.tema-glass-oscuro .notif-badge{background:#DC2626!important}
-html.tema-glass-oscuro.nx-ig #nxIG #nxIGav{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .o{color:#A39B96}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ax span{color:#5B6576}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl{background:var(--tgo-blue-d)!important}html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl p{color:#EFF6FF}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:#1E40AF!important;color:#fff!important}
-html.tema-glass-oscuro .ncf-badge,html.tema-glass-oscuro .nxCobCard .cbBdg.parcial,html.tema-glass-oscuro .nxSL-section-count:not(.nxSL-count-blue){color:#92400E!important}
-html.tema-glass-oscuro .nxCobCard .cbV.gray{color:#64748B}
-html.tema-glass-oscuro .nxCobCard .cbBtn.cobrar,html.tema-glass-oscuro #cnt .btn.bc5,html.tema-glass-oscuro #cnt .btn.bsm.bc5{background:#15803D!important;border-color:#15803D!important;color:#fff!important}
 html.tema-glass-oscuro .nxAvBtn.wa{background:#15803D!important;background-image:none!important}
 html.tema-glass-oscuro .nxAvAv{background:var(--tgo-blue)!important}
-html.tema-glass-oscuro #cnt .nxft-tab.nxft-add,html.tema-glass-oscuro #cnt .nxSL-action-green{background:#047857!important;background-image:none!important;color:#fff!important}
-html.tema-glass-oscuro #cnt .sf-btn.ok,html.tema-glass-oscuro #cnt .sf-btn.ok i{color:#047857!important}
-html.tema-glass-oscuro #v-cliente360 .c360-rinfo span{color:#475569}
-html.tema-glass-oscuro #v-cliente360 .c360-head b,html.tema-glass-oscuro #v-cliente360 .nxSf{--sf-err:#DC2626}
-html.tema-glass-oscuro #cnt .nxFP-dlbl,html.tema-glass-oscuro #cnt .nxFP-dsub,html.tema-glass-oscuro #cnt .nxFP-topSub,html.tema-glass-oscuro #cnt .nxFP-listHead span{color:#5B6576!important}
-html.tema-glass-oscuro #cnt .nxAppSecT{color:#5B6576!important}
-/* colores escritos a mano (style=) dentro de superficies blancas → su variante AA */
-html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:#059669"],[style*="color: rgb(5, 150, 105)"],[style*="color: #059669"],[style*="color: rgb(5, 150, 105)"],[style*="color:#10b981"],[style*="color: rgb(16, 185, 129)"],[style*="color:#10B981"],[style*="color: rgb(16, 185, 129)"],[style*="color:#00e5c7"],[style*="color: rgb(0, 229, 199)"],[style*="color:#16a34a"],[style*="color: rgb(22, 163, 74)"]){color:#047857!important}
-html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi,.nxSf .sf-kpi) :is([style*="color:#d97706"],[style*="color: rgb(217, 119, 6)"],[style*="color: #d97706"],[style*="color: rgb(217, 119, 6)"],[style*="color:#f59e0b"],[style*="color: rgb(245, 158, 11)"],[style*="color:#fbbf24"],[style*="color: rgb(251, 191, 36)"],[style*="color:#f97316"],[style*="color: rgb(249, 115, 22)"]){color:#B45309!important}
-html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:#ef4444"],[style*="color: rgb(239, 68, 68)"],[style*="color:#f43f5e"],[style*="color: rgb(244, 63, 94)"]){color:#DC2626!important}
-html.tema-glass-oscuro :is(.nc,.modal,.overlay,.tw,.kpi,.nxSf .sf-kpi) :is([style*="color:#94a3b8"],[style*="color: rgb(148, 163, 184)"],[style*="color: #94a3b8"],[style*="color: rgb(148, 163, 184)"],[style*="color:#94A3B8"],[style*="color: rgb(148, 163, 184)"],[style*="color:#98a2b3"],[style*="color: rgb(152, 162, 179)"]){color:#64748B!important}
-html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) :is([style*="color:#8b5cf6"],[style*="color: rgb(139, 92, 246)"],[style*="color:#7c3aed"],[style*="color: rgb(124, 58, 237)"],[style*="color:#6d28d9"],[style*="color: rgb(109, 40, 217)"]){color:var(--tgo-blue-d)!important}
-html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) [style*="color:#0891b2"],[style*="color: rgb(8, 145, 178)"]{color:#0E7490!important}
-/* restos morados/navy de temas anteriores → acento azul único */
-html.tema-glass-oscuro .cs-h{background:linear-gradient(135deg,#1D4ED8,#2563EB)!important}
-html.tema-glass-oscuro .nxnov-filter.on{border-color:rgba(37,99,235,.2)!important;background:rgba(37,99,235,.08)!important;color:#1D4ED8!important}
-html.tema-glass-oscuro #cnt .btn.bc2{background:rgba(37,99,235,.08)!important;border-color:rgba(37,99,235,.3)!important;color:#1D4ED8!important}
-html.tema-glass-oscuro #cnt .nxCrmLink:not(.primary):not([style*="color:#fff"]):not([style*="color: rgb(255, 255, 255)"]){color:#1D4ED8!important}
-html.tema-glass-oscuro .nxCrmLink:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]){background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important}
-html.tema-glass-oscuro #cnt .nxCrmLink.primary,html.tema-glass-oscuro .nxCrmLink.primary{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border-color:var(--tgo-blue)!important}
-html.tema-glass-oscuro .badge.bC2{color:#1D4ED8}
-/* Avisos (Facturas) y encabezados sueltos que caen sobre la escena */
-html.tema-glass-oscuro #cnt #v-facturas > .ch .ct,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct,html.tema-glass-oscuro #cnt .view > .ch .ct{color:#F8FAFC!important}
-html.tema-glass-oscuro #cnt #v-facturas > .ch .ct-s,html.tema-glass-oscuro #cnt #v-facturas > div > .ch .ct-s,html.tema-glass-oscuro #cnt .view > .ch .ct-s{color:#D6D3D1!important}
-/* Cliente 360: tablas y vacíos de las pestañas quedaban sobre la escena (texto oscuro sobre oscuro) */
-html.tema-glass-oscuro #v-cliente360 .c360-tbl{background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--tgo-card-shadow)}
-html.tema-glass-oscuro #v-cliente360 .c360-tbl th{color:#5B6576;background:#F8FAFC}
-html.tema-glass-oscuro #v-cliente360 .c360-tbl td{color:#1E293B}
-html.tema-glass-oscuro #v-cliente360 .c360-empty-tab{color:#E7E5E4}
-/* textos cortados con «…» donde sí hay espacio: 2 líneas (KPI del Inicio, prospectos, KPI de Cliente 360). El perfil y la
-   agenda del Inicio siguen en 1 línea: con 2 líneas el bloque crecía al llegar los datos (salto desde el esqueleto). */
+html.tema-glass-oscuro .nxSf .fc-av{background:linear-gradient(135deg,#DC2626,#B91C1C)!important}
+/* ── colores escritos a mano (style=) dentro del contenido, modales y hojas: fondos claros → cristal; textos oscuros → claros.
+   Mismo significado en su variante para fondo oscuro. (La escena es oscura: sin esto quedaba texto carbón sobre grafito.) ── */
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="background:#fff"],[style*="background: #fff"],[style*="background-color:#fff"],[style*="background-color: #fff"],[style*="background: rgb(255, 255, 255)"],[style*="background-color: rgb(255, 255, 255)"],[style*="background:#FFF"],[style*="background: #FFF"],[style*="background-color:#FFF"],[style*="background-color: #FFF"],[style*="background:#ffffff"],[style*="background: #ffffff"],[style*="background-color:#ffffff"],[style*="background-color: #ffffff"],[style*="background:#FFFFFF"],[style*="background: #FFFFFF"],[style*="background-color:#FFFFFF"],[style*="background-color: #FFFFFF"],[style*="background:#f8fafc"],[style*="background: #f8fafc"],[style*="background-color:#f8fafc"],[style*="background-color: #f8fafc"],[style*="background: rgb(248, 250, 252)"],[style*="background-color: rgb(248, 250, 252)"],[style*="background:#F8FAFC"],[style*="background: #F8FAFC"],[style*="background-color:#F8FAFC"],[style*="background-color: #F8FAFC"],[style*="background:#f1f5f9"],[style*="background: #f1f5f9"],[style*="background-color:#f1f5f9"],[style*="background-color: #f1f5f9"],[style*="background: rgb(241, 245, 249)"],[style*="background-color: rgb(241, 245, 249)"],[style*="background:#F1F5F9"],[style*="background: #F1F5F9"],[style*="background-color:#F1F5F9"],[style*="background-color: #F1F5F9"],[style*="background:#f9fafb"],[style*="background: #f9fafb"],[style*="background-color:#f9fafb"],[style*="background-color: #f9fafb"],[style*="background: rgb(249, 250, 251)"],[style*="background-color: rgb(249, 250, 251)"],[style*="background:#fafafa"],[style*="background: #fafafa"],[style*="background-color:#fafafa"],[style*="background-color: #fafafa"],[style*="background: rgb(250, 250, 250)"],[style*="background-color: rgb(250, 250, 250)"],[style*="background:#f8f9fa"],[style*="background: #f8f9fa"],[style*="background-color:#f8f9fa"],[style*="background-color: #f8f9fa"],[style*="background: rgb(248, 249, 250)"],[style*="background-color: rgb(248, 249, 250)"],[style*="background:#fbfcfe"],[style*="background: #fbfcfe"],[style*="background-color:#fbfcfe"],[style*="background-color: #fbfcfe"],[style*="background: rgb(251, 252, 254)"],[style*="background-color: rgb(251, 252, 254)"],[style*="background:#eef2f7"],[style*="background: #eef2f7"],[style*="background-color:#eef2f7"],[style*="background-color: #eef2f7"],[style*="background: rgb(238, 242, 247)"],[style*="background-color: rgb(238, 242, 247)"],[style*="background:#e2e8f0"],[style*="background: #e2e8f0"],[style*="background-color:#e2e8f0"],[style*="background-color: #e2e8f0"],[style*="background: rgb(226, 232, 240)"],[style*="background-color: rgb(226, 232, 240)"],[style*="background:#f6f8fb"],[style*="background: #f6f8fb"],[style*="background-color:#f6f8fb"],[style*="background-color: #f6f8fb"],[style*="background: rgb(246, 248, 251)"],[style*="background-color: rgb(246, 248, 251)"],[style*="background:#faf9ff"],[style*="background: #faf9ff"],[style*="background-color:#faf9ff"],[style*="background-color: #faf9ff"],[style*="background: rgb(250, 249, 255)"],[style*="background-color: rgb(250, 249, 255)"],[style*="background:#f3f4f6"],[style*="background: #f3f4f6"],[style*="background-color:#f3f4f6"],[style*="background-color: #f3f4f6"],[style*="background: rgb(243, 244, 246)"],[style*="background-color: rgb(243, 244, 246)"],[style*="background:#f5f7fa"],[style*="background: #f5f7fa"],[style*="background-color:#f5f7fa"],[style*="background-color: #f5f7fa"],[style*="background: rgb(245, 247, 250)"],[style*="background-color: rgb(245, 247, 250)"],[style*="background:#f4f6fa"],[style*="background: #f4f6fa"],[style*="background-color:#f4f6fa"],[style*="background-color: #f4f6fa"],[style*="background: rgb(244, 246, 250)"],[style*="background-color: rgb(244, 246, 250)"],[style*="background:#eef0f4"],[style*="background: #eef0f4"],[style*="background-color:#eef0f4"],[style*="background-color: #eef0f4"],[style*="background: rgb(238, 240, 244)"],[style*="background-color: rgb(238, 240, 244)"],[style*="background:#fcfcfd"],[style*="background: #fcfcfd"],[style*="background-color:#fcfcfd"],[style*="background-color: #fcfcfd"],[style*="background: rgb(252, 252, 253)"],[style*="background-color: rgb(252, 252, 253)"],[style*="background:#e8edf3"],[style*="background: #e8edf3"],[style*="background-color:#e8edf3"],[style*="background-color: #e8edf3"],[style*="background: rgb(232, 237, 243)"],[style*="background-color: rgb(232, 237, 243)"],[style*="background:#f7f9fc"],[style*="background: #f7f9fc"],[style*="background-color:#f7f9fc"],[style*="background-color: #f7f9fc"],[style*="background: rgb(247, 249, 252)"],[style*="background-color: rgb(247, 249, 252)"],[style*="background:white"],[style*="background: white"]):not(#tgo){background-color:rgba(255,255,255,.06)!important;background-image:none!important;border-color:rgba(255,255,255,.12)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="background:#f0fdf4"],[style*="background: #f0fdf4"],[style*="background-color:#f0fdf4"],[style*="background-color: #f0fdf4"],[style*="background: rgb(240, 253, 244)"],[style*="background-color: rgb(240, 253, 244)"],[style*="background:#dcfce7"],[style*="background: #dcfce7"],[style*="background-color:#dcfce7"],[style*="background-color: #dcfce7"],[style*="background: rgb(220, 252, 231)"],[style*="background-color: rgb(220, 252, 231)"],[style*="background:#ecfdf5"],[style*="background: #ecfdf5"],[style*="background-color:#ecfdf5"],[style*="background-color: #ecfdf5"],[style*="background: rgb(236, 253, 245)"],[style*="background-color: rgb(236, 253, 245)"],[style*="background:#d1fae5"],[style*="background: #d1fae5"],[style*="background-color:#d1fae5"],[style*="background-color: #d1fae5"],[style*="background: rgb(209, 250, 229)"],[style*="background-color: rgb(209, 250, 229)"],[style*="background:#bbf7d0"],[style*="background: #bbf7d0"],[style*="background-color:#bbf7d0"],[style*="background-color: #bbf7d0"],[style*="background: rgb(187, 247, 208)"],[style*="background-color: rgb(187, 247, 208)"],[style*="background:#f0fdfa"],[style*="background: #f0fdfa"],[style*="background-color:#f0fdfa"],[style*="background-color: #f0fdfa"],[style*="background: rgb(240, 253, 250)"],[style*="background-color: rgb(240, 253, 250)"],[style*="background:#e8f9ef"],[style*="background: #e8f9ef"],[style*="background-color:#e8f9ef"],[style*="background-color: #e8f9ef"],[style*="background: rgb(232, 249, 239)"],[style*="background-color: rgb(232, 249, 239)"],[style*="background:#ccfbf1"],[style*="background: #ccfbf1"],[style*="background-color:#ccfbf1"],[style*="background-color: #ccfbf1"],[style*="background: rgb(204, 251, 241)"],[style*="background-color: rgb(204, 251, 241)"]):not(#tgo){background-color:rgba(34,197,94,.16)!important;border-color:rgba(74,222,128,.3)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="background:#fef2f2"],[style*="background: #fef2f2"],[style*="background-color:#fef2f2"],[style*="background-color: #fef2f2"],[style*="background: rgb(254, 242, 242)"],[style*="background-color: rgb(254, 242, 242)"],[style*="background:#fee2e2"],[style*="background: #fee2e2"],[style*="background-color:#fee2e2"],[style*="background-color: #fee2e2"],[style*="background: rgb(254, 226, 226)"],[style*="background-color: rgb(254, 226, 226)"],[style*="background:#fff1f2"],[style*="background: #fff1f2"],[style*="background-color:#fff1f2"],[style*="background-color: #fff1f2"],[style*="background: rgb(255, 241, 242)"],[style*="background-color: rgb(255, 241, 242)"],[style*="background:#ffe4e6"],[style*="background: #ffe4e6"],[style*="background-color:#ffe4e6"],[style*="background-color: #ffe4e6"],[style*="background: rgb(255, 228, 230)"],[style*="background-color: rgb(255, 228, 230)"],[style*="background:#fecaca"],[style*="background: #fecaca"],[style*="background-color:#fecaca"],[style*="background-color: #fecaca"],[style*="background: rgb(254, 202, 202)"],[style*="background-color: rgb(254, 202, 202)"],[style*="background:#fdebec"],[style*="background: #fdebec"],[style*="background-color:#fdebec"],[style*="background-color: #fdebec"],[style*="background: rgb(253, 235, 236)"],[style*="background-color: rgb(253, 235, 236)"],[style*="background:#fecdd3"],[style*="background: #fecdd3"],[style*="background-color:#fecdd3"],[style*="background-color: #fecdd3"],[style*="background: rgb(254, 205, 211)"],[style*="background-color: rgb(254, 205, 211)"]):not(#tgo){background-color:rgba(239,68,68,.18)!important;border-color:rgba(248,113,113,.32)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="background:#fffbeb"],[style*="background: #fffbeb"],[style*="background-color:#fffbeb"],[style*="background-color: #fffbeb"],[style*="background: rgb(255, 251, 235)"],[style*="background-color: rgb(255, 251, 235)"],[style*="background:#fef3c7"],[style*="background: #fef3c7"],[style*="background-color:#fef3c7"],[style*="background-color: #fef3c7"],[style*="background: rgb(254, 243, 199)"],[style*="background-color: rgb(254, 243, 199)"],[style*="background:#fff7ed"],[style*="background: #fff7ed"],[style*="background-color:#fff7ed"],[style*="background-color: #fff7ed"],[style*="background: rgb(255, 247, 237)"],[style*="background-color: rgb(255, 247, 237)"],[style*="background:#fef9c3"],[style*="background: #fef9c3"],[style*="background-color:#fef9c3"],[style*="background-color: #fef9c3"],[style*="background: rgb(254, 249, 195)"],[style*="background-color: rgb(254, 249, 195)"],[style*="background:#fde68a"],[style*="background: #fde68a"],[style*="background-color:#fde68a"],[style*="background-color: #fde68a"],[style*="background: rgb(253, 230, 138)"],[style*="background-color: rgb(253, 230, 138)"],[style*="background:#ffedd5"],[style*="background: #ffedd5"],[style*="background-color:#ffedd5"],[style*="background-color: #ffedd5"],[style*="background: rgb(255, 237, 213)"],[style*="background-color: rgb(255, 237, 213)"],[style*="background:#fff4dd"],[style*="background: #fff4dd"],[style*="background-color:#fff4dd"],[style*="background-color: #fff4dd"],[style*="background: rgb(255, 244, 221)"],[style*="background-color: rgb(255, 244, 221)"],[style*="background:#fefce8"],[style*="background: #fefce8"],[style*="background-color:#fefce8"],[style*="background-color: #fefce8"],[style*="background: rgb(254, 252, 232)"],[style*="background-color: rgb(254, 252, 232)"]):not(#tgo){background-color:rgba(245,158,11,.16)!important;border-color:rgba(251,191,36,.3)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="background:#eff6ff"],[style*="background: #eff6ff"],[style*="background-color:#eff6ff"],[style*="background-color: #eff6ff"],[style*="background: rgb(239, 246, 255)"],[style*="background-color: rgb(239, 246, 255)"],[style*="background:#dbeafe"],[style*="background: #dbeafe"],[style*="background-color:#dbeafe"],[style*="background-color: #dbeafe"],[style*="background: rgb(219, 234, 254)"],[style*="background-color: rgb(219, 234, 254)"],[style*="background:#eef2ff"],[style*="background: #eef2ff"],[style*="background-color:#eef2ff"],[style*="background-color: #eef2ff"],[style*="background: rgb(238, 242, 255)"],[style*="background-color: rgb(238, 242, 255)"],[style*="background:#e0e7ff"],[style*="background: #e0e7ff"],[style*="background-color:#e0e7ff"],[style*="background-color: #e0e7ff"],[style*="background: rgb(224, 231, 255)"],[style*="background-color: rgb(224, 231, 255)"],[style*="background:#f5f3ff"],[style*="background: #f5f3ff"],[style*="background-color:#f5f3ff"],[style*="background-color: #f5f3ff"],[style*="background: rgb(245, 243, 255)"],[style*="background-color: rgb(245, 243, 255)"],[style*="background:#ede9fe"],[style*="background: #ede9fe"],[style*="background-color:#ede9fe"],[style*="background-color: #ede9fe"],[style*="background: rgb(237, 233, 254)"],[style*="background-color: rgb(237, 233, 254)"],[style*="background:#faf5ff"],[style*="background: #faf5ff"],[style*="background-color:#faf5ff"],[style*="background-color: #faf5ff"],[style*="background: rgb(250, 245, 255)"],[style*="background-color: rgb(250, 245, 255)"],[style*="background:#eaf1ff"],[style*="background: #eaf1ff"],[style*="background-color:#eaf1ff"],[style*="background-color: #eaf1ff"],[style*="background: rgb(234, 241, 255)"],[style*="background-color: rgb(234, 241, 255)"],[style*="background:#f0f9ff"],[style*="background: #f0f9ff"],[style*="background-color:#f0f9ff"],[style*="background-color: #f0f9ff"],[style*="background: rgb(240, 249, 255)"],[style*="background-color: rgb(240, 249, 255)"],[style*="background:#e0f2fe"],[style*="background: #e0f2fe"],[style*="background-color:#e0f2fe"],[style*="background-color: #e0f2fe"],[style*="background: rgb(224, 242, 254)"],[style*="background-color: rgb(224, 242, 254)"],[style*="background:#bfdbfe"],[style*="background: #bfdbfe"],[style*="background-color:#bfdbfe"],[style*="background-color: #bfdbfe"],[style*="background: rgb(191, 219, 254)"],[style*="background-color: rgb(191, 219, 254)"]):not(#tgo){background-color:rgba(59,130,246,.18)!important;border-color:rgba(147,197,253,.3)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="solid #e2e8f0"],[style*="solid #f1f5f9"],[style*="solid #e5e7eb"],[style*="solid #eef2f7"],[style*="solid #cbd5e1"],[style*="solid #e8edf3"],[style*="solid #e6e8ef"],[style*="solid #eee"],[style*="solid #ddd"],[style*="solid rgb(226, 232, 240)"],[style*="solid rgb(241, 245, 249)"],[style*="solid rgb(229, 231, 235)"],[style*="solid rgb(238, 242, 247)"],[style*="solid rgb(203, 213, 225)"],[style*="solid rgb(232, 237, 243)"],[style*="solid rgb(230, 232, 239)"],[style*="solid rgb(238, 238, 238)"],[style*="solid rgb(221, 221, 221)"]){border-color:rgba(255,255,255,.12)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#0f172a"],[style*="color:#0F172A"],[style*="color: #0f172a"],[style*="color: #0F172A"],[style*="color: rgb(15, 23, 42)"],[style*="color:#1e293b"],[style*="color:#1E293B"],[style*="color: #1e293b"],[style*="color: #1E293B"],[style*="color: rgb(30, 41, 59)"],[style*="color:#334155"],[style*="color: #334155"],[style*="color: rgb(51, 65, 85)"],[style*="color:#111827"],[style*="color: #111827"],[style*="color: rgb(17, 24, 39)"],[style*="color:#1f2937"],[style*="color:#1F2937"],[style*="color: #1f2937"],[style*="color: #1F2937"],[style*="color: rgb(31, 41, 55)"],[style*="color:#374151"],[style*="color: #374151"],[style*="color: rgb(55, 65, 81)"],[style*="color:#3a4252"],[style*="color:#3A4252"],[style*="color: #3a4252"],[style*="color: #3A4252"],[style*="color: rgb(58, 66, 82)"],[style*="color:#101828"],[style*="color: #101828"],[style*="color: rgb(16, 24, 40)"],[style*="color:#1e1b4b"],[style*="color:#1E1B4B"],[style*="color: #1e1b4b"],[style*="color: #1E1B4B"],[style*="color: rgb(30, 27, 75)"],[style*="color:#222"],[style*="color: #222"],[style*="color: rgb(34, 34, 34)"],[style*="color:#333"],[style*="color: #333"],[style*="color: rgb(51, 51, 51)"],[style*="color:#000"],[style*="color: #000"],[style*="color: rgb(0, 0, 0)"],[style*="color:#20243b"],[style*="color:#20243B"],[style*="color: #20243b"],[style*="color: #20243B"],[style*="color: rgb(32, 36, 59)"],[style*="color:#0b1220"],[style*="color:#0B1220"],[style*="color: #0b1220"],[style*="color: #0B1220"],[style*="color: rgb(11, 18, 32)"]){color:#F5F5F4!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#475569"],[style*="color: #475569"],[style*="color: rgb(71, 85, 105)"],[style*="color:#4b5563"],[style*="color:#4B5563"],[style*="color: #4b5563"],[style*="color: #4B5563"],[style*="color: rgb(75, 85, 99)"],[style*="color:#555"],[style*="color: #555"],[style*="color: rgb(85, 85, 85)"],[style*="color:#344054"],[style*="color: #344054"],[style*="color: rgb(52, 64, 84)"],[style*="color:#475467"],[style*="color: #475467"],[style*="color: rgb(71, 84, 103)"]){color:#D6D3D1!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#64748b"],[style*="color:#64748B"],[style*="color: #64748b"],[style*="color: #64748B"],[style*="color: rgb(100, 116, 139)"],[style*="color:#6b7280"],[style*="color:#6B7280"],[style*="color: #6b7280"],[style*="color: #6B7280"],[style*="color: rgb(107, 114, 128)"],[style*="color:#666"],[style*="color: #666"],[style*="color: rgb(102, 102, 102)"],[style*="color:#777"],[style*="color: #777"],[style*="color: rgb(119, 119, 119)"],[style*="color:#888"],[style*="color: #888"],[style*="color: rgb(136, 136, 136)"],[style*="color:#94a3b8"],[style*="color:#94A3B8"],[style*="color: #94a3b8"],[style*="color: #94A3B8"],[style*="color: rgb(148, 163, 184)"],[style*="color:#98a2b3"],[style*="color:#98A2B3"],[style*="color: #98a2b3"],[style*="color: #98A2B3"],[style*="color: rgb(152, 162, 179)"],[style*="color:#8791a3"],[style*="color:#8791A3"],[style*="color: #8791a3"],[style*="color: #8791A3"],[style*="color: rgb(135, 145, 163)"],[style*="color:#7a8494"],[style*="color:#7A8494"],[style*="color: #7a8494"],[style*="color: #7A8494"],[style*="color: rgb(122, 132, 148)"],[style*="color:#9ca3af"],[style*="color:#9CA3AF"],[style*="color: #9ca3af"],[style*="color: #9CA3AF"],[style*="color: rgb(156, 163, 175)"],[style*="color:#667085"],[style*="color: #667085"],[style*="color: rgb(102, 112, 133)"],[style*="color:#5b6576"],[style*="color:#5B6576"],[style*="color: #5b6576"],[style*="color: #5B6576"],[style*="color: rgb(91, 101, 118)"],[style*="color:#5b6577"],[style*="color:#5B6577"],[style*="color: #5b6577"],[style*="color: #5B6577"],[style*="color: rgb(91, 101, 119)"],[style*="color:#94a0b4"],[style*="color:#94A0B4"],[style*="color: #94a0b4"],[style*="color: #94A0B4"],[style*="color: rgb(148, 160, 180)"],[style*="color:#999"],[style*="color: #999"],[style*="color: rgb(153, 153, 153)"]){color:#A8A29E!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#059669"],[style*="color: #059669"],[style*="color: rgb(5, 150, 105)"],[style*="color:#10b981"],[style*="color:#10B981"],[style*="color: #10b981"],[style*="color: #10B981"],[style*="color: rgb(16, 185, 129)"],[style*="color:#16a34a"],[style*="color:#16A34A"],[style*="color: #16a34a"],[style*="color: #16A34A"],[style*="color: rgb(22, 163, 74)"],[style*="color:#15803d"],[style*="color:#15803D"],[style*="color: #15803d"],[style*="color: #15803D"],[style*="color: rgb(21, 128, 61)"],[style*="color:#047857"],[style*="color: #047857"],[style*="color: rgb(4, 120, 87)"],[style*="color:#065f46"],[style*="color:#065F46"],[style*="color: #065f46"],[style*="color: #065F46"],[style*="color: rgb(6, 95, 70)"],[style*="color:#166534"],[style*="color: #166534"],[style*="color: rgb(22, 101, 52)"],[style*="color:#0d9488"],[style*="color:#0D9488"],[style*="color: #0d9488"],[style*="color: #0D9488"],[style*="color: rgb(13, 148, 136)"],[style*="color:#0f766e"],[style*="color:#0F766E"],[style*="color: #0f766e"],[style*="color: #0F766E"],[style*="color: rgb(15, 118, 110)"],[style*="color:#00e5c7"],[style*="color:#00E5C7"],[style*="color: #00e5c7"],[style*="color: #00E5C7"],[style*="color: rgb(0, 229, 199)"],[style*="color:#22c55e"],[style*="color:#22C55E"],[style*="color: #22c55e"],[style*="color: #22C55E"],[style*="color: rgb(34, 197, 94)"],[style*="color:#0f9d50"],[style*="color:#0F9D50"],[style*="color: #0f9d50"],[style*="color: #0F9D50"],[style*="color: rgb(15, 157, 80)"],[style*="color:#087a4c"],[style*="color:#087A4C"],[style*="color: #087a4c"],[style*="color: #087A4C"],[style*="color: rgb(8, 122, 76)"],[style*="color:#064e3b"],[style*="color:#064E3B"],[style*="color: #064e3b"],[style*="color: #064E3B"],[style*="color: rgb(6, 78, 59)"],[style*="color:#14532d"],[style*="color:#14532D"],[style*="color: #14532d"],[style*="color: #14532D"],[style*="color: rgb(20, 83, 45)"]){color:#4ADE80!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#d97706"],[style*="color:#D97706"],[style*="color: #d97706"],[style*="color: #D97706"],[style*="color: rgb(217, 119, 6)"],[style*="color:#f59e0b"],[style*="color:#F59E0B"],[style*="color: #f59e0b"],[style*="color: #F59E0B"],[style*="color: rgb(245, 158, 11)"],[style*="color:#b45309"],[style*="color:#B45309"],[style*="color: #b45309"],[style*="color: #B45309"],[style*="color: rgb(180, 83, 9)"],[style*="color:#92400e"],[style*="color:#92400E"],[style*="color: #92400e"],[style*="color: #92400E"],[style*="color: rgb(146, 64, 14)"],[style*="color:#ea580c"],[style*="color:#EA580C"],[style*="color: #ea580c"],[style*="color: #EA580C"],[style*="color: rgb(234, 88, 12)"],[style*="color:#c2410c"],[style*="color:#C2410C"],[style*="color: #c2410c"],[style*="color: #C2410C"],[style*="color: rgb(194, 65, 12)"],[style*="color:#9a3412"],[style*="color:#9A3412"],[style*="color: #9a3412"],[style*="color: #9A3412"],[style*="color: rgb(154, 52, 18)"],[style*="color:#f97316"],[style*="color:#F97316"],[style*="color: #f97316"],[style*="color: #F97316"],[style*="color: rgb(249, 115, 22)"],[style*="color:#a16207"],[style*="color:#A16207"],[style*="color: #a16207"],[style*="color: #A16207"],[style*="color: rgb(161, 98, 7)"],[style*="color:#854d0e"],[style*="color:#854D0E"],[style*="color: #854d0e"],[style*="color: #854D0E"],[style*="color: rgb(133, 77, 14)"],[style*="color:#78350f"],[style*="color:#78350F"],[style*="color: #78350f"],[style*="color: #78350F"],[style*="color: rgb(120, 53, 15)"]){color:#FBBF24!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#dc2626"],[style*="color:#DC2626"],[style*="color: #dc2626"],[style*="color: #DC2626"],[style*="color: rgb(220, 38, 38)"],[style*="color:#ef4444"],[style*="color:#EF4444"],[style*="color: #ef4444"],[style*="color: #EF4444"],[style*="color: rgb(239, 68, 68)"],[style*="color:#b91c1c"],[style*="color:#B91C1C"],[style*="color: #b91c1c"],[style*="color: #B91C1C"],[style*="color: rgb(185, 28, 28)"],[style*="color:#991b1b"],[style*="color:#991B1B"],[style*="color: #991b1b"],[style*="color: #991B1B"],[style*="color: rgb(153, 27, 27)"],[style*="color:#9f1239"],[style*="color:#9F1239"],[style*="color: #9f1239"],[style*="color: #9F1239"],[style*="color: rgb(159, 18, 57)"],[style*="color:#e11d48"],[style*="color:#E11D48"],[style*="color: #e11d48"],[style*="color: #E11D48"],[style*="color: rgb(225, 29, 72)"],[style*="color:#f43f5e"],[style*="color:#F43F5E"],[style*="color: #f43f5e"],[style*="color: #F43F5E"],[style*="color: rgb(244, 63, 94)"],[style*="color:#be123c"],[style*="color:#BE123C"],[style*="color: #be123c"],[style*="color: #BE123C"],[style*="color: rgb(190, 18, 60)"],[style*="color:#7f1d1d"],[style*="color:#7F1D1D"],[style*="color: #7f1d1d"],[style*="color: #7F1D1D"],[style*="color: rgb(127, 29, 29)"],[style*="color:#881337"],[style*="color: #881337"],[style*="color: rgb(136, 19, 55)"]){color:#FCA5A5!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#6d28d9"],[style*="color:#6D28D9"],[style*="color: #6d28d9"],[style*="color: #6D28D9"],[style*="color: rgb(109, 40, 217)"],[style*="color:#7c3aed"],[style*="color:#7C3AED"],[style*="color: #7c3aed"],[style*="color: #7C3AED"],[style*="color: rgb(124, 58, 237)"],[style*="color:#8b5cf6"],[style*="color:#8B5CF6"],[style*="color: #8b5cf6"],[style*="color: #8B5CF6"],[style*="color: rgb(139, 92, 246)"],[style*="color:#4f46e5"],[style*="color:#4F46E5"],[style*="color: #4f46e5"],[style*="color: #4F46E5"],[style*="color: rgb(79, 70, 229)"],[style*="color:#4338ca"],[style*="color:#4338CA"],[style*="color: #4338ca"],[style*="color: #4338CA"],[style*="color: rgb(67, 56, 202)"],[style*="color:#4c1d95"],[style*="color:#4C1D95"],[style*="color: #4c1d95"],[style*="color: #4C1D95"],[style*="color: rgb(76, 29, 149)"],[style*="color:#5b21b6"],[style*="color:#5B21B6"],[style*="color: #5b21b6"],[style*="color: #5B21B6"],[style*="color: rgb(91, 33, 182)"],[style*="color:#1e3a6e"],[style*="color:#1E3A6E"],[style*="color: #1e3a6e"],[style*="color: #1E3A6E"],[style*="color: rgb(30, 58, 110)"],[style*="color:#1e40af"],[style*="color:#1E40AF"],[style*="color: #1e40af"],[style*="color: #1E40AF"],[style*="color: rgb(30, 64, 175)"],[style*="color:#1d4ed8"],[style*="color:#1D4ED8"],[style*="color: #1d4ed8"],[style*="color: #1D4ED8"],[style*="color: rgb(29, 78, 216)"],[style*="color:#2563eb"],[style*="color:#2563EB"],[style*="color: #2563eb"],[style*="color: #2563EB"],[style*="color: rgb(37, 99, 235)"],[style*="color:#0c447c"],[style*="color:#0C447C"],[style*="color: #0c447c"],[style*="color: #0C447C"],[style*="color: rgb(12, 68, 124)"],[style*="color:#3568e0"],[style*="color:#3568E0"],[style*="color: #3568e0"],[style*="color: #3568E0"],[style*="color: rgb(53, 104, 224)"],[style*="color:#1e3a8a"],[style*="color:#1E3A8A"],[style*="color: #1e3a8a"],[style*="color: #1E3A8A"],[style*="color: rgb(30, 58, 138)"],[style*="color:#0f5fc7"],[style*="color:#0F5FC7"],[style*="color: #0f5fc7"],[style*="color: #0F5FC7"],[style*="color: rgb(15, 95, 199)"],[style*="color:#312e81"],[style*="color:#312E81"],[style*="color: #312e81"],[style*="color: #312E81"],[style*="color: rgb(49, 46, 129)"],[style*="color:#3730a3"],[style*="color:#3730A3"],[style*="color: #3730a3"],[style*="color: #3730A3"],[style*="color: rgb(55, 48, 163)"],[style*="color:#6366f1"],[style*="color:#6366F1"],[style*="color: #6366f1"],[style*="color: #6366F1"],[style*="color: rgb(99, 102, 241)"],[style*="color:#0369a1"],[style*="color:#0369A1"],[style*="color: #0369a1"],[style*="color: #0369A1"],[style*="color: rgb(3, 105, 161)"],[style*="color:#075985"],[style*="color: #075985"],[style*="color: rgb(7, 89, 133)"]){color:#93C5FD!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#0891b2"],[style*="color:#0891B2"],[style*="color: #0891b2"],[style*="color: #0891B2"],[style*="color: rgb(8, 145, 178)"],[style*="color:#0e7490"],[style*="color:#0E7490"],[style*="color: #0e7490"],[style*="color: #0E7490"],[style*="color: rgb(14, 116, 144)"],[style*="color:#155e75"],[style*="color:#155E75"],[style*="color: #155e75"],[style*="color: #155E75"],[style*="color: rgb(21, 94, 117)"]){color:#67E8F9!important}
+html.tema-glass-oscuro :is(#cnt,.overlay,.cs-panel,.nxCrmDialog,.notif-panel) :is([style*="color:#831843"],[style*="color: #831843"],[style*="color: rgb(131, 24, 67)"],[style*="color:#9d174d"],[style*="color:#9D174D"],[style*="color: #9d174d"],[style*="color: #9D174D"],[style*="color: rgb(157, 23, 77)"],[style*="color:#be185d"],[style*="color:#BE185D"],[style*="color: #be185d"],[style*="color: #BE185D"],[style*="color: rgb(190, 24, 93)"],[style*="color:#db2777"],[style*="color:#DB2777"],[style*="color: #db2777"],[style*="color: #DB2777"],[style*="color: rgb(219, 39, 119)"]){color:#F9A8D4!important}
+/* colores por token escritos a mano (style="color:var(--c4)"): la capa de tablas 3D los tapaba con #0f172a!important */
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--c1)"],[style*="color: var(--c1)"]){color:var(--c1)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--c2)"],[style*="color: var(--c2)"]){color:var(--c2)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--c3)"],[style*="color: var(--c3)"]){color:var(--c3)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--c4)"],[style*="color: var(--c4)"]){color:var(--c4)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--c5)"],[style*="color: var(--c5)"]){color:var(--c5)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--tx1)"],[style*="color: var(--tx1)"]){color:var(--tx1)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--tx2)"],[style*="color: var(--tx2)"]){color:var(--tx2)!important}
+html.tema-glass-oscuro :is(#cnt,.overlay) :is([style*="color:var(--tx3)"],[style*="color: var(--tx3)"]){color:var(--tx3)!important}
+/* botones con color propio (style=) que el relieve «píldora» de Facturas/Clientes/Pólizas tapaba: recuperan su color */
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#059669"],[style*="rgb(5, 150, 105)"],[style*="#10b981"],[style*="rgb(16, 185, 129)"],[style*="#16a34a"],[style*="rgb(22, 163, 74)"],[style*="#25D366"],[style*="rgb(37, 211, 102)"],[style*="#25d366"],[style*="#128C7E"],[style*="rgb(18, 140, 126)"]):not(#tgo){background:#15803D!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#2563eb"],[style*="rgb(37, 99, 235)"],[style*="#2563EB"],[style*="#3b82f6"],[style*="rgb(59, 130, 246)"],[style*="#6d28d9"],[style*="rgb(109, 40, 217)"],[style*="#7c3aed"],[style*="rgb(124, 58, 237)"],[style*="#8b5cf6"],[style*="rgb(139, 92, 246)"]):not(#tgo){background:var(--tgo-blue)!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#dc2626"],[style*="rgb(220, 38, 38)"],[style*="#ef4444"],[style*="rgb(239, 68, 68)"]):not(#tgo){background:#DC2626!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]) i{color:#fff!important}
+html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) :is([style*="color:#fff"],[style*="color: #fff"],[style*="color:#ffffff"],[style*="color: rgb(255, 255, 255)"])[style*="background:#f59e0b"]{background:#B45309!important}
+
+/* foco visible y consistente (teclado) en todo el contenido; sin anillo al hacer clic */
+html.tema-glass-oscuro #cnt :is(button,[role=button],a,.btn,.nxft-tab):focus-visible,html.tema-glass-oscuro .overlay :is(button,[role=button],a,.btn):focus-visible{outline:2px solid #60A5FA!important;outline-offset:2px!important}
+/* barras de desplazamiento discretas sobre el cristal */
+html.tema-glass-oscuro body .content,html.tema-glass-oscuro .overlay,html.tema-glass-oscuro .modal{scrollbar-color:rgba(255,255,255,.22) transparent;scrollbar-width:thin}
+html.tema-glass-oscuro ::-webkit-scrollbar-track{background:transparent!important}
+html.tema-glass-oscuro ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)!important}
+/* toques sin retraso de doble toque */
+html.tema-glass-oscuro body :is(button,[role=button],.ni,.btn){touch-action:manipulation}
+
+/* ═══ ajustes de maquetación que traía 58.90 (sin cambios) ═══ */
+/* textos cortados con «…» donde sí hay espacio: 2 líneas (KPI del Inicio, prospectos, KPI de Cliente 360). */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ks{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 html.tema-glass-oscuro #cnt #v-crm .nxProsMeta{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .sub,html.tema-glass-oscuro #v-cliente360 .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .sf-kpi .sub{white-space:normal!important;overflow:visible!important}
-/* foco visible y consistente (teclado) en todo el contenido; sin anillo al hacer clic */
-html.tema-glass-oscuro #cnt :is(button,[role=button],a,.btn,.nxft-tab,input,select,textarea):focus-visible,html.tema-glass-oscuro .overlay :is(button,[role=button],a,.btn,input,select,textarea):focus-visible{outline:2px solid #2563EB!important;outline-offset:2px!important}
-/* selects nativos: fondo y texto explícitos (Windows modo oscuro) */
-html.tema-glass-oscuro #cnt select,html.tema-glass-oscuro .overlay select{background-color:#fff;color:#0F172A}
-/* barras de desplazamiento discretas sobre el cristal */
-html.tema-glass-oscuro body .content{scrollbar-color:rgba(255,255,255,.22) transparent;scrollbar-width:thin}
-html.tema-glass-oscuro body .content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)!important}
-/* toques sin retraso de doble toque */
-html.tema-glass-oscuro body :is(button,[role=button],.ni,.btn){touch-action:manipulation}
-/* grises de módulos (Novedades, reporte Ciclo 20→20, Préstamos) un paso más oscuros sobre blanco */
-html.tema-glass-oscuro :is(.nxnov-title p,.nxnov-kpi span,.nxnov-seg,.nxnov-filter:not(.on),.nxnov-meta,.nxnov-detail,.nxnov-age,.nxnov-field label,.nxC20Tab:not(.on)){color:#475569!important}
-html.tema-glass-oscuro :is(.nxnov-seg,.nxnov-filter) span{color:inherit}
-html.tema-glass-oscuro #cnt :is(.nxFP-navItem:not(.on):not(.active),.nxFP-sideBack,.nxFP-side span){color:#475569!important}
-html.tema-glass-oscuro #cnt #v-prestamos p{color:#475569}
-html.tema-glass-oscuro .nxSf .fc-av{background:linear-gradient(135deg,#DC2626,#B91C1C)!important}
-html.tema-glass-oscuro #cnt .nxOpsDue.bad{color:#B91C1C!important}
-html.tema-glass-oscuro .modal .badge.bC4,html.tema-glass-oscuro #cnt .badge.bC4{color:#B45309}
-html.tema-glass-oscuro .modal .btn.bc4,html.tema-glass-oscuro .modal .btn.bc4 i{color:#B45309!important}
-html.tema-glass-oscuro .modal [style*="color:#94a3b8"],[style*="color: rgb(148, 163, 184)"],html.tema-glass-oscuro .modal [style*="color: #94a3b8"],[style*="color: rgb(148, 163, 184)"]{color:#64748B!important}
-html.tema-glass-oscuro :is(.nc,.modal,.tw,.kpi) :is([style*="color:#fff"],[style*="color: #fff"],[style*="color:#ffffff"],[style*="color: rgb(255, 255, 255)"])[style*="background:#f59e0b"]{background:#B45309!important}
-html.tema-glass-oscuro .overlay .btn.bc5{background:#15803D!important;border-color:#15803D!important}
-html.tema-glass-oscuro{--c4:#B45309;--c5:#047857}
-/* Botones con color propio (style=) que el relieve «píldora» de Facturas/Clientes/Pólizas tapaba: el texto blanco quedaba
-   sobre gris (invisible). Recuperan su color, en la variante AA. */
-html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#059669"],[style*="rgb(5, 150, 105)"],[style*="#10b981"],[style*="rgb(16, 185, 129)"],[style*="#16a34a"],[style*="rgb(22, 163, 74)"],[style*="#25D366"],[style*="rgb(37, 211, 102)"],[style*="#25d366"],[style*="rgb(37, 211, 102)"],[style*="#128C7E"],[style*="rgb(18, 140, 126)"]){background:#15803D!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
-html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#2563eb"],[style*="rgb(37, 99, 235)"],[style*="#2563EB"],[style*="rgb(37, 99, 235)"],[style*="#3b82f6"],[style*="rgb(59, 130, 246)"],[style*="#6d28d9"],[style*="rgb(109, 40, 217)"],[style*="#7c3aed"],[style*="rgb(124, 58, 237)"],[style*="#8b5cf6"],[style*="rgb(139, 92, 246)"]){background:var(--tgo-blue)!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
-html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]):is([style*="#dc2626"],[style*="rgb(220, 38, 38)"],[style*="#ef4444"],[style*="rgb(239, 68, 68)"]){background:#DC2626!important;background-image:none!important;box-shadow:none!important;color:#fff!important}
-html.tema-glass-oscuro #cnt .btn:is([style*="color:#fff"],[style*="color: rgb(255, 255, 255)"]) i{color:#fff!important}
-html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{color:#92400E!important}
 /* títulos largos en la cabecera móvil: 2 líneas en vez de «…» */
 @media (max-width:768px){
   html.tema-glass-oscuro body .tnav #pttl{font-size:15px!important;line-height:1.15!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   html.tema-glass-oscuro #cnt #v-facturas .nxft-tab{white-space:normal!important;line-height:1.15;text-align:center}
 }
-/* Financiamiento: en escritorio los rótulos Prestado/Cobrado/Vencido/Clientes van sobre el héroe morado (blanco, como
-   siempre); solo en ≤640 px van en tarjetas blancas → gris AA. Las 4 cifras no caben en 2 columnas con el riel a 390 px:
-   ≤480 px van en una columna (sin ancho mínimo que las saque del héroe). */
+/* Financiamiento: las 4 cifras del héroe no caben en 2 columnas con el riel a 390 px → una columna ≤480 px */
 @media (max-width:640px){
-  html.tema-glass-oscuro #cnt .nxFP-hAst .nxFP-hAsl{color:#5B6576!important}
   html.tema-glass-oscuro #cnt :is(.nxFP-hAL,.nxFP-hAR){min-width:0!important}
   html.tema-glass-oscuro #cnt .nxFP-hAst{min-width:0}
   html.tema-glass-oscuro #cnt .nxFP-hAst > div:last-child{min-width:0}
   html.tema-glass-oscuro #cnt .nxFP-hAsv{overflow-wrap:anywhere}
 }
 @media (max-width:480px){html.tema-glass-oscuro #cnt .nxFP-hAR{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
-/* Cliente 360: la fila de acciones y los datos de la cabecera se salían del panel (en escritorio «Nueva póliza» quedaba
-   cortada; en el celular la ficha medía ~850 px dentro de 314). Mismo arreglo que ya tenía el modo CRM (parches-crm.css),
-   aplicado a la ficha abierta desde el menú. */
+/* Cliente 360: la fila de acciones y los datos de la cabecera caben en el panel (mismo arreglo que el modo CRM) */
 html.tema-glass-oscuro #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-width:100%}
 @media (max-width:900px){
   html.tema-glass-oscuro #v-cliente360 .c360-shell{align-items:stretch}
@@ -3528,34 +3898,85 @@ html.tema-glass-oscuro #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-
   html.tema-glass-oscuro #v-cliente360 .sf-actions .sf-btn{padding-left:6px!important;padding-right:6px!important;gap:4px;font-size:11px!important}
   html.tema-glass-oscuro #v-cliente360 .sf-kpis{grid-template-columns:minmax(0,1fr)!important}
 }
-/* Clientes a 390 px: «ASEGURADAS» no cabía en su recuadro: cabecera con menos relleno; en los KPI el ícono va arriba
-   del texto (la letra no puede bajar de 11 px por la capa de tipografía) */
+/* Clientes a 390 px: «ASEGURADAS» cabe en su recuadro */
 @media (max-width:480px){
   html.tema-glass-oscuro #cnt .nxCrmPulse > div{padding-left:6px!important;padding-right:6px!important;min-width:0}
   html.tema-glass-oscuro #cnt .nxCrmPulse span{font-size:10px!important;letter-spacing:0!important}
   html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi{flex-direction:column;align-items:flex-start;gap:8px}
   html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi > div:last-child{min-width:0;width:100%}
 }
-/* Cajón móvil abierto: el avatar queda en la columna del riel y el nombre/rol empezaba debajo de él (se encimaban);
-   ahora el texto arranca en la misma columna que los nombres del menú. */
+/* Cajón móvil abierto: el nombre/rol del usuario empieza en la columna de los nombres del menú */
 @media (max-width:768px){
   html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u > div:not(.sb-av){padding-left:85px;min-width:0}
   html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u :is(.sb-un,.sb-ur){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
-/* Login: rótulos y «Recordarme» venían en pizarra (#475569) sobre el cristal oscuro (≈2:1) → claros; enlace azul claro */
+/* Login: rótulos claros sobre el cristal oscuro */
 html.tema-glass-oscuro #loginScreen .lfr label,html.tema-glass-oscuro #loginScreen .lchk label{color:#D6D3D1!important}
 html.tema-glass-oscuro #loginScreen .lver{color:#A8A29E!important}
 html.tema-glass-oscuro #loginScreen .lforgot{color:#93C5FD!important}
-/* Configuración: los nombres de las pestañas se partían a mitad de palabra («NOTIFICACIO/NES», «USUARIO/S»); ahora van
-   en una línea y la barra se desliza (ya se desplazaba sola hasta la pestaña activa). */
-html.tema-glass-oscuro .cfg-tab{max-width:none!important;flex:0 0 auto!important;padding:4px 6px!important}
-html.tema-glass-oscuro .cfg-tab span{max-width:none!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important;display:block!important}
-/* barra inferior propia de Financiamiento (≤900 px): sobre la escena oscura el blanco al 82 % se volvía gris → casi opaca */
-html.tema-glass-oscuro .nxFP-dock{background:rgba(255,255,255,.96)!important}
-html.tema-glass-oscuro .nxFP-dockBtn:not(.on){color:#475569!important}
-/* Buzón (sin tocar parches-whatsapp-*): solo dos rótulos que quedaban por debajo de 3:1 */
-html.tema-glass-oscuro #v-waInbox .nxCrmHomeBadge{color:#047857!important}
-html.tema-glass-oscuro #v-waInbox .nxWaListCount{color:#5B6576!important}
+/* ── Buzón WhatsApp (#v-waInbox) — SOLO desde esta capa; sin tocar parches-whatsapp-* ni su lógica de carga/envío.
+   Sus capas fijan colores con «#v-waInbox .x{…!important}»; aquí html.tema-glass-oscuro delante gana por especificidad.
+   Cabecera, KPI, accesos, lista, filas y cabecera del chat en cristal; el texto de los mensajes (sin globo propio) queda
+   claro sobre el fondo oscuro del chat; hora y menú de cada mensaje en gris claro. ── */
+html.tema-glass-oscuro #cnt #v-waInbox{background:transparent!important;background-image:none!important;color:#F5F5F4;--wau-ink:#F5F5F4;--wav-ink:#F5F5F4}
+html.tema-glass-oscuro #cnt #v-waInbox :is(.nxCrmHomeHead,.nxWaProKpi,.nxWaCol){background:var(--tgo-card)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxCrmHomeHead::before,html.tema-glass-oscuro #cnt #v-waInbox .nxCrmHomeHead::after{opacity:.35}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaProKpi.on{background:rgba(59,130,246,.18)!important;border-color:rgba(147,197,253,.4)!important}
+html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaListTools,.nxWaListScroll,.nxWaMsgs,.nxWaComposer,.nxWaComposerWrap,.nxWaShell){background:transparent!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaUhdKpiIcon{background:rgba(59,130,246,.2)!important;color:#93C5FD!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox h1{color:#F8FAFC!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxCrmHomeHead p,html.tema-glass-oscuro #cnt #v-waInbox .nxWaUhdHeroTag,html.tema-glass-oscuro #cnt #v-waInbox .nxWaProKpi .l,html.tema-glass-oscuro #cnt #v-waInbox .nxWaListCount,
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaEmpty,html.tema-glass-oscuro #cnt #v-waInbox .nxWaEmpty *,html.tema-glass-oscuro #cnt #v-waInbox .nxWaDetailCol > div > span,html.tema-glass-oscuro #cnt #v-waInbox .nxWaHeadSub{color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaProKpi .v,html.tema-glass-oscuro #cnt #v-waInbox .nxWaListTools b,html.tema-glass-oscuro #cnt #v-waInbox .nxWaRow b,html.tema-glass-oscuro #cnt #v-waInbox .nxWaHeadName,html.tema-glass-oscuro #cnt #v-waInbox .nxWaDetailCol b{color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxCrmHomeBadge{color:#4ADE80!important;background:rgba(34,197,94,.14)!important;border-color:rgba(74,222,128,.28)!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaPro button:not(.primary):not(.nxWaProKpi),html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaVisualContactsBtn,.nxWaAutomationBtn,.nxWaSearchToggle,.nxWaChatHeadBtn,.nxWaHeadAct,.nxWaHeadAction,.nxWaBackMob,.nxWaBack){
+  background:rgba(255,255,255,.07)!important;background-image:none!important;border:1px solid var(--tgo-edge-2)!important;color:#BFDBFE!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaPro button,.nxWaVisualContactsBtn,.nxWaAutomationBtn,.nxWaChatHeadBtn) :is(span,i){color:inherit!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaCtxCount{background:rgba(59,130,246,.25)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRow{background:rgba(255,255,255,.05)!important;background-image:none!important;border-color:rgba(255,255,255,.08)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRow.on{background:rgba(59,130,246,.18)!important;border-color:rgba(147,197,253,.4)!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRow span:not(.nxWaBadge):not(.nxWaTime){color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaTime,html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaMsgTime,.nxWaBubMeta,.nxWaMsgMeta,.nxWaMsgState){color:#A8A29E!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaAv{background:rgba(59,130,246,.22)!important;background-image:none!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaTag.ok{background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaTag.err{background:var(--tgo-err-l)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaTag.warn{background:var(--tgo-warn-l)!important;color:#FBBF24!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaHead{background:rgba(255,255,255,.06)!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important;color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaDaySep{background:rgba(255,255,255,.08)!important;color:#D6D3D1!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaMsgText{color:#F5F5F4}
+html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgDrop){background:rgba(38,34,32,.92)!important;color:#D6D3D1!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgDrop) i{color:#D6D3D1!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefTextPill{background:rgba(255,255,255,.07)!important;border-color:var(--tgo-edge-2)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefTextPill :is(input,textarea):not(#tgo):not(#tgo2):not(#tgo3){background:transparent!important;border:0!important;box-shadow:none!important;color:#F5F5F4!important;-webkit-text-fill-color:#F5F5F4}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefCamera,html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefCamera i{color:#D6D3D1!important}
+/* ═══ capa «semi-glass» global (parches-seguros-base: nx-semi-glass-global-css y nx-tablas-texto-3d-css) ═══
+   Esa capa pinta TODO con !important para un fondo claro (títulos #0f172a, celdas #0f172a con sombra blanca, rótulos
+   #475569, botones con brillo blanco). Aquí sus mismos tokens toman valor oscuro y se anulan sus colores fijos. */
+html.tema-glass-oscuro{--nx-text:#F5F5F4;--nx-muted:#D6D3D1;--nx-glass:rgba(255,255,255,.06);--nx-glass-strong:rgba(255,255,255,.08);--nx-border:rgba(255,255,255,.10);
+  --nx-shadow:none;--nx-shadow-soft:none}
+html.tema-glass-oscuro :is(.ct,h1,h2,h3){color:var(--tgo-t1)!important}
+html.tema-glass-oscuro :is(.card,.sm,.box,.panel):not(.nxFP-dockSheet){background:var(--tgo-card)!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro :is(table td,table th,.nxSL-table td,.nxSL-table th,.nxDC-table td,.nxDC-table th){text-shadow:none!important}
+html.tema-glass-oscuro :is(table td,.nxSL-table td,.nxDC-table td):not([style*="color"]){color:var(--tgo-t1)!important}
+html.tema-glass-oscuro :is(table th,.nxSL-table th,.nxDC-table th):not([style*="color"]){color:var(--tgo-t3)!important}
+html.tema-glass-oscuro :is(table .nxSL-muted,table .nxDC-muted){color:var(--tgo-t2)!important}
+html.tema-glass-oscuro :where(#cnt,.overlay,.nxCrmDialog) :is(.btn,button,.bsm,.bxl){box-shadow:none!important;border-color:rgba(255,255,255,.12)!important}
+html.tema-glass-oscuro .nfcRow{background:rgba(255,255,255,.04)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-navItem:not(.on){border-color:transparent!important}
+html.tema-glass-oscuro :where(#cnt,.overlay) tbody tr:hover{background:rgba(255,255,255,.04)!important}
+/* botones principales con degradado hacia --nm-accent (en oscuro --nm-accent es un azul claro para texto): azul sólido */
+html.tema-glass-oscuro :is(#mAbono,#mCli,#mEmp,#mAgente,#mAsiento,#mUsuario,#mErrorLog,#mDocs,#mHistCobros) .btn.bxl:not(#tgo),html.tema-glass-oscuro #cnt #v-cliente360 .sf-btn.primary:not(#tgo),
+html.tema-glass-oscuro #mAbono .aboQbtn.hero:not(#tgo),html.tema-glass-oscuro #mAbono .aboSummaryIc{background:var(--tgo-blue)!important;background-image:none!important;color:#fff!important;border-color:var(--tgo-blue)!important}
+html.tema-glass-oscuro #mInhab .btn.bdis:not(#tgo){background:#DC2626!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro #mBackup .btn.bc5:not(#tgo){background:#15803D!important;background-image:none!important;color:#fff!important}
+html.tema-glass-oscuro #cnt #v-cliente360 .sf-btn:not(.primary):not(.ok):not(#tgo){background:rgba(255,255,255,.07)!important;color:#E7E5E4!important}
+html.tema-glass-oscuro #cnt #v-cliente360 .sf-btn.ok:not(#tgo){background:var(--tgo-ok-l)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .overlay .modal:not(#tgo),html.tema-glass-oscuro #cnt #v-cliente360,html.tema-glass-oscuro #csPanel{--nm-accent:#60A5FA}
+/* Solicitudes: títulos de sección y vacíos */
+html.tema-glass-oscuro #cnt :is(.nxSL-section-title,.nxSL-section-head,.nxSL-empty-soft){color:#F5F5F4!important}
+html.tema-glass-oscuro #cnt .nxSL-empty-soft{color:#D6D3D1!important}
+/* Configuración: nombre de las pestañas (la regla base lo fija con !important) */
+html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{color:#D6D3D1!important}
 </style>
 </head>
 <body>
@@ -7117,7 +7538,7 @@ function rApariencia(){
   if(!cont)return;
   const temaActual=nxPref('tema',nxTemaDefecto());
   const temas=[
-    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro, tarjetas blancas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0B1220,#26334A 60%,#2563EB)'}]:[]),
+    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0B1220,#26334A 60%,#2563EB)'}]:[]),
     {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
     {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
@@ -7427,7 +7848,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.90';
+const APP_VERSION='58.91';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
