@@ -3504,6 +3504,38 @@ html.tema-glass-oscuro #cnt .btn.bc4,html.tema-glass-oscuro #cnt .btn.bc4 i{colo
   html.tema-glass-oscuro #cnt .nxFP-hAsv{overflow-wrap:anywhere}
 }
 @media (max-width:480px){html.tema-glass-oscuro #cnt .nxFP-hAR{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
+/* Cliente 360: la fila de acciones y los datos de la cabecera se salían del panel (en escritorio «Nueva póliza» quedaba
+   cortada; en el celular la ficha medía ~850 px dentro de 314). Mismo arreglo que ya tenía el modo CRM (parches-crm.css),
+   aplicado a la ficha abierta desde el menú. */
+html.tema-glass-oscuro #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-width:100%}
+@media (max-width:900px){
+  html.tema-glass-oscuro #v-cliente360 .c360-shell{align-items:stretch}
+  html.tema-glass-oscuro #v-cliente360 .c360-main{width:100%;max-width:100%;min-width:0}
+  html.tema-glass-oscuro #v-cliente360 :is(.sf-head,.sf-facts){flex-wrap:wrap;min-width:0;max-width:100%}
+  html.tema-glass-oscuro #v-cliente360 .sf-head>*{min-width:0}
+  html.tema-glass-oscuro #v-cliente360 .sf-facts{flex:1 1 100%;gap:10px 14px}
+  html.tema-glass-oscuro #v-cliente360 .sf-fact{flex:1 1 30%;min-width:0}
+  html.tema-glass-oscuro #v-cliente360 .sf-actions{flex:1 1 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  html.tema-glass-oscuro #v-cliente360 .sf-actions .sf-btn{min-height:44px;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.tema-glass-oscuro #v-cliente360 #c360TabsBar{max-width:100%}
+  html.tema-glass-oscuro #v-cliente360 .c360-tabbody{max-width:100%;overflow-x:auto}
+}
+@media (max-width:480px){
+  html.tema-glass-oscuro #v-cliente360 .sf-actions .sf-btn{padding-left:6px!important;padding-right:6px!important;gap:4px;font-size:11px!important}
+  html.tema-glass-oscuro #v-cliente360 .sf-kpis{grid-template-columns:minmax(0,1fr)!important}
+}
+/* Clientes a 390 px: «ASEGURADAS» no cabía en su recuadro: cabecera con menos relleno; en los KPI el ícono va arriba
+   del texto (la letra no puede bajar de 11 px por la capa de tipografía) */
+@media (max-width:480px){
+  html.tema-glass-oscuro #cnt .nxCrmPulse > div{padding-left:6px!important;padding-right:6px!important;min-width:0}
+  html.tema-glass-oscuro #cnt .nxCrmPulse span{font-size:10px!important;letter-spacing:0!important}
+  html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi{flex-direction:column;align-items:flex-start;gap:8px}
+  html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi > div:last-child{min-width:0;width:100%}
+}
+/* Configuración: los nombres de las pestañas se partían a mitad de palabra («NOTIFICACIO/NES», «USUARIO/S»); ahora van
+   en una línea y la barra se desliza (ya se desplazaba sola hasta la pestaña activa). */
+html.tema-glass-oscuro .cfg-tab{max-width:none!important;flex:0 0 auto!important;padding:4px 6px!important}
+html.tema-glass-oscuro .cfg-tab span{max-width:none!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important;display:block!important}
 /* barra inferior propia de Financiamiento (≤900 px): sobre la escena oscura el blanco al 82 % se volvía gris → casi opaca */
 html.tema-glass-oscuro .nxFP-dock{background:rgba(255,255,255,.96)!important}
 html.tema-glass-oscuro .nxFP-dockBtn:not(.on){color:#475569!important}
