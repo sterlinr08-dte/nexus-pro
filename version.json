@@ -1,7 +1,20 @@
 {
-  "version": "58.93",
+  "version": "58.94",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.94",
+      "fecha": "2026-09-30",
+      "notas": [
+        "WhatsApp como el original — chat: colas en las burbujas, ✓ enviado / ✓✓ entregado / ✓✓ azul leído, «No enviado · Reintentar», separadores Hoy / Ayer / día centrados, divisor «N mensajes no leídos», enlaces y teléfonos tocables, fotos y videos a pantalla completa (zoom y deslizar), reproductor de notas de voz con velocidad 1x / 1.5x / 2x, tarjetas de ubicación (abre el mapa) y de contacto, stickers, documentos con nombre y tamaño, cargar mensajes anteriores al subir, contador de nuevos en «ir al final».",
+        "WhatsApp — acciones por mensaje: Destacar, Borrar para mí, etiqueta «Reenviado», Info con hora de entregado y leído, reacciones del cliente junto a las tuyas; en el menú ⋮ «Mensajes destacados». Menús y ventanas del chat en cristal oscuro. El botón flotante ya no parpadea ni tapa el micrófono.",
+        "WhatsApp — lista: hora como en WhatsApp (7:49 a. m. / Ayer / Domingo / 20/09/26), vista previa con tipo (Foto, Audio, Video…) y ✓✓ del último mensaje, chats fijados arriba, «Archivados (N)», silenciar 8 h / 1 semana / siempre, marcar leído o no leído desde la lista (pulsación larga o deslizar), «Borrador:» en azul, búsqueda también dentro de los mensajes, sonido y contador en la pestaña al llegar mensajes.",
+        "WhatsApp — escribir: selector de emojis completo con categorías y búsqueda, borradores que se conservan al cerrar, el cliente ve «escribiendo…» y ✓✓ azul cuando abres su chat. Ahora se pueden enviar Word, Excel, PowerPoint, CSV y ZIP; las notas de voz grabadas desde iPhone llegan bien.",
+        "Íconos: se quitaron los cuadros con borde que salían dentro de los botones (Cobrar, WhatsApp, ⋮); ahora el ícono va limpio junto al texto y los íconos grandes usan cuadrados de esquinas suaves sin borde. «Cobrar» usa el ícono de billete.",
+        "Legibilidad: 77 textos que se veían tenues en el tema oscuro (reportes, tablas, notas, paginador, chips) ahora cumplen el contraste mínimo. Íconos del menú lateral más grandes (19 → 23 px) y filas del menú del celular de 44 px.",
+        "Buscar: la lupa circular se abre en una barra con animación, halo y botón para limpiar; Esc o tocar fuera la cierra. Aplica a Clientes, Pólizas, Facturas, Cobros, Pagos, Cliente 360, CRM, Auditoría, Solicitudes, Préstamos, Vehículos, POS, Rifas y el Buzón."
+      ]
+    },
     {
       "version": "58.93",
       "fecha": "2026-09-30",
