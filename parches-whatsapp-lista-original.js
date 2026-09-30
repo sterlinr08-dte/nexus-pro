@@ -65,6 +65,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!imp
   #v-waInbox .nxWaListCaption{flex:1 1 auto!important;min-width:0!important}
   #v-waInbox .nxWaListCaption b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   #v-waInbox .nxWaSearch{flex:1 1 100%;order:5}
+  #v-waInbox .nxWaSearch i.ti{position:absolute!important;left:12px}
   #v-waInbox .nxWaSearchToggle{display:none!important}
 }
 @media(max-width:760px){
