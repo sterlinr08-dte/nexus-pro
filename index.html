@@ -4109,6 +4109,20 @@ html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKick
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead,.nxWaProKpi,.nxWaProHead,.nxWaListTools){background:rgba(20,41,75,.78)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi.on{background:rgba(37,99,235,.35)!important;border-color:rgba(147,197,253,.45)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead h1,.nxWaProKpi .v,.nxWaListTools b){color:#F1F5F9!important}
+/* 58.92: cifras del Buzón ordenadas en el celular (antes 5 columnas de ~50 px: rótulos montados y cortados).
+   Filas compactas ícono · rótulo · cifra: «Conversaciones» a todo el ancho y las otras cuatro en dos columnas; «Contactos» en una fila igual. */
+@media (max-width:768px){
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProGrid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:100%!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProGrid > .nxWaProKpi{display:grid!important;grid-template-columns:24px minmax(0,1fr) auto!important;grid-template-areas:"i l v"!important;align-items:center!important;column-gap:7px!important;row-gap:0!important;padding:7px 9px!important;min-height:44px!important;height:auto!important;width:auto!important;min-width:0!important;text-align:left!important;border-radius:12px!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProGrid > .nxWaProKpi:first-child{grid-column:1/-1!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi .nxWaUhdKpiIcon{grid-area:i!important;width:26px!important;height:26px!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:8px!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi .nxWaUhdKpiIcon i{font-size:14px!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi .l{grid-area:l!important;margin:0!important;font-size:11px!important;line-height:1.15!important;font-weight:600!important;white-space:normal!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;text-transform:none!important;letter-spacing:0!important;color:#CBD5E1!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi .v{grid-area:v!important;margin:0!important;font-size:16px!important;line-height:1!important;font-weight:700!important;color:#F1F5F9!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi .s{display:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs{display:flex!important;flex-wrap:wrap!important;gap:6px!important;width:100%!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glass-oscuro body #cnt #v-waInbox .nxWaVisualContactsBtn{flex:1 1 100%!important;min-height:44px!important;justify-content:flex-start!important;border-radius:12px!important;padding:8px 12px!important}
+}
 </style>
 </head>
 <body>
