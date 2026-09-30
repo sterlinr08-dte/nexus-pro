@@ -1,10 +1,12 @@
-// QA del tema «Glass oscuro» (58.89 + v2 58.90, 29-sep-2026): app real (index.html + cadena de parches) contra la REST simulada de
+// QA del tema «Glass oscuro» (58.89 + v2 58.90, 29-sep-2026; 58.91 «todo oscuro», 30-sep-2026): app real (index.html + cadena de parches) contra la REST simulada de
 // scripts/qa-crm-mock-server.js. A 390 y 1280 px, admin y agente:
 //  · primer pintado: cuadro a cuadro (requestAnimationFrame) desde que existe <body> hasta 6 s después de cargar, el tema
 //    visible nunca cambia (usuario nuevo → glass-oscuro; usuario con 'clasico' → clásico; premium; migración única);
 //  · recorre las pantallas de Seguros (+ Préstamos/Panel del dueño/POS como admin) y mide contraste texto/fondo efectivo
 //    (sin texto oscuro sobre oscuro ni blanco sobre blanco; ≥4.5:1 en las superficies principales; campos legibles),
 //    desborde horizontal, modales, Buzón y errores de consola;
+//  · 58.91: ninguna superficie grande clara (luminancia del fondo efectivo de tarjetas/paneles/modales), modales y hojas
+//    oscuros, campos oscuros con texto ≥4.5:1, marcador ≥4.5:1, borde ≥3:1 y anillo de foco visible;
 //  · cambia de tema en Configuración → Apariencia entre todos los temas (clases, espejo local, preferencia guardada,
 //    recarga sin salto) y el botón de la barra superior; interruptor por equipo (nx_tgo_off).
 // Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-tema-glass.mjs
@@ -17,7 +19,7 @@ const BASE = 'http://127.0.0.1:8942';
 const OUT = (process.env.QA_OUT || path.join(os.tmpdir(), 'qa-tema-glass')) + path.sep; fs.mkdirSync(OUT, { recursive: true });
 // Íconos Tabler reales en las capturas si hay copia local (opcional): QA_TABLER=/ruta con tabler-icons.min.css y fonts/.
 const TABLER = process.env.QA_TABLER || '';
-const PFX = process.env.QA_PFX || 'v3-'; // prefijo de las capturas
+const PFX = process.env.QA_PFX || 'v4-'; // prefijo de las capturas
 let pass = 0, fail = 0; const resumen = { contraste: {}, primerPintado: {} };
 const ok = (c, m, extra) => { if (c) { pass++; console.log('PASS  ' + m); } else { fail++; console.log('FAIL  ' + m + (extra !== undefined ? ' :: ' + JSON.stringify(extra).slice(0, 700) : '')); } };
 const qa = (p) => new Promise((r) => http.get(BASE + '/__qa/' + p, (res) => { let s = ''; res.on('data', c => s += c); res.on('end', () => { try { r(JSON.parse(s)); } catch (e) { r(s); } }); }));
@@ -50,14 +52,14 @@ const MEDIR = () => {
   window.__tgo = {
     // Todo texto visible: casos «ilegibles» = oscuro sobre oscuro o claro sobre claro con contraste < 3.
     textos(raiz) {
-      const root = document.querySelector(raiz) || document.body, r = { total: 0, bajo45: 0, bajo3: [], oscuroSobreOscuro: [], claroSobreClaro: [] };
+      const root = document.querySelector(raiz) || document.body, r = { total: 0, bajo45: 0, lista45: [], bajo3: [], oscuroSobreOscuro: [], claroSobreClaro: [] };
       root.querySelectorAll('*').forEach(el => {
         if (el.closest('svg') || /^(SCRIPT|STYLE|svg|path|CANVAS|IMG|BR|OPTION|I)$/i.test(el.tagName) || el.closest('.ti')) return;
         if (![...el.childNodes].some(n => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.textContent))) return; // sin letras ni cifras (emoji, «·») no cuenta
         if (!visible(el)) return;
         const m = medir(el); if (!m) return; r.total++;
         const grande = m.fs >= 24 || (m.fs >= 18.66 && m.fw >= 700);
-        if (m.r < (grande ? 3 : 4.5)) r.bajo45++;
+        if (m.r < (grande ? 3 : 4.5)) { r.bajo45++; if (r.lista45.length < 12) r.lista45.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]); }
         if (m.r < 3) r.bajo3.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
         if (m.r < 3 && m.lt < 0.2 && m.lb < 0.2) r.oscuroSobreOscuro.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
         if (m.r < 3 && m.lt > 0.6 && m.lb > 0.6) r.claroSobreClaro.push([nombre(el), el.textContent.trim().slice(0, 24), +m.r.toFixed(2)]);
@@ -75,6 +77,41 @@ const MEDIR = () => {
     campos(raiz) {
       const root = document.querySelector(raiz) || document.body, malos = []; let n = 0;
       root.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]):not([type=color]),select,textarea').forEach(el => { if (!visible(el)) return; const m = medir(el); if (!m) return; n++; if (m.r < 4.5) malos.push([nombre(el), +m.r.toFixed(2)]); });
+      return { n, malos };
+    },
+    // 58.91 — superficies grandes claras: todo elemento visible de ≥ 4 000 px² cuyo fondo efectivo (capas compuestas hasta
+    // la escena) tenga luminancia > 0.35 (≈ gris medio claro). Se excluyen imágenes/lienzos, las vistas previas de los temas
+    // claros en Apariencia (son muestras a propósito) y lo que no tiene fondo propio.
+    claras(raiz) {
+      const root = document.querySelector(raiz) || document.body, malos = []; let n = 0, max = 0;
+      root.querySelectorAll('*').forEach(el => {
+        if (/^(IMG|CANVAS|SVG|VIDEO|IFRAME|PATH|I|OPTION)$/i.test(el.tagName) || el.closest('svg,.tema-opcion,.ti')) return;
+        const b = el.getBoundingClientRect(); const w = Math.min(b.right, innerWidth) - Math.max(b.left, 0), h = Math.min(b.bottom, innerHeight) - Math.max(b.top, 0);
+        if (w < 40 || h < 24 || w * h < 4000) return;
+        const cs = getComputedStyle(el); const own = parse(cs.backgroundColor);
+        if (!(own && own.a > 0.02) && !/gradient/.test(cs.backgroundImage)) return;
+        if (!visible(el)) return;
+        const f = fondo(el); if (Math.max(f.r, f.g, f.b) - Math.min(f.r, f.g, f.b) > 90) return; // color de acento (ícono verde de WhatsApp, botones azules): no es una superficie clara
+        n++; const L = lum(f); if (L > max) max = L;
+        if (L > 0.35) malos.push([nombre(el), Math.round(w * h), +L.toFixed(2)]);
+      });
+      return { n, malos, max: +max.toFixed(3) };
+    },
+    // 58.91 — campos: fondo oscuro, texto ≥4.5:1, marcador ≥4.5:1 y borde ≥3:1 contra lo que rodea al campo.
+    camposOscuros(raiz) {
+      const root = document.querySelector(raiz) || document.body, malos = []; let n = 0;
+      root.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]):not([type=color]):not([type=file]),select,textarea').forEach(el => {
+        if (!visible(el)) return; n++;
+        const cs = getComputedStyle(el), bg = fondo(el), ent = el.parentElement ? fondo(el.parentElement) : bg;
+        const t = parse(cs.color), ph = parse(getComputedStyle(el, '::placeholder').color), bd = parse(cs.borderTopColor), bw = parseFloat(cs.borderTopWidth) || 0;
+        const r = { fondo: +lum(bg).toFixed(3), texto: t ? +ratio(over(t, bg), bg).toFixed(2) : 0 };
+        if (el.tagName !== 'SELECT' && ph) r.marcador = +ratio(over(ph, bg), bg).toFixed(2);
+        // borde: si el campo no tiene borde propio (va dentro de un buscador con marco), cuenta el contraste del relleno contra su entorno
+        r.borde = bw >= 1 && bd ? +ratio(over(bd, ent), ent).toFixed(2) : +ratio(bg, ent).toFixed(2);
+        const marco = el.closest('.nxBusca,.nxCrmSearch,.nxWaRefTextPill');
+        if (marco) { const mcs = getComputedStyle(marco), mb = parse(mcs.borderTopColor), me = marco.parentElement ? fondo(marco.parentElement) : bg; r.borde = mb && parseFloat(mcs.borderTopWidth) >= 1 ? +ratio(over(mb, me), me).toFixed(2) : r.borde; }
+        if (r.fondo > 0.2 || r.texto < 4.5 || (r.marcador !== undefined && r.marcador < 4.5) || r.borde < 3) malos.push([nombre(el), r]);
+      });
       return { n, malos };
     },
   };
@@ -156,6 +193,13 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       ok(sw[0] <= sw[1], `${tag} ${nom}: sin desborde horizontal`, sw);
       if (capturar && shot) await page.screenshot({ path: OUT + PFX + `${shot}-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
+    if (tema === 'glass-oscuro') {
+      const cl = await page.evaluate(() => window.__tgo.claras('#app'));
+      const co = await page.evaluate(() => window.__tgo.camposOscuros('#cnt'));
+      res[nom].claras = cl.malos.length; res[nom].lumMax = cl.max;
+      ok(cl.malos.length === 0, `${tag} ${nom}: sin superficies grandes claras (${cl.n} superficies, luminancia máx. ${cl.max})`, cl.malos.slice(0, 6));
+      ok(co.malos.length === 0, `${tag} ${nom}: campos oscuros — texto y marcador ≥4.5:1, borde ≥3:1 (${co.n})`, co.malos.slice(0, 4));
+    }
   }
   // Modal (Nuevo cliente) y modal de abono: hoja blanca legible.
   for (const [nom, js] of [['modal', "nav('clientes',null);setTimeout(()=>abrirNuevoCli(),300)"], ['modal-abono', "nav('clientes',null);setTimeout(()=>abrirAbono(ST.clientes[0].id),300)"]]) {
@@ -168,6 +212,14 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     if (tema === 'glass-oscuro') {
       ok(abierto && t.total > 5 && t.oscuroSobreOscuro.length === 0 && t.claroSobreClaro.length === 0, `${tag} ${nom}: abierto y legible (${t.total} textos)`, { abierto, t: t.oscuroSobreOscuro.concat(t.claroSobreClaro).slice(0, 5) });
       ok(c.malos.length === 0 && s.malos.length === 0, `${tag} ${nom}: campos y rótulos ≥4.5:1 (${c.n} campos)`, { c: c.malos.slice(0, 5), s: s.malos.slice(0, 5) });
+      const md = await page.evaluate(() => { const m = document.querySelector('.overlay.open .modal'); if (!m) return null; const cl = window.__tgo.claras('.overlay.open .modal'); const co = window.__tgo.camposOscuros('.overlay.open'); return { bg: getComputedStyle(m).backgroundImage.slice(0, 80), cl, co }; });
+      ok(md && md.cl.malos.length === 0 && md.cl.max < 0.2, `${tag} ${nom}: ventana en cristal oscuro, sin superficies claras dentro (luminancia máx. ${md && md.cl.max})`, md);
+      ok(md && md.co.malos.length === 0 && md.co.n > 0, `${tag} ${nom}: campos oscuros — texto/marcador ≥4.5:1, borde ≥3:1 (${md && md.co.n} campos)`, md && md.co.malos.slice(0, 4));
+      // (se espera a que termine la transición de sombra/borde del campo antes de medir)
+      const hayCampo = await page.evaluate(() => { const i = [...document.querySelectorAll('.overlay.open .modal input:not([type=checkbox]):not([type=radio]):not([type=hidden])')].find(e => e.offsetParent); if (!i) return false; i.setAttribute('data-qa-foco', '1'); i.focus(); return true; });
+      await sleep(450);
+      const foco = hayCampo ? await page.evaluate(() => { const i = document.querySelector('[data-qa-foco]'); const cs = getComputedStyle(i); const r = { sombra: cs.boxShadow, borde: cs.borderTopColor, outline: cs.outlineStyle, activo: document.activeElement === i }; i.blur(); i.removeAttribute('data-qa-foco'); return r; }) : null;
+      ok(foco && (/rgba?\(96, 165, 250/.test(foco.sombra) || foco.outline !== 'none') && /96, 165, 250/.test(foco.borde), `${tag} ${nom}: anillo de foco azul visible al escribir`, foco);
       if (capturar && nom === 'modal') await page.screenshot({ path: OUT + PFX + `modal-${width}${rol === 'agente' ? '-agente' : ''}.png` });
     }
     await page.evaluate(() => document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open')));
@@ -317,7 +369,8 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.nx-fab')).backgroundColor);
       await fab.click(); await sleep(700);
       const hoja = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? { bg: getComputedStyle(s).backgroundColor, t: window.__tgo.textos('.mobile-more-sheet-clean.open') } : null; });
-      ok(bg === 'rgb(37, 99, 235)' && hoja && hoja.bg === 'rgb(255, 255, 255)' && hoja.t.oscuroSobreOscuro.length + hoja.t.claroSobreClaro.length === 0, `390 botón flotante azul NEXUS y su menú en hoja blanca legible`, { bg, hoja });
+      const hojaL = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? window.__tgo.claras('.mobile-more-sheet-clean.open') : null; });
+      ok(bg === 'rgb(37, 99, 235)' && hoja && /gradient/.test(await page.evaluate(() => getComputedStyle(document.querySelector('.mobile-more-sheet-clean.open')).backgroundImage)) && hojaL && hojaL.malos.length === 0 && hoja.t.oscuroSobreOscuro.length + hoja.t.claroSobreClaro.length === 0 && hoja.t.bajo3.length === 0, `390 botón flotante azul NEXUS y su menú en hoja oscura legible (58.91)`, { bg, hoja, hojaL });
       await page.screenshot({ path: OUT + PFX + 'fab-menu-390.png' });
     }
     ok(V.errs.length === 0, '390 menú/botón flotante: sin errores de consola', V.errs.slice(0, 4));
