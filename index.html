@@ -3532,6 +3532,16 @@ html.tema-glass-oscuro #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-
   html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi{flex-direction:column;align-items:flex-start;gap:8px}
   html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi > div:last-child{min-width:0;width:100%}
 }
+/* Cajón móvil abierto: el avatar queda en la columna del riel y el nombre/rol empezaba debajo de él (se encimaban);
+   ahora el texto arranca en la misma columna que los nombres del menú. */
+@media (max-width:768px){
+  html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u > div:not(.sb-av){padding-left:85px;min-width:0}
+  html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u :is(.sb-un,.sb-ur){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+/* Login: rótulos y «Recordarme» venían en pizarra (#475569) sobre el cristal oscuro (≈2:1) → claros; enlace azul claro */
+html.tema-glass-oscuro #loginScreen .lfr label,html.tema-glass-oscuro #loginScreen .lchk label{color:#D6D3D1!important}
+html.tema-glass-oscuro #loginScreen .lver{color:#A8A29E!important}
+html.tema-glass-oscuro #loginScreen .lforgot{color:#93C5FD!important}
 /* Configuración: los nombres de las pestañas se partían a mitad de palabra («NOTIFICACIO/NES», «USUARIO/S»); ahora van
    en una línea y la barra se desliza (ya se desplazaba sola hasta la pestaña activa). */
 html.tema-glass-oscuro .cfg-tab{max-width:none!important;flex:0 0 auto!important;padding:4px 6px!important}
@@ -10033,10 +10043,19 @@ function nxIGChPunto(i){
   const lx=ch.X(i)/6,hp=plot.clientHeight||150,ty=ch.Y(ch.acum[i])/150*hp;
   dot.style.left=lx+'%';dot.style.top=ty+'px';dot.hidden=false;
   const del=ch.serie[i]||0;
-  tip.textContent=fmt(ch.acum[i])+' · '+nxIGFechaCorta(nxIGSumaDias(ch.ini,i))+(del>0?' (+'+fmt(del)+')':'');
+  const base=fmt(ch.acum[i])+' · '+nxIGFechaCorta(nxIGSumaDias(ch.ini,i));
+  tip.textContent=base+(del>0?' (+'+fmt(del)+')':'');
   tip.hidden=false;
-  const pw=plot.clientWidth||600,tw=tip.offsetWidth||120,px=lx/100*pw;
-  tip.style.left=Math.max(tw/2,Math.min(pw-tw/2,px))+'px';tip.style.top=(ty-34>=0?ty-34:ty+12)+'px';
+  const pw=plot.clientWidth||600,px=lx/100*pw;let tw=tip.offsetWidth||120;
+  // Encima del punto si hay sitio; si el punto está arriba del todo, al lado (derecha o izquierda) a su misma altura,
+  // para que la etiqueta no tape la línea (en gráficas angostas, sin el «+ del día» si así cabe); si no, debajo.
+  const lado=w=>px+14+w<=pw||px-14-w>=0;
+  if(ty-34<0&&del>0&&!lado(tw)){tip.textContent=base;const w2=tip.offsetWidth||tw;if(lado(w2))tw=w2;else{tip.textContent=base+' (+'+fmt(del)+')';}}
+  let L=Math.max(tw/2,Math.min(pw-tw/2,px)),T=ty+12;
+  if(ty-34>=0)T=ty-34;
+  else if(px+14+tw<=pw){L=px+14+tw/2;T=Math.max(0,ty-12);}
+  else if(px-14-tw>=0){L=px-14-tw/2;T=Math.max(0,ty-12);}
+  tip.style.left=L+'px';tip.style.top=T+'px';
 }
 // Mouse o dedo sobre la gráfica: muestra el acumulado y lo cobrado ese día; al salir vuelve al total. Un toque en la
 // gráfica solo muestra la etiqueta (el resto de la tarjeta sigue abriendo el historial de pagos).
