@@ -239,7 +239,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const A = await abrir(browser, { width, rol });
     let e = await estadoTema(A.page);
     resumen.primerPintado[tag + ' nuevo'] = { dcl: e.dcl, cuerpo: e.cuerpo, cuadros: e.cuadros.map(c => c.t + '@' + c.ms) };
-    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(27, 23, 21\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
+    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(8, 16, 28\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
     ok(e.cuadros.length === 1 && e.cuadros[0].t === 'glass-oscuro', `${tag} nuevo: ningún cuadro con otro tema durante la carga (${e.cuadros.length} estado)`, e.cuadros);
     ok(e.html && e.attr === 'glass-oscuro' && e.mirror === 'glass-oscuro', `${tag} nuevo: tras cargar sigue glass-oscuro y el espejo local quedó escrito`, { html: e.html, attr: e.attr, mirror: e.mirror });
     await sleep(1200); const pa = await prefs(rol);
@@ -361,7 +361,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     await page.evaluate(() => toggleSB()); await sleep(1200);
     const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const a = getComputedStyle(document.getElementById('sbEl'), '::after').backgroundImage; return { r, a }; });
     const abierto = await page.evaluate(() => document.getElementById('sbEl').classList.contains('mob-open') && getComputedStyle(document.querySelector('#sbEl .ni .ni-l')).display !== 'none');
-    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(42, 37, 34\)/.test(sb.a), `390 cajón móvil de siempre: abre con nombres, grafito sólido y ${sb.r.total} rótulos legibles`, sb);
+    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(19, 35, 61\)/.test(sb.a), `390 cajón móvil de siempre: abre con nombres, grafito sólido y ${sb.r.total} rótulos legibles`, sb);
     await page.screenshot({ path: OUT + PFX + 'menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
     const fab = await page.$('.nx-fab');
@@ -384,7 +384,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const sp = await lp.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), splash: document.getElementById('nxSplash') ? getComputedStyle(document.getElementById('nxSplash')).backgroundColor : null }));
     await sleep(9000);
     const lg = await lp.evaluate(() => ({ vis: getComputedStyle(document.getElementById('loginScreen')).display !== 'none', box: getComputedStyle(document.querySelector('.lbox')).backgroundColor }));
-    ok(sp.cls && sp.splash === 'rgb(34, 28, 24)' && lg.vis && /rgba\(38, 34, 32/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
+    ok(sp.cls && sp.splash === 'rgb(8, 16, 28)' && lg.vis && /rgba\(14, 28, 52/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
     await lp.screenshot({ path: OUT + PFX + 'login-390.png' });
     await ctx.close();
   }
@@ -455,7 +455,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       return { r, searchIG, dentro: tr.top >= mr.top && tr.left >= mr.left && tr.right <= mr.right + 1, fondo: getComputedStyle(t).backgroundColor, borde: getComputedStyle(t).borderTopWidth, mainBg: getComputedStyle(m, '::before').backgroundColor, radio: getComputedStyle(m).borderTopLeftRadius, tog: getComputedStyle(document.querySelector('.tn-tog')).display, titulo: document.getElementById('pttl').innerText, tituloFs: getComputedStyle(document.getElementById('pttl')).fontSize };
     }, ACC);
     const unaVez = ACC.every(f => cab.r[f][0] === 1 && cab.r[f][1] === 1);
-    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(38, 34, 32/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
+    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(14, 28, 52/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
     ok(unaVez && cab.searchIG === 0, `1280 cada acción de la antigua barra aparece UNA vez y se puede tocar: ${ACC.map(f => f + ' ' + cab.r[f][0]).join(', ')}`, cab.r);
     for (const [f, sel, chk] of [['toggleNotif', '.tnav .notif-bell', "document.getElementById('notifPanel').classList.contains('show')"], ['abrirGlobalSearch', '.tnav .tn-b-primary', "document.getElementById('gsOverlay').classList.contains('show')"]]) {
       await page.click(sel); await sleep(500);
@@ -474,7 +474,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const ctx = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 800 }, isMobile: width < 500, hasTouch: width < 500, serviceWorkers: 'block' });
     const page = await ctx.newPage(); const fotos = [];
     // Se retrasa la foto 7 s (app ya pintada) para ver el marcador de posición y medir justo el cambio de la foto.
-    await page.route(/fondo-oficina/, async r => { await sleep(7000); fotos.push(r.request().url()); return r.continue(); });
+    await page.route(/fondo-login/, async r => { await sleep(7000); fotos.push(r.request().url()); return r.continue(); });
     await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, async r => { try { const u = r.request().url(); if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); } return r.fulfill({ status: 200, body: '' }); } catch (e) {} });
     await page.addInitScript(({ id }) => {
       localStorage.setItem('nx_auth_mode', 'legacy');
@@ -492,11 +492,11 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     await page.waitForFunction(() => document.documentElement.classList.contains('tgo-foto'), null, { timeout: 15000 }).catch(() => {});
     await sleep(900);
     const fa = await page.evaluate(() => window.__fotoAntes);
-    const despues = await page.evaluate(() => { const a = getComputedStyle(document.documentElement, '::after'); return { clase: document.documentElement.classList.contains('tgo-foto'), op: a.opacity, img: /fondo-oficina/.test(a.backgroundImage), filtro: a.filter, cls: window.__cls, rects: ['.main', '#sbEl', '#cnt', '.tnav'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; }) }; });
-    const archivo = width < 500 ? 'fondo-oficina-movil.webp' : 'fondo-oficina.webp';
+    const despues = await page.evaluate(() => { const a = getComputedStyle(document.documentElement, '::after'); return { clase: document.documentElement.classList.contains('tgo-foto'), op: a.opacity, img: /fondo-login/.test(a.backgroundImage), filtro: a.filter, cls: window.__cls, rects: ['.main', '#sbEl', '#cnt', '.tnav'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; }) }; });
+    const archivo = width < 500 ? 'fondo-login-movil.webp' : 'fondo-login.webp';
     const kb = Math.round(fs.statSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'assets', archivo)).size / 1024);
     ok(antes.dcl && antes.dcl.grad && antes.dcl.antes === '0' && !antes.dcl.clase && fa && fa.visible, `${width} primer pintado: degradado cálido visible y la foto oculta hasta cargar (la app ya estaba en pantalla con el degradado)`, { antes, fa });
-    ok(despues.clase && despues.op === '1' && despues.img && despues.filtro === 'none' && fotos.some(u => u.includes(archivo)), `${width} la foto ${archivo} (${kb} KB, desenfoque ya horneado en el archivo: sin filter en CSS) entra con fundido`, { despues, fotos });
+    ok(despues.clase && despues.op === '1' && despues.img && despues.filtro === 'none' && fotos.some(u => u.includes(archivo)), `${width} la foto ${archivo} (${kb} KB, mismo fondo del login, sin filter en CSS) entra con fundido`, { despues, fotos });
     const dcls = despues.cls - (fa ? fa.cls : 0);
     ok(fa && JSON.stringify(fa.rects) === JSON.stringify(despues.rects) && dcls < 0.001, `${width} la foto no mueve nada: mismas medidas de panel/menú/contenido/cabecera antes y después, desplazamiento acumulado (CLS) al entrar la foto ${dcls.toFixed(4)}`, { antes: fa, despues: despues.rects, dcls });
     ok(kb < (width < 500 ? 90 : 200), `${width} peso de ${archivo}: ${kb} KB`);
