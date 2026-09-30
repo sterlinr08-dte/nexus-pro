@@ -169,13 +169,31 @@ body.tema-premium #v-waInbox .nxWaBub.out{background:linear-gradient(135deg,#145
 
   function view(){return $('#v-waInbox');}
 
+  // Coincidencias por contenido de mensajes (whatsapp_hilo_mensajes.cuerpo ilike): con 3+
+  // caracteres y tras 400 ms sin teclear; la fila coincidente se marca «en mensajes».
+  const hitMsgs=new Set();let hitTimer=null,hitQ='';
   function applySearch(){
     const v=view();if(!v)return;
     const q=searchTerm.trim().toLocaleLowerCase('es');
     v.querySelectorAll('.nxWaRow').forEach(row=>{
-      const ok=!q||String(row.textContent||'').toLocaleLowerCase('es').includes(q);
-      row.style.display=ok?'':'none';
+      const porTexto=!q||String(row.textContent||'').toLocaleLowerCase('es').includes(q);
+      const porMsg=!!q&&q===hitQ&&hitMsgs.has(String(row.dataset.hilo||''));
+      row.style.display=(porTexto||porMsg)?'':'none';
+      row.classList.toggle('nxWaHitMsg',!porTexto&&porMsg);
     });
+  }
+  function buscarEnMensajes(){
+    if(hitTimer)clearTimeout(hitTimer);
+    const q=searchTerm.trim().toLocaleLowerCase('es');
+    if(q.length<3){hitQ='';hitMsgs.clear();return;}
+    hitTimer=setTimeout(async()=>{
+      const A=window.API;if(!A||typeof A.get!=='function')return;
+      let rows=[];
+      try{rows=await A.get('whatsapp_hilo_mensajes','cuerpo=ilike.*'+encodeURIComponent(q)+'*&select=hilo_id&limit=50')||[];}catch(e){rows=[];}
+      if(searchTerm.trim().toLocaleLowerCase('es')!==q)return;
+      hitQ=q;hitMsgs.clear();rows.forEach(r=>r&&r.hilo_id&&hitMsgs.add(String(r.hilo_id)));
+      applySearch();
+    },400);
   }
 
   function ensureSearch(){
@@ -187,13 +205,13 @@ body.tema-premium #v-waInbox .nxWaBub.out{background:linear-gradient(135deg,#145
       col.insertBefore(tools,col.firstChild);
       const input=$('#nxWaVisualSearch',tools);
       input.value=searchTerm;
-      input.addEventListener('input',()=>{searchTerm=input.value||'';applySearch();});
+      input.addEventListener('input',()=>{searchTerm=input.value||'';buscarEnMensajes();applySearch();});
     }
     applySearch();
   }
 
   window.nxWaVisualClearSearch=function(){
-    searchTerm='';const i=$('#nxWaVisualSearch');if(i)i.value='';applySearch();
+    searchTerm='';const i=$('#nxWaVisualSearch');if(i)i.value='';buscarEnMensajes();applySearch();
   };
 
   function ensureContactsToggle(){

@@ -325,6 +325,7 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
 
   function closeEmoji(){const p=$('.nxWaEmojiPop');if(p)p.remove();}
   function openEmoji(btn){
+    if(typeof window.nxWaEmojiAbrir==='function'){closeEmoji();window.nxWaEmojiAbrir(btn);return;}
     closeEmoji();
     const p=document.createElement('div');p.className='nxWaEmojiPop';
     const emojis=['😀','😂','😊','😍','👍','🙏','❤️','👏','🔥','🎉','✅','👋','😉','😅','🤝','💙','📌','📎'];

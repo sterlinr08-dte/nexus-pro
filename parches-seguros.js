@@ -98,6 +98,7 @@
     ['js','parches-whatsapp-motion-v2.js'],
     ['js','parches-whatsapp-texto-natural.js'],
     ['js','parches-whatsapp-inbox-compact-mobile.js'],
+    ['js','parches-whatsapp-lista-original.js'],
     ['js','parches-contenido-movil-ajuste.js'],
     ['js','parches-render-estable.js'],
     ['css','parches-fase1-ui-motion.css'],
