@@ -24,7 +24,9 @@ var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.cla
 i.src=(window.innerWidth<=768?'assets/fondo-login-movil.webp':'assets/fondo-login.webp');};
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
-if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
+if(t==='glass-oscuro')window.nxTgoFoto();
+/* 58.97: color de arranque del tema (= --tgo-bg del bloque style#nxTemaGlassOscuro; así la intensidad del fondo se cambia en un solo sitio) */
+window.nxTgoBg=function(){var c='';try{c=getComputedStyle(d).getPropertyValue('--tgo-bg').trim();}catch(e){}return c||'#0C1A30';};})();</script>
 <script id="nxTituloMovil">/* 58.93 — título de la barra del celular: el Buzón no pasa por nav() y dejaba el título de la pantalla anterior
    (TITLES no tenía waInbox); y los títulos largos se achican hasta caber (mín. 11 px) en vez de cortarse. */
 (function(){
@@ -3178,13 +3180,26 @@ html.tema-glass-oscuro{
   --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(37,99,235,.08);
   --gradient-primary:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);
   --sidebar-active:rgba(37,99,235,.9);
-  background:#08101C!important;
+  /* ── 58.97: INTENSIDAD DEL FONDO (un solo sitio para aclarar/oscurecer la escena; el cristal no cambia) ──
+     Grado por defecto = «A» (un poco más claro que 58.96). Para «B» (más claro) o volver al «actual» de 58.96,
+     cambiar SOLO estas 9 variables (ver docs/bitacora/2026-09-30-*-claude.md «fondo un poco más claro»):
+       actual 58.96 : velo .58→.74 · viñeta .70 · base #0B1628/#08101C/#050A14 · glow .10 · bg #08101C
+       A (defecto)  : velo .44→.60 · viñeta .55 · base #102040/#0C1A30/#081326 · glow .14 · bg #0C1A30
+       B (más claro): velo .32→.48 · viñeta .42 · base #16294D/#10203A/#0B1730 · glow .18 · bg #10203A
+     --tgo-bg es también el color de arranque (splash, cargador y meta theme-color, leído por script#nxTemaBodyOn y
+     aplicarTema) para que no haya parpadeo de otro color al abrir. */
+  --tgo-bg:#0C1A30;
+  --tgo-base-1:#102040;--tgo-base-2:#0C1A30;--tgo-base-3:#081326;
+  --tgo-glow:rgba(37,99,235,.14);
+  --tgo-velo-a:rgba(4,9,20,.44);--tgo-velo-b:rgba(4,9,20,.60);
+  --tgo-vineta:rgba(2,6,15,.55);
+  background:var(--tgo-bg)!important;
 }
 /* ── escena: degradado cálido inmediato (marcador de posición) + foto real desenfocada que entra con fundido ── */
 html.tema-glass-oscuro::before{
   content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
   /* 58.92: escena azul noche como el login (marcador mientras llega la foto) */
-  background:radial-gradient(60% 50% at 50% 40%,rgba(37,99,235,.10),transparent 70%),linear-gradient(180deg,#0B1628 0%,#08101C 60%,#050A14 100%);
+  background:radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%),linear-gradient(180deg,var(--tgo-base-1) 0%,var(--tgo-base-2) 60%,var(--tgo-base-3) 100%);
 }
 /* La foto viene YA desenfocada en el archivo (desenfoque 18 px + saturación 1.05 horneados con Pillow, 17 KB / 9 KB):
    sin filter en CSS, la capa fija no se vuelve a desenfocar en cada cuadro. Capas propias (will-change) para que el
@@ -3194,14 +3209,15 @@ html.tema-glass-oscuro::before{will-change:transform}
 html.tema-glass-oscuro::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
 html.tema-glass-oscuro.tgo-foto::after{opacity:1;will-change:opacity;
   /* 58.92: mismo fondo que la pantalla de inicio de sesión (login-bg.jpg, nítido) con el mismo velo azul noche */
-  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%),linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%),url(assets/fondo-login.webp) center/cover no-repeat;
+  /* 58.97: viñeta y velo con las variables de intensidad (--tgo-vineta, --tgo-velo-a/b) */
+  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login.webp) center/cover no-repeat;
 }
-@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%),linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%),url(assets/fondo-login-movil.webp) center/cover no-repeat}}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-movil.webp) center/cover no-repeat}}
 @media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
 html.tema-glass-oscuro #nxBgPhoto{display:none!important}
 html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
 /* splash y cargador: misma escena (sin salto de color al entrar a la app) */
-html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:#08101C radial-gradient(60% 50% at 50% 40%,rgba(37,99,235,.12),transparent 70%)!important}
+html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:var(--tgo-bg) radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%)!important}
 html.tema-glass-oscuro .nxs-badge i{color:#60A5FA}
 /* login: tarjeta de cristal oscuro con el acento azul */
 html.tema-glass-oscuro .lbox{background:rgba(14,28,52,.80)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
@@ -3366,11 +3382,11 @@ html.tema-glass-oscuro{
   --tgo-sheet:linear-gradient(180deg,#172B4A 0%,#0F1F38 100%);--tgo-sheet-solid:#13233D;
   --tgo-field:#0E1A2E;--tgo-field-edge:#7A8CA8;--tgo-ph:#94A3B8;--tgo-focus:#60A5FA;
   --tgo-t1:#F1F5F9;--tgo-t2:#CBD5E1;--tgo-t3:#94A3B8;
-  --tgo-ok:#4ADE80;--tgo-ok-l:rgba(34,197,94,.16);--tgo-warn:#FBBF24;--tgo-warn-l:rgba(245,158,11,.16);
+  --tgo-ok:#4ADE80;--tgo-ok-l:rgba(34,197,94,.16);--tgo-warn:#FCD34D;/* 58.97: #FBBF24 → #FCD34D (fondo más claro) */--tgo-warn-l:rgba(245,158,11,.16);
   --tgo-err:#FCA5A5;--tgo-err-s:#F87171;--tgo-err-l:rgba(239,68,68,.18);--tgo-info:#93C5FD;--tgo-info-l:rgba(59,130,246,.20);
   /* tokens del sistema (los usan cientos de estilos escritos a mano: style="background:var(--bg3)") */
   --bg0:#221D1A;--bg1:rgba(255,255,255,.06);--bg2:#0E1A2E;--bg3:rgba(255,255,255,.05);--bg4:rgba(255,255,255,.08);
-  --tx1:#F1F5F9;--tx2:#CBD5E1;--tx3:#94A3B8;--border:rgba(255,255,255,.10);--border-light:rgba(255,255,255,.06);
+  --tx1:#F1F5F9;--tx2:#CBD5E1;--tx3:#A8B5C7;/* 58.97: #94A3B8 → #A8B5C7 (fondo más claro; ver bitácora) */--border:rgba(255,255,255,.10);--border-light:rgba(255,255,255,.06);
   --c1:#60A5FA;--c2:#93C5FD;--c3:#FCA5A5;--c4:#FBBF24;--c5:#4ADE80;
   --shadow-sm:none;--shadow:0 8px 22px -14px rgba(0,0,0,.5);--shadow-md:0 12px 28px -16px rgba(0,0,0,.55);--shadow-lg:0 20px 44px -20px rgba(0,0,0,.6);
   color:#F1F5F9;
@@ -3534,7 +3550,7 @@ html.tema-glass-oscuro #cnt #v-facturas > .ch .ct-s,html.tema-glass-oscuro #cnt 
 /* ── fichas de Seguros (.nxSf: Clientes, Pólizas, Cliente 360, Contabilidad, reportes): mismos tokens, valor oscuro ── */
 html.tema-glass-oscuro .nxSf{--sf-bg:rgba(255,255,255,.04);--sf-card:var(--tgo-card);--sf-line:rgba(255,255,255,.10);--sf-primary:#2563EB;--sf-primary-l:rgba(59,130,246,.20);--sf-primary-d:#93C5FD;
   --sf-ok:#22C55E;--sf-ok-l:rgba(34,197,94,.16);--sf-ok-d:#4ADE80;--sf-warn:#F59E0B;--sf-warn-l:rgba(245,158,11,.16);--sf-warn-d:#FBBF24;
-  --sf-err:#FCA5A5;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F1F5F9;--sf-tx2:#CBD5E1;--sf-tx3:#94A3B8;--sf-elev:none;--sf-elev-sm:none}
+  --sf-err:#FCA5A5;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F1F5F9;--sf-tx2:#CBD5E1;--sf-tx3:#A8B5C7;--sf-elev:none;--sf-elev-sm:none}
 html.tema-glass-oscuro #cnt .nxSf .sf-kpi,html.tema-glass-oscuro .nxSf .sf-kpi{background:var(--tgo-card)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html.tema-glass-oscuro .nxSf .sf-kpi .ic,html.tema-glass-oscuro #cnt .nxSf .sf-kpis .ic{background:rgba(59,130,246,.20)!important;color:#93C5FD!important}
 html.tema-glass-oscuro .nxSf .sf-kpi.ok .ic{background:rgba(34,197,94,.16)!important;color:#4ADE80!important}
@@ -3601,7 +3617,7 @@ html.tema-glass-oscuro #cnt .nxCrmPulse>div{background:var(--tgo-card)!important
 html.tema-glass-oscuro #cnt .nxCrmPulse b{color:#93C5FD!important}html.tema-glass-oscuro #cnt .nxCrmPulse span{color:#CBD5E1!important}
 /* tokens --sf-* también fuera de .nxSf (varios módulos los usan con respaldo blanco: var(--sf-card,#fff)) */
 html.tema-glass-oscuro{--sf-bg:rgba(255,255,255,.04);--sf-card:var(--tgo-card);--sf-line:rgba(255,255,255,.10);--sf-primary:#2563EB;--sf-primary-l:rgba(59,130,246,.20);--sf-primary-d:#93C5FD;
-  --sf-ok-l:rgba(34,197,94,.16);--sf-ok-d:#4ADE80;--sf-warn-l:rgba(245,158,11,.16);--sf-warn-d:#FBBF24;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F1F5F9;--sf-tx2:#CBD5E1;--sf-tx3:#94A3B8}
+  --sf-ok-l:rgba(34,197,94,.16);--sf-ok-d:#4ADE80;--sf-warn-l:rgba(245,158,11,.16);--sf-warn-d:#FBBF24;--sf-err-l:rgba(239,68,68,.18);--sf-err-d:#FCA5A5;--sf-tx:#F1F5F9;--sf-tx2:#CBD5E1;--sf-tx3:#A8B5C7}
 
 /* ── Cliente 360 ── */
 html.tema-glass-oscuro #v-cliente360 .c360-side,html.tema-glass-oscuro #v-cliente360 .c360-empty{background:var(--tgo-card)!important;border-color:var(--tgo-edge)!important}
@@ -3652,7 +3668,7 @@ html.tema-glass-oscuro #cnt #v-crm .nxProsBtn.wa{color:#4ADE80!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips{background:rgba(255,255,255,.05)!important;border-color:var(--tgo-edge)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button:not(.on),html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button:not(.on){color:#CBD5E1!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on,html.tema-glass-oscuro #cnt #v-crm .nxCrmChips button.on{background:var(--tgo-blue)!important;color:#fff!important;box-shadow:0 6px 16px -8px rgba(37,99,235,.7)!important}
-html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg .n{background:rgba(147,197,253,.22)!important;color:#fff!important} /* 58.97: #DBEAFE daba 4.47:1 con el fondo más claro → blanco (≥5.4:1) */
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSeg button.on .n{background:rgba(0,0,0,.22)!important;color:#fff!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch{background:var(--tgo-field)!important;border-color:var(--tgo-field-edge)!important}
 html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch i,html.tema-glass-oscuro #cnt #v-crm .nxCrmSearch button{color:#CBD5E1!important}
@@ -4417,11 +4433,19 @@ html.tema-glass-oscuro #loginScreen .lshield i{filter:none!important;color:#93C5
 <style id="nxLegibilidad">
 /* Solicitudes: nota «Tip: al cobrar con Depósito/Transferencia…» — era tinta azul marino sobre una nota clara semitransparente
    (1.2–1.5:1) y, por el display:flex de la nota, el texto se partía en tres columnas alrededor del <strong> */
-html.tema-glass-oscuro #cnt .nxSL-recibir-note{display:block!important;background:rgba(59,130,246,.14)!important;border-color:rgba(147,197,253,.30)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro #cnt .nxSL-recibir-note{display:block!important;background:rgba(59,130,246,.14)!important;border-color:rgba(147,197,253,.30)!important;color:#fff!important} /* 58.97: #DBEAFE daba 4.49:1 con el fondo más claro → blanco */
 html.tema-glass-oscuro #cnt .nxSL-recibir-note strong{color:#fff!important}
 html.tema-glass-oscuro #cnt .nxSL-recibir-note i{float:left;margin:1px 8px 0 0;color:#93C5FD!important}
 /* Registrar pago: subtítulo de la cabecera azul (opacidad .85 → 4.25:1) */
 html.tema-glass-oscuro #mAbono .aboSub{opacity:1!important;color:#F8FAFC!important}
+/* 58.97 — Solicitudes: contador gris del Historial (.nxSL-badge-gray): en la base es gris #475569 sobre #E2E8F0 y, según la
+   capa que gane, en el tema quedaba tinta gris sobre píldora oscura (1.9:1) o tinta clara sobre píldora clara (1.2:1) →
+   píldora y tinta fijadas aquí (blanco al 12 % + #E2E8F0, ≥9:1 sobre el cristal) */
+html.tema-glass-oscuro #cnt .nxSL-badge-gray{background:rgba(255,255,255,.12)!important;color:#E2E8F0!important}
+/* 58.97 — fondo un poco más claro: los textos terciarios (#94A3B8) y el ámbar (#FBBF24) sobre superficies translúcidas de
+   escritorio quedaban en 4.3–4.5:1 → se suben los tokens del tema (--tx3/--sf-tx3 → #A8B5C7, --tgo-warn → #FCD34D, en sus
+   definiciones) y aquí solo el botón gris de Bancos, que no pasa por token */
+html.tema-glass-oscuro #cnt .bcoActions .btn.bsm:not(.bc1):not(.bc3):not(.bc5){color:#F1F5F9!important}
 /* Chips con iniciales (agente, responsable): la paleta por hash tiene tonos (teal #0d9488) a 3.7:1 con la letra blanca →
    velo oscuro del 22 % sobre el color del chip (identidad intacta, ≥5:1). El velo es una sombra interna SIN difuminar (no un
    degradado ni un brillo): así sigue contando como ícono plano para qa-iphone */
@@ -4718,7 +4742,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
 (function(){var t=document.documentElement.getAttribute('data-nx-tema');if(t==='premium')document.body.classList.add('tema-premium');else if(t==='glass')document.body.classList.add('tema-glass');
-else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#08101C');}})();</script>
+else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',window.nxTgoBg());}})();</script>
 
 <!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
      dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
@@ -8167,7 +8191,7 @@ function aplicarTema(tema,guardar){
   // Espejo local del tema: SOLO para pintar el primer cuadro (login, splash, recarga) con el tema correcto antes de
   // que llegue la preferencia de la base, que sigue siendo la fuente de verdad.
   try{localStorage.setItem('nx_tema',tema);}catch(e){}
-  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?'#08101C':'#1e3a6e');}catch(e){}
+  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?window.nxTgoBg():'#1e3a6e');}catch(e){}
   // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
   // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
   const iconTop=document.getElementById('iconDarkMode');
@@ -8584,7 +8608,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.96';
+const APP_VERSION='58.97';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

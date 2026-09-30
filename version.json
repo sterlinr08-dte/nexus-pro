@@ -1,7 +1,14 @@
 {
-  "version": "58.96",
+  "version": "58.97",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.97",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Tema oscuro: fondo un poco más claro. La escena azul noche (degradado, velo y viñeta sobre la foto) se aclara con moderación para que las tarjetas de cristal se distingan mejor; el color de arranque (pantalla de carga y barra del celular) acompaña el cambio, sin parpadeos."
+      ]
+    },
     {
       "version": "58.96",
       "fecha": "2026-09-30",

@@ -239,7 +239,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const A = await abrir(browser, { width, rol });
     let e = await estadoTema(A.page);
     resumen.primerPintado[tag + ' nuevo'] = { dcl: e.dcl, cuerpo: e.cuerpo, cuadros: e.cuadros.map(c => c.t + '@' + c.ms) };
-    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(8, 16, 28\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
+    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(12, 26, 48\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
     ok(e.cuadros.length === 1 && e.cuadros[0].t === 'glass-oscuro', `${tag} nuevo: ningún cuadro con otro tema durante la carga (${e.cuadros.length} estado)`, e.cuadros);
     ok(e.html && e.attr === 'glass-oscuro' && e.mirror === 'glass-oscuro', `${tag} nuevo: tras cargar sigue glass-oscuro y el espejo local quedó escrito`, { html: e.html, attr: e.attr, mirror: e.mirror });
     await sleep(1200); const pa = await prefs(rol);
@@ -385,7 +385,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const sp = await lp.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), splash: document.getElementById('nxSplash') ? getComputedStyle(document.getElementById('nxSplash')).backgroundColor : null }));
     await sleep(9000);
     const lg = await lp.evaluate(() => ({ vis: getComputedStyle(document.getElementById('loginScreen')).display !== 'none', box: getComputedStyle(document.querySelector('.lbox')).backgroundColor }));
-    ok(sp.cls && sp.splash === 'rgb(8, 16, 28)' && lg.vis && /rgba\(14, 28, 52/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
+    ok(sp.cls && sp.splash === 'rgb(12, 26, 48)' && lg.vis && /rgba\(14, 28, 52/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
     await lp.screenshot({ path: OUT + PFX + 'login-390.png' });
     await ctx.close();
   }
