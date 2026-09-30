@@ -17,6 +17,13 @@
       ]
     },
     {
+      "version": "58.92",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Arreglo: en el chat de WhatsApp las burbujas, la barra de escribir y el aviso de 24 horas ahora se ven oscuros y se leen bien con el tema Glass oscuro."
+      ]
+    },
+    {
       "version": "58.91",
       "fecha": "2026-09-30",
       "notas": [

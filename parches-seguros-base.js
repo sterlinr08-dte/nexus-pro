@@ -11914,7 +11914,16 @@
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return h % 360;
   }
+  // 58.92 (30-sep-2026, dueño: «quita esos iconos 3D, ponlos contemporáneos al tema actual»): con el tema
+  // Glass oscuro los íconos quedan planos (línea Tabler); se quita la bolita de color que este bloque pinta
+  // en línea con !important (ninguna hoja de estilos puede taparla). Los otros temas siguen igual.
+  function oscuro(){ try { return document.documentElement.classList.contains('tema-glass-oscuro'); } catch (e) { return false; } }
+  function aplanar(root){
+    var list = (root || document).querySelectorAll('i.ti[data-nxc]');
+    for (var i = 0; i < list.length; i++) { var el = list[i]; el.style.removeProperty('background'); el.style.removeProperty('box-shadow'); el.removeAttribute('data-nxc'); }
+  }
   function colorize(root){
+    if (oscuro()) { aplanar(root); return; }
     var list = (root || document).querySelectorAll('i.ti:not([data-nxc])');
     for (var i = 0; i < list.length; i++) {
       var el = list[i];
@@ -11945,6 +11954,8 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sched, { once: true });
   else sched();
   try { new MutationObserver(sched).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+  // cambio de tema en vivo (Configuración → Apariencia): la clase de <html> cambia sin agregar nodos
+  try { new MutationObserver(sched).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
   try { window.addEventListener('nexus:reinit', sched); } catch (e) {}
 })();
 
