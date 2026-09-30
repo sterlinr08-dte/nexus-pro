@@ -239,7 +239,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const A = await abrir(browser, { width, rol });
     let e = await estadoTema(A.page);
     resumen.primerPintado[tag + ' nuevo'] = { dcl: e.dcl, cuerpo: e.cuerpo, cuadros: e.cuadros.map(c => c.t + '@' + c.ms) };
-    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(12, 26, 48\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
+    ok(e.cuerpo === 'glass-oscuro' && e.dcl && e.dcl.t === 'glass-oscuro' && /rgb\(16, 32, 58\)/.test(e.dcl.bg), `${tag} nuevo: glass-oscuro ya al crear <body> y en DOMContentLoaded (fondo ${e.dcl && e.dcl.bg})`, { cuerpo: e.cuerpo, dcl: e.dcl });
     ok(e.cuadros.length === 1 && e.cuadros[0].t === 'glass-oscuro', `${tag} nuevo: ningún cuadro con otro tema durante la carga (${e.cuadros.length} estado)`, e.cuadros);
     ok(e.html && e.attr === 'glass-oscuro' && e.mirror === 'glass-oscuro', `${tag} nuevo: tras cargar sigue glass-oscuro y el espejo local quedó escrito`, { html: e.html, attr: e.attr, mirror: e.mirror });
     await sleep(1200); const pa = await prefs(rol);
@@ -362,7 +362,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     // 30-sep (menú de cristal): el panel del cajón ya no es grafito sólido sino cristal (tinte con alfa + blur ≥ 20 px).
     const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const c = getComputedStyle(document.getElementById('sbEl'), '::after'); return { r, a: c.backgroundImage, blur: c.backdropFilter || c.webkitBackdropFilter }; });
     const abierto = await page.evaluate(() => document.getElementById('sbEl').classList.contains('mob-open') && getComputedStyle(document.querySelector('#sbEl .ni .ni-l')).display !== 'none');
-    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgba\(30, 48, 80, 0\.62\)/.test(sb.a) && /blur\((2\d|[3-9]\d)px\)/.test(sb.blur), `390 cajón móvil de siempre: abre con nombres, cristal azul noche y ${sb.r.total} rótulos legibles`, sb);
+    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgba\(42, 64, 102, 0\.6\)/.test(sb.a) && /blur\((2\d|[3-9]\d)px\)/.test(sb.blur), `390 cajón móvil de siempre: abre con nombres, cristal azul noche y ${sb.r.total} rótulos legibles`, sb);
     await page.screenshot({ path: OUT + PFX + 'menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
     const fab = await page.$('.nx-fab');
@@ -385,7 +385,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const sp = await lp.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), splash: document.getElementById('nxSplash') ? getComputedStyle(document.getElementById('nxSplash')).backgroundColor : null }));
     await sleep(9000);
     const lg = await lp.evaluate(() => ({ vis: getComputedStyle(document.getElementById('loginScreen')).display !== 'none', box: getComputedStyle(document.querySelector('.lbox')).backgroundColor }));
-    ok(sp.cls && sp.splash === 'rgb(12, 26, 48)' && lg.vis && /rgba\(14, 28, 52/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
+    ok(sp.cls && sp.splash === 'rgb(16, 32, 58)' && lg.vis && /rgba\(30, 50, 86/.test(lg.box) && lerr.length === 0, `login/splash: tema desde el primer pintado, splash con la escena y tarjeta de login de cristal oscuro`, { sp, lg, lerr });
     await lp.screenshot({ path: OUT + PFX + 'login-390.png' });
     await ctx.close();
   }
@@ -457,7 +457,7 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       return { r, searchIG, dentro: tr.top >= mr.top && tr.left >= mr.left && tr.right <= mr.right + 1, fondo: getComputedStyle(t).backgroundColor, borde: getComputedStyle(t).borderTopWidth, mainBg: getComputedStyle(m, '::before').backgroundColor, radio: getComputedStyle(m).borderTopLeftRadius, tog: getComputedStyle(document.querySelector('.tn-tog')).display, titulo: document.getElementById('pttl').innerText, tituloFs: getComputedStyle(document.getElementById('pttl')).fontSize };
     }, ACC);
     const unaVez = ACC.every(f => cab.r[f][0] === 1 && cab.r[f][1] === 1);
-    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(14, 28, 52/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
+    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(30, 50, 86/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
     ok(unaVez && cab.searchIG === 0, `1280 cada acción de la antigua barra aparece UNA vez y se puede tocar: ${ACC.map(f => f + ' ' + cab.r[f][0]).join(', ')}`, cab.r);
     for (const [f, sel, chk] of [['toggleNotif', '.tnav .notif-bell', "document.getElementById('notifPanel').classList.contains('show')"], ['abrirGlobalSearch', '.tnav .tn-b-primary', "document.getElementById('gsOverlay').classList.contains('show')"]]) {
       await page.click(sel); await sleep(500);
