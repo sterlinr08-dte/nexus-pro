@@ -161,7 +161,7 @@ const VISTAS = [
   ['buzon', "nav('waInbox',null)", 'buzon'], ['config', "navConfig(12,null)", 'config'],
 ];
 const VISTAS_ADMIN = [['comisiones', "nav('comisiones',null)"], ['mayor', "nav('mayor',null)"], ['balance', "nav('balance',null)"], ['pyg', "nav('pyg',null)"], ['dgii', "nav('dgii',null)"],
-  ['prestamos', "nxAbrirPrestamos()"], ['panel-dueno', "nxAbrirSuperadmin()"], ['pos', "nxAbrirPOS()"]];
+  ['prestamos', "nxAbrirPrestamos()", 'prestamos'], ['panel-dueno', "nxAbrirSuperadmin()"], ['pos', "nxAbrirPOS()"]];
 
 async function ir(page, js) {
   await page.evaluate((js) => {
