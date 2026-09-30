@@ -29,6 +29,30 @@
 @keyframes nxWaTplFade{from{opacity:0}to{opacity:1}}@keyframes nxWaTplUp{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
 @media(max-width:640px){.nxWaTplOverlay{align-items:flex-end;padding:8px}.nxWaTplBox{width:100%;max-height:88vh;border-radius:28px 28px 20px 20px}.nxWaTplHead{border-radius:28px 28px 0 0}.nxWaTplGrid{grid-template-columns:1fr}.nxWaTplActions .nxWaTplAction{flex:1}.nxWaTplBody{padding:14px}.nxWaTplVar{grid-template-columns:62px 1fr}}
 @media(prefers-reduced-motion:reduce){.nxWaTplOverlay,.nxWaTplBox{animation:none!important}}
+/* 58.95 · Glass oscuro: la ventana de plantillas («Usar plantilla aprobada» / «Crear plantilla») era blanca y el tema global
+   pintaba su título (h3) y sus pestañas en claro → blanco sobre blanco. Cristal oscuro con la paleta del Buzón; solo colores.
+   Los !important solo vencen reglas !important existentes (h3 del tema, input/textarea de la capa semi-glass, pestañas). */
+html.tema-glass-oscuro .nxWaTplBox{background:rgba(13,28,53,.97);border-color:rgba(147,179,221,.18);box-shadow:0 30px 80px -35px rgba(0,0,0,.85);color:#F1F5F9;text-transform:none}
+html.tema-glass-oscuro .nxWaTplHead{background:rgba(20,41,75,.96);border-bottom-color:rgba(147,179,221,.16)}
+html.tema-glass-oscuro .nxWaTplHead h3{color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaTplHead p,html.tema-glass-oscuro .nxWaTplHint,html.tema-glass-oscuro .nxWaTplEmpty,html.tema-glass-oscuro .nxWaTplCard small,html.tema-glass-oscuro .nxWaTplVar b{color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaTplLabel{color:#CBD5E1!important}
+html.tema-glass-oscuro .nxWaTplX,html.tema-glass-oscuro .nxWaTplAction.ghost{background:rgba(255,255,255,.08)!important;color:#E2E8F0!important}
+html.tema-glass-oscuro .nxWaTplAction.primary{background:#2563EB!important;color:#fff!important}
+html.tema-glass-oscuro :is(.nxWaTplText,.nxWaTplInput,.nxWaTplSelect){background:#1B3358!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9!important}
+html.tema-glass-oscuro :is(.nxWaTplText,.nxWaTplInput)::placeholder{color:#94A3B8!important;-webkit-text-fill-color:#94A3B8!important}
+html.tema-glass-oscuro :is(.nxWaTplText,.nxWaTplInput,.nxWaTplSelect):focus{border-color:#60A5FA!important;box-shadow:0 0 0 4px rgba(37,99,235,.2)!important}
+html.tema-glass-oscuro .nxWaTplPrep{background:rgba(255,255,255,.05);border-color:rgba(147,179,221,.18)}
+html.tema-glass-oscuro .nxWaTplPrep h4{color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaTplPreview,html.tema-glass-oscuro .nxWaTplCard{background:rgba(255,255,255,.06);border-color:rgba(147,179,221,.18);color:#F1F5F9}
+html.tema-glass-oscuro .nxWaTplCard b{color:#F1F5F9}
+html.tema-glass-oscuro .nxWaTplCard p{color:#CBD5E1}
+html.tema-glass-oscuro .nxWaTplSendPreview{background:rgba(37,99,235,.16);color:#F1F5F9}
+html.tema-glass-oscuro .nxWaTplStatus.APPROVED{background:rgba(34,197,94,.18);color:#4ADE80}
+html.tema-glass-oscuro .nxWaTplStatus.PENDING{background:rgba(245,158,11,.18);color:#FBBF24}
+html.tema-glass-oscuro .nxWaTplStatus.REJECTED{background:rgba(239,68,68,.18);color:#FCA5A5}
+html.tema-glass-oscuro .nxWaTplBox .nxWaTplTab{background:rgba(255,255,255,.07)!important;border-color:rgba(147,179,221,.22)!important;color:#CBD5E1!important}
+html.tema-glass-oscuro .nxWaTplBox .nxWaTplTab.on{background:#2563EB!important;border-color:#2563EB!important;color:#fff!important}
 `;(document.head||document.documentElement).appendChild(s);
   }
 

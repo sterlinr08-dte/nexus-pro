@@ -1,7 +1,16 @@
 {
-  "version": "58.94",
+  "version": "58.95",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.95",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Arreglo: conversaciones de WhatsApp que se veían con fondo blanco y letra clara en el tema Glass oscuro (iPhone). Las hojas de Contactos y de Bauches pendientes (Aplicar / Descartar), la ventana de plantillas («Usar plantilla aprobada» / «Crear plantilla») y el campo de buscar al reenviar quedan en cristal oscuro con la paleta del Buzón.",
+        "WhatsApp — legibilidad en las burbujas enviadas (azules): hora y ✓✓, enlaces, «No enviado · Reintentar», cita respondida y reproductor de audio con contraste ≥ 4.5:1; botón «Enviar recordatorio de pago» y flecha «ir al final» en azul del Buzón.",
+        "Nueva prueba automática scripts/qa-whatsapp-legibilidad.mjs: recorre todos los tipos de mensaje, bauches, plantillas, hilos sin cliente / sin número / con ventana cerrada, archivados y todas las ventanas del chat a 390 y 1280 px comprobando 0 superficies claras y contraste WCAG."
+      ]
+    },
     {
       "version": "58.94",
       "fecha": "2026-09-30",
