@@ -4042,10 +4042,10 @@ html.tema-glass-oscuro #cnt .nxSL-empty-soft{color:#D6D3D1!important}
 /* Configuración: nombre de las pestañas (la regla base lo fija con !important) */
 html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{color:#D6D3D1!important}
 
-/* 58.92 (30-sep-2026) — Buzón de WhatsApp con la paleta del WhatsApp original en modo oscuro (pedido del dueño).
+/* 58.92 (30-sep-2026) — Buzón de WhatsApp con el diseño del WhatsApp original en modo oscuro, en AZUL (pedido del dueño: «las ventanas verde ponla azul, como WhatsApp, y toda la iconografía»).
    Arregla además el chat ilegible de 58.91 (las capas parches-whatsapp-* pintan burbujas claras con !important).
    Solo colores: todas las funciones y acciones (responder, reaccionar, adjuntar, audio, plantillas, buscar, menú) siguen igual. */
-html.tema-glass-oscuro body #cnt #v-waInbox{--wa-bg:#0B141A;--wa-panel:#111B21;--wa-head:#202C33;--wa-in:#202C33;--wa-out:#005C4B;--wa-input:#2A3942;--wa-txt:#E9EDEF;--wa-sub:#8696A0;--wa-green:#00A884;--wa-check:#53BDEB;--wa-sep:#182229;--wa-line:rgba(134,150,160,.15)}
+html.tema-glass-oscuro body #cnt #v-waInbox{--wa-bg:#0B141A;--wa-panel:#111B21;--wa-head:#202C33;--wa-in:#202C33;--wa-out:#1E4E8C;--wa-input:#2A3942;--wa-txt:#E9EDEF;--wa-sub:#8696A0;--wa-green:#2563EB;--wa-check:#53BDEB;--wa-sep:#182229;--wa-line:rgba(134,150,160,.15)}
 /* columnas */
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaDetailCol,.nxWaDetalle){background:var(--wa-bg)!important;background-image:none!important;border-color:var(--wa-line)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs{background-color:var(--wa-bg)!important;background-image:radial-gradient(rgba(134,150,160,.07) 1px,transparent 1.4px),radial-gradient(rgba(134,150,160,.05) 1px,transparent 1.4px)!important;background-size:22px 22px,22px 22px!important;background-position:0 0,11px 11px!important}
@@ -4083,8 +4083,8 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaComposer :is(.nxWaEnviar,button
 /* aviso de 24 horas y plantillas */
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada{background:var(--wa-sep)!important;background-image:none!important;border:0!important;color:var(--wa-sub)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaCerrada :is(span,p,div,b):not(.nxWaTplBtn):not(.nxWaTplBtn *){color:var(--wa-sub)!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt){background:var(--wa-green)!important;background-image:none!important;color:#111B21!important;border:0!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt) i{color:#111B21!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt){background:var(--wa-green)!important;background-image:none!important;color:#fff!important;border:0!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn:not(.alt) i{color:#fff!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt{background:var(--wa-input)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTplBtn.alt i{color:var(--wa-txt)!important}
 /* lista de chats */
@@ -4094,11 +4094,20 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow.on{background:var(--wa-inpu
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow b{color:var(--wa-txt)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaRow span:not(.nxWaBadge):not(.nxWaTime):not(.nxWaTag){color:var(--wa-sub)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaTime{color:var(--wa-sub)!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaBadge{background:var(--wa-green)!important;background-image:none!important;color:#111B21!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaBadge{background:var(--wa-green)!important;background-image:none!important;color:#fff!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaSearchBar,.nxWaListTools input,.nxWaSearchBar input){background:var(--wa-head)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaSearchBar,.nxWaListTools) input::placeholder{color:var(--wa-sub)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaFiltro{background:var(--wa-head)!important;background-image:none!important;border:0!important;color:var(--wa-sub)!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaFiltro.on{background:rgba(0,168,132,.18)!important;color:#00D9A5!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaFiltro.on{background:rgba(37,99,235,.22)!important;color:#93C5FD!important}
+/* iconografía plana tipo WhatsApp: sin bolitas de color ni degradados en los íconos (Tabler de línea en gris) */
+html.tema-glass-oscuro body #cnt #v-waInbox i.ti{background:none!important;background-image:none!important;box-shadow:none!important;filter:none!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important;border:0!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedPill,.nxWaRefTextPill,.nxWaComposer) i.ti{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedMic,.nxWaEnviar){background:var(--wa-green)!important;background-image:none!important;border:0!important;box-shadow:none!important;color:#fff!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaRefClosedMic,.nxWaEnviar) i.ti{color:#fff!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdHeroIcon{background:rgba(37,99,235,.18)!important;background-image:none!important;box-shadow:none!important;border:1px solid rgba(147,197,253,.28)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdHeroIcon i.ti{color:#93C5FD!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaUhdChevron{color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaProKpi,.nxWaUhdKpiIcon) i.ti{color:#93C5FD!important}
 </style>
 </head>
 <body>
