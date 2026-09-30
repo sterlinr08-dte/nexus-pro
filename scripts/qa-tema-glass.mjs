@@ -9,13 +9,13 @@
 //    oscuros, campos oscuros con texto ≥4.5:1, marcador ≥4.5:1, borde ≥3:1 y anillo de foco visible;
 //  · cambia de tema en Configuración → Apariencia entre todos los temas (clases, espejo local, preferencia guardada,
 //    recarga sin salto) y el botón de la barra superior; interruptor por equipo (nx_tgo_off).
-// Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-tema-glass.mjs
+// Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-tema-glass.mjs   (QA_BASE=http://127.0.0.1:<puerto> si el simulador corre en otro puerto)
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 let pw; try { pw = require('playwright'); } catch (e) { pw = require('/opt/node22/lib/node_modules/playwright'); }
 const { chromium } = pw;
 const path = require('path'), fs = require('fs'), os = require('os'), http = require('http');
-const BASE = 'http://127.0.0.1:8942';
+const BASE = process.env.QA_BASE || 'http://127.0.0.1:8942';
 const OUT = (process.env.QA_OUT || path.join(os.tmpdir(), 'qa-tema-glass')) + path.sep; fs.mkdirSync(OUT, { recursive: true });
 // Íconos Tabler reales en las capturas si hay copia local (opcional): QA_TABLER=/ruta con tabler-icons.min.css y fonts/.
 const TABLER = process.env.QA_TABLER || '';

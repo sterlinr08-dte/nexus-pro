@@ -28,15 +28,22 @@ function subDelJWT(req: Request): string | null {
     return decoded.sub ?? null;
   } catch { return null; }
 }
-async function acceso(sub: string | null): Promise<{ ok: boolean; accountId: string | null }> {
-  if (!sub) return { ok: false, accountId: null };
+async function acceso(sub: string | null): Promise<{ ok: boolean; accountId: string | null; agenteId: string | null }> {
+  const sinAcceso = { ok: false, accountId: null, agenteId: null };
+  if (!sub) return sinAcceso;
   const { data: pr } = await db.from("profiles").select("rol,usuario_sistema_id").eq("id", sub).maybeSingle();
-  if (!pr?.rol || !pr.usuario_sistema_id) return { ok: false, accountId: null };
-  const { data: us } = await db.from("usuarios_sistema").select("organizacion_id").eq("id", pr.usuario_sistema_id).maybeSingle();
+  if (!pr?.rol || !pr.usuario_sistema_id) return sinAcceso;
+  const { data: us } = await db.from("usuarios_sistema").select("organizacion_id,nom").eq("id", pr.usuario_sistema_id).maybeSingle();
   const { data: org } = await db.from("organizaciones").select("id").eq("slug", "nexus-pro").maybeSingle();
-  if (!us?.organizacion_id || !org?.id || us.organizacion_id !== org.id) return { ok: false, accountId: null };
+  if (!us?.organizacion_id || !org?.id || us.organizacion_id !== org.id) return sinAcceso;
   const { data: cfg } = await db.from("whatsapp_config").select("zernio_account_id").eq("activo", true).limit(1).maybeSingle();
-  return { ok: !!cfg?.zernio_account_id, accountId: cfg?.zernio_account_id ?? null };
+  // Misma resolución que whatsapp-inbox-enviar: el agente se identifica por nombre.
+  let agenteId: string | null = null;
+  if (us.nom) {
+    const { data: agente } = await db.from("agentes").select("id").eq("activo", true).ilike("nom", us.nom).maybeSingle();
+    agenteId = agente?.id ?? null;
+  }
+  return { ok: !!cfg?.zernio_account_id, accountId: cfg?.zernio_account_id ?? null, agenteId };
 }
 function normalizarTelefono(v: unknown): string | null {
   let d = String(v ?? "").replace(/\D/g, "");
@@ -111,7 +118,31 @@ Deno.serve(async (req: Request) => {
       if (!r.ok) return json({ ok: false, error: "zernio_envio_error", status: r.status, detalle: r.data }, 502);
 
       const data = r.data?.data ?? r.data ?? {};
-      return json({ ok: true, messageId: data.messageId ?? null, conversationId: data.conversationId ?? null });
+      const messageId: string | null = data.messageId ?? null;
+
+      // Fila local para que la plantilla se vea al instante en el chat. Si Zernio devuelve el
+      // wamid, el message.sent del webhook la encontrará por wa_message_id y no duplicará.
+      const ahora = new Date().toISOString();
+      const cuerpo = [`Plantilla: ${templateName.replace(/_/g, " ")}`, ...templateParams.filter((x: string) => x.trim())].join(" · ").slice(0, 4000);
+      const { data: mensaje, error: insertError } = await db.from("whatsapp_hilo_mensajes").insert({
+        hilo_id: hiloId,
+        direccion: "out",
+        tipo_contenido: "text",
+        cuerpo,
+        wa_message_id: messageId,
+        estado: "enviado",
+        enviado_por_agente_id: auth.agenteId,
+        meta: { plantilla: { nombre: templateName, idioma: templateLanguage, parametros: templateParams } },
+      }).select("*").single();
+      if (insertError) console.error("whatsapp-plantillas-gestionar: no se pudo guardar la fila local:", insertError.message);
+      await db.from("whatsapp_hilos").update({
+        ultimo_mensaje_at: ahora,
+        ultimo_mensaje_preview: cuerpo.slice(0, 200),
+        ultima_respuesta_humana_at: ahora,
+        updated_at: ahora,
+      }).eq("id", hiloId);
+
+      return json({ ok: true, messageId, conversationId: data.conversationId ?? null, mensaje: mensaje ?? null });
     }
 
     return json({ ok: false, error: "accion_invalida" }, 400);
