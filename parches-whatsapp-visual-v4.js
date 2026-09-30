@@ -92,7 +92,7 @@ body.tema-premium #v-waInbox .nxWaSearchToggle,body.tema-premium #v-waInbox .nxW
 
   function updateToolbarCount(){
     const root=v(),count=root&&$('.nxWaListCount',root);if(!count)return;
-    const rows=$$('.nxWaRow',root),visible=rows.filter(r=>r.style.display!=='none'),unread=rows.filter(r=>$('.nxWaBadge',r)).length;
+    const rows=$$('.nxWaRow',root).filter(r=>!r.closest('.nxWaArchSec')),visible=rows.filter(r=>r.style.display!=='none'),unread=rows.filter(r=>$('.nxWaBadge',r)).length;
     count.textContent=(visible.length!==rows.length?visible.length+' de '+rows.length:rows.length+' chats')+(unread?' · '+unread+' sin leer':'');
     count.classList.toggle('nxWaListUnread',unread>0);
   }

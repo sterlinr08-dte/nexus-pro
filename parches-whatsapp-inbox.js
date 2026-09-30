@@ -72,7 +72,24 @@
   const hilosRecordatorioEnVuelo = new Set();
   const urlFirmadaCache = new Map();
   const urlFirmadaEnVuelo = new Map();
-  const borradoresPorHilo = new Map();
+  // Borradores por hilo: misma interfaz get/set que el Map anterior, pero persistidos en
+  // localStorage (prefijo nxWaBorrador:) para que sobrevivan a recargar la página, como en WhatsApp.
+  const borradoresPorHilo = (() => {
+    const K = 'nxWaBorrador:'; const mem = new Map();
+    const ls = () => { try { return window.localStorage; } catch (e) { return null; } };
+    return {
+      get(id) {
+        if (!id) return '';
+        if (mem.has(id)) return mem.get(id);
+        let v = ''; try { v = ls()?.getItem(K + id) || ''; } catch (e) {}
+        mem.set(id, v); return v;
+      },
+      set(id, v) {
+        if (!id) return; v = String(v || ''); mem.set(id, v);
+        try { const s = ls(); if (!s) return; if (v.trim()) s.setItem(K + id, v); else s.removeItem(K + id); } catch (e) {}
+      }
+    };
+  })();
   let respuestaActiva = null;
   let busquedaChat = { activa: false, q: '', idx: 0, ids: [] };
   let nxWaMenuTimer = null;
@@ -469,11 +486,54 @@
 
   // ── Render ─────────────────────────────────────────────────────────────
   function iniciales(n) { return String(n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase() || '?'; }
+  // Hora de la lista como en WhatsApp: hoy → hora (mismo formato 12 h que las burbujas),
+  // ayer → «Ayer», menos de 7 días → día de la semana, si no → dd/mm/aa.
   function horaRel(iso) {
-    if (!iso) return ''; const d = new Date(iso), min = Math.round((Date.now() - d.getTime()) / 60000);
-    if (min < 1) return 'ahora'; if (min < 60) return min + ' min'; const h = Math.round(min / 60);
-    if (h < 24) return h + ' h'; return Math.round(h / 24) + ' d';
+    if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return '';
+    const hoy = new Date(); const dia0 = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const dias = Math.round((dia0(hoy) - dia0(d)) / 86400000);
+    try {
+      if (dias <= 0) return d.toLocaleTimeString('es-DO', { hour: 'numeric', minute: '2-digit' }).replace(/\s+/g, ' ').trim();
+      if (dias === 1) return 'Ayer';
+      if (dias < 7) { const s = d.toLocaleDateString('es-DO', { weekday: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }
+    } catch (e) {}
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
   }
+  // Columnas nuevas de whatsapp_hilos (fijado_at, archivado_at, silenciado_hasta, ultimo_mensaje_*):
+  // pueden no existir todavía en producción, así que todo lo que las usa tolera undefined.
+  function hiloFijado(h) { return !!h?.fijado_at; }
+  function hiloArchivado(h) { return !!h?.archivado_at; }
+  function hiloSilenciado(h) {
+    const v = h?.silenciado_hasta; if (!v) return false;
+    if (v === 'infinity') return true;
+    const t = new Date(v).getTime(); return isNaN(t) ? true : t > Date.now();
+  }
+  function listaSoporta() {
+    const h = hilos[0];
+    return { fijar: !!h && 'fijado_at' in h, archivar: !!h && 'archivado_at' in h, silenciar: !!h && 'silenciado_hasta' in h };
+  }
+  const TIPO_PREVIEW = { imagen: ['ti-camera', 'Foto'], audio: ['ti-microphone', 'Audio'], video: ['ti-video', 'Video'], documento: ['ti-file-text', 'Documento'], ubicacion: ['ti-map-pin', 'Ubicación'], contacto: ['ti-user', 'Contacto'], sticker: ['ti-sticker', 'Sticker'] };
+  const TICK_PREVIEW = { enviando: ['ti-clock', ''], enviado: ['ti-check', ''], entregado: ['ti-checks', ''], leido: ['ti-checks', 'leido'], fallido: ['ti-alert-circle', 'fallido'] };
+  function previewFila(h) {
+    const texto = String(h.ultimo_mensaje_preview || '').replace(/\s+/g, ' ').trim();
+    const tipo = TIPO_PREVIEW[h.ultimo_mensaje_tipo];
+    let cuerpo;
+    if (tipo) {
+      const generico = !texto || /^\[?(imagen|foto|audio|video|documento|documento adjunto|ubicaci[oó]n|contacto|sticker)\]?$/i.test(texto);
+      cuerpo = `<i class="ti ${tipo[0]} nxWaPrevIco"></i>${esc(generico ? tipo[1] : texto)}`;
+    } else cuerpo = esc(texto);
+    let tick = '';
+    if (h.ultimo_mensaje_direccion === 'out' && TICK_PREVIEW[h.ultimo_mensaje_estado]) {
+      const t = TICK_PREVIEW[h.ultimo_mensaje_estado];
+      tick = `<i class="ti ${t[0]} nxWaPrevTick ${t[1]}"></i>`;
+    }
+    return tick + cuerpo;
+  }
+  function ordenarHilos(lista) {
+    const t = x => x ? (new Date(x).getTime() || 0) : 0;
+    return lista.slice().sort((a, b) => (hiloFijado(b) - hiloFijado(a)) || (t(b.fijado_at) - t(a.fijado_at)) || (t(b.ultimo_mensaje_at) - t(a.ultimo_mensaje_at)));
+  }
+  let mostrarArchivados = false;
   function resumenMensaje(m) {
     if (!m) return '';
     if (m.cuerpo) {
@@ -574,7 +634,7 @@
     if (ep.est === 'vencida' || ep.est === 'gracia') return { key: 'continuidad', label: 'Por vencer', cls: 'warn' };
     if (h.no_leidos_count > 0) return { key: 'no_leidos', label: 'Nuevo', cls: 'warn' };
     if (!waVentanaAbierta(h)) return { key: 'cerrada', label: '24h cerrada', cls: '' };
-    return { key: 'ok', label: 'Al dia', cls: 'ok' };
+    return { key: 'ok', label: 'Al día', cls: 'ok' };
   }
   function hilosFiltrados() {
     if (waFiltro === 'todos') return hilos;
@@ -615,7 +675,7 @@
       const ep = waEstadoPoliza(c);
       const continuidad = ep.est === 'vencida' || ep.est === 'gracia';
       const tieneFactura = waFacturasCliente(c).length > 0;
-      let estado = { key: 'aldia', label: 'Al dia', cls: 'ok' };
+      let estado = { key: 'aldia', label: 'Al día', cls: 'ok' };
       if (meses >= 2) estado = { key: 'vencido', label: 'Vencido', cls: 'err' };
       else if (meses === 1) estado = { key: 'atrasado', label: 'Atrasado', cls: 'err' };
       else if (deuda > 0) estado = { key: 'deuda', label: 'Pendiente', cls: 'warn' };
@@ -666,7 +726,7 @@
         ${tab('continuidad', 'Por vencer')}
         ${tab('todos', 'Todos')}
         ${tab('factura', 'Factura')}
-        ${tab('aldia', 'Al dia')}
+        ${tab('aldia', 'Al día')}
       </div>
       <div class="nxWaContactList">${filas}</div>
       <div class="nxWaContactsFoot nxWaContactsActGrid">
@@ -994,21 +1054,56 @@
     const lista = hilosFiltrados();
     if (!hilos.length) { cont.innerHTML = '<div class="nxWaEmpty">Todavia no han llegado mensajes.</div>'; return; }
     if (!lista.length) { cont.innerHTML = '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>'; return; }
-    cont.innerHTML = lista.map(h => {
+    const fila = h => {
       const nombre = h.nombre_perfil || h.telefono_e164 || 'Sin nombre';
       const cliente = clienteDeHilo(h);
       const tag = waClasificarHilo(h);
       const on = h.id === hiloAbiertoId ? ' on' : '';
-      return `<div class="nxWaRow${on}" onclick="nxWaAbrirHilo('${h.id}')">
+      const noLeidos = Number(h.no_leidos_count) || 0;
+      const silenciado = hiloSilenciado(h);
+      const borrador = h.id !== hiloAbiertoId ? borradoresPorHilo.get(h.id).trim() : '';
+      const preview = borrador ? `<span class="nxWaPrevDraft">Borrador:</span> ${esc(borrador)}` : previewFila(h);
+      const cls = `nxWaRow${on}${noLeidos ? ' nxWaUnread' : ''}${hiloFijado(h) ? ' nxWaPinned' : ''}${silenciado ? ' nxWaMuted' : ''}${hiloArchivado(h) ? ' nxWaArchived' : ''}`;
+      return `<div class="nxWaRowWrap"><div class="${cls}" data-hilo="${h.id}" onclick="nxWaAbrirHilo('${h.id}')">
         <div class="nxWaAv">${esc(iniciales(cliente?.nom || nombre))}</div>
-        <div class="nxWaWho"><b>${esc(cliente?.nom || nombre)}</b><span>${esc(h.ultimo_mensaje_preview || '')}</span><em class="nxWaTag ${tag.cls}">${esc(tag.label)}</em></div>
+        <div class="nxWaWho"><b>${esc(cliente?.nom || nombre)}</b><span>${preview}</span><em class="nxWaTag ${tag.cls}">${esc(tag.label)}</em></div>
         <div class="nxWaRowMeta">
           <span class="nxWaTime">${horaRel(h.ultimo_mensaje_at)}</span>
-          ${h.no_leidos_count ? `<span class="nxWaBadge">${h.no_leidos_count}</span>` : ''}
+          <span class="nxWaRowIcos">${hiloFijado(h) ? '<i class="ti ti-pin" title="Fijado"></i>' : ''}${silenciado ? '<i class="ti ti-bell-off" title="Silenciado"></i>' : ''}${noLeidos ? `<span class="nxWaBadge">${noLeidos}</span>` : ''}</span>
         </div>
-      </div>`;
-    }).join('');
+      </div></div>`;
+    };
+    const activos = ordenarHilos(lista.filter(h => !hiloArchivado(h)));
+    const archivados = ordenarHilos(lista.filter(hiloArchivado));
+    const cab = archivados.length ? `<div class="nxWaArchRow${mostrarArchivados ? ' abierto' : ''}" onclick="nxWaToggleArchivados()"><i class="ti ti-archive"></i><b>Archivados</b><span class="nxWaArchCount">${archivados.length}</span><i class="ti ti-chevron-down nxWaArchChev"></i></div>` : '';
+    const secArch = archivados.length && mostrarArchivados ? `<div class="nxWaArchSec">${archivados.map(fila).join('')}</div>` : '';
+    cont.innerHTML = cab + secArch + activos.map(fila).join('') + (!activos.length && !archivados.length ? '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>' : '');
+    try { document.dispatchEvent(new CustomEvent('nxwa:lista', { detail: { hilos: hilos } })); } catch (e) {}
   }
+  window.nxWaToggleArchivados = function () { mostrarArchivados = !mostrarArchivados; pintarLista(); };
+  window.nxWaHilos = () => hilos;
+  window.nxWaHiloAbierto = () => hiloAbiertoId;
+  window.nxWaListaSoporta = listaSoporta;
+  window.nxWaHiloSilenciado = hiloSilenciado;
+  // Acciones de la lista (fijar / archivar / silenciar / leído / no leído). Escriben SOLO por RPC
+  // (whatsapp_hilos no tiene UPDATE por RLS) y actualizan la fila en memoria de inmediato; el
+  // refresco de Realtime confirma después con el dato real del servidor.
+  window.nxWaHiloAccion = async function (id, accion, valor) {
+    const h = hilos.find(x => x.id === id); if (!h) return false;
+    const A = api(); if (!A?.post) return false;
+    let rpc, body, patch;
+    if (accion === 'fijar') { rpc = 'whatsapp_hilo_fijar'; body = { p_hilo_id: id, p_fijar: !!valor }; patch = { fijado_at: valor ? new Date().toISOString() : null }; }
+    else if (accion === 'archivar') { rpc = 'whatsapp_hilo_archivar'; body = { p_hilo_id: id, p_archivar: !!valor }; patch = { archivado_at: valor ? new Date().toISOString() : null }; }
+    else if (accion === 'silenciar') { rpc = 'whatsapp_hilo_silenciar'; body = { p_hilo_id: id, p_hasta: valor || null }; patch = { silenciado_hasta: valor || null }; }
+    else if (accion === 'no_leido') { rpc = 'whatsapp_marcar_hilo_no_leido'; body = { p_hilo_id: id }; patch = { no_leidos_count: Math.max(1, Number(h.no_leidos_count) || 0) }; }
+    else if (accion === 'leido') { rpc = 'whatsapp_marcar_hilo_leido'; body = { p_hilo_id: id }; patch = { no_leidos_count: 0 }; }
+    else return false;
+    try { await A.post('rpc/' + rpc, body); } catch (e) { try { toast('err', 'No se pudo aplicar', String(e && e.message || e)); } catch (e2) {} return false; }
+    Object.assign(h, patch);
+    if (accion === 'archivar' && valor && hiloAbiertoId === id) window.nxWaCerrarDetalleMob();
+    pintarLista();
+    return true;
+  };
 
   window.nxWaAbrirHilo = async function (id) {
     guardarBorradorActual();
@@ -1242,9 +1337,29 @@
     el.style.height = Math.min(el.scrollHeight, 96) + 'px';
   }
   window.nxWaAjustarTexto = ajustarTexto;
+  // Indicador «escribiendo…» hacia el cliente (Edge whatsapp-inbox-leer): como máximo una vez cada
+  // 20 s por hilo mientras se teclea, nunca con el campo vacío, sin bloquear y tolerando que la
+  // función aún no exista (404/500/{ok:false} se ignoran).
+  const escribiendoUltimo = new Map();
+  function avisarEscribiendo(hiloId) {
+    const ahora = Date.now();
+    if ((ahora - (escribiendoUltimo.get(hiloId) || 0)) < 20000) return;
+    escribiendoUltimo.set(hiloId, ahora);
+    const A = api(); if (!A?.url) return;
+    try {
+      fetch(`${A.url}/functions/v1/whatsapp-inbox-leer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
+        body: JSON.stringify({ hilo_id: hiloId, accion: 'escribiendo' })
+      }).catch(() => {});
+    } catch (e) {}
+  }
   window.nxWaTextoInput = function (el) {
     ajustarTexto(el);
-    if (hiloAbiertoId) borradoresPorHilo.set(hiloAbiertoId, el.value || '');
+    if (hiloAbiertoId) {
+      borradoresPorHilo.set(hiloAbiertoId, el.value || '');
+      if ((el.value || '').trim()) avisarEscribiendo(hiloAbiertoId);
+    }
   };
   window.nxWaKey = function (event) {
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.nxWaEnviar(); }
@@ -1402,12 +1517,36 @@
   };
 
   // ── Tiempo real ────────────────────────────────────────────────────────
+  // Una sola carga en vuelo: Realtime (con su debounce) y el polling de respaldo comparten esta
+  // puerta, así nunca corren dos cargar() en paralelo.
+  let cargaEnVuelo = null;
+  function cargarSeguro() {
+    if (cargaEnVuelo) return cargaEnVuelo;
+    cargaEnVuelo = Promise.resolve().then(cargar).catch(() => {}).finally(() => { cargaEnVuelo = null; });
+    return cargaEnVuelo;
+  }
+  // Polling de respaldo (30 s) mientras el canal Realtime no esté SUBSCRIBED y el Buzón se vea;
+  // se apaga solo cuando el canal se recupera. NX_WA_POLL_MS permite acortarlo en QA.
+  const realtime = { estado: 'sin_canal', polling: null, ticks: 0 };
+  function pollingVigente() { return !!$('#v-waInbox.on') && document.visibilityState !== 'hidden'; }
+  function iniciarPolling() {
+    if (realtime.polling) return;
+    const ms = Math.max(1000, Number(window.NX_WA_POLL_MS) || 30000);
+    realtime.polling = setInterval(() => { if (!pollingVigente()) return; realtime.ticks++; cargarSeguro(); }, ms);
+  }
+  function detenerPolling() { if (realtime.polling) { clearInterval(realtime.polling); realtime.polling = null; } }
+  function estadoCanal(status) {
+    realtime.estado = status || 'desconocido';
+    if (status === 'SUBSCRIBED') detenerPolling(); else iniciarPolling();
+  }
+  window.nxWaEstadoRealtime = () => ({ estado: realtime.estado, polling: !!realtime.polling, ticks: realtime.ticks });
   async function iniciarRealtime() {
     if (sb) return;
     try {
       if (!window.supabase) await cargarSDK();
-      const A = api(); if (!A || !window.supabase) return;
+      const A = api(); if (!A || !window.supabase) { estadoCanal('sin_sdk'); return; }
       sb = window.supabase.createClient(A.url, A.key);
+      estadoCanal('conectando');
       // Fix 2026-09-07: setAuth() es asincrono (hace un round-trip antes de que el socket quede
       // autenticado) -- sin el await, .channel().subscribe() de la linea de abajo se unia ANTES
       // de que la autenticacion terminara, asi que la suscripcion quedaba registrada con el
@@ -1418,12 +1557,24 @@
       // nuevos sin recargar la pagina a mano.
       if (A.token) { try { await sb.realtime.setAuth(A.token); } catch (e) { console.error('[WA Inbox] setAuth', e); } }
       let debounce = null;
-      const refrescar = () => { if (debounce) clearTimeout(debounce); debounce = setTimeout(() => { if ($('#v-waInbox.on')) cargar(); }, 400); };
+      const refrescar = () => { if (debounce) clearTimeout(debounce); debounce = setTimeout(() => { if ($('#v-waInbox.on')) cargarSeguro(); }, 400); };
+      // Un mensaje entrante nuevo se anuncia (sonido / vibración / contador del título) desde la
+      // capa de lista; aquí solo se emite el evento con la fila que trae Realtime.
+      const mensajeNuevo = payload => {
+        try {
+          const m = payload && payload.new;
+          if (payload?.eventType === 'INSERT' && m && m.direccion === 'in') {
+            const h = hilos.find(x => x.id === m.hilo_id);
+            document.dispatchEvent(new CustomEvent('nxwa:mensaje', { detail: { mensaje: m, hilo: h || null, abierto: hiloAbiertoId === m.hilo_id } }));
+          }
+        } catch (e) {}
+        refrescar();
+      };
       canal = sb.channel('nx-wa-inbox')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilos' }, refrescar)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilo_mensajes' }, refrescar)
-        .subscribe();
-    } catch (e) { console.error('[WA Inbox] realtime', e); }
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilo_mensajes' }, mensajeNuevo)
+        .subscribe(status => estadoCanal(status));
+    } catch (e) { console.error('[WA Inbox] realtime', e); estadoCanal('error'); }
   }
   // Primera vez que este codigo usa el SDK de supabase-js en nexus-pro (el resto de la app
   // habla PostgREST/Storage a mano por fetch) -- solo hace falta aca, para Realtime
