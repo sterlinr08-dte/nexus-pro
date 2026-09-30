@@ -416,7 +416,9 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
   // 10) Foto de fondo: el degradado se ve desde el primer pintado; la foto entra con fundido sin mover nada.
   for (const width of [390, 1280]) {
     await qa('tema/none');
-    const ctx = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 800 }, isMobile: width < 500, hasTouch: width < 500 });
+    // serviceWorkers:'block': la foto se pide después de `load`; si el service worker ya controla la página, su fetch no
+    // pasaría por page.route y la prueba no lo vería.
+    const ctx = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 800 }, isMobile: width < 500, hasTouch: width < 500, serviceWorkers: 'block' });
     const page = await ctx.newPage(); const fotos = [];
     // Se retrasa la foto 7 s (app ya pintada) para ver el marcador de posición y medir justo el cambio de la foto.
     await page.route(/fondo-oficina/, async r => { await sleep(7000); fotos.push(r.request().url()); return r.continue(); });

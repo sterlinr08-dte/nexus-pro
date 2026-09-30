@@ -17,8 +17,13 @@ if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
 d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');
 /* Foto de fondo (58.90): se pide aquí mismo, solo con este tema; mientras llega se ve el degradado del CSS y, al
    terminar de cargar, html.tgo-foto la muestra con un fundido (capa fija: no mueve nada de la página). */
-window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;var i=new Image();i.onload=function(){d.classList.add('tgo-foto');};
+/* 58.90 (velocidad): se pide después de `load` y en un momento libre: durante la carga la tapa el splash y descargarla/
+   decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
+window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;
+var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add('tgo-foto');};
 i.src=(window.innerWidth<=768?'assets/fondo-oficina-movil.webp':'assets/fondo-oficina.webp');};
+var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
+if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro')window.nxTgoFoto();})();</script>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
 <!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
@@ -3170,12 +3175,12 @@ html.tema-glass-oscuro::before{
    sin filter en CSS, la capa fija no se vuelve a desenfocar en cada cuadro. Capas propias (will-change) para que el
    desplazamiento no repinte el fondo. */
 html.tema-glass-oscuro::before{will-change:transform}
-html.tema-glass-oscuro::after{
-  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease;will-change:opacity;
+/* La capa de la foto no tiene imagen hasta html.tgo-foto (así el CSS no la descarga ni la pinta durante la carga) */
+html.tema-glass-oscuro::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
+html.tema-glass-oscuro.tgo-foto::after{opacity:1;will-change:opacity;
   background:linear-gradient(180deg,rgba(28,22,18,.48) 0%,rgba(22,17,14,.62) 55%,rgba(16,12,10,.74) 100%),url(assets/fondo-oficina.webp) center/cover no-repeat;
 }
-@media (max-width:768px){html.tema-glass-oscuro::after{background:linear-gradient(180deg,rgba(28,22,18,.52) 0%,rgba(22,17,14,.64) 55%,rgba(16,12,10,.76) 100%),url(assets/fondo-oficina-movil.webp) center/cover no-repeat}}
-html.tema-glass-oscuro.tgo-foto::after{opacity:1}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:linear-gradient(180deg,rgba(28,22,18,.52) 0%,rgba(22,17,14,.64) 55%,rgba(16,12,10,.76) 100%),url(assets/fondo-oficina-movil.webp) center/cover no-repeat}}
 @media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
 html.tema-glass-oscuro #nxBgPhoto{display:none!important}
 html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
