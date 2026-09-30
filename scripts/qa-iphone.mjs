@@ -10,7 +10,7 @@
 //  · Préstamos: la barra inferior a ancho completo, 5 botones sin montarse; toques de la barra superior ≥ 44 px;
 //  · entrada (390×664): «Entrar al sistema» visible sin desplazar y texto de ejemplo ≥ 4.5:1;
 //  · tema oscuro: íconos planos (sin degradado, brillo ::after, sombra interna difusa ni drop-shadow) y en el tema
-//    clásico el coloreado de íconos sigue funcionando.
+//    clásico el coloreado de íconos (colorize de parches-seguros-base, apagado en glass-oscuro desde 58.92) sigue igual.
 // Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta QA_PFX=v5- node scripts/qa-iphone.mjs
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -274,19 +274,19 @@ async function movil(browser, w, h, rol) {
     await ctx.close();
   }
 
-  // Tema clásico: el coloreado de íconos (ahora en index.html) sigue igual; y al pasar a glass-oscuro en vivo se aplana.
+  // Tema clásico: el coloreado de íconos sigue igual; y al pasar a glass-oscuro en vivo se aplana.
   {
     await qa('tema/clasico');
     const { ctx, page, errs } = await abrir(browser, { w: 390, h: 844, rol: 'admin', tema: 'clasico' });
     await page.evaluate(H);
     await ir(page, "nav('clientes',null)");
-    let r = await page.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), n: document.querySelectorAll('i.ti[data-nxc="2"]').length, bg: (document.querySelector('.sf-kpi .ic i.ti') || {}).style?.background || '' }));
+    let r = await page.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), n: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, bg: (document.querySelector('.sf-kpi .ic i.ti') || {}).style?.background || '' }));
     ok(!r.cls && r.n > 3 && /gradient/.test(r.bg), `clásico: los íconos sueltos conservan su color por nombre (${r.n} coloreados)`, r);
     await page.evaluate(() => aplicarTema('glass-oscuro', false)); await sleep(500);
-    r = await page.evaluate(() => ({ n: document.querySelectorAll('i.ti[data-nxc="2"]').length, bg: getComputedStyle(document.querySelector('.sf-kpi .ic i.ti')).backgroundImage }));
+    r = await page.evaluate(() => ({ n: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, bg: getComputedStyle(document.querySelector('.sf-kpi .ic i.ti')).backgroundImage }));
     ok(r.n === 0 && !/gradient/.test(r.bg), `cambio en vivo a glass-oscuro: los íconos quedan planos`, r);
     await page.evaluate(() => aplicarTema('clasico', false)); await sleep(700);
-    r = await page.evaluate(() => document.querySelectorAll('i.ti[data-nxc="2"]').length);
+    r = await page.evaluate(() => [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length);
     ok(r > 3, `cambio en vivo de vuelta a clásico: vuelve el color por nombre (${r})`);
     ok(errs.length === 0, 'clásico: sin errores de consola', errs.slice(0, 4));
     await ctx.close(); await qa('tema/none');
