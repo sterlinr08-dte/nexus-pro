@@ -9,7 +9,7 @@
 //    oscuros, campos oscuros con texto ≥4.5:1, marcador ≥4.5:1, borde ≥3:1 y anillo de foco visible;
 //  · cambia de tema en Configuración → Apariencia entre todos los temas (clases, espejo local, preferencia guardada,
 //    recarga sin salto) y el botón de la barra superior; interruptor por equipo (nx_tgo_off).
-// Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-tema-glass.mjs
+// Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-tema-glass.mjs   (QA_BASE=http://127.0.0.1:<puerto> si el simulador corre en otro puerto)
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 let pw; try { pw = require('playwright'); } catch (e) { pw = require('/opt/node22/lib/node_modules/playwright'); }

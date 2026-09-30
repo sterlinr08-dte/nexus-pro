@@ -4388,6 +4388,71 @@ html.tema-glass-oscuro #cnt .nxPager-info{color:#94A3B8!important}
 html.tema-glass-oscuro .nxTPanelH b{color:#F1F5F9!important}
 html.tema-glass-oscuro .nxTPanelH small{color:#A8B5C7!important}
 </style>
+<style id="nxBusquedaPremiumCSS">
+/* ═══ BÚSQUEDA PREMIUM (58.94, 30-sep-2026) — estilos de parches-busqueda-premium.js (style#nxBusquedaPremiumCSS: bloque propio al final del <head>; el id lleva sufijo CSS para no ocupar window.nxBusquedaPremium, que es la API del JS) ═══
+   Círculo con borde de acento y la lupa dentro → píldora a lo ancho (el resorte lo lleva el JS: width/left del marco y la
+   opacidad del contenido); halo del acento, puntos flotantes y aviso «Esc» (solo escritorio). Comportamiento agnóstico al
+   tema; los colores salen de --nxbp-* (morado del sistema en Clásico/Premium/Glass claro, azul NEXUS en Glass oscuro).
+   Se estiliza el círculo compacto (.nxBusca.nxBusca-c) desde el primer pintado para que no salte cuando monta la capa.
+   No toca #v-waInbox ni parches-whatsapp-*. */
+:root{--nxbp-d:46px;--nxbp-acento:#6d28d9;--nxbp-halo:rgba(109,40,217,.28);--nxbp-fondo:#fff;--nxbp-tx:#0f172a;--nxbp-ph:#94a3b8;--nxbp-x:#f1f5f9;--nxbp-x-tx:#475569}
+html.tema-glass-oscuro{--nxbp-acento:#2563EB;--nxbp-halo:rgba(37,99,235,.35);--nxbp-fondo:rgba(14,28,52,.82);--nxbp-tx:#F1F5F9;--nxbp-ph:#94A3B8;--nxbp-x:rgba(255,255,255,.12);--nxbp-x-tx:#E2E8F0}
+@media(max-width:768px){:root{--nxbp-d:52px}}
+/* círculo compacto antes/después de montar: mismo tamaño y borde (sin salto al cargar la capa) */
+.nxBusca.nxBusca-c:not(.open){width:var(--nxbp-d);min-width:var(--nxbp-d);flex-basis:var(--nxbp-d);height:var(--nxbp-d);border-radius:999px;border:2px solid var(--nxbp-acento);box-shadow:none}
+.nxBusca.nxBusca-c:not(.open) .nxBusca-lupa{width:calc(var(--nxbp-d) - 4px);height:calc(var(--nxbp-d) - 4px);color:var(--nxbp-acento);font-size:19px;border-radius:999px}
+html.tema-glass-oscuro .nxBusca.nxBusca-c:not(.open){background:var(--nxbp-fondo)!important;border-color:var(--nxbp-acento)!important}
+html.tema-glass-oscuro .nxBusca.nxBusca-c:not(.open) .nxBusca-lupa{color:var(--nxbp-acento)!important}
+/* marco: el círculo/píldora vive dentro; el halo, los puntos y el aviso Esc cuelgan fuera de la píldora */
+.nxbp-marco{position:relative;display:inline-flex;vertical-align:middle;width:var(--nxbp-d);height:var(--nxbp-d);flex:0 0 auto;max-width:100%;isolation:isolate}
+.nxbp-hueco{display:inline-flex;vertical-align:middle;flex:0 0 auto;visibility:hidden}
+.nxbp-marco.nxbp-flotante{position:absolute;z-index:6}
+.nxbp-cont-rel{position:relative}
+.nxbp-oculto{display:none!important}
+.nxbp-desvanecido{opacity:0!important;pointer-events:none!important;transition:opacity .22s ease!important}
+.nxbp-marco .nxBusca.nxBusca-c{position:relative;z-index:1;flex:none!important;width:100%!important;min-width:0!important;height:100%;border-radius:999px;border:2px solid var(--nxbp-acento);background:var(--nxbp-fondo);overflow:hidden;box-shadow:none;cursor:pointer;transition:box-shadow .35s cubic-bezier(.23,1,.32,1),border-color .25s ease,background-color .25s ease}
+.nxbp-marco .nxBusca.nxBusca-c.open::before,.nxbp-marco .nxBusca.nxBusca-c.open::after{display:none}
+.nxbp-marco.open .nxBusca.nxBusca-c{cursor:text;box-shadow:0 0 0 4px var(--nxbp-halo),0 14px 32px -12px var(--nxbp-halo)}
+.nxbp-marco:not(.open) .nxBusca.nxBusca-c:focus-within{box-shadow:0 0 0 3px var(--nxbp-halo)}
+@media(hover:hover) and (pointer:fine){.nxbp-marco:not(.open) .nxBusca.nxBusca-c:hover{box-shadow:0 0 0 3px var(--nxbp-halo);border-color:var(--nxbp-acento)}}
+.nxbp-marco .nxBusca-lupa{width:calc(var(--nxbp-d) - 4px);height:calc(var(--nxbp-d) - 4px);min-width:0;min-height:0;padding:0;flex:0 0 auto;color:var(--nxbp-acento);font-size:19px;border-radius:999px;background:transparent;transition:transform .16s cubic-bezier(.23,1,.32,1)}
+.nxbp-marco .nxBusca-lupa i{color:inherit}
+.nxbp-marco:not(.open) .nxBusca-lupa:active{transform:scale(.92)} /* respuesta al pointer-down */
+.nxbp-marco .nxBusca-lupa:focus-visible{outline:2px solid var(--nxbp-acento);outline-offset:-4px}
+.nxbp-marco .nxBusca-in{opacity:0;transition:none;color:var(--nxbp-tx)}
+.nxbp-marco .nxBusca-in::placeholder{color:var(--nxbp-ph);opacity:1}
+.nxbp-marco .nxBusca-x{display:none;width:30px;height:30px;min-width:0;min-height:0;padding:0;margin-right:9px;border-radius:50%;background:var(--nxbp-x);color:var(--nxbp-x-tx);opacity:0;transition:transform .16s cubic-bezier(.23,1,.32,1)} /* min-height:0 — parches-fase1 pone 44 px a todo botón */
+.nxbp-marco.open .nxBusca-x{display:flex!important}
+.nxbp-marco .nxBusca-x:active{transform:scale(.9)}
+/* punto de «búsqueda activa»: el círculo cerrado conserva un texto que sigue filtrando */
+.nxbp-marco.nxbp-con-texto:not(.open)::after{content:"";position:absolute;top:1px;right:1px;width:11px;height:11px;border-radius:50%;background:var(--nxbp-acento);border:2px solid var(--nxbp-fondo);z-index:2;pointer-events:none}
+/* brillo: halo suave que respira detrás de la píldora */
+.nxbp-brillo{position:absolute;inset:-8px;border-radius:999px;background:radial-gradient(60% 120% at 50% 50%,var(--nxbp-halo),transparent 72%);filter:blur(10px);opacity:0;pointer-events:none;z-index:0;transition:opacity .45s ease}
+.nxbp-marco.open .nxbp-brillo{opacity:1;animation:nxbpRespira 3.2s ease-in-out .4s infinite}
+@keyframes nxbpRespira{0%,100%{opacity:.75}50%{opacity:1}}
+/* puntos flotantes (5, lentos, sin interacción) */
+.nxbp-aura{position:absolute;inset:0;pointer-events:none;z-index:0;display:none}
+.nxbp-marco.open .nxbp-aura{display:block}
+.nxbp-aura i{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--nxbp-acento);opacity:0;animation:nxbpFlota 3.6s ease-in-out infinite;animation-delay:calc(var(--nxbp-t0,0s) + var(--nxbp-r,0s))}
+.nxbp-aura i:nth-child(1){left:14%;top:-9px;--nxbp-r:0s}
+.nxbp-aura i:nth-child(2){left:37%;bottom:-8px;--nxbp-r:-1.1s;width:4px;height:4px}
+.nxbp-aura i:nth-child(3){left:61%;top:-11px;--nxbp-r:-2.3s;width:7px;height:7px}
+.nxbp-aura i:nth-child(4){left:80%;bottom:-6px;--nxbp-r:-.6s}
+.nxbp-aura i:nth-child(5){left:95%;top:35%;--nxbp-r:-1.8s;width:4px;height:4px}
+@keyframes nxbpFlota{0%,100%{transform:translate3d(0,0,0);opacity:.15}50%{transform:translate3d(2px,-7px,0);opacity:.6}}
+/* aviso Esc: solo escritorio con puntero fino; flota bajo la píldora sin ocupar sitio */
+.nxbp-esc{display:none;position:absolute;left:12px;top:calc(100% + 5px);align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:7px;background:var(--nxbp-fondo);font-size:11px;line-height:1;color:var(--nxbp-ph);white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(-3px);transition:opacity .25s ease .25s,transform .25s ease .25s;z-index:2} /* con fondo propio: se lee aunque debajo haya texto (Auditoría) */
+.nxbp-esc kbd{font:inherit;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid var(--nxbp-ph);color:var(--nxbp-tx)}
+@media(hover:hover) and (pointer:fine) and (min-width:769px){.nxbp-esc{display:inline-flex}.nxbp-marco.open .nxbp-esc{opacity:1;transform:none}}
+/* tema oscuro: gana a las reglas !important de campos del bloque del tema */
+html.tema-glass-oscuro .nxbp-marco .nxBusca.nxBusca-c{background:var(--nxbp-fondo)!important;border-color:var(--nxbp-acento)!important}
+html.tema-glass-oscuro .nxbp-marco.open .nxBusca.nxBusca-c{box-shadow:0 0 0 4px var(--nxbp-halo),0 14px 32px -12px var(--nxbp-halo)!important}
+html.tema-glass-oscuro .nxbp-marco:not(.open) .nxBusca.nxBusca-c:focus-within{box-shadow:0 0 0 3px var(--nxbp-halo)!important}
+html.tema-glass-oscuro .nxbp-marco .nxBusca-lupa{color:var(--nxbp-acento)!important}
+html.tema-glass-oscuro .nxbp-marco .nxBusca-x{background:var(--nxbp-x)!important;color:var(--nxbp-x-tx)!important}
+/* movimiento reducido: sin resorte (lo decide el JS), sin puntos ni respiración; solo fundidos cortos */
+@media(prefers-reduced-motion:reduce){.nxbp-aura{display:none!important}.nxbp-brillo{animation:none!important;transition:none}.nxbp-marco .nxBusca-in,.nxbp-marco .nxBusca-x{transition:opacity .16s ease}.nxbp-desvanecido,.nxbp-esc{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -8388,7 +8453,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
+    ['parches-busqueda-premium.js','parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -15824,6 +15889,7 @@ setTimeout(verificarAutoFacturacion, 5000);
       }
       cargar();
     }
+    cargarConReintento('parches-busqueda-premium.js'); // 58.94: búsqueda «Premium» (lupa → píldora) de toda la app; estilos en style#nxBusquedaPremiumCSSCSS
     cargarConReintento('parches-seguros.js');
     cargarConReintento('parches-financiamiento.js');
     cargarConReintento('parches-vehiculos.js');
