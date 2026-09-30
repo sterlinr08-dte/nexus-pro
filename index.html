@@ -4200,12 +4200,12 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glas
   /* Nuevo cliente → dependientes: el campo de nombre puede encogerse (el selector ya no se sale). */
   html body #mCli #dN{min-width:0!important}
   html body #mCli #dR{width:96px!important;flex:0 0 96px;min-width:0}
-  /* Buzón: las 5 cifras en una tira que se desliza (antes 5 columnas de 45 px cortaban los rótulos). Solo desde
-     esta capa; los archivos parches-whatsapp-* no se tocan. */
-  html body #v-waInbox .nxWaProGrid{grid-template-columns:repeat(5,minmax(96px,1fr))!important;overflow-x:auto!important;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
-  html body #v-waInbox .nxWaProGrid::-webkit-scrollbar{display:none}
-  html body #v-waInbox .nxWaProKpi{scroll-snap-align:start;min-width:0}
-  html body #v-waInbox .nxWaProKpi .l:not(#tgo){white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:10px!important}
+  /* Buzón (temas claros): las 5 cifras en una tira que se desliza (antes 5 columnas de 45 px cortaban los rótulos).
+     En Glass oscuro manda el acomodo de 58.92 (filas ícono · rótulo · cifra). Sin tocar parches-whatsapp-*. */
+  html:not(.tema-glass-oscuro) body #v-waInbox .nxWaProGrid{grid-template-columns:repeat(5,minmax(96px,1fr))!important;overflow-x:auto!important;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  html:not(.tema-glass-oscuro) body #v-waInbox .nxWaProGrid::-webkit-scrollbar{display:none}
+  html:not(.tema-glass-oscuro) body #v-waInbox .nxWaProKpi{scroll-snap-align:start;min-width:0}
+  html:not(.tema-glass-oscuro) body #v-waInbox .nxWaProKpi .l:not(#tgo){white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:10px!important}
   /* ── 5. Registrar pago: la fila Cancelar / Registrar abono queda pegada abajo (visible con el teclado abierto) ── */
   html body #mAbono.overlay.open .modal{overflow-x:clip!important;overflow-y:visible!important}
   html body #mAbono .modal>.fe{position:sticky;bottom:0;z-index:3;background:inherit;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));margin-bottom:0}
@@ -4223,59 +4223,77 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glas
   html body #loginScreen .lrow{margin-bottom:12px;gap:4px}
 }
 @media(max-width:768px){
-  /* Campos del login del tema oscuro: mismo gris cálido que los campos del resto del sistema (antes azul marino
-     #0F172A sobre la tarjeta gris cálida) y texto de ejemplo ≥4.5:1 (antes #64748B, 3.7:1). */
-  html.tema-glass-oscuro #loginScreen .lfr input{background:#1F1B19!important;border-color:#8A837E!important;color:#F5F5F4!important}
+  /* Campos del login del tema oscuro: los mismos colores de campo que el resto del sistema (--tgo-field, borde
+     --tgo-field-edge ≥3:1) y texto de ejemplo ≥4.5:1 (antes #64748B sobre #0F172A, 3.7:1). */
+  html.tema-glass-oscuro #loginScreen .lfr input{background:var(--tgo-field,#0E1A2E)!important;border-color:var(--tgo-field-edge,#7A8CA8)!important;color:var(--tgo-t1,#F1F5F9)!important}
   html.tema-glass-oscuro #loginScreen .lfr input:focus{border-color:#60A5FA!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important}
-  html.tema-glass-oscuro #loginScreen .lfr input::placeholder{color:#A8A29E!important;opacity:1}
-  html.tema-glass-oscuro #loginScreen .lfi i{color:#A8A29E!important}
-  html.tema-glass-oscuro #loginScreen .lchk input{background-color:#1F1B19!important;border-color:#8A837E!important}
+  html.tema-glass-oscuro #loginScreen .lfr input::placeholder{color:var(--tgo-ph,#94A3B8)!important;opacity:1}
+  html.tema-glass-oscuro #loginScreen .lfi i{color:var(--tgo-ph,#94A3B8)!important}
+  html.tema-glass-oscuro #loginScreen .lchk input{background-color:var(--tgo-field,#0E1A2E)!important;border-color:var(--tgo-field-edge,#7A8CA8)!important}
 }
 
-/* ═══ Íconos planos del tema oscuro (58.93, pedido del dueño: «quita esos iconos 3D y ponlos contemporáneos») ═══
-   Antes: esferas de degradado con brillo (::after), sombras internas y reflejos (parches-seguros-base:
-   nx-dashboard-icons-3d-css + el coloreado por nombre con estilo en línea !important, que desde 58.92 ya no pinta en
-   este tema: ver colorize() en parches-seguros-base.js). Ahora: ícono de línea Tabler en un círculo con tinte translúcido del color de
-   significado (fondo al 16 %, borde al 28 %, ícono en el tono claro), sin degradados, brillos ni sombras. */
-html.tema-glass-oscuro{--ico-b:147,197,253;--ico-g:74,222,128;--ico-a:251,191,36;--ico-r:252,165,165;--ico-v:196,181,253}
-/* base de la hoja (.ti: esfera morado→cian con brillo): solo se cambian las propiedades que esa base pone, para que
-   los contextos que ya la anulan (riel, botones, tablas…) sigan igual */
-html.tema-glass-oscuro :where(.ti){background:rgba(var(--ico-b),.16);color:rgb(var(--ico-b));box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* ═══ Iconografía plana del tema oscuro (58.93; dueño: «quita esos iconos 3D y ponlos contemporáneos» y «la
+   iconografía general acorde al nuevo tema») ═══
+   Antes: esferas y cuadros con degradado, brillo (::after), sombras internas y relieve: la base global .ti
+   (nx-dashboard-icons-3d-css), la paleta «ICONOS SEMÁNTICOS COLOR 3D VIBRANTE» (.kpi/.qa/.sm/.nc) y avatares/logos con
+   degradado; el coloreado en línea por nombre ya no pinta en este tema desde 58.92 (colorize() de parches-seguros-base).
+   Ahora: ícono de línea Tabler en un círculo o cuadro redondeado con un tinte translúcido del color de su significado,
+   sin degradados, brillos, sombras ni biseles. Tonos (ícono · fondo · borde):
+     azul (principal/info) #93C5FD · rgba(59,130,246,.16) · rgba(147,197,253,.28)
+     verde (dinero/confirmado) #4ADE80 · rgba(34,197,94,.14)   ámbar (pendiente/atención) #FBBF24 · rgba(245,158,11,.14)
+     rojo (vencido/eliminar) #FCA5A5 · rgba(239,68,68,.14)      neutro (sistema) #CBD5E1 · rgba(255,255,255,.06)
+   Solo bajo html.tema-glass-oscuro: Clásico, Premium y Glass claro no cambian. */
+html.tema-glass-oscuro{--ico-t:147,197,253;--ico-f:59,130,246;--ico-fa:.16}
+/* base global .ti (esfera morado→cian con brillo): solo se cambian las propiedades que esa base pone, así los
+   contextos que ya la anulan (riel, botones, tablas…) siguen igual */
+html.tema-glass-oscuro :where(.ti){background:rgba(var(--ico-f),var(--ico-fa));color:rgb(var(--ico-t));box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 html.tema-glass-oscuro .ti::after{content:none!important;background:none!important}
 /* brillo de vidrio de los botones redondos de la barra (el ::after de .tn-b-primary es el texto «Buscar…»: se queda) */
 html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b:not(.tn-b-primary)::after{background:none!important;box-shadow:none!important}
-/* avatares sobre la tarjeta azul destacada de Prospectos: tinte blanco para que se lean sobre el azul */
-html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.2)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
-/* contenedores con color de significado: el tono sale de su clase */
-html.tema-glass-oscuro .ic-tone,
-html.tema-glass-oscuro .sf-kpi .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi,html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxFP-dico i.ti,
-html.tema-glass-oscuro .nxFP-emptyIco i.ti,html.tema-glass-oscuro .nxFP-sideLogo i.ti,html.tema-glass-oscuro .nxFP-qico,
-html.tema-glass-oscuro .nxSL-head-icon,html.tema-glass-oscuro .nxSL-head-icon i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti,html.tema-glass-oscuro .nxSL-recibir-note i.ti,
-html.tema-glass-oscuro .nxCrmHomeBadge i.ti,html.tema-glass-oscuro .echip i.ti,
-html.tema-glass-oscuro .overlay :is(.aboShield,.aboAv,.aboFact,.aboLnk,.aboNote,.aboToggleIc,.aboSummaryIc) i.ti,
-html.tema-glass-oscuro #v-dashboard .qa i.qa-ico,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .ct>i.ti{
-  --t:var(--ico-b);background:rgba(var(--t),.16)!important;background-image:none!important;border:1px solid rgba(var(--t),.28)!important;color:rgb(var(--t))!important;
-  box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:none!important;text-shadow:none!important;animation:none!important}
-html.tema-glass-oscuro .sf-kpi.ok .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-circle-check,html.tema-glass-oscuro .aboSummaryIc i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti-cash{--t:var(--ico-g)}
-html.tema-glass-oscuro .sf-kpi.warn .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi.warn,html.tema-glass-oscuro .nxFP-hAsi.warn i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-clock-hour-4,html.tema-glass-oscuro .aboNote i.ti{--t:var(--ico-a)}
-html.tema-glass-oscuro .sf-kpi.err .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-alert-triangle{--t:var(--ico-r)}
-html.tema-glass-oscuro .sf-kpi.purple .ic i.ti{--t:var(--ico-v)}
-html.tema-glass-oscuro .overlay .aboShield i.ti{--t:255,255,255}
-html.tema-glass-oscuro .nxSf .fc-ico i.ti{background:none!important;border:0!important}
-html.tema-glass-oscuro .nxSf .fc-ico.wa i.ti{--t:var(--ico-g)}
+/* ── contenedores de ícono teñidos ── */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti,html.tema-glass-oscuro .sf-kpi .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi,html.tema-glass-oscuro .nxFP-dico i.ti,html.tema-glass-oscuro .nxFP-emptyIco i.ti,html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-sideLogo,html.tema-glass-oscuro #v-dashboard .qa i.qa-ico,html.tema-glass-oscuro .nxFP-qico,html.tema-glass-oscuro .nxTLogo,html.tema-glass-oscuro .nxSL-head-icon,html.tema-glass-oscuro .nxSL-section-title i.ti,html.tema-glass-oscuro .nxSL-recibir-note i.ti,html.tema-glass-oscuro .nxCrmHomeBadge i.ti,html.tema-glass-oscuro .echip i.ti,html.tema-glass-oscuro .overlay :is(.aboShield,.aboAv,.aboFact,.aboLnk,.aboNote,.aboToggleIc,.aboSummaryIc) i.ti,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .ct>i.ti,html.tema-glass-oscuro .cfg-tab i,html.tema-glass-oscuro .mobile-more-sheet-clean .icon{
+  background:rgba(var(--ico-f),var(--ico-fa))!important;background-image:none!important;border:1px solid rgba(var(--ico-t),.28)!important;
+  color:rgb(var(--ico-t))!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  filter:none!important;text-shadow:none!important;animation:none!important}
+html.tema-glass-oscuro .cfg-tab i{border-radius:12px!important}
 /* el ícono dentro de un contenedor ya teñido no lleva su propio círculo */
-html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxSL-head-icon i.ti{background:none!important;border:0!important}
-/* «Atención prioritaria»: triángulo de aviso en ámbar */
-html.tema-glass-oscuro .nxSf .sf-sec-h i.ti-alert-triangle,html.tema-glass-oscuro .nxSf i.ti-alert-triangle:not(.sf-kpi i){--t:var(--ico-a);background:rgba(var(--t),.16)!important;border:1px solid rgba(var(--t),.28)!important;color:rgb(var(--t))!important;box-shadow:none!important}
-/* Avatares con iniciales: círculo plano teñido, letras claras, sin brillo ni sombra */
+html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxSL-head-icon i.ti,html.tema-glass-oscuro .nxFP-sideLogo i.ti,html.tema-glass-oscuro .nxTLogo i.ti,html.tema-glass-oscuro .nxFP-qico i.ti,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .mobile-more-sheet-clean .icon i.ti{background:none!important;border:0!important;box-shadow:none!important}
+/* ── tonos por significado ── */
+/* verde: dinero, cobros, confirmado */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-cash,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-coin,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-currency-dollar,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-moneybag,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-pig-money,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-receipt,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-receipt-2,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-wallet,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-circle-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-shield-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-thumb-up,html.tema-glass-oscuro .sf-kpi.ok .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-circle-check,html.tema-glass-oscuro .aboSummaryIc i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti-cash,html.tema-glass-oscuro .nxSf .fc-ico.wa i.ti{--ico-t:74,222,128;--ico-f:34,197,94;--ico-fa:.14}
+/* ámbar: pendiente, atención, destacados */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-alert-circle,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-alert-triangle,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-bell,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-clock,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-clock-hour-4,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-flame,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-hourglass,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-trophy,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-bolt,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-crown,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-diamond,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-medal,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-star,html.tema-glass-oscuro .sf-kpi.warn .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi.warn,html.tema-glass-oscuro .nxFP-dico i.ti-clock-hour-4,html.tema-glass-oscuro .aboNote i.ti,html.tema-glass-oscuro .nxSf i.ti-alert-triangle{--ico-t:251,191,36;--ico-f:245,158,11;--ico-fa:.14}
+/* rojo: vencido, eliminar, anular */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-ban,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-circle-x,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-flag,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-logout,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-power,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-trash,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-x,html.tema-glass-oscuro .sf-kpi.err .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-alert-triangle{--ico-t:252,165,165;--ico-f:239,68,68;--ico-fa:.14}
+/* neutro: sistema y configuración */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-adjustments,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-database,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-settings,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-tool,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-tools,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{--ico-t:203,213,225;--ico-f:255,255,255;--ico-fa:.06}
+/* pestaña activa de Configuración: azul sólido plano (antes degradado azul→morado con sombra) */
+html.tema-glass-oscuro .cfg-tab.active-tab i{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1;border-color:transparent!important}
+/* sello de la ventana Registrar pago: sobre la cabecera azul, tinte blanco */
+html.tema-glass-oscuro .overlay .aboShield i.ti{--ico-t:255,255,255;--ico-f:255,255,255;--ico-fa:.16}
+/* «Atención prioritaria»: triángulo de aviso en ámbar (fuera de las cifras) */
+html.tema-glass-oscuro .nxSf i.ti-alert-triangle:not(.sf-kpi i):not(.btn i){background:rgba(var(--ico-f),var(--ico-fa))!important;border:1px solid rgba(var(--ico-t),.28)!important;color:rgb(var(--ico-t))!important;box-shadow:none!important}
+/* Accesos rápidos del Inicio: la capa del Inicio glass escondía también ::before de .qa-ico (que en Tabler ES el dibujo
+   del ícono, no un brillo) y los accesos quedaban como círculos vacíos: se vuelve a mostrar el ícono */
+html.tema-glass-oscuro body #nxIG .nxIG-acc .qa-g .qa i.qa-ico::before{display:block!important;line-height:1!important}
+/* ── avatares con iniciales: círculo plano teñido, letras claras, sin brillo ni sombra ── */
 html.tema-glass-oscuro .nxSf .fc-avwrap{filter:none!important}
-html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(var(--ico-r),.35)}
-html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-avring{box-shadow:inset 0 0 0 1px rgba(var(--ico-a),.35)}
-html.tema-glass-oscuro .nxSf .fc-av:not(#tgo){border-radius:50%!important;background:rgba(var(--ico-r),.18)!important;color:#FECACA!important;box-shadow:none!important}
-html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av:not(#tgo){background:rgba(var(--ico-a),.18)!important;color:#FDE68A!important}
+html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(252,165,165,.35)}
+html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-avring{box-shadow:inset 0 0 0 1px rgba(251,191,36,.35)}
+html.tema-glass-oscuro .nxSf .fc-av:not(#tgo){border-radius:50%!important;background:rgba(239,68,68,.2)!important;color:#FECACA!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxSf .sf-fancard.warn .fc-av:not(#tgo){background:rgba(245,158,11,.2)!important;color:#FDE68A!important}
 html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(59,130,246,.32)!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro #nxIG .nxIG-prof .nxIG-av:not(#tgo){background:#2563EB!important;color:#fff!important}
-html.tema-glass-oscuro .cli-row .av{box-shadow:none!important}
+html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.2)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
+html.tema-glass-oscuro :is(.cli-row,#cnt) .av{box-shadow:none!important;background-image:none!important}
+html.tema-glass-oscuro nav#sbEl .sb-av{box-shadow:none!important;background-image:none!important}
+/* logo del riel: cuadro azul plano sin brillo */
+html.tema-glass-oscuro nav#sbEl .sb-mk::after,html.tema-glass-oscuro nav#sbEl .sb-mk::before{background:none!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxOptIco.logo{box-shadow:none!important}
+/* ── entrada: escudo y campo de usuario planos (sin halo azul que respira ni sombra del ícono) ── */
+html.tema-glass-oscuro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.28)!important;box-shadow:none!important;color:#93C5FD!important}
+html.tema-glass-oscuro #loginScreen .lshield::before{display:none!important}
+html.tema-glass-oscuro #loginScreen .lshield i{filter:none!important;color:#93C5FD!important}
 </style>
 </head>
 <body>
