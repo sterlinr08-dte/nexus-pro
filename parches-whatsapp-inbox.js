@@ -304,6 +304,9 @@
 #v-waInbox .nxWaBubWrap.in{padding-left:8px;box-sizing:border-box}
 #v-waInbox .nxWaBubWrap.out{padding-right:8px;box-sizing:border-box}
 #v-waInbox .nxWaBubWrap.nxWaHasReaction{margin-bottom:12px!important}
+/* mensaje corto: texto y hora en la misma línea; si no caben, la hora baja a la derecha (como WhatsApp) */
+#v-waInbox .nxWaBubWrap .nxWaBub.nxWaRefShort{flex-wrap:wrap;row-gap:1px}
+#v-waInbox .nxWaBubWrap .nxWaBub.nxWaRefShort .nxWaMsgMeta{margin-left:auto!important}
 #v-waInbox .nxWaBubWrap .nxWaBub.in{border-radius:18px!important}
 #v-waInbox .nxWaBubWrap .nxWaBub.out{border-radius:18px!important}
 #v-waInbox .nxWaBubWrap.nxWaTail .nxWaBub.in{border-bottom-left-radius:4px!important}

@@ -69,6 +69,18 @@
 body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#172235;border-color:rgba(148,163,184,.14)}body.tema-premium .nxWaChatPop button,body.tema-premium .nxWaModalHead b{color:#f3f7ff}body.tema-premium .nxWaChatPop button:hover{background:#223047}body.tema-premium .nxWaChatPop .sep,body.tema-premium .nxWaModalHead{border-color:rgba(148,163,184,.14);background-color:transparent}body.tema-premium .nxWaContactPick{background:#1c2a40;border-color:rgba(148,163,184,.14)}body.tema-premium .nxWaContactPick b{color:#f8fafc}
 @media(max-width:760px){#v-waInbox .nxWaHead{min-height:60px!important;padding:7px 8px!important}#v-waInbox .nxWaBackMob{display:grid!important}#v-waInbox .nxWaHeadAvatar,#v-waInbox .nxWaClientAv{width:40px!important;height:40px!important;flex-basis:40px!important}#v-waInbox .nxWaHeadName,#v-waInbox .nxWaClientName{font-size:11.4px!important}#v-waInbox .nxWaHeadSub,#v-waInbox .nxWaClientMeta{font-size:7.8px!important;max-width:190px!important}#v-waInbox .nxWaChatHeadBtn{width:38px!important;height:38px!important;flex-basis:38px!important}#v-waInbox .nxWaBub{max-width:84%!important;font-size:11.2px!important}.nxWaChatPop{right:10px!important;left:auto!important;top:auto!important;bottom:calc(76px + env(safe-area-inset-bottom))!important;transform-origin:bottom right}.nxWaAttachPop{left:10px!important;right:auto!important;bottom:calc(76px + env(safe-area-inset-bottom))!important}.nxWaMediaGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.nxWaModalOv{align-items:end;padding:0}.nxWaModalCard{width:100%;max-height:76dvh;border-radius:24px 24px 0 0;border-bottom:0}.nxWaWallChoices{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){#v-waInbox .nxWaChatHeadBtn,.nxWaChatPop,.nxWaModalOv,.nxWaModalCard,.nxWaAttachGrid button{animation:none!important;transition:none!important}}
+/* 58.94 · Glass oscuro: menú ⋮, clip, ventanas (contacto, fondo, elegir contacto, destacados) y «Subiendo…» en cristal oscuro */
+html.tema-glass-oscuro .nxWaChatPop,html.tema-glass-oscuro .nxWaModalCard{background:rgba(20,41,75,.97);border-color:rgba(147,179,221,.2);box-shadow:0 28px 70px -34px rgba(0,0,0,.85)}
+html.tema-glass-oscuro .nxWaChatPop button,html.tema-glass-oscuro .nxWaModalHead b{color:#E2E8F0}html.tema-glass-oscuro .nxWaChatPop button{text-transform:none}html.tema-glass-oscuro .nxWaChatPop button:hover{background:rgba(255,255,255,.08)}html.tema-glass-oscuro .nxWaChatPop button i{color:#93C5FD}html.tema-glass-oscuro .nxWaChatPop .sep{background:rgba(147,179,221,.16)}html.tema-glass-oscuro .nxWaChatPop .danger,html.tema-glass-oscuro .nxWaChatPop .danger i{color:#FCA5A5}html.tema-glass-oscuro .nxWaChatPop .arr{color:#9FB3D1}
+html.tema-glass-oscuro .nxWaAttachGrid button i{background:rgba(59,130,246,.18)!important;color:#93C5FD!important;border:1px solid rgba(147,197,253,.28)}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(2) i{background:rgba(236,72,153,.16)!important;color:#F9A8D4!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(3) i{background:rgba(139,92,246,.18)!important;color:#C4B5FD!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(4) i{background:rgba(34,197,94,.14)!important;color:#4ADE80!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(5) i{background:rgba(245,158,11,.14)!important;color:#FBBF24!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(6) i{background:rgba(14,165,233,.16)!important;color:#7DD3FC!important}
+html.tema-glass-oscuro .nxWaModalHead{border-color:rgba(147,179,221,.16)}html.tema-glass-oscuro .nxWaModalHead button{background:rgba(255,255,255,.08);color:#CBD5E1}html.tema-glass-oscuro .nxWaModalBody{color:#CBD5E1}
+html.tema-glass-oscuro .nxWaContactPick,html.tema-glass-oscuro .nxWaMediaItem{background:rgba(255,255,255,.06);border-color:rgba(147,179,221,.18);color:#CBD5E1}html.tema-glass-oscuro .nxWaContactPick b{color:#F1F5F9}html.tema-glass-oscuro .nxWaContactPick span{color:#9FB3D1}html.tema-glass-oscuro .nxWaContactPick .av{background:rgba(37,99,235,.28);color:#BFDBFE}
+html.tema-glass-oscuro .nxWaWallChoice{border-color:rgba(147,179,221,.2)!important;color:#E2E8F0!important}html.tema-glass-oscuro .nxWaWallChoice[data-wall="soft"]{background:linear-gradient(180deg,#0A1628,#12264A)!important}html.tema-glass-oscuro .nxWaWallChoice[data-wall="clean"]{background:#0A1628!important}html.tema-glass-oscuro .nxWaWallChoice[data-wall="blue"]{background:linear-gradient(180deg,#0D1C35,#1B3358)!important}html.tema-glass-oscuro .nxWaWallChoice[data-wall="mint"]{background:linear-gradient(180deg,#0A1E28,#0F2E38)!important}
+html.tema-glass-oscuro .nxWaBusyBox{background:rgba(20,41,75,.96);color:#E2E8F0}html.tema-glass-oscuro .nxWaBusySpin{border-color:rgba(147,179,221,.25);border-top-color:#93C5FD}
+.nxWaCcRow{display:flex;align-items:center;gap:12px}.nxWaCcAv{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#eaf3ff;color:#2563eb;font-weight:900;flex:none}.nxWaCcName{font-size:13px;color:#102a56}.nxWaCcSub{font-size:10px;color:#7184a5;margin-top:4px}.nxWaCcSub2{font-size:9px;color:#7184a5;margin-top:3px}.nxWaCcEmpty{text-align:center;color:#7184a5;padding:20px}
+html.tema-glass-oscuro .nxWaCcAv{background:rgba(37,99,235,.28);color:#BFDBFE}html.tema-glass-oscuro .nxWaCcName{color:#F1F5F9}html.tema-glass-oscuro .nxWaCcSub,html.tema-glass-oscuro .nxWaCcSub2,html.tema-glass-oscuro .nxWaCcEmpty{color:#9FB3D1}
+.nxWaStarList{display:flex;flex-direction:column;gap:7px}.nxWaStarRow{width:100%;border:1px solid #e2eaf5;border-radius:14px;background:#fff;padding:10px;display:flex;gap:10px;align-items:center;text-align:left;cursor:pointer;font:inherit}.nxWaStarRow>i{font-size:17px;color:#f59e0b;flex:none}.nxWaStarRow .tx{min-width:0;flex:1}.nxWaStarRow b{display:block;font-size:10px;color:#7184a5;font-weight:800}.nxWaStarRow span{display:block;margin-top:3px;font-size:11px;color:#102a56;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+html.tema-glass-oscuro .nxWaStarRow{background:rgba(255,255,255,.06);border-color:rgba(147,179,221,.18)}html.tema-glass-oscuro .nxWaStarRow b{color:#9FB3D1}html.tema-glass-oscuro .nxWaStarRow span{color:#F1F5F9}
 `;
     document.head.appendChild(s);
   }
@@ -115,6 +127,7 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
       <button data-a="crm" ${c?'':'disabled'}><i class="ti ti-briefcase"></i><span>Abrir ficha CRM</span></button>
       <button data-a="pago" ${c?'':'disabled'}><i class="ti ti-cash"></i><span>Registrar pago</span></button>
       <button data-a="unread"><i class="ti ti-mail"></i><span>Marcar como no leído</span></button>
+      <button data-a="starred"><i class="ti ti-star"></i><span>Mensajes destacados</span></button>
       <div class="sep"></div>
       <button data-a="more"><i class="ti ti-dots"></i><span>Más</span><i class="ti ti-chevron-right arr"></i></button>`;
     p.addEventListener('click',e=>{
@@ -127,6 +140,7 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
       else if(a==='crm'){closePop();const x=clienteActual();if(x&&typeof window.nxWaVisualAbrirFicha==='function')window.nxWaVisualAbrirFicha(x.id);}
       else if(a==='pago'){closePop();const x=clienteActual();if(x&&typeof window.abrirAbono==='function')window.abrirAbono(x.id);else toastSafe('info','No se puede abrir el formulario de pago');}
       else if(a==='unread'){closePop();markUnread();}
+      else if(a==='starred'){closePop();openStarred();}
       else if(a==='more'){closePop();openMoreMenu(anchor);}
     });
     positionPop(p,anchor,false);
@@ -169,11 +183,30 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
   function openContactCard(){
     const c=clienteActual();
     const ov=document.createElement('div');ov.className='nxWaModalOv';
-    const content=c?`<div style="display:flex;align-items:center;gap:12px"><div style="width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#eaf3ff;color:#2563eb;font-weight:900">${esc(String(c.nom||'?').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase())}</div><div><b style="font-size:13px;color:#102a56">${esc(c.nom||'Cliente')}</b><div style="font-size:10px;color:#7184a5;margin-top:4px">${esc(c.wa||c.tel||'Sin teléfono')}</div><div style="font-size:9px;color:#7184a5;margin-top:3px">${esc([c.plan,c.ars].filter(Boolean).join(' · '))}</div></div></div>`:'<div style="text-align:center;color:#7184a5;padding:20px">Este chat no está vinculado a un cliente único.</div>';
+    const content=c?`<div class="nxWaCcRow"><div class="nxWaCcAv">${esc(String(c.nom||'?').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase())}</div><div><b class="nxWaCcName">${esc(c.nom||'Cliente')}</b><div class="nxWaCcSub">${esc(c.wa||c.tel||'Sin teléfono')}</div><div class="nxWaCcSub2">${esc([c.plan,c.ars].filter(Boolean).join(' · '))}</div></div></div>`:'<div class="nxWaCcEmpty">Este chat no está vinculado a un cliente único.</div>';
     ov.innerHTML=`<section class="nxWaModalCard"><div class="nxWaModalHead"><b>Contacto</b><button type="button"><i class="ti ti-x"></i></button></div><div class="nxWaModalBody">${content}</div>${c?`<div style="padding:0 12px 12px"><button class="btn bxl" data-open style="width:100%"><i class="ti ti-briefcase"></i> Abrir ficha CRM</button></div>`:''}</section>`;
     ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('.nxWaModalHead button'))ov.remove();});
     $('[data-open]',ov)?.addEventListener('click',()=>{ov.remove();if(typeof window.nxWaVisualAbrirFicha==='function')window.nxWaVisualAbrirFicha(c.id);});
     document.body.appendChild(ov);
+  }
+
+  // Mensajes destacados del hilo (RPC whatsapp_mensajes_destacados); tocar uno lleva al mensaje si está cargado.
+  async function openStarred(){
+    const id=hiloActualId();if(!id)return toastSafe('info','Abre una conversación primero');
+    const ov=document.createElement('div');ov.className='nxWaModalOv nxWaStarredOv';
+    ov.innerHTML='<section class="nxWaModalCard" role="dialog" aria-modal="true"><div class="nxWaModalHead"><b>Mensajes destacados</b><button type="button"><i class="ti ti-x"></i></button></div><div class="nxWaModalBody"><div class="nxWaCcEmpty"><i class="ti ti-loader-2"></i> Cargando…</div></div></section>';
+    ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('.nxWaModalHead button'))ov.remove();});document.body.appendChild(ov);
+    const body=$('.nxWaModalBody',ov);
+    const resumen=m=>{const t=String(m.tipo_contenido||'text'),c=String(m.cuerpo||'').trim();if(t==='text'||(c&&!/^\[?(imagen|audio|video|documento|sticker|ubicaci[oó]n|contacto)\]?$/i.test(c)))return c||'Mensaje';return {imagen:'📷 Foto',video:'🎥 Video',audio:'🎤 Mensaje de voz',documento:'📄 Documento',sticker:'Sticker',ubicacion:'📍 Ubicación',contacto:'👤 Contacto'}[t]||'Mensaje';};
+    const fecha=v=>{try{return new Date(v).toLocaleString('es-DO',{dateStyle:'medium',timeStyle:'short'});}catch(e){return String(v||'');}};
+    try{
+      const A=api();if(!A?.post)throw new Error('API no disponible');
+      let rows=await A.post('rpc/whatsapp_mensajes_destacados',{p_hilo_id:id});rows=Array.isArray(rows)?rows.filter(m=>m&&!m.oculto_at):[];
+      rows.sort((a,b)=>String(b.destacado_at||b.created_at||'').localeCompare(String(a.destacado_at||a.created_at||'')));
+      if(!body)return;
+      body.innerHTML=rows.length?`<div class="nxWaStarList">${rows.map(m=>`<button type="button" class="nxWaStarRow" data-mid="${esc(m.id)}"><i class="ti ti-star-filled"></i><div class="tx"><b>${m.direccion==='out'?'Tú':'Cliente'} · ${esc(fecha(m.created_at))}</b><span>${esc(resumen(m))}</span></div><i class="ti ti-chevron-right" style="color:#9FB3D1"></i></button>`).join('')}</div>`:'<div class="nxWaCcEmpty"><i class="ti ti-star" style="font-size:28px;display:block;margin-bottom:6px"></i>Aún no hay mensajes destacados en esta conversación.</div>';
+      $$('.nxWaStarRow',body).forEach(b=>b.addEventListener('click',()=>{ov.remove();const mid=b.dataset.mid;if(document.getElementById('nxWaMsg-'+mid)){try{window.nxWaIrAMensaje?.(mid);}catch(e){}}else toastSafe('info','Ese mensaje no está entre los cargados','Desplázate hacia arriba para cargar mensajes anteriores.');}));
+    }catch(e){if(body)body.innerHTML='<div class="nxWaCcEmpty">No se pudieron cargar los destacados.</div>';toastSafe('err','No se pudieron cargar los destacados',String(e?.message||e));}
   }
 
   function openMedia(){

@@ -51,6 +51,13 @@ body.tema-premium .nxWaAdminDelHead{border-color:rgba(148,163,184,.12)}
 body.tema-premium .nxWaAdminDelHead b,body.tema-premium .nxWaAdminDelBody strong{color:#edf4ff}
 body.tema-premium .nxWaAdminDelBody{color:#9fb0cb}
 body.tema-premium .nxWaAdminDelBody input{background:#101827;border-color:#334155;color:#edf4ff}
+html.tema-glass-oscuro .nxWaAdminDelCard{background:rgba(20,41,75,.97);border-color:rgba(147,179,221,.2)}
+html.tema-glass-oscuro .nxWaAdminDelHead{border-color:rgba(147,179,221,.16)}
+html.tema-glass-oscuro .nxWaAdminDelHead b,html.tema-glass-oscuro .nxWaAdminDelBody strong{color:#F1F5F9}
+html.tema-glass-oscuro .nxWaAdminDelBody{color:#CBD5E1}
+html.tema-glass-oscuro .nxWaAdminDelWarn{background:rgba(245,158,11,.14);border-color:rgba(251,191,36,.3);color:#FDE68A}
+html.tema-glass-oscuro .nxWaAdminDelBody input{background:rgba(255,255,255,.06);border-color:rgba(147,179,221,.25);color:#F1F5F9}
+html.tema-glass-oscuro .nxWaAdminDelX,html.tema-glass-oscuro .nxWaAdminDelCancel{background:rgba(255,255,255,.08);border-color:rgba(147,179,221,.2);color:#E2E8F0}
 @media(max-width:640px){.nxWaAdminDelOv{align-items:end;padding:10px}.nxWaAdminDelCard{border-radius:22px 22px 16px 16px}.nxWaAdminDelFoot{display:grid;grid-template-columns:1fr 1fr}.nxWaAdminDelFoot button{width:100%;padding:0 8px}}
 `;
     document.head.appendChild(s);

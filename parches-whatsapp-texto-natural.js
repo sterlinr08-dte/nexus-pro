@@ -69,6 +69,24 @@
 /* El buscador dentro de la conversacion. */
 #v-waInbox #nxWaSearchInput{text-transform:none!important}
 #v-waInbox #nxWaSearchInput::placeholder{text-transform:none!important}
+
+/* 58.94 (WhatsApp original): tambien en su forma natural la cabecera del chat
+   (nombre tal como esta guardado, telefono y estado de la ventana), los
+   separadores de dia y de no leidos, y los menus y ventanas del chat (menu del
+   mensaje, menu de tres puntos, clip, reacciones, confirmaciones, multimedia,
+   destacados, visor). Estos menus cuelgan de <body>, fuera de #v-waInbox. */
+#v-waInbox .nxWaHead,
+#v-waInbox .nxWaHead *,
+#v-waInbox .nxWaDaySep,
+#v-waInbox .nxWaUnreadSep,
+#v-waInbox .nxWaOlder,
+#v-waInbox .nxWaLatestCount,
+.nxWaMsgPro,.nxWaMsgPro *,
+.nxWaChatPop,.nxWaChatPop *,
+.nxWaModalOv,.nxWaModalOv *,
+.nxWaMhOv,.nxWaMhOv *,
+.nxWaLb,.nxWaLb *,
+.nxWaAdminDelOv,.nxWaAdminDelOv *{text-transform:none!important}
 `;
     (document.head||document.documentElement).appendChild(s);
   }
