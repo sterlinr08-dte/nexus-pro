@@ -4232,50 +4232,101 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glas
   html.tema-glass-oscuro #loginScreen .lchk input{background-color:var(--tgo-field,#0E1A2E)!important;border-color:var(--tgo-field-edge,#7A8CA8)!important}
 }
 
-/* ═══ Iconografía plana del tema oscuro (58.93; dueño: «quita esos iconos 3D y ponlos contemporáneos» y «la
-   iconografía general acorde al nuevo tema») ═══
-   Antes: esferas y cuadros con degradado, brillo (::after), sombras internas y relieve: la base global .ti
-   (nx-dashboard-icons-3d-css), la paleta «ICONOS SEMÁNTICOS COLOR 3D VIBRANTE» (.kpi/.qa/.sm/.nc) y avatares/logos con
-   degradado; el coloreado en línea por nombre ya no pinta en este tema desde 58.92 (colorize() de parches-seguros-base).
-   Ahora: ícono de línea Tabler en un círculo o cuadro redondeado con un tinte translúcido del color de su significado,
-   sin degradados, brillos, sombras ni biseles. Tonos (ícono · fondo · borde):
-     azul (principal/info) #93C5FD · rgba(59,130,246,.16) · rgba(147,197,253,.28)
-     verde (dinero/confirmado) #4ADE80 · rgba(34,197,94,.14)   ámbar (pendiente/atención) #FBBF24 · rgba(245,158,11,.14)
-     rojo (vencido/eliminar) #FCA5A5 · rgba(239,68,68,.14)      neutro (sistema) #CBD5E1 · rgba(255,255,255,.06)
-   Solo bajo html.tema-glass-oscuro: Clásico, Premium y Glass claro no cambian. */
-html.tema-glass-oscuro{--ico-t:147,197,253;--ico-f:59,130,246;--ico-fa:.16}
-/* base global .ti (esfera morado→cian con brillo): solo se cambian las propiedades que esa base pone, así los
-   contextos que ya la anulan (riel, botones, tablas…) siguen igual */
-html.tema-glass-oscuro :where(.ti){background:rgba(var(--ico-f),var(--ico-fa));color:rgb(var(--ico-t));box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* ═══ Iconografía del tema oscuro — 58.94 (dueño, 30-sep-2026, captura iPhone de Cobros: «corregir todos esos iconos que se ven así
+   cuadrados del sistema de NEXUS; utiliza los mejores iconos») ═══
+   Diagnóstico (58.93): la regla `html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti{background;border:1px…!important}` (0,2,2) alcanzaba a
+   TODO ícono dentro de una tarjeta .nc —botones COBRAR/WhatsApp/⋮, pestañas, chips de filtro, lupa, paginación, celdas— y le ganaba al
+   reinicio `.btn .ti{border-radius:0;width:auto;display:inline-block!important}` (0,1,1) de parches-seguros-base.js: el resultado era un
+   cuadrado teñido con borde de 1 px que abraza el glifo (radio 0, sin tamaño fijo, sin centrar). Además .sf-kpi .ic, .nxFP-dico, etc. ya
+   traen su propio contenedor teñido y el ícono de dentro recibía un segundo círculo.
+   Sistema (solo bajo html.tema-glass-oscuro; Clásico, Premium y Glass claro no cambian):
+     · GLIFO: dentro de botones, píldoras, chips, pestañas, filas, celdas, campos y notas el ícono va SIN caja ni borde: solo el trazo Tabler,
+       color semántico o heredado del botón, tamaño óptico --nx-ico-sm (18 px; --nx-ico-md 20 px en botones redondos de una sola acción),
+       centrado con inline-flex y separación de 8 px del texto.
+     · TILE (ícono protagonista solo: cifras KPI, accesos rápidos del Inicio, cabeceras de sección y tarjeta, pestañas de Configuración,
+       logos y avatares de módulo, filas de menú): cuadrado de esquinas continuas —radio 28 % del lado (32→9, 40→11, 44→12) y
+       corner-shape:squircle donde el navegador lo tenga—, relleno translúcido del color de su significado (14-16 %), hairline al 8 % como
+       máximo, glifo al 50-56 % del lado, centrado. El contenedor lleva el tinte; el <i> de dentro nunca lleva caja propia.
+     · Un solo trazo (Tabler outline), sin degradados, brillos, sombras internas ni 3D. Tonos: azul (acción/info), verde (dinero, WhatsApp,
+       confirmado), ámbar (pendiente/atención/vencimiento), rojo (vencido/eliminar), gris azulado (sistema). */
+html.tema-glass-oscuro{
+  --nx-ico-sm:18px;--nx-ico-md:20px;--nx-ico-lg:24px;
+  --nx-ico-tile-sm:32px;--nx-ico-tile:40px;--nx-ico-tile-lg:44px;--nx-ico-tile-r:28%;
+  --nx-ico-tint-blue:59,130,246;--nx-ico-blue:147,197,253;--nx-ico-tint-green:34,197,94;--nx-ico-green:74,222,128;
+  --nx-ico-tint-amber:245,158,11;--nx-ico-amber:251,191,36;--nx-ico-tint-red:239,68,68;--nx-ico-red:252,165,165;
+  --nx-ico-tint-neutral:255,255,255;--nx-ico-neutral:203,213,225;
+  --ico-t:var(--nx-ico-blue);--ico-f:var(--nx-ico-tint-blue);--ico-fa:.16}
+/* 1 · Base: la esfera global .ti (morado→cian con brillo ::after, de parches-seguros-base) queda en glifo plano. Solo se tocan las
+   propiedades que esa base pone (:where = misma especificidad baja), así los contextos que ya la anulan siguen igual. */
+html.tema-glass-oscuro :where(.ti){background:none;color:rgb(var(--ico-t));box-shadow:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 html.tema-glass-oscuro .ti::after{content:none!important;background:none!important}
-/* brillo de vidrio de los botones redondos de la barra (el ::after de .tn-b-primary es el texto «Buscar…»: se queda) */
 html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b:not(.tn-b-primary)::after{background:none!important;box-shadow:none!important}
-/* ── contenedores de ícono teñidos ── */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti,html.tema-glass-oscuro .sf-kpi .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi,html.tema-glass-oscuro .nxFP-dico i.ti,html.tema-glass-oscuro .nxFP-emptyIco i.ti,html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-sideLogo,html.tema-glass-oscuro #v-dashboard .qa i.qa-ico,html.tema-glass-oscuro .nxFP-qico,html.tema-glass-oscuro .nxTLogo,html.tema-glass-oscuro .nxSL-head-icon,html.tema-glass-oscuro .nxSL-section-title i.ti,html.tema-glass-oscuro .nxSL-recibir-note i.ti,html.tema-glass-oscuro .nxCrmHomeBadge i.ti,html.tema-glass-oscuro .echip i.ti,html.tema-glass-oscuro .overlay :is(.aboShield,.aboAv,.aboFact,.aboLnk,.aboNote,.aboToggleIc,.aboSummaryIc) i.ti,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .ct>i.ti,html.tema-glass-oscuro .cfg-tab i,html.tema-glass-oscuro .mobile-more-sheet-clean .icon{
-  background:rgba(var(--ico-f),var(--ico-fa))!important;background-image:none!important;border:1px solid rgba(var(--ico-t),.28)!important;
-  color:rgb(var(--ico-t))!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  filter:none!important;text-shadow:none!important;animation:none!important}
-html.tema-glass-oscuro .cfg-tab i{border-radius:12px!important}
-/* el ícono dentro de un contenedor ya teñido no lleva su propio círculo */
-html.tema-glass-oscuro .nxFP-hAsi i.ti,html.tema-glass-oscuro .nxSL-head-icon i.ti,html.tema-glass-oscuro .nxFP-sideLogo i.ti,html.tema-glass-oscuro .nxTLogo i.ti,html.tema-glass-oscuro .nxFP-qico i.ti,html.tema-glass-oscuro .fc-ico i.ti,html.tema-glass-oscuro .sf-btn i.ti,html.tema-glass-oscuro .mobile-more-sheet-clean .icon i.ti{background:none!important;border:0!important;box-shadow:none!important}
-/* ── tonos por significado ── */
-/* verde: dinero, cobros, confirmado */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-cash,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-coin,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-currency-dollar,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-moneybag,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-pig-money,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-receipt,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-receipt-2,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-wallet,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-circle-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-shield-check,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-thumb-up,html.tema-glass-oscuro .sf-kpi.ok .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-circle-check,html.tema-glass-oscuro .aboSummaryIc i.ti,html.tema-glass-oscuro .nxSL-section-title i.ti-cash,html.tema-glass-oscuro .nxSf .fc-ico.wa i.ti{--ico-t:74,222,128;--ico-f:34,197,94;--ico-fa:.14}
-/* ámbar: pendiente, atención, destacados */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-alert-circle,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-alert-triangle,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-bell,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-clock,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-clock-hour-4,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-flame,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-hourglass,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-trophy,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-bolt,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-crown,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-diamond,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-medal,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-star,html.tema-glass-oscuro .sf-kpi.warn .ic i.ti,html.tema-glass-oscuro .nxFP-hAsi.warn,html.tema-glass-oscuro .nxFP-dico i.ti-clock-hour-4,html.tema-glass-oscuro .aboNote i.ti,html.tema-glass-oscuro .nxSf i.ti-alert-triangle{--ico-t:251,191,36;--ico-f:245,158,11;--ico-fa:.14}
-/* rojo: vencido, eliminar, anular */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-ban,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-circle-x,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-flag,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-logout,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-power,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-trash,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-x,html.tema-glass-oscuro .sf-kpi.err .ic i.ti,html.tema-glass-oscuro .nxFP-dico i.ti-alert-triangle{--ico-t:252,165,165;--ico-f:239,68,68;--ico-fa:.14}
-/* neutro: sistema y configuración */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-adjustments,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-database,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-settings,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-tool,html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti-tools,html.tema-glass-oscuro .cfg-tab:not(.active-tab) i{--ico-t:203,213,225;--ico-f:255,255,255;--ico-fa:.06}
-/* pestaña activa de Configuración: azul sólido plano (antes degradado azul→morado con sombra) */
+/* La paleta «ICONOS SEMÁNTICOS COLOR 3D VIBRANTE» (.kpi/.qa/.sm/.nc i.ti-*) pinta degradados con !important: se apagan sin dar caja. */
+html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti{background-image:none!important;box-shadow:none!important;border:0!important;filter:none!important;text-shadow:none!important;animation:none!important}
+/* 2 · Glifo dentro de botones, píldoras, chips, pestañas, filas, celdas y notas: sin caja, sin borde, centrado. */
+html.tema-glass-oscuro :is(button:not(.cfg-tab),.btn,.sf-btn,.cbBtn,.maBtn,.sfr-cob,.nxft-tab,.nfcBtn,.nxVistaOpt,.nxpag-btn,.nxBusca-lupa,.cliCard-more,.fc-ico,.echip,.tn-b,.tn-tog,.pill,.chip,.badge,.sfr-prev,.sfr-ref,.deuda-prev,.nxCrmHomeBadge,.nxSL-recibir-note,.aboLnk,.aboNote,.aboFact,.lfi,.inw,summary,label,td,th) i.ti,
+html.tema-glass-oscuro body #cnt .sf-btn i.ti{
+  background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;
+  width:auto!important;height:auto!important;min-width:0!important;padding:0!important;filter:none!important;text-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* tamaño óptico y alineación con el texto (inline-flex + line-height 1: el glifo Tabler queda centrado en la altura de x del rótulo) */
+html.tema-glass-oscuro :is(.btn,.sf-btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn,.nxVistaOpt,.echip,.nxCrmHomeBadge,.tn-b-primary) i.ti{font-size:var(--nx-ico-sm)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
+html.tema-glass-oscuro :is(.btn.bsm.bghost,.nxBusca-lupa,.cliCard-more,.fc-ico,.nxpag-btn,.tn-b:not(.tn-b-primary),.tn-tog,.nxSf table.sf-fact td[data-lb="Acciones"] .btn) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
+/* barra de arriba (☰, campana, actualizar): parches-seguros-base fija 16 px con `.tn-r > #btnRefrescar i` (1,1,1) !important → un solo tamaño md */
+html.tema-glass-oscuro body .tnav :is(.tn-tog,#btnRefrescar,.notif-bell) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important}
+html.tema-glass-oscuro :is(.btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn):has(>i.ti){gap:8px}
+html.tema-glass-oscuro :is(.btn,.nxft-tab,.nfcBtn) i.ti:is(.ti-chevron-down,.ti-chevron-up,.ti-chevron-right,.ti-chevron-left){opacity:.75}
+/* color semántico del glifo en botones translúcidos (en botones sólidos hereda el color del texto) */
+html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-brand-whatsapp,.ti-cash,.ti-wallet,.ti-coin,.ti-circle-check,.ti-shield-check){color:rgb(var(--nx-ico-green))!important}
+html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-alert-triangle,.ti-alert-circle,.ti-bell,.ti-clock,.ti-hourglass,.ti-star){color:rgb(var(--nx-ico-amber))!important}
+html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5)) i.ti:is(.ti-trash,.ti-ban,.ti-circle-x,.ti-cash-off,.ti-user-x){color:rgb(var(--nx-ico-red))!important}
+/* 3 · Tiles cuyo contenedor es el propio <i>: cifras del tablero clásico, título de tarjeta, cabeceras de sección, accesos rápidos del
+   Inicio (en su píldora), pestañas de Configuración y filas del menú de acciones. */
+html.tema-glass-oscuro :is(#v-dashboard .kpi i.ti,#v-dashboard .sm i.ti,#v-dashboard .qa i.qa-ico,html.tema-glass-oscuro body #nxIG .nxIG-acc .qa-g .qa i.qa-ico,.nc .ct>i.ti,.nxSL-section-title>i.ti,.nxSf .sf-fantitle h2 i.ti,.cfg-tab i,.acc-menu button>i.ti){
+  --nx-tile:var(--nx-tile-set,var(--nx-ico-tile-sm));--nx-tile-fs:var(--nx-tile-fs-set,var(--nx-ico-sm));
+  width:var(--nx-tile)!important;height:var(--nx-tile)!important;min-width:var(--nx-tile)!important;max-width:none!important;flex:none;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border-radius:var(--nx-ico-tile-r)!important;corner-shape:squircle;
+  background:rgba(var(--ico-f),var(--ico-fa))!important;background-image:none!important;border:1px solid rgba(var(--ico-t),.08)!important;
+  color:rgb(var(--ico-t))!important;font-size:var(--nx-tile-fs)!important;line-height:1!important;
+  box-shadow:none!important;filter:none!important;text-shadow:none!important;animation:none!important;transform:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important;padding:0!important;opacity:1!important;position:static!important}
+/* tamaño por contexto: se declara en el padre (heredado) porque una regla menos específica sobre el mismo <i> perdería la cascada */
+html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,.cfg-tab){--nx-tile-set:var(--nx-ico-tile);--nx-tile-fs-set:var(--nx-ico-md)}
+html.tema-glass-oscuro .cfg-tab i{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
 html.tema-glass-oscuro .cfg-tab.active-tab i{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1;border-color:transparent!important}
-/* sello de la ventana Registrar pago: sobre la cabecera azul, tinte blanco */
-html.tema-glass-oscuro .overlay .aboShield i.ti{--ico-t:255,255,255;--ico-f:255,255,255;--ico-fa:.16}
-/* «Atención prioritaria»: triángulo de aviso en ámbar (fuera de las cifras) */
-html.tema-glass-oscuro .nxSf i.ti-alert-triangle:not(.sf-kpi i):not(.btn i){background:rgba(var(--ico-f),var(--ico-fa))!important;border:1px solid rgba(var(--ico-t),.28)!important;color:rgb(var(--ico-t))!important;box-shadow:none!important}
-/* Accesos rápidos del Inicio: la capa del Inicio glass escondía también ::before de .qa-ico (que en Tabler ES el dibujo
-   del ícono, no un brillo) y los accesos quedaban como círculos vacíos: se vuelve a mostrar el ícono */
+html.tema-glass-oscuro .cfg-tab:hover i{transform:none!important}
+/* Accesos rápidos del Inicio: la capa del Inicio glass escondía también ::before de .qa-ico (que en Tabler ES el dibujo del ícono) */
 html.tema-glass-oscuro body #nxIG .nxIG-acc .qa-g .qa i.qa-ico::before{display:block!important;line-height:1!important}
+/* 4 · Tiles cuyo contenedor es otro elemento (ya teñido por el tema): esquinas continuas en el contenedor y glifo limpio dentro. */
+html.tema-glass-oscuro :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield){border-radius:var(--nx-ico-tile-r)!important;corner-shape:squircle;background-image:none!important;box-shadow:none!important;filter:none!important;animation:none!important}
+html.tema-glass-oscuro :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield) i.ti{
+  background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;
+  width:auto!important;height:auto!important;min-width:0!important;padding:0!important;margin:0!important;color:inherit!important;
+  font-size:var(--nx-tile-fs,var(--nx-ico-sm))!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;filter:none!important;text-shadow:none!important}
+html.tema-glass-oscuro :is(.nxFP-hAsi,.nxFP-sideLogo,.nxTLogo,.toast .ti-ic,.mobile-more-sheet-clean .icon,.nxSL-head-icon){--nx-tile-fs:var(--nx-ico-md)}
+html.tema-glass-oscuro :is(.nxFP-emptyIco,.nxFP-qico,#loginScreen .lshield){--nx-tile-fs:var(--nx-ico-lg)}
+html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-sideLogo,html.tema-glass-oscuro .nxTLogo{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html.tema-glass-oscuro .nxFP-hAsi{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html.tema-glass-oscuro .nxFP-hAsi.warn{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
+html.tema-glass-oscuro .nxSL-head-icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html.tema-glass-oscuro .mobile-more-sheet-clean .icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html.tema-glass-oscuro #mAbono .aboSummaryIc{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1}
+html.tema-glass-oscuro #mAbono .aboShield{--ico-t:255,255,255;--ico-f:255,255,255;--ico-fa:.16;background:rgba(var(--ico-f),var(--ico-fa))!important;color:#fff!important;border:0!important}
+/* 5 · Tono por significado en los tiles que son el propio <i> (por nombre del ícono o por la categoría c-* de los accesos rápidos). */
+html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-cash,.ti-coin,.ti-currency-dollar,.ti-moneybag,.ti-pig-money,.ti-receipt,.ti-receipt-2,.ti-report-money,.ti-wallet,.ti-check,.ti-circle-check,.ti-shield-check,.ti-thumb-up,.ti-brand-whatsapp,.ti-list-check,.qa-ico.c-verde,.qa-ico.c-esmeralda),
+html.tema-glass-oscuro .nxSL-section-recibir .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-green>i.ti{--ico-t:var(--nx-ico-green);--ico-f:var(--nx-ico-tint-green);--ico-fa:.14}
+html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-alert-circle,.ti-alert-triangle,.ti-bell,.ti-clock,.ti-clock-hour-4,.ti-flame,.ti-hourglass,.ti-trophy,.ti-bolt,.ti-crown,.ti-diamond,.ti-medal,.ti-star,.ti-calendar-event,.ti-file-alert,.ti-folder-open,.qa-ico.c-ambar,.qa-ico.c-naranja),
+html.tema-glass-oscuro .nxSL-section-pend .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-amber>i.ti{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
+html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-ban,.ti-circle-x,.ti-flag,.ti-logout,.ti-power,.ti-trash,.ti-x,.ti-user-exclamation,.ti-cash-off,.ti-calendar-x,.ti-user-x,.qa-ico.c-rojo,.qa-ico.c-rosa),
+html.tema-glass-oscuro .acc-i-red>i.ti{--ico-t:var(--nx-ico-red);--ico-f:var(--nx-ico-tint-red);--ico-fa:.14}
+html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.acc-menu button) :is(.ti-adjustments,.ti-adjustments-horizontal,.ti-database,.ti-settings,.ti-tool,.ti-tools,.ti-history),
+html.tema-glass-oscuro .nxSL-section-historial .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-gray>i.ti{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
+/* 6 · Botones redondos de una sola acción en tarjetas (WhatsApp, teléfono, ⋮): 40-44 px, relleno translúcido, glifo de 20 px centrado. */
+html.tema-glass-oscuro .nxSf .fc-ico,html.tema-glass-oscuro .cliCard-more{width:40px!important;height:40px!important;border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:0!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxSf .fc-ico.wa{color:rgb(var(--nx-ico-green))!important;background:rgba(var(--nx-ico-tint-green),.14)!important}
+html.tema-glass-oscuro .nxSf .fc-ico.call{color:rgb(var(--nx-ico-blue))!important;background:rgba(var(--nx-ico-tint-blue),.16)!important}
+html.tema-glass-oscuro .nxSf table.sf-fact td[data-lb="Acciones"] .btn{min-width:44px;min-height:40px;padding:0 14px}
 /* ── avatares con iniciales: círculo plano teñido, letras claras, sin brillo ni sombra ── */
 html.tema-glass-oscuro .nxSf .fc-avwrap{filter:none!important}
 html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(252,165,165,.35)}
@@ -4291,7 +4342,7 @@ html.tema-glass-oscuro nav#sbEl .sb-av{box-shadow:none!important;background-imag
 html.tema-glass-oscuro nav#sbEl .sb-mk::after,html.tema-glass-oscuro nav#sbEl .sb-mk::before{background:none!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxOptIco.logo{box-shadow:none!important}
 /* ── entrada: escudo y campo de usuario planos (sin halo azul que respira ni sombra del ícono) ── */
-html.tema-glass-oscuro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.28)!important;box-shadow:none!important;color:#93C5FD!important}
+html.tema-glass-oscuro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.08)!important;box-shadow:none!important;color:#93C5FD!important}
 html.tema-glass-oscuro #loginScreen .lshield::before{display:none!important}
 html.tema-glass-oscuro #loginScreen .lshield i{filter:none!important;color:#93C5FD!important}
 </style>
@@ -8440,7 +8491,7 @@ function rMetasProgress(){
     <div style="font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase;color:#1e293b"><i class="ti ti-chart-bar"></i> Progreso del mes</div>
     ${m.clientes?`<div class="meta-card">
       <div class="meta-row">
-        <div class="meta-name"><i class="ti ti-sparkles"></i> Clientes nuevos</div>
+        <div class="meta-name"><i class="ti ti-user-plus"></i> Clientes nuevos</div>
         <div class="meta-val">${nuevos} / ${m.clientes}</div>
       </div>
       <div class="meta-bar"><div class="meta-fill" style="width:${pct(nuevos,m.clientes)}%;background:linear-gradient(90deg,#6d28d9,#60a5fa)"></div></div>
@@ -8487,7 +8538,7 @@ function rNotifs(){
   const hoyStr=hoyD.toISOString().slice(0,10);
   ST.clientes.filter(c=>c.created_at?.slice(0,10)===hoyStr).forEach(c=>{
     const creadoPor=c.created_by_name?' · CREADO POR: '+c.created_by_name:'';
-    _notifs.push({id:'nvo_'+c.id,icon:'<i class="ti ti-sparkles"></i>',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
+    _notifs.push({id:'nvo_'+c.id,icon:'<i class="ti ti-user-plus"></i>',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
   });
   // Facturas pendientes → navega a facturas
   const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
@@ -9822,7 +9873,7 @@ function generarEmailPreview(){
     <div style="color:#6d28d9;font-weight:600;margin-bottom:6px">${CFG.empNom}</div>
     <div style="border-top:1px solid #e2e8f0;padding-top:8px">
       <div style="margin-bottom:4px"><i class="ti ti-users"></i> Clientes activos: <strong>${act.length}</strong></div>
-      <div style="margin-bottom:4px"><i class="ti ti-sparkles"></i> Nuevos hoy: <strong>${nuevosHoy}</strong></div>
+      <div style="margin-bottom:4px"><i class="ti ti-user-plus"></i> Nuevos hoy: <strong>${nuevosHoy}</strong></div>
       <div style="margin-bottom:4px"><i class="ti ti-file-invoice"></i> Facturas hoy: <strong>${facHoy}</strong></div>
       <div style="margin-bottom:4px"><i class="ti ti-cash"></i> Prima mensual: <strong>${fmt(prima)}</strong></div>
       <div style="margin-bottom:4px"><i class="ti ti-circle-check"></i> Cobrado: <strong>${fmt(cob)}</strong></div>
@@ -11315,7 +11366,7 @@ function rCli(){
     const agTxt=(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> <span style="color:#ef4444;font-size:9px">SIN AGENTE</span>';})();
     const accMenuHTML=`<div class="acc-menu-hd">ACCIONES RÁPIDAS</div>
             <button class="acc-i-blue" onclick="editarCli('${c.id}');cerrarAccMenus()"><i class="ti ti-edit"></i> Editar</button>
-            <button class="acc-i-green" onclick="abrirAbono('${c.id}');cerrarAccMenus()"><i class="ti ti-wallet"></i> Registrar cobro</button>
+            <button class="acc-i-green" onclick="abrirAbono('${c.id}');cerrarAccMenus()"><i class="ti ti-cash"></i> Registrar cobro</button>
             <button class="acc-i-green" onclick="nxWaElegir('${c.id}');cerrarAccMenus()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
             <div class="am-sep"></div>
             <div class="acc-menu-hd">GESTIÓN</div>
@@ -11360,7 +11411,7 @@ function rCli(){
       </div>
       <div class="cr-acts">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-wallet"></i></button>
+        <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-cash"></i></button>
         <button class="btn bsm bghost" style="color:#059669" onclick="nxWaElegir('${c.id}')" title="WhatsApp — al cliente o a su agente" aria-label="Enviar WhatsApp al cliente o a su agente"><i class="ti ti-brand-whatsapp"></i></button>
         <div style="position:relative;display:inline-block">
           <button class="btn bsm bghost" onclick="toggleAccMenu(event,'${c.id}')" title="Más acciones" aria-label="Más acciones"><i class="ti ti-dots-vertical"></i></button>
@@ -11961,7 +12012,7 @@ function rFact(){
       <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
       <td data-lb="Balance" class="r"${anul?'':` role="button" tabindex="0" title="Registrar pago" aria-label="Registrar pago de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"`} style="font-weight:800;${anul?'':'cursor:pointer;'}color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
       <td data-lb="Estado"><span class="badge ${ec}">${est.pillTxt.toUpperCase()}</span></td>
-      <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}</td>
+      <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-cash','Cobrar')}</td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
         ${anul?'':btn(`event.stopPropagation();enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
         ${btn(`event.stopPropagation();nxFactMenu('${f.id}',this)`,'bghost','ti-dots-vertical','','Más acciones')}
@@ -12155,7 +12206,7 @@ function nxMesesAntVer(cid,periodoActual){
     <div class="maTot"><span>Total meses anteriores</span><span class="maTotV">RD$ ${fmtN(total)}</span></div>
     <div class="maBtns">
       <button class="maBtn maShare" onclick="nxMesesAntCompartir('${c.id}','${periodoActual||''}')"><i class="ti ti-share" aria-hidden="true"></i> Compartir</button>
-      <button class="maBtn maCobrar" onclick="closeM('mMesesAnt');cobrarDesdeFact('${c.id}')"><i class="ti ti-wallet" aria-hidden="true"></i> Cobrar</button>
+      <button class="maBtn maCobrar" onclick="closeM('mMesesAnt');cobrarDesdeFact('${c.id}')"><i class="ti ti-cash" aria-hidden="true"></i> Cobrar</button>
     </div></div>`;
   let m=document.getElementById('mMesesAnt');
   if(!m){m=document.createElement('div');m.id='mMesesAnt';m.className='overlay';m.onclick=e=>{if(e.target===m)closeM('mMesesAnt');};document.body.appendChild(m);}
