@@ -359,9 +359,10 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     ok(cab.vis.includes('tn-tog') && cab.vis.includes('pttl') && cab.vis.some(v => /notif-bell/.test(v)) && cab.alto <= 76 && cab.bb === 0, `390 cabecera mínima: menú + título «${cab.titulo}» + campana (${cab.vis.join(', ')}; ${cab.alto} px) y sin barra inferior`, cab);
     await page.screenshot({ path: OUT + PFX + 'inicio-390.png' });
     await page.evaluate(() => toggleSB()); await sleep(1200);
-    const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const a = getComputedStyle(document.getElementById('sbEl'), '::after').backgroundImage; return { r, a }; });
+    // 30-sep (menú de cristal): el panel del cajón ya no es grafito sólido sino cristal (tinte con alfa + blur ≥ 20 px).
+    const sb = await page.evaluate(() => { const r = window.__tgo.textos('#sbEl'); const c = getComputedStyle(document.getElementById('sbEl'), '::after'); return { r, a: c.backgroundImage, blur: c.backdropFilter || c.webkitBackdropFilter }; });
     const abierto = await page.evaluate(() => document.getElementById('sbEl').classList.contains('mob-open') && getComputedStyle(document.querySelector('#sbEl .ni .ni-l')).display !== 'none');
-    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgb\(19, 35, 61\)/.test(sb.a), `390 cajón móvil de siempre: abre con nombres, grafito sólido y ${sb.r.total} rótulos legibles`, sb);
+    ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgba\(30, 48, 80, 0\.62\)/.test(sb.a) && /blur\((2\d|[3-9]\d)px\)/.test(sb.blur), `390 cajón móvil de siempre: abre con nombres, cristal azul noche y ${sb.r.total} rótulos legibles`, sb);
     await page.screenshot({ path: OUT + PFX + 'menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
     const fab = await page.$('.nx-fab');
@@ -399,16 +400,17 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     const riel = await page.evaluate(() => {
       const sb = document.getElementById('sbEl'), b = sb.getBoundingClientRect();
       const items = [...sb.querySelectorAll('.ni')].filter(n => !n.closest('#sbContab,#sbConfig') && n.offsetParent && getComputedStyle(n).display !== 'none');
-      const conNombre = items.filter(n => getComputedStyle(n.querySelector('.ni-l') || n).display !== 'none' && n.querySelector('.ni-l'));
+      // 30-sep (menú de cristal): la etiqueta existe en el DOM (se revela al expandir) pero en el riel contraído va con opacidad 0
+      const conNombre = items.filter(n => n.querySelector('.ni-l') && getComputedStyle(n.querySelector('.ni-l')).display !== 'none' && +getComputedStyle(n.querySelector('.ni-l')).opacity > 0);
       const sinAria = items.filter(n => !(n.getAttribute('aria-label') || '').trim());
       const on = sb.querySelector('.spring-ind'), onR = on.getBoundingClientRect();
       const av = sb.querySelector('.sb-av').getBoundingClientRect();
       return { w: Math.round(b.width), left: Math.round(b.left), top: Math.round(b.top), bottom: Math.round(innerHeight - b.bottom), radius: getComputedStyle(sb, '::before').borderRadius, n: items.length, conNombre: conNombre.length, sinAria: sinAria.length,
-        cuadros: items.every(n => { const r = n.getBoundingClientRect(); return Math.round(r.width) === 48 && Math.round(r.height) === 48; }),
+        cuadros: items.every(n => { const r = n.getBoundingClientRect(); return Math.round(r.width) === 76 && Math.round(r.height) === 48; }), // 30-sep: filas de borde a borde (76×48)
         activo: { w: Math.round(onR.width), h: Math.round(onR.height), bg: getComputedStyle(on).backgroundColor }, avatarAbajo: Math.round(b.bottom - av.bottom) < 40 };
     });
-    ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '24px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} ítems de 48 px sin texto`, riel);
-    ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 48 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = cuadro azul 48×48, avatar al pie`, riel);
+    ok(riel.w === 76 && riel.left >= 10 && riel.top >= 10 && riel.bottom >= 10 && riel.radius === '26px' && riel.cuadros && riel.conNombre === 0, `1280 riel flotante solo de íconos: ${riel.w} px, separado de los bordes, radio ${riel.radius}, ${riel.n} filas de 76×48 sin texto visible`, riel);
+    ok(riel.sinAria === 0 && riel.activo.bg === 'rgb(37, 99, 235)' && riel.activo.w === 76 && riel.activo.h === 48 && riel.avatarAbajo, `1280 riel: aria-label en cada ícono, activo = barra azul de borde a borde 76×48, avatar al pie`, riel);
     // Gráfica «Cobros del ciclo» acumulada (58.91): último punto = cobrado en el ciclo; etiqueta del día al pasar el mouse.
     const gr = await page.evaluate(() => { const ch = _nxIG.ch, d = (t) => String(t || '').replace(/[^\d]/g, ''); return { ultimo: ch && ch.acum[ch.acum.length - 1], monotona: ch && ch.acum.every((v, i, a) => !i || v >= a[i - 1]), suma: ch && ch.serie.slice(0, ch.acum.length).reduce((s, v) => s + v, 0), ciclo: d(document.getElementById('nxIGcy1').textContent), tip: document.getElementById('nxIGchTip').textContent, sub: document.getElementById('nxIGchs').textContent }; });
     ok(gr.ultimo > 0 && String(Math.round(gr.ultimo)) === gr.ciclo && gr.monotona && gr.ultimo === gr.suma && /Acumulado/.test(gr.sub), `1280 gráfica acumulada: último punto ${gr.ultimo} = «cobrado en el ciclo» ${gr.ciclo}, sin bajadas`, gr);
