@@ -4081,10 +4081,11 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out{background:va
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in{background:var(--wa-in)!important;background-image:none!important;border:0!important;color:var(--wa-txt)!important;box-shadow:0 1px .5px rgba(11,20,26,.13)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub :is(.nxWaMsgText,p,span:not(.ti),b,strong,em){color:inherit!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub a{color:var(--wa-check)!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta){color:rgba(233,237,239,.6)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta){color:#F1F5F9!important}/* 58.95: antes rgba(233,237,239,.6) → 2.5:1 sobre el azul; ahora 4.6:1 */
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.in :is(.nxWaMsgMeta,.nxWaBubMeta){color:var(--wa-sub)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaMsgMeta,.nxWaBubMeta) .ti-checks{color:var(--wa-check)!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaQuote{background:rgba(0,0,0,.2)!important;border-left:4px solid var(--wa-green)!important;color:var(--wa-sub)!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaQuote{background:rgba(0,0,0,.28)!important;border-left:4px solid #BFDBFE!important;color:#F1F5F9!important}/* 58.95: antes var(--wa-sub) → 3.4:1 en la burbuja azul */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaQuote b{color:#BFDBFE!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaDaySep{background:var(--wa-sep)!important;color:var(--wa-sub)!important;box-shadow:none!important;border:0!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgMenu,.nxWaMsgDrop){background:#233138!important;background-image:none!important;border-color:transparent!important;color:var(--wa-txt)!important;box-shadow:0 2px 5px rgba(11,20,26,.26)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgMenu,.nxWaMsgDrop) :is(i,span,button){color:var(--wa-txt)!important}
@@ -4132,6 +4133,67 @@ html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKick
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead,.nxWaProKpi,.nxWaProHead,.nxWaListTools){background:rgba(20,41,75,.78)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi.on{background:rgba(37,99,235,.35)!important;border-color:rgba(147,197,253,.45)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead h1,.nxWaProKpi .v,.nxWaListTools b){color:#F1F5F9!important}
+/* ═══ 58.95 (30-sep-2026) — Hotfix «conversaciones de WhatsApp con fondo blanco / ilegibles» en Glass oscuro. Solo colores.
+   1) Burbujas enviadas (azul #2563EB): hora/estado, enlaces, «No enviado · Reintentar» y el reproductor de audio con contraste
+      ≥ 4.5:1; botón «Enviar recordatorio» y «ir al final» en la paleta del Buzón (las capas los pintaban verde claro / blanco).
+   2) Hojas que parches-whatsapp-visual-v5 abre FUERA de #v-waInbox (#nxWaCtxOverlay: «Contactos» y «Bauches pendientes» con
+      Aplicar/Descartar): visual-v5, contactos-uhd y sin-3d las pintan blancas con !important y el tema global deja el texto claro
+      → tarjetas blancas con letra blanca. Aquí ganan por especificidad (html.tema-glass-oscuro + :not(#tgo)). ═══ */
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out a{color:#fff!important;text-decoration:underline}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaMsgMeta .nxWaRetry{background:#DC2626;color:#fff}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out .nxWaAudioTime{opacity:1}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaAudioRate,.nxWaAudioPlay,.nxWaAudioMic){background:rgba(0,0,0,.28)}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaBtnRecordatorio{background:var(--wa-green);background-image:none;color:#fff;box-shadow:none}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaLatest{background:var(--wa-head);border-color:var(--wa-line);color:#BFDBFE;box-shadow:0 4px 12px -6px rgba(0,0,0,.6)}
+/* hoja de Contactos / Bauches (#nxWaCtxOverlay, hija de <body>) */
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxSheet:not(#tgo){background:rgba(13,28,53,.97)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:0 30px 80px -38px rgba(0,0,0,.85)!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxHead:not(#tgo){background:#14294B!important;background-image:none!important;border-bottom:1px solid rgba(147,179,221,.16)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxIcon:not(#tgo){background:rgba(37,99,235,.28)!important;background-image:none!important;color:#BFDBFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxTitle b:not(#tgo){color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxTitle span:not(#tgo){color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxClose:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(147,179,221,.22)!important;color:#CBD5E1!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxBody:not(#tgo){background:transparent!important;background-image:none!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearch:not(#tgo){background:linear-gradient(180deg,rgba(13,28,53,.98) 72%,rgba(13,28,53,0))!important}
+html.tema-glass-oscuro .nxWaCtxOverlay :is(.nxWaUhdSearchBox,.nxWaUhdTune):not(#tgo){background:#1B3358!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#BFDBFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdTune.on:not(#tgo){background:rgba(37,99,235,.35)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay :is(.nxWaUhdSearchBox i,.nxWaUhdTune):not(#tgo){color:#93C5FD!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearchBox input:not(#tgo){color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearchBox input:not(#tgo)::placeholder{color:#94A3B8!important;-webkit-text-fill-color:#94A3B8!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs:not(#tgo){background:transparent!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#CBD5E1!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs button.on:not(#tgo){background:#2563EB!important;background-image:none!important;border-color:#2563EB!important;color:#fff!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactList:not(#tgo){background:transparent!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact:not(#tgo){background:rgba(255,255,255,.05)!important;background-image:none!important;border-color:rgba(147,179,221,.16)!important;box-shadow:none!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact:not(#tgo):hover{border-color:rgba(147,197,253,.4)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av:not(#tgo){background:rgba(37,99,235,.28)!important;background-image:none!important;border-color:transparent!important;color:#BFDBFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-err:not(#tgo){background:rgba(239,68,68,.2)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-warn:not(#tgo){background:rgba(245,158,11,.2)!important;color:#FBBF24!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-ok:not(#tgo){background:rgba(34,197,94,.18)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .tx b:not(#tgo){color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .tx span:not(#tgo){color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(147,179,221,.2)!important;color:#CBD5E1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.err:not(#tgo){background:rgba(239,68,68,.18)!important;border-color:rgba(252,165,165,.3)!important;color:#FCA5A5!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.warn:not(#tgo){background:rgba(245,158,11,.18)!important;border-color:rgba(251,191,36,.3)!important;color:#FBBF24!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.ok:not(#tgo){background:rgba(34,197,94,.16)!important;border-color:rgba(74,222,128,.3)!important;color:#4ADE80!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .chev:not(#tgo){color:#94A3B8!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults:not(#tgo){color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults i:not(#tgo){background:rgba(37,99,235,.22)!important;color:#93C5FD!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults b:not(#tgo){color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot:not(#tgo){background:rgba(13,28,53,.96)!important;background-image:none!important;border-top-color:rgba(147,179,221,.16)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#BFDBFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button.primary:not(#tgo){background:rgba(37,99,235,.35)!important;border-color:rgba(147,197,253,.4)!important;color:#DBEAFE!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button.admin:not(#tgo){background:rgba(139,92,246,.18)!important;border-color:rgba(196,181,253,.3)!important;color:#DDD6FE!important}
+/* bauches pendientes: tarjeta oscura, Aplicar en verde, Descartar en rojo */
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend:not(#tgo){background:rgba(255,255,255,.06)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:none!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend b:not(#tgo){color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend div[style*="color"]:not(#tgo){color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend span[style*="color"]:not(#tgo){color:#FCA5A5!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend img:not(#tgo){background:#1B3358!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend button:not(#tgo){background:rgba(239,68,68,.16)!important;background-image:none!important;border-color:rgba(252,165,165,.3)!important;color:#FCA5A5!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend button.primary:not(#tgo){background:#15803D!important;border-color:#15803D!important;color:#fff!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty:not(#tgo){color:#9FB3D1!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty b:not(#tgo){color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty i:not(#tgo){background:rgba(34,197,94,.16)!important;color:#4ADE80!important}
 /* 58.92: cifras del Buzón ordenadas en el celular (antes 5 columnas de ~50 px: rótulos montados y cortados).
    Filas compactas ícono · rótulo · cifra: «Conversaciones» a todo el ancho y las otras cuatro en dos columnas; «Contactos» en una fila igual. */
 @media (max-width:768px){
@@ -8323,7 +8385,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.94';
+const APP_VERSION='58.95';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
