@@ -1,11 +1,11 @@
 // QA del menú lateral de cristal (30-sep-2026): app real (index.html + cadena de parches) contra la REST simulada de
 // scripts/qa-crm-mock-server.js, tema Glass oscuro, admin.
 //  · 1280×800: el riel contraído mide 76–84 px y el expandido 260–320 px; el chevron expande en < 600 ms y las etiquetas
-//    quedan visibles; el estado persiste tras recargar (ya en el primer pintado); el ítem activo tiene fondo #2563EB y ocupa
-//    todo el ancho del panel; las divisorias son degradados; el panel tiene backdrop-filter con blur ≥ 20 px y borde ≤ .12 de
+//    quedan visibles; el estado persiste tras recargar (ya en el primer pintado); el ítem activo es una píldora redondeada
+//    (radio 14, 10 px a cada lado; cuadro 48×48 en el riel) con degradado, brillo y halo; las divisorias son degradados; el panel tiene backdrop-filter con blur ≥ 20 px y borde ≤ .12 de
 //    alfa; .main no cambia de posición ni de ancho al expandir (el panel flota encima); Esc contrae; los paneles flotantes
 //    de Contabilidad siguen al borde; 6 cuadros de la transición; sin errores de consola.
-//  · 390×844 (UA iPhone): el cajón ☰ abre con el mismo lenguaje (cristal, divisorias, rótulos, activo de borde a borde,
+//  · 390×844 (UA iPhone): el cajón ☰ abre con el mismo lenguaje (cristal, divisorias, rótulos, activo como píldora con 12 px a cada lado,
 //    tarjeta de usuario), filas ≥ 44 px, sin scroll horizontal, sin superficies claras, cierra con toque fuera, con el
 //    chevron y deslizando hacia la izquierda.
 // Uso: PORT=8975 node scripts/qa-crm-mock-server.js &   QA_BASE=http://127.0.0.1:8975 QA_OUT=/ruta node scripts/qa-menu-cristal.mjs
@@ -76,7 +76,8 @@ const MEDIR = () => {
     nav: { x: r.x, w: r.width, h: r.height, cls: sb.className, open: document.documentElement.classList.contains('nx-mc-open') },
     panel: { w: bw, blur: panel.backdropFilter || panel.webkitBackdropFilter, bg: panel.backgroundImage, bgc: panel.backgroundColor, border: rgba(panel.borderTopColor), bw: panel.borderTopWidth, radius: panel.borderTopLeftRadius, shadow: panel.boxShadow, display: panel.display },
     main: { x: mr.x, w: mr.width },
-    bar: bar && { x: bar.x, w: bar.width, h: bar.height, bg: cs(barEl).backgroundColor, el: barEl.id || barEl.className, navX: navR.x, navW: navR.width },
+    bar: bar && { x: bar.x, w: bar.width, h: bar.height, bg: cs(barEl).backgroundColor, img: cs(barEl).backgroundImage, sh: cs(barEl).boxShadow, r: cs(barEl).borderTopLeftRadius, el: barEl.id || barEl.className, navX: navR.x, navW: navR.width },
+    hover: (() => { const n = [...nav.querySelectorAll('.ni:not(.on):not(#sbContab *):not(#sbConfig *)')][0]; if (!n) return null; const b = n.getBoundingClientRect(); return { x: b.x, w: b.width, h: b.height, r: cs(n).borderTopLeftRadius, navX: navR.x, navW: navR.width }; })(),
     activo: act && { t: (lbl || act).textContent.trim(), lblColor: lbl && cs(lbl).color, icoColor: cs(act.querySelector('.ni-i')).color },
     ss: ss && { txt: ss.textContent.trim(), line: cs(ss, '::before').backgroundImage, color: cs(ss).color, fs: cs(ss).fontSize, ls: cs(ss).letterSpacing, tt: cs(ss).textTransform, h: ss.getBoundingClientRect().height },
     tg: tg && { exp: tg.getAttribute('aria-expanded'), label: tg.getAttribute('aria-label'), x: tg.getBoundingClientRect().x, vis: cs(tg).display !== 'none' },
@@ -88,6 +89,10 @@ const MEDIR = () => {
 };
 const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 const esAzul = s => /rgba?\(37,\s*99,\s*235/.test(s || '');
+// 58.98: píldora redondeada = radio 14, degradado #3B82F6→#2563EB, brillo interior y halo, dentro del panel con margen m
+const esPildora = (b, m, h) => b && esAzul(b.bg) && /linear-gradient/.test(b.img) && /59, 130, 246/.test(b.img) && /37, 99, 235/.test(b.img) && /inset/.test(b.sh) && b.r === '14px'
+  && Math.abs(b.x - (b.navX + m)) < 1 && Math.abs(b.w - (b.navW - 2 * m)) < 1 && Math.round(b.h) === h;
+const BADGE = () => { const b = document.getElementById('nb1'); b.textContent = '3'; b.style.display = ''; const n = b.parentElement, br = b.getBoundingClientRect(), nr = n.getBoundingClientRect(); const r = { vis: getComputedStyle(b).display !== 'none' && br.width > 0, derecha: Math.round(nr.right - br.right), bg: getComputedStyle(b).backgroundColor, color: getComputedStyle(b).color }; b.style.display = 'none'; b.textContent = '0'; return r; };
 const esGradiente = s => /linear-gradient\(/.test(s || '') && /rgba\(0, 0, 0, 0\)|transparent/.test(s || '');
 const blurPx = s => { const m = /blur\(([\d.]+)px\)/.exec(s || ''); return m ? +m[1] : 0; };
 
@@ -120,8 +125,9 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(parseFloat(m.panel.radius) >= 24 && parseFloat(m.panel.radius) <= 28, `radio grande del panel (${m.panel.radius})`);
   ok(m.ss && esGradiente(m.ss.line), 'divisorias de sección: degradado que se desvanece en los extremos', m.ss);
   ok(m.ss && m.ss.tt === 'uppercase' && parseFloat(m.ss.fs) >= 10 && parseFloat(m.ss.ls) >= 1, `rótulo de sección en mayúsculas con tracking (${m.ss && m.ss.fs}, ${m.ss && m.ss.ls})`, m.ss);
-  ok(m.bar && esAzul(m.bar.bg) && Math.abs(m.bar.x - m.bar.navX) < 1 && Math.abs(m.bar.w - m.bar.navW) < 1, 'ítem activo (contraído): barra #2563EB de borde a borde del panel', m.bar);
-  ok(m.rows.length >= 9 && m.rows.every(r => r.h === 48 && r.w === 76), `ítems del riel: ${m.rows.length} filas de 76×48`, m.rows.slice(0, 3));
+  ok(esPildora(m.bar, 14, 48), 'ítem activo (contraído): cuadro redondeado 48×48 centrado, radio 14, degradado + brillo + halo', m.bar);
+  ok(m.rows.length >= 9 && m.rows.every(r => r.h === 48 && r.w === 48 && r.x === 12 + 14), `ítems del riel: ${m.rows.length} cuadros de 48×48 centrados (misma geometría que el activo)`, m.rows.slice(0, 3));
+  ok(m.hover && m.hover.r === '14px', 'ítems inactivos: mismo radio de 14 px (hover/pressed comparten la geometría)', m.hover);
   ok(m.labels.every(l => l.op === 0), 'contraído: etiquetas ocultas (opacidad 0)', m.labels.filter(l => l.op > 0));
   ok(m.tg.exp === 'false' && /expandir/i.test(m.tg.label), 'chevron: aria-expanded=false / «Expandir el menú»', m.tg);
   ok(m.search && m.search.pillOp === 0 && m.search.border === '0px', 'buscador: solo la lupa en el riel, sin marco de botón', m.search);
@@ -150,7 +156,10 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(m.labels.length >= 9 && m.labels.every(l => l.op === 1 && l.x > 60 && l.x + l.w <= 300 + 12), `expandido: ${m.labels.length} etiquetas visibles dentro del panel`, m.labels);
   const sol = await A.page.evaluate(() => { const l = document.querySelector('#niSolicit .ni-l'); return l && getComputedStyle(l).textTransform; });
   ok(sol === 'lowercase', '«SOLICITUDES» se muestra como «Solicitudes» (minúsculas + inicial en mayúscula)', sol);
-  ok(m.bar && esAzul(m.bar.bg) && Math.abs(m.bar.x - m.bar.navX) < 1 && Math.abs(m.bar.w - m.bar.navW) < 1 && m.bar.w >= 260, 'ítem activo (expandido): barra #2563EB de borde a borde del panel', m.bar);
+  ok(esPildora(m.bar, 10, 44) && m.bar.w >= 260, 'ítem activo (expandido): píldora de 44 px con 10 px a cada lado, radio 14, degradado + brillo + halo', m.bar);
+  ok(m.hover && m.hover.r === '14px' && Math.abs(m.hover.x - (m.hover.navX + 10)) < 1 && Math.abs(m.hover.w - (m.hover.navW - 20)) < 1 && Math.round(m.hover.h) === 44, 'ítems inactivos (expandido): misma geometría que la píldora activa', m.hover);
+  const badge = await A.page.evaluate(BADGE);
+  ok(badge.vis && badge.derecha === 12 && /239, 68, 68/.test(badge.bg) && /255, 255, 255/.test(badge.color), 'contador: blanco sobre rojo, a 12 px del borde derecho de la píldora', badge);
   ok(m.activo && /rgb\(255, 255, 255\)/.test(m.activo.lblColor) && /rgb\(255, 255, 255\)/.test(m.activo.icoColor), 'ítem activo: ícono y texto blancos', m.activo);
   ok(m.tg.exp === 'true' && /contraer/i.test(m.tg.label) && m.tg.x > 270, 'chevron: aria-expanded=true / «Contraer el menú», en el canto derecho del panel', m.tg);
   ok(m.user && m.user.nomOp === 1 && m.user.nom && !/cargando/i.test(m.user.nom), 'tarjeta de usuario: nombre visible al expandir', m.user);
@@ -193,7 +202,7 @@ async function compuesto(browser, archivos, salida, alto) {
   // navegar a otra pantalla mantiene la barra activa de borde a borde
   await A.page.evaluate(() => nav('clientes', document.querySelector('#sbEl .ni[onclick^="nav(\'clientes\'"]'))); await sleep(900);
   m = await A.page.evaluate(MEDIR);
-  ok(m.activo && m.activo.t === 'Clientes' && m.bar && esAzul(m.bar.bg) && Math.abs(m.bar.w - m.bar.navW) < 1, 'al navegar, la barra activa sigue al nuevo ítem de borde a borde', { activo: m.activo, bar: m.bar });
+  ok(m.activo && m.activo.t === 'Clientes' && esPildora(m.bar, 10, 44), 'al navegar, la píldora activa sigue al nuevo ítem con la misma geometría', { activo: m.activo, bar: m.bar });
   ok(A.errs.length === 0, 'sin errores de consola (recarga)', A.errs);
   await A.ctx.close();
 
@@ -215,8 +224,10 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(m.panel.display !== 'none' && blurPx(m.panel.blur) >= 20, `cristal en el cajón: blur ≥ 20 px (${m.panel.blur})`, m.panel);
   ok(m.panel.border && m.panel.border[3] <= 0.12 && /linear-gradient/.test(m.panel.bg), 'cajón: hairline ≤ .12 y tinte con degradado', m.panel);
   ok(m.ss && esGradiente(m.ss.line) && m.ss.tt === 'uppercase' && parseFloat(m.ss.fs) >= 11, 'cajón: divisorias en degradado y rótulos ≥ 11 px', m.ss);
-  ok(m.rows.length >= 9 && m.rows.every(r => r.h >= 44 && r.x === 0 && Math.abs(r.w - m.nav.w) <= 2), `cajón: ${m.rows.length} filas ≥ 44 px de borde a borde`, m.rows.slice(0, 4));
-  ok(m.bar && esAzul(m.bar.bg) && m.bar.x === 0 && Math.abs(m.bar.w - m.nav.w) <= 2, 'cajón: ítem activo #2563EB de borde a borde', m.bar);
+  ok(m.rows.length >= 9 && m.rows.every(r => r.h >= 44 && r.x === 12 && Math.abs(r.w - (m.nav.w - 24)) <= 2), `cajón: ${m.rows.length} filas ≥ 44 px con 12 px a cada lado`, m.rows.slice(0, 4));
+  ok(m.bar && esAzul(m.bar.bg) && /59, 130, 246/.test(m.bar.img) && /inset/.test(m.bar.sh) && m.bar.r === '14px' && m.bar.x === 12 && Math.abs(m.bar.w - (m.nav.w - 24)) <= 2 && Math.round(m.bar.h) === 48, 'cajón: ítem activo = píldora de 48 px, radio 14, 12 px a cada lado, degradado + brillo + halo', m.bar);
+  const badgeM = await M.page.evaluate(BADGE);
+  ok(badgeM.vis && badgeM.derecha === 12 && /239, 68, 68/.test(badgeM.bg), 'cajón: contador blanco sobre rojo a 12 px del borde de la píldora', badgeM);
   ok(m.labels.every(l => l.op === 1 && l.disp !== 'none'), 'cajón: etiquetas visibles', m.labels.filter(l => l.op < 1));
   ok(m.sw[0] <= m.sw[1], 'cajón: sin desplazamiento horizontal', m.sw);
   ok(m.user && m.user.nom && m.user.h >= 44, 'cajón: tarjeta de usuario (avatar, nombre, rol) ≥ 44 px', m.user);
