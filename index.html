@@ -5184,6 +5184,7 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
           <div class="ni" onclick="nav('balance',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
           <div class="ni" onclick="nav('pyg',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-chart-line ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">P&amp;G</span></div>
           <div class="ni" onclick="nav('rep-agente',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
+          <div class="ni" id="niCustodia" onclick="nav('custodia',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-wallet ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Dinero en poder</span></div>
           <div class="ni" onclick="nav('rep-plan',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
           <div class="ni" onclick="nav('rep-empresa',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
           <div class="ni" onclick="nav('rep-aging',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-clock-dollar ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Aging cartera</span></div>
@@ -5780,6 +5781,8 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
 
         <!-- REPORTES -->
         <div class="view nxSf" id="v-rep-agente"><div class="nc"><div class="ch"><span class="ct">Reporte por agente</span><button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div style="margin-bottom:10px"><select id="repAgtSel" onchange="rRepAgt()" class="nxFsel" style="width:100%"><option value="">— Todos los agentes —</option></select></div><div id="rAgt"></div></div></div>
+        <!-- Dinero en poder de cada uno (custodia por ciclo 20→20, solo lectura) -->
+        <div class="view" id="v-custodia"><div id="cusC"></div></div>
         <div class="view nxSf" id="v-rep-plan"><div class="nc"><div class="ch"><span class="ct">Reporte por plan</span><button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rPlan"></div></div></div>
         <div class="view nxSf" id="v-rep-empresa"><div class="nc"><div class="ch"><span class="ct">Reporte por empresa</span><button aria-label="Exportar a Excel (CSV)" class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rEmp"></div></div></div>
         <div class="view nxSf" id="v-rep-aging"><div class="nc"><div class="ch"><span class="ct">Aging de cartera — Antigüedad de la deuda</span></div><div id="rAging"></div></div></div>
@@ -6968,7 +6971,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:0},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'DASHBOARD',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
+const TITLES={dashboard:'DASHBOARD',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES',custodia:'DINERO EN PODER','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -11000,7 +11003,7 @@ function nav(view,el){
     if(esConsOrg){ if(typeof window.nxAbrirConsultorio==='function')window.nxAbrirConsultorio(); return; }
   }catch(e){}
   // ── Control de acceso a Contabilidad ──
-  const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','rep-aging','dgii'];
+  const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','custodia','rep-plan','rep-empresa','rep-aging','dgii'];
   if(vistasContab.includes(view)&&!tienePermiso('can_view_accounting')){
     toast('err','Acceso restringido','No tienes permiso para ver Contabilidad');
     return;
@@ -11018,7 +11021,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,'cliente360':rCliente360,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);}};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,custodia:rCustodia,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);}};
   if(fn[view])fn[view]();
   // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
   // terminen de bajar, los traemos y re-pintamos esa vista (sub-segundo).
@@ -15042,6 +15045,267 @@ function detalleAgente(a){
       <div style="padding:10px 12px;font-size:11px;font-weight:800;color:var(--tx2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>👥 CLIENTES DE ${a.nom.toUpperCase()}</span><span style="color:var(--tx3)">${todos.length}${inhab?' · '+inhab+' inhab.':''}</span></div>
       ${lista}
     </div>`;
+}
+// ══ DINERO EN PODER DE CADA UNO (custodia por ciclo 20→20) ══════════════════════════════════════════════
+// Solo lectura. Las cifras oficiales salen de la RPC rpc/seguros_resumen_ciclo_admin (= seguros_resumen_ciclo_agente_core
+// por agente, solo admin). El navegador NO recalcula la custodia: solo separa (efectivo/banco, en mano/en cuenta) y lista
+// los movimientos que explican cada cifra, con lecturas REST de abonos, entregas_admin y transferencias_agentes.
+// Regla: Efectivo → en poder de quien lo recibió. Transferencia/Depósito → en poder del DUEÑO DE LA CUENTA donde cayó
+// (entregas_admin es_directo=true: agente_id = dueño de la cuenta, cobrado_por = quien gestionó). Entregas en mano:
+// es_directo=false. Transferencias entre agentes (estado aceptada) solo cambian quién tiene el dinero: NO son cobros.
+const _cus={periodo:null,data:null,sel:null,req:0,cache:{}};
+const CUS_BANCO=m=>m==='Transferencia'||m==='Depósito';
+function cusHoyRD(){const p={};new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santo_Domingo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);return {y:+p.year,m:+p.month,d:+p.day};}
+function cusPeriodoActual(){const h=cusHoyRD();let y=h.y,m=h.m;if(h.d<20){m--;if(m<1){m=12;y--;}}return y+'-'+String(m).padStart(2,'0');}
+function cusPeriodoMas(k,n){const [y,m]=k.split('-').map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function cusPeriodoTxt(k){const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];const [y,m]=k.split('-').map(Number);const m2=m===12?1:m+1,y2=m===12?y+1:y;return '20 '+M[m-1]+(y2!==y?' '+y:'')+' → 20 '+M[m2-1]+' '+y2;}
+function cusFecha(v){if(!v)return '—';try{return new Date(v).toLocaleDateString('es-DO',{day:'2-digit',month:'short',timeZone:'America/Santo_Domingo'}).replace('.','');}catch(e){return String(v).slice(0,10);}}
+function cusN(v){const n=Number(v);return isFinite(n)?n:0;}
+function cusIgual(a,b){return Math.abs(cusN(a)-cusN(b))<0.5;}
+function cusCli(id){if(!id)return 'Sin cliente';const c=(typeof ST!=='undefined'&&ST.clientes||[]).find(x=>String(x.id)===String(id));return c?c.nom:'Cliente';}
+function cusAgNom(id,rows){const r=(rows||[]).find(x=>String(x.agente_id)===String(id));if(r)return r.agente;const a=(typeof ST!=='undefined'&&ST.agentes||[]).find(x=>String(x.id)===String(id));return a?a.nom:'Otro agente';}
+function cusNomCorto(n){n=String(n||'').trim();if(!n)return '—';return n.split(/\s+/)[0].toLowerCase().replace(/^\p{L}/u,c=>c.toUpperCase());}
+function cusEsAdmin(r){return /admin/i.test(r.cargo||'');}
+function cusCSS(){
+  if(document.getElementById('cusCSS'))return;
+  const s=document.createElement('style');s.id='cusCSS';
+  s.textContent=`
+#v-custodia{--cu-t1:var(--tgo-t1,var(--tx1,#0f172a));--cu-t2:var(--tgo-t2,var(--tx2,#334155));--cu-t3:var(--tgo-t3,var(--tx3,#64748b));--cu-card:var(--tgo-card,#fff);--cu-sub:var(--tgo-well,#f8fafc);--cu-edge:var(--tgo-edge,#e2e8f0);--cu-ok:var(--tgo-ok,#047857);--cu-okl:var(--tgo-ok-l,#ecfdf5);--cu-warn:var(--tgo-warn,#92400e);--cu-warnl:var(--tgo-warn-l,#fffbeb);--cu-err:var(--tgo-err,#b91c1c);--cu-info:var(--tgo-info,#1d4ed8);--cu-infol:var(--tgo-info-l,#eff6ff);--cu-acc:var(--tgo-blue,#2563eb)}
+#v-custodia,#v-custodia *{text-transform:none!important}
+#v-custodia .cuTotal .k,#v-custodia .cuPoder small,#v-custodia .cuGrp h4{text-transform:uppercase!important}
+#v-custodia .cuWrap{max-width:1180px;margin:0 auto;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+#v-custodia .cuHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#v-custodia .cuHead h2{margin:0;font-size:17px;font-weight:800;color:var(--cu-t1);display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
+#v-custodia .cuHead h2 i{color:var(--cu-acc);font-size:20px}
+#v-custodia .cuHead h2 small{display:block;font-size:11px;font-weight:500;color:var(--cu-t3);margin-top:2px}
+#v-custodia .cuSel{height:38px;border-radius:12px;border:1px solid var(--cu-edge);background:var(--tgo-field,#fff);color:var(--cu-t1);padding:0 10px;font-size:13px;font-weight:700;min-width:0;max-width:100%}
+#v-custodia .cuBtn{height:38px;border-radius:12px;border:1px solid var(--cu-edge);background:var(--cu-card);color:var(--cu-t1);padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#v-custodia .cuTotal{border-radius:16px;padding:14px 16px;background:var(--cu-card);border:1px solid var(--cu-edge);margin-bottom:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+#v-custodia .cuTotal .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--cu-t3);font-weight:800}
+#v-custodia .cuTotal .v{font-size:20px;font-weight:850;color:var(--cu-t1);font-variant-numeric:tabular-nums;margin-top:2px}
+#v-custodia .cuTotal .s{font-size:11px;color:var(--cu-t3);margin-top:2px;line-height:1.35}
+#v-custodia .cuTotal .v.big{color:var(--cu-ok)}
+#v-custodia .cuEq{grid-column:1/-1;font-size:12px;color:var(--cu-t2);line-height:1.5;border-top:1px solid var(--cu-edge);padding-top:9px}
+#v-custodia .cuEq b{color:var(--cu-t1)}
+#v-custodia .cuGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+#v-custodia .cuCard{border-radius:16px;background:var(--cu-card);border:1px solid var(--cu-edge);padding:14px 14px 12px;cursor:pointer;text-align:left;color:inherit;font:inherit;width:100%;display:block;transition:border-color .15s,transform .15s}
+#v-custodia .cuCard:focus-visible{outline:2px solid var(--cu-acc);outline-offset:2px}
+#v-custodia .cuCard:hover{border-color:var(--cu-acc)}
+#v-custodia .cuCard:active{transform:scale(.995)}
+#v-custodia .cuCard.on{border-color:var(--cu-acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--cu-acc) 35%,transparent)}
+#v-custodia .cuTop{display:flex;align-items:center;gap:10px}
+#v-custodia .cuAv{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,#2563eb,#1d4ed8);flex:0 0 auto}
+#v-custodia .cuAv.adm{background:linear-gradient(135deg,#7c3aed,#6d28d9)}
+#v-custodia .cuNom{flex:1;min-width:0}
+#v-custodia .cuNom b{display:block;font-size:14.5px;color:var(--cu-t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v-custodia .cuNom span{font-size:11px;color:var(--cu-t3)}
+#v-custodia .cuPoder{text-align:right}
+#v-custodia .cuPoder small{display:block;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--cu-t3)}
+#v-custodia .cuPoder strong{display:block;font-size:22px;font-weight:850;color:var(--cu-ok);font-variant-numeric:tabular-nums;line-height:1.15}
+#v-custodia .cuPoder strong.neg{color:var(--cu-err)}
+#v-custodia .cuRows{margin-top:10px;border-radius:12px;background:var(--cu-sub);padding:4px 10px}
+#v-custodia .cuRow{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:12.5px;color:var(--cu-t2);border-bottom:1px dashed var(--cu-edge)}
+#v-custodia .cuRow:last-child{border-bottom:0}
+#v-custodia .cuRow em{font-style:normal;font-size:11px;color:var(--cu-t3)}
+#v-custodia .cuRow b{font-variant-numeric:tabular-nums;color:var(--cu-t1);white-space:nowrap}
+#v-custodia .cuRow.mas b{color:var(--cu-ok)}#v-custodia .cuRow.menos b{color:var(--cu-err)}
+#v-custodia .cuRow.tot{border-top:1px solid var(--cu-edge);border-bottom:0;font-weight:800}
+#v-custodia .cuDebe{margin-top:10px;font-size:12.5px;line-height:1.45;color:var(--cu-t1);background:var(--cu-infol);border-radius:12px;padding:9px 11px}
+#v-custodia .cuAviso{margin-top:8px;font-size:11.5px;line-height:1.45;color:var(--cu-warn);background:var(--cu-warnl);border-radius:10px;padding:8px 10px;display:flex;gap:7px}
+#v-custodia .cuAviso i{flex:0 0 auto;margin-top:1px}
+#v-custodia .cuVer{margin-top:9px;font-size:11.5px;font-weight:700;color:var(--cu-info);display:flex;align-items:center;gap:4px}
+#v-custodia .cuDet{margin-top:14px;border-radius:16px;background:var(--cu-card);border:1px solid var(--cu-edge);padding:14px;scroll-margin-top:70px}
+#v-custodia .cuDetHead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#v-custodia .cuDetHead h3{flex:1;margin:0;font-size:15px;color:var(--cu-t1)}
+#v-custodia .cuGrp{margin-top:12px}
+#v-custodia .cuGrp h4{margin:0 0 6px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--cu-t3);display:flex;justify-content:space-between;gap:8px}
+#v-custodia .cuGrp h4 b{color:var(--cu-t1);font-variant-numeric:tabular-nums}
+#v-custodia .cuMov{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border-radius:10px;background:var(--cu-sub);margin-bottom:5px}
+#v-custodia .cuMov .c{font-size:12.5px;font-weight:700;color:var(--cu-t1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#v-custodia .cuMov .m{font-size:12.5px;font-weight:800;color:var(--cu-t1);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+#v-custodia .cuMov .d{grid-column:1/-1;font-size:11px;color:var(--cu-t3);line-height:1.35}
+#v-custodia .cuMov.flag{outline:1px dashed var(--cu-warn)}
+#v-custodia .cuVacio{font-size:12px;color:var(--cu-t3);padding:4px 2px}
+#v-custodia .cuNota{margin-top:12px;font-size:11.5px;line-height:1.5;color:var(--cu-t3)}
+#v-custodia .cuLoad{padding:30px;text-align:center;color:var(--cu-t3);font-size:12.5px}
+@media(max-width:600px){
+  #v-custodia .cuHead h2{font-size:15.5px;flex-basis:100%}
+  #v-custodia .cuSel{flex:1}
+  #v-custodia .cuGrid{grid-template-columns:1fr}
+  #v-custodia .cuTotal{grid-template-columns:1fr 1fr;padding:12px}
+  #v-custodia .cuTotal .v{font-size:17px}
+  #v-custodia .cuPoder strong{font-size:20px}
+  #v-custodia .cuWrap{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+}
+@media(prefers-reduced-motion:reduce){#v-custodia .cuCard{transition:none}}`;
+  document.head.appendChild(s);
+}
+async function rCustodia(){
+  const box=document.getElementById('cusC');if(!box)return;
+  cusCSS();
+  if(!(typeof sesion!=='undefined'&&sesion&&sesion.rol==='admin')){box.innerHTML='<div class="cuLoad">Este reporte es solo para el administrador.</div>';return;}
+  if(!_cus.periodo)_cus.periodo=cusPeriodoActual();
+  let opts='';const act=cusPeriodoActual();
+  for(let i=0;i<12;i++){const k=cusPeriodoMas(act,-i);opts+=`<option value="${k}"${k===_cus.periodo?' selected':''}>${cusPeriodoTxt(k)}${i===0?' · actual':''}</option>`;}
+  box.innerHTML=`<div class="cuWrap"><div class="cuHead"><h2><i class="ti ti-wallet"></i><span>Dinero en poder de cada uno<small>Quién tiene el dinero cobrado y por qué · ciclo del 20 al 20</small></span></h2>
+    <select class="cuSel" id="cusPer" aria-label="Elegir ciclo" onchange="_cus.periodo=this.value;_cus.sel=null;cusCargar()">${opts}</select>
+    <button type="button" class="cuBtn" onclick="cusCargar(true)" aria-label="Actualizar"><i class="ti ti-refresh"></i><span>Actualizar</span></button></div>
+    <div id="cusBody"><div class="cuLoad"><div class="spin" style="margin:0 auto 8px"></div>Cargando…</div></div></div>`;
+  cusCargar();
+}
+function cusDentro(t,I,C){if(!t)return false;const x=new Date(t).getTime();return x>=I&&x<C;}
+async function cusCargar(force){
+  const body=document.getElementById('cusBody');if(!body)return;
+  const per=_cus.periodo,req=++_cus.req;
+  if(force)delete _cus.cache[per];
+  if(_cus.cache[per]){_cus.data=_cus.cache[per];cusPintar();return;}
+  body.innerHTML='<div class="cuLoad"><div class="spin" style="margin:0 auto 8px"></div>Cargando las cifras del servidor…</div>';
+  try{
+    const rows=await API.post('rpc/seguros_resumen_ciclo_admin',{p_periodo:per})||[];
+    if(req!==_cus.req)return;
+    if(!rows.length){body.innerHTML='<div class="cuLoad">No hay movimientos en este ciclo.</div>';return;}
+    const I=new Date(rows[0].ciclo_inicio).getTime(),C=new Date(rows[0].corte).getTime();
+    const iI=new Date(I).toISOString(),iC=new Date(C+1).toISOString();
+    const [abonos,entregas,transf]=await Promise.all([
+      API.get('abonos',`select=id,cliente_id,monto,metodo,banco,referencia,fecha,created_at,validado_at,validacion_estado,estado,reversado_at,agente_cobro&or=(fecha.gte.${iI},validado_at.gte.${iI})&fecha=lt.${iC}&order=fecha.asc&limit=10000`),
+      API.get('entregas_admin',`select=id,agente_id,cobrado_por,monto,metodo,banco,referencia,nota,fecha,created_at,es_directo,cliente_id,abono_id,anulado,anulado_at&or=(created_at.gte.${iI},fecha.gte.${iI})&order=created_at.asc&limit=10000`),
+      API.get('transferencias_agentes',`select=id,desde_agente,hacia_agente,monto,metodo,banco,referencia,nota,fecha,created_at,aceptado_en,estado&estado=in.(aceptada,pendiente)&or=(aceptado_en.gte.${iI},fecha.gte.${iI},created_at.gte.${iI})&limit=10000`)
+    ]);
+    if(req!==_cus.req)return;
+    // Mismos filtros que seguros_resumen_ciclo_agente_core
+    const ab=(abonos||[]).filter(a=>{const t=CUS_BANCO(a.metodo)?(a.validacion_estado==='validado'?(a.validado_at||a.fecha||a.created_at):null):(a.fecha||a.created_at);
+      return a.agente_cobro&&cusDentro(t,I,C)&&((a.estado||'')!=='Reversado'||a.reversado_at)&&(!a.reversado_at||new Date(a.reversado_at).getTime()>=C);});
+    const vigente=e=>(!e.anulado||e.anulado_at)&&(!e.anulado_at||new Date(e.anulado_at).getTime()>=C);
+    const en=(entregas||[]).filter(e=>cusDentro(e.created_at||e.fecha,I,C)&&vigente(e));
+    const tr=(transf||[]).filter(t=>t.estado==='aceptada'&&cusDentro(t.aceptado_en||t.fecha||t.created_at,I,C));
+    const trPend=(transf||[]).filter(t=>t.estado==='pendiente');
+    // Entregas «directas» de los depósitos del ciclo que quedaron fuera del ciclo (desfase de fechas)
+    const enIds=new Set(en.map(e=>String(e.abono_id||'')));
+    const falta=ab.filter(a=>CUS_BANCO(a.metodo)&&!enIds.has(String(a.id))).map(a=>a.id);
+    let fuera=[];
+    if(falta.length){for(let i=0;i<falta.length;i+=60){const r=await API.get('entregas_admin',`select=id,agente_id,cobrado_por,monto,es_directo,abono_id,anulado,anulado_at,created_at,fecha&es_directo=eq.true&abono_id=in.(${falta.slice(i,i+60).join(',')})`);fuera=fuera.concat((r||[]).filter(e=>!e.anulado));}}
+    if(req!==_cus.req)return;
+    _cus.data=_cus.cache[per]={rows,I,C,ab,en,tr,trPend,fuera};
+    cusPintar();
+  }catch(e){
+    if(req!==_cus.req)return;
+    body.innerHTML=`<div class="cuLoad">No se pudieron cargar las cifras. ${escHtml(String(e&&e.message||e).slice(0,160))}<br><button type="button" class="cuBtn" style="margin-top:10px" onclick="cusCargar(true)">Reintentar</button></div>`;
+  }
+}
+// Separa las cifras del servidor (efectivo/banco, en mano/en cuenta) y arma la lista de movimientos de un agente.
+function cusAgente(r,d){
+  const id=String(r.agente_id),sum=a=>a.reduce((s,x)=>s+cusN(x.monto),0);
+  const quien=e=>String(e.cobrado_por||e.agente_id);
+  const enPorAbono={};d.en.concat(d.fuera).forEach(e=>{if(e.es_directo&&e.abono_id)enPorAbono[e.abono_id]=e;});
+  const cobros=d.ab.filter(a=>String(a.agente_cobro)===id);
+  const efectivo=cobros.filter(a=>!CUS_BANCO(a.metodo));
+  const banco=cobros.filter(a=>CUS_BANCO(a.metodo));
+  const bancoPropio=banco.filter(a=>{const e=enPorAbono[a.id];return e&&String(e.agente_id)===id;});
+  const bancoSinCuenta=banco.filter(a=>!enPorAbono[a.id]);
+  const recCuenta=d.en.filter(e=>e.es_directo&&String(e.agente_id)===id&&quien(e)!==id);
+  const depOtros=d.en.filter(e=>e.es_directo&&String(e.agente_id)!==id&&quien(e)===id);
+  const enMano=d.en.filter(e=>!e.es_directo&&String(e.agente_id)===id);
+  const envio=d.tr.filter(t=>String(t.desde_agente)===id),recibio=d.tr.filter(t=>String(t.hacia_agente)===id);
+  const pend=d.trPend.filter(t=>String(t.desde_agente)===id||String(t.hacia_agente)===id);
+  // Desfase: el cobro cuenta en este ciclo pero su depósito a la cuenta de otro se registró en otro ciclo (o al revés)
+  const desfaseCobro=banco.filter(a=>{const e=enPorAbono[a.id];return e&&String(e.agente_id)!==id&&!d.en.includes(e);});
+  const abIds=new Set(d.ab.map(a=>String(a.id)));
+  const desfaseDep=depOtros.filter(e=>e.abono_id&&!abIds.has(String(e.abono_id)));
+  const x={cobEf:sum(efectivo),cobBan:sum(banco),bancoPropio:sum(bancoPropio),bancoSinCuenta:sum(bancoSinCuenta),recCuenta:sum(recCuenta),depOtros:sum(depOtros),enMano:sum(enMano),envio:sum(envio),recibio:sum(recibio)};
+  x.ajustes=-cusN(r.reversas_cobros_previos)+cusN(r.reintegros_entregas_previas)-cusN(r.directos_previos_anulados);
+  x.inicial=cusN(r.saldo_inicial);x.final=cusN(r.saldo_final);x.ciclo=x.final-x.inicial;
+  x.efectivoNeto=x.cobEf+x.recibio-x.envio-x.enMano;
+  x.enCuenta=x.bancoPropio+x.recCuenta;
+  x.otros=x.ciclo-x.efectivoNeto-x.enCuenta;
+  x.cuadra=cusIgual(x.cobEf+x.cobBan,r.cobrado_validado)&&cusIgual(x.depOtros+x.enMano,r.entregado_admin_directo)&&cusIgual(x.recCuenta,r.directo_recibido)&&cusIgual(x.envio,r.transferido_confirmado)&&cusIgual(x.recibio,r.recibido_confirmado);
+  return {id,x,efectivo,banco,bancoPropio,bancoSinCuenta,recCuenta,depOtros,enMano,envio,recibio,pend,desfaseCobro,desfaseDep,enPorAbono};
+}
+function cusDebeTxt(r,g){
+  const x=g.x,nom=cusNomCorto(r.agente);const partes=[];
+  partes.push('efectivo '+fmt(x.efectivoNeto));
+  partes.push((cusEsAdmin(r)?'en su cuenta ':'depositado en su cuenta ')+fmt(x.enCuenta));
+  if(Math.abs(x.otros)>=0.5)partes.push((x.otros>0?'':'− ')+fmt(Math.abs(x.otros))+' por desfase de fechas o ajustes (ver detalle)');
+  const base=cusEsAdmin(r)?`<b>${escHtml(nom)}</b> (administración) tiene <b>${fmt(x.ciclo)}</b> de este ciclo`:(x.ciclo>0.5?`<b>${escHtml(nom)}</b> debe entregar <b>${fmt(x.ciclo)}</b> de este ciclo`:`<b>${escHtml(nom)}</b> no tiene dinero pendiente de este ciclo`);
+  let t=base+(x.ciclo>0.5||cusEsAdmin(r)?' ('+partes.join(' + ')+')':'')+'.';
+  if(Math.abs(x.inicial)>=0.5)t+=` Además figura con <b>${fmt(x.inicial)}</b> que trae de ciclos anteriores${r.historico_aproximado?' (cifra aproximada: confírmela antes de pedirla)':''}.`;
+  return t;
+}
+function cusPintar(){
+  const body=document.getElementById('cusBody'),d=_cus.data;if(!body||!d)return;
+  const rows=d.rows.slice().sort((a,b)=>(cusEsAdmin(b)-cusEsAdmin(a))||cusN(b.saldo_final)-cusN(a.saldo_final));
+  const G={};rows.forEach(r=>G[r.agente_id]=cusAgente(r,d));
+  const tot={cob:cusN(rows[0].total_negocio_cobrado_ciclo),ef:0,ban:0,mano:0,ciclo:0,inicial:0,final:0,ajustes:0,transf:0};
+  rows.forEach(r=>{const x=G[r.agente_id].x;tot.ef+=x.cobEf;tot.ban+=x.cobBan;tot.mano+=x.enMano;tot.ciclo+=x.ciclo;tot.inicial+=x.inicial;tot.final+=x.final;tot.ajustes+=x.ajustes;tot.transf+=x.envio;});
+  const aprox=rows.some(r=>r.historico_aproximado);
+  const row=(l,v,cls,sub)=>`<div class="cuRow ${cls||''}"><span>${l}${sub?` <em>${sub}</em>`:''}</span><b>${v}</b></div>`;
+  const cards=rows.map(r=>{const g=G[r.agente_id],x=g.x,adm=cusEsAdmin(r);
+    const avisos=[];
+    if(r.historico_aproximado&&Math.abs(x.inicial)>=0.5)avisos.push('Lo que trae de ciclos anteriores es una cifra histórica <b>aproximada</b> (hay movimientos viejos sin fecha de confirmación).');
+    if(g.desfaseCobro.length||g.desfaseDep.length)avisos.push('Hay depósitos cuyo cobro y entrega quedaron en ciclos distintos (desfase de fechas). Toque para ver cuáles.');
+    if(!x.cuadra)avisos.push('El detalle no coincide con las cifras del servidor; se muestran las del servidor.');
+    if(Math.abs(cusN(r.diferencia_reconciliacion))>=0.5)avisos.push('El servidor reporta una diferencia de '+fmt(r.diferencia_reconciliacion)+' en la conciliación.');
+    return `<div role="button" tabindex="0" class="cuCard${_cus.sel===String(r.agente_id)?' on':''}" data-ag="${escHtml(r.agente_id)}" onclick="cusVer('${escHtml(r.agente_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="${escHtml(r.agente+': en su poder '+fmt(x.final)+'. Ver movimientos')}">
+      <div class="cuTop"><div class="cuAv${adm?' adm':''}">${escHtml(cusNomCorto(r.agente).slice(0,1))}</div><div class="cuNom"><b>${escHtml(cusNomCorto(r.agente))}</b><span>${adm?'Administración':escHtml(r.cargo||'Agente')}</span></div>
+      <div class="cuPoder"><small>En su poder</small><strong class="cuEnPoder${x.final<0?' neg':''}" data-v="${x.final}">${fmt(x.final)}</strong></div></div>
+      <div class="cuRows">
+        ${row('Trae de ciclos anteriores',fmt(x.inicial),'',r.historico_aproximado?'aproximado':'')}
+        ${row('Cobró',fmt(r.cobrado_validado),'mas','efectivo '+fmt(x.cobEf)+' · banco '+fmt(x.cobBan))}
+        ${row('Recibido en su cuenta (de otros)',fmt(x.recCuenta),'mas')}
+        ${row('Recibido por transferencia',fmt(x.recibio),'mas')}
+        ${row('Depositado en cuentas de otros',fmt(x.depOtros),'menos')}
+        ${row('Entregado en mano',fmt(x.enMano),'menos')}
+        ${row('Transferido a otros',fmt(x.envio),'menos')}
+        ${Math.abs(x.ajustes)>=0.5?row('Ajustes (reversos/anulaciones)',fmt(x.ajustes),''):''}
+        ${row('De este ciclo',fmt(x.ciclo),'tot')}
+      </div>
+      <div class="cuDebe">${cusDebeTxt(r,g)}</div>
+      ${avisos.map(a=>`<div class="cuAviso"><i class="ti ti-alert-triangle"></i><span>${a}</span></div>`).join('')}
+      <div class="cuVer"><i class="ti ti-list-details"></i> Ver los movimientos</div></div>`;}).join('');
+  body.innerHTML=`<div class="cuTotal" id="cusTot">
+      <div><div class="k">Total real cobrado</div><div class="v" id="cusTotCob" data-v="${tot.cob}">${fmt(tot.cob)}</div><div class="s">Efectivo ${fmt(tot.ef)} · banco ${fmt(tot.ban)}</div></div>
+      <div><div class="k">En poder de todos · este ciclo</div><div class="v big" id="cusTotCiclo" data-v="${tot.ciclo}">${fmt(tot.ciclo)}</div><div class="s">Suma de «De este ciclo»</div></div>
+      <div><div class="k">Entregado en mano</div><div class="v" id="cusTotMano" data-v="${tot.mano}">${fmt(tot.mano)}</div><div class="s">A la administración</div></div>
+      <div><div class="k">Trae de ciclos anteriores</div><div class="v" data-v="${tot.inicial}">${fmt(tot.inicial)}</div><div class="s">${aprox?'⚠ Cifra histórica aproximada':'Saldo al iniciar el ciclo'}</div></div>
+      <div class="cuEq">Cobrado <b>${fmt(tot.cob)}</b> = en poder de todos <b>${fmt(tot.ciclo)}</b> + entregado en mano <b>${fmt(tot.mano)}</b>${Math.abs(tot.ajustes)>=0.5?' − ajustes <b>'+fmt(tot.ajustes)+'</b>':''}. Las transferencias entre agentes (${fmt(tot.transf)}) y los depósitos a cuentas de otros <b>no se suman</b>: solo cambian quién tiene el dinero.</div>
+    </div>
+    <div class="cuGrid">${cards}</div>
+    <div id="cusDet"></div>
+    <div class="cuNota"><b>Cómo se calcula:</b> efectivo, cheque o tarjeta → en poder de quien lo recibió. Transferencia o depósito → en poder del dueño de la cuenta donde cayó, aunque otro haya gestionado el cobro. Los depósitos cuentan cuando se validan. Cifras oficiales del servidor (mismas del cierre por ciclo); esta pantalla no modifica nada.</div>`;
+  if(_cus.sel&&G[_cus.sel])cusDetalle(_cus.sel,false);
+}
+function cusVer(id){
+  id=String(id);_cus.sel=_cus.sel===id?null:id;
+  document.querySelectorAll('#v-custodia .cuCard').forEach(c=>c.classList.toggle('on',c.dataset.ag===_cus.sel));
+  if(!_cus.sel){const det=document.getElementById('cusDet');if(det)det.innerHTML='';return;}
+  cusDetalle(_cus.sel,true);
+}
+function cusDetalle(id,scroll){
+  const d=_cus.data,det=document.getElementById('cusDet');if(!d||!det)return;
+  const r=d.rows.find(x=>String(x.agente_id)===id);if(!r)return;
+  const g=cusAgente(r,d),x=g.x,rows=d.rows;
+  const mov=(c,m,det2,flag)=>`<div class="cuMov${flag?' flag':''}"><span class="c">${escHtml(c)}</span><span class="m">${fmt(m)}</span><span class="d">${det2}</span></div>`;
+  const grp=(t,total,items,cls)=>`<div class="cuGrp ${cls||''}"><h4><span>${t}</span><b>${fmt(total)}</b></h4>${items.length?items.join(''):'<div class="cuVacio">Nada en este ciclo.</div>'}</div>`;
+  const fechaAb=a=>CUS_BANCO(a.metodo)?(a.validado_at||a.fecha):a.fecha||a.created_at;
+  const desfaseIds=new Set(g.desfaseCobro.map(a=>a.id));
+  const ef=g.efectivo.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo||'Efectivo')}${a.referencia&&a.referencia!=='Efectivo'?' · ref. '+escHtml(a.referencia):''}`));
+  const propios=g.bancoPropio.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · a su cuenta · lo gestionó la misma persona`))
+    .concat(g.recCuenta.map(e=>mov(cusCli(e.cliente_id),e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Depósito')}${e.banco?' '+escHtml(e.banco):''} · a su cuenta · lo gestionó ${escHtml(cusNomCorto(cusAgNom(e.cobrado_por,rows)))}`)))
+    .concat(g.bancoSinCuenta.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · sin cuenta registrada: queda en su poder`,true)));
+  const otros=g.depOtros.map(e=>mov(cusCli(e.cliente_id),e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Depósito')}${e.banco?' '+escHtml(e.banco):''} · a la cuenta de ${escHtml(cusNomCorto(cusAgNom(e.agente_id,rows)))}${g.desfaseDep.includes(e)?' · ⚠ el cobro de este depósito cuenta en otro ciclo':''}`,g.desfaseDep.includes(e)))
+    .concat(g.desfaseCobro.map(a=>{const e=g.enPorAbono[a.id];return mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · a la cuenta de ${escHtml(cusNomCorto(cusAgNom(e.agente_id,rows)))} · ⚠ cobrado ${cusFecha(a.fecha)}, validado ${cusFecha(a.validado_at)}: el cobro cuenta en este ciclo pero el depósito se descontó en otro, por eso este monto sigue sumando en su poder`,true);}));
+  const mano=g.enMano.map(e=>mov('Entrega a la administración',e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Efectivo')}${e.nota?' · '+escHtml(String(e.nota).slice(0,80)):''}`));
+  const trs=g.envio.map(t=>mov('Envió a '+cusNomCorto(cusAgNom(t.hacia_agente,rows)),-cusN(t.monto),`${cusFecha(t.aceptado_en||t.fecha)} · ${escHtml(t.metodo||'')} · confirmada`))
+    .concat(g.recibio.map(t=>mov('Recibió de '+cusNomCorto(cusAgNom(t.desde_agente,rows)),t.monto,`${cusFecha(t.aceptado_en||t.fecha)} · ${escHtml(t.metodo||'')} · confirmada`)))
+    .concat(g.pend.map(t=>mov((String(t.desde_agente)===id?'Pendiente a ':'Pendiente de ')+cusNomCorto(cusAgNom(String(t.desde_agente)===id?t.hacia_agente:t.desde_agente,rows)),t.monto,`${cusFecha(t.fecha||t.created_at)} · sin confirmar: todavía no cuenta`,true)));
+  const eq=`Trae ${fmt(x.inicial)} + cobró ${fmt(r.cobrado_validado)} + recibió en su cuenta ${fmt(x.recCuenta)} + recibió por transferencia ${fmt(x.recibio)} − depositado en cuentas de otros ${fmt(x.depOtros)} − entregado en mano ${fmt(x.enMano)} − transferido ${fmt(x.envio)}${Math.abs(x.ajustes)>=0.5?' + ajustes '+fmt(x.ajustes):''} = <b>${fmt(x.final)}</b> en su poder.`;
+  det.innerHTML=`<div class="cuDet" id="cusDetBox" data-ag="${escHtml(id)}"><div class="cuDetHead"><h3>Movimientos de ${escHtml(cusNomCorto(r.agente))} · ${escHtml(cusPeriodoTxt(_cus.periodo))}</h3><button type="button" class="cuBtn" onclick="cusVer('${escHtml(id)}')" aria-label="Cerrar detalle"><i class="ti ti-x"></i></button></div>
+    <div class="cuDebe">${eq}</div>
+    ${grp('Efectivo recibido',x.cobEf,ef)}
+    ${grp('Depósitos a su cuenta',x.bancoPropio+x.recCuenta+x.bancoSinCuenta,propios)}
+    ${grp('Depósitos a cuentas de otros',x.depOtros+g.desfaseCobro.reduce((s,a)=>s+cusN(a.monto),0),otros)}
+    ${grp('Entregas en mano',x.enMano,mano)}
+    ${grp('Transferencias',x.recibio-x.envio,trs)}</div>`;
+  if(scroll){const b=document.getElementById('cusDetBox');if(b&&b.scrollIntoView)b.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 }
 function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
 function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),hex='#6d28d9';const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%"></div></div></div>`;}).join('');}
