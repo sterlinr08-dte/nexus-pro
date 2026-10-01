@@ -4584,7 +4584,7 @@ html.tema-glass-oscuro{
 }
 html.tema-glass-oscuro.nx-mc-open{--nx-mc-w:288px}
 /* 58.98 — píldora del ítem activo (pedido del dueño: «redondearlo»): misma geometría para activo, hover y pressed */
-html.tema-glass-oscuro{--nx-mc-pill:linear-gradient(180deg,#3B82F6 0%,#2563EB 100%);--nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -8px rgba(37,99,235,.9);--nx-mc-r:14px}
+html.tema-glass-oscuro{--nx-mc-pill:linear-gradient(180deg,#2563EB 0%,#1E50D6 100%);--nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -8px rgba(37,99,235,.9);--nx-mc-r:14px}
 /* en los demás temas las piezas propias no existen visualmente (el JS las crea una sola vez; el tema puede cambiar en vivo) */
 html:not(.tema-glass-oscuro) .nx-mc-tg,html:not(.tema-glass-oscuro) .nx-mc-search,html:not(.tema-glass-oscuro) .nx-mc-out{display:none!important}
 /* ── piezas que pone parches-menu-cristal.js (chevron del canto, buscador, salida) ── */
@@ -8645,7 +8645,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.99';
+const APP_VERSION='59.00';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -16213,6 +16213,7 @@ setTimeout(verificarAutoFacturacion, 5000);
     }
     cargarConReintento('parches-busqueda-premium.js'); // 58.94: búsqueda «Premium» (lupa → píldora) de toda la app; estilos en style#nxBusquedaPremiumCSSCSS
     cargarConReintento('parches-menu-cristal.js'); // 30-sep-2026: menú lateral de cristal (chevron, buscador, Esc, deslizar); estilos en style#nxMenuCristal
+    cargarConReintento('parches-nav-botones.js'); // 01-oct-2026: botones Atrás/Cerrar de las ventanas al estilo Apple (círculos de cristal, ✕ a la derecha, ‹ a la izquierda solo en ventanas apiladas)
     cargarConReintento('parches-seguros.js');
     cargarConReintento('parches-financiamiento.js');
     cargarConReintento('parches-vehiculos.js');

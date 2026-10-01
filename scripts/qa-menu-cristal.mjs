@@ -89,8 +89,9 @@ const MEDIR = () => {
 };
 const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 const esAzul = s => /rgba?\(37,\s*99,\s*235/.test(s || '');
-// 58.98: píldora redondeada = radio 14, degradado #3B82F6→#2563EB, brillo interior y halo, dentro del panel con margen m
-const esPildora = (b, m, h) => b && esAzul(b.bg) && /linear-gradient/.test(b.img) && /59, 130, 246/.test(b.img) && /37, 99, 235/.test(b.img) && /inset/.test(b.sh) && b.r === '14px'
+// 58.98: píldora redondeada = radio 14, degradado azul, brillo interior y halo, dentro del panel con margen m
+// 59.00: degradado #2563EB→#1E50D6 (antes #3B82F6→#2563EB: texto blanco a 4.3:1 en el iPhone)
+const esPildora = (b, m, h) => b && esAzul(b.bg) && /linear-gradient/.test(b.img) && /37, 99, 235/.test(b.img) && /30, 80, 214/.test(b.img) && /inset/.test(b.sh) && b.r === '14px'
   && Math.abs(b.x - (b.navX + m)) < 1 && Math.abs(b.w - (b.navW - 2 * m)) < 1 && Math.round(b.h) === h;
 const BADGE = () => { const b = document.getElementById('nb1'); b.textContent = '3'; b.style.display = ''; const n = b.parentElement, br = b.getBoundingClientRect(), nr = n.getBoundingClientRect(); const r = { vis: getComputedStyle(b).display !== 'none' && br.width > 0, derecha: Math.round(nr.right - br.right), bg: getComputedStyle(b).backgroundColor, color: getComputedStyle(b).color }; b.style.display = 'none'; b.textContent = '0'; return r; };
 const esGradiente = s => /linear-gradient\(/.test(s || '') && /rgba\(0, 0, 0, 0\)|transparent/.test(s || '');
@@ -225,7 +226,7 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(m.panel.border && m.panel.border[3] <= 0.12 && /linear-gradient/.test(m.panel.bg), 'cajón: hairline ≤ .12 y tinte con degradado', m.panel);
   ok(m.ss && esGradiente(m.ss.line) && m.ss.tt === 'uppercase' && parseFloat(m.ss.fs) >= 11, 'cajón: divisorias en degradado y rótulos ≥ 11 px', m.ss);
   ok(m.rows.length >= 9 && m.rows.every(r => r.h >= 44 && r.x === 12 && Math.abs(r.w - (m.nav.w - 24)) <= 2), `cajón: ${m.rows.length} filas ≥ 44 px con 12 px a cada lado`, m.rows.slice(0, 4));
-  ok(m.bar && esAzul(m.bar.bg) && /59, 130, 246/.test(m.bar.img) && /inset/.test(m.bar.sh) && m.bar.r === '14px' && m.bar.x === 12 && Math.abs(m.bar.w - (m.nav.w - 24)) <= 2 && Math.round(m.bar.h) === 48, 'cajón: ítem activo = píldora de 48 px, radio 14, 12 px a cada lado, degradado + brillo + halo', m.bar);
+  ok(m.bar && esAzul(m.bar.bg) && /30, 80, 214/.test(m.bar.img) && /inset/.test(m.bar.sh) && m.bar.r === '14px' && m.bar.x === 12 && Math.abs(m.bar.w - (m.nav.w - 24)) <= 2 && Math.round(m.bar.h) === 48, 'cajón: ítem activo = píldora de 48 px, radio 14, 12 px a cada lado, degradado + brillo + halo', m.bar);
   const badgeM = await M.page.evaluate(BADGE);
   ok(badgeM.vis && badgeM.derecha === 12 && /239, 68, 68/.test(badgeM.bg), 'cajón: contador blanco sobre rojo a 12 px del borde de la píldora', badgeM);
   ok(m.labels.every(l => l.op === 1 && l.disp !== 'none'), 'cajón: etiquetas visibles', m.labels.filter(l => l.op < 1));
