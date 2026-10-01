@@ -9,6 +9,8 @@
 //    Depósito → «En poder de» el dueño de la cuenta donde se depositó, aunque otro haya gestionado el cobro.
 //  · Tras registrar: pantalla «Pago registrado» (monto, en poder de, pendiente; Ver recibo / WhatsApp / Listo), sin
 //    formulario ni botón de registrar; al abrir otro cobro vuelve el formulario limpio.
+//  · Inteligente/animado: entrada escalonada; el botón dice «Falta …» y al tocarlo lleva y resalta el campo; ✓ animado;
+//    monto que cuenta; movimiento reducido = sin animaciones.
 //  · Atajos: «1 cuota» = getTot, «Saldar» = pendiente, «Adelantar» +/− meses = pendiente + N·cuota; resumen y botón con el monto.
 // Uso: PORT=8942 node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-registrar-pago.mjs
 import { createRequire } from 'module';
@@ -101,8 +103,29 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     });
     ok(/recibió el efectivo/i.test(cust.ef.tit) && cust.ef.poder.includes('En poder de: ' + cust.nomAg) && /efectivo/i.test(cust.ef.poder), `${w}px Efectivo: «En poder de» quien recibió el efectivo`, cust.ef);
     ok(/gestionó/i.test(cust.tr.tit) && cust.tr.poder.includes('En poder de: ' + cust.nomCu) && cust.tr.poder.includes('no está en poder de ' + cust.nomAg) && /llegó el dinero/i.test(cust.tr.cuentaTit), `${w}px Transferencia: «En poder de» el dueño de la cuenta, no quien gestionó`, cust);
+    // ── inteligente: el botón dice qué falta y lleva al campo ──
+    const ent = await page.evaluate(() => { const m = document.querySelector('#mAbono .modal'); return { cls: m.classList.contains('pgIn'), an: getComputedStyle(document.querySelector('#mAbono .pgSec')).animationName }; });
+    const sm = await page.evaluate(async () => {
+      const ag = document.getElementById('aAgente'); ag.value = ''; ag.dispatchEvent(new Event('change')); nxAboActualizarResumen();
+      const sinAg = document.getElementById('btnAbo').textContent.trim();
+      const i = [...ag.options].findIndex(o => o.value); ag.value = ag.options[i].value; ag.dispatchEvent(new Event('change'));
+      const m = document.getElementById('aMet'); m.value = 'Transferencia'; m.dispatchEvent(new Event('change')); await new Promise(r => setTimeout(r, 120));
+      const b = document.getElementById('aBanco'); b.value = b.options[1].value; b.dispatchEvent(new Event('change'));
+      document.getElementById('aRef').value = '123'; nxAboActualizarResumen();
+      const sinCuenta = document.getElementById('btnAbo').textContent.trim(); const inc = document.getElementById('btnAbo').classList.contains('pgIncompleto');
+      await regAbono(); await new Promise(r => setTimeout(r, 120));
+      const marcado = document.getElementById('aDirectoWrap').classList.contains('pgFalta');
+      const cu = document.getElementById('aDirectoCuenta'); cu.value = cu.options[1].value; cu.dispatchEvent(new Event('change')); nxAboActualizarResumen();
+      const listo = document.getElementById('btnAbo').textContent.trim();
+      m.value = 'Efectivo'; m.dispatchEvent(new Event('change')); document.getElementById('aRef').value = '';
+      return { sinAg, sinCuenta, inc, marcado, listo };
+    });
+    ok(ent.cls && ent.an === 'pgSube', `${w}px entrada animada escalonada al abrir`, ent);
+    ok(/Falta elegir quién recibió/.test(sm.sinAg) && /Falta elegir la cuenta/.test(sm.sinCuenta) && sm.inc && /^Registrar RD\$/.test(sm.listo), `${w}px el botón dice qué falta y luego «Registrar RD$ X»`, sm);
+    ok(sm.marcado && rpc.length === 0, `${w}px tocar con datos incompletos lleva y resalta el campo que falta (sin registrar)`, sm);
     // ── atajos ──
     const at = await page.evaluate(() => { const c = ST.clientes.find(x => x.id === abonoCliId); const P = s => window.nxMoney ? nxMoney.parse(document.getElementById('aMnt').value) : parseFloat(document.getElementById('aMnt').value);
+      { const ag = document.getElementById('aAgente'); const i = [...ag.options].findIndex(o => o.value); ag.value = ag.options[i].value; ag.dispatchEvent(new Event('change')); }
       nxAboUnaCuota(); const una = P(); nxAboSaldar(); const sal = P(); nxAboToggleAdelanto(); const ad1 = P(); nxAboPasoMeses(1); const ad2 = P(); nxAboToggleAdelanto(); const off = P();
       return { cuota: getTot(c), pend: pend(c), una, sal, ad1, ad2, off, tit: document.getElementById('aboResumenTit').textContent, btn: document.getElementById('btnAbo').textContent.trim() }; });
     ok(at.una === at.cuota && at.sal === at.pend && at.ad1 === at.pend + at.cuota && at.ad2 === at.pend + 2 * at.cuota && at.off === at.pend, `${w}px atajos: 1 cuota / Saldar / Adelantar +1 mes / apagar`, at);
@@ -127,12 +150,19 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     ok(hecho.cls && hecho.tit === 'Pago registrado' && !hecho.form && !hecho.registrar && !hecho.cancelar && hecho.listo && hecho.recibo, `${w}px tras registrar: pantalla «Pago registrado» (sin formulario ni botón de registrar; Listo + Ver recibo)`, hecho);
     ok(/RD\$/.test(hecho.monto) && /En poder de/.test(hecho.poder) && /pendiente|al día/i.test(hecho.pend), `${w}px «Pago registrado» muestra monto, en poder de quién y lo que queda`, hecho);
     await page.screenshot({ path: OUT + `${w}-registrado.png` });
+    ok(await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono .pgOkIc')).animationName === 'pgOkPop'), `${w}px «Pago registrado» con ✓ animado`);
+    const ctr = await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono small#aQSaldarV')).color);
+    ok(/255, 255, 255/.test(ctr), `${w}px monto de «Saldar» en blanco (contraste)`, ctr);
     await page.click('#btnAboListo'); await sleep(300);
     ok(await page.evaluate(() => !document.querySelector('#mAbono.open')), `${w}px «Listo» cierra la ventana`);
     await page.evaluate(id => abrirAbono(id), A); await sleep(500);
     const otra = await page.evaluate(() => ({ cls: document.querySelector('#mAbono .modal').classList.contains('pgHecho'), tit: document.querySelector('#mAbono .modal > .mt > span').textContent, reg: getComputedStyle(document.getElementById('btnAbo')).display, ok: getComputedStyle(document.getElementById('reciboWAbtn')).display }));
     ok(!otra.cls && otra.tit === 'Registrar pago' && otra.reg !== 'none' && otra.ok === 'none', `${w}px al abrir otro cobro vuelve el formulario limpio`, otra);
     await page.evaluate(() => closeM('mAbono'));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.evaluate(id => abrirAbono(id), A); await sleep(200);
+    ok(await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono .pgSec')).animationName === 'none'), `${w}px movimiento reducido: sin animaciones`);
+    await page.evaluate(() => closeM('mAbono')); await page.emulateMedia({ reducedMotion: 'no-preference' });
     ok(errs.length === 0, `${w}px sin errores de consola`, errs);
     await ctx.close();
   }

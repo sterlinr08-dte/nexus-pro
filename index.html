@@ -4879,6 +4879,33 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
 #mAbono .nxPago:not(#_n):not(#_m) .pgOkActs .btn{min-height:46px!important;justify-content:center;font-size:14px!important;border-radius:12px!important;text-transform:none!important}
 #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAboListo{grid-column:1/-1}
 @media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .pgOkIc{animation:none}}
+/* ── animaciones (59.01): entrada escalonada, aparición de bloques, chip elegido, pulso del resumen, campo que falta ── */
+@keyframes pgSube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pgAbre{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pgPop{0%{transform:scale(1)}40%{transform:scale(.94)}100%{transform:scale(1)}}
+@keyframes pgPulso{0%{box-shadow:0 0 0 0 rgba(96,165,250,.55)}100%{box-shadow:0 0 0 12px rgba(96,165,250,0)}}
+@keyframes pgTiembla{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.modal.nxPago.pgIn:not(#_n):not(#_m)>:is(#abonoI,.pgSec,.aboSummary){animation:pgSube .42s cubic-bezier(.2,.8,.2,1) both}
+.modal.nxPago.pgIn:not(#_n):not(#_m)>.pgSec:nth-of-type(1){animation-delay:.05s}
+.modal.nxPago.pgIn:not(#_n):not(#_m)>.pgSec:nth-of-type(2){animation-delay:.10s}
+.modal.nxPago.pgIn:not(#_n):not(#_m)>.pgSec:nth-of-type(3){animation-delay:.15s}
+.modal.nxPago.pgIn:not(#_n):not(#_m)>.aboSummary{animation-delay:.2s}
+#mAbono .nxPago:not(#_n):not(#_m) :is(#aBancoCont,#aBancoOtrosCont,#aDirectoWrap,#aAdelantoBody){animation:pgAbre .32s cubic-bezier(.2,.8,.2,1) both}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip.on{animation:pgPop .32s cubic-bezier(.34,1.56,.64,1)}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip{transition:background-color .18s ease,border-color .18s ease,transform .12s ease}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip:active{transform:scale(.96)}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary.pgPulso{animation:pgPulso .6s ease-out}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder{transition:background-color .25s ease,color .25s ease}
+#mAbono .nxPago:not(#_n):not(#_m) .pgFalta{animation:pgTiembla .42s ease;border-radius:12px;box-shadow:0 0 0 2px #F59E0B!important}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo{transition:background-color .2s ease,filter .2s ease,transform .12s ease}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:active{transform:scale(.97)}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo.pgIncompleto{filter:saturate(.35) brightness(.85)}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOk{animation:pgSube .4s cubic-bezier(.2,.8,.2,1) both}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkPoder{animation:pgSube .4s .25s cubic-bezier(.2,.8,.2,1) both}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkActs{animation:pgSube .4s .35s cubic-bezier(.2,.8,.2,1) both}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn.hero small{color:#fff!important;opacity:1!important}
+@media (prefers-reduced-motion:reduce){.modal.nxPago:not(#_n):not(#_m) *,.modal.nxPago:not(#_n):not(#_m){animation:none!important}#mAbono .nxPago:not(#_n):not(#_m) .pgFalta{box-shadow:0 0 0 2px #F59E0B!important}}
+html.tema-glass-oscuro .nxpag-btn.nxpag-on{background:#0F766E!important;color:#fff!important}
 /* ── colores del tema Glass oscuro ── */
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m){color:var(--tgo-t1)}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgSecT,.aboLbl,.fr>label,#aDirectoWrap strong,#nxBaucheWrap>label){color:var(--tgo-t3)!important}
@@ -6305,7 +6332,7 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       </div>
       <div class="fr" id="aBancoCont" style="display:none"><label>Banco <span class="req">*</span></label><select id="aBanco" onchange="cambiarBancoAbono();nxAboActualizarResumen()"><option value="">Seleccionar banco...</option></select><div id="aBancoChips"></div></div>
       <div class="fr" id="aBancoOtrosCont" style="display:none"><label for="aBancoOtros">Nombre del banco <span class="req">*</span></label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" oninput="nxAboActualizarResumen()"/></div>
-      <div class="fr pgRef"><label for="aRef" id="aRefLbl">Referencia</label><input type="text" id="aRef" autocomplete="off" placeholder="Número de transferencia, cheque…"/></div>
+      <div class="fr pgRef"><label for="aRef" id="aRefLbl">Referencia</label><input type="text" id="aRef" autocomplete="off" placeholder="Número de transferencia, cheque…" oninput="nxAboActualizarResumen()"/></div>
       <div id="mAboBaucheAnchor"></div>
     </section>
     <section class="pgSec">
@@ -13578,6 +13605,7 @@ function abrirAbono(cid){
   const _ami=document.getElementById('aAdelantoMeses');if(_ami)_ami.value='';
   openM('mAbono');
   nxChipsSync('mAbono'); // repinta los chips ya con el modal visible
+  {const _md=document.querySelector('#mAbono .modal');if(_md){_md.classList.remove('pgIn');void _md.offsetWidth;_md.classList.add('pgIn');clearTimeout(_md.__pgIn);_md.__pgIn=setTimeout(()=>_md.classList.remove('pgIn'),900);}}
   {const _qb=document.getElementById('aQAdel');if(_qb){_qb.classList.remove('on');_qb.setAttribute('aria-expanded','false');}}
   nxAboPintarAtajos();
   nxAboActualizarResumen();
@@ -13679,8 +13707,16 @@ function nxAboActualizarResumen(){
   }
   if(tit)tit.textContent=monto>0?fmt(monto):'Escribe el monto';
   txt.innerHTML=escHtml(linea1)+(linea2?('<em>'+escHtml(linea2)+'</em>'):'');
+  // Botón «inteligente»: dice lo que falta; al tocarlo, regAbono lleva a ese campo (nxPagoMarcar).
+  const refV=(document.getElementById('aRef')?.value||'').trim();
+  const falta=!(monto>0)?'escribir el monto':(esBanco&&!banco)?'elegir el banco':(!refV&&metodo!=='Efectivo')?'escribir el número':(esBanco&&!cuenta)?'elegir la cuenta':!agente?(esBanco?'elegir quién gestionó':'elegir quién recibió'):'';
   const btn=document.getElementById('btnAbo');
-  if(btn&&!btn.disabled)btn.innerHTML='<i class="ti ti-check"></i> '+(monto>0?('Registrar '+fmt(monto)):'Registrar pago');
+  if(btn&&!btn.disabled){btn.innerHTML=falta?('<i class="ti ti-arrow-down"></i> Falta '+falta):('<i class="ti ti-check"></i> Registrar '+fmt(monto));btn.classList.toggle('pgIncompleto',!!falta);}
+  // Pulso suave cuando cambia el monto o quién tiene el dinero
+  const firma=(tit?tit.textContent:'')+'|'+(enPoder?enPoder.textContent:'');
+  const sum=document.querySelector('#mAbono .aboSummary');
+  if(sum&&sum.__pgFirma!==undefined&&sum.__pgFirma!==firma){sum.classList.remove('pgPulso');void sum.offsetWidth;sum.classList.add('pgPulso');}
+  if(sum)sum.__pgFirma=firma;
 }
 function nxDestinoCambio(){
   const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
@@ -14067,6 +14103,22 @@ async function verHistorialAbonos(clienteId){
 
 // Muestra la caja "envía el recibo" tras registrar un abono — SIEMPRE visible (antes se
 // escondía por completo y sin aviso si el cliente no tenía WhatsApp registrado).
+// 59.01: «inteligente» — lleva al campo que falta (desplaza, resalta con un temblor corto y enfoca si es un campo de texto).
+function nxPagoMarcar(id){
+  const el=document.getElementById(id);if(!el)return;
+  const blk=el.closest('.fr,#aDirectoWrap,.pgSec')||el;
+  try{blk.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});}catch(e){}
+  blk.classList.remove('pgFalta');void blk.offsetWidth;blk.classList.add('pgFalta');
+  clearTimeout(blk.__pgF);blk.__pgF=setTimeout(()=>blk.classList.remove('pgFalta'),1400);
+  if(/^(INPUT|TEXTAREA)$/.test(el.tagName))setTimeout(()=>{try{el.focus({preventScroll:true});}catch(e){}},250);
+}
+// Cuenta animada de un monto (respeta «reducir movimiento»)
+function nxPagoContar(el,hasta,ms){
+  if(!el)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches||!(hasta>0)){el.textContent=fmt(hasta||0);return;}
+  const t0=performance.now();ms=ms||650;cancelAnimationFrame(el.__pgRaf);
+  const paso=t=>{const k=Math.min(1,(t-t0)/ms);const e=1-Math.pow(1-k,3);el.textContent=fmt(Math.round(hasta*e));if(k<1)el.__pgRaf=requestAnimationFrame(paso);else el.textContent=fmt(hasta);};
+  el.__pgRaf=requestAnimationFrame(paso);
+}
 function mostrarCajaRecibo(c){
   // 59.01: al registrar, la ventana pasa a «Pago registrado» (sin formulario ni botón de registrar: no se puede
   // registrar dos veces sin querer). Se arma con lo que mostraba el resumen justo antes de guardar.
@@ -14075,7 +14127,7 @@ function mostrarCajaRecibo(c){
   const T=id=>{const e=document.getElementById(id);return e?e.textContent.trim():'';};
   const set=(id,v)=>{const e=document.getElementById(id);if(e){e.textContent=v||'';e.style.display=v?'':'none';}};
   const monto=(window._ultimoAbono&&window._ultimoAbono.monto)||0;
-  set('pgOkMonto',monto?fmt(monto):T('aboResumenTit'));
+  set('pgOkMonto',monto?fmt(monto):T('aboResumenTit'));if(monto)nxPagoContar(document.getElementById('pgOkMonto'),monto,700);
   set('pgOkDet',T('aboResumenTxt').replace(/(Queda pendiente|Salda todo|Salda lo pendiente|Adelanta).*$/,'').trim());
   const poder=document.getElementById('aboEnPoder');const pp=document.getElementById('pgOkPoder');
   if(pp){pp.innerHTML=poder&&!poder.classList.contains('falta')?poder.innerHTML:'';pp.style.display=pp.innerHTML?'':'none';}
@@ -14100,26 +14152,26 @@ function mostrarCajaRecibo(c){
 // NO queda ningún cobro a medias.
 async function regAbono(){
   const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
-  if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
+  if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');nxPagoMarcar('aMnt');return;}
   // VALIDACIONES nuevas: agente, referencia, banco/cuenta (si transferencia/depósito)
   // — se quedan aquí como feedback rápido; la RPC las vuelve a exigir del lado
   // del servidor, así que esto es solo UX, nunca la única barrera real.
   const agenteCobro=document.getElementById('aAgente')?.value||null;
-  if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente que cobró');return;}
+  if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente');nxPagoMarcar('aAgenteChips');return;}
   const metodo=document.getElementById('aMet').value;
   // 01-oct-2026: en Efectivo la referencia es opcional; la RPC la exige (seguros_registrar_cobro: «Referencia obligatoria»),
   // así que si queda vacía se envía «Efectivo» (antes se inventaban números tipo 9877777).
   let refValor=(document.getElementById('aRef')?.value||'').trim();
   if(!refValor&&metodo==='Efectivo')refValor='Efectivo';
-  if(!refValor){toast('err','Referencia requerida','Escribe el número de la transferencia, depósito, cheque o tarjeta');return;}
+  if(!refValor){toast('err','Referencia requerida','Escribe el número de la transferencia, depósito, cheque o tarjeta');nxPagoMarcar('aRef');return;}
   let bancoGuardar=null;
   let cuentaDestinoId=null;
   if(metodo==='Transferencia'||metodo==='Depósito'){
     const bSel=document.getElementById('aBanco')?.value||'';
-    if(!bSel){toast('err','Banco requerido','Selecciona el banco');return;}
+    if(!bSel){toast('err','Banco requerido','Selecciona el banco');nxPagoMarcar('aBancoChips');return;}
     if(bSel==='Otros'){
       const bOtros=(document.getElementById('aBancoOtros')?.value||'').trim();
-      if(!bOtros){toast('err','Banco requerido','Escribe el nombre del banco');return;}
+      if(!bOtros){toast('err','Banco requerido','Escribe el nombre del banco');nxPagoMarcar('aBancoOtros');return;}
       bancoGuardar=bOtros;
     }else{
       bancoGuardar=bSel;
@@ -14131,7 +14183,7 @@ async function regAbono(){
     // se valida aquí como UX, y quien de verdad CREA la entrega es la RPC
     // atómica del servidor — nunca el navegador.
     cuentaDestinoId=document.getElementById('aDirectoCuenta')?.value||'';
-    if(!cuentaDestinoId){toast('err','Falta la cuenta','Elige a qué cuenta se depositó el pago');return;}
+    if(!cuentaDestinoId){toast('err','Falta la cuenta','Elige a qué cuenta llegó el dinero');nxPagoMarcar('aDirectoChips');return;}
   }
   const comprobanteUrl=window._nxBaucheURL||null;
   const c=ST.clientes.find(x=>x.id===abonoCliId);
