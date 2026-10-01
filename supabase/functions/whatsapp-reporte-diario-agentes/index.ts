@@ -4,7 +4,12 @@ import { createClient } from "jsr:@supabase/supabase-js@2.112.2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ZERNIO_API_KEY = Deno.env.get("ZERNIO_API_KEY") ?? "";
-const TEMPLATE = "reporte_diario_agente";
+const TEMPLATE = "reporte_diario_agente";          // v1 (actual): un mensaje por agente + copia al admin
+// v2 (decisión del dueño 01-oct-2026): el agente recibe solo lo suyo; el administrador recibe UN solo
+// mensaje con lo suyo + el equipo + el total del negocio. Se usan solo cuando Meta las aprueba;
+// mientras tanto sigue saliendo la v1 sin cortes.
+const TEMPLATE_AGENTE_V2 = "reporte_diario_agente_v2";
+const TEMPLATE_ADMIN_V2 = "reporte_diario_admin";
 const TZ = "America/Santo_Domingo";
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
@@ -105,24 +110,140 @@ async function cargarTodos(tabla: string, columnas: string) {
   return out;
 }
 
-async function plantillaAprobada(accountId: string) {
-  const qs = new URLSearchParams({ accountId, status: "APPROVED", name: TEMPLATE, language: "es" });
+async function plantillaAprobada(accountId: string, nombre = TEMPLATE) {
+  const qs = new URLSearchParams({ accountId, status: "APPROVED", name: nombre, language: "es" });
   const r = await fetch(`https://zernio.com/api/v1/whatsapp/templates?${qs}`, {
     headers: { Authorization: `Bearer ${ZERNIO_API_KEY}` }, signal: AbortSignal.timeout(20000)
   });
   const j = await r.json().catch(() => null);
   const rows = j?.templates ?? j?.data?.templates ?? [];
-  return r.ok && Array.isArray(rows) && rows.some((t: any) => t?.name === TEMPLATE && t?.language === "es" && t?.status === "APPROVED");
+  return r.ok && Array.isArray(rows) && rows.some((t: any) => t?.name === nombre && t?.language === "es" && t?.status === "APPROVED");
 }
-async function enviar(telefono: string, accountId: string, variables: string[]) {
+async function enviar(telefono: string, accountId: string, variables: string[], plantilla = TEMPLATE) {
   const r = await fetch("https://zernio.com/api/v1/inbox/conversations", {
     method: "POST",
     headers: { Authorization: `Bearer ${ZERNIO_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ accountId, participantId: telefono, templateName: TEMPLATE, templateLanguage: "es", templateParams: variables }),
+    body: JSON.stringify({ accountId, participantId: telefono, templateName: plantilla, templateLanguage: "es", templateParams: variables }),
     signal: AbortSignal.timeout(20000)
   });
   const data = await r.json().catch(() => null);
   return { ok: r.ok && data?.success !== false, status: r.status, data };
+}
+
+// ===== Reporte v2 (01-oct-2026) =====
+// Montos sin «.00» cuando son enteros: el mensaje se lee más limpio en el teléfono.
+function fmtCorto(v: unknown) {
+  const n = Number(v) || 0;
+  const entero = Math.abs(n - Math.round(n)) < 0.005;
+  return n.toLocaleString("en-US", { minimumFractionDigits: entero ? 0 : 2, maximumFractionDigits: entero ? 0 : 2 });
+}
+// «2026-09» → «20 sep–20 oct» (el ciclo empieza el 20 de ese mes y termina el 20 del siguiente).
+function etiquetaCiclo(periodo: string) {
+  const m = Number(periodo.split("-")[1]) - 1;
+  return `20 ${MESES[m]}–20 ${MESES[(m + 1) % 12]}`;
+}
+function nombreCorto(v: unknown, max = 26) {
+  const t = String(v || "Sin nombre").replace(/\s+/g, " ").trim();
+  return t.length > max ? t.slice(0, max - 1).trimEnd() + "…" : t;
+}
+// Los atrasados que más deben primero; el resto se resume en «… y N más».
+function cobrarPrimero(atrasados: any[], n = 3) {
+  if (!atrasados.length) return "Ningún cliente atrasado 🎉";
+  const orden = [...atrasados].sort((a, b) => b.monto - a.monto);
+  const lineas = orden.slice(0, n).map((x: any) => `• ${nombreCorto(x.c.nom)} — ${x.meses} mes${x.meses === 1 ? "" : "es"} — RD$ ${fmtCorto(x.monto)}`);
+  if (orden.length > n) lineas.push(`• … y ${orden.length - n} más en NEXUS PRO`);
+  return lineas.join(" ");
+}
+
+const CUERPO_AGENTE_V2 = [
+  "📊 *Cierre del día — {{1}}*",
+  "Hola {{2}}, este es tu resumen de hoy en NEXUS PRO.",
+  "",
+  "💰 *DINERO DEL CICLO ({{3}})*",
+  "• Tenías al empezar el ciclo: RD$ {{4}}",
+  "• Cobraste en este ciclo: RD$ {{5}}",
+  "• Entregaste a administración: RD$ {{6}}",
+  "• Queda en tu poder: RD$ {{7}}",
+  "(Efectivo RD$ {{8}} · Banco RD$ {{9}})",
+  "",
+  "📅 En el ciclo anterior cobraste: RD$ {{10}}",
+  "",
+  "👥 *TUS CLIENTES*",
+  "• Atrasados: {{11}} — deben RD$ {{12}}",
+  "• En proceso: {{13}}",
+  "• Nuevos hoy: {{14}}",
+  "",
+  "⚠️ *COBRAR PRIMERO*",
+  "{{15}}",
+  "",
+  "El detalle completo está en NEXUS PRO."
+].join("\n");
+const EJEMPLO_AGENTE_V2 = ["01/10/2026", "JUAN", "20 sep–20 oct", "333,190", "93,500", "80,000", "346,690", "190,500", "156,190", "264,500", "14", "52,300", "2", "0",
+  "• María Pérez — 3 meses — RD$ 9,000 • Pedro Gómez — 2 meses — RD$ 6,000 • … y 12 más en NEXUS PRO"];
+
+const CUERPO_ADMIN_V2 = [
+  "📊 *Cierre del día — {{1}}*",
+  "Hola {{2}}, este es el resumen de hoy en NEXUS PRO.",
+  "",
+  "🏢 *NEGOCIO — CICLO {{3}}*",
+  "• Total cobrado: RD$ {{4}}",
+  "• Ciclo anterior: RD$ {{5}}",
+  "",
+  "💰 *TU DINERO*",
+  "• Tenías al empezar el ciclo: RD$ {{6}}",
+  "• Cobraste: RD$ {{7}}",
+  "• Recibiste de agentes: RD$ {{8}}",
+  "• En tu poder: RD$ {{9}}",
+  "(Efectivo RD$ {{10}} · Banco RD$ {{11}})",
+  "",
+  "👥 *TUS CLIENTES*",
+  "• Atrasados: {{12}} — deben RD$ {{13}}",
+  "• En proceso: {{14}} · Nuevos hoy: {{15}}",
+  "⚠️ Cobrar primero: {{16}}",
+  "",
+  "🧑‍💼 *EQUIPO*",
+  "{{17}}",
+  "",
+  "El detalle completo está en NEXUS PRO."
+].join("\n");
+const EJEMPLO_ADMIN_V2 = ["01/10/2026", "ANA", "20 sep–20 oct", "217,000", "409,300", "1,402,310", "123,500", "80,000", "1,605,810", "88,900", "1,516,910", "13", "41,200", "2", "0",
+  "• Luis Díaz — 4 meses — RD$ 12,000 • … y 12 más en NEXUS PRO",
+  "• JUAN: cobró RD$ 93,500 · entregó RD$ 80,000 · en su poder RD$ 346,690 · 14 atrasados (RD$ 52,300) · 2 en proceso"];
+
+// Vista previa del texto tal como lo verá el teléfono (para pruebas «dry» y para medir el largo).
+function renderizar(cuerpo: string, vars: string[]) {
+  return cuerpo.replace(/\{\{(\d+)\}\}/g, (_m, i) => vars[Number(i) - 1] ?? "");
+}
+// Meta limita el cuerpo de la plantilla a 1024 caracteres ya con las variables.
+const MAX_CUERPO = 1000;
+
+async function plantillaExiste(accountId: string, nombre: string) {
+  const qs = new URLSearchParams({ accountId, name: nombre, language: "es" });
+  const r = await fetch(`https://zernio.com/api/v1/whatsapp/templates?${qs}`, {
+    headers: { Authorization: `Bearer ${ZERNIO_API_KEY}` }, signal: AbortSignal.timeout(20000)
+  });
+  const j = await r.json().catch(() => null);
+  const rows = j?.templates ?? j?.data?.templates ?? [];
+  const t = Array.isArray(rows) ? rows.find((x: any) => x?.name === nombre && x?.language === "es") : null;
+  return t ? String(t.status || "DESCONOCIDO") : null;
+}
+// Somete a Meta (vía Zernio, mismo endpoint que whatsapp-plantilla-crear) solo las que no existen.
+async function someterPlantillasV2(accountId: string) {
+  const out: any[] = [];
+  for (const [nombre, texto, ejemplo] of [[TEMPLATE_AGENTE_V2, CUERPO_AGENTE_V2, EJEMPLO_AGENTE_V2], [TEMPLATE_ADMIN_V2, CUERPO_ADMIN_V2, EJEMPLO_ADMIN_V2]] as [string, string, string[]][]) {
+    const estado = await plantillaExiste(accountId, nombre);
+    if (estado) { out.push({ nombre, ya_existe: true, estado }); continue; }
+    const r = await fetch("https://zernio.com/api/v1/whatsapp/templates", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ZERNIO_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId, name: nombre, category: "UTILITY", language: "es",
+        components: [{ type: "body", text: texto, example: { body_text: [ejemplo] } }] }),
+      signal: AbortSignal.timeout(20000)
+    });
+    const data = await r.json().catch(() => null);
+    out.push({ nombre, sometida: r.ok, status: r.status, data });
+  }
+  return out;
 }
 
 Deno.serve(async (req: Request) => {
@@ -138,9 +259,12 @@ Deno.serve(async (req: Request) => {
     const forzar = body?.forzar === true;
     const soloAgenteId = body?.solo_agente_id ? String(body.solo_agente_id) : null;
     const soloAdmin = body?.solo_admin === true;   // pruebas: solo la copia al administrador, no al agente
+    const someter = body?.someter_plantillas === true;   // somete a Meta las plantillas v2 que falten
+    const forzarV1 = body?.v1 === true;                  // pruebas: forzar el formato viejo
 
     const { data: cfg } = await db.from("whatsapp_config").select("zernio_account_id,activo").eq("activo", true).limit(1).maybeSingle();
     if (!cfg?.zernio_account_id) return json({ ok:false, error:"whatsapp_sin_configurar" }, 409);
+    if (someter) return json({ ok:true, plantillas: await someterPlantillasV2(cfg.zernio_account_id) });
     if (!dry && !(await plantillaAprobada(cfg.zernio_account_id))) return json({ ok:false, error:"plantilla_no_aprobada" }, 409);
 
     const [{ data: agentes, error: agErr }, clientes, facturas] = await Promise.all([
@@ -170,22 +294,22 @@ Deno.serve(async (req: Request) => {
 
     // Envía el reporte de «origen» a «destino». referencia_id = agente del reporte cuando es una copia al admin,
     // así el control de «ya enviado hoy» distingue el reporte propio de cada copia.
-    async function entregar(destino: any, origen: any, variables: string[]) {
+    async function entregar(destino: any, origen: any, variables: string[], plantilla = TEMPLATE) {
       const esCopia = String(destino.id) !== String(origen.id);
-      const base = { agente_id: destino.id, referencia_id: esCopia ? origen.id : null, tipo: "reporte_diario_agente", plantilla_nombre: TEMPLATE, plantilla_variables: variables };
+      const base = { agente_id: destino.id, referencia_id: esCopia ? origen.id : null, tipo: "reporte_diario_agente", plantilla_nombre: plantilla, plantilla_variables: variables };
       const telefono = tel(destino.tel);
       if (!telefono) {
         await db.from("whatsapp_mensajes").insert({ ...base, estado: "error", error_detalle: "agente sin WhatsApp registrado" });
         return { agente: origen.nom, destino: destino.nom, ok: false, motivo: "sin_whatsapp" };
       }
       if (!forzar) {
-        let q = db.from("whatsapp_mensajes").select("id").eq("agente_id", destino.id).eq("plantilla_nombre", TEMPLATE).eq("estado", "enviado").gte("created_at", hoy.ini).lt("created_at", hoy.fin);
+        let q = db.from("whatsapp_mensajes").select("id").eq("agente_id", destino.id).eq("plantilla_nombre", plantilla).eq("estado", "enviado").gte("created_at", hoy.ini).lt("created_at", hoy.fin);
         q = esCopia ? q.eq("referencia_id", origen.id) : q.is("referencia_id", null);
         const { data: ya } = await q.limit(1);
         if (ya?.length) return { agente: origen.nom, destino: destino.nom, ok: true, skip: true, motivo: "ya_enviado_hoy" };
       }
       let r;
-      try { r = await enviar(telefono, cfg.zernio_account_id, variables); }
+      try { r = await enviar(telefono, cfg.zernio_account_id, variables, plantilla); }
       catch (e) { r = { ok:false, status:0, data:{ error:e instanceof Error ? e.message : String(e) } }; }
       if (r.ok) {
         const msgId = r.data?.data?.messageId ?? r.data?.messageId ?? null;
@@ -196,9 +320,14 @@ Deno.serve(async (req: Request) => {
       return { agente: origen.nom, destino: destino.nom, ok: false, status: r.status, detalle: r.data };
     }
 
-    const resultados: any[] = [];
+    // v2 solo cuando Meta aprobó las dos plantillas nuevas; si no, sigue el formato v1 sin cortes.
+    const v2Lista = !forzarV1 && (await plantillaAprobada(cfg.zernio_account_id, TEMPLATE_AGENTE_V2)) && (await plantillaAprobada(cfg.zernio_account_id, TEMPLATE_ADMIN_V2));
+    const etiqueta = etiquetaCiclo(periodo);
+    const periodoPrevio = ciclosAnteriores(periodo, 1)[0].periodo;
+
+    // 1) Datos de cada agente activo (todos, aunque se pida uno solo: el admin necesita los del equipo).
+    const infos: any[] = [];
     for (const a of (agentes || [])) {
-      if (soloAgenteId && String(a.id) !== soloAgenteId) continue;
       const cartera = activos.filter((c: any) => String(c.agente_id || "") === String(a.id));
       const pendientes: any[] = [];
       const atrasados: any[] = [];
@@ -233,7 +362,8 @@ Deno.serve(async (req: Request) => {
       const row = Array.isArray(resumen) ? resumen[0] : resumen;
       // Desglose efectivo/banco dentro de la misma variable {{3}}; si falla, solo el total.
       const dg = Array.isArray(desglose) ? desglose[0] : desglose;
-      const custodia = dg && Number(dg.total) === Number(acumulado)
+      const dgOk = !!dg && Number(dg.total) === Number(acumulado);
+      const custodia = dgOk
         ? `${fmtMonto(acumulado)} (Efectivo RD$ ${fmtMonto(dg.efectivo)} / Banco RD$ ${fmtMonto(dg.banco)})`
         : fmtMonto(acumulado);
 
@@ -244,12 +374,14 @@ Deno.serve(async (req: Request) => {
         const r = Array.isArray(data) ? data[0] : data;
         return { ...c, cobrado: error ? null : Number(r?.cobrado_validado) || 0 };
       }));
+      const cobradoAnterior = cobradosPrevios[0]?.cobrado ?? 0;
       while (cobradosPrevios.length && cobradosPrevios[cobradosPrevios.length - 1].cobrado === 0) cobradosPrevios.pop();
       const historial = cobradosPrevios.filter((c) => c.cobrado !== null).map((c) => `${c.etiqueta} RD$ ${fmtMonto(c.cobrado)}`);
       const cobradoCiclo = historial.length
         ? `${fmtMonto(row?.cobrado_validado || 0)} · Ciclos anteriores: ${historial.join(" · ")}`
         : fmtMonto(row?.cobrado_validado || 0);
 
+      // v1 (formato actual, 12 variables).
       const variables = [
         String(a.nom || "Agente"),
         fecha,
@@ -265,16 +397,87 @@ Deno.serve(async (req: Request) => {
         compactar(proceso.map((c:any) => `${c.nom || "Sin nombre"} — Cédula ${cedula(c)} — ${detalleProceso(c)}`))
       ].map(limpiarParam);
 
+      // Cifras del ciclo para v2. Entregado = enviado a otros (transferencias confirmadas + depósitos de sus
+      // clientes a la cuenta del admin); recibido = lo contrario. Una transferencia no es un cobro nuevo.
+      const entregado = (Number(row?.transferido_confirmado) || 0) + (Number(row?.entregado_admin_directo) || 0);
+      const recibido = (Number(row?.recibido_confirmado) || 0) + (Number(row?.directo_recibido) || 0);
+      infos.push({
+        a, variables, pendientes, atrasados, nuevos, proceso,
+        esAdmin: String(a.cargo || "").toUpperCase() === "ADMIN",
+        inicial: Number(row?.saldo_inicial) || 0,
+        cobrado: Number(row?.cobrado_validado) || 0,
+        cobradoAnterior: Number(cobradoAnterior) || 0,
+        entregado, recibido,
+        enPoder: Number(acumulado) || 0,
+        efectivo: dgOk ? Number(dg.efectivo) || 0 : null,
+        banco: dgOk ? Number(dg.banco) || 0 : null,
+        deben: atrasados.reduce((t: number, x: any) => t + x.monto, 0),
+        custodia, cobradoCiclo
+      });
+    }
+
+    // Total real del negocio = suma de lo cobrado directamente por cada agente (activos o no).
+    // Las transferencias y entregas solo mueven custodia: no se suman otra vez.
+    const { data: todos } = await db.from("agentes").select("id");
+    async function totalNegocio(p: string) {
+      const filas = await Promise.all((todos || []).map((x: any) => db.rpc("seguros_resumen_ciclo_agente_core", { p_agente_id: x.id, p_periodo: p })));
+      return filas.reduce((t: number, f: any) => { const r = Array.isArray(f.data) ? f.data[0] : f.data; return t + (Number(r?.cobrado_validado) || 0); }, 0);
+    }
+    const [negocioCiclo, negocioAnterior] = await Promise.all([totalNegocio(periodo), totalNegocio(periodoPrevio)]);
+
+    const dinero = (v: number | null) => v === null ? "—" : fmtCorto(v);
+    function varsAgenteV2(i: any, lista = 3) {
+      const entregaTxt = fmtCorto(i.entregado) + (i.recibido > 0.005 ? ` (recibiste RD$ ${fmtCorto(i.recibido)})` : "");
+      return [fecha, String(i.a.nom || "Agente"), etiqueta, fmtCorto(i.inicial), fmtCorto(i.cobrado), entregaTxt,
+        fmtCorto(i.enPoder), dinero(i.efectivo), dinero(i.banco), fmtCorto(i.cobradoAnterior),
+        String(i.atrasados.length), fmtCorto(i.deben), String(i.proceso.length), String(i.nuevos.length),
+        cobrarPrimero(i.atrasados, lista)].map(limpiarParam);
+    }
+    function lineaEquipo(i: any) {
+      const extra = i.recibido > 0.005 ? ` · recibió RD$ ${fmtCorto(i.recibido)}` : "";
+      return `• ${String(i.a.nom || "Agente")}: cobró RD$ ${fmtCorto(i.cobrado)} · entregó RD$ ${fmtCorto(i.entregado)}${extra} · en su poder RD$ ${fmtCorto(i.enPoder)} · ${i.atrasados.length} atrasado${i.atrasados.length === 1 ? "" : "s"} (RD$ ${fmtCorto(i.deben)}) · ${i.proceso.length} en proceso`;
+    }
+    function varsAdminV2(i: any, lista = 3) {
+      const equipo = infos.filter((x) => String(x.a.id) !== String(i.a.id) && !x.esAdmin).map(lineaEquipo);
+      return [fecha, String(i.a.nom || "Admin"), etiqueta, fmtCorto(negocioCiclo), fmtCorto(negocioAnterior),
+        fmtCorto(i.inicial), fmtCorto(i.cobrado), fmtCorto(i.recibido), fmtCorto(i.enPoder), dinero(i.efectivo), dinero(i.banco),
+        String(i.atrasados.length), fmtCorto(i.deben), String(i.proceso.length), String(i.nuevos.length),
+        cobrarPrimero(i.atrasados, lista), equipo.length ? equipo.join(" ") : "Sin otros agentes activos"].map(limpiarParam);
+    }
+    // Si el texto pasa del límite de Meta, se acorta la lista de «cobrar primero».
+    function ajustar(fn: (i: any, n: number) => string[], cuerpo: string, i: any) {
+      for (let n = 3; n >= 1; n--) { const v = fn(i, n); if (renderizar(cuerpo, v).length <= MAX_CUERPO || n === 1) return v; }
+      return fn(i, 1);
+    }
+
+    // 2) Envío.
+    const resultados: any[] = [];
+    for (const i of infos) {
+      const a = i.a;
+      if (soloAgenteId && String(a.id) !== soloAgenteId) continue;
+      const vAgente = ajustar(varsAgenteV2, CUERPO_AGENTE_V2, i);
+      const vAdmin = i.esAdmin ? ajustar(varsAdminV2, CUERPO_ADMIN_V2, i) : null;
+
       if (dry) {
-        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:Number(acumulado)||0, efectivo:Number(dg?.efectivo)||0, banco:Number(dg?.banco)||0, custodia, cobrado_ciclo:cobradoCiclo, cobrado_validado:Number(row?.cobrado_validado)||0, pendientes:pendientes.length, atrasados:atrasados.length, nuevos:nuevos.length, en_proceso:proceso.length, telefono_valido:!!tel(a.tel) });
+        resultados.push({ agente_id:a.id, agente:a.nom, periodo, acumulado:i.enPoder, efectivo:i.efectivo, banco:i.banco, custodia:i.custodia,
+          cobrado_ciclo:i.cobradoCiclo, cobrado_validado:i.cobrado, pendientes:i.pendientes.length, atrasados:i.atrasados.length,
+          nuevos:i.nuevos.length, en_proceso:i.proceso.length, telefono_valido:!!tel(a.tel), v2_aprobada: v2Lista,
+          vista_v2: i.esAdmin ? renderizar(CUERPO_ADMIN_V2, vAdmin!) : renderizar(CUERPO_AGENTE_V2, vAgente) });
         continue;
       }
 
-      // 1) El reporte propio de cada agente (el admin también recibe el suyo).
-      if (!soloAdmin) resultados.push(await entregar(a, a, variables));
-      // 2) Copia al administrador del reporte de cada agente que no es admin (p. ej. ROBINSON).
-      if (String(a.cargo || "").toUpperCase() !== "ADMIN") {
-        for (const ad of admins) resultados.push(await entregar(ad, a, variables));
+      if (v2Lista) {
+        // v2: el agente recibe solo lo suyo; el admin recibe UN mensaje con lo suyo + el equipo.
+        if (i.esAdmin) resultados.push(await entregar(a, a, vAdmin!, TEMPLATE_ADMIN_V2));
+        else if (!soloAdmin) resultados.push(await entregar(a, a, vAgente, TEMPLATE_AGENTE_V2));
+        continue;
+      }
+
+      // v1: el reporte propio de cada agente (el admin también recibe el suyo).
+      if (!soloAdmin) resultados.push(await entregar(a, a, i.variables));
+      // Copia al administrador del reporte de cada agente que no es admin (p. ej. ROBINSON).
+      if (!i.esAdmin) {
+        for (const ad of admins) resultados.push(await entregar(ad, a, i.variables));
       }
     }
 
@@ -288,7 +491,7 @@ Deno.serve(async (req: Request) => {
       });
     } catch (_) {}
 
-    return json({ ok:true, dry, fecha, periodo, resultados });
+    return json({ ok:true, dry, fecha, periodo, formato: v2Lista ? "v2" : "v1", total_negocio_ciclo: negocioCiclo, resultados });
   } catch (e) {
     console.error("whatsapp-reporte-diario-agentes", e);
     return json({ ok:false, error:e instanceof Error ? e.message : String(e) }, 500);
