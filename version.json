@@ -7,7 +7,8 @@
       "fecha": "2026-10-01",
       "notas": [
         "Ventanas (tema oscuro): los botones de arriba siguen la regla de Apple. Cerrar (✕) siempre a la derecha; Atrás (‹) a la izquierda solo cuando la ventana está encima de otra. Ambos son círculos de cristal iguales (44 px en el iPhone), con el ícono en blanco, y el título queda centrado.",
-        "Se quita la flecha ← que salía repetida junto a la ✕ (hacían lo mismo) y los botones blancos «← Volver» / «← Cerrar» que casi no se leían."
+        "Se quita la flecha ← que salía repetida junto a la ✕ (hacían lo mismo) y los botones blancos «← Volver» / «← Cerrar» que casi no se leían.",
+        "Menú lateral: el azul de la píldora del módulo activo es un poco más profundo para que el texto blanco se lea mejor en el iPhone (contraste 4.3 → 5.2 o más)."
       ]
     },
     {

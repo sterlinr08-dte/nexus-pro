@@ -89,8 +89,9 @@ const MEDIR = () => {
 };
 const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 const esAzul = s => /rgba?\(37,\s*99,\s*235/.test(s || '');
-// 58.98: píldora redondeada = radio 14, degradado #3B82F6→#2563EB, brillo interior y halo, dentro del panel con margen m
-const esPildora = (b, m, h) => b && esAzul(b.bg) && /linear-gradient/.test(b.img) && /59, 130, 246/.test(b.img) && /37, 99, 235/.test(b.img) && /inset/.test(b.sh) && b.r === '14px'
+// 58.98: píldora redondeada = radio 14, degradado azul, brillo interior y halo, dentro del panel con margen m
+// 59.00: degradado #2563EB→#1E50D6 (antes #3B82F6→#2563EB: texto blanco a 4.3:1 en el iPhone)
+const esPildora = (b, m, h) => b && esAzul(b.bg) && /linear-gradient/.test(b.img) && /37, 99, 235/.test(b.img) && /30, 80, 214/.test(b.img) && /inset/.test(b.sh) && b.r === '14px'
   && Math.abs(b.x - (b.navX + m)) < 1 && Math.abs(b.w - (b.navW - 2 * m)) < 1 && Math.round(b.h) === h;
 const BADGE = () => { const b = document.getElementById('nb1'); b.textContent = '3'; b.style.display = ''; const n = b.parentElement, br = b.getBoundingClientRect(), nr = n.getBoundingClientRect(); const r = { vis: getComputedStyle(b).display !== 'none' && br.width > 0, derecha: Math.round(nr.right - br.right), bg: getComputedStyle(b).backgroundColor, color: getComputedStyle(b).color }; b.style.display = 'none'; b.textContent = '0'; return r; };
 const esGradiente = s => /linear-gradient\(/.test(s || '') && /rgba\(0, 0, 0, 0\)|transparent/.test(s || '');
