@@ -1,7 +1,15 @@
 {
-  "version": "59.01",
+  "version": "59.02",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.02",
+      "fecha": "2026-10-01",
+      "notas": [
+        "Menú lateral en computadora: al abrirlo y elegir un módulo, se cierra solo. Contabilidad y Configuración solo despliegan su lista; sus opciones también lo cierran.",
+        "Menú lateral «smart» en computadora: se asoma solo si dejas el mouse sobre la barra un momento y se esconde al sacarlo; si lo abres con el botón o Ctrl+B, se queda hasta que elijas un módulo, toques fuera o pulses Esc. Después de elegir no se reabre de golpe, y con Contabilidad o Configuración desplegadas no se cierra."
+      ]
+    },
     {
       "version": "59.01",
       "fecha": "2026-10-01",
