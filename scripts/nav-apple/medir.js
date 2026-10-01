@@ -5,15 +5,19 @@ window.nxMedirVentana = function (rootSel) {
     if (!el) return false;
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0.05;
+    return r.width > 2 && r.height > 2 && cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0.05;
   };
   const roots = rootSel
     ? [document.querySelector(rootSel)]
     : [...document.querySelectorAll('.overlay.open, [data-nx-ventana]')].filter(vis);
-  const root = roots.filter(Boolean).sort((a, b) => (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0))[0];
+  // La de más arriba: mayor z-index y, a igualdad, la última en el DOM
+  const root = roots.filter(Boolean).sort((a, b) => {
+    const dz = (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0);
+    return dz || ((a.compareDocumentPosition(b) & 4) ? 1 : -1);
+  })[0];
   if (!root) return { ok: false, motivo: 'sin ventana visible' };
 
-  const head = root.querySelector('[data-nx-head], .mt, .nxm-head, .nx-sheet-head, header, .wa-chat-head, .wa-head, .pos-head, .modal-head, .mh');
+  const head = root.querySelector('[data-nx-nav-cab], :scope > .modal > .mt, :scope > .modal > .mh, :scope > .modal.nxPf > .head, :scope > .modal > .aboHead > .aboHead-row, .mt, .mh, header');
   if (!head || !vis(head)) return { ok: false, motivo: 'sin cabecera visible', root: root.id || root.className };
 
   const hr = head.getBoundingClientRect();
@@ -39,11 +43,11 @@ window.nxMedirVentana = function (rootSel) {
   const salidas = btns.map((b) => {
     const r = b.getBoundingClientRect();
     const cs = getComputedStyle(b);
-    const icon = b.querySelector('i[class*="ti-"], svg');
-    const iconCls = icon ? (icon.className.baseVal !== undefined ? 'svg' : [...icon.classList].find((c) => c.startsWith('ti-') && c !== 'ti') || '') : '';
+    const icon = [...b.querySelectorAll('i[class*="ti-"], svg')].find(vis) || null;
+    const iconCls = icon ? (icon.className.baseVal !== undefined ? 'svg:' + (icon.getAttribute('data-k') || '') : [...icon.classList].find((c) => c.startsWith('ti-') && c !== 'ti') || '') : '';
     const txt = [...b.childNodes].map((n) => (n.nodeType === 3 ? n.textContent : (n.nodeType === 1 && vis(n) && !n.matches('i,svg') ? n.textContent : ''))).join('').trim();
-    const esX = /ti-x$|ti-x\b/.test(iconCls) || /^[✕×x]$/i.test(txt) || /cerrar/i.test(b.getAttribute('aria-label') || '');
-    const esBack = /arrow-left|chevron-left|arrow-narrow-left/.test(iconCls) || /^[←‹<]/.test(txt) || /volver|atr[aá]s|regresar/i.test(txt + ' ' + (b.getAttribute('aria-label') || ''));
+    const esX = /ti-x$|ti-x\b|svg:x/.test(iconCls) || /^[✕×x]$/i.test(txt) || (!iconCls && /cerrar/i.test(b.getAttribute('aria-label') || ''));
+    const esBack = /arrow-left|chevron-left|arrow-narrow-left|svg:back/.test(iconCls) || /^[←‹<]/.test(txt) || /volver|atr[aá]s|regresar/i.test(txt) || (!iconCls && /volver/i.test(b.getAttribute('aria-label') || ''));
     if (!esX && !esBack) return null;
     const cx = r.left + r.width / 2;
     const lado = cx < hr.left + hr.width / 2 ? 'izq' : 'der';

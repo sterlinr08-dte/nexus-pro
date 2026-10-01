@@ -97,7 +97,8 @@
     ['js','parches-render-estable.js'],
     ['css','parches-fase1-ui-motion.css'],
     ['css','parches-motion-fase2.css'],
-    ['js','parches-motion-fase2.js']
+    ['js','parches-motion-fase2.js'],
+    ['js','parches-nav-apple.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
