@@ -46,6 +46,8 @@
       var m = movil(), v = !m && abierto();
       tg.setAttribute('aria-expanded', m ? 'true' : (v ? 'true' : 'false'));
       tg.setAttribute('aria-label', m ? 'Cerrar el menú' : (v ? 'Contraer el menú' : 'Expandir el menú'));
+      var mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+      tg.title = m ? 'Cerrar el menú' : ((v ? 'Contraer el menú' : 'Abrir el menú') + (mac ? ' (⌘B)' : ' (Ctrl+B)'));
     }
     function poner(v) {
       html.classList.toggle('nx-mc-open', !!v);
@@ -58,7 +60,16 @@
       if (movil()) { if (typeof window.closeMobSB === 'function') window.closeMobSB(); return; }
       poner(!abierto());
     }
-    tg.addEventListener('click', alternar);
+    tg.addEventListener('click', function () { quitarPista(); alternar(); });
+    // 59.01: pista — el botón late las primeras veces (hasta que se usa una vez); Ctrl/⌘+B abre y cierra.
+    var PISTA = 'nx_menu_cristal_visto';
+    function quitarPista() { tg.classList.remove('nx-mc-hint'); try { localStorage.setItem(PISTA, '1'); } catch (e) {} }
+    try { if (!localStorage.getItem(PISTA) && !abierto()) tg.classList.add('nx-mc-hint'); } catch (e) {}
+    document.addEventListener('keydown', function (ev) {
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey || ev.shiftKey || String(ev.key).toLowerCase() !== 'b' || !glass() || movil()) return;
+      var a = document.activeElement; if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+      ev.preventDefault(); quitarPista(); alternar();
+    });
     aria();
     window.addEventListener('resize', aria);
 

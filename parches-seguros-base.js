@@ -5894,14 +5894,14 @@
     wrap.style.cssText = 'display:none;margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--nm-bg,#eff6ff);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)';
     wrap.innerHTML = `
       <div style="display:block;font-size:11px;line-height:1.4">
-        <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">¿A qué cuenta se depositó?</strong>
+        <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">¿A qué cuenta llegó el dinero? *</strong>
         <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:9px 11px;border:none;border-radius:10px;background:var(--nm-bg,#fff);color:var(--nm-tx,#1e3a6e);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)">
           <option value="">— Elige la cuenta —</option>
         </select>
         <div id="aDirectoChips"></div>
         <span style="font-size:10px;color:var(--nm-tx2,#475569);display:block;margin-top:5px">
-          El cliente depositó/transfirió a esta cuenta. Queda como PENDIENTE DE CONFIRMAR en Solicitudes
-          hasta verificarlo — salvo que sea tu propia cuenta, que se confirma sola.
+          El dinero queda en poder del dueño de esta cuenta (no de quien gestionó el cobro). Si no es tu
+          cuenta, queda pendiente de confirmar en Solicitudes hasta verificarlo.
         </span>
       </div>
     `;
@@ -10431,8 +10431,12 @@
       if (url && exito && cid) {
         const api = getAPI();
         try {
-          const ab = await api.get('abonos', `cliente_id=eq.${cid}&order=created_at.desc&limit=1`);
-          if (ab && ab[0]) await api.patch('abonos', `id=eq.${ab[0].id}`, { comprobante_url: url });
+          // 01-oct-2026: el comprobante va al abono EXACTO que devolvió la RPC (after.abonoId), nunca a «el último
+          // abono del cliente» (dos cobros seguidos lo podían pegar al equivocado). La RPC solo lo guarda en la
+          // entrega, por eso este PATCH sigue siendo necesario. Sin id → no se adivina.
+          const abonoId = after && after.abonoId;
+          if (abonoId) await api.patch('abonos', `id=eq.${abonoId}&comprobante_url=is.null`, { comprobante_url: url });
+          else console.warn('Bauche: la RPC no devolvió abono_id; no se enlaza para no adivinar.');
         } catch (e) { console.warn('No se pudo enlazar bauche al abono:', e); }
         try {
           // Bloque 4D-1 (docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md):
