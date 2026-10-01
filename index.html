@@ -4589,15 +4589,20 @@ html.tema-glass-oscuro{--nx-mc-pill:linear-gradient(180deg,#2563EB 0%,#1E50D6 10
 html:not(.tema-glass-oscuro) .nx-mc-tg,html:not(.tema-glass-oscuro) .nx-mc-search,html:not(.tema-glass-oscuro) .nx-mc-out{display:none!important}
 /* ── piezas que pone parches-menu-cristal.js (chevron del canto, buscador, salida) ── */
 /* (los dos <button> llevan !important contra la regla global de botones «píldora» de parches-seguros-base: borde, sombra, radio y mayúsculas) */
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{position:absolute;z-index:5;display:flex;align-items:center;gap:8px;height:28px;min-height:0!important;margin:0;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{position:absolute;z-index:5;display:flex;align-items:center;gap:8px;height:34px;min-height:0!important;margin:0;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
   cursor:pointer;font:inherit;text-transform:none!important;letter-spacing:0!important;-webkit-tap-highlight-color:transparent}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c{width:28px;height:28px;border-radius:50%;background:#F8FAFC;color:#0F172A;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;
-  box-shadow:0 6px 14px -6px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12);transition:transform .16s var(--nx-mc-out)}
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#3B82F6,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
+  box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .16s var(--nx-mc-out),box-shadow .2s ease}
+/* 59.01: el botón que abre el menú se nota (34 px, azul con brillo); late las primeras veces hasta que se usa */
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:hover .nx-mc-c{box-shadow:0 8px 20px -6px rgba(37,99,235,1),0 0 0 3px rgba(147,197,253,.45),inset 0 1px 0 rgba(255,255,255,.3);transform:scale(1.06)}
+@keyframes nxMcHint{0%,100%{box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),0 0 0 0 rgba(96,165,250,.6)}50%{box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),0 0 0 10px rgba(96,165,250,0)}}
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:nxMcHint 1.6s ease-out 3}
+@media (prefers-reduced-motion:reduce){html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:none}}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{display:block;transition:transform var(--nx-mc-dur) var(--nx-mc-ease)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:active .nx-mc-c{transform:scale(.92)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible{outline:0}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #10203A,0 0 0 4px #93C5FD}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p{height:28px;padding:0 12px;border-radius:14px;background:#F8FAFC;color:#1D4ED8;font-size:13px;font-weight:700;line-height:28px;white-space:nowrap;text-transform:none!important;letter-spacing:0!important;
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p{height:30px;padding:0 12px;border-radius:14px;background:#F8FAFC;color:#1D4ED8;font-size:13px;font-weight:700;line-height:28px;white-space:nowrap;text-transform:none!important;letter-spacing:0!important;
   box-shadow:0 6px 14px -6px rgba(0,0,0,.7);opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .14s ease,transform .18s var(--nx-mc-out)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;height:44px;min-height:0!important;margin:2px 0 0;padding:0 16px 0 19px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
   cursor:pointer;font:inherit;color:#BCC7D6;text-align:left;text-transform:none!important;letter-spacing:0!important;-webkit-tap-highlight-color:transparent}
@@ -4626,7 +4631,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
     width:var(--nx-mc-w)!important;box-sizing:border-box;transition:width var(--nx-mc-dur) var(--nx-mc-ease)}
   html.tema-glass-oscuro body nav#sbEl.sb .sb-nav{padding:0 0 6px!important}
   /* chevron del canto: centrado en la fila del logo, pegado al borde derecho del panel */
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{top:24px;left:calc(var(--nx-mc-w) - 14px);transition:left var(--nx-mc-dur) var(--nx-mc-ease)}
+  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{top:21px;left:calc(var(--nx-mc-w) - 17px);transition:left var(--nx-mc-dur) var(--nx-mc-ease)}
   html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-c i{transform:rotate(180deg)}
   html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-p{opacity:1;transform:none;pointer-events:auto;transition-delay:.14s}
   /* cabecera: escudo en la columna de íconos (centro x=38) + nombre que aparece al expandir */
