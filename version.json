@@ -1,7 +1,14 @@
 {
-  "version": "58.97",
+  "version": "58.98",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "58.98",
+      "fecha": "2026-09-30",
+      "notas": [
+        "Arreglo: en Solicitudes, la tabla «Historial de entregas» salía con fondo blanco y el texto casi no se leía en el tema oscuro; ahora va sobre el cristal con cabecera y filas legibles (los montos siguen en verde)."
+      ]
+    },
     {
       "version": "58.97",
       "fecha": "2026-09-30",
