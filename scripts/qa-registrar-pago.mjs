@@ -1,10 +1,12 @@
 // QA de la ventana «Registrar pago» (#mAbono) 59.01 — app real contra scripts/qa-crm-mock-server.js, tema Glass oscuro,
 // 390×844 (iPhone) y 1280×800. Intercepta la RPC real seguros_registrar_cobro_con_entrega y el PATCH del comprobante.
 //  · Orden: cliente → monto → cómo pagó (banco · referencia · cuenta · comprobante) → quién cobró → resumen → botón.
-//  · Altura: Efectivo ≤ 900 px y Transferencia ≤ 1,450 px a 390 (antes 1,225 / ~1,860).
+//  · Altura: Efectivo ≤ 1,000 px (incluye la línea «En poder de») y Transferencia ≤ 1,450 px a 390 (antes 1,225 / ~1,860).
 //  · Lógica: método/banco/cuenta se reinician al abrir; Efectivo sin referencia envía «Efectivo»; Transferencia sin
 //    referencia no llama a la RPC; tras registrar, window._ultimoAbono.abonoId = abono_id devuelto (recibo enlazado);
 //    el comprobante se enlaza con PATCH abonos?id=eq.<abono_id>&comprobante_url=is.null (nunca «el último del cliente»).
+//  · Custodia (regla del dueño, = seguros_resumen_ciclo_agente_core): Efectivo → «En poder de» quien recibió; Transferencia/
+//    Depósito → «En poder de» el dueño de la cuenta donde se depositó, aunque otro haya gestionado el cobro.
 //  · Atajos: «1 cuota» = getTot, «Saldar» = pendiente, «Adelantar» +/− meses = pendiente + N·cuota; resumen y botón con el monto.
 // Uso: PORT=8942 node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-registrar-pago.mjs
 import { createRequire } from 'module';
@@ -66,9 +68,9 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     // ── orden y reinicio ──
     await page.evaluate(id => abrirAbono(id), A); await sleep(600);
     const orden = await page.evaluate(() => { const ids = ['abonoI', 'aMnt', 'aMetChips', 'aRef', 'nxBaucheWrap', 'aAgenteChips', 'aboResumenTxt', 'btnAbo']; return ids.map(i => { const e = document.getElementById(i); return e ? Math.round(e.getBoundingClientRect().top + document.querySelector('#mAbono .modal').scrollTop) : null; }); });
-    ok(orden.every((v, i) => v !== null && (i === 0 || v > orden[i - 1])), `${w}px orden: cliente → monto → método → referencia → comprobante → agente → resumen → botón`, orden);
+    ok(orden.every(v => v !== null) && await page.evaluate(() => { const ids = ['abonoI', 'aMnt', 'aMetChips', 'aRef', 'nxBaucheWrap', 'aAgenteChips', 'aboResumenTxt', 'btnAbo'].map(i => document.getElementById(i)); return ids.every((e, i) => i === 0 || (ids[i - 1].compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING)); }), `${w}px orden: cliente → monto → método → referencia → comprobante → agente → resumen → botón`, orden);
     ok(await page.evaluate(() => document.getElementById('aMet').value === 'Efectivo'), `${w}px abre en Efectivo`);
-    if (w < 500) { const h = await page.evaluate(ALTO); ok(h <= 900, `${w}px altura con Efectivo ≤ 900 px (${h})`, h); }
+    if (w < 500) { const h = await page.evaluate(ALTO); ok(h <= 1000, `${w}px altura con Efectivo ≤ 1,000 px (${h})`, h); }
     await page.screenshot({ path: OUT + `${w}-efectivo.png` });
     await metodo(page, 'Transferencia');
     await page.evaluate(() => { const b = document.getElementById('aBanco'); b.value = b.options[1] ? b.options[1].value : ''; b.dispatchEvent(new Event('change')); });
@@ -81,6 +83,22 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     await page.evaluate(id => abrirAbono(id), B); await sleep(600);
     const reinicio = await page.evaluate(() => ({ m: document.getElementById('aMet').value, b: document.getElementById('aBanco').value, c: (document.getElementById('aDirectoCuenta') || {}).value || '', vis: getComputedStyle(document.getElementById('aBancoCont')).display }));
     ok(reinicio.m === 'Efectivo' && !reinicio.b && !reinicio.c && reinicio.vis === 'none', `${w}px al abrir otro cliente NO se arrastra método/banco/cuenta`, reinicio);
+    // ── regla de custodia en la ventana: Efectivo → quien recibió; banco → dueño de la cuenta ──
+    const cust = await page.evaluate(async () => {
+      const sel = (id, i) => { const e = document.getElementById(id); e.value = e.options[i].value; e.dispatchEvent(new Event('change')); return e.options[i].textContent.trim(); };
+      const ag = document.getElementById('aAgente'); const iAg = [...ag.options].findIndex(o => o.value);
+      const nomAg = sel('aAgente', iAg); nxAboActualizarResumen();
+      const ef = { tit: document.getElementById('aAgenteTit').textContent, poder: document.getElementById('aboEnPoder').textContent };
+      const m = document.getElementById('aMet'); m.value = 'Transferencia'; m.dispatchEvent(new Event('change'));
+      await new Promise(r => setTimeout(r, 150));
+      const cu = document.getElementById('aDirectoCuenta'); const iCu = [...cu.options].findIndex(o => o.value && o.textContent.trim() !== nomAg);
+      const nomCu = sel('aDirectoCuenta', iCu); nxAboActualizarResumen();
+      const tr = { tit: document.getElementById('aAgenteTit').textContent, poder: document.getElementById('aboEnPoder').textContent, cuentaTit: document.querySelector('#aDirectoWrap strong').textContent };
+      m.value = 'Efectivo'; m.dispatchEvent(new Event('change'));
+      return { nomAg, nomCu, ef, tr };
+    });
+    ok(/recibió el efectivo/i.test(cust.ef.tit) && cust.ef.poder.includes('En poder de: ' + cust.nomAg) && /efectivo/i.test(cust.ef.poder), `${w}px Efectivo: «En poder de» quien recibió el efectivo`, cust.ef);
+    ok(/gestionó/i.test(cust.tr.tit) && cust.tr.poder.includes('En poder de: ' + cust.nomCu) && cust.tr.poder.includes('no está en poder de ' + cust.nomAg) && /llegó el dinero/i.test(cust.tr.cuentaTit), `${w}px Transferencia: «En poder de» el dueño de la cuenta, no quien gestionó`, cust);
     // ── atajos ──
     const at = await page.evaluate(() => { const c = ST.clientes.find(x => x.id === abonoCliId); const P = s => window.nxMoney ? nxMoney.parse(document.getElementById('aMnt').value) : parseFloat(document.getElementById('aMnt').value);
       nxAboUnaCuota(); const una = P(); nxAboSaldar(); const sal = P(); nxAboToggleAdelanto(); const ad1 = P(); nxAboPasoMeses(1); const ad2 = P(); nxAboToggleAdelanto(); const off = P();

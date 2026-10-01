@@ -4859,6 +4859,11 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
 #mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.rojo b{color:#B91C1C}
 #mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.ok b{color:#15803D}
 #mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{color:#B45309}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder{display:block;margin-top:8px;padding:8px 10px;border-radius:10px;font-size:13.5px;font-weight:700;line-height:1.35;background:rgba(22,163,74,.10);color:#15803D}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder small{display:block;font-size:12px;font-weight:600;opacity:.9;margin-top:2px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder i{margin-right:4px;vertical-align:-2px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder.falta{background:rgba(217,119,6,.12);color:#B45309}
+#mAbono .nxPago:not(#_n):not(#_m) .pgPoder:empty{display:none}
 /* ── colores del tema Glass oscuro ── */
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m){color:var(--tgo-t1)}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgSecT,.aboLbl,.fr>label,#aDirectoWrap strong,#nxBaucheWrap>label){color:var(--tgo-t3)!important}
@@ -4884,6 +4889,8 @@ html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummaryIc{backgroun
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary b{color:#fff!important}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary span{color:var(--tgo-t2)!important}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{color:#FCD34D}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgPoder{background:rgba(34,197,94,.14);color:#86EFAC}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgPoder.falta{background:rgba(245,158,11,.14);color:#FCD34D}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe{background:linear-gradient(180deg,rgba(21,42,74,0) 0%,#152A4A 22%)!important;border:0!important}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe .btn:not(.bxl){background:rgba(255,255,255,.08)!important;color:var(--tgo-t1)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
 @media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{transition:none}#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:active{transform:none}}
@@ -6284,13 +6291,15 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       <div id="mAboBaucheAnchor"></div>
     </section>
     <section class="pgSec">
-      <div class="pgSecT">Quién cobró</div>
+      <div class="pgSecT" id="aAgenteTit">¿Quién recibió el efectivo?</div>
       <div class="fr"><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select><div id="aAgenteChips"></div></div>
-      <div class="aboNote"><i class="ti ti-info-circle"></i> El agente elegido queda como responsable de este dinero.</div>
+      <div class="aboNote" id="aAgenteNota"><i class="ti ti-info-circle"></i> <span>Ese dinero queda en su poder hasta que lo entregue o lo transfiera.</span></div>
     </section>
+    <!-- REGLA DE CUSTODIA (igual que seguros_resumen_ciclo_agente_core): Efectivo → en poder de quien lo recibió.
+         Transferencia/Depósito → en poder del DUEÑO DE LA CUENTA donde cayó; quien gestionó el cobro no lo tiene. -->
     <div class="aboSummary" aria-live="polite">
       <div class="aboSummaryIc"><i class="ti ti-receipt-2"></i></div>
-      <div><b id="aboResumenTit">Resumen</b><span id="aboResumenTxt">—</span></div>
+      <div><b id="aboResumenTit">Resumen</b><span id="aboResumenTxt">—</span><strong class="pgPoder" id="aboEnPoder"></strong></div>
     </div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Pago registrado</span></div>
@@ -13626,7 +13635,17 @@ function nxAboActualizarResumen(){
   const rl=document.getElementById('aRefLbl'),ri=document.getElementById('aRef');
   const REF={Efectivo:['Referencia (opcional)','Ej. número de recibo'],Transferencia:['Número de la transferencia *','Ref. o confirmación del banco'],'Depósito':['Número del depósito *','Número del volante'],Cheque:['Número del cheque *','Número del cheque'],Tarjeta:['Aprobación de la tarjeta *','Código de aprobación']};
   const rr=REF[metodo]||REF.Efectivo;if(rl)rl.textContent=rr[0];if(ri)ri.placeholder=rr[1];
-  const linea1=[metodo+(esBanco&&banco?(' '+banco):''),esBanco?(cuenta?('→ cuenta de '+cuenta):'→ elige la cuenta'):null,agente?('cobró '+agente):'sin agente'].filter(Boolean).join(' · ');
+  // Regla de custodia (misma que el reporte por ciclo): Efectivo → quien lo recibió; banco → dueño de la cuenta.
+  const tA=document.getElementById('aAgenteTit'),nA=document.querySelector('#aAgenteNota span');
+  if(tA)tA.textContent=esBanco?'¿Quién gestionó el cobro?':'¿Quién recibió el efectivo?';
+  if(nA)nA.textContent=esBanco?'Solo indica quién atendió al cliente. El dinero queda en poder del dueño de la cuenta donde se depositó.':'Ese dinero queda en su poder hasta que lo entregue o lo transfiera.';
+  const linea1=[metodo+(esBanco&&banco?(' '+banco):''),esBanco?(cuenta?('a la cuenta de '+cuenta):'falta elegir la cuenta'):null,agente?((esBanco?'gestionó ':'recibió ')+agente):'falta elegir el agente'].filter(Boolean).join(' · ');
+  const enPoder=document.getElementById('aboEnPoder');
+  if(enPoder){
+    const quien=esBanco?cuenta:agente;
+    enPoder.innerHTML=quien?('<i class="ti ti-wallet"></i> En poder de: '+escHtml(quien)+(esBanco?(agente&&agente!==cuenta?' <small>Depositado a su cuenta — no está en poder de '+escHtml(agente)+'</small>':' <small>Depositado a su cuenta</small>'):' <small>Recibió el efectivo</small>')):'<i class="ti ti-alert-circle"></i> '+(esBanco?'Elige a qué cuenta llegó el dinero':'Elige quién recibió el efectivo');
+    enPoder.classList.toggle('falta',!quien);
+  }
   let linea2='';
   if(c&&monto>0){
     const destino=document.getElementById('aDestino')?.value||'facturas';
