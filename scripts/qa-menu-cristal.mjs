@@ -3,7 +3,8 @@
 //  · 1280×800: el riel contraído mide 76–84 px y el expandido 260–320 px; el chevron expande en < 600 ms y las etiquetas
 //    quedan visibles; el estado persiste tras recargar (ya en el primer pintado); el ítem activo es una píldora redondeada
 //    (radio 14, 10 px a cada lado; cuadro 48×48 en el riel) con degradado, brillo y halo; las divisorias son degradados; el panel tiene backdrop-filter con blur ≥ 20 px y borde ≤ .12 de
-//    alfa; .main no cambia de posición ni de ancho al expandir (el panel flota encima); Esc contrae; los paneles flotantes
+//    alfa; .main no cambia de posición ni de ancho al expandir (el panel flota encima); Esc contrae; elegir un módulo lo cierra solo
+//    (Contabilidad/Configuración solo despliegan); los paneles flotantes
 //    de Contabilidad siguen al borde; 6 cuadros de la transición; sin errores de consola.
 //  · 390×844 (UA iPhone): el cajón ☰ abre con el mismo lenguaje (cristal, divisorias, rótulos, activo como píldora con 12 px a cada lado,
 //    tarjeta de usuario), filas ≥ 44 px, sin scroll horizontal, sin superficies claras, cierra con toque fuera, con el
@@ -187,6 +188,14 @@ async function compuesto(browser, archivos, salida, alto) {
   await A.page.click('#sbEl .sb-mk'); await sleep(600);
   m = await A.page.evaluate(MEDIR);
   ok(m.nav.open && m.panel.w >= 260, 'el escudo del riel también expande', m.panel);
+  // 59.02: elegir un módulo con el menú expandido lo contrae solo; Contabilidad/Configuración solo despliegan
+  await A.page.click('#niContab'); await sleep(500);
+  ok(await A.page.evaluate(() => document.documentElement.classList.contains('nx-mc-open')), 'tocar «Contabilidad» (desplegar lista) NO cierra el menú');
+  await A.page.evaluate(() => toggleContab()); await sleep(300);
+  await A.page.evaluate(() => { const n = [...document.querySelectorAll('#sbNav .ni')].find(x => /nav\('facturas'/.test(x.getAttribute('onclick') || '')); n.click(); }); await sleep(700);
+  m = await A.page.evaluate(MEDIR);
+  ok(!m.nav.open && m.panel.w <= 84 && await A.page.evaluate(() => /facturas/i.test((document.querySelector('#sbNav .ni.on') || {}).getAttribute?.('onclick') || '')), 'elegir un módulo (Facturas) con el menú expandido lo cierra solo y abre el módulo', m.panel);
+  await A.page.click('#sbEl .nx-mc-tg'); await sleep(600);
   ok(A.errs.length === 0, 'sin errores de consola (1280)', A.errs);
   const guardado = await A.page.evaluate(() => localStorage.getItem('nx_menu_cristal'));
   ok(guardado === '1', 'estado guardado en localStorage nx_menu_cristal=1', guardado);

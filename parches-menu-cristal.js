@@ -61,6 +61,14 @@
       poner(!abierto());
     }
     tg.addEventListener('click', function () { quitarPista(); alternar(); });
+    // 59.02: en PC, con el menú expandido, elegir un módulo lo contrae solo (el panel flota sobre el contenido).
+    // Contabilidad y Configuración solo despliegan su lista (no cierran); sus opciones sí cierran.
+    navEl.addEventListener('click', function (ev) {
+      var it = ev.target && ev.target.closest && ev.target.closest('.ni');
+      if (!it || !navEl.contains(it) || it.id === 'niContab' || it.id === 'niAdmin2') return;
+      if (!glass() || movil() || !abierto()) return;
+      setTimeout(function () { if (abierto()) poner(false); }, 140); // deja ver la píldora pasar al módulo elegido
+    });
     // 59.01: pista — el botón late las primeras veces (hasta que se usa una vez); Ctrl/⌘+B abre y cierra.
     var PISTA = 'nx_menu_cristal_visto';
     function quitarPista() { tg.classList.remove('nx-mc-hint'); try { localStorage.setItem(PISTA, '1'); } catch (e) {} }

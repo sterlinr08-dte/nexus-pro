@@ -1,7 +1,14 @@
 {
-  "version": "59.01",
+  "version": "59.02",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.02",
+      "fecha": "2026-10-01",
+      "notas": [
+        "Menú lateral en computadora: al abrirlo y elegir un módulo, se cierra solo. Contabilidad y Configuración solo despliegan su lista; sus opciones también lo cierran."
+      ]
+    },
     {
       "version": "59.01",
       "fecha": "2026-10-01",
