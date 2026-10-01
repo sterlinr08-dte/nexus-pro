@@ -60,7 +60,7 @@ const MEDIR = () => {
   const btns = [...mt.querySelectorAll(':scope > button, :scope > a.btn')].filter(vis).map(b => {
     const r = b.getBoundingClientRect(), i = b.querySelector('i'), c = getComputedStyle(b);
     const txt = [...b.childNodes].filter(n => n.nodeType === 3 || (n.nodeType === 1 && getComputedStyle(n).display !== 'none' && n.tagName !== 'I')).map(n => n.textContent).join('').trim();
-    return { kind: b.getAttribute('data-nxnav'), icon: i ? i.className : '', txt, x: Math.round(r.x - mr.x), w: Math.round(r.width), h: Math.round(r.height),
+    return { kind: b.getAttribute('data-nxnav'), icon: i ? i.className : '', txt, x: Math.round(r.x - mr.x), w: b.offsetWidth, h: b.offsetHeight,
       lado: (r.x + r.width / 2) < (mr.x + mr.width / 2) ? 'izq' : 'der', radio: c.borderTopLeftRadius, color: c.color, lumIcon: lum(c.color), fs: c.fontSize };
   });
   const t = mt.querySelector(':scope > [data-nxtitle]') || [...mt.children].find(e => e.tagName !== 'BUTTON');
@@ -149,6 +149,61 @@ async function revisar(page, nombre, espera, w, captura) {
       ok(await page.evaluate(() => !document.getElementById('qaVs') && !!document.querySelector('#qaBase.open')), `${w}px volverApilado: ‹ vuelve a la ventana de abajo`);
     }
     await page.evaluate(() => { ['qaVs', 'qaBase'].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); }); });
+    if (!SIN) {
+      // ── Animaciones ──
+      await page.evaluate(() => window.nxVerComprobante('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>')));
+      await sleep(60);
+      const ent = await page.evaluate(() => { const b = document.querySelector('#nxVisorBauche [data-nxnav="close"]'); return b && { in: b.hasAttribute('data-nxin'), an: getComputedStyle(b).animationName, ico: getComputedStyle(b.querySelector('i')).animationName }; });
+      ok(ent && ent.in && ent.an === 'nxNavIn' && ent.ico === 'nxNavInIco', `${w}px entrada: el botón se materializa (escala+desenfoque) y la ✕ gira al aparecer`, ent);
+      await sleep(800);
+      ok(await page.evaluate(() => !document.querySelector('#nxVisorBauche [data-nxnav="close"]').hasAttribute('data-nxin')), `${w}px entrada: termina y libera la animación`);
+      const caja = await page.locator('#nxVisorBauche [data-nxnav="close"]').boundingBox();
+      await page.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+      if (w > 500) { await sleep(450); const rot = await page.evaluate(() => getComputedStyle(document.querySelector('#nxVisorBauche [data-nxnav="close"] i')).transform); ok(/matrix\((-?0(\.0+)?|[-.e\d]+), 1, -1,/.test(rot) || /matrix\(6\.\d+e-17, 1, -1, 6/.test(rot), `${w}px hover: la ✕ gira 90°`, rot); }
+      await page.mouse.down(); await sleep(130);
+      const pr = await page.evaluate(() => { const b = document.querySelector('#nxVisorBauche [data-nxnav="close"]'); const m = /matrix\(([\d.]+)/.exec(getComputedStyle(b).transform); return { nxp: b.classList.contains('nxp'), esc: m ? +m[1] : 1 }; });
+      ok(pr.nxp && pr.esc < 0.92, `${w}px pulsado: responde al presionar (escala ${pr.esc})`, pr);
+      await page.mouse.move(caja.x - 80, caja.y + 120); await page.mouse.up(); await sleep(200);
+      ok(await page.evaluate(() => !document.querySelector('#nxVisorBauche [data-nxnav="close"]').classList.contains('nxp') && !!document.querySelector('#nxVisorBauche.open')), `${w}px pulsado: arrastrar fuera cancela sin cerrar`);
+      // ── Esc ──
+      await page.keyboard.press('Escape'); await sleep(250);
+      ok(await page.evaluate(() => !document.querySelector('#nxVisorBauche.open')), `${w}px Esc cierra la ventana de arriba`);
+      await abrirSint(page, 'volverSuelto', true);
+      await page.keyboard.press('Escape'); await sleep(250);
+      ok(await page.evaluate(() => !document.getElementById('qaVs') && !!document.querySelector('#qaBase.open')), `${w}px Esc en ventana apilada = ‹ (vuelve a la de abajo)`);
+      await page.evaluate(() => { const o = document.getElementById('qaBase'); if (o) o.remove(); });
+      // ── Deslizar para cerrar (solo táctil) ──
+      if (w < 500) {
+        const cdp = await ctx.newCDPSession(page);
+        const arrastre = async (id, dist, pasos, ms) => {
+          const r = await page.locator(`#${id} .modal > .mt [data-nxtitle]`).boundingBox();
+          const x = r.x + r.width / 2, y0 = r.y + r.height / 2;
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y0 }] });
+          for (let k = 1; k <= pasos; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y0 + dist * k / pasos }] }); await sleep(ms); }
+          const medio = await page.evaluate(id => { const m = document.querySelector('#' + id + ' .modal'); return m ? getComputedStyle(m).transform : null; }, id);
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          return medio;
+        };
+        await abrirSint(page, 'xMasFlecha', false);
+        ok(await page.evaluate(() => document.querySelector('#qaXf .mt').hasAttribute('data-nxswipe')), `${w}px cabecera deslizable con agarradera en iPhone`);
+        const m1 = await arrastre('qaXf', 40, 8, 60); await sleep(600);
+        const t1 = /matrix\(1, 0, 0, 1, 0, ([\d.]+)\)/.exec(m1 || '');
+        ok(t1 && Math.abs(+t1[1] - 40) < 2, `${w}px deslizar: la ventana sigue al dedo 1:1`, m1);
+        ok(await page.evaluate(() => { const o = document.getElementById('qaXf'); const t = getComputedStyle(o.querySelector('.modal')).transform; return o.classList.contains('open') && (t === 'none' || /matrix\(1, 0, 0, 1, 0, 0\)/.test(t)); }), `${w}px deslizar corto y lento: vuelve a su sitio con resorte`);
+        await arrastre('qaXf', 260, 5, 12); await sleep(700);
+        ok(await page.evaluate(() => !document.querySelector('#qaXf.open')), `${w}px deslizar largo/rápido: cierra con la ✕ real`);
+        ok(await page.evaluate(() => { const m = document.querySelector('#qaXf .modal'); return !m || m.style.transform === '' || m.style.transform === 'none'; }), `${w}px deslizar: deja la ventana sin desplazamiento para la próxima vez`);
+        await page.evaluate(() => { const o = document.getElementById('qaXf'); if (o) o.remove(); });
+      }
+      // ── Movimiento reducido ──
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.evaluate(() => window.nxVerComprobante('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>')));
+      await sleep(60);
+      const rm = await page.evaluate(() => { const b = document.querySelector('#nxVisorBauche [data-nxnav="close"]'); return { an: getComputedStyle(b).animationName, ico: getComputedStyle(b.querySelector('i')).animationName }; });
+      ok(rm.an === 'nxNavFade' && rm.ico === 'none', `${w}px movimiento reducido: solo fundido, sin escala ni giro`, rm);
+      await page.evaluate(() => document.getElementById('nxVisorBauche').classList.remove('open'));
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+    }
     ok(errs.length === 0, `${w}px sin errores de consola`, errs);
     await ctx.close();
   }
