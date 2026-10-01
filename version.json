@@ -1,7 +1,15 @@
 {
-  "version": "59.02",
+  "version": "59.03",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.03",
+      "fecha": "2026-10-01",
+      "notas": [
+        "Nuevo reporte «Dinero en poder» (Contabilidad, solo administración): por ciclo del 20 al 20, cuánto tiene en su poder cada agente y la administración, con la regla clara (efectivo: quien lo recibió; transferencia o depósito: el dueño de la cuenta), lo que debe entregar cada uno y los movimientos que lo explican. El total cobrado no suma dos veces transferencias ni depósitos a cuentas de otros.",
+        "Avisos: lo que traen de ciclos anteriores es una cifra aproximada (confírmela antes de pedirla) y los cobros con fecha de depósito y de validación en ciclos distintos se marcan como «desfase de fechas»."
+      ]
+    },
     {
       "version": "59.02",
       "fecha": "2026-10-01",
