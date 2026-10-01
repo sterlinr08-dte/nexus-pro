@@ -226,7 +226,7 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(m.panel.border && m.panel.border[3] <= 0.12 && /linear-gradient/.test(m.panel.bg), 'cajón: hairline ≤ .12 y tinte con degradado', m.panel);
   ok(m.ss && esGradiente(m.ss.line) && m.ss.tt === 'uppercase' && parseFloat(m.ss.fs) >= 11, 'cajón: divisorias en degradado y rótulos ≥ 11 px', m.ss);
   ok(m.rows.length >= 9 && m.rows.every(r => r.h >= 44 && r.x === 12 && Math.abs(r.w - (m.nav.w - 24)) <= 2), `cajón: ${m.rows.length} filas ≥ 44 px con 12 px a cada lado`, m.rows.slice(0, 4));
-  ok(m.bar && esAzul(m.bar.bg) && /59, 130, 246/.test(m.bar.img) && /inset/.test(m.bar.sh) && m.bar.r === '14px' && m.bar.x === 12 && Math.abs(m.bar.w - (m.nav.w - 24)) <= 2 && Math.round(m.bar.h) === 48, 'cajón: ítem activo = píldora de 48 px, radio 14, 12 px a cada lado, degradado + brillo + halo', m.bar);
+  ok(m.bar && esAzul(m.bar.bg) && /30, 80, 214/.test(m.bar.img) && /inset/.test(m.bar.sh) && m.bar.r === '14px' && m.bar.x === 12 && Math.abs(m.bar.w - (m.nav.w - 24)) <= 2 && Math.round(m.bar.h) === 48, 'cajón: ítem activo = píldora de 48 px, radio 14, 12 px a cada lado, degradado + brillo + halo', m.bar);
   const badgeM = await M.page.evaluate(BADGE);
   ok(badgeM.vis && badgeM.derecha === 12 && /239, 68, 68/.test(badgeM.bg), 'cajón: contador blanco sobre rojo a 12 px del borde de la píldora', badgeM);
   ok(m.labels.every(l => l.op === 1 && l.disp !== 'none'), 'cajón: etiquetas visibles', m.labels.filter(l => l.op < 1));
