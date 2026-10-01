@@ -4,7 +4,8 @@
 //    quedan visibles; el estado persiste tras recargar (ya en el primer pintado); el ítem activo es una píldora redondeada
 //    (radio 14, 10 px a cada lado; cuadro 48×48 en el riel) con degradado, brillo y halo; las divisorias son degradados; el panel tiene backdrop-filter con blur ≥ 20 px y borde ≤ .12 de
 //    alfa; .main no cambia de posición ni de ancho al expandir (el panel flota encima); Esc contrae; elegir un módulo lo cierra solo
-//    (Contabilidad/Configuración solo despliegan); los paneles flotantes
+//    (Contabilidad/Configuración solo despliegan); «smart»: se asoma con el mouse ~½ s y se esconde al salir (sin
+//    tocar la preferencia), abierto a mano se queda hasta elegir/tocar fuera/Esc, no se reabre tras elegir; los paneles flotantes
 //    de Contabilidad siguen al borde; 6 cuadros de la transición; sin errores de consola.
 //  · 390×844 (UA iPhone): el cajón ☰ abre con el mismo lenguaje (cristal, divisorias, rótulos, activo como píldora con 12 px a cada lado,
 //    tarjeta de usuario), filas ≥ 44 px, sin scroll horizontal, sin superficies claras, cierra con toque fuera, con el
@@ -195,6 +196,32 @@ async function compuesto(browser, archivos, salida, alto) {
   await A.page.evaluate(() => { const n = [...document.querySelectorAll('#sbNav .ni')].find(x => /nav\('facturas'/.test(x.getAttribute('onclick') || '')); n.click(); }); await sleep(700);
   m = await A.page.evaluate(MEDIR);
   ok(!m.nav.open && m.panel.w <= 84 && await A.page.evaluate(() => /facturas/i.test((document.querySelector('#sbNav .ni.on') || {}).getAttribute?.('onclick') || '')), 'elegir un módulo (Facturas) con el menú expandido lo cierra solo y abre el módulo', m.panel);
+  // 59.02 «smart» con mouse real
+  {
+    const P = A.page; const abiertoM = () => P.evaluate(() => document.documentElement.classList.contains('nx-mc-open'));
+    const guardado = () => P.evaluate(() => localStorage.getItem('nx_menu_cristal'));
+    if (await abiertoM()) { await P.keyboard.press('Escape'); await sleep(500); }
+    await P.mouse.move(700, 400); await sleep(300);
+    const g0 = await guardado();
+    await P.mouse.move(38, 420, { steps: 4 }); await sleep(250);
+    ok(!(await abiertoM()), 'pasar el mouse de largo por el riel NO lo abre');
+    await sleep(600);
+    ok(await abiertoM(), 'dejar el mouse ~½ s sobre el riel lo ASOMA (se abre solo)');
+    ok((await guardado()) === g0, 'abrirse por asomo no cambia la preferencia guardada', { g0, g1: await guardado() });
+    await P.mouse.move(700, 400, { steps: 4 }); await sleep(750);
+    ok(!(await abiertoM()), 'al sacar el mouse, el menú asomado se esconde solo');
+    await P.mouse.move(38, 420, { steps: 3 }); await sleep(900);
+    ok(await abiertoM(), 'se vuelve a asomar');
+    await P.evaluate(() => { const n = [...document.querySelectorAll('#sbNav .ni')].find(x => /nav\('clientes'/.test(x.getAttribute('onclick') || '')); n.click(); }); await sleep(1100);
+    ok(!(await abiertoM()), 'elegir un módulo desde el asomo lo cierra y NO se reabre aunque el mouse siga encima');
+    await P.mouse.move(700, 400, { steps: 3 }); await sleep(300);
+    await P.click('#sbEl .nx-mc-tg'); await sleep(500);
+    await P.mouse.move(700, 400, { steps: 4 }); await sleep(900);
+    ok(await abiertoM(), 'abierto a mano (botón): sacar el mouse NO lo cierra');
+    const neutro = await P.evaluate(() => { const h = [...document.querySelectorAll('.main h1, .main h2, .main .tb-t, .main .pg-t, .main .pgtit')].find(e => { const r = e.getBoundingClientRect(); return r.width > 40 && r.x > 120; }); const r = h ? h.getBoundingClientRect() : { x: 600, y: 30, width: 10, height: 10 }; return { x: r.x + Math.min(30, r.width / 2), y: r.y + r.height / 2 }; });
+    await P.mouse.click(neutro.x, neutro.y); await sleep(500);
+    ok(!(await abiertoM()), 'abierto a mano: tocar fuera del menú lo cierra');
+  }
   await A.page.click('#sbEl .nx-mc-tg'); await sleep(600);
   ok(A.errs.length === 0, 'sin errores de consola (1280)', A.errs);
   const guardado = await A.page.evaluate(() => localStorage.getItem('nx_menu_cristal'));

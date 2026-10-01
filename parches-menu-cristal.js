@@ -49,16 +49,19 @@
       var mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
       tg.title = m ? 'Cerrar el menú' : ((v ? 'Contraer el menú' : 'Abrir el menú') + (mac ? ' (⌘B)' : ' (Ctrl+B)'));
     }
-    function poner(v) {
+    var modo = null; // cómo se abrió: 'mano' (botón, escudo, Ctrl+B) o 'asomo' (mouse encima) — 59.02
+    function poner(v, sinGuardar) {
       html.classList.toggle('nx-mc-open', !!v);
-      try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {}
+      if (!v) modo = null;
+      if (!sinGuardar) { try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {} }
       aria();
       // La barra activa (indicador de resorte) mide su fila al instante; el ancho lo lleva el CSS (left/right 0).
       if (typeof window.nxSidebarSpringSync === 'function') window.nxSidebarSpringSync(true);
     }
     function alternar() {
       if (movil()) { if (typeof window.closeMobSB === 'function') window.closeMobSB(); return; }
-      poner(!abierto());
+      cancelarAsomo();
+      var v = !abierto(); poner(v); modo = v ? 'mano' : null;
     }
     tg.addEventListener('click', function () { quitarPista(); alternar(); });
     // 59.02: en PC, con el menú expandido, elegir un módulo lo contrae solo (el panel flota sobre el contenido).
@@ -67,8 +70,41 @@
       var it = ev.target && ev.target.closest && ev.target.closest('.ni');
       if (!it || !navEl.contains(it) || it.id === 'niContab' || it.id === 'niAdmin2') return;
       if (!glass() || movil() || !abierto()) return;
-      setTimeout(function () { if (abierto()) poner(false); }, 140); // deja ver la píldora pasar al módulo elegido
+      bloqueoAsomo = true; // no volver a asomarse mientras el mouse siga encima del riel
+      setTimeout(function () { if (abierto()) poner(false, modo === 'asomo'); }, 140); // deja ver la píldora pasar al módulo elegido
     });
+
+    // 59.02 «smart» (solo PC con mouse): se ASOMA si el mouse se queda ~½ s sobre el riel y se esconde al salir;
+    // si se abrió a mano (botón, escudo, Ctrl+B) se queda hasta elegir un módulo, tocar fuera o Esc.
+    // No se cierra al salir con la lista de Contabilidad/Configuración abierta ni con el foco del teclado adentro.
+    var conMouse = window.matchMedia ? matchMedia('(hover: hover) and (pointer: fine)') : { matches: false };
+    var tAbrir = null, tCerrar = null, bloqueoAsomo = false;
+    function cancelarAsomo() { clearTimeout(tAbrir); clearTimeout(tCerrar); tAbrir = tCerrar = null; }
+    function listaAbierta() { try { return !!(window._contabAbierto || window._configAbierto); } catch (e) { return false; } }
+    sb.addEventListener('mouseenter', function () {
+      clearTimeout(tCerrar); tCerrar = null;
+      if (!glass() || movil() || !conMouse.matches || abierto() || bloqueoAsomo) return;
+      clearTimeout(tAbrir);
+      tAbrir = setTimeout(function () { tAbrir = null; if (!abierto() && sb.matches(':hover')) { poner(true, true); modo = 'asomo'; quitarPista(); } }, 550);
+    });
+    sb.addEventListener('mouseleave', function () {
+      clearTimeout(tAbrir); tAbrir = null; bloqueoAsomo = false;
+      if (!glass() || movil() || modo !== 'asomo' || !abierto()) return;
+      clearTimeout(tCerrar);
+      tCerrar = setTimeout(function () {
+        tCerrar = null;
+        var tecl = false; try { tecl = !!sb.querySelector(':focus-visible'); } catch (e) {}
+        if (modo !== 'asomo' || !abierto() || sb.matches(':hover') || listaAbierta() || tecl) return;
+        poner(false, true);
+      }, 380);
+    });
+    // Tocar fuera del menú expandido lo cierra (sin tocar ventanas, búsqueda global ni paneles que ya lo manejan).
+    document.addEventListener('pointerdown', function (ev) {
+      if (!glass() || movil() || !abierto()) return;
+      var t = ev.target; if (!t || !t.closest) return;
+      if (sb.contains(t) || t.closest('.overlay.open,.gs-overlay,.mbbOv,.nbfOv,.nxRA-ov')) return;
+      cancelarAsomo(); poner(false, modo === 'asomo');
+    }, true);
     // 59.01: pista — el botón late las primeras veces (hasta que se usa una vez); Ctrl/⌘+B abre y cierra.
     var PISTA = 'nx_menu_cristal_visto';
     function quitarPista() { tg.classList.remove('nx-mc-hint'); try { localStorage.setItem(PISTA, '1'); } catch (e) {} }
