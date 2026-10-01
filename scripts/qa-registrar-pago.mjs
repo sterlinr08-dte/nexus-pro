@@ -7,6 +7,8 @@
 //    el comprobante se enlaza con PATCH abonos?id=eq.<abono_id>&comprobante_url=is.null (nunca «el último del cliente»).
 //  · Custodia (regla del dueño, = seguros_resumen_ciclo_agente_core): Efectivo → «En poder de» quien recibió; Transferencia/
 //    Depósito → «En poder de» el dueño de la cuenta donde se depositó, aunque otro haya gestionado el cobro.
+//  · Tras registrar: pantalla «Pago registrado» (monto, en poder de, pendiente; Ver recibo / WhatsApp / Listo), sin
+//    formulario ni botón de registrar; al abrir otro cobro vuelve el formulario limpio.
 //  · Atajos: «1 cuota» = getTot, «Saldar» = pendiente, «Adelantar» +/− meses = pendiente + N·cuota; resumen y botón con el monto.
 // Uso: PORT=8942 node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-registrar-pago.mjs
 import { createRequire } from 'module';
@@ -119,6 +121,18 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     ok(ua === ABONO_ID, `${w}px window._ultimoAbono.abonoId = abono_id (el recibo queda enlazado)`, ua);
     ok(patch.length === 1 && patch[0].includes('id=eq.' + ABONO_ID) && patch[0].includes('comprobante_url=is.null'), `${w}px comprobante al abono EXACTO (no «el último del cliente»)`, patch);
     ok(await page.evaluate(() => getComputedStyle(document.getElementById('reciboWAbtn')).display !== 'none' && getComputedStyle(document.getElementById('btnReciboAdelanto')).display === 'none'), `${w}px tras registrar: caja de recibo visible; sin botón de recibo suelto`);
+    await page.evaluate(() => document.querySelectorAll('.nxRA-ov').forEach(o => o.remove())); await sleep(300);
+    const hecho = await page.evaluate(() => { const v = id => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0; };
+      return { cls: document.querySelector('#mAbono .modal').classList.contains('pgHecho'), tit: document.querySelector('#mAbono .modal > .mt > span').textContent, form: v('aMnt') || v('aMetChips') || v('aAgenteChips'), registrar: v('btnAbo'), cancelar: v('btnAboCancelar'), listo: v('btnAboListo'), recibo: v('btnReciboVer'), monto: document.getElementById('pgOkMonto').textContent, poder: document.getElementById('pgOkPoder').textContent, pend: document.getElementById('pgOkPend').textContent }; });
+    ok(hecho.cls && hecho.tit === 'Pago registrado' && !hecho.form && !hecho.registrar && !hecho.cancelar && hecho.listo && hecho.recibo, `${w}px tras registrar: pantalla «Pago registrado» (sin formulario ni botón de registrar; Listo + Ver recibo)`, hecho);
+    ok(/RD\$/.test(hecho.monto) && /En poder de/.test(hecho.poder) && /pendiente|al día/i.test(hecho.pend), `${w}px «Pago registrado» muestra monto, en poder de quién y lo que queda`, hecho);
+    await page.screenshot({ path: OUT + `${w}-registrado.png` });
+    await page.click('#btnAboListo'); await sleep(300);
+    ok(await page.evaluate(() => !document.querySelector('#mAbono.open')), `${w}px «Listo» cierra la ventana`);
+    await page.evaluate(id => abrirAbono(id), A); await sleep(500);
+    const otra = await page.evaluate(() => ({ cls: document.querySelector('#mAbono .modal').classList.contains('pgHecho'), tit: document.querySelector('#mAbono .modal > .mt > span').textContent, reg: getComputedStyle(document.getElementById('btnAbo')).display, ok: getComputedStyle(document.getElementById('reciboWAbtn')).display }));
+    ok(!otra.cls && otra.tit === 'Registrar pago' && otra.reg !== 'none' && otra.ok === 'none', `${w}px al abrir otro cobro vuelve el formulario limpio`, otra);
+    await page.evaluate(() => closeM('mAbono'));
     ok(errs.length === 0, `${w}px sin errores de consola`, errs);
     await ctx.close();
   }

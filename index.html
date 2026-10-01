@@ -4864,6 +4864,21 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
 #mAbono .nxPago:not(#_n):not(#_m) .pgPoder i{margin-right:4px;vertical-align:-2px}
 #mAbono .nxPago:not(#_n):not(#_m) .pgPoder.falta{background:rgba(217,119,6,.12);color:#B45309}
 #mAbono .nxPago:not(#_n):not(#_m) .pgPoder:empty{display:none}
+/* estado «Pago registrado» */
+#mAbono .modal.nxPago.pgHecho:not(#_n):not(#_m)>:is(#aDestinoCont,.pgSec,.aboSummary,#abonoI){display:none!important}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOk{text-align:center;padding:8px 4px 14px;margin:0;background:none;border:0;font-size:14px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkIc{width:64px;height:64px;margin:6px auto 10px;border-radius:50%;display:grid;place-items:center;font-size:34px;background:#16A34A;color:#fff;animation:pgOkPop .45s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pgOkPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkTit{font-size:17px;font-weight:700}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkMonto{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin:2px 0 4px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkDet{font-size:13px;line-height:1.4;opacity:.9}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkPoder{display:block;margin:10px 0 6px;padding:8px 10px;border-radius:10px;font-size:13.5px;font-weight:700;background:rgba(22,163,74,.10);color:#15803D;text-align:left}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkPoder small{display:block;font-size:12px;font-weight:600;opacity:.9;margin-top:2px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkPend{font-size:13px;font-weight:650;margin-top:6px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkActs{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgOkActs .btn{min-height:46px!important;justify-content:center;font-size:14px!important;border-radius:12px!important;text-transform:none!important}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAboListo{grid-column:1/-1}
+@media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .pgOkIc{animation:none}}
 /* ── colores del tema Glass oscuro ── */
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m){color:var(--tgo-t1)}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgSecT,.aboLbl,.fr>label,#aDirectoWrap strong,#nxBaucheWrap>label){color:var(--tgo-t3)!important}
@@ -4891,6 +4906,9 @@ html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary span{color:
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{color:#FCD34D}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgPoder{background:rgba(34,197,94,.14);color:#86EFAC}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgPoder.falta{background:rgba(245,158,11,.14);color:#FCD34D}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgOkPoder{background:rgba(34,197,94,.14);color:#86EFAC}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgOkTit,.pgOkMonto){color:#fff}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgOkDet,.pgOkPend){color:var(--tgo-t2)}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe{background:linear-gradient(180deg,rgba(21,42,74,0) 0%,#152A4A 22%)!important;border:0!important}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe .btn:not(.bxl){background:rgba(255,255,255,.08)!important;color:var(--tgo-t1)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
 @media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{transition:none}#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:active{transform:none}}
@@ -6301,15 +6319,19 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       <div class="aboSummaryIc"><i class="ti ti-receipt-2"></i></div>
       <div><b id="aboResumenTit">Resumen</b><span id="aboResumenTxt">—</span><strong class="pgPoder" id="aboEnPoder"></strong></div>
     </div>
-    <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Pago registrado</span></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Abrir WhatsApp</button>
-        <button class="btn bsm bc1" id="btnReciboVer" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
+    <div id="reciboWAbtn" class="pgOk" style="display:none" role="status" aria-live="polite">
+      <div class="pgOkIc" aria-hidden="true"><i class="ti ti-check"></i></div>
+      <div class="pgOkMonto" id="pgOkMonto"></div>
+      <div class="pgOkDet" id="pgOkDet"></div>
+      <div class="pgOkPoder" id="pgOkPoder"></div>
+      <div class="pgOkPend" id="pgOkPend"></div>
+      <div class="pgOkActs">
+        <button class="btn bsm bc1" id="btnReciboVer" type="button" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
+        <button class="btn bwa bsm" id="btnReciboWA" type="button" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Abrir WhatsApp</button>
       </div>
     </div>
     <button class="btn bsm" id="btnReciboAdelanto" type="button" style="display:none" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo</button>
-    <div class="fe"><button class="btn" type="button" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" type="button" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar pago</button></div>
+    <div class="fe"><button class="btn" type="button" id="btnAboCancelar" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" type="button" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar pago</button><button class="btn bxl" type="button" id="btnAboListo" style="display:none" onclick="closeM('mAbono')"><i class="ti ti-check"></i> Listo</button></div>
   </div>
 </div>
 
@@ -13549,6 +13571,7 @@ function abrirAbono(cid){
   if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
+  {const _md=document.querySelector('#mAbono .modal');if(_md)_md.classList.remove('pgHecho');const _bc=document.getElementById('btnAboCancelar');if(_bc)_bc.style.display='';const _bl=document.getElementById('btnAboListo');if(_bl)_bl.style.display='none';const _tt=document.querySelector('#mAbono .modal > .mt > span');if(_tt)_tt.textContent='Registrar pago';}
   // "Pago adelantado" siempre arranca apagado — evita arrastrar meses de un cliente anterior
   const _tgl=document.getElementById('aAdelantoTgl');const _abody=document.getElementById('aAdelantoBody');
   if(_tgl)_tgl.classList.remove('on');if(_abody)_abody.style.display='none';
@@ -14045,8 +14068,26 @@ async function verHistorialAbonos(clienteId){
 // Muestra la caja "envía el recibo" tras registrar un abono — SIEMPRE visible (antes se
 // escondía por completo y sin aviso si el cliente no tenía WhatsApp registrado).
 function mostrarCajaRecibo(c){
+  // 59.01: al registrar, la ventana pasa a «Pago registrado» (sin formulario ni botón de registrar: no se puede
+  // registrar dos veces sin querer). Se arma con lo que mostraba el resumen justo antes de guardar.
   const reciboDiv=document.getElementById('reciboWAbtn');if(!reciboDiv)return;
+  const modal=document.querySelector('#mAbono .modal');
+  const T=id=>{const e=document.getElementById(id);return e?e.textContent.trim():'';};
+  const set=(id,v)=>{const e=document.getElementById(id);if(e){e.textContent=v||'';e.style.display=v?'':'none';}};
+  const monto=(window._ultimoAbono&&window._ultimoAbono.monto)||0;
+  set('pgOkMonto',monto?fmt(monto):T('aboResumenTit'));
+  set('pgOkDet',T('aboResumenTxt').replace(/(Queda pendiente|Salda todo|Salda lo pendiente|Adelanta).*$/,'').trim());
+  const poder=document.getElementById('aboEnPoder');const pp=document.getElementById('pgOkPoder');
+  if(pp){pp.innerHTML=poder&&!poder.classList.contains('falta')?poder.innerHTML:'';pp.style.display=pp.innerHTML?'':'none';}
+  try{const cc=c&&ST.clientes.find(x=>x.id===c.id)||c;const destino=document.getElementById('aDestino')?.value||'facturas';
+    const q=destino==='deuda_anterior'?deudaAnt(cc):pend(cc);set('pgOkPend',q>0.009?('Le queda pendiente '+fmt(q)):'El cliente quedó al día');}catch(e){set('pgOkPend','');}
+  const wa=document.getElementById('btnReciboWA');if(wa)wa.style.display=(c&&c.wa)?'':'none';
   reciboDiv.style.display='block';
+  if(modal){modal.classList.add('pgHecho');modal.scrollTop=0;}
+  const ba=document.getElementById('btnAbo');if(ba)ba.style.display='none';
+  const bc=document.getElementById('btnAboCancelar');if(bc)bc.style.display='none';
+  const bl=document.getElementById('btnAboListo');if(bl)bl.style.display='';
+  const tt=document.querySelector('#mAbono .modal > .mt > span');if(tt)tt.textContent='Pago registrado';
 }
 // ── CUTOVER (docs/bitacora/2026-08-10-2321-chatgpt.md) ──────────────────────
 // regAbono()/nxRegAbonoDeudaAnterior() ya NO hacen PATCH clientes + POST abonos
@@ -14130,8 +14171,8 @@ async function regAbono(){
     _cobroIdemKey=nxNuevaIdemKey(); // cobro ya comprometido: cualquier próximo intento es un cobro NUEVO
     mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
-    toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
-    nxReciboAnimado({empresa:CFG.empNom,titulo:'Abono registrado',cliente:c.nom,monto,
+    toast('ok','Pago registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+    nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago registrado',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
       folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
       [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
