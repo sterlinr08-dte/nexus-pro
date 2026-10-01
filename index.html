@@ -4775,6 +4775,119 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18
   html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p,html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{transform:none!important;transition:opacity .15s ease!important}
 }
 </style>
+<style id="nxPagoV3">
+/* ═══ 59.01 · «Registrar pago» ordenado (01-oct-2026) — capa única para #mAbono .nxPago:not(#_n):not(#_m). Orden: cliente → monto →
+   cómo pagó (banco · referencia · cuenta · comprobante) → quién cobró → resumen → botón fijo. Mismos ids/funciones.
+   Para deshacer: borrar este <style> y restaurar el marcado anterior de #mAbono (ver bitácora 2026-10-01). ═══ */
+#mAbono .modal.nxPago:not(#_n):not(#_m){--pg-gap:12px;--pg-r:14px;--pg-ctl:44px;padding:14px 16px 0!important;text-transform:none}
+#mAbono .nxPago:not(#_n):not(#_m) *{text-transform:none!important;letter-spacing:normal}
+#mAbono .nxPago:not(#_n):not(#_m)>.mt{font-size:17px!important;font-weight:700!important;margin:0 0 10px!important}
+/* :not(#_n):not(#_m) = peso de id: el tema oscuro trae reglas «html.tema-glass-oscuro .x:not(#tgo)» sobre chips, notas y tarjetas */
+/* tarjeta del cliente */
+#mAbono .nxPago:not(#_n):not(#_m) #abonoI{padding:10px 12px!important;margin:0 0 var(--pg-gap)!important;border-radius:var(--pg-r)!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliTop{display:flex!important;align-items:center;gap:10px;margin:0!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboAv{flex:0 0 40px;width:40px!important;height:40px!important;border-radius:50%!important;display:grid!important;place-items:center;font-size:14px!important;font-weight:700}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliInfo{flex:1 1 auto;min-width:0}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliNom{font-size:15px!important;font-weight:650!important;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPol{font-size:12px!important;line-height:1.35;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:1px}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPol .badge,#mAbono .nxPago:not(#_n):not(#_m) .aboCliPol [class*="badge"]{font-size:10.5px!important;padding:1px 7px!important;line-height:1.5}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliMeta{font-size:12px;line-height:1.35;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPend{flex:0 0 auto;text-align:right;display:flex;flex-direction:column;gap:1px}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPend span{font-size:11px;font-weight:600}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPend b{font-size:17px;font-weight:750;font-variant-numeric:tabular-nums}
+/* monto */
+#mAbono .nxPago:not(#_n):not(#_m) .pgSec{margin:0 0 var(--pg-gap)}
+#mAbono .nxPago:not(#_n):not(#_m) .pgSecT,#mAbono .nxPago:not(#_n):not(#_m) .aboLbl,#mAbono .nxPago:not(#_n):not(#_m) .fr>label{font-size:11.5px!important;font-weight:650!important;letter-spacing:.02em!important;text-transform:uppercase!important;margin:0 0 6px!important;display:block}
+#mAbono .nxPago:not(#_n):not(#_m) .aboLblRow{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px}
+#mAbono .nxPago:not(#_n):not(#_m) .aboLblRow .aboLbl{margin:0!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboLnk{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:4px 2px;border-radius:8px}
+#mAbono .nxPago:not(#_n):not(#_m) .aboLnk:focus-visible{outline:2px solid #60A5FA;outline-offset:2px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgMntWrap{position:relative;margin:0 0 8px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .pgCur{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;font-weight:600;pointer-events:none}
+#mAbono .nxPago:not(#_n):not(#_m) #aMnt{height:56px!important;padding:0 14px 0 52px!important;font-size:28px!important;font-weight:750!important;font-variant-numeric:tabular-nums;border-radius:var(--pg-r)!important}
+#mAbono .nxPago:not(#_n):not(#_m) .pgQuick{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:8px!important;margin:0!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{all:unset;box-sizing:border-box;cursor:pointer;min-height:50px;padding:6px 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;font-size:13px;font-weight:650;line-height:1.2;transition:transform .12s ease,background-color .15s ease}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn small{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;opacity:.9}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:active{transform:scale(.96)}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:disabled{opacity:.45;cursor:default}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:focus-visible{outline:2px solid #60A5FA;outline-offset:2px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgAdel{margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:12px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgAdel label{margin:0!important;font-size:12.5px!important;text-transform:none!important;letter-spacing:0!important}
+#mAbono .nxPago:not(#_n):not(#_m) .pgStep{display:flex;align-items:center;gap:6px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgStep button{all:unset;cursor:pointer;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:16px}
+#mAbono .nxPago:not(#_n):not(#_m) .pgStep input{width:52px!important;height:36px!important;text-align:center;font-size:16px!important;font-weight:700!important;padding:0!important;border-radius:10px!important}
+/* chips: método en una fila deslizable; banco / cuenta / agente en 2 columnas compactas */
+#mAbono .nxPago:not(#_n):not(#_m) #aMetChips{display:flex!important;flex-wrap:nowrap!important;gap:8px!important;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:16px;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px!important;grid-template-columns:none!important}
+#mAbono .nxPago:not(#_n):not(#_m) #aMetChips::-webkit-scrollbar{display:none}
+#mAbono .nxPago:not(#_n):not(#_m) #aMetChips .nxOptChip{flex:0 0 auto!important;scroll-snap-align:start;min-height:var(--pg-ctl)!important;height:var(--pg-ctl);padding:0 14px 0 8px!important;border-radius:22px!important;gap:8px!important}
+#mAbono .nxPago:not(#_n):not(#_m) :is(#aBancoChips,#aDirectoChips,#aAgenteChips,#aDestinoChips){display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip{min-height:var(--pg-ctl)!important;padding:6px 10px 6px 6px!important;border-radius:12px!important;font-size:13px!important;font-weight:600!important;gap:8px!important;position:relative}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptIco{width:30px!important;height:30px!important;flex:0 0 30px;font-size:12px!important;border-radius:50%!important}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptIco i{font-size:16px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptIco img,#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptIco .logo{width:30px!important;height:30px!important;border-radius:50%!important;object-fit:contain}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptTxt{white-space:normal;line-height:1.2;text-align:left}
+#mAbono .nxPago:not(#_n):not(#_m) .nxOptChip .nxOptOk{display:none!important}
+#mAbono .nxPago:not(#_n):not(#_m) .fr{margin:0 0 10px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .fr input[type=text]{height:var(--pg-ctl)!important;font-size:15px!important;border-radius:12px!important;padding:0 12px!important}
+/* cuenta de depósito (capa de seguros-base, estilos en línea) */
+#mAbono .nxPago:not(#_n):not(#_m) #aDirectoWrap{margin:0 0 10px!important;padding:0!important;background:none!important;box-shadow:none!important;border-radius:0!important}
+#mAbono .nxPago:not(#_n):not(#_m) #aDirectoWrap strong{font-size:11.5px!important;font-weight:650!important;letter-spacing:.02em;text-transform:uppercase!important;margin-bottom:6px!important}
+#mAbono .nxPago:not(#_n):not(#_m) #aDirectoWrap>div>span{font-size:11.5px!important;line-height:1.4!important;margin-top:6px!important}
+/* comprobante: una fila */
+#mAbono .nxPago:not(#_n):not(#_m) #nxBaucheWrap{margin:0 0 4px!important}
+#mAbono .nxPago:not(#_n):not(#_m) #nxBaucheWrap>label{font-size:11.5px!important;font-weight:650!important;letter-spacing:.02em;text-transform:uppercase!important}
+#mAbono .nxPago:not(#_n):not(#_m) #nxBaucheBox{padding:0!important;background:none!important;box-shadow:none!important}
+#mAbono .nxPago:not(#_n):not(#_m) #nxBaucheBox .btn{min-height:var(--pg-ctl)!important;border-radius:12px!important;font-size:13px!important;font-weight:650!important}
+#mAbono .nxPago:not(#_n):not(#_m) #nxBaucheBox>div:not(:first-child):not([id]){font-size:11.5px!important;text-align:left!important;margin-top:6px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboNote{display:flex;gap:6px;align-items:flex-start;font-size:12px!important;line-height:1.4;padding:0!important;margin:2px 0 0!important;background:none!important;border:0!important;box-shadow:none!important}
+/* resumen */
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary{display:flex!important;gap:12px;align-items:flex-start;padding:12px!important;border-radius:var(--pg-r)!important;margin:0 0 10px!important}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummaryIc{flex:0 0 36px;width:36px!important;height:36px!important;border-radius:50%!important;display:grid!important;place-items:center}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary b{display:block;font-size:20px!important;font-weight:750!important;font-variant-numeric:tabular-nums;line-height:1.2}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary span{display:block;font-size:13px!important;line-height:1.4;margin-top:2px}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{display:block;font-style:normal;font-weight:650;margin-top:3px}
+/* pie fijo */
+#mAbono .nxPago:not(#_n):not(#_m)>.fe{position:sticky;bottom:0;z-index:3;display:grid!important;grid-template-columns:auto 1fr;gap:10px;margin:0 -16px!important;padding:10px 16px calc(12px + env(safe-area-inset-bottom))!important}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe .btn{min-height:48px!important;font-size:15px!important;font-weight:650!important;border-radius:14px!important;justify-content:center;text-transform:none!important}
+#mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo{font-variant-numeric:tabular-nums}
+@media (max-width:768px){#mAbono .modal.nxPago:not(#_n):not(#_m){padding:12px 16px 0!important}}
+#mAbono .nxPago:not(#_n):not(#_m) ::placeholder{text-transform:none!important;font-weight:400}
+/* colores base (temas claros); el tema oscuro los redefine abajo */
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{background:var(--nm-bg,#fff);border:1px solid rgba(15,23,42,.10);color:var(--nm-tx,#1e293b)}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn.hero{background:#2563EB;border-color:transparent;color:#fff}
+#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn.on{background:#EFF6FF;border-color:#2563EB}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.rojo b{color:#B91C1C}
+#mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.ok b{color:#15803D}
+#mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{color:#B45309}
+/* ── colores del tema Glass oscuro ── */
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m){color:var(--tgo-t1)}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgSecT,.aboLbl,.fr>label,#aDirectoWrap strong,#nxBaucheWrap>label){color:var(--tgo-t3)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) #abonoI,html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary,html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgAdel{background:rgba(255,255,255,.06)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboAv{background:rgba(96,165,250,.16)!important;color:#BFDBFE!important;border:0!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboCliNom{color:var(--tgo-t1)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.aboCliPol,.aboCliMeta){color:var(--tgo-t3)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboCliPend span{color:var(--tgo-t3)}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.rojo b{color:#FCA5A5}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboCliPend.ok b{color:#86EFAC}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboLnk{color:#93C5FD}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgCur{color:var(--tgo-t3)}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) #aMnt{color:#FFFFFF!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{background:rgba(255,255,255,.07)!important;border:1px solid var(--tgo-edge)!important;color:var(--tgo-t1)!important;box-shadow:none!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboQbtn.hero{background:var(--tgo-blue)!important;border-color:transparent!important;color:#fff!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboQbtn.on{background:rgba(37,99,235,.22)!important;border-color:#3B82F6!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgStep button{background:rgba(255,255,255,.10);color:var(--tgo-t1)}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .nxOptChip{background:rgba(255,255,255,.06)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important;color:var(--tgo-t1)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .nxOptChip.on{background:rgba(37,99,235,.24)!important;border-color:#60A5FA!important;box-shadow:0 0 0 1px #60A5FA inset!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(#aDirectoWrap>div>span,.aboNote,#nxBaucheBox>div:not(:first-child)){color:var(--tgo-t3)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) #nxBaucheBox .btn{background:rgba(255,255,255,.07)!important;color:#BFDBFE!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummaryIc{background:rgba(96,165,250,.16)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary b{color:#fff!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary span{color:var(--tgo-t2)!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .aboSummary em{color:#FCD34D}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe{background:linear-gradient(180deg,rgba(21,42,74,0) 0%,#152A4A 22%)!important;border:0!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe .btn:not(.bxl){background:rgba(255,255,255,.08)!important;color:var(--tgo-t1)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
+@media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{transition:none}#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:active{transform:none}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -6140,59 +6253,54 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
 
 <!-- Modal Abono -->
 <div class="overlay" id="mAbono">
-  <div class="modal nm-abono" style="max-width:370px">
-    <div class="aboHead">
-      <div class="aboHead-row">
-        <div class="aboShield"><i class="ti ti-shield-check"></i></div>
-        <button aria-label="Cerrar ventana" class="aboX" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="aboTitle">Registrar pago</div>
-      <div class="aboSub">Registra el pago de esta póliza</div>
-    </div>
+  <!-- 01-oct-2026 (59.01): rediseño ordenado. Mismos ids y funciones; orden = cliente → monto → cómo pagó (banco,
+       referencia, cuenta y comprobante juntos) → quién cobró → resumen → botón. Cabecera estándar .mt (botones 59.00). -->
+  <div class="modal nm-abono nxPago" style="max-width:420px">
+    <div class="mt"><span>Registrar pago</span><button aria-label="Cerrar" class="btn bghost bsm" type="button" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI"></div>
     <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select><div id="aDestinoChips"></div></div>
-    <div class="aboLblRow"><span class="aboLbl">Monto a recibir <span class="req">*</span></span><span class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Ver historial</span></div>
-    <div class="fr" style="margin-bottom:8px"><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" oninput="nxAboActualizarResumen()"/></div>
-    <div class="aboQuickRow">
-      <div class="aboQbtn" onclick="nxAboFijarMonto(500)">RD$500</div>
-      <div class="aboQbtn" onclick="nxAboFijarMonto(1000)">RD$1,000</div>
-      <div class="aboQbtn" onclick="nxAboFijarMonto(2000)">RD$2,000</div>
-      <div class="aboQbtn hero" onclick="nxAboSaldar()">SALDAR<br>PENDIENTE</div>
-    </div>
-    <div class="fr">
-      <label>Método</label>
-      <select id="aMet" style="display:none" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
-      <div id="aMetChips"></div>
-    </div>
-    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select><div id="aBancoChips"></div></div>
-    <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco"/></div>
-    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select><div id="aAgenteChips"></div></div>
-    <div class="aboNote"><i class="ti ti-info-circle"></i> El agente que registra será quien figura como responsable del cobro.</div>
-    <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
-    <div class="aboToggleCard">
-      <div class="aboToggleRow" onclick="nxAboToggleAdelanto()">
-        <div class="aboToggleIc"><i class="ti ti-calendar-plus"></i></div>
-        <div class="aboToggleTxt"><b>Pago adelantado</b><span>Registra meses por adelantado (opcional)</span></div>
-        <div class="aboTgl" id="aAdelantoTgl"></div>
+    <section class="pgSec pgMonto">
+      <div class="aboLblRow"><label class="aboLbl" for="aMnt">Monto <span class="req">*</span></label><button type="button" class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Historial</button></div>
+      <div class="fr pgMntWrap"><span class="pgCur" aria-hidden="true">RD$</span><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" autocomplete="off" oninput="nxAboActualizarResumen()"/></div>
+      <div class="aboQuickRow pgQuick">
+        <button type="button" class="aboQbtn" id="aQCuota" onclick="nxAboUnaCuota()">1 cuota<small id="aQCuotaV"></small></button>
+        <button type="button" class="aboQbtn hero" id="aQSaldar" onclick="nxAboSaldar()">Saldar<small id="aQSaldarV"></small></button>
+        <button type="button" class="aboQbtn" id="aQAdel" onclick="nxAboToggleAdelanto()" aria-expanded="false">Adelantar<small>meses</small><span class="aboTgl" id="aAdelantoTgl" hidden></span></button>
       </div>
-      <div id="aAdelantoBody" style="display:none;margin-top:10px">
-        <div class="fr" style="margin-bottom:0"><label>¿Cuántos meses por adelantado?</label><input type="number" id="aAdelantoMeses" min="1" max="24" placeholder="Ej: 3" oninput="nxAboMesesAdelanto()"/></div>
+      <div id="aAdelantoBody" class="pgAdel" style="display:none">
+        <label for="aAdelantoMeses">Meses por adelantado</label>
+        <div class="pgStep"><button type="button" onclick="nxAboPasoMeses(-1)" aria-label="Un mes menos"><i class="ti ti-minus"></i></button><input type="number" id="aAdelantoMeses" min="1" max="24" placeholder="0" inputmode="numeric" oninput="nxAboMesesAdelanto()"/><button type="button" onclick="nxAboPasoMeses(1)" aria-label="Un mes más"><i class="ti ti-plus"></i></button></div>
       </div>
-    </div>
-    <div id="mAboBaucheAnchor"></div>
-    <div class="aboSummary">
-      <div class="aboSummaryIc"><i class="ti ti-shield-check"></i></div>
-      <div><b>Resumen del pago</b><span id="aboResumenTxt">Método: — · Banco: — · Cuenta: — · Agente: —</span></div>
+    </section>
+    <section class="pgSec">
+      <div class="pgSecT">Cómo pagó</div>
+      <div class="fr pgMet">
+        <select id="aMet" style="display:none" onchange="cambiarMetodoAbono();nxAboActualizarResumen()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
+        <div id="aMetChips"></div>
+      </div>
+      <div class="fr" id="aBancoCont" style="display:none"><label>Banco <span class="req">*</span></label><select id="aBanco" onchange="cambiarBancoAbono();nxAboActualizarResumen()"><option value="">Seleccionar banco...</option></select><div id="aBancoChips"></div></div>
+      <div class="fr" id="aBancoOtrosCont" style="display:none"><label for="aBancoOtros">Nombre del banco <span class="req">*</span></label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" oninput="nxAboActualizarResumen()"/></div>
+      <div class="fr pgRef"><label for="aRef" id="aRefLbl">Referencia</label><input type="text" id="aRef" autocomplete="off" placeholder="Número de transferencia, cheque…"/></div>
+      <div id="mAboBaucheAnchor"></div>
+    </section>
+    <section class="pgSec">
+      <div class="pgSecT">Quién cobró</div>
+      <div class="fr"><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select><div id="aAgenteChips"></div></div>
+      <div class="aboNote"><i class="ti ti-info-circle"></i> El agente elegido queda como responsable de este dinero.</div>
+    </section>
+    <div class="aboSummary" aria-live="polite">
+      <div class="aboSummaryIc"><i class="ti ti-receipt-2"></i></div>
+      <div><b id="aboResumenTit">Resumen</b><span id="aboResumenTxt">—</span></div>
     </div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Pago registrado</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
+        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Abrir WhatsApp</button>
         <button class="btn bsm bc1" id="btnReciboVer" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
       </div>
     </div>
-    <div style="margin-bottom:8px"><button class="btn bsm" id="btnReciboAdelanto" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
-    <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
+    <button class="btn bsm" id="btnReciboAdelanto" type="button" style="display:none" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo</button>
+    <div class="fe"><button class="btn" type="button" onclick="closeM('mAbono')">Cancelar</button><button class="btn bxl" type="button" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar pago</button></div>
   </div>
 </div>
 
@@ -8645,7 +8753,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.00';
+const APP_VERSION='59.01';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13389,30 +13497,23 @@ try{Object.defineProperty(window,'llenarSelectBancosCobros',{value:llenarSelectB
 // anterior) para mostrar la cifra correcta — la usan abrirAbono() y
 // nxDestinoCambio() por igual, así no hay dos copias del mismo HTML.
 function nxAboPintarCliente(c){
+  // 59.01: tarjeta compacta — nombre, póliza y estado en una línea; plan · ARS · vigencia debajo; el pendiente a la derecha (lo que importa al cobrar).
   const el=document.getElementById('abonoI');if(!el||!c)return;
   const destino=document.getElementById('aDestino')?.value||'facturas';
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   let pendLbl,pendVal,pendRojo;
-  if(destino==='deuda_anterior'){
-    pendLbl='Deuda anterior';pendVal=fmt(deudaAnt(c));pendRojo=true;
-  }else{
-    const p=pend(c);
-    pendLbl='Pendiente';pendVal=fmt(p);pendRojo=p>0;
-  }
+  if(destino==='deuda_anterior'){pendLbl='Deuda anterior';pendVal=fmt(deudaAnt(c));pendRojo=true;}
+  else{const p=pend(c);pendLbl='Pendiente';pendVal=fmt(p);pendRojo=p>0;}
+  const meta=[c.plan||null,c.ars||'Sin ARS',c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin vigencia'].filter(Boolean).map(escHtml).join(' · ');
   el.innerHTML=`
     <div class="aboCliTop">
-      <div class="aboAv"><i class="ti ti-user"></i></div>
+      <div class="aboAv" aria-hidden="true">${escHtml(String(c.nom||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase())}</div>
       <div class="aboCliInfo">
         <div class="aboCliNom">${escHtml(c.nom)}</div>
-        <div class="aboCliPol">Póliza: ${escHtml(c.numero_poliza||'Sin póliza')}</div>
+        <div class="aboCliPol">${escHtml(c.numero_poliza||'Sin póliza')} ${estB(c)}</div>
+        <div class="aboCliMeta">${meta}</div>
       </div>
-      ${estB(c)}
-    </div>
-    <div class="aboCliFacts">
-      <div class="aboFact"><i class="ti ti-calendar"></i> ${c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin vigencia'}</div>
-      <div class="aboFact">${escHtml(c.plan||'—')}</div>
-      <div class="aboFact">${escHtml(c.ars||'Sin ARS')}</div>
-      <div class="aboFact" style="color:${pendRojo?'#dc2626':'#16a34a'}"><b>${pendLbl}:</b> ${pendVal}</div>
+      <div class="aboCliPend ${pendRojo?'rojo':'ok'}"><span>${pendLbl}</span><b>${pendVal}</b></div>
     </div>`;
 }
 function abrirAbono(cid){
@@ -13430,6 +13531,11 @@ function abrirAbono(cid){
   const _pndAbo=pend(c);const _aMntEl=document.getElementById('aMnt');
   _aMntEl.value=_pndAbo>0?(window.nxMoney?window.nxMoney.format(String(_pndAbo)):_pndAbo):'';
   document.getElementById('aRef').value='';
+  // 01-oct-2026: cada cobro arranca en Efectivo y sin banco/cuenta — antes se arrastraban los del cliente anterior.
+  {const _m=document.getElementById('aMet');if(_m)_m.value='Efectivo';
+   ['aBanco','aBancoOtros','aDirectoCuenta'].forEach(function(id){const e=document.getElementById(id);if(e)e.value='';});
+   if(typeof cambiarMetodoAbono==='function')cambiarMetodoAbono();
+   try{const _m2=document.getElementById('aMet');if(_m2)_m2.dispatchEvent(new Event('change'));}catch(e){}}
   // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
   if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
@@ -13440,6 +13546,8 @@ function abrirAbono(cid){
   const _ami=document.getElementById('aAdelantoMeses');if(_ami)_ami.value='';
   openM('mAbono');
   nxChipsSync('mAbono'); // repinta los chips ya con el modal visible
+  {const _qb=document.getElementById('aQAdel');if(_qb){_qb.classList.remove('on');_qb.setAttribute('aria-expanded','false');}}
+  nxAboPintarAtajos();
   nxAboActualizarResumen();
 }
 // ── Montos rápidos / Saldar pendiente / Pago adelantado / Resumen en vivo —
@@ -13466,7 +13574,28 @@ function nxAboToggleAdelanto(){
   const on=!tgl.classList.contains('on');
   tgl.classList.toggle('on',on);
   body.style.display=on?'':'none';
-  if(!on){const mi=document.getElementById('aAdelantoMeses');if(mi)mi.value='';}
+  const qb=document.getElementById('aQAdel');if(qb){qb.classList.toggle('on',on);qb.setAttribute('aria-expanded',on?'true':'false');}
+  if(!on){const mi=document.getElementById('aAdelantoMeses');if(mi)mi.value='';nxAboSaldar();}
+  else{const mi=document.getElementById('aAdelantoMeses');if(mi&&!mi.value){mi.value='1';nxAboMesesAdelanto();}}
+}
+// 59.01: atajo «1 cuota» = la prima mensual del cliente (getTot), sin pasar de lo que se pide saldar si debe menos.
+function nxAboUnaCuota(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
+  const cuota=getTot(c)||0;if(cuota>0)nxAboFijarMonto(cuota);
+}
+function nxAboPasoMeses(d){
+  const mi=document.getElementById('aAdelantoMeses');if(!mi)return;
+  const v=Math.max(1,Math.min(24,(parseInt(mi.value)||0)+d));mi.value=String(v);nxAboMesesAdelanto();
+}
+// Valores visibles de los atajos (se llaman al abrir y al cambiar el destino)
+function nxAboPintarAtajos(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
+  const destino=document.getElementById('aDestino')?.value||'facturas';
+  const cuota=getTot(c)||0;const saldar=destino==='deuda_anterior'?deudaAnt(c):pend(c);
+  const q=document.getElementById('aQCuota'),qv=document.getElementById('aQCuotaV'),sv=document.getElementById('aQSaldarV'),ad=document.getElementById('aQAdel');
+  if(qv)qv.textContent=cuota>0?fmt(cuota):'—';if(q)q.disabled=!(cuota>0)||destino==='deuda_anterior';
+  if(sv)sv.textContent=saldar>0?fmt(saldar):'Al día';
+  if(ad)ad.disabled=destino==='deuda_anterior'||!(cuota>0);
 }
 // Calcula el monto para N meses por adelantado: lo pendiente hoy + N primas
 // mensuales del cliente (getTot(c), la misma prima que usa toda la app).
@@ -13479,17 +13608,37 @@ function nxAboMesesAdelanto(){
   nxAboActualizarResumen();
 }
 function nxAboActualizarResumen(){
+  // 59.01: resumen que se entiende de un vistazo: cuánto, cómo, a dónde, quién cobró y qué queda pendiente.
   const txt=document.getElementById('aboResumenTxt');if(!txt)return;
-  const metodo=document.getElementById('aMet')?.value||'—';
+  const tit=document.getElementById('aboResumenTit');
+  const c=(typeof ST!=='undefined'&&ST.clientes)?ST.clientes.find(x=>x.id===abonoCliId):null;
+  const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt')?.value||''):parseFloat(document.getElementById('aMnt')?.value||'');
+  const metodo=document.getElementById('aMet')?.value||'Efectivo';
   const bancoSel=document.getElementById('aBanco')?.value||'';
-  const bancoOtros=document.getElementById('aBancoOtros')?.value||'';
-  const banco=bancoSel==='Otros'?(bancoOtros||'—'):(bancoSel||'—');
+  const bancoOtros=(document.getElementById('aBancoOtros')?.value||'').trim();
+  const banco=bancoSel==='Otros'?bancoOtros:bancoSel;
   const cuentaSel=document.getElementById('aDirectoCuenta');
-  const cuenta=(cuentaSel&&cuentaSel.value)?(cuentaSel.options[cuentaSel.selectedIndex]?.textContent||'—'):'—';
+  const cuenta=(cuentaSel&&cuentaSel.value)?(cuentaSel.options[cuentaSel.selectedIndex]?.textContent||'').trim():'';
   const agSel=document.getElementById('aAgente');
-  const agente=(agSel&&agSel.value)?(agSel.options[agSel.selectedIndex]?.textContent||'—'):'Sin asignar';
-  const mostrarBanco=metodo==='Transferencia'||metodo==='Depósito';
-  txt.textContent=`Método: ${metodo} · Banco: ${mostrarBanco?banco:'—'} · Cuenta: ${mostrarBanco?cuenta:'—'} · Agente: ${agente}`;
+  const agente=(agSel&&agSel.value)?(agSel.options[agSel.selectedIndex]?.textContent||'').trim():'';
+  const esBanco=metodo==='Transferencia'||metodo==='Depósito';
+  // Etiqueta y ayuda de la referencia según el método
+  const rl=document.getElementById('aRefLbl'),ri=document.getElementById('aRef');
+  const REF={Efectivo:['Referencia (opcional)','Ej. número de recibo'],Transferencia:['Número de la transferencia *','Ref. o confirmación del banco'],'Depósito':['Número del depósito *','Número del volante'],Cheque:['Número del cheque *','Número del cheque'],Tarjeta:['Aprobación de la tarjeta *','Código de aprobación']};
+  const rr=REF[metodo]||REF.Efectivo;if(rl)rl.textContent=rr[0];if(ri)ri.placeholder=rr[1];
+  const linea1=[metodo+(esBanco&&banco?(' '+banco):''),esBanco?(cuenta?('→ cuenta de '+cuenta):'→ elige la cuenta'):null,agente?('cobró '+agente):'sin agente'].filter(Boolean).join(' · ');
+  let linea2='';
+  if(c&&monto>0){
+    const destino=document.getElementById('aDestino')?.value||'facturas';
+    const deuda=destino==='deuda_anterior'?deudaAnt(c):pend(c);const cuota=getTot(c)||0;
+    if(monto<deuda-0.009)linea2='Queda pendiente '+fmt(deuda-monto);
+    else if(Math.abs(monto-deuda)<0.01)linea2=deuda>0?'Salda todo lo pendiente':'';
+    else{const extra=monto-deuda;const n=cuota>0?Math.floor((extra+0.009)/cuota):0;linea2=(deuda>0?'Salda lo pendiente y adelanta ':'Adelanta ')+fmt(extra)+(n>0?(' (≈ '+n+(n===1?' mes':' meses')+')'):'');}
+  }
+  if(tit)tit.textContent=monto>0?fmt(monto):'Escribe el monto';
+  txt.innerHTML=escHtml(linea1)+(linea2?('<em>'+escHtml(linea2)+'</em>'):'');
+  const btn=document.getElementById('btnAbo');
+  if(btn&&!btn.disabled)btn.innerHTML='<i class="ti ti-check"></i> '+(monto>0?('Registrar '+fmt(monto)):'Registrar pago');
 }
 function nxDestinoCambio(){
   const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
@@ -13498,6 +13647,7 @@ function nxDestinoCambio(){
   const monto=destino==='deuda_anterior'?deudaAnt(c):pend(c);
   if(aMntEl)aMntEl.value=monto>0?(window.nxMoney?window.nxMoney.format(String(monto)):monto):'';
   nxAboPintarCliente(c);
+  nxAboPintarAtajos();
   nxAboActualizarResumen();
 }
 let _pagosCache=[];
@@ -13896,9 +14046,12 @@ async function regAbono(){
   // del servidor, así que esto es solo UX, nunca la única barrera real.
   const agenteCobro=document.getElementById('aAgente')?.value||null;
   if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente que cobró');return;}
-  const refValor=(document.getElementById('aRef')?.value||'').trim();
-  if(!refValor){toast('err','Referencia requerida','Escribe una referencia');return;}
   const metodo=document.getElementById('aMet').value;
+  // 01-oct-2026: en Efectivo la referencia es opcional; la RPC la exige (seguros_registrar_cobro: «Referencia obligatoria»),
+  // así que si queda vacía se envía «Efectivo» (antes se inventaban números tipo 9877777).
+  let refValor=(document.getElementById('aRef')?.value||'').trim();
+  if(!refValor&&metodo==='Efectivo')refValor='Efectivo';
+  if(!refValor){toast('err','Referencia requerida','Escribe el número de la transferencia, depósito, cheque o tarjeta');return;}
   let bancoGuardar=null;
   let cuentaDestinoId=null;
   if(metodo==='Transferencia'||metodo==='Depósito'){
@@ -13966,7 +14119,7 @@ async function regAbono(){
        {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar pago';if(typeof nxAboActualizarResumen==='function')nxAboActualizarResumen();
 }
 
 // Pago dirigido a la DEUDA ANTES DEL SISTEMA (baja clientes.deuda_anterior, NO toca facturas).
@@ -14009,7 +14162,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
        {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',msg);}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar pago';if(typeof nxAboActualizarResumen==='function')nxAboActualizarResumen();
 }
 
 // ── EMPRESAS ─────────────────────────────────────────────────────────────────
@@ -15990,6 +16143,10 @@ function switchTab(tab){
 // parches-seguros-base.js y parches-whatsapp-inbox.js también, no solo este), nunca borrar sin
 // verificar los 3 lados primero.
 let _ultimoAbono={cliente:null,monto:0};
+// 01-oct-2026: «let» no crea window._ultimoAbono y nxReciboMeses (seguros-base) y el envoltorio de WhatsApp lo leen
+// desde window → el recibo no se enlazaba al abono (sin número; sept-2026: 114 abonos, 0 con recibo_num). Puente de
+// solo lectura/escritura sobre la MISMA variable (nadie más la redeclara).
+try{Object.defineProperty(window,'_ultimoAbono',{get:function(){return _ultimoAbono;},set:function(v){_ultimoAbono=v;},configurable:true});}catch(e){}
 
 // Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
 // inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.

@@ -1,7 +1,16 @@
 {
-  "version": "59.00",
+  "version": "59.01",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.01",
+      "fecha": "2026-10-01",
+      "notas": [
+        "Registrar pago, ordenado y más corto (de 1.5 pantallas a casi una en el iPhone): cliente → monto → cómo pagó (banco, número, cuenta y comprobante juntos) → quién cobró → resumen → botón fijo con el monto.",
+        "Atajos útiles: «1 cuota», «Saldar» y «Adelantar» con − / + meses. El resumen dice cuánto, cómo, a qué cuenta, quién cobró y cuánto queda pendiente.",
+        "Arreglos: cada pago nuevo queda enlazado a su recibo (con número); el bauche de WhatsApp se marca aplicado; al abrir otro cliente ya no se arrastra el método ni el banco anterior; en Efectivo la referencia es opcional; el comprobante se guarda en el pago exacto."
+      ]
+    },
     {
       "version": "59.00",
       "fecha": "2026-10-01",

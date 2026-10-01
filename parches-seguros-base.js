@@ -10431,8 +10431,12 @@
       if (url && exito && cid) {
         const api = getAPI();
         try {
-          const ab = await api.get('abonos', `cliente_id=eq.${cid}&order=created_at.desc&limit=1`);
-          if (ab && ab[0]) await api.patch('abonos', `id=eq.${ab[0].id}`, { comprobante_url: url });
+          // 01-oct-2026: el comprobante va al abono EXACTO que devolvió la RPC (after.abonoId), nunca a «el último
+          // abono del cliente» (dos cobros seguidos lo podían pegar al equivocado). La RPC solo lo guarda en la
+          // entrega, por eso este PATCH sigue siendo necesario. Sin id → no se adivina.
+          const abonoId = after && after.abonoId;
+          if (abonoId) await api.patch('abonos', `id=eq.${abonoId}&comprobante_url=is.null`, { comprobante_url: url });
+          else console.warn('Bauche: la RPC no devolvió abono_id; no se enlaza para no adivinar.');
         } catch (e) { console.warn('No se pudo enlazar bauche al abono:', e); }
         try {
           // Bloque 4D-1 (docs/bitacora/2026-08-14-2152-claude-bloque4d1-revision2.md):
