@@ -146,13 +146,14 @@ function nombreCorto(v: unknown, max = 26) {
   const t = String(v || "Sin nombre").replace(/\s+/g, " ").trim();
   return t.length > max ? t.slice(0, max - 1).trimEnd() + "…" : t;
 }
-// Los atrasados que más deben primero; el resto se resume en «… y N más».
-function cobrarPrimero(atrasados: any[], n = 3) {
-  if (!atrasados.length) return "Ningún cliente atrasado 🎉";
+// Los atrasados que más deben primero, cada uno en su propia línea fija de la plantilla
+// (Meta no permite saltos de línea dentro de una variable). Faltantes → «—».
+function cobrarPrimero(atrasados: any[], max = 26) {
   const orden = [...atrasados].sort((a, b) => b.monto - a.monto);
-  const lineas = orden.slice(0, n).map((x: any) => `• ${nombreCorto(x.c.nom)} — ${x.meses} mes${x.meses === 1 ? "" : "es"} — RD$ ${fmtCorto(x.monto)}`);
-  if (orden.length > n) lineas.push(`• … y ${orden.length - n} más en NEXUS PRO`);
-  return lineas.join(" ");
+  const lineas = orden.slice(0, 3).map((x: any) => `${nombreCorto(x.c.nom, max)} — ${x.meses} mes${x.meses === 1 ? "" : "es"} — RD$ ${fmtCorto(x.monto)}`);
+  if (!lineas.length) lineas.push("Ningún cliente atrasado 🎉");
+  while (lineas.length < 3) lineas.push("—");
+  return [...lineas, String(Math.max(0, orden.length - 3))];
 }
 
 const CUERPO_AGENTE_V2 = [
@@ -163,10 +164,10 @@ const CUERPO_AGENTE_V2 = [
   "• Tenías al empezar el ciclo: RD$ {{4}}",
   "• Cobraste en este ciclo: RD$ {{5}}",
   "• Entregaste a administración: RD$ {{6}}",
-  "• Queda en tu poder: RD$ {{7}}",
+  "• *Queda en tu poder: RD$ {{7}}*",
   "(Efectivo RD$ {{8}} · Banco RD$ {{9}})",
   "",
-  "📅 En el ciclo anterior cobraste: RD$ {{10}}",
+  "📅 Ciclo anterior cobraste: RD$ {{10}}",
   "",
   "👥 *TUS CLIENTES*",
   "• Atrasados: {{11}} — deben RD$ {{12}}",
@@ -174,41 +175,51 @@ const CUERPO_AGENTE_V2 = [
   "• Nuevos hoy: {{14}}",
   "",
   "⚠️ *COBRAR PRIMERO*",
-  "{{15}}",
-  "",
-  "El detalle completo está en NEXUS PRO."
+  "1. {{15}}",
+  "2. {{16}}",
+  "3. {{17}}",
+  "Otros atrasados: {{18}} (ver NEXUS PRO)"
 ].join("\n");
 const EJEMPLO_AGENTE_V2 = ["01/10/2026", "JUAN", "20 sep–20 oct", "333,190", "93,500", "80,000", "346,690", "190,500", "156,190", "264,500", "14", "52,300", "2", "0",
-  "• María Pérez — 3 meses — RD$ 9,000 • Pedro Gómez — 2 meses — RD$ 6,000 • … y 12 más en NEXUS PRO"];
+  "María Pérez — 3 meses — RD$ 9,000", "Pedro Gómez — 2 meses — RD$ 6,000", "Luis Díaz — 1 mes — RD$ 3,000", "11"];
 
 const CUERPO_ADMIN_V2 = [
   "📊 *Cierre del día — {{1}}*",
   "Hola {{2}}, este es el resumen de hoy en NEXUS PRO.",
   "",
-  "🏢 *NEGOCIO — CICLO {{3}}*",
-  "• Total cobrado: RD$ {{4}}",
+  "🏢 *NEGOCIO ({{3}})*",
+  "• *Total cobrado: RD$ {{4}}*",
   "• Ciclo anterior: RD$ {{5}}",
   "",
   "💰 *TU DINERO*",
   "• Tenías al empezar el ciclo: RD$ {{6}}",
   "• Cobraste: RD$ {{7}}",
   "• Recibiste de agentes: RD$ {{8}}",
-  "• En tu poder: RD$ {{9}}",
+  "• *En tu poder: RD$ {{9}}*",
   "(Efectivo RD$ {{10}} · Banco RD$ {{11}})",
   "",
   "👥 *TUS CLIENTES*",
   "• Atrasados: {{12}} — deben RD$ {{13}}",
   "• En proceso: {{14}} · Nuevos hoy: {{15}}",
-  "⚠️ Cobrar primero: {{16}}",
   "",
-  "🧑‍💼 *EQUIPO*",
-  "{{17}}",
+  "⚠️ *COBRAR PRIMERO*",
+  "1. {{16}}",
+  "2. {{17}}",
+  "3. {{18}}",
+  "Otros atrasados: {{19}}",
+  "",
+  "🧑‍💼 *AGENTE: {{20}}*",
+  "• Cobró: RD$ {{21}}",
+  "• Te entregó: RD$ {{22}}",
+  "• En su poder: RD$ {{23}}",
+  "• Atrasados: {{24}} — deben RD$ {{25}}",
+  "• En proceso: {{26}}",
   "",
   "El detalle completo está en NEXUS PRO."
 ].join("\n");
 const EJEMPLO_ADMIN_V2 = ["01/10/2026", "ANA", "20 sep–20 oct", "217,000", "409,300", "1,402,310", "123,500", "80,000", "1,605,810", "88,900", "1,516,910", "13", "41,200", "2", "0",
-  "• Luis Díaz — 4 meses — RD$ 12,000 • … y 12 más en NEXUS PRO",
-  "• JUAN: cobró RD$ 93,500 · entregó RD$ 80,000 · en su poder RD$ 346,690 · 14 atrasados (RD$ 52,300) · 2 en proceso"];
+  "Luis Díaz — 4 meses — RD$ 12,000", "Rosa Peña — 2 meses — RD$ 8,000", "Juan Cruz — 1 mes — RD$ 6,500", "10",
+  "JUAN", "93,500", "80,000", "346,690", "14", "52,300", "2"];
 
 // Vista previa del texto tal como lo verá el teléfono (para pruebas «dry» y para medir el largo).
 function renderizar(cuerpo: string, vars: string[]) {
@@ -426,28 +437,33 @@ Deno.serve(async (req: Request) => {
     const [negocioCiclo, negocioAnterior] = await Promise.all([totalNegocio(periodo), totalNegocio(periodoPrevio)]);
 
     const dinero = (v: number | null) => v === null ? "—" : fmtCorto(v);
-    function varsAgenteV2(i: any, lista = 3) {
+    function varsAgenteV2(i: any, max = 26) {
       const entregaTxt = fmtCorto(i.entregado) + (i.recibido > 0.005 ? ` (recibiste RD$ ${fmtCorto(i.recibido)})` : "");
       return [fecha, String(i.a.nom || "Agente"), etiqueta, fmtCorto(i.inicial), fmtCorto(i.cobrado), entregaTxt,
         fmtCorto(i.enPoder), dinero(i.efectivo), dinero(i.banco), fmtCorto(i.cobradoAnterior),
         String(i.atrasados.length), fmtCorto(i.deben), String(i.proceso.length), String(i.nuevos.length),
-        cobrarPrimero(i.atrasados, lista)].map(limpiarParam);
+        ...cobrarPrimero(i.atrasados, max)].map(limpiarParam);
     }
-    function lineaEquipo(i: any) {
-      const extra = i.recibido > 0.005 ? ` · recibió RD$ ${fmtCorto(i.recibido)}` : "";
-      return `• ${String(i.a.nom || "Agente")}: cobró RD$ ${fmtCorto(i.cobrado)} · entregó RD$ ${fmtCorto(i.entregado)}${extra} · en su poder RD$ ${fmtCorto(i.enPoder)} · ${i.atrasados.length} atrasado${i.atrasados.length === 1 ? "" : "s"} (RD$ ${fmtCorto(i.deben)}) · ${i.proceso.length} en proceso`;
-    }
-    function varsAdminV2(i: any, lista = 3) {
-      const equipo = infos.filter((x) => String(x.a.id) !== String(i.a.id) && !x.esAdmin).map(lineaEquipo);
+    // La plantilla del admin tiene un bloque fijo para UN agente (hoy: ROBINSON). Si algún día hay más,
+    // los demás se resumen al final de la línea «En proceso» del bloque para no perderlos.
+    function varsAdminV2(i: any, max = 26) {
+      const equipo = infos.filter((x) => String(x.a.id) !== String(i.a.id) && !x.esAdmin);
+      const ag = equipo[0];
+      const otros = equipo.slice(1).map((x) => ` · ${x.a.nom}: cobró RD$ ${fmtCorto(x.cobrado)}, en su poder RD$ ${fmtCorto(x.enPoder)}`).join("");
+      const bloque = ag
+        ? [String(ag.a.nom || "Agente"), fmtCorto(ag.cobrado),
+           fmtCorto(ag.entregado) + (ag.recibido > 0.005 ? ` (recibió RD$ ${fmtCorto(ag.recibido)})` : ""),
+           fmtCorto(ag.enPoder), String(ag.atrasados.length), fmtCorto(ag.deben), String(ag.proceso.length) + otros]
+        : ["Sin agentes activos", "0", "0", "0", "0", "0", "0"];
       return [fecha, String(i.a.nom || "Admin"), etiqueta, fmtCorto(negocioCiclo), fmtCorto(negocioAnterior),
         fmtCorto(i.inicial), fmtCorto(i.cobrado), fmtCorto(i.recibido), fmtCorto(i.enPoder), dinero(i.efectivo), dinero(i.banco),
         String(i.atrasados.length), fmtCorto(i.deben), String(i.proceso.length), String(i.nuevos.length),
-        cobrarPrimero(i.atrasados, lista), equipo.length ? equipo.join(" ") : "Sin otros agentes activos"].map(limpiarParam);
+        ...cobrarPrimero(i.atrasados, max), ...bloque].map(limpiarParam);
     }
-    // Si el texto pasa del límite de Meta, se acorta la lista de «cobrar primero».
+    // Si el texto pasa del límite de Meta, se acortan los nombres de «cobrar primero».
     function ajustar(fn: (i: any, n: number) => string[], cuerpo: string, i: any) {
-      for (let n = 3; n >= 1; n--) { const v = fn(i, n); if (renderizar(cuerpo, v).length <= MAX_CUERPO || n === 1) return v; }
-      return fn(i, 1);
+      for (const n of [26, 20, 14]) { const v = fn(i, n); if (renderizar(cuerpo, v).length <= MAX_CUERPO) return v; }
+      return fn(i, 14);
     }
 
     // 2) Envío.
