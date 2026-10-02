@@ -936,3 +936,54 @@ nav.sb .sb-ur{color:#64748b !important}
       inset -1px 0 0 rgba(148,163,184,.07);
   }
 }
+
+
+/* ════════════════════════════════════════════════════════════════
+   SHEEN — brillo diagonal de bajo costo para la barra superior.
+   Solo anima transform/opacity: no recalcula layout, sombras ni blur.
+   ════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion:no-preference){
+  body .tnav{
+    position:relative;
+    isolation:isolate;
+  }
+  body .tnav::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:0;
+    background:linear-gradient(
+      112deg,
+      transparent 38%,
+      rgba(255,255,255,0) 43%,
+      rgba(255,255,255,.20) 48%,
+      rgba(255,255,255,.055) 52%,
+      transparent 58%
+    );
+    transform:translate3d(-100%,0,0) skewX(-16deg);
+    will-change:transform,opacity;
+    animation:nxTopbarSheen 10s cubic-bezier(.22,1,.36,1) 2.5s infinite;
+  }
+  body .tnav > *{
+    position:relative;
+    z-index:1;
+  }
+  @keyframes nxTopbarSheen{
+    0%,74%{
+      opacity:0;
+      transform:translate3d(-100%,0,0) skewX(-16deg);
+    }
+    78%{opacity:1}
+    94%{opacity:0}
+    100%{
+      opacity:0;
+      transform:translate3d(100%,0,0) skewX(-16deg);
+    }
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  body .tnav::before{animation:none !important;}
+}
