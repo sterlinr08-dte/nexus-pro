@@ -1037,7 +1037,7 @@ body .tnav > .nx-glide{
 body .tnav > .nx-glide::after{
   content:'';
   position:absolute;
-  left:22%;right:22%;bottom:-6px;height:2px;border-radius:2px;
+  left:18%;right:18%;top:0;height:2px;border-radius:2px; /* 59.06: el brillo va ARRIBA, en el borde (dueño) */
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
   box-shadow:0 0 8px rgba(255,255,255,.45);
 }
@@ -1092,9 +1092,9 @@ body .tnav.nx-glass-active::before{opacity:.75;}
   transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),border-radius .3s ease,opacity .18s ease,scale .16s ease;
   will-change:transform,width,height,opacity;
 }
-/* Rayita de luz debajo (como el video); en controles altos va más corta y tenue. */
+/* Rayita de luz en el borde de ARRIBA (59.06, dueño: «el brillo se ve abajo y es arriba»); en controles altos va más corta. */
 .nx-vidrio::after{
-  content:'';position:absolute;left:24%;right:24%;bottom:2px;height:2px;border-radius:2px;
+  content:'';position:absolute;left:20%;right:20%;top:0;height:2px;border-radius:2px; /* 59.06: brillo ARRIBA (dueño) */
   background:linear-gradient(90deg,transparent,rgba(var(--v-luz),.9),transparent);
   box-shadow:0 0 8px rgba(var(--v-luz),.45);
   transition:left .3s ease,right .3s ease,opacity .2s ease;

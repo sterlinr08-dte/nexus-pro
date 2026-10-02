@@ -22,7 +22,9 @@
   var FINO=mq('(hover: hover) and (pointer: fine)');
   if(!FINO&&navigator.deviceMemory&&navigator.deviceMemory<=2)return; // celulares muy limitados: nada
   var TOCABLE='button,a[href],[role="button"],[role="tab"],[role="menuitem"],[role="option"],[role="switch"],summary,select,label[for],.ni,.btn,.chip,[onclick],[tabindex="0"]';
-  var NO='.tnav,input,textarea,[contenteditable="true"],.nx-vidrio-no,iframe,video,canvas';
+  // En la computadora la barra superior tiene su propio deslizador (parches-glass-pointer.js), por eso se excluye .tnav;
+  // en el iPhone ese deslizador no existe y la barra también recibe esta luz al tocar (59.06, dueño).
+  var NO=(FINO?'.tnav,':'')+'input,textarea,[contenteditable="true"],.nx-vidrio-no,iframe,video,canvas';
   var GRUPO='nav,[role="tablist"],[role="menu"],[role="listbox"],[role="toolbar"],ul,ol,.sb-nav,.tn-r,thead,tbody,form';
   var capa=null,actual=null,raf=0,visible=false,ultimo=0,prev=null,mx=0,my=0,tScroll=0,escribiendo=false,tSalir=0,apagadoEn=0;
 

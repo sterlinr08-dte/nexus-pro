@@ -93,6 +93,13 @@ const vio = (p, k) => p.evaluate(k => window.__clases.some(c => c.split(' ').inc
   const M = await abrir(b, 390, false);
   const t = []; for (const h of await M.page.$$('#cnt button, #cnt [role="button"]')) { if (await h.isVisible()) { const bb = await h.boundingBox(); if (bb && bb.height <= 120 && bb.y > 80 && bb.y < 760) t.push(bb); } }
   if (t[0]) { await M.page.touchscreen.tap(...centro(t[0])); await M.page.waitForTimeout(60); ok(await vio(M.page, 'on') && await vio(M.page, 'onda'), 'iPhone: luz con onda al tocar'); }
+  // iPhone · barra superior: al tocar un botón de la barra también sale la luz (con el brillo arriba)
+  { const tb = []; for (const h of await M.page.$$('.tnav button')) { if (await h.isVisible()) { const bb = await h.boundingBox(); if (bb && bb.width >= 20) tb.push(bb); } }
+    if (tb.length) { await M.page.evaluate(() => { window.__clases = []; }); const c = [tb[tb.length - 1].x + tb[tb.length - 1].width / 2, tb[tb.length - 1].y + tb[tb.length - 1].height / 2];
+      const cdp0 = await M.ctx.newCDPSession(M.page); await cdp0.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: c[0], y: c[1] }] }); await M.page.waitForTimeout(200);
+      ok(await vio(M.page, 'on'), 'iPhone: tocar un botón de la barra superior también enciende la luz');
+      await cdp0.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await M.page.waitForTimeout(600); }
+    else ok(false, 'iPhone: no hay botones visibles en la barra'); }
   // iPhone · Clientes: tocar una tarjeta (la luz se queda mientras el dedo está) y al deslizar la lista pasa a otra
   await M.page.evaluate(() => { try { nav('clientes', null); } catch (e) {} }); await M.page.waitForTimeout(1500);
   await M.page.evaluate(() => { const r = document.querySelector('.cliCard, .clirow'); if (r) r.scrollIntoView({ block: 'start' }); }); await M.page.waitForTimeout(600);
