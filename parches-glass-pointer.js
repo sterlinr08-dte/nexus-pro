@@ -1,4 +1,4 @@
-/* NEXUS PRO · Reflejo glass que sigue el puntero — visual-only */
+/* NEXUS PRO · Reflejo de vidrio global y ligero — visual-only */
 (function(){
   'use strict';
   if(window.__nxPointerGlass)return;
@@ -8,18 +8,32 @@
   var precise=window.matchMedia&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if(reduce||!precise)return;
 
-  var SEL=[
-    '.tnav','.sb','.nc','.tw','.sf-kpi','.role-card','.meta-card',
-    '.nxWaPro','.nxWaProKpi','.nxCrmKpi','.nxProsCol','.nxProsCard',
-    '.nxPf','.nx-card','.qa','.tn-b','.btn','.modal','.dialog','.pop'
+  /* Superficies, no texto ni celdas: funciona también con módulos renderizados después. */
+  var CORE=[
+    '.tnav','.sb','[role="dialog"]','[role="menu"]',
+    '[class*="card" i]','[class*="panel" i]','[class*="modal" i]',
+    '[class*="dialog" i]','[class*="drawer" i]','[class*="sheet" i]',
+    '[class*="window" i]','[class*="chat" i]','[class*="kpi" i]',
+    '[class*="report" i]','[class*="summary" i]','[class*="toolbar" i]',
+    '[class*="menu" i]','.nc','.tw','.qa','.nxPf'
   ].join(',');
-  var active=null,layer=null,raf=0,lastX=0,lastY=0;
+  var CONTROL='button,.btn,.tn-b,.tn-tog,.qa';
+  var active=null,layer=null,raf=0,lastX=0,lastY=0,lastTarget=null;
 
+  function isElement(node){return !!(node&&node.nodeType===1);}
+  function hostFor(node){
+    if(!isElement(node))return null;
+    var core=node.closest&&node.closest(CORE);
+    if(core)return core;
+    return node.closest&&node.closest(CONTROL);
+  }
   function clear(){
     if(!active)return;
     active.classList.remove('nx-glass-active','nx-glass-host');
+    active.style.removeProperty('--nx-glass-x');
     if(layer&&layer.parentNode===active)layer.remove();
-    active=null; layer=null;
+    active=null;
+    layer=null;
   }
   function setActive(next){
     if(next===active)return;
@@ -34,27 +48,28 @@
   }
   function paint(){
     raf=0;
-    if(!active)return;
+    var next=hostFor(lastTarget);
+    if(!next||!document.documentElement.contains(next)){clear();return;}
+    setActive(next);
     var rect=active.getBoundingClientRect();
-    if(rect.width<1||rect.height<1)return;
+    if(rect.width<1||rect.height<1){clear();return;}
     var x=Math.max(0,Math.min(100,(lastX-rect.left)/rect.width*100));
-    var y=Math.max(0,Math.min(100,(lastY-rect.top)/rect.height*100));
     active.style.setProperty('--nx-glass-x',x.toFixed(2)+'%');
-    active.style.setProperty('--nx-glass-y',y.toFixed(2)+'%');
+  }
+  function schedule(){
+    if(!raf)raf=requestAnimationFrame(paint);
   }
   document.addEventListener('pointermove',function(ev){
     if(ev.pointerType&&ev.pointerType!=='mouse')return;
-    var node=ev.target&&ev.target.nodeType===1?ev.target:null;
-    var next=node&&node.closest?node.closest(SEL):null;
-    setActive(next);
-    if(!active)return;
-    lastX=ev.clientX; lastY=ev.clientY;
-    if(!raf)raf=requestAnimationFrame(paint);
+    lastTarget=ev.target;
+    lastX=ev.clientX;
+    lastY=ev.clientY;
+    schedule();
   },{passive:true});
   document.addEventListener('pointerout',function(ev){
     if(!active)return;
-    var to=ev.relatedTarget&&ev.relatedTarget.nodeType===1?ev.relatedTarget:null;
-    var next=to&&to.closest?to.closest(SEL):null;
+    var to=ev.relatedTarget;
+    var next=hostFor(to);
     if(next!==active)clear();
   },{passive:true});
   window.addEventListener('blur',clear,{passive:true});
