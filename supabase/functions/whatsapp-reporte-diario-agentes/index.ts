@@ -267,11 +267,12 @@ const CUERPO_ACUMULADO = [
   "📅 Ciclo {{1}}",
   "🕖 Cierre del {{2}}",
   "",
-  "━━━━━━━━━━━━━━",
+  "━━━━━━━━━━",
   "👤 *{{3}}*",
   "Cobrado en el ciclo: *RD$ {{4}}*",
-  "Cobrado hoy: *RD$ {{5}}* ({{6}})",
-  "",
+  "Cobrado hoy: *RD$ {{5}}*",
+  "Clientes que pagaron hoy, de mayor a menor:",
+  "{{6}}",
   "{{7}}",
   "{{8}}",
   "{{9}}",
@@ -279,31 +280,30 @@ const CUERPO_ACUMULADO = [
   "{{11}}",
   "{{12}}",
   "{{13}}",
-  "{{14}}",
-  "━━━━━━━━━━━━━━",
-  "👤 *{{15}}*",
-  "Cobrado en el ciclo: *RD$ {{16}}*",
-  "Cobrado hoy: *RD$ {{17}}* ({{18}})",
-  "",
+  "━━━━━━━━━━",
+  "👤 *{{14}}*",
+  "Cobrado en el ciclo: *RD$ {{15}}*",
+  "Cobrado hoy: *RD$ {{16}}*",
+  "Clientes que pagaron hoy, de mayor a menor:",
+  "{{17}}",
+  "{{18}}",
   "{{19}}",
   "{{20}}",
   "{{21}}",
   "{{22}}",
   "{{23}}",
   "{{24}}",
-  "{{25}}",
-  "{{26}}",
-  "━━━━━━━━━━━━━━",
+  "━━━━━━━━━━",
   "💰 *TOTALES*",
-  "Ciclo: *RD$ {{27}}*",
-  "Hoy: *RD$ {{28}}*",
+  "Ciclo: *RD$ {{25}}*",
+  "Hoy: *RD$ {{26}}*",
   "",
-  "Detalle en NEXUS PRO."
+  "ℹ️ Cada pago cuenta en el ciclo del día en que se cobró o se validó (del 20 al 20). Lo que un agente le entrega a otro no se suma otra vez. Si no caben todos los clientes, ve el resto en NEXUS PRO."
 ].join("\n");
 const EJ_LISTA = ["1. Ana Gómez — RD$ 6,500", "2. Orlando Reyes — RD$ 6,500", "3. Yesenia Siri — RD$ 5,000", "4. Ángel Bueno — RD$ 4,500",
   "5. Luis Pimentel — RD$ 4,500", "6. Nuris Pérez — RD$ 4,500", "7. Rey De Oleo — RD$ 4,000", "8. Domingo De Los Santos — RD$ 4,000"];
-const EJEMPLO_ACUMULADO = ["20 sep–20 oct", "01/10/2026", "JUAN", "123,500", "39,500", "8 clientes", ...EJ_LISTA,
-  "PEDRO", "93,500", "28,000", "8 clientes", ...EJ_LISTA, "217,000", "67,500"];
+const EJEMPLO_ACUMULADO = ["20 sep–20 oct", "01/10/2026", "JUAN", "123,500", "39,500 · 8 clientes", ...EJ_LISTA,
+  "PEDRO", "93,500", "28,000 · 8 clientes", ...EJ_LISTA, "217,000", "67,500"];
 // Relleno de las líneas vacías. Si Meta lo rechazara, el envío se reintenta con «·».
 const RELLENO = "\u200B";
 
@@ -318,13 +318,14 @@ function nombreYApellido(v: unknown) {
   if (i < t.length) out.push(t[i]);
   return out.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
-function listaClientesHoy(items: { nom: string; monto: number }[], relleno = RELLENO) {
+// «tope» = cuántas líneas de cliente se muestran (≤ 8); baja si el mensaje pasaría del límite de Meta.
+function listaClientesHoy(items: { nom: string; monto: number }[], relleno = RELLENO, tope = SLOTS_CLIENTES) {
   const orden = [...items].sort((a, b) => b.monto - a.monto);
   const linea = (x: any, k: number) => `${k + 1}. ${nombreYApellido(x.nom)} — RD$ ${fmtCorto(x.monto)}`;
   let out: string[];
   if (!orden.length) out = ["Sin cobros hoy"];
-  else if (orden.length <= SLOTS_CLIENTES) out = orden.map(linea);
-  else out = [...orden.slice(0, SLOTS_CLIENTES - 1).map(linea), `… y ${orden.length - (SLOTS_CLIENTES - 1)} más (ver NEXUS PRO)`];
+  else if (orden.length <= tope) out = orden.map(linea);
+  else out = [...orden.slice(0, tope - 1).map(linea), `… y ${orden.length - (tope - 1)} más (ver NEXUS PRO)`];
   while (out.length < SLOTS_CLIENTES) out.push(relleno);
   return out;
 }
@@ -334,7 +335,7 @@ function renderizar(cuerpo: string, vars: string[]) {
   return cuerpo.replace(/\{\{(\d+)\}\}/g, (_m, i) => vars[Number(i) - 1] ?? "");
 }
 // Meta limita el cuerpo de la plantilla a 1024 caracteres ya con las variables.
-const MAX_CUERPO = 1000;
+const MAX_CUERPO = 1020;   // JS cuenta los emojis como 2: queda margen real
 
 async function plantillaExiste(accountId: string, nombre: string) {
   const qs = new URLSearchParams({ accountId, name: nombre, language: "es" });
@@ -611,19 +612,27 @@ Deno.serve(async (req: Request) => {
     const hoyDe = (i: any) => hoyMapa.get(String(i.a.id)) || { total: 0, porCliente: new Map<string, number>() };
     const orden = [...infos].sort((x, y) => y.cobrado - x.cobrado);
     const totalHoy = [...hoyMapa.values()].reduce((t, r) => t + r.total, 0);
-    function varsAcumulado(relleno: string) {
+    function varsAcumuladoTope(relleno: string, tope: number) {
       const slot = (i: any) => {
-        if (!i) return ["—", "0", "0", "0 clientes", ...listaClientesHoy([], relleno)];
+        if (!i) return ["—", "0", "0 · 0 clientes", ...listaClientesHoy([], relleno, tope)];
         const h = hoyDe(i);
         const n = h.porCliente.size;
         const items = [...h.porCliente.entries()].map(([id, monto]) => ({ nom: nomCliente.get(id) || "Sin nombre", monto }));
-        return [String(i.a.nom || "Agente"), fmtCorto(i.cobrado), fmtCorto(h.total), `${n} cliente${n === 1 ? "" : "s"}`, ...listaClientesHoy(items, relleno)];
+        return [String(i.a.nom || "Agente"), fmtCorto(i.cobrado), `${fmtCorto(h.total)} · ${n} cliente${n === 1 ? "" : "s"}`, ...listaClientesHoy(items, relleno, tope)];
       };
       const b1 = slot(orden[0]), b2 = slot(orden[1]);
       const extra = orden.slice(2).map((i) => `${i.a.nom}: ciclo RD$ ${fmtCorto(i.cobrado)}, hoy RD$ ${fmtCorto(hoyDe(i).total)}`).join(" · ");
       if (extra) b2[b2.length - 1] = (b2[b2.length - 1] === relleno ? "" : b2[b2.length - 1] + " · ") + extra;
       // El relleno invisible no es espacio para limpiarParam, así que se conserva.
       return [etiqueta, fecha, ...b1, ...b2, fmtCorto(negocioCiclo), fmtCorto(totalHoy)].map(limpiarParam);
+    }
+    // Meta corta en 1024 caracteres: si no cabe, se muestran menos clientes por agente.
+    function varsAcumulado(relleno: string) {
+      for (let tope = SLOTS_CLIENTES; tope >= 2; tope--) {
+        const v = varsAcumuladoTope(relleno, tope);
+        if (renderizar(CUERPO_ACUMULADO, v).length <= MAX_CUERPO) return v;
+      }
+      return varsAcumuladoTope(relleno, 2);
     }
     if (dry) {
       resultados.push({ acumulado_agentes: true, vista: renderizar(CUERPO_ACUMULADO, varsAcumulado(RELLENO)) });
