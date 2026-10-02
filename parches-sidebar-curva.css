@@ -1070,6 +1070,52 @@ body .tnav.nx-glass-active::before{opacity:.75;}
   body .tnav > .nx-glide{display:none !important;}
 }
 
+/* ── 59.05 · LUZ DE VIDRIO GLOBAL (parches-vidrio-global.js): el efecto del video en todo lo que se señala o toca ──
+   Una sola capa flotante (no recibe clics ni mueve nada). Con mouse se desliza con resorte de un control al siguiente;
+   al hacer clic se hunde y rebota. En táctil, destello breve al tocar. */
+.nx-vidrio{
+  position:fixed;left:0;top:0;
+  width:var(--v-w,0px);height:var(--v-h,0px);
+  transform:translate3d(var(--v-x,0px),var(--v-y,0px),0);
+  border-radius:var(--v-r,10px);
+  z-index:2147483000;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.035) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.06);
+  mix-blend-mode:screen;
+  transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),border-radius .3s ease,opacity .18s ease,scale .16s ease;
+  will-change:transform,width,height,opacity;
+}
+/* Rayita de luz debajo (como el video); en controles altos (filas, tarjetas chicas) va más corta y tenue. */
+.nx-vidrio::after{
+  content:'';position:absolute;left:24%;right:24%;bottom:2px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  box-shadow:0 0 8px rgba(255,255,255,.4);
+}
+.nx-vidrio.alto::after{left:38%;right:38%;opacity:.6;}
+.nx-vidrio.on{opacity:1;}
+.nx-vidrio.sin{transition:opacity .18s ease;}
+/* Clic: se hunde y rebota. */
+.nx-vidrio.press{scale:.96;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.06) 100%);transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),opacity .18s ease,scale .08s ease;}
+/* Táctil: destello breve. */
+.nx-vidrio.flash{animation:nxVidrioFlash .5s cubic-bezier(.22,1,.36,1) both;}
+@keyframes nxVidrioFlash{0%{opacity:0;scale:.94}25%{opacity:1;scale:1}100%{opacity:0;scale:1.02}}
+/* Tema claro: luz azulada en vez de blanca (el blanco no se vería sobre fondo claro). */
+body:not(.tema-premium) .nx-vidrio{
+  mix-blend-mode:normal;
+  background:linear-gradient(180deg,rgba(37,99,235,.075) 0%,rgba(37,99,235,.035) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(37,99,235,.10);
+}
+body:not(.tema-premium) .nx-vidrio::after{background:linear-gradient(90deg,transparent,rgba(37,99,235,.8),transparent);box-shadow:0 0 8px rgba(37,99,235,.3);}
+html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio{
+  mix-blend-mode:screen;
+  background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.035) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.06);
+}
+html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);box-shadow:0 0 8px rgba(255,255,255,.4);}
+@media (prefers-reduced-motion:reduce){.nx-vidrio{display:none !important;}}
+
 /* Halo decorativo de la esquina superior de los KPI del CRM (de la capa de ChatGPT; se conserva). */
 html.tema-glass-oscuro #v-crm .nxCrmKpi::after{
   background:rgba(147,197,253,.035) !important;
