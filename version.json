@@ -1,7 +1,16 @@
 {
-  "version": "59.06",
+  "version": "59.07",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.07",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Brillo fijo en la barra superior: el reflejo de arriba queda siempre encendido y, al tocar o hacer clic en un botón de la barra, la luz se queda fija sobre él (también en el iPhone).",
+        "Brillo fijo en lo seleccionado: pestañas, filtros, chips y demás opciones elegidas llevan la rayita de luz arriba mientras sigan elegidas.",
+        "Menú lateral: el ítem elegido lleva la rayita de luz en vertical, en su borde izquierdo, y viaja con la píldora al cambiar de pantalla."
+      ]
+    },
     {
       "version": "59.06",
       "fecha": "2026-10-02",
