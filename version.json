@@ -1,7 +1,15 @@
 {
-  "version": "59.04",
+  "version": "59.05",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.05",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Barra superior como el video: al pasar el mouse por los botones, una luz de vidrio con una rayita brillante se desliza con resorte de un botón al otro; el botón señalado se levanta un poco y se aclara.",
+        "El reflejo del borde de arriba se centra sobre el botón señalado y brilla más, como en el video. Solo en computadora; en el iPhone la barra queda fija."
+      ]
+    },
     {
       "version": "59.04",
       "fecha": "2026-10-02",

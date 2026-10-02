@@ -989,8 +989,8 @@ body .tnav::after{
   inset:0;
   opacity:0;
   background:
-    radial-gradient(180px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.75),transparent 100%),
-    radial-gradient(220px 26px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.075),transparent 100%);
+    radial-gradient(200px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.95),transparent 100%),
+    radial-gradient(240px 30px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.10),transparent 100%);
   transition:opacity .25s ease;
 }
 body:not(.tema-premium) .tnav::after{
@@ -1000,8 +1000,8 @@ body:not(.tema-premium) .tnav::after{
 }
 html.tema-glass-oscuro body:not(.tema-premium) .tnav::after{
   background:
-    radial-gradient(180px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.75),transparent 100%),
-    radial-gradient(220px 26px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.075),transparent 100%);
+    radial-gradient(200px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.95),transparent 100%),
+    radial-gradient(240px 30px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.10),transparent 100%);
 }
 /* Solo con mouse (parches-glass-pointer.js marca la barra mientras el puntero está encima). */
 body .tnav.nx-glass-active::after{opacity:1;}
@@ -1014,6 +1014,60 @@ body .tnav.nx-glass-active::after{opacity:1;}
 }
 @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
   body .tnav::after{display:none !important;}
+}
+
+/* ── 59.05 · DESLIZADOR (video del dueño): luz que se desliza de un botón de la barra al siguiente ──────────────
+   Un solo elemento (.nx-glide, lo crea parches-glass-pointer.js) detrás del contenido: píldora de vidrio + rayita de
+   luz debajo. Se mueve con transform (sin recalcular la página) y un resorte suave; solo con mouse. */
+body .tnav > .nx-glide{
+  position:absolute;
+  z-index:-1;
+  left:0;top:0;
+  width:var(--g-w,40px);
+  height:var(--g-h,40px);
+  transform:translate3d(var(--g-x,0px),var(--g-y,0px),0);
+  border-radius:999px;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.11) 0%,rgba(255,255,255,.04) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 18px rgba(0,0,0,.28);
+  transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .3s ease,opacity .2s ease;
+  will-change:transform,width;
+}
+body .tnav > .nx-glide::after{
+  content:'';
+  position:absolute;
+  left:22%;right:22%;bottom:-6px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+  box-shadow:0 0 8px rgba(255,255,255,.45);
+}
+body:not(.tema-premium) .tnav > .nx-glide{
+  background:linear-gradient(180deg,rgba(37,99,235,.10) 0%,rgba(37,99,235,.05) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 16px rgba(15,23,42,.10);
+}
+body:not(.tema-premium) .tnav > .nx-glide::after{background:linear-gradient(90deg,transparent,rgba(37,99,235,.85),transparent);box-shadow:0 0 8px rgba(37,99,235,.35);}
+html.tema-glass-oscuro body:not(.tema-premium) .tnav > .nx-glide{
+  background:linear-gradient(180deg,rgba(255,255,255,.11) 0%,rgba(255,255,255,.04) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 18px rgba(0,0,0,.28);
+}
+html.tema-glass-oscuro body:not(.tema-premium) .tnav > .nx-glide::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);box-shadow:0 0 8px rgba(255,255,255,.45);}
+body .tnav > .nx-glide.on{opacity:1;}
+/* Al aparecer (entrar a la barra) se pone en su sitio sin deslizarse desde el último lugar. */
+body .tnav > .nx-glide.nx-glide-sin{transition:opacity .2s ease;}
+/* El botón señalado se levanta un poco y se aclara, como en el video. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  body .tnav .tn-r > button,body .tnav .tn-r > [role="button"],body .tnav .tn-tog{
+    transition:transform .28s cubic-bezier(.22,1.18,.36,1),color .18s ease,background-color .18s ease,border-color .18s ease,filter .18s ease;
+  }
+  body .tnav .tn-r > button:hover,body .tnav .tn-r > [role="button"]:hover,body .tnav .tn-tog:hover{
+    transform:translateY(-1px) scale(1.06);
+    filter:brightness(1.25);
+  }
+}
+/* Reflejo del borde superior más marcado mientras se señala un botón (centrado sobre él). */
+body .tnav.nx-glass-active::before{opacity:.75;}
+@media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
+  body .tnav > .nx-glide{display:none !important;}
 }
 
 /* Halo decorativo de la esquina superior de los KPI del CRM (de la capa de ChatGPT; se conserva). */
