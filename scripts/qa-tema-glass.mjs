@@ -457,7 +457,8 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
       return { r, searchIG, dentro: tr.top >= mr.top && tr.left >= mr.left && tr.right <= mr.right + 1, fondo: getComputedStyle(t).backgroundColor, borde: getComputedStyle(t).borderTopWidth, mainBg: getComputedStyle(m, '::before').backgroundColor, radio: getComputedStyle(m).borderTopLeftRadius, tog: getComputedStyle(document.querySelector('.tn-tog')).display, titulo: document.getElementById('pttl').innerText, tituloFs: getComputedStyle(document.getElementById('pttl')).fontSize };
     }, ACC);
     const unaVez = ACC.every(f => cab.r[f][0] === 1 && cab.r[f][1] === 1);
-    ok(cab.dentro && cab.fondo === 'rgba(0, 0, 0, 0)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(30, 50, 86/.test(cab.mainBg) && cab.tog === 'none', `1280 sin barra superior: la cabecera («${cab.titulo}», ${cab.tituloFs}) es la primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
+    // 59.04 (dueño 02-oct-2026, video «Glassy Navbar UI»): la cabecera ya no es transparente: es la barra de vidrio grafito sólida.
+    ok(cab.dentro && cab.fondo === 'rgb(21, 24, 30)' && cab.borde === '0px' && cab.radio === '24px' && /rgba\(30, 50, 86/.test(cab.mainBg) && cab.tog === 'none', `1280 cabecera de vidrio grafito («${cab.titulo}», ${cab.tituloFs}) como primera fila del panel principal de cristal (radio ${cab.radio})`, cab);
     ok(unaVez && cab.searchIG === 0, `1280 cada acción de la antigua barra aparece UNA vez y se puede tocar: ${ACC.map(f => f + ' ' + cab.r[f][0]).join(', ')}`, cab.r);
     for (const [f, sel, chk] of [['toggleNotif', '.tnav .notif-bell', "document.getElementById('notifPanel').classList.contains('show')"], ['abrirGlobalSearch', '.tnav .tn-b-primary', "document.getElementById('gsOverlay').classList.contains('show')"]]) {
       await page.click(sel); await sleep(500);
