@@ -1003,7 +1003,10 @@ html.tema-glass-oscuro body:not(.tema-premium) .tnav::after{
     radial-gradient(200px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.95),transparent 100%),
     radial-gradient(240px 30px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.10),transparent 100%);
 }
-/* Solo con mouse (parches-glass-pointer.js marca la barra mientras el puntero está encima). */
+/* 59.07 (dueño: «que el brillo de la barra superior se quede fijo»): el reflejo queda SIEMPRE encendido — sobre el
+   botón elegido (parches-glass-pointer.js) o al centro si aún no se elige nada; más fuerte mientras el mouse está encima. */
+body .tnav::after{opacity:.7;}
+body .tnav.nx-glass-fijo::after{opacity:.9;}
 body .tnav.nx-glass-active::after{opacity:1;}
 /* Botones de la barra: al pasar el mouse se aclaran como en el video (sin mover nada). */
 @media (hover:hover) and (pointer:fine){
@@ -1012,7 +1015,7 @@ body .tnav.nx-glass-active::after{opacity:1;}
   html.tema-glass-oscuro body .tnav button:hover,
   body.tema-premium .tnav button:hover{background-color:rgba(255,255,255,.07) !important;border-color:rgba(255,255,255,.14) !important;}
 }
-@media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
+@media (prefers-reduced-motion:reduce){
   body .tnav::after{display:none !important;}
 }
 
@@ -1066,7 +1069,11 @@ body .tnav > .nx-glide.nx-glide-sin{transition:opacity .2s ease;}
 }
 /* Reflejo del borde superior más marcado mientras se señala un botón (centrado sobre él). */
 body .tnav.nx-glass-active::before{opacity:.75;}
-@media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
+/* 59.07: el botón ELEGIDO conserva la luz fija (píldora + rayita arriba) aunque el mouse se vaya; un poco más viva. */
+body .tnav > .nx-glide.fijo::after{left:14%;right:14%;box-shadow:0 0 10px rgba(255,255,255,.6),0 0 18px rgba(147,197,253,.35);}
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .tnav > .nx-glide.fijo::after{box-shadow:0 0 10px rgba(37,99,235,.45);}
+/* En el iPhone no hay deslizamiento por hover: solo la luz fija del botón tocado. */
+@media (prefers-reduced-motion:reduce){
   body .tnav > .nx-glide{display:none !important;}
 }
 
@@ -1132,4 +1139,49 @@ html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio.tinte{--v-luz:var(--v-
 /* Halo decorativo de la esquina superior de los KPI del CRM (de la capa de ChatGPT; se conserva). */
 html.tema-glass-oscuro #v-crm .nxCrmKpi::after{
   background:rgba(147,197,253,.035) !important;
+}
+
+/* ── 59.07 · BRILLO FIJO en lo seleccionado (parches-brillo-fijo.js) ─────────────────────────────────────────────
+   Dueño: «cuando uno selecciona cualquier selección que se quede fijo; y en la barra lateral, en la línea vertical,
+   que se vea esa línea con ese efecto». La misma rayita de luz del vidrio (59.06), pero FIJA en lo elegido:
+   · horizontal en el borde de ARRIBA de pestañas, filtros, chips, segmentos y lo demás que esté elegido;
+   · VERTICAL en el borde izquierdo del ítem elegido del menú lateral. */
+.nx-marca{
+  position:absolute;left:16%;right:16%;top:0;height:2px;border-radius:2px;
+  z-index:2;pointer-events:none;display:block;margin:0;padding:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);
+  box-shadow:0 0 6px rgba(255,255,255,.7),0 0 14px rgba(147,197,253,.4);
+  animation:nxMarcaIn .45s cubic-bezier(.22,1,.36,1) both;
+}
+.nx-marca.v{
+  left:4px;right:auto;top:22%;bottom:22%;width:2px;height:auto;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.95),transparent);
+  animation-name:nxMarcaInV;
+}
+/* Sobre fondo claro (y en el tema claro) la rayita va azul. */
+.nx-marca.azul,
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .nx-marca:not(.v){
+  background:linear-gradient(90deg,transparent,rgba(37,99,235,.9),transparent);
+  box-shadow:0 0 8px rgba(37,99,235,.35);
+}
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .nx-marca.v{
+  background:linear-gradient(180deg,transparent,rgba(37,99,235,.9),transparent);
+  box-shadow:0 0 8px rgba(37,99,235,.35);
+}
+@keyframes nxMarcaIn{from{opacity:0;transform:scaleX(.3)}to{opacity:1;transform:none}}
+@keyframes nxMarcaInV{from{opacity:0;transform:scaleY(.3)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.nx-marca{animation:none;}}
+/* Menú lateral en la computadora: el indicador de resorte (la píldora que viaja entre ítems) lleva la línea vertical,
+   así la luz viaja con él; la del ítem se esconde para no duplicarla. */
+.spring-ind::after{
+  content:'';position:absolute;left:4px;top:22%;bottom:22%;width:2px;border-radius:2px;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg,transparent,#fff 50%,transparent);
+  box-shadow:0 0 6px rgba(255,255,255,.8),0 0 14px rgba(255,255,255,.45),0 0 22px rgba(147,197,253,.5);
+}
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .spring-ind::after{
+  background:linear-gradient(180deg,transparent,rgba(37,99,235,.95),transparent);
+  box-shadow:0 0 8px rgba(37,99,235,.4);
+}
+@media (min-width:769px){
+  body.spring-nav nav.sb .ni.on > .nx-marca.v{display:none;}
 }
