@@ -1010,3 +1010,39 @@ body .tnav > *{
 @media (prefers-reduced-motion:reduce){
   body .tnav::before{animation:none !important;}
 }
+
+
+/* ────────────────────────────────────────────────────────────────
+   REFLEJO INTERACTIVO — la luz sigue el puntero dentro de cada
+   superficie importante. La posición llega por variables CSS del
+   único listener delegado; no afecta rutas, datos ni controles.
+   ──────────────────────────────────────────────────────────────── */
+.nx-glass-host{isolation:isolate;}
+.nx-pointer-glass{
+  position:absolute;
+  inset:0;
+  z-index:20;
+  pointer-events:none;
+  border-radius:inherit;
+  opacity:0;
+  background:
+    radial-gradient(210px circle at var(--nx-glass-x,50%) var(--nx-glass-y,50%),
+      rgba(255,255,255,.42) 0%,
+      rgba(255,255,255,.15) 19%,
+      rgba(191,219,254,.08) 34%,
+      transparent 64%);
+  transition:opacity .16s ease;
+  will-change:opacity;
+}
+.nx-glass-host.nx-glass-active .nx-pointer-glass{opacity:1;}
+body.tema-premium .nx-pointer-glass{
+  background:
+    radial-gradient(230px circle at var(--nx-glass-x,50%) var(--nx-glass-y,50%),
+      rgba(255,255,255,.18) 0%,
+      rgba(125,211,252,.13) 22%,
+      rgba(96,165,250,.06) 38%,
+      transparent 66%);
+}
+@media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
+  .nx-pointer-glass{display:none !important;}
+}
