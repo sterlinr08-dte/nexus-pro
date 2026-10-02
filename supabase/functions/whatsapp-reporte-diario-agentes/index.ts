@@ -263,12 +263,15 @@ const EJEMPLO_ADMIN_V2 = ["01/10/2026", "ANA", "20 sep–20 oct", "217,000", "40
 // si algún día hay más, los demás se agregan a la última línea del segundo bloque.
 const SLOTS_CLIENTES = 8;
 const CUERPO_ACUMULADO = [
-  "👤 *ACUMULADO POR AGENTE*",
-  "Ciclo {{1}} · al cierre del {{2}}",
+  "📊 *ACUMULADO POR AGENTE*",
+  "📅 Ciclo {{1}}",
+  "🕖 Cierre del {{2}}",
   "",
-  "• *{{3}}*",
-  "Cobrado en el ciclo: RD$ {{4}}",
-  "Hoy: RD$ {{5}} · {{6}}",
+  "━━━━━━━━━━━━━━",
+  "👤 *{{3}}*",
+  "Cobrado en el ciclo: *RD$ {{4}}*",
+  "Cobrado hoy: *RD$ {{5}}* ({{6}})",
+  "",
   "{{7}}",
   "{{8}}",
   "{{9}}",
@@ -277,10 +280,11 @@ const CUERPO_ACUMULADO = [
   "{{12}}",
   "{{13}}",
   "{{14}}",
+  "━━━━━━━━━━━━━━",
+  "👤 *{{15}}*",
+  "Cobrado en el ciclo: *RD$ {{16}}*",
+  "Cobrado hoy: *RD$ {{17}}* ({{18}})",
   "",
-  "• *{{15}}*",
-  "Cobrado en el ciclo: RD$ {{16}}",
-  "Hoy: RD$ {{17}} · {{18}}",
   "{{19}}",
   "{{20}}",
   "{{21}}",
@@ -289,15 +293,15 @@ const CUERPO_ACUMULADO = [
   "{{24}}",
   "{{25}}",
   "{{26}}",
-  "",
   "━━━━━━━━━━━━━━",
-  "*Total cobrado en el ciclo: RD$ {{27}}*",
-  "Cobrado hoy entre todos: RD$ {{28}}",
+  "💰 *TOTALES*",
+  "Ciclo: *RD$ {{27}}*",
+  "Hoy: *RD$ {{28}}*",
   "",
   "Detalle en NEXUS PRO."
 ].join("\n");
-const EJ_LISTA = ["▫️ Ana Gómez — RD$ 6,500", "▫️ Orlando Reyes — RD$ 6,500", "▫️ Yesenia Siri — RD$ 5,000", "▫️ Ángel Bueno — RD$ 4,500",
-  "▫️ Luis Pimentel — RD$ 4,500", "▫️ Nuris Pérez — RD$ 4,500", "▫️ Rey De Oleo — RD$ 4,000", "▫️ Domingo De Los Santos — RD$ 4,000"];
+const EJ_LISTA = ["1. Ana Gómez — RD$ 6,500", "2. Orlando Reyes — RD$ 6,500", "3. Yesenia Siri — RD$ 5,000", "4. Ángel Bueno — RD$ 4,500",
+  "5. Luis Pimentel — RD$ 4,500", "6. Nuris Pérez — RD$ 4,500", "7. Rey De Oleo — RD$ 4,000", "8. Domingo De Los Santos — RD$ 4,000"];
 const EJEMPLO_ACUMULADO = ["20 sep–20 oct", "01/10/2026", "JUAN", "123,500", "39,500", "8 clientes", ...EJ_LISTA,
   "PEDRO", "93,500", "28,000", "8 clientes", ...EJ_LISTA, "217,000", "67,500"];
 // Relleno de las líneas vacías. Si Meta lo rechazara, el envío se reintenta con «·».
@@ -316,7 +320,7 @@ function nombreYApellido(v: unknown) {
 }
 function listaClientesHoy(items: { nom: string; monto: number }[], relleno = RELLENO) {
   const orden = [...items].sort((a, b) => b.monto - a.monto);
-  const linea = (x: any) => `▫️ ${nombreYApellido(x.nom)} — RD$ ${fmtCorto(x.monto)}`;
+  const linea = (x: any, k: number) => `${k + 1}. ${nombreYApellido(x.nom)} — RD$ ${fmtCorto(x.monto)}`;
   let out: string[];
   if (!orden.length) out = ["Sin cobros hoy"];
   else if (orden.length <= SLOTS_CLIENTES) out = orden.map(linea);
