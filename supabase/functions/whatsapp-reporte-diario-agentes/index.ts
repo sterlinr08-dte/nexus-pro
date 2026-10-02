@@ -10,6 +10,8 @@ const TEMPLATE = "reporte_diario_agente";          // v1 (actual): un mensaje po
 // mientras tanto sigue saliendo la v1 sin cortes.
 const TEMPLATE_AGENTE_V2 = "reporte_diario_agente_v2";
 const TEMPLATE_ADMIN_V2 = "reporte_diario_admin";
+// Segundo mensaje diario solo para el administrador: acumulado de cada agente + cobrado hoy (dueño 02-oct-2026).
+const TEMPLATE_ACUMULADO = "acumulado_agentes_diario";
 const TZ = "America/Santo_Domingo";
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
@@ -95,6 +97,33 @@ function compactar(lineas: string[], maxChars = 240) {
     usados += linea.length + 1;
   }
   return out.join(" ");
+}
+
+// Cobrado HOY por agente con la misma regla de fecha que seguros_resumen_ciclo_agente_core:
+// transferencia/depósito cuentan el día en que se VALIDAN; efectivo y otros, el día del cobro.
+// Los reversados no cuentan.
+function fechaCobro(a: any) {
+  if (a.metodo === "Transferencia" || a.metodo === "Depósito") {
+    return a.validacion_estado === "validado" ? (a.validado_at || a.fecha || a.created_at) : null;
+  }
+  return a.fecha || a.created_at;
+}
+async function cobradoHoyPorAgente(ini: string, fin: string) {
+  const { data, error } = await db.from("abonos")
+    .select("agente_cobro,monto,metodo,validacion_estado,validado_at,fecha,created_at,estado,reversado_at")
+    .or(`validado_at.gte.${ini},fecha.gte.${ini},created_at.gte.${ini}`);
+  if (error) throw new Error(`abonos hoy: ${error.message}`);
+  const out = new Map<string, number>();
+  for (const a of data || []) {
+    const t = fechaCobro(a);
+    if (!t) continue;
+    const ms = new Date(t).getTime();
+    if (ms < new Date(ini).getTime() || ms >= new Date(fin).getTime()) continue;
+    if (a.reversado_at || String(a.estado || "") === "Reversado") continue;
+    const k = String(a.agente_cobro || "");
+    out.set(k, (out.get(k) || 0) + (Number(a.monto) || 0));
+  }
+  return out;
 }
 
 async function cargarTodos(tabla: string, columnas: string) {
@@ -221,6 +250,29 @@ const EJEMPLO_ADMIN_V2 = ["01/10/2026", "ANA", "20 sep–20 oct", "217,000", "40
   "Luis Díaz — 4 meses — RD$ 12,000", "Rosa Peña — 2 meses — RD$ 8,000", "Juan Cruz — 1 mes — RD$ 6,500", "10",
   "JUAN", "93,500", "80,000", "346,690", "14", "52,300", "2"];
 
+// Acumulado por agente. Tiene dos bloques fijos (hoy hay dos agentes activos: ESTERLIN y ROBINSON);
+// Meta no deja repetir bloques ni poner saltos de línea dentro de una variable. Si algún día hay más
+// agentes, los demás se agregan al final del último bloque para no perderlos.
+const CUERPO_ACUMULADO = [
+  "👤 *ACUMULADO POR AGENTE*",
+  "Al cierre del {{1}}",
+  "",
+  "• *{{2}}*",
+  "RD$ {{3}} acumulados",
+  "Hoy: RD$ {{4}}",
+  "",
+  "• *{{5}}*",
+  "RD$ {{6}} acumulados",
+  "Hoy: RD$ {{7}}",
+  "",
+  "━━━━━━━━━━━━━━",
+  "*Total acumulado general: RD$ {{8}}*",
+  "Cobrado hoy entre todos: RD$ {{9}}",
+  "",
+  "Detalle en NEXUS PRO."
+].join("\n");
+const EJEMPLO_ACUMULADO = ["01/10/2026", "JUAN", "1,605,810.00", "39,500.00", "PEDRO", "346,690.00", "28,000.00", "1,952,500.00", "67,500.00"];
+
 // Vista previa del texto tal como lo verá el teléfono (para pruebas «dry» y para medir el largo).
 function renderizar(cuerpo: string, vars: string[]) {
   return cuerpo.replace(/\{\{(\d+)\}\}/g, (_m, i) => vars[Number(i) - 1] ?? "");
@@ -241,7 +293,7 @@ async function plantillaExiste(accountId: string, nombre: string) {
 // Somete a Meta (vía Zernio, mismo endpoint que whatsapp-plantilla-crear) solo las que no existen.
 async function someterPlantillasV2(accountId: string) {
   const out: any[] = [];
-  for (const [nombre, texto, ejemplo] of [[TEMPLATE_AGENTE_V2, CUERPO_AGENTE_V2, EJEMPLO_AGENTE_V2], [TEMPLATE_ADMIN_V2, CUERPO_ADMIN_V2, EJEMPLO_ADMIN_V2]] as [string, string, string[]][]) {
+  for (const [nombre, texto, ejemplo] of [[TEMPLATE_AGENTE_V2, CUERPO_AGENTE_V2, EJEMPLO_AGENTE_V2], [TEMPLATE_ADMIN_V2, CUERPO_ADMIN_V2, EJEMPLO_ADMIN_V2], [TEMPLATE_ACUMULADO, CUERPO_ACUMULADO, EJEMPLO_ACUMULADO]] as [string, string, string[]][]) {
     const estado = await plantillaExiste(accountId, nombre);
     if (estado) { out.push({ nombre, ya_existe: true, estado }); continue; }
     const r = await fetch("https://zernio.com/api/v1/whatsapp/templates", {
@@ -495,6 +547,22 @@ Deno.serve(async (req: Request) => {
       if (!i.esAdmin) {
         for (const ad of admins) resultados.push(await entregar(ad, a, i.variables));
       }
+    }
+
+    // 3) Acumulado por agente → solo administradores, un mensaje al día (cuando Meta aprueba la plantilla).
+    const hoyMapa = await cobradoHoyPorAgente(hoy.ini, hoy.fin);
+    const orden = [...infos].sort((x, y) => y.enPoder - x.enPoder);
+    const slot = (i: any) => i ? [String(i.a.nom || "Agente"), fmtMonto(i.enPoder), fmtMonto(hoyMapa.get(String(i.a.id)) || 0)] : ["—", "0.00", "0.00"];
+    const extra = orden.slice(2).map((i) => ` · ${i.a.nom}: RD$ ${fmtMonto(i.enPoder)} acumulados, hoy RD$ ${fmtMonto(hoyMapa.get(String(i.a.id)) || 0)}`).join("");
+    const b1 = slot(orden[0]), b2 = slot(orden[1]);
+    b2[2] += extra;
+    const totalAcum = orden.reduce((t, i) => t + i.enPoder, 0);
+    const totalHoy = orden.reduce((t, i) => t + (hoyMapa.get(String(i.a.id)) || 0), 0);
+    const varsAcumulado = [fecha, ...b1, ...b2, fmtMonto(totalAcum), fmtMonto(totalHoy)].map(limpiarParam);
+    if (dry) {
+      resultados.push({ acumulado_agentes: true, vista: renderizar(CUERPO_ACUMULADO, varsAcumulado) });
+    } else if (!soloAgenteId && (await plantillaAprobada(cfg.zernio_account_id, TEMPLATE_ACUMULADO))) {
+      for (const ad of admins) resultados.push(await entregar(ad, ad, varsAcumulado, TEMPLATE_ACUMULADO));
     }
 
     try {
