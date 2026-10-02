@@ -961,9 +961,9 @@ body .tnav::after{
   pointer-events:none;
   border-radius:inherit;
   background:
-    linear-gradient(180deg,rgba(255,255,255,.54) 0%,rgba(255,255,255,.16) 38%,transparent 64%),
-    linear-gradient(112deg,transparent 18%,rgba(255,255,255,.18) 42%,transparent 62%);
-  opacity:.92;
+    linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.055) 38%,transparent 64%),
+    linear-gradient(112deg,transparent 18%,rgba(255,255,255,.07) 42%,transparent 62%);
+  opacity:.62;
 }
 body.tema-premium .tnav::after{
   background:
@@ -982,8 +982,8 @@ body.tema-premium .tnav::after{
       112deg,
       transparent 24%,
       rgba(255,255,255,.03) 35%,
-      rgba(255,255,255,.58) 48%,
-      rgba(255,255,255,.13) 57%,
+      rgba(255,255,255,.28) 48%,
+      rgba(255,255,255,.06) 57%,
       transparent 70%
     );
     transform:translate3d(-100%,0,0) skewX(-16deg);
@@ -1026,14 +1026,14 @@ body .tnav > *{
   opacity:0;
   background:
     linear-gradient(180deg,
-      rgba(255,255,255,.34) 0%,
-      rgba(255,255,255,.12) 12%,
-      rgba(255,255,255,.025) 23%,
+      rgba(255,255,255,.16) 0%,
+      rgba(255,255,255,.05) 12%,
+      rgba(255,255,255,.012) 23%,
       transparent 38%),
     radial-gradient(220px 64px at var(--nx-glass-x,50%) 0%,
-      rgba(255,255,255,.70) 0%,
-      rgba(255,255,255,.24) 38%,
-      rgba(191,219,254,.09) 58%,
+      rgba(255,255,255,.32) 0%,
+      rgba(255,255,255,.10) 38%,
+      rgba(191,219,254,.035) 58%,
       transparent 100%);
   transition:opacity .16s ease;
   will-change:opacity;
@@ -1042,13 +1042,13 @@ body .tnav > *{
 body.tema-premium .nx-pointer-glass{
   background:
     linear-gradient(180deg,
-      rgba(255,255,255,.13) 0%,
-      rgba(255,255,255,.045) 13%,
+      rgba(255,255,255,.06) 0%,
+      rgba(255,255,255,.022) 13%,
       transparent 38%),
     radial-gradient(240px 66px at var(--nx-glass-x,50%) 0%,
-      rgba(255,255,255,.33) 0%,
-      rgba(125,211,252,.15) 40%,
-      rgba(96,165,250,.06) 62%,
+      rgba(255,255,255,.15) 0%,
+      rgba(125,211,252,.07) 40%,
+      rgba(96,165,250,.03) 62%,
       transparent 100%);
 }
 @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
