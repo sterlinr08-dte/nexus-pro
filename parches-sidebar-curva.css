@@ -1054,3 +1054,28 @@ body.tema-premium .nx-pointer-glass{
 @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
   .nx-pointer-glass{display:none !important;}
 }
+
+
+/* ── Calibración de brillo oscuro ──────────────────────────────────
+   En el tema oscuro, el acabado conserva la línea de vidrio pero elimina
+   la neblina blanca en cabeceras y tarjetas de datos. */
+html.tema-glass-oscuro body .tnav{
+  background:linear-gradient(180deg,rgba(24,35,57,.96),rgba(15,27,47,.94)) !important;
+  border-color:rgba(148,163,184,.10) !important;
+  box-shadow:0 7px 18px rgba(2,6,23,.22),inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+html.tema-glass-oscuro body .tnav::after{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.016) 30%,transparent 55%),
+    linear-gradient(112deg,transparent 28%,rgba(148,163,184,.025) 47%,transparent 66%) !important;
+  opacity:.42 !important;
+}
+@media (prefers-reduced-motion:no-preference){
+  html.tema-glass-oscuro body .tnav::before{
+    background:linear-gradient(112deg,transparent 28%,rgba(255,255,255,.018) 43%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.02) 57%,transparent 68%) !important;
+  }
+}
+/* Halo decorativo de la esquina superior de los KPI del CRM. */
+html.tema-glass-oscuro #v-crm .nxCrmKpi::after{
+  background:rgba(147,197,253,.035) !important;
+}
