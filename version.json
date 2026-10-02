@@ -1,7 +1,15 @@
 {
-  "version": "59.07",
+  "version": "59.08",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.08",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Ventana de WhatsApp con brillo: el marco, la cabecera del chat, la barra de escribir y el aviso de 24 horas llevan la rayita de luz fija arriba.",
+        "Botones de WhatsApp como los de la barra superior: el botón que tocas (atrás, buscar, más, emoji, adjuntar, micrófono/enviar, plantillas, herramientas de la lista) se queda con la luz de vidrio fija; al tocar otro del mismo grupo, la luz pasa a ese."
+      ]
+    },
     {
       "version": "59.07",
       "fecha": "2026-10-02",
