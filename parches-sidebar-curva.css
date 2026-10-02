@@ -1013,9 +1013,8 @@ body .tnav > *{
 
 
 /* ────────────────────────────────────────────────────────────────
-   REFLEJO INTERACTIVO — la luz sigue el puntero dentro de cada
-   superficie importante. La posición llega por variables CSS del
-   único listener delegado; no afecta rutas, datos ni controles.
+   REFLEJO SUPERIOR — highlight especular de vidrio.
+   Se mantiene arriba de cada superficie y sigue el puntero horizontalmente.
    ──────────────────────────────────────────────────────────────── */
 .nx-glass-host{isolation:isolate;}
 .nx-pointer-glass{
@@ -1026,22 +1025,31 @@ body .tnav > *{
   border-radius:inherit;
   opacity:0;
   background:
-    radial-gradient(210px circle at var(--nx-glass-x,50%) var(--nx-glass-y,50%),
-      rgba(255,255,255,.42) 0%,
-      rgba(255,255,255,.15) 19%,
-      rgba(191,219,254,.08) 34%,
-      transparent 64%);
+    linear-gradient(180deg,
+      rgba(255,255,255,.34) 0%,
+      rgba(255,255,255,.12) 12%,
+      rgba(255,255,255,.025) 23%,
+      transparent 38%),
+    radial-gradient(220px 64px at var(--nx-glass-x,50%) 0%,
+      rgba(255,255,255,.70) 0%,
+      rgba(255,255,255,.24) 38%,
+      rgba(191,219,254,.09) 58%,
+      transparent 100%);
   transition:opacity .16s ease;
   will-change:opacity;
 }
 .nx-glass-host.nx-glass-active .nx-pointer-glass{opacity:1;}
 body.tema-premium .nx-pointer-glass{
   background:
-    radial-gradient(230px circle at var(--nx-glass-x,50%) var(--nx-glass-y,50%),
-      rgba(255,255,255,.18) 0%,
-      rgba(125,211,252,.13) 22%,
-      rgba(96,165,250,.06) 38%,
-      transparent 66%);
+    linear-gradient(180deg,
+      rgba(255,255,255,.13) 0%,
+      rgba(255,255,255,.045) 13%,
+      transparent 38%),
+    radial-gradient(240px 66px at var(--nx-glass-x,50%) 0%,
+      rgba(255,255,255,.33) 0%,
+      rgba(125,211,252,.15) 40%,
+      rgba(96,165,250,.06) 62%,
+      transparent 100%);
 }
 @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
   .nx-pointer-glass{display:none !important;}
