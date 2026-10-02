@@ -110,10 +110,11 @@ function fechaCobro(a: any) {
 }
 async function cobradoHoyPorAgente(ini: string, fin: string) {
   const { data, error } = await db.from("abonos")
-    .select("agente_cobro,monto,metodo,validacion_estado,validado_at,fecha,created_at,estado,reversado_at")
+    .select("agente_cobro,cliente_id,monto,metodo,validacion_estado,validado_at,fecha,created_at,estado,reversado_at")
     .or(`validado_at.gte.${ini},fecha.gte.${ini},created_at.gte.${ini}`);
   if (error) throw new Error(`abonos hoy: ${error.message}`);
-  const out = new Map<string, number>();
+  // agente → { total, porCliente: cliente_id → monto }
+  const out = new Map<string, { total: number; porCliente: Map<string, number> }>();
   for (const a of data || []) {
     const t = fechaCobro(a);
     if (!t) continue;
@@ -121,7 +122,12 @@ async function cobradoHoyPorAgente(ini: string, fin: string) {
     if (ms < new Date(ini).getTime() || ms >= new Date(fin).getTime()) continue;
     if (a.reversado_at || String(a.estado || "") === "Reversado") continue;
     const k = String(a.agente_cobro || "");
-    out.set(k, (out.get(k) || 0) + (Number(a.monto) || 0));
+    if (!out.has(k)) out.set(k, { total: 0, porCliente: new Map() });
+    const r = out.get(k)!;
+    const m = Number(a.monto) || 0;
+    r.total += m;
+    const c = String(a.cliente_id || "");
+    r.porCliente.set(c, (r.porCliente.get(c) || 0) + m);
   }
   return out;
 }
@@ -250,28 +256,57 @@ const EJEMPLO_ADMIN_V2 = ["01/10/2026", "ANA", "20 sep–20 oct", "217,000", "40
   "Luis Díaz — 4 meses — RD$ 12,000", "Rosa Peña — 2 meses — RD$ 8,000", "Juan Cruz — 1 mes — RD$ 6,500", "10",
   "JUAN", "93,500", "80,000", "346,690", "14", "52,300", "2"];
 
-// Acumulado por agente. Tiene dos bloques fijos (hoy hay dos agentes activos: ESTERLIN y ROBINSON);
-// Meta no deja repetir bloques ni poner saltos de línea dentro de una variable. Si algún día hay más
-// agentes, los demás se agregan al final del último bloque para no perderlos.
+// Acumulado por agente DEL CICLO (20 → 20) + los clientes cobrados hoy. Dos bloques fijos (hoy hay dos
+// agentes activos: ESTERLIN y ROBINSON); Meta no deja repetir bloques ni poner saltos de línea dentro de
+// una variable, así que la lista de clientes de cada agente va en una sola línea separada por «·».
+// Si algún día hay más agentes, los demás se agregan al final de la lista del segundo bloque.
 const CUERPO_ACUMULADO = [
   "👤 *ACUMULADO POR AGENTE*",
-  "Al cierre del {{1}}",
+  "Ciclo {{1}} · al cierre del {{2}}",
   "",
-  "• *{{2}}*",
-  "RD$ {{3}} acumulados",
-  "Hoy: RD$ {{4}}",
+  "• *{{3}}*",
+  "Cobrado en el ciclo: RD$ {{4}}",
+  "Hoy: RD$ {{5}} · {{6}}",
+  "{{7}}",
   "",
-  "• *{{5}}*",
-  "RD$ {{6}} acumulados",
-  "Hoy: RD$ {{7}}",
+  "• *{{8}}*",
+  "Cobrado en el ciclo: RD$ {{9}}",
+  "Hoy: RD$ {{10}} · {{11}}",
+  "{{12}}",
   "",
   "━━━━━━━━━━━━━━",
-  "*Total acumulado general: RD$ {{8}}*",
-  "Cobrado hoy entre todos: RD$ {{9}}",
+  "*Total cobrado en el ciclo: RD$ {{13}}*",
+  "Cobrado hoy entre todos: RD$ {{14}}",
   "",
   "Detalle en NEXUS PRO."
 ].join("\n");
-const EJEMPLO_ACUMULADO = ["01/10/2026", "JUAN", "1,605,810.00", "39,500.00", "PEDRO", "346,690.00", "28,000.00", "1,952,500.00", "67,500.00"];
+const EJEMPLO_ACUMULADO = ["20 sep–20 oct", "01/10/2026", "JUAN", "123,500", "39,500", "8 clientes",
+  "Ana Gómez 6,500 · Orlando Reyes 6,500 · Yesenia Siri 5,000", "PEDRO", "93,500", "28,000", "5 clientes",
+  "Ana Peña 9,500 · Dayeli Martínez 5,500", "217,000", "67,500"];
+
+// «ANA LUISA GOMEZ GARCIA» → «Ana Gomez»; respeta partículas («Domingo De Los Santos», «Rey De Oleo»).
+const PARTICULAS = new Set(["DE", "DEL", "LA", "LAS", "LOS", "Y"]);
+function nombreYApellido(v: unknown) {
+  const t = String(v || "").trim().split(/\s+/).filter(Boolean);
+  if (!t.length) return "Sin nombre";
+  let i = t.length >= 4 && !PARTICULAS.has(t[1].toUpperCase()) ? 2 : 1;
+  const out = [t[0]];
+  while (i < t.length && PARTICULAS.has(t[i].toUpperCase())) out.push(t[i++]);
+  if (i < t.length) out.push(t[i]);
+  return out.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+function listaClientesHoy(items: { nom: string; monto: number }[], maxChars = 230) {
+  if (!items.length) return "Sin cobros hoy";
+  const orden = [...items].sort((a, b) => b.monto - a.monto);
+  const out: string[] = [];
+  let usados = 0;
+  for (let k = 0; k < orden.length; k++) {
+    const p = `${nombreYApellido(orden[k].nom)} ${fmtCorto(orden[k].monto)}`;
+    if (out.length && usados + p.length + 3 > maxChars - 20) { out.push(`… y ${orden.length - k} más`); break; }
+    out.push(p); usados += p.length + 3;
+  }
+  return out.join(" · ");
+}
 
 // Vista previa del texto tal como lo verá el teléfono (para pruebas «dry» y para medir el largo).
 function renderizar(cuerpo: string, vars: string[]) {
@@ -551,14 +586,20 @@ Deno.serve(async (req: Request) => {
 
     // 3) Acumulado por agente → solo administradores, un mensaje al día (cuando Meta aprueba la plantilla).
     const hoyMapa = await cobradoHoyPorAgente(hoy.ini, hoy.fin);
-    const orden = [...infos].sort((x, y) => y.enPoder - x.enPoder);
-    const slot = (i: any) => i ? [String(i.a.nom || "Agente"), fmtMonto(i.enPoder), fmtMonto(hoyMapa.get(String(i.a.id)) || 0)] : ["—", "0.00", "0.00"];
-    const extra = orden.slice(2).map((i) => ` · ${i.a.nom}: RD$ ${fmtMonto(i.enPoder)} acumulados, hoy RD$ ${fmtMonto(hoyMapa.get(String(i.a.id)) || 0)}`).join("");
+    const nomCliente = new Map(clientes.map((c: any) => [String(c.id), String(c.nom || "Sin nombre")]));
+    const hoyDe = (i: any) => hoyMapa.get(String(i.a.id)) || { total: 0, porCliente: new Map<string, number>() };
+    const orden = [...infos].sort((x, y) => y.cobrado - x.cobrado);
+    const slot = (i: any) => {
+      if (!i) return ["—", "0", "0", "0 clientes", "Sin cobros hoy"];
+      const h = hoyDe(i);
+      const n = h.porCliente.size;
+      const items = [...h.porCliente.entries()].map(([id, monto]) => ({ nom: nomCliente.get(id) || "Sin nombre", monto }));
+      return [String(i.a.nom || "Agente"), fmtCorto(i.cobrado), fmtCorto(h.total), `${n} cliente${n === 1 ? "" : "s"}`, listaClientesHoy(items)];
+    };
     const b1 = slot(orden[0]), b2 = slot(orden[1]);
-    b2[2] += extra;
-    const totalAcum = orden.reduce((t, i) => t + i.enPoder, 0);
-    const totalHoy = orden.reduce((t, i) => t + (hoyMapa.get(String(i.a.id)) || 0), 0);
-    const varsAcumulado = [fecha, ...b1, ...b2, fmtMonto(totalAcum), fmtMonto(totalHoy)].map(limpiarParam);
+    b2[4] += orden.slice(2).map((i) => ` · ${i.a.nom}: ciclo RD$ ${fmtCorto(i.cobrado)}, hoy RD$ ${fmtCorto(hoyDe(i).total)}`).join("");
+    const totalHoy = [...hoyMapa.values()].reduce((t, r) => t + r.total, 0);
+    const varsAcumulado = [etiqueta, fecha, ...b1, ...b2, fmtCorto(negocioCiclo), fmtCorto(totalHoy)].map(limpiarParam);
     if (dry) {
       resultados.push({ acumulado_agentes: true, vista: renderizar(CUERPO_ACUMULADO, varsAcumulado) });
     } else if (!soloAgenteId && (await plantillaAprobada(cfg.zernio_account_id, TEMPLATE_ACUMULADO))) {
