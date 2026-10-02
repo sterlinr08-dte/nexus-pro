@@ -1,76 +1,37 @@
-/* NEXUS PRO · Reflejo de vidrio global y ligero — visual-only */
+/* NEXUS PRO · Línea de luz de la barra superior que sigue al mouse — solo visual.
+   02-oct-2026 (Claude, video del dueño «Glassy Navbar UI»): antes (capa de ChatGPT del mismo día) se metía un
+   <span> de reflejo dentro de TODAS las tarjetas, menús y botones; ahora solo se mueve una variable CSS en la barra
+   superior (.tnav) — no se agrega nada al DOM ni se toca ninguna otra pantalla. El dibujo está en
+   parches-sidebar-curva.css («BARRA SUPERIOR DE VIDRIO»). En celular y con movimiento reducido no hace nada. */
 (function(){
   'use strict';
   if(window.__nxPointerGlass)return;
   window.__nxPointerGlass=true;
-
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var precise=window.matchMedia&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if(reduce||!precise)return;
-
-  /* Superficies, no texto ni celdas: funciona también con módulos renderizados después. */
-  var CORE=[
-    '.tnav','.sb','[role="dialog"]','[role="menu"]',
-    '[class*="card" i]','[class*="panel" i]','[class*="modal" i]',
-    '[class*="dialog" i]','[class*="drawer" i]','[class*="sheet" i]',
-    '[class*="window" i]','[class*="chat" i]','[class*="kpi" i]',
-    '[class*="report" i]','[class*="summary" i]','[class*="toolbar" i]',
-    '[class*="menu" i]','.nc','.tw','.qa','.nxPf'
-  ].join(',');
-  var CONTROL='button,.btn,.tn-b,.tn-tog,.qa';
-  var active=null,layer=null,raf=0,lastX=0,lastY=0,lastTarget=null;
-
-  function isElement(node){return !!(node&&node.nodeType===1);}
-  function hostFor(node){
-    if(!isElement(node))return null;
-    var core=node.closest&&node.closest(CORE);
-    if(core)return core;
-    return node.closest&&node.closest(CONTROL);
-  }
-  function clear(){
-    if(!active)return;
-    active.classList.remove('nx-glass-active','nx-glass-host');
-    active.style.removeProperty('--nx-glass-x');
-    if(layer&&layer.parentNode===active)layer.remove();
-    active=null;
-    layer=null;
-  }
-  function setActive(next){
-    if(next===active)return;
-    clear();
-    if(!next)return;
-    active=next;
-    active.classList.add('nx-glass-host','nx-glass-active');
-    layer=document.createElement('span');
-    layer.className='nx-pointer-glass';
-    layer.setAttribute('aria-hidden','true');
-    active.appendChild(layer);
-  }
+  var bar=null,raf=0,lastX=0;
   function paint(){
     raf=0;
-    var next=hostFor(lastTarget);
-    if(!next||!document.documentElement.contains(next)){clear();return;}
-    setActive(next);
-    var rect=active.getBoundingClientRect();
-    if(rect.width<1||rect.height<1){clear();return;}
-    var x=Math.max(0,Math.min(100,(lastX-rect.left)/rect.width*100));
-    active.style.setProperty('--nx-glass-x',x.toFixed(2)+'%');
-  }
-  function schedule(){
-    if(!raf)raf=requestAnimationFrame(paint);
+    if(!bar)return;
+    var r=bar.getBoundingClientRect();
+    if(r.width<1)return;
+    var x=Math.max(0,Math.min(100,(lastX-r.left)/r.width*100));
+    bar.style.setProperty('--nx-glass-x',x.toFixed(1)+'%');
   }
   document.addEventListener('pointermove',function(ev){
     if(ev.pointerType&&ev.pointerType!=='mouse')return;
-    lastTarget=ev.target;
+    var t=ev.target&&ev.target.closest?ev.target.closest('.tnav'):null;
+    if(t!==bar){
+      if(bar)bar.classList.remove('nx-glass-active');
+      bar=t;
+      if(bar)bar.classList.add('nx-glass-active');
+    }
+    if(!bar)return;
     lastX=ev.clientX;
-    lastY=ev.clientY;
-    schedule();
+    if(!raf)raf=requestAnimationFrame(paint);
   },{passive:true});
-  document.addEventListener('pointerout',function(ev){
-    if(!active)return;
-    var to=ev.relatedTarget;
-    var next=hostFor(to);
-    if(next!==active)clear();
-  },{passive:true});
-  window.addEventListener('blur',clear,{passive:true});
+  function salir(){if(bar){bar.classList.remove('nx-glass-active');bar=null;}}
+  document.addEventListener('pointerleave',salir,{passive:true});
+  window.addEventListener('blur',salir,{passive:true});
 })();

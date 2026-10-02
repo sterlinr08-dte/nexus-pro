@@ -1,7 +1,16 @@
 {
-  "version": "59.03",
+  "version": "59.04",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.04",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Barra superior de vidrio como el video: sólida y grafito en el tema oscuro, con una línea de luz fina en el borde de arriba que en la computadora sigue al mouse; los botones de la barra se aclaran al pasar el mouse.",
+        "Se quitan el destello que cruzaba la barra cada 7 segundos y el reflejo que aparecía encima de todas las tarjetas y menús (ahora el efecto es solo en la barra, sin tapar nada).",
+        "Modo liviano otra vez con la barra sólida y sin animaciones."
+      ]
+    },
     {
       "version": "59.03",
       "fecha": "2026-10-01",

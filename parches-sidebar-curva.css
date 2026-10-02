@@ -937,145 +937,86 @@ nav.sb .sb-ur{color:#64748b !important}
   }
 }
 
-
-
-
 /* ════════════════════════════════════════════════════════════════
-   GLASSY SHEEN — reflejo visible estilo barra de vidrio.
-   La capa fija da el acabado; el destello solo anima transform/opacity.
+   BARRA SUPERIOR DE VIDRIO — como el video del dueño («Glassy Navbar UI», 02-oct-2026).
+   Reemplaza las capas de ChatGPT del mismo día (destello que cruzaba la barra cada 7 s y reflejo sobre
+   TODAS las tarjetas): ver docs/bitacora/2026-10-02-1210-claude.md.
+   · Barra sólida (sin neblina encima del contenido) con degradado vertical suave y borde fino.
+   · Línea de luz en el borde superior: fija en el celular; en la computadora sigue al mouse.
+   · Los efectos van DETRÁS del contenido (isolation + z-index:-1): no se mueve ni tapa nada de la barra.
+   · Sin animaciones infinitas (batería) y sin efectos en «movimiento reducido».
    ════════════════════════════════════════════════════════════════ */
 body .tnav{
   position:relative;
   isolation:isolate;
 }
-body:not(.tema-premium) .tnav{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.94) 0%,rgba(241,245,249,.82) 100%) !important;
-  border-color:rgba(255,255,255,.68) !important;
+/* Fondo y borde de la barra en los temas oscuros (Glass oscuro y Premium) — grafito como en el video. */
+html.tema-glass-oscuro body .tnav,
+body.tema-premium .tnav{
+  background:#15181e linear-gradient(180deg,#1e222a 0%,#171a21 55%,#13161b 100%) !important;
+  border-color:rgba(255,255,255,.075) !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.045),inset 0 -1px 0 rgba(0,0,0,.35) !important;
 }
+/* Tema claro: el mismo vidrio, en claro. */
+body:not(.tema-premium) .tnav{
+  background:#f8fafc linear-gradient(180deg,rgba(255,255,255,.97) 0%,rgba(244,247,251,.93) 100%) !important;
+  border-color:rgba(15,23,42,.08) !important;
+}
+html.tema-glass-oscuro body:not(.tema-premium) .tnav{
+  background:#15181e linear-gradient(180deg,#1e222a 0%,#171a21 55%,#13161b 100%) !important;
+  border-color:rgba(255,255,255,.075) !important;
+}
+/* Línea de luz del borde superior (::before) + halo muy tenue debajo de ella (::after). */
+body .tnav::before,
 body .tnav::after{
   content:'';
   position:absolute;
-  inset:1px;
-  z-index:0;
+  z-index:-1;
   pointer-events:none;
   border-radius:inherit;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.055) 38%,transparent 64%),
-    linear-gradient(112deg,transparent 18%,rgba(255,255,255,.07) 42%,transparent 62%);
-  opacity:.62;
 }
-body.tema-premium .tnav::after{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.025) 40%,transparent 68%),
-    linear-gradient(112deg,transparent 18%,rgba(148,163,184,.13) 42%,transparent 62%);
+body .tnav::before{
+  left:14px;right:14px;top:0;height:1px;border-radius:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.20) 22%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.20) 78%,transparent 100%);
 }
-@media (prefers-reduced-motion:no-preference){
-  body .tnav::before{
-    content:'';
-    position:absolute;
-    inset:0;
-    z-index:0;
-    pointer-events:none;
-    opacity:0;
-    background:linear-gradient(
-      112deg,
-      transparent 24%,
-      rgba(255,255,255,.03) 35%,
-      rgba(255,255,255,.28) 48%,
-      rgba(255,255,255,.06) 57%,
-      transparent 70%
-    );
-    transform:translate3d(-100%,0,0) skewX(-16deg);
-    will-change:transform,opacity;
-    animation:nxTopbarGlassSheen 7.2s cubic-bezier(.22,1,.36,1) .6s infinite;
-  }
-  @keyframes nxTopbarGlassSheen{
-    0%,65%{
-      opacity:0;
-      transform:translate3d(-100%,0,0) skewX(-16deg);
-    }
-    69%{opacity:1}
-    88%{opacity:0}
-    100%{
-      opacity:0;
-      transform:translate3d(100%,0,0) skewX(-16deg);
-    }
-  }
+body:not(.tema-premium) .tnav::before{
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,1) 22%,rgba(255,255,255,.7) 50%,rgba(255,255,255,1) 78%,transparent 100%);
 }
-body .tnav > *{
-  position:relative;
-  z-index:1;
+html.tema-glass-oscuro body:not(.tema-premium) .tnav::before{
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.20) 22%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.20) 78%,transparent 100%);
 }
-@media (prefers-reduced-motion:reduce){
-  body .tnav::before{animation:none !important;}
-}
-
-
-/* ────────────────────────────────────────────────────────────────
-   REFLEJO SUPERIOR — highlight especular de vidrio.
-   Se mantiene arriba de cada superficie y sigue el puntero horizontalmente.
-   ──────────────────────────────────────────────────────────────── */
-.nx-glass-host{isolation:isolate;}
-.nx-pointer-glass{
-  position:absolute;
+body .tnav::after{
   inset:0;
-  z-index:20;
-  pointer-events:none;
-  border-radius:inherit;
   opacity:0;
   background:
-    linear-gradient(180deg,
-      rgba(255,255,255,.16) 0%,
-      rgba(255,255,255,.05) 12%,
-      rgba(255,255,255,.012) 23%,
-      transparent 38%),
-    radial-gradient(220px 64px at var(--nx-glass-x,50%) 0%,
-      rgba(255,255,255,.32) 0%,
-      rgba(255,255,255,.10) 38%,
-      rgba(191,219,254,.035) 58%,
-      transparent 100%);
-  transition:opacity .16s ease;
-  will-change:opacity;
+    radial-gradient(180px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.75),transparent 100%),
+    radial-gradient(220px 26px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.075),transparent 100%);
+  transition:opacity .25s ease;
 }
-.nx-glass-host.nx-glass-active .nx-pointer-glass{opacity:1;}
-body.tema-premium .nx-pointer-glass{
+body:not(.tema-premium) .tnav::after{
   background:
-    linear-gradient(180deg,
-      rgba(255,255,255,.06) 0%,
-      rgba(255,255,255,.022) 13%,
-      transparent 38%),
-    radial-gradient(240px 66px at var(--nx-glass-x,50%) 0%,
-      rgba(255,255,255,.15) 0%,
-      rgba(125,211,252,.07) 40%,
-      rgba(96,165,250,.03) 62%,
-      transparent 100%);
+    radial-gradient(180px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,1),transparent 100%),
+    radial-gradient(220px 26px at var(--nx-glass-x,50%) 0,rgba(37,99,235,.06),transparent 100%);
+}
+html.tema-glass-oscuro body:not(.tema-premium) .tnav::after{
+  background:
+    radial-gradient(180px 2px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.75),transparent 100%),
+    radial-gradient(220px 26px at var(--nx-glass-x,50%) 0,rgba(255,255,255,.075),transparent 100%);
+}
+/* Solo con mouse (parches-glass-pointer.js marca la barra mientras el puntero está encima). */
+body .tnav.nx-glass-active::after{opacity:1;}
+/* Botones de la barra: al pasar el mouse se aclaran como en el video (sin mover nada). */
+@media (hover:hover) and (pointer:fine){
+  html.tema-glass-oscuro body .tnav button,
+  body.tema-premium .tnav button{transition:background-color .18s ease,border-color .18s ease,color .18s ease;}
+  html.tema-glass-oscuro body .tnav button:hover,
+  body.tema-premium .tnav button:hover{background-color:rgba(255,255,255,.07) !important;border-color:rgba(255,255,255,.14) !important;}
 }
 @media (prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){
-  .nx-pointer-glass{display:none !important;}
+  body .tnav::after{display:none !important;}
 }
 
-
-/* ── Calibración de brillo oscuro ──────────────────────────────────
-   En el tema oscuro, el acabado conserva la línea de vidrio pero elimina
-   la neblina blanca en cabeceras y tarjetas de datos. */
-html.tema-glass-oscuro body .tnav{
-  background:linear-gradient(180deg,rgba(24,35,57,.96),rgba(15,27,47,.94)) !important;
-  border-color:rgba(148,163,184,.10) !important;
-  box-shadow:0 7px 18px rgba(2,6,23,.22),inset 0 1px 0 rgba(255,255,255,.035) !important;
-}
-html.tema-glass-oscuro body .tnav::after{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.016) 30%,transparent 55%),
-    linear-gradient(112deg,transparent 28%,rgba(148,163,184,.025) 47%,transparent 66%) !important;
-  opacity:.42 !important;
-}
-@media (prefers-reduced-motion:no-preference){
-  html.tema-glass-oscuro body .tnav::before{
-    background:linear-gradient(112deg,transparent 28%,rgba(255,255,255,.018) 43%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.02) 57%,transparent 68%) !important;
-  }
-}
-/* Halo decorativo de la esquina superior de los KPI del CRM. */
+/* Halo decorativo de la esquina superior de los KPI del CRM (de la capa de ChatGPT; se conserva). */
 html.tema-glass-oscuro #v-crm .nxCrmKpi::after{
   background:rgba(147,197,253,.035) !important;
 }
