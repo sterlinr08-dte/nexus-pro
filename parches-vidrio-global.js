@@ -24,7 +24,7 @@
   var TOCABLE='button,a[href],[role="button"],[role="tab"],[role="menuitem"],[role="option"],[role="switch"],summary,select,label[for],.ni,.btn,.chip,[onclick],[tabindex="0"]';
   var NO='.tnav,input,textarea,[contenteditable="true"],.nx-vidrio-no,iframe,video,canvas';
   var GRUPO='nav,[role="tablist"],[role="menu"],[role="listbox"],[role="toolbar"],ul,ol,.sb-nav,.tn-r,thead,tbody,form';
-  var capa=null,actual=null,raf=0,visible=false,ultimo=0,prev=null,mx=0,my=0,tScroll=0,escribiendo=false,tSalir=0;
+  var capa=null,actual=null,raf=0,visible=false,ultimo=0,prev=null,mx=0,my=0,tScroll=0,escribiendo=false,tSalir=0,apagadoEn=0;
 
   function crear(){
     if(capa&&document.body.contains(capa))return capa;
@@ -37,9 +37,35 @@
     var el=t.closest(TOCABLE);
     if(!el||el===document.body||el===document.documentElement)return null;
     if(el.disabled||el.getAttribute('aria-disabled')==='true')return null;
+    // Tarjetas (clientes, pólizas, prospectos…): la luz abarca la tarjeta entera, no solo la zona tocable de adentro.
+    // Solo si lo tocable es la parte principal (≥ 35 % de la tarjeta/fila): un chip dentro de una fila de chips no
+    // ilumina la fila entera.
+    var card=el.parentElement&&el.parentElement.closest('[class*="Card"],[class*="card"],[class*="row"],[class*="Row"],[class*="item"],[class*="fila"]');
+    if(card&&card!==el&&card.contains(el)&&!card.closest(NO)&&(el.parentElement===card||el.parentElement.parentElement===card)){
+      var rc=card.getBoundingClientRect(),re=el.getBoundingClientRect();
+      // …o si es lo ÚNICO tocable entre sus hermanos (la zona del nombre en una fila de clientes).
+      var hermanos=0,ch=el.parentElement.children;
+      for(var i=0;i<ch.length;i++){if(ch[i]!==el&&ch[i].matches&&ch[i].matches(TOCABLE))hermanos++;}
+      if(rc.height>=40&&rc.height<=260&&rc.width<=window.innerWidth&&(re.width*re.height>=0.35*rc.width*rc.height||hermanos===0))el=card;
+    }
     var r=el.getBoundingClientRect();
-    if(r.width<14||r.height<14||r.height>120||r.width>Math.min(720,window.innerWidth*0.9))return null;
+    // Controles y tarjetas/filas tocables: nada diminuto ni paneles enteros (fondos de ventanas, secciones).
+    if(r.width<14||r.height<14||r.height>260||r.width>window.innerWidth)return null;
+    if(r.height>120&&!/card|row|item|fila/i.test(el.className||'')&&el.tagName!=='TR')return null;
     return el;
+  }
+  // Táctil: si el dedo está sobre los datos de una fila o tarjeta (agente, prima…), la luz toma la fila entera, siempre
+  // que la fila tenga algo que la abra (nombre del cliente, etc.).
+  var FILA='[class*="Card"],[class*="card"],[class*="row"],[class*="Row"],[class*="item"],[class*="fila"]';
+  function objetivoTactil(t){
+    var el=objetivo(t);
+    if(el)return el;
+    if(!t||!t.closest||t.closest(NO))return null;
+    var f=t.closest(FILA);
+    if(!f||f===document.body)return null;
+    var r=f.getBoundingClientRect();
+    if(r.height<40||r.height>260||r.width>window.innerWidth)return null;
+    return f.querySelector('[role="button"],[onclick],a[href]')?f:null;
   }
   function grupoDe(el){var g=el.parentElement&&el.parentElement.closest(GRUPO);return g||el.parentElement;}
   // ¿Deslizar o aparecer? Solo se desliza entre vecinos: mismo grupo y a menos de 320 px.
@@ -47,7 +73,7 @@
     if(!a||!b||!document.documentElement.contains(a))return false;
     var ra=a.getBoundingClientRect(),rb=b.getBoundingClientRect();
     var d=Math.hypot((ra.left+ra.width/2)-(rb.left+rb.width/2),(ra.top+ra.height/2)-(rb.top+rb.height/2));
-    return d<320&&(a.parentElement===b.parentElement||grupoDe(a)===grupoDe(b));
+    return d<Math.max(320,(ra.height+rb.height)*1.3)&&(a.parentElement===b.parentElement||grupoDe(a)===grupoDe(b));
   }
   function recorte(el,r){
     var top=0,left=0,right=window.innerWidth,bottom=window.innerHeight,p=el.parentElement,n=0;
@@ -112,7 +138,9 @@
     if(!document.documentElement.contains(actual)){apagar();return;}
     var r=actual.getBoundingClientRect();
     if(r.width<1){apagar();return;}
-    var deslizar=visible&&prev!==actual&&vecinos(prev,actual);
+    // Si la luz se apagó hace un instante (cruzó un hueco), recuerda dónde estaba y se desliza desde ahí.
+    var reciente=visible||(Date.now()-apagadoEn<450);
+    var deslizar=reciente&&prev&&prev!==actual&&vecinos(prev,actual);
     if(prev===actual&&visible){iman(r);return;}
     colocar(actual,deslizar);
     crear().classList.add('on');visible=true;prev=actual;
@@ -141,7 +169,7 @@
       // llegar al siguiente control se desliza en vez de apagarse y reaparecer.
       if(!el){
         actual=null;
-        if(!tSalir)tSalir=setTimeout(function(){tSalir=0;if(!actual){if(capa)capa.classList.remove('on');visible=false;prev=null;}},140);
+        if(!tSalir)tSalir=setTimeout(function(){tSalir=0;if(!actual){if(capa)capa.classList.remove('on');visible=false;apagadoEn=Date.now();}},140);
         return;
       }
       if(tSalir){clearTimeout(tSalir);tSalir=0;}
@@ -182,14 +210,39 @@
     // Si la pantalla se redibuja y el control desaparece, se apaga.
     document.addEventListener('click',function(){setTimeout(function(){if(actual&&!document.documentElement.contains(actual))apagar();},60);},{passive:true,capture:true});
   }else{
-    // Táctil: destello breve con onda desde el dedo (no sigue el dedo; no estorba el desplazamiento).
+    // Táctil (iPhone): al tocar, la luz aparece con onda desde el dedo y se queda mientras el dedo está puesto. Al
+    // deslizar una lista (clientes, pólizas…), la luz pasa de tarjeta en tarjeta por debajo del punto donde está o
+    // estuvo el dedo, deslizándose con resorte como en la computadora; se apaga sola al detenerse.
+    var px=0,py=0,tocando=false,tFade=0,tVivo=0,rafT=0;
+    function fade(ms){clearTimeout(tFade);tFade=setTimeout(function(){if(!tocando&&capa){capa.classList.remove('on');visible=false;prev=null;actual=null;}},ms);}
+    function seguir(){
+      rafT=0;
+      var el=objetivoTactil(document.elementFromPoint(px,py));
+      if(!el){return;}
+      var deslizar=visible&&prev&&prev!==el&&vecinos(prev,el);
+      if(el!==prev||!visible){colocar(el,deslizar);crear().classList.add('on');visible=true;prev=el;actual=el;}
+      else colocar(el,true);
+    }
     document.addEventListener('pointerdown',function(ev){
-      var el=objetivo(ev.target);
+      if(ev.pointerType==='mouse')return;
+      var el=objetivoTactil(ev.target);
+      tocando=true;px=ev.clientX;py=ev.clientY;tVivo=Date.now();
       if(!el)return;
-      var ahora=Date.now();if(ahora-ultimo<80)return;ultimo=ahora;
-      mx=ev.clientX;my=ev.clientY;
-      colocar(el,false);
-      var c=crear();onda(ev,el);c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+      mx=px;my=py;
+      var deslizar=visible&&prev&&prev!==el&&vecinos(prev,el);
+      colocar(el,deslizar);crear().classList.add('on');visible=true;prev=el;actual=el;
+      onda(ev,el);clearTimeout(tFade);
     },{passive:true});
+    document.addEventListener('touchmove',function(ev){var t=ev.touches&&ev.touches[0];if(t){px=t.clientX;py=t.clientY;tVivo=Date.now();}},{passive:true});
+    function soltar(){tocando=false;fade(450);}
+    document.addEventListener('pointerup',soltar,{passive:true});
+    document.addEventListener('pointercancel',function(){tocando=false;tVivo=Date.now();fade(700);},{passive:true}); // empezó a desplazar
+    document.addEventListener('touchend',soltar,{passive:true});
+    window.addEventListener('scroll',function(){
+      if(Date.now()-tVivo>2500&&!tocando)return; // desplazamientos que no hizo el dedo (programáticos): nada
+      tVivo=Date.now();
+      if(!rafT)rafT=requestAnimationFrame(seguir);
+      fade(380);
+    },{passive:true,capture:true});
   }
 })();

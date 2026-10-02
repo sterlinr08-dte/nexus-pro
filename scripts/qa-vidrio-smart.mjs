@@ -74,12 +74,44 @@ const vio = (p, k) => p.evaluate(k => window.__clases.some(c => c.split(' ').inc
   const foco = await page.evaluate(() => { const c = document.querySelector('.nx-vidrio'), a = document.activeElement; if (!c || !a) return null; const r = a.getBoundingClientRect(); const t = getComputedStyle(c).getPropertyValue('--v-x'); return { on: c.classList.contains('on'), dx: Math.abs(parseFloat(t) - r.left), tag: a.tagName }; });
   ok(foco && foco.on && foco.dx < 2, 'teclado (Tab): la luz acompaña al control enfocado', foco);
   ok(await page.evaluate(() => document.querySelectorAll('.nx-vidrio').length) === 1, 'una sola capa de luz');
+  // 10) Clientes (PC): la luz abarca la tarjeta entera y se desliza de tarjeta en tarjeta
+  await page.evaluate(() => { try { nav('clientes', null); } catch (e) {} }); await page.waitForTimeout(1500);
+  await page.evaluate(() => { const r = document.querySelector('.cliCard, .clirow'); if (r) r.scrollIntoView({ block: 'start' }); }); await page.waitForTimeout(600);
+  // Se señala la parte que abre la ficha (nombre del cliente); la luz debe cubrir la fila o tarjeta entera.
+  const cards = []; for (const h of await page.$$('.cliCard, .clirow')) { if (await h.isVisible()) { const bb = await h.boundingBox(); const m = await h.$('[role="button"]'); const mb = m && await m.boundingBox(); if (bb && mb && bb.y > 60 && bb.y + bb.height < 715) cards.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height, mx: mb.x + mb.width / 2, my: mb.y + mb.height / 2 }); } }
+  if (cards.length >= 2) {
+    await page.mouse.move(cards[0].mx, cards[0].my, { steps: 6 }); await page.waitForTimeout(500);
+    const w1 = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.nx-vidrio')).getPropertyValue('--v-w')));
+    ok(Math.abs(w1 - cards[0].width) < 2, `clientes: la luz abarca la tarjeta entera (${Math.round(w1)} ≈ ${Math.round(cards[0].width)} px)`);
+    await reset(page);
+    await page.mouse.move(cards[1].mx, cards[1].my, { steps: 10 }); await page.waitForTimeout(500);
+    ok(!(await vio(page, 'sin')) && /\bon\b/.test(await cls(page)), 'clientes: se desliza de una tarjeta a la otra', await page.evaluate(() => window.__clases));
+  } else ok(false, 'clientes: no hay tarjetas visibles', cards.length);
   ok(errs.length === 0, 'sin errores (PC)', errs);
   const v = page.video(); await ctx.close(); fs.renameSync(await v.path(), OUT + '/vidrio-smart.webm');
   // iPhone
   const M = await abrir(b, 390, false);
   const t = []; for (const h of await M.page.$$('#cnt button, #cnt [role="button"]')) { if (await h.isVisible()) { const bb = await h.boundingBox(); if (bb && bb.height <= 120 && bb.y > 80 && bb.y < 760) t.push(bb); } }
-  if (t[0]) { await M.page.touchscreen.tap(...centro(t[0])); await M.page.waitForTimeout(60); ok(await vio(M.page, 'flash') && await vio(M.page, 'onda'), 'iPhone: destello con onda al tocar'); }
+  if (t[0]) { await M.page.touchscreen.tap(...centro(t[0])); await M.page.waitForTimeout(60); ok(await vio(M.page, 'on') && await vio(M.page, 'onda'), 'iPhone: luz con onda al tocar'); }
+  // iPhone · Clientes: tocar una tarjeta (la luz se queda mientras el dedo está) y al deslizar la lista pasa a otra
+  await M.page.evaluate(() => { try { nav('clientes', null); } catch (e) {} }); await M.page.waitForTimeout(1500);
+  await M.page.evaluate(() => { const r = document.querySelector('.cliCard, .clirow'); if (r) r.scrollIntoView({ block: 'start' }); }); await M.page.waitForTimeout(600);
+  const mc = []; for (const h of await M.page.$$('.cliCard, .clirow')) { if (await h.isVisible()) { const bb = await h.boundingBox(); if (bb && bb.y > 90 && bb.y + bb.height < 800) mc.push(bb); } }
+  if (mc.length >= 1) {
+    const cx = mc[0].x + mc[0].width / 2, cy = mc[0].y + 18;
+    const cdp = await M.ctx.newCDPSession(M.page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] }); await M.page.waitForTimeout(250);
+    const w = await M.page.evaluate(() => { const c = document.querySelector('.nx-vidrio'); return { on: c && c.classList.contains('on'), w: c && parseFloat(getComputedStyle(c).getPropertyValue('--v-w')) }; });
+    ok(w.on && Math.abs(w.w - mc[0].width) < 2, 'iPhone clientes: al tocar, la luz cubre la tarjeta y se queda mientras el dedo está', w);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); // no abre la ficha: es una prueba visual
+    // desliza la lista (como el dedo) y la luz debe pasar a otra tarjeta
+    await M.page.evaluate(() => { window.__antes = getComputedStyle(document.querySelector('.nx-vidrio')).getPropertyValue('--v-y'); const e = [...document.querySelectorAll('*')].find(x => x.scrollHeight > x.clientHeight + 200 && /(auto|scroll)/.test(getComputedStyle(x).overflowY) && x.querySelector('.cliCard, .clirow')) || document.scrollingElement; window.__sc = e; });
+    for (let i = 0; i < 6; i++) { await M.page.evaluate(() => { const e = window.__sc; e.scrollBy(0, e.scrollTop + e.clientHeight >= e.scrollHeight - 5 ? -60 : 60); }); await M.page.waitForTimeout(60); }
+    const d = await M.page.evaluate(() => { const c = document.querySelector('.nx-vidrio'); return { on: c.classList.contains('on'), antes: window.__antes, ahora: getComputedStyle(c).getPropertyValue('--v-y') }; });
+    ok(d.on && d.antes !== d.ahora, 'iPhone clientes: al deslizar la lista, la luz pasa de tarjeta en tarjeta', d);
+    await M.page.waitForTimeout(700);
+    ok(!(await M.page.evaluate(() => document.querySelector('.nx-vidrio').classList.contains('on'))), 'iPhone: al detenerse, la luz se apaga sola');
+  } else ok(false, 'iPhone clientes: sin tarjetas', mc.length);
   ok(M.errs.length === 0, 'sin errores (iPhone)', M.errs);
   await M.ctx.close(); await b.close();
   console.log(`\n${pass} PASS · ${fail} FAIL`);
