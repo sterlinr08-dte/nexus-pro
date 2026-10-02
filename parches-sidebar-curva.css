@@ -1071,49 +1071,62 @@ body .tnav.nx-glass-active::before{opacity:.75;}
 }
 
 /* ── 59.05 · LUZ DE VIDRIO GLOBAL (parches-vidrio-global.js): el efecto del video en todo lo que se señala o toca ──
-   Una sola capa flotante (no recibe clics ni mueve nada). Con mouse se desliza con resorte de un control al siguiente;
-   al hacer clic se hunde y rebota. En táctil, destello breve al tocar. */
+   Una sola capa flotante (no recibe clics ni mueve nada). Smart: se desliza entre vecinos, se inclina hacia el puntero
+   (imán) con brillo que lo sigue, toma el color de los botones de color, es más suave sobre lo ya activo, onda desde el
+   punto del clic, se esconde al desplazar o escribir. En táctil, destello breve con onda desde el dedo. */
 .nx-vidrio{
+  --v-luz:255,255,255;
   position:fixed;left:0;top:0;
   width:var(--v-w,0px);height:var(--v-h,0px);
-  transform:translate3d(var(--v-x,0px),var(--v-y,0px),0);
+  transform:translate3d(calc(var(--v-x,0px) + var(--v-dx,0px)),calc(var(--v-y,0px) + var(--v-dy,0px)),0);
   border-radius:var(--v-r,10px);
   z-index:2147483000;
   pointer-events:none;
   opacity:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.035) 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.06);
+  overflow:hidden;
+  background:
+    radial-gradient(70% 90% at var(--v-mx,50%) 0%,rgba(var(--v-luz),.20) 0%,transparent 70%),
+    linear-gradient(180deg,rgba(var(--v-luz),.085) 0%,rgba(var(--v-luz),.03) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 0 0 1px rgba(var(--v-luz),.07);
   mix-blend-mode:screen;
   transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),border-radius .3s ease,opacity .18s ease,scale .16s ease;
   will-change:transform,width,height,opacity;
 }
-/* Rayita de luz debajo (como el video); en controles altos (filas, tarjetas chicas) va más corta y tenue. */
+/* Rayita de luz debajo (como el video); en controles altos va más corta y tenue. */
 .nx-vidrio::after{
   content:'';position:absolute;left:24%;right:24%;bottom:2px;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
-  box-shadow:0 0 8px rgba(255,255,255,.4);
+  background:linear-gradient(90deg,transparent,rgba(var(--v-luz),.9),transparent);
+  box-shadow:0 0 8px rgba(var(--v-luz),.45);
+  transition:left .3s ease,right .3s ease,opacity .2s ease;
 }
 .nx-vidrio.alto::after{left:38%;right:38%;opacity:.6;}
+/* Onda del clic / toque: nace en el punto exacto. */
+.nx-vidrio::before{
+  content:'';position:absolute;left:var(--v-ox,50%);top:var(--v-oy,50%);
+  width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:radial-gradient(circle,rgba(var(--v-luz),.45) 0%,rgba(var(--v-luz),0) 70%);
+  opacity:0;transform:scale(0);
+}
+.nx-vidrio.onda::before{animation:nxVidrioOnda .55s cubic-bezier(.22,1,.36,1) both;}
+@keyframes nxVidrioOnda{0%{opacity:.9;transform:scale(0)}100%{opacity:0;transform:scale(18)}}
 .nx-vidrio.on{opacity:1;}
 .nx-vidrio.sin{transition:opacity .18s ease;}
+/* Se aparta mientras desplazas o escribes. */
+.nx-vidrio.quieto{opacity:0 !important;transition:opacity .1s ease;}
+/* Botones de color: la luz toma su color. */
+.nx-vidrio.tinte{--v-luz:var(--v-tinte);}
+/* Lo que ya está activo: solo la rayita y un brillo leve (no se duplica el resaltado). */
+.nx-vidrio.actual{background:radial-gradient(70% 90% at var(--v-mx,50%) 0%,rgba(var(--v-luz),.14) 0%,transparent 70%);box-shadow:none;}
 /* Clic: se hunde y rebota. */
-.nx-vidrio.press{scale:.96;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.06) 100%);transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),opacity .18s ease,scale .08s ease;}
+.nx-vidrio.press{scale:.96;transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),opacity .18s ease,scale .08s ease;}
 /* Táctil: destello breve. */
 .nx-vidrio.flash{animation:nxVidrioFlash .5s cubic-bezier(.22,1,.36,1) both;}
 @keyframes nxVidrioFlash{0%{opacity:0;scale:.94}25%{opacity:1;scale:1}100%{opacity:0;scale:1.02}}
-/* Tema claro: luz azulada en vez de blanca (el blanco no se vería sobre fondo claro). */
-body:not(.tema-premium) .nx-vidrio{
-  mix-blend-mode:normal;
-  background:linear-gradient(180deg,rgba(37,99,235,.075) 0%,rgba(37,99,235,.035) 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(37,99,235,.10);
-}
-body:not(.tema-premium) .nx-vidrio::after{background:linear-gradient(90deg,transparent,rgba(37,99,235,.8),transparent);box-shadow:0 0 8px rgba(37,99,235,.3);}
-html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio{
-  mix-blend-mode:screen;
-  background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.035) 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.06);
-}
-html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);box-shadow:0 0 8px rgba(255,255,255,.4);}
+/* Tema claro: luz azulada (el blanco no se vería sobre fondo claro). */
+body:not(.tema-premium) .nx-vidrio{--v-luz:37,99,235;mix-blend-mode:normal;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 0 0 1px rgba(37,99,235,.10);}
+body:not(.tema-premium) .nx-vidrio.tinte{--v-luz:var(--v-tinte);mix-blend-mode:screen;}
+html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio{--v-luz:255,255,255;mix-blend-mode:screen;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 0 0 1px rgba(255,255,255,.07);}
+html.tema-glass-oscuro body:not(.tema-premium) .nx-vidrio.tinte{--v-luz:var(--v-tinte);}
 @media (prefers-reduced-motion:reduce){.nx-vidrio{display:none !important;}}
 
 /* Halo decorativo de la esquina superior de los KPI del CRM (de la capa de ChatGPT; se conserva). */

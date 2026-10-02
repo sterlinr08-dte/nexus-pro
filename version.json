@@ -8,7 +8,8 @@
       "notas": [
         "Barra superior como el video: al pasar el mouse por los botones, una luz de vidrio con una rayita brillante se desliza con resorte de un botón al otro; el botón señalado se levanta un poco y se aclara.",
         "El reflejo del borde de arriba se centra sobre el botón señalado y brilla más, como en el video. Solo en computadora; en el iPhone la barra queda fija.",
-        "Ese mismo efecto en todo el sistema: en la computadora, la luz de vidrio aparece sobre cualquier botón, ítem del menú, pestaña o enlace donde pongas el puntero y se desliza al siguiente; al hacer clic se hunde y rebota. En el iPhone, al tocar algo sale un destello breve de vidrio."
+        "Ese mismo efecto en todo el sistema: en la computadora, la luz de vidrio aparece sobre cualquier botón, ítem del menú, pestaña o enlace donde pongas el puntero y se desliza al siguiente; al hacer clic se hunde y rebota. En el iPhone, al tocar algo sale un destello breve de vidrio.",
+        "Luz inteligente: se desliza solo entre controles vecinos (si saltas a otra zona aparece ahí); se inclina hacia el puntero y su brillo lo sigue; toma el color de los botones de color; es más suave sobre lo que ya está activo; el clic suelta una onda desde donde haces clic; se aparta al desplazar o escribir y vuelve sola; con la tecla Tab acompaña al control enfocado."
       ]
     },
     {
