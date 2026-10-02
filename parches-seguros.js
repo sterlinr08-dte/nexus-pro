@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6005'):'?b=6005';
-    }catch(e){return '?b=6005';}
+      return base?(base+'&b=6006'):'?b=6006';
+    }catch(e){return '?b=6006';}
   }
 
   function load(src,done){
@@ -40,6 +40,7 @@
   var pasos=[
     ['js','parches-seguros-base.js'],
     ['css','parches-sidebar-curva.css'],
+    ['js','parches-glass-pointer.js'],
     ['js','parches-reporte-ciclo-agentes.js'],
     ['js','parches-excepciones.js'],
     /* CRM unificado (29-sep-2026): parches-crm.css + parches-crm.js reemplazan a los tres JS y el CSS
