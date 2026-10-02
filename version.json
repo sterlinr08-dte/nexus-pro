@@ -6,7 +6,8 @@
       "version": "59.06",
       "fecha": "2026-10-02",
       "notas": [
-        "El brillo de la luz de vidrio ahora va arriba, en el borde superior de cada botón, ítem del menú y cliente (antes salía abajo), como el reflejo del video."
+        "El brillo de la luz de vidrio ahora va arriba, en el borde superior de cada botón, ítem del menú y cliente (antes salía abajo), como el reflejo del video.",
+        "En el iPhone, la barra de arriba también recibe la luz con el brillo arriba al tocar sus botones, igual que el resto del sistema."
       ]
     },
     {
