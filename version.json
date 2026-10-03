@@ -1,7 +1,15 @@
 {
-  "version": "59.08",
+  "version": "59.09",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.09",
+      "fecha": "2026-10-03",
+      "notas": [
+        "WhatsApp sin lag ni parpadeo (como el CRM de Bayol Cell): cuando llega un mensaje o cambia una conversación ya no se recarga ni se vuelve a dibujar toda la pantalla; solo se actualiza lo que cambió. Si el mensaje es de otra conversación, el chat abierto no se toca.",
+        "Enviar es más rápido: el campo de escribir queda libre en cuanto WhatsApp confirma, sin esperar a recargar la lista, y el mensaje nunca sale repetido."
+      ]
+    },
     {
       "version": "59.08",
       "fecha": "2026-10-02",

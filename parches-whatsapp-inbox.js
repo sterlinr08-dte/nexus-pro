@@ -898,7 +898,7 @@
     const conCobro = hilos.filter(h => waPendienteCliente(clienteDeHilo(h)) > 0).length;
     const continuidad = hilos.filter(h => { const ep = waEstadoPoliza(clienteDeHilo(h)); return ep.est === 'vencida' || ep.est === 'gracia'; }).length;
     const kpi = (key, label, val, sub) => `<button class="nxWaProKpi ${waFiltro === key ? 'on' : ''}" onclick="nxWaFiltro('${key}')"><div class="l">${esc(label)}</div><div class="v">${val}</div><div class="s">${esc(sub)}</div></button>`;
-    host.innerHTML = `<section class="nxWaPro">
+    const html = `<section class="nxWaPro">
       <div class="nxWaProHead"><div><h3>Centro WhatsApp Pro</h3><p>Prioriza clientes por factura, cobro, póliza por vencer, bauches y conversaciones sin vincular.</p></div></div>
       <div class="nxWaProGrid">
         ${kpi('todos', 'Conversaciones', hilos.length, conCliente.length + ' vinculadas')}
@@ -915,6 +915,11 @@
       </div>
       ${waContactosHTML()}
     </section>`;
+    // 59.09 (sin lag): si el panel quedó igual no se reescribe — cada reescritura despertaba ~20 capas que lo vuelven
+    // a decorar y eso era el parpadeo.
+    if (host.__nxHtml === html && host.firstElementChild) return;
+    host.__nxHtml = html;
+    host.innerHTML = html;
   }
 
   function waContactos() {
@@ -1301,8 +1306,8 @@
   function pintarLista() {
     const cont = $('#nxWaLista'); if (!cont) return;
     const lista = hilosFiltrados();
-    if (!hilos.length) { cont.innerHTML = '<div class="nxWaEmpty">Todavia no han llegado mensajes.</div>'; return; }
-    if (!lista.length) { cont.innerHTML = '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>'; return; }
+    if (!hilos.length) { cont.__nxHtml = ''; cont.innerHTML = '<div class="nxWaEmpty">Todavia no han llegado mensajes.</div>'; return; }
+    if (!lista.length) { cont.__nxHtml = ''; cont.innerHTML = '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>'; return; }
     const fila = h => {
       const nombre = h.nombre_perfil || h.telefono_e164 || 'Sin nombre';
       const cliente = clienteDeHilo(h);
@@ -1326,7 +1331,9 @@
     const archivados = ordenarHilos(lista.filter(hiloArchivado));
     const cab = archivados.length ? `<div class="nxWaArchRow${mostrarArchivados ? ' abierto' : ''}" onclick="nxWaToggleArchivados()"><i class="ti ti-archive"></i><b>Archivados</b><span class="nxWaArchCount">${archivados.length}</span><i class="ti ti-chevron-down nxWaArchChev"></i></div>` : '';
     const secArch = archivados.length && mostrarArchivados ? `<div class="nxWaArchSec">${archivados.map(fila).join('')}</div>` : '';
-    cont.innerHTML = cab + secArch + activos.map(fila).join('') + (!activos.length && !archivados.length ? '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>' : '');
+    const html = cab + secArch + activos.map(fila).join('') + (!activos.length && !archivados.length ? '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>' : '');
+    // 59.09 (sin lag): misma lista → no se toca el DOM (no parpadea ni pierde el scroll).
+    if (!(cont.__nxHtml === html && cont.firstElementChild)) { cont.__nxHtml = html; cont.innerHTML = html; }
     try { document.dispatchEvent(new CustomEvent('nxwa:lista', { detail: { hilos: hilos } })); } catch (e) {}
   }
   window.nxWaToggleArchivados = function () { mostrarArchivados = !mostrarArchivados; pintarLista(); };
@@ -1634,7 +1641,7 @@
     const cont = $('#nxWaDetalle'); if (!cont) return;
     const detailCol = cont.closest('.nxWaDetailCol');
     if (detailCol) detailCol.classList.toggle('has-open', !!hiloAbiertoId);
-    if (!hiloAbiertoId) { ultimoRenderHiloId = null; cont.innerHTML = '<div class="nxWaEmpty"><b style="display:block;font-size:13px;color:#0f172a;margin-bottom:4px">Selecciona una conversación</b><span>Abre un cliente para revisar mensajes, comprobantes y seguimiento.</span></div>'; return; }
+    if (!hiloAbiertoId) { ultimoRenderHiloId = null; cont.__nxHtml = ''; cont.innerHTML = '<div class="nxWaEmpty"><b style="display:block;font-size:13px;color:#0f172a;margin-bottom:4px">Selecciona una conversación</b><span>Abre un cliente para revisar mensajes, comprobantes y seguimiento.</span></div>'; return; }
     const h = hilos.find(x => x.id === hiloAbiertoId);
     const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
     const ventanaAbierta = h?.ultimo_inbound_at && (Date.now() - new Date(h.ultimo_inbound_at).getTime()) < 24 * 3600000;
@@ -1649,6 +1656,7 @@
     // pintarDetalle() se acuerde de no hacerlo mientras la carga sigue en vuelo.
     if (mensajesHiloId !== hiloAbiertoId) {
       if (ultimoRenderHiloId !== hiloAbiertoId) {
+        cont.__nxHtml = '';
         cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}<div class="nxWaMsgs"><div class="nxWaEmpty">Cargando…</div></div>`;
         ultimoRenderHiloId = hiloAbiertoId;
       }
@@ -1702,7 +1710,7 @@
     const borrador = borradoresPorHilo.get(hiloAbiertoId) || valorPrevio || '';
     const resp = respuestaActiva ? `<div class="nxWaReplyBar"><div class="tx"><b>Respondiendo a ${esc(respuestaActiva.autor || 'Cliente')}</b><span>${esc(respuestaActiva.texto || '')}</span></div><button onclick="nxWaCancelarRespuesta()">×</button></div>` : '';
     if (scrollInicial) cont.classList.add('prep-bottom'); else cont.classList.remove('prep-bottom');
-    cont.innerHTML = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}${barraBusquedaChat()}
+    const htmlDet = `${cabeceraChat(nombreCabecera, subCabecera, inicialesCabecera)}${barraBusquedaChat()}
       <div class="nxWaMsgs ${scrollInicial ? 'prep-bottom' : ''}" id="nxWaMsgsBox">${filas}</div>
       ${ventanaAbierta
         // El boton de clip NO se puede borrar de aqui, aunque al usuario no se le muestre.
@@ -1717,6 +1725,11 @@
         : `<div class="nxWaCerrada">Pasaron más de 24h desde el último mensaje del cliente — espera a que vuelva a escribir para poder responder con texto libre.
             ${(h?.cliente_id && waMesesAtraso(cliente) > 0) ? `<button class="nxWaBtnRecordatorio" ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'disabled' : ''} onclick="nxWaRecordatorioManual('${h.cliente_id}','${hiloAbiertoId}',this)"><i class="ti ti-brand-whatsapp"></i> ${hilosRecordatorioEnVuelo.has(hiloAbiertoId) ? 'Enviando…' : 'Enviar recordatorio de pago ahora'}</button>` : ''}
           </div>`}`;
+    // 59.09 (sin lag): si el chat abierto quedó exactamente igual (p. ej. llegó algo de OTRA conversación) no se
+    // reescribe: así no parpadea, no se pierde lo que se está escribiendo y las capas no vuelven a decorar todo.
+    if (cont.__nxHtml === htmlDet && $('#nxWaMsgsBox') && cont.contains($('#nxWaMsgsBox'))) { ultimoRenderHiloId = hiloAbiertoId; return; }
+    cont.__nxHtml = htmlDet;
+    cont.innerHTML = htmlDet;
 
     const nuevoBox = $('#nxWaMsgsBox');
     if (nuevoBox) nuevoBox.scrollTop = estabaAlFondo ? nuevoBox.scrollHeight : (boxPrevio ? boxPrevio.scrollTop : nuevoBox.scrollHeight);
@@ -1899,10 +1912,15 @@
       else {
         if (d.mensaje) {
           const i = mensajes.findIndex(m => String(m.id) === String(tempMsg.id));
-          if (i >= 0) mensajes[i] = d.mensaje;
+          // 59.09: si el eco de Realtime ya trajo el mensaje real, la provisional solo se quita (no se duplica).
+          if (i >= 0) { if (mensajes.some(m => String(m.id) === String(d.mensaje.id))) mensajes.splice(i, 1); else mensajes[i] = d.mensaje; }
           if (hiloAbiertoId === hiloDestino) pintarDetalle();
         } else if (hiloAbiertoId === hiloDestino) { await cargarMensajes(hiloDestino); pintarDetalle(); }
-        await cargar();
+        // 59.09: antes se esperaba aquí una recarga completa (100 conversaciones + mensajes) con el campo de escribir
+        // bloqueado. Ahora la fila de la lista se actualiza en memoria y Realtime trae el resto.
+        const hh = hilos.find(x => x.id === hiloDestino);
+        if (hh) { hh.ultimo_mensaje_at = new Date().toISOString(); hh.ultimo_mensaje_preview = texto; hh.ultimo_mensaje_direccion = 'out'; hh.ultimo_mensaje_estado = 'enviado'; hh.ultimo_mensaje_tipo = 'text'; hilos.sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || ''))); pintarLista(); }
+        if (!(sb && realtime.estado === 'SUBSCRIBED')) cargarSeguro();   // sin tiempo real: refresco en segundo plano
       }
     } catch (e) { toast('err', 'No se pudo enviar', String(e && e.message || e)); marcarFallido(String(e && e.message || e)); }
     hiloEnviosEnVuelo.delete(hiloDestino);
@@ -2118,6 +2136,66 @@
     if (status === 'SUBSCRIBED') detenerPolling(); else iniciarPolling();
   }
   window.nxWaEstadoRealtime = () => ({ estado: realtime.estado, polling: !!realtime.polling, ticks: realtime.ticks });
+  // ── 59.09: tiempo real aplicado en memoria (sin recargas completas ni reescribir toda la pantalla) ──
+  let ultimaRecargaCompleta = Date.now();
+  let rtPintado = null, rtDetalle = false;
+  function rtProgramarPintado(detalle) {
+    if (detalle) rtDetalle = true;
+    if (rtPintado) return;
+    rtPintado = setTimeout(() => {
+      rtPintado = null; const d = rtDetalle; rtDetalle = false;
+      if (!$('#v-waInbox.on')) return;
+      pintarProPanel(); pintarLista();   // ambos se saltan solos si no cambió nada
+      if (d) pintarDetalle();
+    }, 60);
+  }
+  // Cambio en whatsapp_hilos: la fila viene completa en el evento → se mezcla con la lista en memoria.
+  function rtAplicarHilo(payload) {
+    if (payload?.eventType === 'DELETE') {
+      const id = payload.old && payload.old.id; if (!id) return false;
+      hilos = hilos.filter(h => h.id !== id);
+      if (hiloAbiertoId === id) return false;   // raro: que lo resuelva la recarga completa
+      rtProgramarPintado(false); return true;
+    }
+    const n = payload && payload.new; if (!n || !n.id) return false;
+    const i = hilos.findIndex(h => h.id === n.id);
+    const antes = i >= 0 ? hilos[i] : null;
+    if (antes) Object.assign(antes, n); else hilos.push(n);
+    hilos.sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || '')));
+    // El chat abierto solo se repinta si cambió algo que se ve en él (ventana de 24 h, cliente, nombre).
+    const det = n.id === hiloAbiertoId && (!antes || ['ultimo_inbound_at', 'cliente_id', 'nombre_perfil', 'telefono_e164'].some(k => k in n));
+    rtProgramarPintado(det);
+    return true;
+  }
+  // Cambio en whatsapp_hilo_mensajes: si es de OTRA conversación no se hace nada (su fila de la lista se actualiza con
+  // el evento de whatsapp_hilos que dispara el mismo mensaje); si es del chat abierto se mete/actualiza en memoria.
+  async function rtAplicarMensaje(payload) {
+    const m = (payload && (payload.new && payload.new.id ? payload.new : payload.old)) || null;
+    if (!m || !m.id) return false;
+    if (!m.hilo_id) return payload?.eventType === 'DELETE' ? (mensajes.some(x => String(x.id) === String(m.id)) ? false : true) : false;
+    if (m.hilo_id !== hiloAbiertoId || mensajesHiloId !== hiloAbiertoId) return true;
+    if (payload.eventType === 'DELETE') { mensajes = mensajes.filter(x => String(x.id) !== String(m.id)); rtProgramarPintado(true); return true; }
+    const i = mensajes.findIndex(x => String(x.id) === String(m.id));
+    if (payload.eventType === 'UPDATE') {
+      if (i < 0) return true;   // mensaje viejo fuera de la ventana cargada
+      const v = mensajes[i];
+      if ((v.media_path || null) !== (m.media_path || null)) return false;
+      const url = v._url; Object.assign(v, m); if (url) v._url = url;
+      rtProgramarPintado(true); return true;
+    }
+    if (i >= 0) { const url = mensajes[i]._url; Object.assign(mensajes[i], m); if (url) mensajes[i]._url = url; rtProgramarPintado(true); return true; }
+    if (m.media_path && !m._url) { try { m._url = await urlFirmada(m.media_path); } catch (e) {} }
+    if (m.hilo_id !== hiloAbiertoId || mensajesHiloId !== hiloAbiertoId) return true;   // el usuario cambió de chat mientras tanto
+    if (mensajes.some(x => String(x.id) === String(m.id))) return true;
+    // Eco del envío propio: reemplaza la burbuja provisional («enviando…») en vez de duplicarla.
+    if (m.direccion === 'out') {
+      const t = mensajes.findIndex(x => x._optimista && x.estado === 'enviando' && String(x.cuerpo || '') === String(m.cuerpo || ''));
+      if (t >= 0) { mensajes[t] = m; rtProgramarPintado(true); return true; }
+    }
+    mensajes.push(m);
+    mensajes.sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')) || String(a.id).localeCompare(String(b.id)));
+    rtProgramarPintado(true); return true;
+  }
   async function iniciarRealtime() {
     if (sb) return;
     try {
@@ -2135,7 +2213,13 @@
       // nuevos sin recargar la pagina a mano.
       if (A.token) { try { await sb.realtime.setAuth(A.token); } catch (e) { console.error('[WA Inbox] setAuth', e); } }
       let debounce = null;
-      const refrescar = () => { if (debounce) clearTimeout(debounce); debounce = setTimeout(() => { if ($('#v-waInbox.on')) cargarSeguro(); }, 400); };
+      const refrescar = () => { if (debounce) clearTimeout(debounce); debounce = setTimeout(() => { if ($('#v-waInbox.on')) { ultimaRecargaCompleta = Date.now(); cargarSeguro(); } }, 400); };
+      // 59.09 (sin lag, igual que el CRM de Bayol Cell): antes CADA evento (de cualquier conversación, también los
+      // ✓✓ de entregado/leído) recargaba 100 conversaciones + 200 mensajes y reescribía toda la pantalla. Ahora el
+      // cambio se aplica en memoria y solo se repinta lo que cambió; la recarga completa queda como respaldo
+      // (si el evento no se puede aplicar, o cada 90 s como mínimo).
+      const tras = aplicado => { if (!aplicado || Date.now() - ultimaRecargaCompleta > 90000) refrescar(); };
+      const hiloCambio = payload => { let a = false; try { a = rtAplicarHilo(payload); } catch (e) {} tras(a); };
       // Un mensaje entrante nuevo se anuncia (sonido / vibración / contador del título) desde la
       // capa de lista; aquí solo se emite el evento con la fila que trae Realtime.
       const mensajeNuevo = payload => {
@@ -2146,10 +2230,10 @@
             document.dispatchEvent(new CustomEvent('nxwa:mensaje', { detail: { mensaje: m, hilo: h || null, abierto: hiloAbiertoId === m.hilo_id } }));
           }
         } catch (e) {}
-        refrescar();
+        rtAplicarMensaje(payload).then(tras, () => tras(false));
       };
       canal = sb.channel('nx-wa-inbox')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilos' }, refrescar)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilos' }, hiloCambio)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_hilo_mensajes' }, mensajeNuevo)
         .subscribe(status => estadoCanal(status));
     } catch (e) { console.error('[WA Inbox] realtime', e); estadoCanal('error'); }
