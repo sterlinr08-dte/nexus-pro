@@ -11,6 +11,8 @@
   /* Corto y lineal: la rueda sigue al desplazamiento sin quedarse atrás. */
   transition:transform .12s linear,opacity .12s linear,filter .12s linear,box-shadow .25s ease !important;
 }
+/* Mientras se desplaza, la rueda se recalcula en cada cuadro: sin transición, para que no vaya un paso atrás. */
+.nx-rueda.nx-rueda-gira > .nx-rueda-fila{transition:box-shadow .25s ease !important;}
 /* Fila del centro: por encima de las vecinas, con sombra que la levanta y resplandor azul detrás. */
 .nx-rueda > .nx-rueda-fila.nx-foco{
   position:relative;
@@ -38,12 +40,11 @@
     linear-gradient(var(--c),var(--c)) right bottom/var(--l) var(--g) no-repeat,
     linear-gradient(var(--c),var(--c)) right bottom/var(--g) var(--l) no-repeat;
   filter:drop-shadow(0 0 4px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(96,165,250,.8));
-  transition:transform .3s cubic-bezier(.22,1.18,.36,1),width .3s cubic-bezier(.22,1.18,.36,1),height .3s cubic-bezier(.22,1.18,.36,1),opacity .2s ease;
-  will-change:transform,width,height,opacity;
+  /* Sin animación de posición: el JS lo pega a la fila en cada cuadro (una animación lo dejaba atrasado en el iPhone). */
+  transition:opacity .2s ease;
+  will-change:transform,opacity;
 }
 .nx-foco-marco.on{opacity:1;}
-/* Mientras la rueda gira, el marco acompaña sin resorte (si no, se quedaría atrás). */
-.nx-foco-marco.sigue{transition:transform .06s linear,width .06s linear,height .06s linear,opacity .2s ease;}
 .nx-foco-marco.tactil{--l:12px;}
 
 /* Tema claro: esquinas azules y sombra más suave (el blanco no se vería sobre fondo claro). */

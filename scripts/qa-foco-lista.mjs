@@ -71,6 +71,22 @@ const centrar = (p, sel, k) => p.evaluate(([sel, k]) => { const f = document.que
     ok(e.filas[1].ang > 8 && e.filas[3].ang < -8 && e.filas[1].op < 1, 'iPhone: las vecinas se inclinan y se oscurecen', [e.filas[1], e.filas[3]]);
     ok(!e.filas.some(f => f.blur), 'iPhone: sin desenfoque (rendimiento)');
     await page.screenshot({ path: OUT + '/rueda-390-clientes.png' });
+    // Desplazar sin parar (como la inercia del iPhone): el marco va pegado a la fila del centro en cada cuadro.
+    const desfase = await page.evaluate(async () => {
+      let sc = document.querySelector('#tbCli'); while (sc && sc !== document.body) { const cs = getComputedStyle(sc); if (/(auto|scroll)/.test(cs.overflowY) && sc.scrollHeight > sc.clientHeight + 4) break; sc = sc.parentElement; }
+      if (!sc || sc === document.body) sc = document.scrollingElement;
+      let peor = 0;
+      for (let i = 0; i < 40; i++) {
+        sc.scrollTop += 9; await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const f = document.querySelector('.nx-rueda-fila.nx-foco'), m = document.querySelector('.nx-foco-marco.on');
+        if (!f || !m) continue;
+        const a = f.getBoundingClientRect(), b = m.getBoundingClientRect();
+        peor = Math.max(peor, Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
+      }
+      return Math.round(peor * 10) / 10;
+    });
+    ok(desfase <= 3, 'iPhone: al desplazar sin parar, el marco va pegado a la fila del centro (desfase ≤ 3 px)', desfase);
+    ok(await page.evaluate(() => !!document.querySelector('.nx-rueda.nx-vidrio-no')), 'iPhone: la luz de vidrio no se dibuja sobre la lista que gira');
     ok(errs.length === 0, 'sin errores de JavaScript (iPhone)', errs.slice(0, 3));
     await ctx.close(); }
   await b.close();

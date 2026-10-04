@@ -5,8 +5,8 @@
    cada vez más pequeñas, oscuras y (en la computadora) borrosas según su distancia al centro.
    Lo «smart»:
    · Solo LISTAS VERTICALES reales (filas del mismo tipo, con la misma clase, apiladas en la misma columna; al menos 3).
-     Tablas, menús, barras, formularios, ventanas emergentes, burbujas del chat y la cabecera/barra de escribir de
-     WhatsApp no entran.
+     Tablas, menús, barras, formularios, ventanas y paneles emergentes (p. ej. el del clip del chat), burbujas del chat
+     y la cabecera/barra de escribir de WhatsApp no entran.
    · Gira la lista que cruza el centro de la pantalla; si ninguna lo cruza, todo se ve normal.
    · Se mide sin transformaciones (offsetTop/Height), así la rueda no se «autoalimenta» al inclinar las filas.
    · Un cálculo por cuadro (requestAnimationFrame) al desplazar, al cambiar el tamaño y cuando la pantalla se redibuja.
@@ -20,8 +20,8 @@
   var mq=function(q){return !!(window.matchMedia&&window.matchMedia(q).matches);};
   if(mq('(prefers-reduced-motion: reduce)'))return;
   var FINO=mq('(hover: hover) and (pointer: fine)');
-  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
-  var lista=null,filas=[],centro=null,marco=null,raf=0,tQuieto=0;
+  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],[class*="Pop"],[class*="pop"],[class*="Menu"],[class*="menu"],[class*="Sheet"],[class*="sheet"],[class*="Modal"],table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
+  var lista=null,filas=[],centro=null,marco=null,raf=0;
 
   // ── Detección de listas (medidas sin transformar: offset*) ──────────────────────────────────────────────────────
   function comparten(a,b){
@@ -98,20 +98,33 @@
   function colocarMarco(el,s){
     var m=crearMarco(),r=el.getBoundingClientRect(),g=FINO?8:6;
     var cx=r.left+r.width/2,cy=r.top+r.height/2,w=el.offsetWidth*s+g*2,h=el.offsetHeight*s+g*2;
-    m.style.setProperty('--f-x',(cx-w/2).toFixed(1)+'px');
-    m.style.setProperty('--f-y',(cy-h/2).toFixed(1)+'px');
-    m.style.setProperty('--f-w',w.toFixed(1)+'px');
-    m.style.setProperty('--f-h',h.toFixed(1)+'px');
-    m.classList.add('on');
+    var x=cx-w/2,y=cy-h/2;
+    poner(m,'--f-w',w.toFixed(1)+'px');
+    poner(m,'--f-h',h.toFixed(1)+'px');
+    poner(m,'--f-x',x.toFixed(1)+'px');
+    poner(m,'--f-y',y.toFixed(1)+'px');
+    // El marco se pega a la fila en el mismo cuadro (sin animación de posición). Si algún contenedor de la página hace
+    // que «fixed» no cuente desde la ventana (pasa en Safari con capas transformadas), se corrige con lo que mide.
+    var q=m.getBoundingClientRect(),dx=x-q.left,dy=y-q.top;
+    if(Math.abs(dx)>0.5||Math.abs(dy)>0.5){
+      poner(m,'--f-x',(x+dx).toFixed(1)+'px');
+      poner(m,'--f-y',(y+dy).toFixed(1)+'px');
+    }
+    clase(m,'on',true);
   }
 
   // ── La rueda ────────────────────────────────────────────────────────────────────────────────────────────────────
   var PROPS=['--rw-t','--rw-o','--rw-f'];
-  function soltarFila(el){el.classList.remove('nx-rueda-fila','nx-foco');for(var i=0;i<PROPS.length;i++)el.style.removeProperty(PROPS[i]);}
+  // Solo se escribe en el DOM lo que cambió: en cada cuadro de giro se recalcula todo, pero una clase o un estilo que ya
+  // tiene ese valor no se vuelve a escribir. Otras capas (WhatsApp, brillo fijo…) vigilan cambios de clase/estilo con
+  // MutationObserver y se redibujarían en cada cuadro (cerraba el panel del clip del chat en el iPhone).
+  function clase(el,c,on){if(el.classList.contains(c)!==!!on)el.classList.toggle(c,!!on);}
+  function poner(el,k,v){var m=el.__nxRw||(el.__nxRw={});if(m[k]!==v){m[k]=v;el.style.setProperty(k,v);}}
+  function soltarFila(el){clase(el,'nx-rueda-fila',false);clase(el,'nx-foco',false);if(el.__nxRw){for(var i=0;i<PROPS.length;i++)el.style.removeProperty(PROPS[i]);el.__nxRw=null;}}
   function limpiar(){
     for(var i=0;i<filas.length;i++)soltarFila(filas[i]);
-    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil');
-    if(marco)marco.classList.remove('on');
+    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil','nx-vidrio-no','nx-rueda-gira');
+    if(marco)clase(marco,'on',false);
     lista=null;filas=[];centro=null;
   }
   // Escala de la fila central: hasta 6 % (iPhone 4 %), sin crecer más de ~18 px por lado.
@@ -121,7 +134,10 @@
     var f=filaCentral();
     var p=f?f.parentElement:null;
     if(!p){limpiar();return;}
-    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda');if(!FINO)p.classList.add('nx-rueda-tactil');}
+    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda');if(!FINO)p.classList.add('nx-rueda-tactil','nx-vidrio-no');}
+    // iPhone: la luz de vidrio (parches-vidrio-global.js) no se dibuja sobre la lista que gira: seguía al dedo con retraso
+    // y quedaba cruzada entre dos tarjetas (video del dueño). En la computadora se queda.
+    clase(p,'nx-rueda-gira',Date.now()-ultimoScroll<300);
     // Filas de la lista: hijos del mismo tipo y clase que la central.
     var nuevas=[],k=p.children;
     for(var i=0;i<k.length;i++){var c=k[i];if(c===f||(c.tagName===f.tagName&&comparten(c,f)&&medida(c)))nuevas.push(c);}
@@ -142,22 +158,23 @@
       var o=a<0.1?1:Math.max(0.16,1-(a-0.05)*0.36);
       var b=FINO?Math.min(4.5,Math.max(0,(a-0.1)*1.7)):0;
       var br=a<0.1?1.12:Math.max(0.7,0.92-(a-0.1)*0.08);
-      el.classList.add('nx-rueda-fila');
-      el.style.setProperty('--rw-t','perspective(1100px) rotateX('+rx.toFixed(2)+'deg) scale('+s.toFixed(4)+')');
-      el.style.setProperty('--rw-o',o.toFixed(3));
-      el.style.setProperty('--rw-f',(b>0.05?'blur('+b.toFixed(2)+'px) ':'')+'brightness('+br.toFixed(3)+')'+(a<0.1?' saturate(1.08)':' saturate(.75)'));
+      clase(el,'nx-rueda-fila',true);
+      poner(el,'--rw-t','perspective(1100px) rotateX('+rx.toFixed(1)+'deg) scale('+s.toFixed(3)+')');
+      poner(el,'--rw-o',o.toFixed(2));
+      poner(el,'--rw-f',(b>0.05?'blur('+b.toFixed(2)+'px) ':'')+'brightness('+br.toFixed(3)+')'+(a<0.1?' saturate(1.08)':' saturate(.75)'));
     }
-    if(centro!==mejor){if(centro)centro.classList.remove('nx-foco');centro=mejor;}
-    if(centro&&md<0.75){centro.classList.add('nx-foco');colocarMarco(centro,escalaFoco(centro));}
-    else{if(centro)centro.classList.remove('nx-foco');if(marco)marco.classList.remove('on');}
+    if(centro!==mejor){if(centro)clase(centro,'nx-foco',false);centro=mejor;}
+    if(centro&&md<0.75){clase(centro,'nx-foco',true);colocarMarco(centro,escalaFoco(centro));}
+    else{if(centro)clase(centro,'nx-foco',false);if(marco)clase(marco,'on',false);}
   }
   function pedir(){if(!raf)raf=requestAnimationFrame(pintar);}
-
+  // Mientras se desplaza (incluida la inercia del iPhone) se recalcula en CADA cuadro hasta 300 ms después del último
+  // evento de desplazamiento: la rueda y el marco van pegados al dedo.
+  var ultimoScroll=0,girando=0;
+  function bucle(){pintar();if(Date.now()-ultimoScroll<300)girando=requestAnimationFrame(bucle);else{girando=0;pintar();}}
   window.addEventListener('scroll',function(){
-    pedir();
-    // Mientras gira, el marco acompaña sin resorte; al quedarse quieto vuelve el deslizamiento suave.
-    if(marco)marco.classList.add('sigue');
-    clearTimeout(tQuieto);tQuieto=setTimeout(function(){if(marco)marco.classList.remove('sigue');pedir();},160);
+    ultimoScroll=Date.now();
+    if(!girando){if(raf){cancelAnimationFrame(raf);raf=0;}girando=requestAnimationFrame(bucle);}
   },{passive:true,capture:true});
   window.addEventListener('resize',function(){if(scrollDe)scrollDe=new WeakMap();pedir();},{passive:true});
   document.addEventListener('visibilitychange',function(){if(!document.hidden)pedir();});
