@@ -64,17 +64,21 @@
     marco=document.createElement('div');marco.className='nx-foco-marco';marco.setAttribute('aria-hidden','true');
     document.body.appendChild(marco);return marco;
   }
+  // Cuánto se agranda la fila: hasta 6 % (iPhone 4 %), pero nunca más de ~18 px por lado (12 px en el iPhone), para que
+  // una fila ancha no se salga del panel.
+  function escala(el){var w=el.offsetWidth||1;return FINO?Math.min(1.06,1+36/w):Math.min(1.04,1+24/w);}
   function colocarMarco(el,deslizar){
-    var m=crearMarco(),r=el.getBoundingClientRect(),cs=getComputedStyle(el),g=FINO?7:5;
+    // Se mide sin la transformación (offsetWidth/Height y el centro, que no cambia al escalar desde el centro): así el marco
+    // abraza la fila ya agrandada aunque la animación vaya a medias.
+    var m=crearMarco(),r=el.getBoundingClientRect(),cs=getComputedStyle(el),g=FINO?8:6,s=parseFloat(el.style.getPropertyValue('--nx-foco-s'))||escala(el);
     if(!FINO)m.classList.add('tactil');
-    // La fila se agranda ~2,5 % (CSS): el marco abraza la fila ya agrandada, con un poco de aire.
-    var dx=r.width*0.0125+g,dy=r.height*0.0125+g;
+    var cx=r.left+r.width/2,cy=r.top+r.height/2,w=el.offsetWidth*s+g*2,h=el.offsetHeight*s+g*2;
     if(!deslizar)m.classList.add('sin');
-    m.style.setProperty('--f-x',(r.left-dx).toFixed(1)+'px');
-    m.style.setProperty('--f-y',(r.top-dy).toFixed(1)+'px');
-    m.style.setProperty('--f-w',(r.width+dx*2).toFixed(1)+'px');
-    m.style.setProperty('--f-h',(r.height+dy*2).toFixed(1)+'px');
-    m.style.setProperty('--f-r',Math.min(22,(parseFloat(cs.borderTopLeftRadius)||10)+g).toFixed(1)+'px');
+    m.style.setProperty('--f-x',(cx-w/2).toFixed(1)+'px');
+    m.style.setProperty('--f-y',(cy-h/2).toFixed(1)+'px');
+    m.style.setProperty('--f-w',w.toFixed(1)+'px');
+    m.style.setProperty('--f-h',h.toFixed(1)+'px');
+    m.style.setProperty('--f-r',Math.min(24,(parseFloat(cs.borderTopLeftRadius)||10)+g).toFixed(1)+'px');
     if(!deslizar){void m.offsetWidth;m.classList.remove('sin');}
     m.classList.add('on');
   }
@@ -82,17 +86,17 @@
     var p=el.parentElement;
     var deslizar=!!(fila&&lista===p&&marco&&marco.classList.contains('on'));
     if(lista&&lista!==p)apagar();
-    if(fila&&fila!==el)fila.classList.remove('nx-foco');
+    if(fila&&fila!==el){fila.classList.remove('nx-foco');fila.style.removeProperty('--nx-foco-s');}
     lista=p;fila=el;
+    el.style.setProperty('--nx-foco-s',escala(el).toFixed(4));
     p.classList.add('nx-foco-lista','nx-foco-on');
     if(!FINO)p.classList.add('nx-foco-tactil');
     el.classList.add('nx-foco');
-    // Se coloca el marco cuando la fila ya terminó de agrandarse un poco (lectura tras el primer cuadro).
     requestAnimationFrame(function(){if(fila===el)colocarMarco(el,deslizar);});
   }
   function apagar(){
     clearTimeout(tEntrar);candidata=null;
-    if(fila)fila.classList.remove('nx-foco');
+    if(fila){fila.classList.remove('nx-foco');fila.style.removeProperty('--nx-foco-s');}
     if(lista)lista.classList.remove('nx-foco-on');
     if(marco)marco.classList.remove('on');
     fila=null;lista=null;

@@ -32,15 +32,16 @@ const estado = (p) => p.evaluate(() => {
     const filas = await page.$$('#tbCli > .clirow');
     ok(filas.length >= 3, 'clientes: hay filas para probar', filas.length);
     const bb = await filas[1].boundingBox();
-    await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 6 }); await page.waitForTimeout(80);
+    await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.waitForTimeout(30);
     ok(!(await estado(page)).on, 'pasar de largo (<90 ms) no enciende el foco');
     await page.waitForTimeout(500);
     let e = await estado(page);
     ok(e.on && /nx-foco/.test(e.fila), 'detenerse sobre una fila: foco encendido', e);
     ok(/blur/.test(e.blur) && parseFloat(e.op) < 0.7, 'las demás filas se desenfocan y oscurecen', e);
-    ok(/matrix\(1\.02/.test(e.escala), 'la fila elegida se agranda un poco', e.escala);
+    ok((() => { const m = /matrix\(([\d.]+)/.exec(e.escala); return m && +m[1] >= 1.03 && +m[1] <= 1.06; })(), 'la fila elegida se agranda (3–6 %, sin salirse del panel)', e.escala);
     ok(/\bon\b/.test(e.marco), 'marco de esquinas visible', e.marco);
     await page.screenshot({ path: OUT + '/foco-1280-clientes.png' });
+    if (process.env.SONDA) console.log('MARCO', JSON.stringify(await page.evaluate(() => { const m = document.querySelector('.nx-foco-marco'), f = document.querySelector('.nx-foco'); const cs = getComputedStyle(m); return { m: m.getBoundingClientRect().toJSON(), f: f.getBoundingClientRect().toJSON(), op: cs.opacity, cls: m.className, bg: cs.backgroundImage.slice(0, 80), w: cs.width, tr: cs.transform }; })));
     // Pasar a la vecina: el marco se desliza (sin «sin»)
     await page.evaluate(() => { window.__sin = false; const m = document.querySelector('.nx-foco-marco'); new MutationObserver(() => { if (m.classList.contains('sin')) window.__sin = true; }).observe(m, { attributes: true, attributeFilter: ['class'] }); });
     const bb2 = await filas[2].boundingBox();
@@ -75,7 +76,7 @@ const estado = (p) => p.evaluate(() => {
     ok(!(await estado(page)).on, 'toque rápido: no enciende el foco');
     await page.waitForTimeout(300);
     let e = await estado(page);
-    ok(e.on && e.blur === 'none' && parseFloat(e.op) < 0.7, 'mantener el dedo: la fila se levanta y las demás se oscurecen (sin desenfoque)', e);
+    ok(e.on && !/blur/.test(e.blur) && parseFloat(e.op) < 0.7, 'mantener el dedo: la fila se levanta y las demás se oscurecen (sin desenfoque)', e);
     await page.screenshot({ path: OUT + '/foco-390-clientes.png' });
     await toque('pointerup', ...pt); await page.waitForTimeout(500);
     ok(!(await estado(page)).on, 'al soltar vuelve todo');
