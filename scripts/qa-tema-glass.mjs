@@ -55,6 +55,8 @@ const MEDIR = () => {
       const root = document.querySelector(raiz) || document.body, r = { total: 0, bajo45: 0, lista45: [], bajo3: [], oscuroSobreOscuro: [], claroSobreClaro: [] };
       root.querySelectorAll('*').forEach(el => {
         if (el.closest('svg') || /^(SCRIPT|STYLE|svg|path|CANVAS|IMG|BR|OPTION|I)$/i.test(el.tagName) || el.closest('.ti')) return;
+        // Rueda (59.12): las filas fuera del centro se atenúan a propósito (decisión del dueño); se mide la del centro.
+        if (el.closest('.nx-rueda-fila:not(.nx-foco)')) return;
         if (![...el.childNodes].some(n => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.textContent))) return; // sin letras ni cifras (emoji, «·») no cuenta
         if (!visible(el)) return;
         const m = medir(el); if (!m) return; r.total++;

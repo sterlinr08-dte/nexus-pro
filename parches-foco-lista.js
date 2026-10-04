@@ -5,7 +5,8 @@
    cada vez más pequeñas, oscuras y (en la computadora) borrosas según su distancia al centro.
    Lo «smart»:
    · Solo LISTAS VERTICALES reales (filas del mismo tipo, con la misma clase, apiladas en la misma columna; al menos 3).
-     Tablas, menús, barras, burbujas del chat y la cabecera/barra de escribir de WhatsApp no entran.
+     Tablas, menús, barras, formularios, ventanas emergentes, burbujas del chat y la cabecera/barra de escribir de
+     WhatsApp no entran.
    · Gira la lista que cruza el centro de la pantalla; si ninguna lo cruza, todo se ve normal.
    · Se mide sin transformaciones (offsetTop/Height), así la rueda no se «autoalimenta» al inclinar las filas.
    · Un cálculo por cuadro (requestAnimationFrame) al desplazar, al cambiar el tamaño y cuando la pantalla se redibuja.
@@ -19,7 +20,7 @@
   var mq=function(q){return !!(window.matchMedia&&window.matchMedia(q).matches);};
   if(mq('(prefers-reduced-motion: reduce)'))return;
   var FINO=mq('(hover: hover) and (pointer: fine)');
-  var NO='nav,.sb,#sbEl,.tnav,table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
+  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
   var lista=null,filas=[],centro=null,marco=null,raf=0,tQuieto=0;
 
   // ── Detección de listas (medidas sin transformar: offset*) ──────────────────────────────────────────────────────
@@ -39,6 +40,8 @@
   function esFila(el){
     var r=medida(el);
     if(!r||!el.parentElement||el.parentElement.closest(NO))return false;
+    // Campos de un formulario apilados no son una lista: nunca se inclina algo donde se escribe.
+    if(el.querySelector('input:not([type=checkbox]):not([type=radio]),select,textarea'))return false;
     var n=1,a=el.previousElementSibling,b=el.nextElementSibling;
     if(hermana(el,r,a)){n++;if(hermana(el,r,a.previousElementSibling))n++;}
     if(hermana(el,r,b)){n++;if(hermana(el,r,b.nextElementSibling))n++;}
