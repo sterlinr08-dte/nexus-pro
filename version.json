@@ -1,7 +1,14 @@
 {
-  "version": "59.11",
+  "version": "59.12",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.12",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Rueda en las listas: al desplazar, la fila que pasa por el centro de la pantalla queda en foco (grande, nítida, con marco y resplandor) y las de arriba y abajo se inclinan como un cilindro que gira, cada vez más pequeñas y tenues. Reemplaza el foco por puntero de 59.10–59.11. Solo visual."
+      ]
+    },
     {
       "version": "59.11",
       "fecha": "2026-10-05",
