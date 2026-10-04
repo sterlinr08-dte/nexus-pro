@@ -1,0 +1,57 @@
+/* NEXUS PRO · FOCO en listas (parches-foco-lista.js; dueño 05-oct-2026, captura «Bomber Jacket»). Solo visual.
+   La fila señalada se levanta; las demás de la lista se desenfocan y oscurecen; un marco de esquinas la abraza.
+   Lleva !important en transform/filter/opacity porque algunas filas ya tienen su propio :hover con id (#v-crm …). */
+.nx-foco-lista > *{
+  transition:filter .28s ease,opacity .28s ease,transform .34s cubic-bezier(.22,1,.36,1),box-shadow .3s ease !important;
+}
+.nx-foco-lista.nx-foco-on > :not(.nx-foco){
+  filter:blur(1.6px) saturate(.75) !important;
+  opacity:.5 !important;
+  transform:scale(.985) !important;
+}
+.nx-foco-lista.nx-foco-on > .nx-foco{
+  position:relative;
+  z-index:6;
+  transform:scale(1.025) !important;
+  filter:none !important;
+  opacity:1 !important;
+  box-shadow:0 22px 44px -10px rgba(2,6,23,.55),0 0 0 1px rgba(255,255,255,.16),inset 0 1px 0 rgba(255,255,255,.22) !important;
+}
+/* iPhone: sin desenfoque (rendimiento al tener muchas filas), solo se oscurecen. */
+html body .nx-foco-lista.nx-foco-tactil.nx-foco-on > :not(.nx-foco){filter:none !important;opacity:.55 !important;}
+
+/* Marco de esquinas: una sola capa flotante que se desliza de fila en fila. */
+.nx-foco-marco{
+  --c:rgba(255,255,255,.95);
+  --l:20px;
+  position:fixed;left:0;top:0;
+  width:var(--f-w,0px);height:var(--f-h,0px);
+  transform:translate3d(var(--f-x,0px),var(--f-y,0px),0);
+  border-radius:var(--f-r,14px);
+  z-index:2147482990;pointer-events:none;opacity:0;
+  background:
+    linear-gradient(var(--c),var(--c)) left top/var(--l) 2px no-repeat,
+    linear-gradient(var(--c),var(--c)) left top/2px var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) right top/var(--l) 2px no-repeat,
+    linear-gradient(var(--c),var(--c)) right top/2px var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) left bottom/var(--l) 2px no-repeat,
+    linear-gradient(var(--c),var(--c)) left bottom/2px var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) right bottom/var(--l) 2px no-repeat,
+    linear-gradient(var(--c),var(--c)) right bottom/2px var(--l) no-repeat;
+  filter:drop-shadow(0 0 6px rgba(147,197,253,.55));
+  transition:transform .42s cubic-bezier(.22,1.18,.36,1),width .42s cubic-bezier(.22,1.18,.36,1),height .42s cubic-bezier(.22,1.18,.36,1),opacity .2s ease;
+  will-change:transform,width,height,opacity;
+}
+.nx-foco-marco.on{opacity:1;}
+.nx-foco-marco.sin{transition:opacity .2s ease;}
+.nx-foco-marco.tactil{--l:14px;}
+
+/* Tema claro: esquinas azules y sombra más suave (el blanco no se vería sobre fondo claro). */
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .nx-foco-marco{--c:rgba(37,99,235,.9);filter:drop-shadow(0 0 5px rgba(37,99,235,.35));}
+html:not(.tema-glass-oscuro) body:not(.tema-premium) .nx-foco-lista.nx-foco-on > .nx-foco{
+  box-shadow:0 18px 36px -12px rgba(15,23,42,.28),0 0 0 1px rgba(37,99,235,.18),inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+@media (prefers-reduced-motion:reduce){
+  .nx-foco-marco{display:none !important;}
+  .nx-foco-lista.nx-foco-on > *{filter:none !important;opacity:1 !important;transform:none !important;}
+}
