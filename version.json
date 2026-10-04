@@ -1,7 +1,14 @@
 {
-  "version": "59.10",
+  "version": "59.11",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.11",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Foco en listas más parecido a la referencia del dueño: la fila elegida crece más (hasta 6 %, sin salirse del panel), brilla y tiene un resplandor azul detrás; las demás se desenfocan y oscurecen más; esquinas del marco más finas y separadas."
+      ]
+    },
     {
       "version": "59.10",
       "fecha": "2026-10-05",
