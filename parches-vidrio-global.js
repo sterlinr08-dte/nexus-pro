@@ -212,39 +212,30 @@
     // Si la pantalla se redibuja y el control desaparece, se apaga.
     document.addEventListener('click',function(){setTimeout(function(){if(actual&&!document.documentElement.contains(actual))apagar();},60);},{passive:true,capture:true});
   }else{
-    // Táctil (iPhone): al tocar, la luz aparece con onda desde el dedo y se queda mientras el dedo está puesto. Al
-    // deslizar una lista (clientes, pólizas…), la luz pasa de tarjeta en tarjeta por debajo del punto donde está o
-    // estuvo el dedo, deslizándose con resorte como en la computadora; se apaga sola al detenerse.
-    var px=0,py=0,tocando=false,tFade=0,tVivo=0,rafT=0;
-    function fade(ms){clearTimeout(tFade);tFade=setTimeout(function(){if(!tocando&&capa){capa.classList.remove('on');visible=false;prev=null;actual=null;}},ms);}
-    function seguir(){
-      rafT=0;
-      var el=objetivoTactil(document.elementFromPoint(px,py));
-      if(!el){return;}
-      var deslizar=visible&&prev&&prev!==el&&vecinos(prev,el);
-      if(el!==prev||!visible){colocar(el,deslizar);crear().classList.add('on');visible=true;prev=el;actual=el;}
-      else colocar(el,true);
-    }
+    // Táctil (iPhone): al tocar, la luz aparece con onda desde el dedo y se queda mientras el dedo está puesto.
+    // Al DESLIZAR una lista se apaga al instante (dueño 05-oct-2026, 59.14): antes perseguía al dedo de tarjeta en tarjeta
+    // con resorte y, con el desplazamiento, quedaba atrasada y cruzada entre dos tarjetas (video del dueño).
+    var tocando=false,tFade=0,tVivo=0;
+    function apagarYa(){clearTimeout(tFade);if(capa){capa.classList.remove('on','onda');}visible=false;prev=null;actual=null;}
+    function fade(ms){clearTimeout(tFade);tFade=setTimeout(function(){if(!tocando)apagarYa();},ms);}
     document.addEventListener('pointerdown',function(ev){
       if(ev.pointerType==='mouse')return;
       var el=objetivoTactil(ev.target);
-      tocando=true;px=ev.clientX;py=ev.clientY;tVivo=Date.now();
+      tocando=true;tVivo=Date.now();
       if(!el)return;
-      mx=px;my=py;
+      mx=ev.clientX;my=ev.clientY;
       var deslizar=visible&&prev&&prev!==el&&vecinos(prev,el);
       colocar(el,deslizar);crear().classList.add('on');visible=true;prev=el;actual=el;
       onda(ev,el);clearTimeout(tFade);
     },{passive:true});
-    document.addEventListener('touchmove',function(ev){var t=ev.touches&&ev.touches[0];if(t){px=t.clientX;py=t.clientY;tVivo=Date.now();}},{passive:true});
     function soltar(){tocando=false;fade(450);}
     document.addEventListener('pointerup',soltar,{passive:true});
-    document.addEventListener('pointercancel',function(){tocando=false;tVivo=Date.now();fade(700);},{passive:true}); // empezó a desplazar
     document.addEventListener('touchend',soltar,{passive:true});
+    document.addEventListener('pointercancel',function(){tocando=false;apagarYa();},{passive:true}); // empezó a desplazar
     window.addEventListener('scroll',function(){
+      if(!visible)return;
       if(Date.now()-tVivo>2500&&!tocando)return; // desplazamientos que no hizo el dedo (programáticos): nada
-      tVivo=Date.now();
-      if(!rafT)rafT=requestAnimationFrame(seguir);
-      fade(380);
+      apagarYa();
     },{passive:true,capture:true});
   }
 })();
