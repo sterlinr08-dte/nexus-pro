@@ -21,7 +21,7 @@
   if(mq('(prefers-reduced-motion: reduce)'))return;
   var FINO=mq('(hover: hover) and (pointer: fine)');
   var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
-  var lista=null,filas=[],centro=null,marco=null,raf=0,tQuieto=0;
+  var lista=null,filas=[],centro=null,marco=null,raf=0;
 
   // ── Detección de listas (medidas sin transformar: offset*) ──────────────────────────────────────────────────────
   function comparten(a,b){
@@ -98,10 +98,18 @@
   function colocarMarco(el,s){
     var m=crearMarco(),r=el.getBoundingClientRect(),g=FINO?8:6;
     var cx=r.left+r.width/2,cy=r.top+r.height/2,w=el.offsetWidth*s+g*2,h=el.offsetHeight*s+g*2;
-    m.style.setProperty('--f-x',(cx-w/2).toFixed(1)+'px');
-    m.style.setProperty('--f-y',(cy-h/2).toFixed(1)+'px');
+    var x=cx-w/2,y=cy-h/2;
     m.style.setProperty('--f-w',w.toFixed(1)+'px');
     m.style.setProperty('--f-h',h.toFixed(1)+'px');
+    m.style.setProperty('--f-x',x.toFixed(1)+'px');
+    m.style.setProperty('--f-y',y.toFixed(1)+'px');
+    // El marco se pega a la fila en el mismo cuadro (sin animación de posición). Si algún contenedor de la página hace
+    // que «fixed» no cuente desde la ventana (pasa en Safari con capas transformadas), se corrige con lo que mide.
+    var q=m.getBoundingClientRect(),dx=x-q.left,dy=y-q.top;
+    if(Math.abs(dx)>0.5||Math.abs(dy)>0.5){
+      m.style.setProperty('--f-x',(x+dx).toFixed(1)+'px');
+      m.style.setProperty('--f-y',(y+dy).toFixed(1)+'px');
+    }
     m.classList.add('on');
   }
 
@@ -110,7 +118,7 @@
   function soltarFila(el){el.classList.remove('nx-rueda-fila','nx-foco');for(var i=0;i<PROPS.length;i++)el.style.removeProperty(PROPS[i]);}
   function limpiar(){
     for(var i=0;i<filas.length;i++)soltarFila(filas[i]);
-    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil');
+    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil','nx-vidrio-no','nx-rueda-gira');
     if(marco)marco.classList.remove('on');
     lista=null;filas=[];centro=null;
   }
@@ -121,7 +129,9 @@
     var f=filaCentral();
     var p=f?f.parentElement:null;
     if(!p){limpiar();return;}
-    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda');if(!FINO)p.classList.add('nx-rueda-tactil');}
+    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda','nx-vidrio-no');if(!FINO)p.classList.add('nx-rueda-tactil');}
+    // La luz de vidrio (parches-vidrio-global.js) no se dibuja sobre una lista que gira: seguiría al dedo con retraso.
+    if(Date.now()-ultimoScroll<300)p.classList.add('nx-rueda-gira');else p.classList.remove('nx-rueda-gira');
     // Filas de la lista: hijos del mismo tipo y clase que la central.
     var nuevas=[],k=p.children;
     for(var i=0;i<k.length;i++){var c=k[i];if(c===f||(c.tagName===f.tagName&&comparten(c,f)&&medida(c)))nuevas.push(c);}
@@ -152,12 +162,13 @@
     else{if(centro)centro.classList.remove('nx-foco');if(marco)marco.classList.remove('on');}
   }
   function pedir(){if(!raf)raf=requestAnimationFrame(pintar);}
-
+  // Mientras se desplaza (incluida la inercia del iPhone) se recalcula en CADA cuadro hasta 300 ms después del último
+  // evento de desplazamiento: la rueda y el marco van pegados al dedo.
+  var ultimoScroll=0,girando=0;
+  function bucle(){pintar();if(Date.now()-ultimoScroll<300)girando=requestAnimationFrame(bucle);else{girando=0;pintar();}}
   window.addEventListener('scroll',function(){
-    pedir();
-    // Mientras gira, el marco acompaña sin resorte; al quedarse quieto vuelve el deslizamiento suave.
-    if(marco)marco.classList.add('sigue');
-    clearTimeout(tQuieto);tQuieto=setTimeout(function(){if(marco)marco.classList.remove('sigue');pedir();},160);
+    ultimoScroll=Date.now();
+    if(!girando){if(raf){cancelAnimationFrame(raf);raf=0;}girando=requestAnimationFrame(bucle);}
   },{passive:true,capture:true});
   window.addEventListener('resize',function(){if(scrollDe)scrollDe=new WeakMap();pedir();},{passive:true});
   document.addEventListener('visibilitychange',function(){if(!document.hidden)pedir();});

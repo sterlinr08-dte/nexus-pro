@@ -1,7 +1,14 @@
 {
-  "version": "59.12",
+  "version": "59.13",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.13",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Rueda en las listas corregida en el iPhone (video del dueño): el marco de esquinas va pegado a la tarjeta del centro mientras se desplaza (antes se quedaba atrás y quedaba entre dos tarjetas), las tarjetas giran sin retraso y la luz de vidrio ya no se cruza sobre la lista que gira."
+      ]
+    },
     {
       "version": "59.12",
       "fecha": "2026-10-05",
