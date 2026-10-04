@@ -1,7 +1,14 @@
 {
-  "version": "59.09",
+  "version": "59.10",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.10",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Foco en las listas: la fila que señalas (o tocas y mantienes en el iPhone) se levanta con un marco de esquinas, y las demás de la lista se desenfocan y oscurecen, como en la captura del dueño. Solo visual: no cambia clics ni datos."
+      ]
+    },
     {
       "version": "59.09",
       "fecha": "2026-10-03",
