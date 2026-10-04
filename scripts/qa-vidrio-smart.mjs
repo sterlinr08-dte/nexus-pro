@@ -79,7 +79,12 @@ const vio = (p, k) => p.evaluate(k => window.__clases.some(c => c.split(' ').inc
   await page.evaluate(() => { const r = document.querySelector('.cliCard, .clirow'); if (r) r.scrollIntoView({ block: 'start' }); }); await page.waitForTimeout(600);
   // Se señala la parte que abre la ficha (nombre del cliente); la luz debe cubrir la fila o tarjeta entera.
   const cards = []; for (const h of await page.$$('.cliCard, .clirow')) { if (await h.isVisible()) { const bb = await h.boundingBox(); const m = await h.$('[role="button"]'); const mb = m && await m.boundingBox(); if (bb && mb && bb.y > 60 && bb.y + bb.height < 715) cards.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height, mx: mb.x + mb.width / 2, my: mb.y + mb.height / 2 }); } }
-  if (cards.length >= 2) {
+  // 59.14: sobre la lista de clientes que gira como rueda (parches-foco-lista.js) la luz de vidrio no se dibuja.
+  const ruedaPC = await page.evaluate(() => !!document.querySelector('.nx-rueda.nx-vidrio-no'));
+  if (ruedaPC && cards.length >= 1) {
+    await page.mouse.move(cards[0].mx, cards[0].my, { steps: 6 }); await page.waitForTimeout(500);
+    ok(!/\bon\b/.test(await cls(page)), 'clientes (rueda): la luz de vidrio no se cruza sobre las tarjetas que giran', await cls(page));
+  } else if (cards.length >= 2) {
     await page.mouse.move(cards[0].mx, cards[0].my, { steps: 6 }); await page.waitForTimeout(500);
     const w1 = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.nx-vidrio')).getPropertyValue('--v-w')));
     ok(Math.abs(w1 - cards[0].width) < 2, `clientes: la luz abarca la tarjeta entera (${Math.round(w1)} ≈ ${Math.round(cards[0].width)} px)`);
@@ -119,8 +124,8 @@ const vio = (p, k) => p.evaluate(k => window.__clases.some(c => c.split(' ').inc
     await M.page.evaluate(() => { window.__antes = document.querySelector('.nx-vidrio') ? getComputedStyle(document.querySelector('.nx-vidrio')).getPropertyValue('--v-y') : ''; const e = [...document.querySelectorAll('*')].find(x => x.scrollHeight > x.clientHeight + 200 && /(auto|scroll)/.test(getComputedStyle(x).overflowY) && x.querySelector('.cliCard, .clirow')) || document.scrollingElement; window.__sc = e; });
     for (let i = 0; i < 6; i++) { await M.page.evaluate(() => { const e = window.__sc; e.scrollBy(0, e.scrollTop + e.clientHeight >= e.scrollHeight - 5 ? -60 : 60); }); await M.page.waitForTimeout(60); }
     const d = await M.page.evaluate(() => { const c = document.querySelector('.nx-vidrio'); if (!c) return { on: false }; return { on: c.classList.contains('on'), antes: window.__antes, ahora: getComputedStyle(c).getPropertyValue('--v-y') }; });
-    if (enRueda) ok(!d.on, 'iPhone clientes: al deslizar la lista que gira, la luz de vidrio sigue apagada', d);
-    else ok(d.on && d.antes !== d.ahora, 'iPhone clientes: al deslizar la lista, la luz pasa de tarjeta en tarjeta', d);
+    // 59.14: al deslizar, la luz se apaga al instante (antes perseguía las tarjetas y quedaba cruzada entre dos).
+    ok(!d.on, 'iPhone clientes: al deslizar la lista, la luz de vidrio se apaga (no persigue las tarjetas)', d);
     await M.page.waitForTimeout(700);
     ok(!(await M.page.evaluate(() => { const c = document.querySelector('.nx-vidrio'); return !!(c && c.classList.contains('on')); })), 'iPhone: al detenerse, la luz se apaga sola');
   } else ok(false, 'iPhone clientes: sin tarjetas', mc.length);

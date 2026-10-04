@@ -1,7 +1,14 @@
 {
-  "version": "59.13",
+  "version": "59.14",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.14",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Cristal (luz de vidrio) en el iPhone: al deslizar cualquier lista la luz se apaga al instante en vez de perseguir las tarjetas (quedaba atrasada y cruzada entre dos). Al tocar una tarjeta sigue encendiéndose como antes."
+      ]
+    },
     {
       "version": "59.13",
       "fecha": "2026-10-05",

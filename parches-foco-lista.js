@@ -134,9 +134,10 @@
     var f=filaCentral();
     var p=f?f.parentElement:null;
     if(!p){limpiar();return;}
-    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda');if(!FINO)p.classList.add('nx-rueda-tactil','nx-vidrio-no');}
-    // iPhone: la luz de vidrio (parches-vidrio-global.js) no se dibuja sobre la lista que gira: seguía al dedo con retraso
-    // y quedaba cruzada entre dos tarjetas (video del dueño). En la computadora se queda.
+    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda','nx-vidrio-no');if(!FINO)p.classList.add('nx-rueda-tactil');}
+    // La luz de vidrio (parches-vidrio-global.js) no se dibuja sobre la lista que gira (59.14): en el iPhone quedaba
+    // cruzada entre dos tarjetas (video del dueño) y en la computadora saltaba en vez de deslizarse sobre tarjetas
+    // inclinadas. La rueda ya resalta la del centro con su marco y resplandor.
     clase(p,'nx-rueda-gira',Date.now()-ultimoScroll<300);
     // Filas de la lista: hijos del mismo tipo y clase que la central.
     var nuevas=[],k=p.children;
