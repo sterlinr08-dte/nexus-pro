@@ -109,6 +109,13 @@ const centrar = (p, sel, k) => p.evaluate(([sel, k]) => { const f = document.que
     if (ef.i >= 1 && ef.i < ef.n - 1) { const a = ef.filas[ef.i - 1], c = ef.filas[ef.i], z = ef.filas[ef.i + 1];
       ok(Math.abs(c.ang) <= 4 && a.ang > 8 && z.ang < -8 && Math.abs(a.ang + z.ang) <= 4, 'iPhone Facturas: centro derecho y vecinas simétricas', [a.ang, c.ang, z.ang]); }
     await page.screenshot({ path: OUT + '/rueda-390-facturas.png' });
+    // WhatsApp sin rueda (dueño 05-oct-2026): una lista con las clases del Inbox no gira.
+    await page.evaluate(() => { const c = document.getElementById('cnt') || document.body; const l = document.createElement('div'); l.className = 'nxWaLista'; l.id = 'qaWa';
+      for (let i = 0; i < 12; i++) { const r = document.createElement('div'); r.className = 'nxWaRow'; r.style.cssText = 'height:72px;width:340px;margin:4px 0;background:#223'; r.textContent = 'Chat ' + i; l.appendChild(r); }
+      c.prepend(l); l.children[5].scrollIntoView({ block: 'center' }); });
+    await page.waitForTimeout(2200);
+    ok(await page.evaluate(() => !document.querySelector('#qaWa.nx-rueda') && !document.querySelector('#qaWa .nx-rueda-fila') && !document.querySelector('.nx-foco-marco.on')), 'iPhone WhatsApp: la lista de chats no gira (sin rueda ni marco)');
+    await page.evaluate(() => document.getElementById('qaWa').remove());
     ok(errs.length === 0, 'sin errores de JavaScript (iPhone)', errs.slice(0, 3));
     await ctx.close(); }
   await b.close();

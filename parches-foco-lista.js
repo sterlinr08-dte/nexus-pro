@@ -23,7 +23,8 @@
   // Rueda nativa: con animaciones ligadas al desplazamiento (Safari 26+, Chrome 115+) el NAVEGADOR inclina cada fila
   // según su posición, sin JavaScript en cada cuadro (fluye como el scroll nativo). Si no hay soporte, se calcula aquí.
   var NATIVA=!!(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'));
-  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],[class*="Pop"],[class*="pop"],[class*="Menu"],[class*="menu"],[class*="Sheet"],[class*="sheet"],[class*="Modal"],thead,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
+  // WhatsApp sin rueda (dueño 05-oct-2026, 59.15: «Quítale el efecto al WhatsApp»): la lista de chats queda normal.
+  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],[class*="Pop"],[class*="pop"],[class*="Menu"],[class*="menu"],[class*="Sheet"],[class*="sheet"],[class*="Modal"],thead,#nxWaMsgsBox,.nxWaLista,.nxWaListScroll,.nxWaListCol,.nxWaRowWrap,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
   var lista=null,filas=[],centro=null,marco=null,raf=0;
 
   // ── Detección de listas (medidas sin transformar: offset*) ──────────────────────────────────────────────────────
