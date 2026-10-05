@@ -46,7 +46,9 @@ html .nx-rueda-clip.nx-rueda-clip{overflow:clip !important;}
 /* Fila que ya giró y se soltó: no repite su animación de entrada (se veía aparecer otra vez). */
 .nx-rueda-vista{animation:none !important;}
 /* La del centro se levanta un poco más («scale» se suma a la animación) y lleva el resplandor. */
-.nx-rueda.nx-rueda-nativa > .nx-rueda-fila.nx-foco{scale:1.03;transition:scale .2s ease,box-shadow .25s ease}
+/* … y siempre a opacidad plena: una tarjeta alta (iPhone) puede ser la más cercana al centro sin estar justo en él, y la
+   animación la dejaría tenue; la fila en foco debe leerse completa. */
+.nx-rueda.nx-rueda-nativa > .nx-rueda-fila.nx-foco{scale:1.03;opacity:1 !important;transition:scale .2s ease,box-shadow .25s ease}
 
 /* Marco de esquinas: una sola capa flotante sobre la fila del centro. */
 .nx-foco-marco{
