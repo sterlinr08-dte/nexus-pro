@@ -20,11 +20,17 @@
   var mq=function(q){return !!(window.matchMedia&&window.matchMedia(q).matches);};
   if(mq('(prefers-reduced-motion: reduce)'))return;
   var FINO=mq('(hover: hover) and (pointer: fine)');
-  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],[class*="Pop"],[class*="pop"],[class*="Menu"],[class*="menu"],[class*="Sheet"],[class*="sheet"],[class*="Modal"],table,thead,tbody,tr,#nxWaMsgsBox,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
+  // Rueda nativa: con animaciones ligadas al desplazamiento (Safari 26+, Chrome 115+) el NAVEGADOR inclina cada fila
+  // según su posición, sin JavaScript en cada cuadro (fluye como el scroll nativo). Si no hay soporte, se calcula aquí.
+  var NATIVA=!!(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'));
+  // WhatsApp sin rueda (dueño 05-oct-2026, 59.15: «Quítale el efecto al WhatsApp»): la lista de chats queda normal.
+  var NO='nav,.sb,#sbEl,.tnav,form,.modal,.overlay,[role="dialog"],[class*="Pop"],[class*="pop"],[class*="Menu"],[class*="menu"],[class*="Sheet"],[class*="sheet"],[class*="Modal"],thead,#nxWaMsgsBox,.nxWaLista,.nxWaListScroll,.nxWaListCol,.nxWaRowWrap,.nxWaHead,.nxWaComposer,.nxWaCerrada,input,textarea,select,[contenteditable="true"],.nx-foco-no,.nx-vidrio,[role="menu"],[role="listbox"]';
   var lista=null,filas=[],centro=null,marco=null,raf=0;
 
   // ── Detección de listas (medidas sin transformar: offset*) ──────────────────────────────────────────────────────
   function comparten(a,b){
+    // Filas de una tabla en modo tarjeta (Facturas en el iPhone): cada una lleva la clase de su estado (u-aldia, u-grave…).
+    if(a.tagName==='TR')return a.parentElement===b.parentElement;
     var ca=a.classList,cb=b.classList;
     for(var i=0;i<ca.length;i++){if(!/^(on|active|activo|is-|nx-)/.test(ca[i])&&cb.contains(ca[i]))return true;}
     return false;
@@ -47,8 +53,12 @@
     if(hermana(el,r,b)){n++;if(hermana(el,r,b.nextElementSibling))n++;}
     return n>=3;
   }
+  // Una tabla de verdad (filas «table-row», computadora) no gira: inclinar celdas rompe sus columnas. Si la pantalla la
+  // convierte en tarjetas (Facturas en el iPhone), cada fila es una tarjeta más y sí gira.
+  function tablaReal(el){var tr=el.closest&&el.closest('tr');return !!(tr&&getComputedStyle(tr).display==='table-row');}
   function filaDe(t){
     var el=t&&t.nodeType===1?t:(t&&t.parentElement),n=0;
+    if(el&&tablaReal(el))return null;
     while(el&&el!==document.body&&n<10){
       if(el.closest&&el.closest(NO))return null;
       if(esFila(el))return el;
@@ -95,23 +105,40 @@
     if(!FINO)marco.classList.add('tactil');
     document.body.appendChild(marco);return marco;
   }
-  function colocarMarco(el,s){
-    var m=crearMarco(),r=el.getBoundingClientRect(),g=FINO?8:6;
-    var cx=r.left+r.width/2,cy=r.top+r.height/2,w=el.offsetWidth*s+g*2,h=el.offsetHeight*s+g*2;
-    var x=cx-w/2,y=cy-h/2;
-    poner(m,'--f-w',w.toFixed(1)+'px');
-    poner(m,'--f-h',h.toFixed(1)+'px');
-    poner(m,'--f-x',x.toFixed(1)+'px');
-    poner(m,'--f-y',y.toFixed(1)+'px');
-    // El marco se pega a la fila en el mismo cuadro (sin animación de posición). Si algún contenedor de la página hace
-    // que «fixed» no cuente desde la ventana (pasa en Safari con capas transformadas), se corrige con lo que mide.
-    var q=m.getBoundingClientRect(),dx=x-q.left,dy=y-q.top;
-    if(Math.abs(dx)>0.5||Math.abs(dy)>0.5){
-      poner(m,'--f-x',(x+dx).toFixed(1)+'px');
-      poner(m,'--f-y',(y+dy).toFixed(1)+'px');
-    }
+  // Desfase del origen de «fixed» (Safari con capas transformadas): se mide UNA vez al crear el marco y al cambiar el
+  // tamaño de la ventana, no en cada cuadro (medirlo en cada cuadro obligaba a recalcular toda la página).
+  var desfase=null;
+  function medirDesfase(m){
+    poner(m,'--f-x','0px');poner(m,'--f-y','0px');
+    var q=m.getBoundingClientRect();desfase={x:-q.left,y:-q.top};
+  }
+  // Solo escribe (en la hoja propia): la geometría llega ya leída de la fase de lectura.
+  function colocarMarco(cx,cy,w0,h0,s){
+    var m=crearMarco(),g=FINO?8:6;
+    if(!desfase)medirDesfase(m);
+    var w=w0*s+g*2,h=h0*s+g*2;
+    poner(m,'--f-w',w.toFixed(1)+'px');poner(m,'--f-h',h.toFixed(1)+'px');
+    poner(m,'--f-x',(cx-w/2+desfase.x).toFixed(1)+'px');poner(m,'--f-y',(cy-h/2+desfase.y).toFixed(1)+'px');
     clase(m,'on',true);
   }
+
+  // Los valores de la rueda y del marco NO se escriben en las filas (style="…"): van a una hoja de estilos propia que
+  // ninguna otra capa vigila. Escribir en las filas en cada cuadro despertaba los MutationObserver de otras capas
+  // (WhatsApp, brillo fijo, novedades…) y cada cuadro costaba cientos de ms en un iPhone (medido: 311 ms → ver bitácora).
+  var hoja=null,hojaEl=null,cssPrevio='';
+  function hojaPoner(css){
+    if(css===cssPrevio)return;cssPrevio=css;
+    try{
+      if(!hoja&&!hojaEl&&typeof CSSStyleSheet==='function'&&'replaceSync' in CSSStyleSheet.prototype&&'adoptedStyleSheets' in document){
+        hoja=new CSSStyleSheet();document.adoptedStyleSheets=document.adoptedStyleSheets.concat([hoja]);
+      }
+    }catch(e){hoja=null;}
+    if(hoja){hoja.replaceSync(css);return;}
+    if(!hojaEl){hojaEl=document.createElement('style');hojaEl.setAttribute('data-nx','rueda');document.head.appendChild(hojaEl);}
+    hojaEl.textContent=css;
+  }
+  var reglasFilas='',reglaMarco='';
+  function volcar(){hojaPoner(reglasFilas+reglaMarco);}
 
   // ── La rueda ────────────────────────────────────────────────────────────────────────────────────────────────────
   var PROPS=['--rw-t','--rw-o','--rw-f'];
@@ -120,64 +147,106 @@
   // MutationObserver y se redibujarían en cada cuadro (cerraba el panel del clip del chat en el iPhone).
   function clase(el,c,on){if(el.classList.contains(c)!==!!on)el.classList.toggle(c,!!on);}
   function poner(el,k,v){var m=el.__nxRw||(el.__nxRw={});if(m[k]!==v){m[k]=v;el.style.setProperty(k,v);}}
-  function soltarFila(el){clase(el,'nx-rueda-fila',false);clase(el,'nx-foco',false);if(el.__nxRw){for(var i=0;i<PROPS.length;i++)el.style.removeProperty(PROPS[i]);el.__nxRw=null;}}
+  // Al soltarla queda marcada «ya vista»: si no, su animación de entrada (nxFadeUp) se repetiría y la fila parpadearía.
+  function soltarFila(el){if(NATIVA)clase(el,'nx-rueda-vista',true);clase(el,'nx-rueda-fila',false);clase(el,'nx-foco',false);if(el.hasAttribute('data-rw'))el.removeAttribute('data-rw');if(el.__nxRw){for(var i=0;i<PROPS.length;i++)el.style.removeProperty(PROPS[i]);el.__nxRw=null;}}
   function limpiar(){
     for(var i=0;i<filas.length;i++)soltarFila(filas[i]);
-    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil','nx-vidrio-no','nx-rueda-gira');
+    if(lista)lista.classList.remove('nx-rueda','nx-rueda-tactil','nx-vidrio-no','nx-rueda-gira','nx-rueda-nativa');
+    for(var r=0;r<recortes.length;r++)recortes[r].classList.remove('nx-rueda-clip');recortes=[];
     if(marco)clase(marco,'on',false);
+    reglasFilas='';volcar();
     lista=null;filas=[];centro=null;
   }
-  // Escala de la fila central: hasta 6 % (iPhone 4 %), sin crecer más de ~18 px por lado.
-  function escalaFoco(el){var w=el.offsetWidth||1;return FINO?Math.min(1.06,1+36/w):Math.min(1.04,1+24/w);}
-  function pintar(){
-    raf=0;
-    var f=filaCentral();
-    var p=f?f.parentElement:null;
-    if(!p){limpiar();return;}
-    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda','nx-vidrio-no');if(!FINO)p.classList.add('nx-rueda-tactil');}
-    // La luz de vidrio (parches-vidrio-global.js) no se dibuja sobre la lista que gira (59.14): en el iPhone quedaba
-    // cruzada entre dos tarjetas (video del dueño) y en la computadora saltaba en vez de deslizarse sobre tarjetas
-    // inclinadas. La rueda ya resalta la del centro con su marco y resplandor.
-    clase(p,'nx-rueda-gira',Date.now()-ultimoScroll<300);
-    // Filas de la lista: hijos del mismo tipo y clase que la central.
+  // Cada cuadro en tres fases para no obligar al navegador a recalcular la página varias veces por cuadro:
+  //   1) LEER todas las posiciones de una vez, 2) CALCULAR, 3) ESCRIBIR solo lo que cambió.
+  // La lista y sus filas se detectan una vez y se reutilizan; se vuelven a buscar solo cuando la pantalla cambia
+  // (MutationObserver), cuando la lista sale del centro o al cambiar el tamaño de la ventana.
+  var sucio=true,recortes=[];
+  function detectar(){
+    var f=filaCentral(),p=f?f.parentElement:null;
+    if(!p){limpiar();return false;}
+    if(p!==lista){limpiar();lista=p;p.classList.add('nx-rueda','nx-vidrio-no');if(!FINO)p.classList.add('nx-rueda-tactil');if(NATIVA)p.classList.add('nx-rueda-nativa');}
+    // La luz de vidrio (parches-vidrio-global.js) no se dibuja sobre la lista que gira (59.14). La rueda ya resalta la
+    // del centro con su marco y resplandor.
     var nuevas=[],k=p.children;
     for(var i=0;i<k.length;i++){var c=k[i];if(c===f||(c.tagName===f.tagName&&comparten(c,f)&&medida(c)))nuevas.push(c);}
     for(var j=0;j<filas.length;j++){if(nuevas.indexOf(filas[j])<0)soltarFila(filas[j]);}
-    filas=nuevas;
-    // Distancia al centro de la pantalla en «filas»: posición sin transformar (la rotación y la escala son desde el centro
-    // de cada fila, así que su centro en pantalla no cambia).
-    var vc=centroDe(f),mejor=null,md=1e9,unidad=0;
-    for(var u=0;u<filas.length;u++)unidad+=filas[u].offsetHeight;
-    unidad=(unidad/filas.length||100)*1.08;
-    for(var n=0;n<filas.length;n++){
-      var el=filas[n],r=el.getBoundingClientRect(),d0=((r.top+r.height/2)-vc)/unidad,a0=Math.abs(d0);
-      if(a0<md){md=a0;mejor=el;}
-      // Franja de selección: a menos de 0,4 filas del centro la fila queda derecha y grande (como el selector del iPhone).
-      var a=Math.max(0,a0-0.4),d=d0<0?-a:a;
-      var rx=Math.max(-68,Math.min(68,-d*24));
-      var sF=escalaFoco(el),s=a<1?sF+(0.94-sF)*a:Math.max(0.78,0.94-(a-1)*0.05);
-      var o=a<0.1?1:Math.max(0.16,1-(a-0.05)*0.36);
-      var b=FINO?Math.min(4.5,Math.max(0,(a-0.1)*1.7)):0;
-      var br=a<0.1?1.12:Math.max(0.7,0.92-(a-0.1)*0.08);
-      clase(el,'nx-rueda-fila',true);
-      poner(el,'--rw-t','perspective(1100px) rotateX('+rx.toFixed(1)+'deg) scale('+s.toFixed(3)+')');
-      poner(el,'--rw-o',o.toFixed(2));
-      poner(el,'--rw-f',(b>0.05?'blur('+b.toFixed(2)+'px) ':'')+'brightness('+br.toFixed(3)+')'+(a<0.1?' saturate(1.08)':' saturate(.75)'));
+    filas=nuevas;sucio=false;
+    // Nativa: la animación toma el centro de la caja que se desplaza más cercana. En el iPhone la lista va dentro de
+    // cajas con overflow:auto que NO se desplazan (.nc): la rueda giraba alrededor del centro de toda la lista y no del
+    // de la pantalla. A esas cajas quietas se les pone overflow:clip (no son zona de desplazamiento, se ven igual).
+    if(NATIVA&&filas.length){
+      var real=contenedor(filas[0]),a=p.parentElement,nc=[];
+      while(a&&a!==real&&a!==document.body&&a!==document.documentElement){
+        var ca=getComputedStyle(a);
+        if(!a.classList.contains('nx-rueda-clip')&&(ca.overflowY!=='visible'||ca.overflowX!=='visible')&&ca.overflowY!=='clip'){
+          if(a.scrollHeight<=a.clientHeight+1&&a.scrollWidth<=a.clientWidth+1)nc.push(a);
+        }else if(a.classList.contains('nx-rueda-clip'))nc.push(a);
+        a=a.parentElement;
+      }
+      for(var r=0;r<recortes.length;r++)if(nc.indexOf(recortes[r])<0)recortes[r].classList.remove('nx-rueda-clip');
+      for(var r2=0;r2<nc.length;r2++)clase(nc[r2],'nx-rueda-clip',true);
+      recortes=nc;
     }
-    if(centro!==mejor){if(centro)clase(centro,'nx-foco',false);centro=mejor;}
-    if(centro&&md<0.75){clase(centro,'nx-foco',true);colocarMarco(centro,escalaFoco(centro));}
-    else{if(centro)clase(centro,'nx-foco',false);if(marco)clase(marco,'on',false);}
+    // Cada fila lleva su número (una sola escritura por fila al detectar); los valores van a la hoja propia.
+    for(var q=0;q<filas.length;q++){var nq=String(q);if(filas[q].getAttribute('data-rw')!==nq)filas[q].setAttribute('data-rw',nq);clase(filas[q],'nx-rueda-fila',true);}
+    return true;
   }
-  function pedir(){if(!raf)raf=requestAnimationFrame(pintar);}
+  function pintar(reintento){
+    raf=0;
+    if(sucio||!lista||!filas.length||!document.documentElement.contains(lista)){if(!detectar())return;}
+    // ── 1) LEER ──
+    var vc=centroDe(filas[0]),n=filas.length,rs=new Array(n),hs=new Array(n),ws=new Array(n),unidad=0,cruza=false;
+    for(var i=0;i<n;i++){
+      var el=filas[i];rs[i]=el.getBoundingClientRect();hs[i]=el.offsetHeight;ws[i]=el.offsetWidth;unidad+=hs[i];
+      if(rs[i].top<=vc&&rs[i].bottom>=vc)cruza=true;
+    }
+    unidad=(unidad/n||100)*1.08;
+    // La lista ya no cruza el centro (se desplazó fuera o cambió la pantalla): se busca de nuevo una sola vez.
+    if(!cruza&&!reintento){sucio=true;return pintar(true);}
+    if(!cruza){limpiar();return;}
+    // ── 2) CALCULAR ──
+    var mejor=-1,md=1e9,vals=new Array(n);
+    for(var k=0;k<n;k++){
+      var d0=((rs[k].top+rs[k].height/2)-vc)/unidad,a0=Math.abs(d0);
+      if(a0<md){md=a0;mejor=k;}
+      // Fuera de la pantalla (más de 4 filas del centro) todas quedan igual: no se recalculan cuadro a cuadro.
+      var a=Math.min(4,Math.max(0,a0-0.4)),d=d0<0?-a:a;
+      var rx=Math.max(-68,Math.min(68,-d*24));
+      var sF=FINO?Math.min(1.06,1+36/(ws[k]||1)):Math.min(1.04,1+24/(ws[k]||1));
+      var s=a<1?sF+(0.94-sF)*a:Math.max(0.78,0.94-(a-1)*0.05);
+      var o=a<0.1?1:Math.max(0.16,1-(a-0.05)*0.36);
+      // Mientras gira no hay desenfoque (es lo más caro de dibujar); vuelve al quedarse quieto.
+      var b=(FINO&&!girando)?Math.min(4.5,Math.max(0,(a-0.1)*1.7)):0;
+      var br=a<0.1?1.12:Math.max(0.7,0.92-(a-0.1)*0.08);
+      vals[k]=['perspective(1100px) rotateX('+rx.toFixed(1)+'deg) scale('+s.toFixed(3)+')',o.toFixed(2),
+               (b>0.05?'blur('+b.toFixed(1)+'px) ':'')+'brightness('+br.toFixed(2)+')'+(a<0.1?' saturate(1.08)':' saturate(.75)'),sF];
+    }
+    // ── 3) ESCRIBIR (solo lo que cambió) ──
+    var gira=Date.now()-ultimoScroll<300;
+    clase(lista,'nx-rueda-gira',gira);if(marco)clase(marco,'gira',gira);
+    // Nativa: el navegador ya inclina las filas; aquí solo se elige la del centro y se coloca el marco.
+    var css='';
+    if(!NATIVA)for(var w=0;w<n;w++)css+='.nx-rueda>[data-rw="'+w+'"]{--rw-t:'+vals[w][0]+';--rw-o:'+vals[w][1]+';--rw-f:'+vals[w][2]+'}';
+    reglasFilas=css;
+    var nuevo=mejor>=0?filas[mejor]:null;
+    if(centro!==nuevo){if(centro)clase(centro,'nx-foco',false);centro=nuevo;}
+    if(centro&&md<0.75){
+      clase(centro,'nx-foco',true);
+      var r=rs[mejor];colocarMarco(r.left+r.width/2,r.top+r.height/2,ws[mejor],hs[mejor],NATIVA?1.03:vals[mejor][3]);
+    }else{if(centro)clase(centro,'nx-foco',false);if(marco)clase(marco,'on',false);}
+    volcar();
+  }
+  function pedir(){if(!raf)raf=requestAnimationFrame(function(){pintar(false);});}
   // Mientras se desplaza (incluida la inercia del iPhone) se recalcula en CADA cuadro hasta 300 ms después del último
   // evento de desplazamiento: la rueda y el marco van pegados al dedo.
   var ultimoScroll=0,girando=0;
-  function bucle(){pintar();if(Date.now()-ultimoScroll<300)girando=requestAnimationFrame(bucle);else{girando=0;pintar();}}
+  function bucle(){pintar(false);if(Date.now()-ultimoScroll<300)girando=requestAnimationFrame(bucle);else{girando=0;pintar(false);}}
   window.addEventListener('scroll',function(){
     ultimoScroll=Date.now();
     if(!girando){if(raf){cancelAnimationFrame(raf);raf=0;}girando=requestAnimationFrame(bucle);}
   },{passive:true,capture:true});
-  window.addEventListener('resize',function(){if(scrollDe)scrollDe=new WeakMap();pedir();},{passive:true});
+  window.addEventListener('resize',function(){if(scrollDe)scrollDe=new WeakMap();sucio=true;desfase=null;pedir();},{passive:true});
   document.addEventListener('visibilitychange',function(){if(!document.hidden)pedir();});
   function iniciar(){
     pedir();
@@ -186,10 +255,10 @@
       for(var i=0;i<rs.length;i++){
         var t=rs[i].target;
         if(t===marco||(t.classList&&(t.classList.contains('nx-rueda-fila')||t.classList.contains('nx-foco-marco'))))continue;
-        return pedir();
+        sucio=true;return pedir();
       }
     }).observe(document.body,{subtree:true,childList:true});
-    setInterval(function(){if(!document.hidden)pedir();},1500);
+    setInterval(function(){if(!document.hidden){sucio=true;pedir();}},1500);
   }
   if(document.body)iniciar();else document.addEventListener('DOMContentLoaded',iniciar);
 })();
