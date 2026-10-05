@@ -27,6 +27,13 @@ nombres.forEach((nom, i) => {
   ['2020-01', '2020-02'].forEach((per, j) => FAC.push({ id: uuid(3000 + i * 10 + j), cliente_id: id, periodo: per, prima_base: 4000, prima_deps: 0, total: 4000, estado: 'Pendiente', mes: j + 1, anio: 2020, created_at: '2020-0' + (j + 1) + '-20T12:00:00Z' }));
 });
 
+// QA_CLIENTES=N (opcional): agrega clientes de relleno hasta N, para medir el rendimiento de listas largas (producción
+// tiene más de 100). Sin la variable, los datos de prueba no cambian.
+for (let i = CLI.length; i < Math.min(180, +process.env.QA_CLIENTES || 0); i++) {
+  const b = CLI[i % 8];
+  CLI.push(Object.assign({}, b, { id: uuid(200 + i), nom: b.nom + ' ' + (i + 1), cedula: `001-0${String(i).padStart(6, '0')}-1`, wa: `18095${String(i).padStart(6, '0')}`, deps: [] }));
+}
+
 let TAREAS = [];
 let ACTS = [];
 // 12 pendientes: 4 vencidas (más de las 8 que veía la agenda vieja), 1 de hoy, 7 futuras; 1 completada.

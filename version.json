@@ -1,7 +1,18 @@
 {
-  "version": "59.14",
+  "version": "59.15",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.15",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Rueda en Clientes y Facturas fluida como en WhatsApp: ahora el navegador gira las filas al desplazar (animación ligada al desplazamiento), sin calcular cada fila con JavaScript en cada cuadro. En una lista de 104 clientes el cuadro pasa de ~311 ms a ~25 ms con el procesador lento y ~17 ms normal (60 cuadros por segundo).",
+        "iPhone: la rueda gira alrededor del centro de la pantalla (antes tomaba el centro de toda la lista y las filas de abajo quedaban planas).",
+        "Facturas en el iPhone (tarjetas) también gira; en la computadora sigue siendo una tabla normal.",
+        "Sin desenfoque ni brillo en las filas que giran (obligaban a redibujar); el marco va sin resplandor mientras se desplaza y lo recupera al parar. Las filas ya no repiten su animación de entrada al salir de la rueda.",
+        "Navegadores sin soporte (iPhone con iOS anterior a 26): sigue la rueda calculada, ahora con lectura y escritura separadas por cuadro (~2x más rápida)."
+      ]
+    },
     {
       "version": "59.14",
       "fecha": "2026-10-05",

@@ -1,7 +1,7 @@
 /* NEXUS PRO · RUEDA en listas (parches-foco-lista.js; dueño 05-oct-2026: «como si fuera una rueda giratoria»). Solo visual.
    El JS calcula por fila la inclinación/escala (--rw-t), la opacidad (--rw-o) y el filtro (--rw-f) según su distancia al
    centro de la pantalla. Lleva !important porque algunas filas ya tienen su propio :hover con id (#v-crm …). */
-.nx-rueda > .nx-rueda-fila{
+.nx-rueda:not(.nx-rueda-nativa) > .nx-rueda-fila{
   transform:var(--rw-t) !important;
   opacity:var(--rw-o,1) !important;
   filter:var(--rw-f,none) !important;
@@ -12,13 +12,41 @@
   transition:transform .12s linear,opacity .12s linear,filter .12s linear,box-shadow .25s ease !important;
 }
 /* Mientras se desplaza, la rueda se recalcula en cada cuadro: sin transición, para que no vaya un paso atrás. */
-.nx-rueda.nx-rueda-gira > .nx-rueda-fila{transition:box-shadow .25s ease !important;}
+.nx-rueda.nx-rueda-gira:not(.nx-rueda-nativa) > .nx-rueda-fila{transition:box-shadow .25s ease !important;}
 /* Fila del centro: por encima de las vecinas, con sombra que la levanta y resplandor azul detrás. */
 .nx-rueda > .nx-rueda-fila.nx-foco{
   position:relative;
   z-index:6;
   box-shadow:0 26px 50px -12px rgba(2,6,23,.7),0 0 80px 10px rgba(96,165,250,.45),0 0 0 1px rgba(255,255,255,.18),inset 0 1px 0 rgba(255,255,255,.26) !important;
 }
+
+/* ── Rueda NATIVA (59.15): el navegador inclina cada fila según su posición en la zona que se desplaza
+   (animation-timeline: view()), sin JavaScript en cada cuadro. Fluye igual que el desplazamiento del sistema.
+   0 % = la fila entra por abajo · 50 % = en el centro · 100 % = sale por arriba. Solo transform y opacidad: el
+   navegador las mueve sin volver a dibujar (un filtro de brillo o desenfoque obligaba a redibujar en cada cuadro). */
+@keyframes nxRuedaGiro{
+  0%{transform:perspective(1100px) rotateX(-50deg) scale(.8);opacity:.2}
+  32%{transform:perspective(1100px) rotateX(-22deg) scale(.92);opacity:.55}
+  45%,55%{transform:perspective(1100px) rotateX(0deg) scale(1);opacity:1}
+  68%{transform:perspective(1100px) rotateX(22deg) scale(.92);opacity:.55}
+  100%{transform:perspective(1100px) rotateX(50deg) scale(.8);opacity:.2}
+}
+.nx-rueda.nx-rueda-nativa > .nx-rueda-fila{
+  /* !important: la entrada «nxFadeUp» de las filas lleva id (#tbFact table.sf-fact tbody tr) y ganaría. */
+  animation:nxRuedaGiro linear both !important;
+  animation-timeline:view() !important;
+  animation-range:cover 0% cover 100% !important;
+  transform-origin:50% 50%;
+  backface-visibility:hidden;
+}
+/* Cajas que envuelven la lista sin desplazarse (iPhone): clip en vez de auto, para que la rueda gire alrededor del
+   centro de la pantalla y no del de toda la lista. Solo se marca la caja que no tiene nada que desplazar. Gana a
+   «.nc,.card{overflow-x:auto !important}» por especificidad. */
+html .nx-rueda-clip.nx-rueda-clip{overflow:clip !important;}
+/* Fila que ya giró y se soltó: no repite su animación de entrada (se veía aparecer otra vez). */
+.nx-rueda-vista{animation:none !important;}
+/* La del centro se levanta un poco más («scale» se suma a la animación) y lleva el resplandor. */
+.nx-rueda.nx-rueda-nativa > .nx-rueda-fila.nx-foco{scale:1.03;transition:scale .2s ease,box-shadow .25s ease}
 
 /* Marco de esquinas: una sola capa flotante sobre la fila del centro. */
 .nx-foco-marco{
@@ -45,6 +73,8 @@
   will-change:transform,opacity;
 }
 .nx-foco-marco.on{opacity:1;}
+/* Mientras la lista gira, el marco va sin resplandor (redibujarlo en cada cuadro era caro); vuelve al detenerse. */
+.nx-foco-marco.gira{filter:none;}
 .nx-foco-marco.tactil{--l:12px;}
 
 /* Tema claro: esquinas azules y sombra más suave (el blanco no se vería sobre fondo claro). */
@@ -53,6 +83,7 @@ html:not(.tema-glass-oscuro) body:not(.tema-premium) .nx-rueda > .nx-rueda-fila.
   box-shadow:0 22px 44px -14px rgba(15,23,42,.32),0 0 60px 4px rgba(37,99,235,.18),0 0 0 1px rgba(37,99,235,.2),inset 0 1px 0 rgba(255,255,255,.9) !important;
 }
 @media (prefers-reduced-motion:reduce){
+  .nx-rueda.nx-rueda-nativa > .nx-rueda-fila{animation:none !important;}
   .nx-foco-marco{display:none !important;}
   .nx-rueda > .nx-rueda-fila{transform:none !important;opacity:1 !important;filter:none !important;}
 }
