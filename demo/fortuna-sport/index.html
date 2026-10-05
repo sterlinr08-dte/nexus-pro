@@ -335,14 +335,15 @@ function total(){var pares=totalPares();return carro[modo].reduce(function(s,l){
 function persistir(){guardar('fortuna_carro_'+modo,carro[modo]);}
 
 // ── Portada
-var destacados=['samba','speedcat','pump'],di=0;
+// Portada: [modelo, color] con las fotos más nítidas.
+var destacados=[['gazelle',0],['samba',1],['gazelle',1]],di=0;
 function pintarPortada(){
   var M=modo==='mayor';
   $('#pOjo').textContent=M?'Catálogo mayorista · precios por volumen':'Adidas · Puma · Reebok';
   $('#pTit').innerHTML=M?'Adidas, Puma y Reebok <em>por curva.</em>':'Originales.<br><em>Para cada paso.</em>';
   $('#pTxt').textContent=M?'Pedido mínimo de '+MINIMO+' pares, combinando modelos, colores y tallas. Mientras más pares, menor el precio por par. Envía el pedido por WhatsApp y te confirmamos existencia y despacho.':'Tenis originales de Adidas, Puma y Reebok. Elige modelo, color y talla, arma tu pedido y envíalo por WhatsApp: te confirmamos disponibilidad y entrega.';
   $('#pChips').innerHTML=M?'<span class="chip"><b>Mín. '+MINIMO+'</b> pares</span><span class="chip">Curvas de tallas <b>38–45</b></span><span class="chip">Despacho a <b>todo el país</b></span>':'<span class="chip">Entrega <b>el mismo día</b> en SD</span><span class="chip">Cambio de talla <b>gratis</b></span><span class="chip">Pago contra entrega</span>';
-  var p=prod(destacados[di]),v=p.vars[0];
+  var p=prod(destacados[di][0]),v=p.vars[destacados[di][1]];
   $('#esc').style.setProperty('--tono',v[1]);
   $('#escLetra').textContent=p.letra;
   $('#escNom').textContent=p.nom+' · '+(M?rd(p.pm)+' por par':rd(p.pd));
