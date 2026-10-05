@@ -72,7 +72,7 @@ const MEDIR = () => {
     superficies() {
       const SEL = ['.tnav .pttl', '#sbEl .ni-l', '#sbEl .sb-nm', '.nc .ct', 'thead th', 'tbody td', '.kpi .kl', '.kpi .kv', '.modal .mt', '.modal .fr label', '.nxCrmHead h1', '.nxCrmHead p', '.nxSf .sf-kpi .lb', '.nxSf .sf-kpi .v', '.nxSf .sf-fantitle h2', '#nxIG .nxIG-h', '#nxIG .nxIG-kv', '.nxCrmHomeHead h1', '.nxCrmHomeHead h2', '.tema-opcion div'];
       const malos = []; let n = 0;
-      SEL.forEach(s => document.querySelectorAll(s).forEach(el => { if (!visible(el) || !/[\p{L}\p{N}]/u.test(el.textContent)) return; const m = medir(el); if (!m) return; n++; const grande = m.fs >= 24 || (m.fs >= 18.66 && m.fw >= 700); if (m.r < (grande ? 3 : 4.5)) malos.push([s, el.textContent.trim().slice(0, 20), +m.r.toFixed(2)]); }));
+      SEL.forEach(s => document.querySelectorAll(s).forEach(el => { if (!visible(el) || !/[\p{L}\p{N}]/u.test(el.textContent)) return; if (el.closest('.nx-rueda-fila:not(.nx-foco)')) return; /* filas atenuadas a propósito por la rueda (Pólizas/Facturas en tarjetas, 59.15) */ const m = medir(el); if (!m) return; n++; const grande = m.fs >= 24 || (m.fs >= 18.66 && m.fw >= 700); if (m.r < (grande ? 3 : 4.5)) malos.push([s, el.textContent.trim().slice(0, 20), +m.r.toFixed(2)]); }));
       return { n, malos };
     },
     // Campos: texto escrito legible sobre su propio fondo.
