@@ -93,6 +93,37 @@ header.portada{background:var(--tinta);color:#f3f2ee;padding:calc(18px + env(saf
 .aviso{background:var(--alertaS);color:var(--texto);border-radius:10px;padding:9px 12px;font-size:13px;margin-top:10px}
 input.campo{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--linea);background:var(--carta);margin-top:6px}
 
+.hoja.ancha{max-width:760px}
+.factura{background:#fff;color:#1b1d22;border:1px solid #e3e0d8;border-radius:10px;padding:clamp(14px,4vw,28px);font-size:13px;line-height:1.45}
+.fc-cab{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid #15171c}
+.fc-emp{display:flex;gap:12px;align-items:flex-start}
+.fc-logo{width:44px;height:44px;border-radius:12px;background:#0f7b68;color:#fff;display:grid;place-items:center;font:700 21px var(--fd);flex:none}
+.fc-emp b{font:700 16px var(--fd);letter-spacing:.02em;display:block}
+.fc-emp span{color:#5d6068;font-size:12px;display:block}
+.fc-tit{text-align:right}
+.fc-tit h4{margin:0;font:700 20px var(--fd);letter-spacing:.06em;color:#0f7b68}
+.fc-tit div{font-size:12px;color:#5d6068}
+.fc-tit b{color:#1b1d22}
+.fc-caja{border:1px solid #e3e0d8;border-radius:8px;padding:10px 12px;margin:14px 0}
+.fc-caja small{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8d94;margin-bottom:4px}
+.fc-caja input{width:100%;border:0;border-bottom:1px dashed #cfcbc1;padding:4px 0;font-weight:600;background:transparent;color:#1b1d22}
+.fc-caja input:focus{outline:none;border-bottom-color:#0f7b68}
+.fc-tabla{overflow-x:auto}
+.factura table{width:100%;border-collapse:collapse;font-size:12.5px}
+.factura th{background:#15171c;color:#fff;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:8px 10px}
+.factura th:first-child{border-radius:6px 0 0 6px}.factura th:last-child{border-radius:0 6px 6px 0}
+.factura td{padding:8px 10px;border-bottom:1px solid #eeebe4;vertical-align:top}
+.factura td small{color:#6c6f77;display:block}
+.factura td button{border:0;background:none;color:#c23b32;font-size:11px;text-decoration:underline;padding:0;margin-top:2px}
+.factura .d{text-align:right}
+.fc-tot{margin:12px 0 0 auto;max-width:280px;display:grid;gap:4px}
+.fc-tot div{display:flex;justify-content:space-between;gap:16px}
+.fc-tot .gr{border-top:2px solid #15171c;padding-top:8px;margin-top:4px;font:700 18px var(--fd)}
+.fc-sello{margin-top:14px;padding-top:10px;border-top:1px dashed #cfcbc1;text-align:center;font-size:11px;color:#8a8d94}
+.factura .pm{display:none}
+.factura td.d{white-space:nowrap}
+@media (max-width:560px){.factura .pc{display:none}.factura .pm{display:block}.factura th,.factura td{padding:8px 6px}.factura{padding:14px} .fc-tit{text-align:left}.factura .oc{display:none}.fc-tot{max-width:none}}
+
 .flot{white-space:nowrap;gap:12px;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(520px,calc(100% - 32px));z-index:20;justify-content:space-between;padding:14px 18px;border-radius:14px;box-shadow:0 12px 30px rgba(15,123,104,.35)}
 .flot[hidden]{display:none}
 footer{text-align:center;color:var(--suave);font-size:12px;padding:0 16px 110px}
@@ -158,7 +189,7 @@ function pintarFlot() {
   $('#flot').innerHTML = `<span>Ver pedido · ${u} unid.</span><b class="num">${rd(t)}</b>`;
 }
 function totalPedido() { return pedido.reduce((a, l) => a + l.cant * precioU(prodPor[l.id], unidadesDe(l.id)), 0); }
-function abrir(h) { $('#hoja').innerHTML = h; $('#velo').classList.add('abierto'); }
+function abrir(h) { $('#hoja').classList.remove('ancha'); $('#hoja').innerHTML = h; $('#velo').classList.add('abierto'); }
 function cerrar() { $('#velo').classList.remove('abierto'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('ver'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('ver'), 2000); }
@@ -186,14 +217,23 @@ function agregar() {
 }
 function quitar(i) { pedido.splice(i, 1); guardar(); pintar(); pedido.length ? verPedido() : cerrar(); }
 function verPedido() {
-  const t = totalPedido();
+  const t = totalPedido(), base = t / 1.18, hoy = new Date(), vence = new Date(); vence.setDate(vence.getDate() + 7);
   let nombre = ''; try { nombre = localStorage.getItem('bello_negocio') || ''; } catch (e) { }
-  abrir(`<h3>Tu pedido</h3><p class="sub">El precio por docena o por caja se calcula con el total de unidades de cada artículo.</p>
-    ${pedido.map((l, i) => { const p = prodPor[l.id], pu = precioU(p, unidadesDe(l.id)); return `<div class="linea"><div>${esc(p.nombre)}<small>${l.modelo !== '—' ? l.modelo + ' · ' : ''}${l.color} · ${l.cant} × ${rd(pu)}</small><button onclick="quitar(${i})">Quitar</button></div><b class="num">${rd(l.cant * pu)}</b></div>`; }).join('')}
-    <div class="total"><span>Total</span><span class="num">${rd(t)}</span></div>
-    ${t < MINIMO ? `<div class="aviso">El pedido mínimo es ${rd(MINIMO)}. Te faltan ${rd(MINIMO - t)}.</div>` : ''}
-    <div class="etq">Nombre de tu negocio</div><input class="campo" id="neg" value="${esc(nombre)}" placeholder="Ej.: Celulares El Primo" autocomplete="organization">
-    <div class="pie"><button class="btn sec" onclick="cerrar()">Seguir comprando</button><button class="btn wa" ${t < MINIMO ? 'disabled' : ''} onclick="enviar()">Enviar por WhatsApp</button></div>`);
+  abrir(`<div class="factura">
+    <div class="fc-cab">
+      <div class="fc-emp"><div class="fc-logo">B</div><div><b>BELLO ACCESORIOS</b><span>Ventas al por mayor</span><span>Santo Domingo, República Dominicana</span></div></div>
+      <div class="fc-tit"><h4>PEDIDO</h4><div>Cotización mayorista</div><div>Fecha <b>${hoy.toLocaleDateString('es-DO')}</b></div><div>Válida hasta <b>${vence.toLocaleDateString('es-DO')}</b></div></div>
+    </div>
+    <div class="fc-caja"><small>Cliente</small><input id="neg" value="${esc(nombre)}" placeholder="Escribe el nombre de tu negocio" autocomplete="organization" aria-label="Nombre de tu negocio"></div>
+    <div class="fc-tabla"><table><thead><tr><th>Cant.</th><th class="oc">Código</th><th>Descripción</th><th class="d pc">Precio</th><th class="d">Importe</th></tr></thead><tbody>
+    ${pedido.map((l, i) => { const p = prodPor[l.id], pu = precioU(p, unidadesDe(l.id)); return `<tr><td class="num">${l.cant}</td><td class="oc">${p.sku}</td><td>${esc(p.nombre)}<small>${l.modelo !== '—' ? l.modelo + ' · ' : ''}${l.color} · ${unidadesDe(l.id) >= 50 ? 'precio caja' : 'precio docena'}</small><small class="pm">${l.cant} × ${rd(pu)}</small><button onclick="quitar(${i})">Quitar</button></td><td class="d num pc">${rd(pu)}</td><td class="d num">${rd(l.cant * pu)}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="fc-tot num"><div><span>Subtotal</span><span>${rd(base)}</span></div><div><span>ITBIS 18 %</span><span>${rd(t - base)}</span></div><div class="gr"><span>Total</span><span>${rd(t)}</span></div></div>
+    <div class="fc-sello">${pedido.reduce((a, l) => a + l.cant, 0)} unidades · Precios con ITBIS incluido · El pedido se confirma por WhatsApp</div>
+  </div>
+  ${t < MINIMO ? `<div class="aviso">El pedido mínimo es ${rd(MINIMO)}. Te faltan ${rd(MINIMO - t)}.</div>` : ''}
+  <div class="pie"><button class="btn sec" onclick="cerrar()">Seguir comprando</button><button class="btn wa" ${t < MINIMO ? 'disabled' : ''} onclick="enviar()">Enviar por WhatsApp</button></div>`);
+  $('#hoja').classList.add('ancha');
 }
 function enviar() {
   const neg = $('#neg').value.trim();
