@@ -32,7 +32,7 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en NEXUS PRO em
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 
-- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **59.16** (07-oct-2026: POS Fase 1 desde STUDIO, PR #400; ver `docs/PLAN-POS-DESDE-STUDIO.md`).
+- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **59.17** (07-oct-2026: POS Fase 2 solo app, PR #401). La migración `20261007120000_pos_fiado_abono_servidor.sql` **NO está aplicada**: falta correr `supabase/pruebas/20261007120000_prueba_fiado.sql`.
 - Supabase madre `tnwsgcxurfyuszxsewsn` — NEXUS PRO Seguros.
 - WhatsApp: plantillas aprobadas listadas en `CLAUDE.md`; Inbox corporativo y automatizaciones en producción.
 - Iniciativa abierta: acumulados por agente y ciclo (20 → 20), transferencias entre agentes, notificaciones, cierre por ciclo y consolidado mensual — empezar por la Fase 0 de auditoría descrita en `CLAUDE.md`.

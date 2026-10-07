@@ -594,14 +594,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     } catch (e) { _dashKPI = null; }
   }
   async function cargarVentas() {
-    _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=400') || [];
+    // Fase 2 (07-oct-2026): sin el tope de 400; si alguna página falla se queda lo que ya había.
+    const todas = await getTodasPOS('pos_ventas', 'select=*&order=created_at.desc,id.asc'); if (todas) _ventas = todas;
   }
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
     try {
-      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada') || [];
+      // Fase 2: leídos completos (la API entrega a lo sumo 1000 filas por consulta y el saldo se quedaba corto).
+      const fi = await getTodasPOS('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada&order=id.asc') || [];
       fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.credito_monto || 0); });
-      const ab = await getAPI().get('pos_abonos', 'select=cliente_id,monto') || [];
+      const ab = await getTodasPOS('pos_abonos', 'select=cliente_id,monto&order=id.asc') || [];
       ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
     } catch (e) {}
   }
@@ -6369,7 +6371,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const exposicionTotal = saldo + totCuotas;
     const planesHTML = finesCli.length ? finesCli.map(f => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(f.descripcion || '')}<div style="color:#475569;font-size:9.5px">${cuotasDe(f.id).filter(c => c.pagado).length}/${f.cuotas_total} cuotas pagadas</div></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#2563eb">${fmt(pendPlan(f))}</b><button class="btn bsm bghost" onclick="document.getElementById('nxPosCli').remove();window.nxFinPlan('${f.id}')" title="Ver plan" aria-label="Ver plan"><i class="ti ti-list-numbers"></i></button></div></div>`).join('') : '';
     const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(v.numero_factura || v.numero || '')} <span style="color:#475569">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#475569;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin ventas fiadas</div>';
-    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
+    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:${Number(a.monto) < 0 ? '#dc2626' : '#059669'}">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div>${Number(a.monto) < 0 || a.anula_id || abonos.some(x => x.anula_id === a.id) ? `<span style="font-size:10px;color:#64748b;white-space:nowrap">${Number(a.monto) < 0 ? 'Anulación' : 'Anulado'}</span>` : `<button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Anular" aria-label="Anular abono"><i class="ti ti-minus" style="color:#dc2626"></i></button>`}</div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
@@ -6961,6 +6963,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     ticketHTML(Object.assign({}, v, { _items: items }));
   };
+  // ── Fiado por el servidor (Fase 2, migración 20261007120000_pos_fiado_abono_servidor.sql) ──
+  // Mientras esa migración no esté aplicada la función no existe (PGRST202) y se usa el camino de antes.
+  function fiadoRpcFalta(e) { return /PGRST202|Could not find the function/i.test(String(e && e.message || e)); }
+  function fiadoErrTxt(e) {
+    const m = String(e && e.message || e);
+    const t = { FIADO_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja antes de recibir efectivo.', FIADO_EXCEDE_SALDO: 'El abono es mayor que lo que debe el cliente.',
+      FIADO_MONTO_INVALIDO: 'Pon un monto mayor que cero.', FIADO_FECHA_SOLO_ADMIN: 'Solo el administrador o el gerente pueden poner otra fecha (nunca una futura).',
+      FIADO_ELIMINAR_SOLO_ADMIN: 'Solo el administrador o el gerente pueden anular un abono.', FIADO_ABONO_YA_ANULADO: 'Ese abono ya estaba anulado.',
+      FIADO_ABONO_ES_ANULACION: 'Eso es una anulación; no se puede anular.', FIADO_SIN_PERMISO: 'Tu usuario no tiene permiso.' };
+    const k = Object.keys(t).find(x => m.indexOf(x) >= 0); return k ? t[k] : m;
+  }
+  function nuevaOperacion() { try { return crypto.randomUUID(); } catch (e) { return null; } }
   window.nxPosAbonar = async function (id) {
     const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
     // REGLAMENTO DE COBRO regla 4: un abono en efectivo entra a una caja abierta o no entra.
@@ -6968,6 +6982,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (/efectivo/i.test(_met) && !(_caja && _caja.id)) {
       try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
+    }
+    // Un número de operación por intento: si el botón se toca dos veces o la red repite el envío, no se cobra doble.
+    const btnOp = window.__nxAbonoOp || (window.__nxAbonoOp = { cli: id, op: nuevaOperacion() });
+    if (btnOp.cli !== id) { btnOp.cli = id; btnOp.op = nuevaOperacion(); }
+    try {
+      const fechaAb = val('posAbFecha') || hoy();
+      const r = await finRpc('pos_fiado_registrar_abono', { p_cliente_id: id, p_monto: monto, p_metodo: _met, p_nota: (val('posAbNota') || '').trim() || null,
+        p_fecha: fechaAb === hoy() ? null : fechaAb, p_operacion_id: btnOp.op, p_created_by_name: nomAdmin() });
+      window.__nxAbonoOp = null;
+      if (!(r && r.repetido)) _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
+      toast('ok', r && r.repetido ? 'Ese abono ya estaba registrado' : 'Abono registrado', fmt(monto) + (r && r.numero ? ' · ' + r.numero : ''));
+      window.nxPosCliVer(id);
+      const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
+      return;
+    } catch (e) {
+      if (!fiadoRpcFalta(e)) { toast('err', 'No se pudo registrar', fiadoErrTxt(e)); return; }
     }
     try {
       const rab = await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: _met, nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
@@ -6980,7 +7010,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     } catch (e) { toast('err', 'No se pudo registrar', String(e && e.message || e)); }
   };
   window.nxPosDelAbono = async function (abId, cliId) {
-    if (!confirm('¿Eliminar este abono? Se revierte su contabilidad.')) return;
+    if (!confirm('¿Anular este abono? Queda un movimiento que lo revierte, con su contabilidad.')) return;
+    try {
+      const r = await finRpc('pos_fiado_eliminar_abono', { p_abono_id: abId });
+      toast('ok', 'Abono anulado', (r && r.numero) || ''); await cargarSaldosCli(); window.nxPosCliVer(cliId); return;
+    } catch (e) { if (!fiadoRpcFalta(e)) { toast('err', 'No se pudo anular', fiadoErrTxt(e)); return; } }
     try { await getAPI().del('pos_abonos', 'id=eq.' + abId); await delAsientoOrigen('cobro', abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosDelCli = async function (id) {
@@ -11050,8 +11084,17 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       resyncCuotasPagos();
       const completa = !!prox.pagado;
       await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { monto_pagado: prox.monto_pagado, pagado: prox.pagado, metodo: metodo, fecha_pago: completa ? hoyISOPos() : null });
-      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + (moraPagada > 0 ? ' · incl. ' + fmt(moraPagada) + ' mora' : '') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
-      try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id, moraPagada); } catch (e) {}
+      // Fase 2: el abono y su asiento los escribe el servidor (la misma función del fiado); si aún no existe, como antes.
+      const notaCuota = 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + (moraPagada > 0 ? ' · incl. ' + fmt(moraPagada) + ' mora' : '') + ' · ' + (f.descripcion || '');
+      let cuotaPorServidor = false;
+      if (f.cliente_id) {
+        try { await finRpc('pos_fiado_registrar_abono', { p_cliente_id: f.cliente_id, p_monto: monto, p_metodo: metodo, p_nota: notaCuota, p_es_cuota: true, p_mora: moraPagada, p_origen_id: prox.id, p_created_by_name: nomAdmin() }); cuotaPorServidor = true; }
+        catch (e) { if (!fiadoRpcFalta(e)) { try { window.logAudit && window.logAudit('POS_CUOTA_ABONO_FALLO', (f.cliente_nombre || '') + ' · ' + fiadoErrTxt(e), 'Cuotas'); } catch (e2) {} cuotaPorServidor = true; } }
+      }
+      if (!cuotaPorServidor) {
+        if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: notaCuota }); } catch (e) {} }
+        try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id, moraPagada); } catch (e) {}
+      }
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(monto) + (completa ? '' : ' (parcial)'), 'Cuotas'); } catch (e) {}
       cerrarModal('nxFinM'); toast('ok', completa ? 'Cuota cobrada' : 'Abono parcial registrado', fmt(monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
