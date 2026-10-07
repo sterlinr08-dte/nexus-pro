@@ -123,7 +123,7 @@ td.d,th.d{text-align:right}
 .pag button:disabled{opacity:.4}
 .vacio{padding:30px;text-align:center;color:var(--suave)}
 
-/* ── Vender ── */
+/* ── Facturar ── */
 .pos{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
 .grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .tarj{background:var(--carta);border:1px solid var(--linea);border-radius:13px;padding:10px;text-align:left;display:flex;flex-direction:column;gap:6px;transition:border-color .15s,transform .1s ease-out}
@@ -292,7 +292,7 @@ const ICO = {
   lupa: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'
 };
 const ico = (k, extra) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra || ''} aria-hidden="true">${ICO[k]}</svg>`;
-const VISTAS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['inventario', 'Inventario'], ['clientes', 'Clientes'], ['historial', 'Historial'], ['reportes', 'Reportes']];
+const VISTAS = [['inicio', 'Inicio'], ['vender', 'Facturar'], ['inventario', 'Inventario'], ['clientes', 'Clientes'], ['historial', 'Historial'], ['reportes', 'Reportes']];
 
 /* ── Estado ── */
 const prodPor = Object.fromEntries(B.PRODUCTOS.map(p => [p.id, p]));
@@ -380,7 +380,7 @@ function inicio() {
   const dias = []; for (let i = 13; i >= 0; i--) dias.push([dia(i), suma(delDia(i).map(totalV))]);
   const max = Math.max(...dias.map(d => d[1]));
   const cambio = va ? Math.round((vh - va) / va * 100) : 0;
-  return `<div class="cab"><div><h1>Buenas, Bello</h1><p>${HOY.toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><button class="btn" onclick="ir('vender')">${ico('vender', 'width="18" height="18"')}Nueva venta</button></div>
+  return `<div class="cab"><div><h1>Buenas, Bello</h1><p>${HOY.toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><button class="btn" onclick="ir('vender')">${ico('vender', 'width="18" height="18"')}Nueva factura</button></div>
   <div class="kpis">
     <div class="carta kpi"><small>Vendido hoy</small><b class="num">${rd(vh)}</b><span class="${cambio >= 0 ? 'sube' : ''}">${cambio >= 0 ? '▲' : '▼'} ${Math.abs(cambio)}% contra ayer</span></div>
     <div class="carta kpi"><small>Ventas hoy</small><b class="num">${hoy.length}</b><span>${hoy.filter(v => v.cli && cliPor[v.cli].tipo === 'Mayorista').length} de mayoristas</span></div>
@@ -400,7 +400,7 @@ function inicio() {
   </div>
   <div class="carta bloque" style="margin-top:16px"><h2>Accesos rápidos</h2>
     <div class="accesos">
-      <button class="acceso" onclick="ir('vender')">${ico('vender')}Vender</button>
+      <button class="acceso" onclick="ir('vender')">${ico('vender')}Facturar</button>
       <button class="acceso" onclick="ir('inventario')">${ico('inventario')}Inventario</button>
       <button class="acceso" onclick="ir('clientes')">${ico('clientes')}Clientes</button>
       <button class="acceso" onclick="ir('historial')">${ico('historial')}Historial</button>
@@ -410,16 +410,16 @@ function inicio() {
   </div>`;
 }
 
-/* ── Vender ── */
+/* ── Facturar ── */
 function vender() {
   const lista = B.PRODUCTOS.filter(p => (filtroCat === 'todos' || p.cat === filtroCat) && coincide(p.nombre + ' ' + p.sku + ' ' + (p.modelos || []).join(' ')));
-  return `<div class="cab"><div><h1>Vender</h1><p>Toca un artículo, elige modelo y color.</p></div></div>
+  return `<div class="cab"><div><h1>Facturar</h1><p>Toca un artículo, elige modelo y color.</p></div></div>
   <div class="pos"><div>
     <div class="herr">${cajaBuscar('Buscar: cover iPhone 15, cable tipo C, BA-1012…')}</div>
     <div class="chips" style="margin-bottom:12px">${B.CATS.map(([k, t]) => `<button class="chip" aria-pressed="${filtroCat === k}" onclick="filtroCat='${k}';pintar()">${t}</button>`).join('')}</div>
     <div class="grilla">${lista.map(p => `<button class="tarj" onclick="elegir('${p.id}')"><div class="foto">${B.foto(p)}</div><b>${esc(p.nombre)}</b><span class="pr num">${rd(p.precio)}</span><small>${p.sku} · ${stockDe(p)} en existencia${p.nuevo ? ' · <span class="pill jade">Nuevo</span>' : ''}</small></button>`).join('') || '<div class="vacio">No hay artículos con esa búsqueda.</div>'}</div>
   </div>
-  <section class="carta carrito" id="carrito" aria-label="Venta actual"></section></div>
+  <section class="carta carrito" id="carrito" aria-label="Factura actual"></section></div>
   <button class="btn flot" id="flot" onclick="$('#carrito').classList.add('abierto')"></button>`;
 }
 let eleccion = null;
@@ -443,7 +443,7 @@ function pintarEleccion() {
 function agregar() {
   const e = eleccion, ya = carrito.find(l => l.id === e.id && l.modelo === e.modelo && l.color === e.color);
   if (ya) ya.cant += e.cant; else carrito.push({ ...e });
-  cerrar(); pintarCarrito(); toast('Agregado a la venta');
+  cerrar(); pintarCarrito(); toast('Agregado a la factura');
 }
 function cambiarCant(i, d) { carrito[i].cant += d; if (carrito[i].cant <= 0) carrito.splice(i, 1); pintarCarrito(); }
 function totales() {
@@ -454,15 +454,15 @@ function totales() {
 function pintarCarrito() {
   const c = $('#carrito'); if (!c) return;
   const t = totales();
-  c.innerHTML = `<h2>Venta actual <span class="pill jade">${t.cant} art.</span></h2>
+  c.innerHTML = `<h2>Factura actual <span class="pill jade">${t.cant} art.</span></h2>
     <select class="selcli" onchange="clienteSel=this.value;pintarCarrito()" aria-label="Cliente"><option value="">Cliente de mostrador</option>${B.CLIENTES.map(x => `<option value="${x.id}" ${clienteSel === x.id ? 'selected' : ''}>${x.codigo} · ${esc(x.nombre)} (${x.tipo})</option>`).join('')}</select>
     <div class="lineas">${t.ls.map((l, i) => `<div class="linea"><b>${esc(l.p.nombre)}</b><small>${l.modelo !== '—' ? l.modelo + ' · ' : ''}${l.color} · ${nivel(l.p, l.cant, t.cli)} ${rd(l.u)}</small><div class="cant"><button onclick="cambiarCant(${i},-1)" aria-label="Quitar uno">−</button><span class="num">${l.cant}</span><button onclick="cambiarCant(${i},1)" aria-label="Agregar uno">+</button></div><span class="tot num">${rd(l.t)}</span></div>`).join('') || '<div class="vacio" style="padding:18px">Todavía no hay artículos.</div>'}</div>
     ${t.ahorro > 0 ? `<div class="nota">Precio de ${t.cli && t.cli.tipo === 'Mayorista' ? 'mayorista' : 'docena'} aplicado: el cliente ahorra ${rd(t.ahorro)}.</div>` : carrito.length ? '<div class="nota">Desde 12 unidades de un artículo baja solo al precio por docena.</div>' : ''}
     <div class="totales"><div><span>Subtotal</span><span class="num">${rd(t.total)}</span></div><div class="grande"><span>Total</span><span class="num">${rd(t.total)}</span></div></div>
     <button class="btn" ${carrito.length ? '' : 'disabled'} onclick="cobrar()">Cobrar ${rd(t.total)}</button>
-    <button class="btn sec movil-cerrar" style="display:none" onclick="$('#carrito').classList.remove('abierto')">Seguir vendiendo</button>`;
+    <button class="btn sec movil-cerrar" style="display:none" onclick="$('#carrito').classList.remove('abierto')">Seguir facturando</button>`;
   if (matchMedia('(max-width:820px)').matches) c.querySelector('.movil-cerrar').style.display = '';
-  const f = $('#flot'); if (f) { f.hidden = !carrito.length; f.innerHTML = `<span>Ver venta · ${t.cant} art.</span><b class="num">${rd(t.total)}</b>`; }
+  const f = $('#flot'); if (f) { f.hidden = !carrito.length; f.innerHTML = `<span>Ver factura · ${t.cant} art.</span><b class="num">${rd(t.total)}</b>`; }
 }
 let metodo = 'Efectivo';
 function cobrar() {
@@ -472,7 +472,7 @@ function cobrar() {
     <div class="etq" style="margin-top:12px">Forma de pago</div>
     <div class="metodos">${['Efectivo', 'Tarjeta', 'Transferencia'].map(m => `<button class="op" style="justify-content:center" aria-pressed="${metodo === m}" onclick="metodo='${m}';cobrar()">${m}</button>`).join('')}</div>
     ${metodo === 'Efectivo' ? `<div class="etq">Recibido</div><input class="campo num" id="recibido" inputmode="numeric" placeholder="0" oninput="devuelta(${t.total})"><div class="opciones" style="margin-top:8px">${[t.total, Math.ceil(t.total / 500) * 500, Math.ceil(t.total / 1000) * 1000, Math.ceil(t.total / 2000) * 2000].filter((v, i, a) => a.indexOf(v) === i).map(v => `<button class="op" onclick="$('#recibido').value=${v};devuelta(${t.total})">${rd(v)}</button>`).join('')}</div><div id="dev"></div>` : ''}
-    <div class="pie"><button class="btn sec" onclick="cerrar()">Volver</button><button class="btn" id="fin" ${metodo === 'Efectivo' ? 'disabled' : ''} onclick="finalizar()">Terminar venta</button></div>`);
+    <div class="pie"><button class="btn sec" onclick="cerrar()">Volver</button><button class="btn" id="fin" ${metodo === 'Efectivo' ? 'disabled' : ''} onclick="finalizar()">Generar factura</button></div>`);
 }
 function devuelta(total) {
   const r = Number(String($('#recibido').value).replace(/[^\d.]/g, '')) || 0;
@@ -516,9 +516,9 @@ function finalizar() {
   const recibido = metodo === 'Efectivo' ? Number($('#recibido').value) : t.total;
   VENTAS.push({ no, fecha: ahora, cli: clienteSel, lineas: t.ls.map(l => ({ id: l.id, modelo: l.modelo, color: l.color, cant: l.cant, precio: l.u })), metodo });
   t.ls.forEach(l => { const v = l.p.vars.find(x => x.modelo === l.modelo && x.color === l.color); if (v) v.stock = Math.max(0, v.stock - l.cant); });
-  abrirFactura(`<h3>Venta #${String(no).padStart(5, '0')} lista</h3><p class="sub">El inventario ya se descontó.</p>
+  abrirFactura(`<h3>Factura #${String(no).padStart(6, '0')} lista</h3><p class="sub">El inventario ya se descontó.</p>
     ${factura(VENTAS[VENTAS.length - 1], { recibido })}
-    <div class="pie"><button class="btn sec" onclick="toast('En el sistema real se envía el PDF por WhatsApp')">Enviar por WhatsApp</button><button class="btn sec" onclick="window.print()">Imprimir</button><button class="btn" onclick="cerrar()">Nueva venta</button></div>`);
+    <div class="pie"><button class="btn sec" onclick="toast('En el sistema real se envía el PDF por WhatsApp')">Enviar por WhatsApp</button><button class="btn sec" onclick="window.print()">Imprimir</button><button class="btn" onclick="cerrar()">Nueva factura</button></div>`);
   carrito = []; clienteSel = ''; metodo = 'Efectivo'; const c = $('#carrito'); if (c) c.classList.remove('abierto'); pintarCarrito();
 }
 
