@@ -28,6 +28,7 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en NEXUS PRO em
 - `ZERNIO_API_KEY` y cualquier secreto: jamás en frontend, logs, repo, bitácoras ni chat.
 - Cambios visuales: aislados por módulo y reversibles; revisar la cascada `parches-whatsapp-*` antes de añadir capas; nada que reintroduzca FOUC en iPhone.
 - **STUDIO ya no vive aquí**: es `sterlinr08-dte/studio-rd` con su propia base. No añadir nada de STUDIO a este repositorio.
+  - **Excepción decidida por el dueño (07-oct-2026, Fase 1 de `docs/PLAN-POS-DESDE-STUDIO.md`):** se permite portar al POS multiempresa **funciones y código genérico** de STUDIO. Nunca sus datos, su base (`edbknlkjnlfmkkiizdbe`), su dominio, sus teléfonos, su marca (negro y oro, `studio-*.css`, `html.nx-studio`) ni los respaldos `'STUDIO'` en textos: en NEXUS se usa el nombre de la organización. Lista completa de lo que no se porta en la última sección del plan.
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 

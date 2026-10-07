@@ -19,6 +19,21 @@
   }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
+  // Lee una tabla completa en páginas de 1000 (el máximo que entrega la API por consulta). Antes las cargas de
+  // financiamiento tenían tope (300/2000/3000) y al crecer la cartera se perdían justo las cuotas y pagos más nuevos.
+  // Devuelve null si alguna página falla (igual que g() en la carga inicial), para no pintar una cartera incompleta.
+  // Portado de STUDIO (Fase 1 de docs/PLAN-POS-DESDE-STUDIO.md). El RLS de pos_* sigue filtrando por organización.
+  async function getTodasPOS(tabla, qs) {
+    const out = []; const PAG = 1000;
+    try {
+      for (let off = 0; off < 100000; off += PAG) {
+        const r = await getAPI().get(tabla, qs + '&limit=' + PAG + '&offset=' + off) || [];
+        out.push.apply(out, r);
+        if (r.length < PAG) break;
+      }
+      return out;
+    } catch (e) { return null; }
+  }
   function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
   function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
@@ -170,9 +185,9 @@
       g('pos_secuencias', 'select=*&order=tipo.asc'),
       g('pos_acceso', 'select=*'),
       g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
@@ -11481,9 +11496,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function finV2RecargarLedger() {
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
     const [fins, fcuo, finpag, so] = await Promise.all([
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300')
     ]);
     if (fins) _fins = fins; if (fcuo) _finCuotas = fcuo; if (finpag) _finPagos = finpag; if (so) _finSols = so;
