@@ -15,6 +15,14 @@
 - Esa regla protege los **datos y la operación** de STUDIO.
 - Al activar la Fase 1 se escribe la excepción: se permite portar **funciones genéricas** sin datos, sin marca y sin la base de STUDIO.
 
+## Decisiones del dueño (07-oct-2026)
+
+1. **El Financiamiento del POS y Préstamos (`parches-financiamiento.js`) siguen separados.** La Fase 3 completa el Financiamiento del POS dentro del POS, sin unirlo ni tocar Préstamos.
+2. **El CRM con bandeja de mensajes queda «listo por si un cliente quiere comprar ese servicio».**
+   - Se porta como **módulo opcional por empresa**: una bandera en `pos_config`, apagada por defecto, igual que Reacondicionado. Las empresas actuales no notan nada.
+   - **El proveedor de mensajes no queda fijo.** El CRM (embudo, tareas, actividades) funciona sin bandeja. La bandeja se conecta con el proveedor que se elija al vendérselo a cada cliente: Meta Cloud API, como NEXUS hoy, o Zernio, como STUDIO.
+   - Se pasa a la Fase 6 como «listo para activar».
+
 ## Resumen
 
 - STUDIO salió de este mismo POS (sus migraciones 01–14 son idénticas a las de NEXUS).
@@ -92,7 +100,7 @@
 - Financiamiento fácil (35, 36).
 - Recibo REC- y estado de cuenta.
 - Cobranza y reportes.
-- Antes de esta fase hay que decidir si el Financiamiento del POS y Préstamos (`parches-financiamiento.js`) **conviven o se unen**.
+- Decidido: el Financiamiento del POS y Préstamos **siguen separados** (ver Decisiones).
 
 **Fase 4: personas, clientes y configuración.**
 - Las migraciones 46–50 **con el relleno corregido para que vaya por organización**. Hoy, en STUDIO, el relleno de la 48 y la 49 y la línea 52 de la 50 miran la tabla entera, y en NEXUS eso afectaría a otras empresas.
@@ -102,7 +110,7 @@
 
 **Fase 6, opcional por empresa:**
 - Reacondicionado, con una bandera por empresa.
-- CRM con embudo. Antes hay que elegir el proveedor de la bandeja: **Meta Cloud API, que usa NEXUS, o Zernio, que usa STUDIO**.
+- CRM con embudo como módulo vendible, apagado por defecto. El proveedor de la bandeja se elige por cliente (ver Decisiones).
 
 **Después, compartido:** la factura electrónica e-CF con MSeller (ver `docs/ECF-MSELLER.md` en studio-rd), hecha una sola vez para las dos.
 
