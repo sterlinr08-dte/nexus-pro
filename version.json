@@ -1,7 +1,17 @@
 {
-  "version": "59.16",
+  "version": "59.17",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.17",
+      "fecha": "2026-10-07",
+      "notas": [
+        "Punto de Venta, Fase 2 (solo la app; la parte de la base queda para después de probarla).",
+        "El saldo de fiado de cada cliente y el historial de ventas ya no se cortan: antes se perdía lo que pasaba de 1,000 abonos o de 400 ventas.",
+        "Abonos de fiado: la app ya intenta registrarlos y anularlos por el servidor, con número de operación contra los cobros dobles; mientras esa función no exista en la base, cobra exactamente como antes.",
+        "Cuando el servidor anule un abono, en vez de borrarlo deja un movimiento de reverso en rojo; la lista muestra «Anulación» y «Anulado»."
+      ]
+    },
     {
       "version": "59.16",
       "fecha": "2026-10-07",
