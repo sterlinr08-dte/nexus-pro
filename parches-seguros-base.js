@@ -11586,6 +11586,13 @@
   function ensurePager(table) {
     const tbody = table.tBodies && table.tBodies[0];
     if (!tbody) return;
+    // POS Fase 1 (07-oct-2026): las listas del POS marcadas data-pag10 tienen su propio paginador de 10 en 10
+    // (Reglamento 13, parches-pos.js). Aquí no se tocan; si ya se les había puesto el pie, se quita.
+    if (tbody.hasAttribute('data-pag10')) {
+      Array.from(tbody.rows).forEach(r => { if (r.dataset.nxPagerHidden) { r.style.display = ''; delete r.dataset.nxPagerHidden; } });
+      if (table.__nxPagerEl) { table.__nxPagerEl.remove(); table.__nxPagerEl = null; }
+      return;
+    }
     const allRows = Array.from(tbody.rows);
     // Elegibles = filas visibles + las que ocultó el propio paginador
     // (así respetamos filtros de otros módulos que ocultan con display:none)

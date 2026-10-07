@@ -4,7 +4,10 @@
 
 **Alcance:** se pasan **funciones y código genérico**. No se pasan datos, marca, dominio, números ni base de STUDIO.
 
-**Estado:** Fase 0, la auditoría, está **hecha y es solo lectura**. No hay código. **Cada fase de abajo necesita la autorización del dueño.**
+**Estado:**
+- Fase 0 (auditoría, solo lectura): **hecha**.
+- Fase 1: **hecha en la rama `claude/pos-fase1` (59.16), sin publicar.** Ver la bitácora `2026-10-07-0020-claude.md`.
+- **Cada fase de abajo necesita la autorización del dueño.**
 
 **Fuentes:**
 - `main` de `sterlinr08-dte/nexus-pro` (versión 59.15, `parches-pos.js` de unas 12.0k líneas);

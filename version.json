@@ -1,7 +1,23 @@
 {
-  "version": "59.15",
+  "version": "59.16",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.16",
+      "fecha": "2026-10-07",
+      "notas": [
+        "Punto de Venta, Fase 1 del plan para llevar al POS lo que ya tiene STUDIO (solo funciones; nada de sus datos ni su marca).",
+        "Cartera de financiamiento sin tope: antes se cortaba en 300 financiamientos, 2,000 cuotas y 3,000 pagos; ahora se lee completa de 1,000 en 1,000.",
+        "Dinero en el POS con centavos: «RD$ 1,250.00», y una línea «Redondeo» cuando el total se cobra en pesos enteros.",
+        "Buscador con lupa en cualquier lista de 10 o más opciones del POS (artículos, clientes, empleados, cuentas): sin acentos, varias palabras, por código y tolera un error de letra. Fuera del POS no cambia nada.",
+        "Listas de 10 en 10 con números de página; en Clientes y Cotizaciones la búsqueda revisa toda la lista.",
+        "Factura y demás documentos (Prefactura, Cotización, Reparación, Nota de crédito, Apartado y Compra): botones Guardar, Guardar+Imprimir, Guardar+WhatsApp, Imprimir, Anular y Cancelar, con atajos y explicación cuando un botón no se puede usar.",
+        "Asistente de factura: avisa precio bajo el costo y deuda del cliente, sugiere artículos y deja la venta «En espera».",
+        "«Elegir cliente» trae «Crear cliente nuevo» con la ficha de Entidades; al guardar queda elegido.",
+        "En el cobro solo el administrador puede cambiar el cliente que viene de la factura.",
+        "Corregido: el historial crediticio decía «Sin historial de crédito en STUDIO»; ahora dice el nombre del negocio."
+      ]
+    },
     {
       "version": "59.15",
       "fecha": "2026-10-05",

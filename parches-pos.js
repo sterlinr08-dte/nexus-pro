@@ -119,7 +119,10 @@
     if (document.getElementById('nxPosFase1Css')) return;
     const st = document.createElement('style'); st.id = 'nxPosFase1Css';
     st.textContent = `
-#v-pos .nx-invoice-pro .facQs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 2px; }
+/* El pie de la factura es una cuadrícula «1fr 300px»: sin esto, la fila de píldoras del asistente (sin salto de
+   línea) impone su ancho y la factura se sale por la derecha (visto en QA a 1280 px). */
+#v-pos .nx-invoice-pro .facPie > * { min-width: 0; }
+#v-pos .nx-invoice-pro .facQs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px; }
 #v-pos .nx-invoice-pro .facQs::-webkit-scrollbar { display: none; }
 #v-pos .nx-invoice-pro .facQs { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 28px; }
 #v-pos .nx-invoice-pro .facQ { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid #E2E8F0; background: #ffffff; color: #0F172A; font: inherit; cursor: pointer; }
