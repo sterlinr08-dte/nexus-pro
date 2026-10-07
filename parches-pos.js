@@ -1371,7 +1371,9 @@
     } else { reg.favShown = []; reg.recShown = []; }
     const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
     reg.filas = filas; reg.navOrder = navOrder;
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
+    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>`
+      // Fase 1 (portado de STUDIO 59.87): crear el cliente desde aquí con la MISMA ficha de Entidades, y queda elegido.
+      + `<div class="pf2clirow pf2cliNuevo" onclick="window.nxPosCliCrear('${modalId}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b><i class="ti ti-user-plus" aria-hidden="true"></i> Crear cliente nuevo</b><span>${ql ? 'Con «' + esc(String(q).trim()) + '» · ficha completa de Entidades' : 'Ficha completa de Entidades'}</span></div>` + secciones + resultsHtml;
   }
   function nxPosCliRegistrarReciente(modalId, c) {
     const snap = nxPosCliSnap(c);
@@ -3802,6 +3804,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .pf2clirow:hover{background:var(--pf-bg)}
 .nxPf .pf2clirow b{font-size:12.5px;color:var(--pf-txt)}
 .nxPf .pf2clirow span{font-size:10.5px;color:var(--pf-txt3)}
+.pf2cliNuevo b{color:var(--pf-blue,#2563EB)}.pf2cliNuevo b i{font-size:14px;vertical-align:-2px}
 .nxPf .pf2cliinfo{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 16px 3px;font-size:11.5px;color:var(--pf-txt2)}
 .nxPf .card .pf2cliinfo{padding-left:0;padding-right:0}
 .nxPf .pf2cliinfo-i{display:inline-flex;align-items:center;gap:5px;font-weight:600}
