@@ -6,7 +6,7 @@
 
 **Estado:**
 - Fase 0 (auditoría, solo lectura): **hecha**.
-- Fase 1: **hecha en la rama `claude/pos-fase1` (59.16), sin publicar.** Ver la bitácora `2026-10-07-0020-claude.md`.
+- Fase 1: **publicada en 59.16** (PR #400, 07-oct-2026). Ver las bitácoras `2026-10-07-0020-claude.md` y `2026-10-07-0025-claude.md`.
 - **Cada fase de abajo necesita la autorización del dueño.**
 
 **Fuentes:**

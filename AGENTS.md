@@ -32,7 +32,7 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en NEXUS PRO em
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 
-- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **58.85** (22-sep-2026: STUDIO separado, mapa de bases por dominio retirado).
+- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **59.16** (07-oct-2026: POS Fase 1 desde STUDIO, PR #400; ver `docs/PLAN-POS-DESDE-STUDIO.md`).
 - Supabase madre `tnwsgcxurfyuszxsewsn` — NEXUS PRO Seguros.
 - WhatsApp: plantillas aprobadas listadas en `CLAUDE.md`; Inbox corporativo y automatizaciones en producción.
 - Iniciativa abierta: acumulados por agente y ciclo (20 → 20), transferencias entre agentes, notificaciones, cierre por ciclo y consolidado mensual — empezar por la Fase 0 de auditoría descrita en `CLAUDE.md`.
