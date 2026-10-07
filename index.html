@@ -8819,7 +8819,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.15';
+const APP_VERSION='59.16';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8949,7 +8949,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-busqueda-premium.js','parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
+    ['parches-busqueda-premium.js','parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos-buscador.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -16755,6 +16755,7 @@ setTimeout(verificarAutoFacturacion, 5000);
     cargarConReintento('parches-seguros.js');
     cargarConReintento('parches-financiamiento.js');
     cargarConReintento('parches-vehiculos.js');
+    cargarConReintento('parches-pos-buscador.js'); // POS Fase 1 (07-oct-2026): buscador con lupa en las listas de 10+ opciones, solo con el Punto de Venta abierto
     cargarConReintento('parches-pos.js');
     cargarConReintento('parches-pos-stitch-visual.js');
     cargarConReintento('parches-rifas.js');

@@ -28,10 +28,11 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en NEXUS PRO em
 - `ZERNIO_API_KEY` y cualquier secreto: jamás en frontend, logs, repo, bitácoras ni chat.
 - Cambios visuales: aislados por módulo y reversibles; revisar la cascada `parches-whatsapp-*` antes de añadir capas; nada que reintroduzca FOUC en iPhone.
 - **STUDIO ya no vive aquí**: es `sterlinr08-dte/studio-rd` con su propia base. No añadir nada de STUDIO a este repositorio.
+  - **Excepción decidida por el dueño (07-oct-2026, Fase 1 de `docs/PLAN-POS-DESDE-STUDIO.md`):** se permite portar al POS multiempresa **funciones y código genérico** de STUDIO. Nunca sus datos, su base (`edbknlkjnlfmkkiizdbe`), su dominio, sus teléfonos, su marca (negro y oro, `studio-*.css`, `html.nx-studio`) ni los respaldos `'STUDIO'` en textos: en NEXUS se usa el nombre de la organización. Lista completa de lo que no se porta en la última sección del plan.
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 
-- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **58.85** (22-sep-2026: STUDIO separado, mapa de bases por dominio retirado).
+- Producción: `https://nexusprord.com` = Worker Cloudflare `nexus-pro`. Versión publicada: **59.16** (07-oct-2026: POS Fase 1 desde STUDIO, PR #400; ver `docs/PLAN-POS-DESDE-STUDIO.md`).
 - Supabase madre `tnwsgcxurfyuszxsewsn` — NEXUS PRO Seguros.
 - WhatsApp: plantillas aprobadas listadas en `CLAUDE.md`; Inbox corporativo y automatizaciones en producción.
 - Iniciativa abierta: acumulados por agente y ciclo (20 → 20), transferencias entre agentes, notificaciones, cierre por ciclo y consolidado mensual — empezar por la Fase 0 de auditoría descrita en `CLAUDE.md`.

@@ -17,8 +17,299 @@
     o = o || {};
     return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
   }
-  function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  // Dinero (Fase 1, portado de STUDIO 59.87: «RD$ 1,250.00»): signo, coma de miles y siempre dos decimales.
+  // Solo cambia lo que se MUESTRA en el POS; los montos guardados y las reglas de cobro en pesos enteros no cambian.
+  function fmt(n) { const v = Math.round(Number(n || 0) * 100) / 100; return (v < 0 ? '-RD$ ' : 'RD$ ') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  // Teléfono legible: 8095551234 → 809-555-1234 (10 dígitos; si no, se deja como está).
+  function fmtTel(t) { const d = String(t || '').replace(/\D/g, ''); const x = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return x.length === 10 ? x.slice(0, 3) + '-' + x.slice(3, 6) + '-' + x.slice(6) : String(t || ''); }
+  // Filtro instantáneo de una tabla por texto (sin volver a pintar: no se pierde el foco del buscador).
+  function normBusca(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  // ── Reglamento 13 (dueño 06-oct-2026: «apilar siempre de 10 en 10») ──
+  // Toda lista que se recorre en pantalla muestra 10 registros por página, con «1–10 de N» y los números de página.
+  // Uso: marcar el contenedor de las filas con data-pag10="clave" (un <tbody> o una caja de tarjetas). Cada hijo es una
+  // fila; data-p10-fijo deja una fila siempre visible (aviso «sin resultados», encabezado). La búsqueda de
+  // nxFiltrarFilas busca en TODAS las filas y pagina lo que coincide. La página se recuerda por clave y vuelve a la 1
+  // cuando cambia la cantidad de filas (otro filtro u otra búsqueda). Se aplica solo al pintar (MutationObserver).
+  const P10 = 10;
+  const _p10 = {}, _p10N = {};
+  function pag10Css() {
+    if (document.getElementById('nxP10Css')) return;
+    const st = document.createElement('style'); st.id = 'nxP10Css';
+    st.textContent = '.nxP10{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 4px 2px;font-size:12px;color:#64748B}'
+      + '.nxP10 b{color:#0F172A;font-variant-numeric:tabular-nums}.nxP10B{display:flex;gap:4px;flex-wrap:wrap}'
+      + '.nxP10 button{min-width:34px;height:34px;padding:0 8px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;color:#0F172A;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}'
+      + '.nxP10 button.on{background:#2563EB;color:#fff;border-color:#2563EB}.nxP10 button:disabled{opacity:.35;cursor:default}.nxP10 .dots{align-self:center;padding:0 2px}'
+      + 'html.tema-glass-oscuro .nxP10,body.tema-premium .nxP10{color:#BCC7D6}html.tema-glass-oscuro .nxP10 b,body.tema-premium .nxP10 b{color:#F1F5F9}'
+      + 'html.tema-glass-oscuro .nxP10 button:not(.on),body.tema-premium .nxP10 button:not(.on){background:#121826;color:#F1F5F9;border-color:rgba(255,255,255,.12)}'
+      + '[data-p10-oculta]{display:none}';
+    document.head.appendChild(st);
+  }
+  function pag10Aplicar(cont) {
+    const clave = cont.getAttribute('data-pag10'); if (!clave) return;
+    pag10Css();
+    const filas = Array.from(cont.children).filter(el => !el.hasAttribute('data-p10-fijo') && !el.classList.contains('nxSinRes') && !el.classList.contains('nxP10'));
+    const visibles = filas.filter(el => !el.hasAttribute('data-p10-fuera'));
+    const n = visibles.length, pags = Math.max(1, Math.ceil(n / P10));
+    if (_p10N[clave] !== n) { if (_p10N[clave] != null) _p10[clave] = 1; _p10N[clave] = n; }
+    const p = Math.min(Math.max(1, _p10[clave] || 1), pags); _p10[clave] = p;
+    const desde = (p - 1) * P10, hasta = desde + P10;
+    filas.forEach(el => el.setAttribute('data-p10-oculta', '1'));
+    visibles.slice(desde, hasta).forEach(el => el.removeAttribute('data-p10-oculta'));
+    // el pie va debajo de la tabla (o de la caja de tarjetas)
+    const ancla = cont.tagName === 'TBODY' ? (cont.closest('.card, .tw, .ltblWrap') || cont.closest('table')) : cont;
+    let pie = ancla.nextElementSibling && ancla.nextElementSibling.classList.contains('nxP10') && ancla.nextElementSibling.getAttribute('data-de') === clave ? ancla.nextElementSibling : null;
+    if (n <= P10) { if (pie) pie.remove(); return; }
+    if (!pie) { pie = document.createElement('div'); pie.className = 'nxP10'; pie.setAttribute('data-de', clave); ancla.after(pie); }
+    const nums = [...new Set([1, pags, p - 1, p, p + 1].filter(x => x >= 1 && x <= pags))].sort((a, b) => a - b);
+    let b = `<button type="button" aria-label="Página anterior" ${p <= 1 ? 'disabled' : ''} onclick="window.nxPag10('${clave}',${p - 1})">‹</button>`, prev = 0;
+    nums.forEach(x => { if (prev && x - prev > 1) b += '<span class="dots">…</span>'; b += `<button type="button" class="${x === p ? 'on' : ''}" ${x === p ? 'aria-current="page"' : ''} onclick="window.nxPag10('${clave}',${x})">${x}</button>`; prev = x; });
+    b += `<button type="button" aria-label="Página siguiente" ${p >= pags ? 'disabled' : ''} onclick="window.nxPag10('${clave}',${p + 1})">›</button>`;
+    pie.innerHTML = `<span><b>${desde + 1}–${Math.min(hasta, n)}</b> de <b>${n.toLocaleString('en-US')}</b></span><div class="nxP10B">${b}</div>`;
+  }
+  window.nxPag10 = function (clave, p) {
+    _p10[clave] = p;
+    document.querySelectorAll(`[data-pag10="${clave}"]`).forEach(c => {
+      pag10Aplicar(c);
+      const top = (c.tagName === 'TBODY' ? c.closest('table') : c); if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  };
+  window.nxPag10Aplicar = function (raiz) { (raiz || document).querySelectorAll('[data-pag10]').forEach(pag10Aplicar); };
+  (function () {
+    let pend = false;
+    const correr = () => { pend = false; window.nxPag10Aplicar(document); };
+    // NEXUS: data-pag10 solo existe en el POS; con el POS cerrado no se revisa nada (WhatsApp y Seguros mutan mucho).
+    const obs = new MutationObserver(muts => {
+      if (pend) return;
+      const vp = document.getElementById('v-pos'); if (!vp || !vp.classList.contains('on')) return;
+      for (const m of muts) {
+        if (m.target.closest && m.target.closest('.nxP10')) continue;
+        for (const nd of m.addedNodes) {
+          if (nd.nodeType === 1 && !nd.classList.contains('nxP10') && (nd.hasAttribute('data-pag10') || nd.querySelector('[data-pag10]') || (nd.parentElement && nd.parentElement.hasAttribute('data-pag10')))) { pend = true; requestAnimationFrame(correr); return; }
+        }
+      }
+    });
+    const iniciar = () => obs.observe(document.body, { childList: true, subtree: true });
+    if (document.body) iniciar(); else document.addEventListener('DOMContentLoaded', iniciar);
+  })();
+  window.nxFiltrarFilas = function (tablaId, q) {
+    const n = normBusca(q).trim(); const tb = document.getElementById(tablaId); if (!tb) return; let vis = 0;
+    tb.querySelectorAll('tr[data-q]').forEach(tr => { const ok = !n || tr.getAttribute('data-q').indexOf(n) >= 0 || tr.getAttribute('data-q').replace(/\D/g, '').indexOf(n.replace(/\D/g, '') || '§') >= 0; tr.style.display = ok ? '' : 'none'; if (ok) vis++; });
+    const v = tb.querySelector('tr.nxSinRes'); if (v) v.style.display = vis ? 'none' : '';
+    if (tb.hasAttribute('data-pag10')) {
+      // Lista de 10 en 10: la búsqueda marca las filas que no coinciden y la página vuelve a la 1
+      tb.querySelectorAll('tr[data-q]').forEach(tr => { if (tr.style.display === 'none') { tr.setAttribute('data-p10-fuera', '1'); } else tr.removeAttribute('data-p10-fuera'); tr.style.display = ''; });
+      _p10[tb.getAttribute('data-pag10')] = 1; pag10Aplicar(tb);
+    }
+  };
+  // Fila de búsqueda sobre una lista (Clientes, Cotizaciones). Colores de NEXUS (DESIGN.md).
+  (function () {
+    if (document.getElementById('nxBuscaFilaCss')) return;
+    const st = document.createElement('style'); st.id = 'nxBuscaFilaCss';
+    st.textContent = '.nxPf .toolbar2.nxConBusca{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}'
+      + '.nxPf .nxBuscaFila{flex:1 1 260px;max-width:460px;display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:1px solid var(--pf-line,#E2E8F0);border-radius:12px;background:var(--pf-panel,#fff)}'
+      + '.nxPf .nxBuscaFila:focus-within{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.18)}'
+      + '.nxPf .nxBuscaFila i{color:var(--pf-txt2,#64748B);font-size:17px}'
+      + '.nxPf .nxBuscaFila input,.nxPf .nxBuscaFila input:focus{flex:1;min-width:0;border:0!important;outline:0;box-shadow:none!important;background:transparent!important;font:inherit;font-size:16px;color:var(--pf-txt,#0F172A);text-transform:none;padding:0;height:auto;border-radius:0}';
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
+  // Estilos de la Fase 1 (07-oct-2026): acciones inteligentes de Factura y documentos, asistente de factura y cliente
+  // fijo en el cobro. Portados de STUDIO (studio-brand-theme.css §19–§20) con los colores de NEXUS (DESIGN.md).
+  (function () {
+    if (document.getElementById('nxPosFase1Css')) return;
+    const st = document.createElement('style'); st.id = 'nxPosFase1Css';
+    st.textContent = `
+/* El pie de la factura es una cuadrícula «1fr 300px»: sin esto, la fila de píldoras del asistente (sin salto de
+   línea) impone su ancho y la factura se sale por la derecha (visto en QA a 1280 px). */
+#v-pos .nx-invoice-pro .facPie > * { min-width: 0; }
+#v-pos .nx-invoice-pro .facQs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px; }
+#v-pos .nx-invoice-pro .facQs::-webkit-scrollbar { display: none; }
+#v-pos .nx-invoice-pro .facQs { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 28px; }
+#v-pos .nx-invoice-pro .facQ { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid #E2E8F0; background: #ffffff; color: #0F172A; font: inherit; cursor: pointer; }
+#v-pos .nx-invoice-pro .facQ i { font-size: 15px; line-height: 1; }
+#v-pos .nx-invoice-pro .facQ b { font-size: 12px; font-weight: 600; white-space: nowrap; }
+#v-pos .nx-invoice-pro .facQ:hover:not(:disabled) { border-color: #2563EB; }
+#v-pos .nx-invoice-pro .facQ:focus-visible { outline: 2px solid #2563EB; outline-offset: 1px; }
+#v-pos .nx-invoice-pro .facQ:disabled { opacity: .4; cursor: default; }
+#v-pos .nx-invoice-pro .facQDanger i { color: #b42318; }
+#v-pos .nx-invoice-pro .facQDanger:hover:not(:disabled) { border-color: #b42318; }
+/* Asistente: cada aviso en UNA línea; lo completo va en el título (al pasar el dedo/ratón). */
+#v-pos .nx-invoice-pro .facSug { display: flex; flex-direction: column; gap: 4px; }
+#v-pos .nx-invoice-pro .facSugIt { --tono: #475569; --fondo: #F8FAFC; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 3px 4px 3px 10px; border-radius: 9px; background: var(--fondo); }
+#v-pos .nx-invoice-pro .facSugIt.warn { --tono: #b54708; --fondo: #fffaeb; }
+#v-pos .nx-invoice-pro .facSugIt.bad { --tono: #b42318; --fondo: #fef3f2; }
+#v-pos .nx-invoice-pro .facSugIt.acc { --tono: #1D4ED8; --fondo: #EFF6FF; }
+#v-pos .nx-invoice-pro .facSugIt > i { font-size: 16px; color: var(--tono); flex: none; }
+#v-pos .nx-invoice-pro .facSugTx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+#v-pos .nx-invoice-pro .facSugIt.ch .facSugTx { flex: none; }
+#v-pos .nx-invoice-pro .facSugTx b { font-weight: 600; color: #0F172A; }
+#v-pos .nx-invoice-pro .facSugTx small { font-size: 11.5px; color: #475569; margin-left: 6px; }
+#v-pos .nx-invoice-pro .facSugA { flex: none; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--tono); background: #ffffff; color: var(--tono); font: 600 12px inherit; cursor: pointer; white-space: nowrap; }
+#v-pos .nx-invoice-pro .facSugA:hover { background: var(--tono); color: #ffffff; }
+#v-pos .nx-invoice-pro .facSugCh { flex: 1; min-width: 0; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+#v-pos .nx-invoice-pro .facSugCh::-webkit-scrollbar { display: none; }
+#v-pos .nx-invoice-pro .facSugCh button { flex: none; display: inline-flex; align-items: center; gap: 4px; max-width: 230px; height: 28px; padding: 0 9px; border-radius: 999px; border: 1px solid rgba(37, 99, 235, .35); background: #ffffff; color: #0F172A; font: 600 12px inherit; cursor: pointer; white-space: nowrap; }
+#v-pos .nx-invoice-pro .facSugCh button:hover { border-color: #2563EB; }
+#v-pos .nx-invoice-pro .facSugCh button i { color: #1D4ED8; font-size: 13px; }
+#v-pos .nx-invoice-pro .facSugCh .nm { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#v-pos .nx-invoice-pro .facSugCh small { flex: none; font: 500 11px var(--nx-code, ui-monospace, monospace); color: #475569; }
+#v-pos .nx-invoice-pro .facSugMas { align-self: flex-start; border: 0; background: none; padding: 2px 4px; font: 600 11.5px inherit; color: #475569; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* Últimas facturas: una línea por factura. */
+#v-pos .nx-invoice-pro .facUlt { border-top: 1px solid #E2E8F0; padding-top: 8px; }
+#v-pos .nx-invoice-pro .facUlt .plab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+#v-pos .nx-invoice-pro .facUltMas { border: 0; background: none; padding: 0; font: 600 11.5px inherit; color: #0F172A; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+#v-pos .nx-invoice-pro .facUltR { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 34px; padding: 2px 2px; border-bottom: 1px solid #E2E8F0; cursor: pointer; color: #0F172A; }
+#v-pos .nx-invoice-pro .facUltR:last-child { border-bottom: 0; }
+#v-pos .nx-invoice-pro .facUltR:hover { background: #F8FAFC; }
+#v-pos .nx-invoice-pro .facUltR .n { font: 600 12px var(--nx-code, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+#v-pos .nx-invoice-pro .facUltR .c { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#v-pos .nx-invoice-pro .facUltR .c small { font-size: 11px; font-weight: 400; color: #64748B; margin-left: 6px; }
+#v-pos .nx-invoice-pro .facUltR b { font: 600 12.5px var(--nx-code, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+#v-pos .nx-invoice-pro .facUltR.an { color: #64748B; }
+#v-pos .nx-invoice-pro .facUltR.an b { text-decoration: line-through; }
+#v-pos .nx-invoice-pro .facUltAc { display: flex; gap: 3px; }
+#v-pos .nx-invoice-pro .facUltAc button { width: 28px; height: 28px; border-radius: 7px; border: 1px solid transparent; background: none; color: #475569; display: grid; place-items: center; cursor: pointer; }
+#v-pos .nx-invoice-pro .facUltAc button:hover { color: #0F172A; border-color: #E2E8F0; background: #ffffff; }
+#v-pos .nx-invoice-pro .facUltAc button.dg:hover { color: #b42318; border-color: #b42318; }
+@container (max-width: 380px) { #v-pos .nx-invoice-pro .facUltR { grid-template-columns: minmax(0, 1fr) auto auto; } #v-pos .nx-invoice-pro .facUltR .n, #v-pos .nx-invoice-pro .facUltR .c small, #v-pos .nx-invoice-pro .facSugTx small { display: none; } }
+#v-pos .nx-invoice-pro .facUltV { font-size: 12.5px; color: #64748B; padding: 6px 4px; }
+/* Cliente fijo (roles que no son administrador): se ve, no se toca */
+#nxPosPago .nxPgCliFijo { cursor: default; border-style: dashed; }
+
+#nxPosPago .nxPgCliFijo > .ti-lock { color: #94A3B8; font-size: 15px; flex: none; }
+/* ── §19 Factura: acciones inteligentes (59.12) ──────────────────────────────
+   Guardar · Guardar+Imprimir · Guardar+WhatsApp · Imprimir · Anular · Cancelar. Cada botón lleva en
+   su title/aria-label lo que va a hacer; si no se puede, se ve atenuado y al tocarlo explica por qué. */
+.nxFacBar6 { gap: 6px; align-items: center; container-type: inline-size; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+.nxFacBar6 .fbMas { display: none; width: 38px; height: 38px; padding: 0; }
+.nxFacBar6 .fbT { flex: 1 0 auto; overflow: visible; }
+.nxFacBar6 .fbT b { font-size: 18px; }
+.nxFacBar6 .fbA { height: 38px; padding: 0 11px; gap: 6px; border-radius: 9px; font-size: 13px; font-weight: 600; flex: 0 0 auto; background: #ffffff; border: 1px solid #E2E8F0; color: #0F172A; box-shadow: none; }
+.nxFacBar6 .fbA i { font-size: 15px; line-height: 1; }
+.nxFacBar6 .fbA:hover { border-color: #0F172A; }
+.nxFacBar6 .fbA:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+.nxFacBar6 .fbA kbd { font: 600 9.5px/1 var(--nx-code, ui-monospace, monospace); padding: 2px 4px; border-radius: 4px; border: 1px solid currentColor; opacity: .45; }
+.nxFacBar6 .fbA[aria-disabled="true"] { opacity: .42; box-shadow: none; }
+.nxFacBar6 .fbA[aria-disabled="true"]:hover { border-color: #E2E8F0; }
+.nxFacBar6 .fbS { color: #475569; }
+.nxFacBar6 .fbDanger i { color: #b42318; }
+.nxFacBar6 .fbDanger:not([aria-disabled="true"]):hover { background: #fef3f2; border-color: #b42318; color: #b42318; }
+.nxFacBar6 .fbW i { color: #16a34a; }
+.nxFacBar6 .fbG2 { background: #0F172A; border-color: #0F172A; color: #FFFFFF; }
+.nxFacBar6 .fbG2:hover { background: #1E293B; }
+.nxFacBar6 .fbA.fbP { min-width: 0; padding: 0 16px; border: 0; }
+/* Qué se muestra depende del ANCHO DE LA BARRA (que es el de la ventana de factura), no de la pantalla. */
+@container (max-width: 1120px) { .nxFacBar6 .fbA kbd { display: none; } }
+@container (max-width: 940px) {
+  /* Anular sigue a la vista (pedido del dueño 25-sep), solo con su icono; Cancelar queda en «…». */
+  .nxFacBar6 .fbA[data-k="cancelar"] { display: none; }
+  .nxFacBar6 .fbA[data-k="anular"] { width: 38px; padding: 0; justify-content: center; }
+  .nxFacBar6 .fbA[data-k="anular"] .fbL { display: none; }
+  .nxFacBar6 .fbMas { display: inline-flex; }
+}
+@container (max-width: 720px) {
+  .nxFacBar6 .fbA:not(.fbP) .fbL { display: none; }
+  .nxFacBar6 .fbA:not(.fbP) { width: 38px; padding: 0; }
+}
+@container (max-width: 520px) {
+  .nxFacBar6 .fbA[data-k="reimp"], .nxFacBar6 .fbA[data-k="imprimir"] { display: none; }
+}
+@container (max-width: 420px) { .nxFacBar6 .fbT small { display: none; } .nxFacBar6 .fbT b { font-size: 16px; } }
+/* Estado de la factura en el pie: qué falta, formato de impresión, última guardada. */
+#v-pos .facSmart { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid #E2E8F0; }
+.facSmart .fsE, .nxFacAccM .fsE { display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.35; color: #475569; padding: 8px 10px; border-radius: 9px; background: #F1F5F9; }
+.facSmart .fsE i { font-size: 16px; flex: 0 0 auto; }
+.facSmart .fsE span { flex: 1 1 auto; min-width: 0; }
+.facSmart .fsE.ok { background: #f0fdf4; color: #166534; }
+.facSmart .fsE.warn { background: #fffaeb; color: #93370d; }
+.facSmart .fsE button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+.facSmart .fsF, .nxFacAccM .fsF { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: #64748B; }
+.fsSeg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 9px; background: #E2E8F0; }
+.fsSeg button { border: 0; background: transparent; color: #475569; font: 600 12px inherit; padding: 5px 10px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.fsSeg button.on { background: #0F172A; color: #FFFFFF; }
+
+/* Hoja de acciones (⋯) */
+.nxFacAccM { max-width: 440px; width: 100%; padding: 8px 8px 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 2px; }
+.nxFacAccM .fahd { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px 8px; }
+.nxFacAccM .fahd b { font-size: 15px; color: #0F172A; }
+.nxFacAccM .fahd span { font: 600 15px var(--nx-code, ui-monospace, monospace); font-variant-numeric: tabular-nums; color: #0F172A; }
+.nxFacAccM .faIt { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left; width: 100%; min-height: 58px; padding: 8px 12px; border: 0; border-radius: 12px; background: transparent; color: #0F172A; font-family: inherit; cursor: pointer; }
+.nxFacAccM .faIt:hover, .nxFacAccM .faIt:focus-visible { background: #F1F5F9; outline: none; }
+.nxFacAccM .faIt > i { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: #F1F5F9; color: #0F172A; }
+.nxFacAccM .faIt.fbP > i { background: #2563EB; color: #FFFFFF; }
+.nxFacAccM .faIt.fbG2 > i { background: #0F172A; color: #FFFFFF; }
+.nxFacAccM .faIt.fbW > i { color: #16a34a; }
+.nxFacAccM .faIt.fbDanger > i { color: #b42318; background: #fef3f2; }
+.nxFacAccM .faIt span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nxFacAccM .faIt b { font-size: 14px; font-weight: 600; }
+.nxFacAccM .faIt small { font-size: 12px; line-height: 1.35; color: #475569; }
+.nxFacAccM .faIt kbd { font: 600 10px/1 var(--nx-code, ui-monospace, monospace); padding: 3px 5px; border: 1px solid #E2E8F0; border-radius: 4px; color: #64748B; }
+.nxFacAccM .faIt[aria-disabled="true"] { opacity: .45; }
+.nxFacAccM .faFmt { padding: 10px 12px 0; margin-top: 6px; border-top: 1px solid #E2E8F0; }
+@media (max-width: 760px) {
+  #nxFacAccSheet { align-items: flex-end; }
+  .nxFacAccM { border-radius: 18px 18px 0 0; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
+
+/* ── §20 Acciones inteligentes en las demás ventanas (59.13) ─────────────────
+   Prefactura y Compra usan la barra fija (.nxFacBar6). Cotización, Reparación, Nota de crédito y
+   Apartado llevan el mismo juego de botones en el pie de la ventana (.docAcc), con una línea que
+   explica qué hace el botón que tienes encima. */
+.docAcc { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid #E2E8F0; background: #ffffff; }
+.docAccBtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.docAcc .fbA { height: 44px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; font: 600 13.5px inherit; white-space: nowrap; cursor: pointer; background: #ffffff; border: 1px solid #E2E8F0; color: #0F172A; box-shadow: none; }
+.docAcc .fbA i { font-size: 17px; }
+.docAcc .fbA:hover { border-color: #0F172A; }
+.docAcc .fbA:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+.docAcc .fbA kbd { display: none; }
+.docAcc .fbA[aria-disabled="true"] { opacity: .42; box-shadow: none; }
+.docAcc .fbS { color: #475569; }
+.docAcc .fbW i { color: #16a34a; }
+.docAcc .fbG2 { background: #0F172A; border-color: #0F172A; color: #FFFFFF; }
+.docAcc .fbA.fbP { background: #2563EB; border: 0; color: #FFFFFF; box-shadow: none; }
+.docAcc .fbA[data-k="cancelar"] { margin-right: auto; }
+.docAccWhy { min-height: 16px; font-size: 12px; line-height: 1.35; color: #475569; text-align: right; text-transform: none; letter-spacing: 0; }
+.docAcc { container-type: inline-size; }
+@container (min-width: 561px) and (max-width: 700px) {
+  .docAccBtns { gap: 6px; }
+  .docAcc .fbA { padding: 0 10px; font-size: 13px; }
+  .docAcc .fbA.fbS { width: 44px; padding: 0; }
+  .docAcc .fbA.fbS .fbL { display: none; }
+}
+@media (max-width: 560px) {
+  .docAccBtns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docAcc .fbA { padding: 0 8px; font-size: 13px; }
+  .docAcc .fbA kbd { display: none; }
+  .docAcc .fbA.fbP { grid-column: 1 / -1; order: -1; }
+  .docAcc .fbA[data-k="cancelar"] { margin-right: 0; order: 9; }
+  .docAccBtns:has(> :nth-child(4):last-child) .fbA[data-k="cancelar"] { grid-column: 1 / -1; }
+  .docAccWhy { text-align: left; }
+}
+
+/* Temas oscuros de NEXUS (glass oscuro / premium): superficies y texto */
+html.tema-glass-oscuro .nxFacBar6 .fbA:not(.fbP):not(.fbG2), body.tema-premium .nxFacBar6 .fbA:not(.fbP):not(.fbG2), html.tema-glass-oscuro .docAcc .fbA:not(.fbP):not(.fbG2), body.tema-premium .docAcc .fbA:not(.fbP):not(.fbG2), html.tema-glass-oscuro #v-pos .nx-invoice-pro .facQ, body.tema-premium #v-pos .nx-invoice-pro .facQ { background: #121826; color: #F1F5F9; border-color: rgba(255, 255, 255, .14); }
+html.tema-glass-oscuro .docAcc, body.tema-premium .docAcc { background: #121826; border-color: rgba(255, 255, 255, .10); }
+html.tema-glass-oscuro .facSmart .fsE, body.tema-premium .facSmart .fsE, html.tema-glass-oscuro .nxFacAccM .faIt > i, body.tema-premium .nxFacAccM .faIt > i { background: #0B0F19; color: #E2E8F0; }
+html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-pos .nx-invoice-pro .facSugTx b, html.tema-glass-oscuro #v-pos .nx-invoice-pro .facUltR, body.tema-premium #v-pos .nx-invoice-pro .facUltR, html.tema-glass-oscuro .nxFacAccM .faIt, body.tema-premium .nxFacAccM .faIt, html.tema-glass-oscuro .nxFacAccM .fahd b, body.tema-premium .nxFacAccM .fahd b { color: #F1F5F9; }
+`;
+    (document.head || document.documentElement).appendChild(st);
+  })();
   function hoy() { return new Date().toISOString().slice(0, 10); }
+  // Lee una tabla completa en páginas de 1000 (el máximo que entrega la API por consulta). Antes las cargas de
+  // financiamiento tenían tope (300/2000/3000) y al crecer la cartera se perdían justo las cuotas y pagos más nuevos.
+  // Devuelve null si alguna página falla (igual que g() en la carga inicial), para no pintar una cartera incompleta.
+  // Portado de STUDIO (Fase 1 de docs/PLAN-POS-DESDE-STUDIO.md). El RLS de pos_* sigue filtrando por organización.
+  async function getTodasPOS(tabla, qs) {
+    const out = []; const PAG = 1000;
+    try {
+      for (let off = 0; off < 100000; off += PAG) {
+        const r = await getAPI().get(tabla, qs + '&limit=' + PAG + '&offset=' + off) || [];
+        out.push.apply(out, r);
+        if (r.length < PAG) break;
+      }
+      return out;
+    } catch (e) { return null; }
+  }
   function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
   function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
@@ -26,6 +317,8 @@
   function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
   function nomAdmin() { try { return (window.sesion && window.sesion.nom) || 'Admin'; } catch (e) { return 'Admin'; } }
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
+  // Nombre del negocio para mensajes y documentos nuevos (Fase 1): el de la organización; nunca un nombre fijo.
+  function bizNom() { try { const _s = curSesPOS(); return (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio'; } catch (e) { return empNom() || 'Mi negocio'; } }
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
   function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
   function authUidPOS() {
@@ -102,7 +395,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
-  let _prodQ = '', _prodPage = 1, _prodPageSize = 15, _prodSel = new Set(); // buscador/paginación/selección de la tabla premium de Inventario
+  let _prodQ = '', _prodPage = 1, _prodPageSize = 10, _prodSel = new Set(); // buscador/paginación/selección de la tabla premium de Inventario
   let _impModo = 'nuevos'; // modal Importar (Productos): nuevos (Infoplus, pegar) | precios (CSV, actualizar existentes)
   let _niveles = [], _prodNiveles = []; // Niveles de precio ilimitados por org (pos_niveles_precio) + precio de cada producto en cada nivel (pos_producto_niveles)
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
@@ -170,9 +463,9 @@
       g('pos_secuencias', 'select=*&order=tipo.asc'),
       g('pos_acceso', 'select=*'),
       g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
@@ -406,8 +699,11 @@
   function totales() {
     let total = 0, itbis = 0, descuento = 0;
     _cart.forEach(it => { const imp = lineImporte(it); descuento += lineDescMonto(it); total += imp; if (it.itbis) itbis += imp * 18 / 118; });
+    // La venta se cobra en pesos enteros (regla de siempre). Con los centavos visibles (59.87), la diferencia se
+    // muestra como «Redondeo» para que la suma de las líneas cuadre con el total.
+    const bruto = total;
     total = Math.round(total); itbis = Math.round(itbis); descuento = Math.round(descuento);
-    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
+    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento, redondeo: Math.round((total - bruto) * 100) / 100, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
   }
   function catNombre(id) { const c = _cats.find(x => String(x.id) === String(id)); return c ? c.nombre : ''; }
 
@@ -1028,8 +1324,9 @@
         <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span><div style="display:flex;align-items:center"><button type="button" class="cartsuspbadge" onclick="window.nxVentaSuspLista()" title="Ventas suspendidas" aria-label="Ver ventas suspendidas"><i class="ti ti-player-pause"></i>${_ventasSusp.length ? `<b>${_ventasSusp.length}</b>` : ''}</button>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div></div>
         <div class="cartlist">${filas}</div>
         <div class="carttotals">
-          <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
+          <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal - (t.redondeo || 0))}</span></div>
           <div class="cartrow"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
+          ${t.redondeo ? `<div class="cartrow"><span>Redondeo</span><span>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</span></div>` : ''}
           <div class="cartpaytot"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
         </div>
         <div class="cartsave">
@@ -1104,6 +1401,133 @@
       </div>
     </div>`;
   }
+  // «Otras acciones» (pedido del dueño 25-sep): accesos a lo que se hace ALREDEDOR de una factura
+  // —buscar, anular, devolver, cotizar— más las últimas facturas a un toque. Solo reutiliza funciones
+  // existentes (nxFacHist, nxPosAnularVenta vía nxFacAnularId, nxDevNueva, nxCotGuardarDesdeCart).
+  let _facRecientes = null, _facRecCargando = false;
+  function facOtrasHTML() {
+    const hay = _cart.length > 0, pre = esPreTab(), anul = facPuedeAnular();
+    const sug = pre ? [] : facSugerencias();
+    const q = (ic, lbl, fn, on, cls, tip) => `<button type="button" class="facQ${cls ? ' ' + cls : ''}"${on ? '' : ' disabled'} title="${esc(tip || lbl)}" onclick="${fn}"><i class="ti ${ic}" aria-hidden="true"></i><b>${lbl}</b></button>`;
+    const vis = _facSugTodas ? sug : sug.slice(0, 2), mas = sug.length - vis.length;
+    return (sug.length ? `<div class="facSug">${vis.map(facSugHTML).join('')}${mas > 0 ? `<button type="button" class="facSugMas" onclick="window.nxFacSugTodas(true)">+${mas} aviso${mas === 1 ? '' : 's'} más</button>` : _facSugTodas && sug.length > 2 ? `<button type="button" class="facSugMas" onclick="window.nxFacSugTodas(false)">Ver menos</button>` : ''}</div>` : '')
+      + `<div class="facQs" role="toolbar" aria-label="Acciones">`
+      + q('ti-search', 'Buscar', 'window.nxFacHist()', true, '', 'Buscar una factura por número o cliente')
+      + (pre ? '' : q('ti-ban', 'Anular', "window.nxFacHist('anular')", anul, 'facQDanger', anul ? 'Anular una factura' : 'Solo el administrador o el gerente puede anular'))
+      + (pre ? '' : q('ti-receipt-refund', 'Devolución', "window.nxFacHist('nc')", true, '', 'Devolución / nota de crédito'))
+      + (pre ? '' : q('ti-player-pause', 'En espera', 'window.nxVentaSuspender()', hay, '', 'Guarda esta venta y atiende a otro cliente'))
+      + q('ti-clipboard-text', 'Cotización', 'window.nxCotGuardarDesdeCart()', hay, '', 'Guardar como cotización')
+      + q('ti-files', 'Prefacturas', "window.nxPosTab('prefhist')", true)
+      + q('ti-history', 'Historial', "window.nxPosTab('ventas')", true)
+      + q('ti-trash', 'Limpiar', 'window.nxPosVaciar();window.nxFacRepaint()', hay, '', 'Limpiar carrito')
+      + `</div>`;
+  }
+  // ── Asistente de la factura: avisos y atajos según lo que hay EN PANTALLA (cliente, artículos,
+  // pendientes). Todo sale de datos ya cargados o de lecturas; ninguna tarjeta cobra ni guarda sola:
+  // cada una solo llama a una función existente cuando el usuario la toca.
+  let _facSugTodas = false;
+  window.nxFacSugTodas = function (v) { _facSugTodas = !!v; facSugRepintar(); };
+  function facSugHTML(x) {
+    const acc = x.chips ? `<div class="facSugCh">${x.chips.map(c => `<button type="button" onclick="${c.fn}"><i class="ti ti-plus" aria-hidden="true"></i><span class="nm">${esc(c.lbl)}</span><small>${esc(c.sub)}</small></button>`).join('')}</div>`
+      : x.a ? `<button type="button" class="facSugA" onclick="${x.fn}">${esc(x.a)}</button>` : '';
+    const tip = String(x.t + (x.s ? ' · ' + x.s : '')).replace(/<[^>]*>/g, '');
+    return `<div class="facSugIt ${x.tone || ''}${x.chips ? ' ch' : ''}" title="${tip}"><i class="ti ${x.ic}" aria-hidden="true"></i><span class="facSugTx"><b>${x.t}</b>${x.s && !x.chips ? `<small>${x.s}</small>` : ''}</span>${acc}</div>`;
+  }
+  let _facComp = { key: '', ids: null }, _facHoy = null, _facHoyCargando = false;
+  function facSugerencias() {
+    const out = [], c = clienteSel(), hay = _cart.length > 0, t = totales().total, adm = puedeVerMin();
+    // 1) Precios: debajo del mínimo o del costo (solo quien puede ver esos datos)
+    const bajoCosto = [];
+    if (hay && adm) _cart.forEach((it, i) => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p) return;
+      const neto = lineImporte(it) / Math.max(1, Number(it.cantidad || 1)) / (it.itbis ? 1.18 : 1), costo = Number(p.costo || 0), mn = minimoDe(p);
+      if (costo > 0 && neto < costo) bajoCosto.push({ it: it, costo: costo, neto: neto, pierde: (costo - neto) * Number(it.cantidad || 1) });
+      else if (mn > 0 && Number(it.precio || 0) < mn) out.push({ tone: 'warn', ic: 'ti-lock', t: esc(it.nombre) + ' está debajo del mínimo', s: 'Mínimo ' + fmt(mn) + ' · puesto ' + fmt(it.precio), a: 'Poner ' + fmt(mn), fn: `window.nxFacPrecio(${i},'${mn}')` });
+    });
+    if (bajoCosto.length === 1) { const x = bajoCosto[0]; out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: esc(x.it.nombre) + ' se vende por debajo del costo', s: 'Costo ' + fmt(x.costo) + ' · vendiendo a ' + fmt(x.neto) + ' sin ITBIS pierdes ' + fmt(x.pierde) }); }
+    else if (bajoCosto.length > 1) out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: bajoCosto.length + ' artículos se venden por debajo del costo', s: 'Pierdes ' + fmt(bajoCosto.reduce((a, x) => a + x.pierde, 0)) + ': ' + bajoCosto.map(x => esc(x.it.nombre)).join(', ') });
+    // 2) El cliente: lo que debe, su límite, lo que tiene abierto
+    if (c) {
+      const quien = esc(String(c.nombre || '').split(' ')[0]), saldo = saldoCli(c), lim = Number(c.limite_credito || 0);
+      if (_facCredito && lim > 0 && saldo + t > lim) out.push({ tone: 'bad', ic: 'ti-credit-card-off', t: 'Pasa su límite de crédito por ' + fmt(saldo + t - lim), s: 'Límite ' + fmt(lim) + ' · ya debe ' + fmt(saldo) });
+      else if (saldo > 0) out.push({ tone: 'warn', ic: 'ti-cash', t: quien + ' debe ' + fmt(saldo), s: 'Aprovecha la visita para cobrarle', a: 'Ver cuenta', fn: `window.nxCliente360('${c.id}')` });
+      const pf = (_prefs || []).find(x => String(x.cliente_id) === String(c.id));
+      if (pf) out.push({ ic: 'ti-file-description', t: 'Tiene la prefactura ' + esc(pf.numero || '') + ' abierta', s: fmt(pf.total) + ' · ' + ((pf.items || []).length) + ' artículo(s)', a: 'Cargarla', fn: `window.nxPrefFacturar('${pf.id}')` });
+      const vs = (_ventasSusp || []).find(x => String(x.cliente_id) === String(c.id));
+      if (vs) out.push({ ic: 'ti-player-pause', t: 'Dejó una venta en espera', s: esc(vs.numero || '') + ' · ' + fmt(vs.total), a: 'Retomar', fn: `window.nxFacRetomar('${vs.id}')` });
+      if (hay && !waNum(c.telefono)) out.push({ ic: 'ti-brand-whatsapp', t: quien + ' no tiene WhatsApp registrado', s: 'Agrégalo para enviarle la factura y los avisos', a: 'Completar', fn: `window.nxCliente360('${c.id}')` });
+    }
+    // 3) Lo que la gente suele llevar junto con lo que hay en el carrito (ventas reales)
+    if (hay) {
+      facCompCargar();
+      const ids = (_facComp.ids || []).filter(id => !_cart.find(x => String(x.producto_id) === id));
+      const chips = ids.map(id => _prods.find(x => String(x.id) === id)).filter(Boolean).slice(0, 2)
+        .map(p => ({ lbl: p.nombre, sub: fmt(precioCli(p)), fn: `window.nxFacAdd('${p.id}')` }));
+      if (chips.length) out.push({ ic: 'ti-sparkles', tone: 'acc', t: _facComp.fuente === 'ventas' ? 'Suelen llevar' : 'Agrega', s: '', chips });
+    }
+    // 4) Sin venta en curso: lo que quedó pendiente y cómo va el día
+    if (!hay && !c) {
+      if ((_ventasSusp || []).length) { const v0 = _ventasSusp[0]; out.push({ ic: 'ti-player-pause', t: _ventasSusp.length + (_ventasSusp.length === 1 ? ' venta en espera' : ' ventas en espera'), s: esc(v0.cliente_nombre || 'Consumidor final') + ' · ' + fmt(v0.total), a: _ventasSusp.length === 1 ? 'Retomar' : 'Ver', fn: _ventasSusp.length === 1 ? `window.nxFacRetomar('${v0.id}')` : 'window.nxVentaSuspLista()' }); }
+      if ((_prefs || []).length) out.push({ ic: 'ti-file-description', t: _prefs.length + (_prefs.length === 1 ? ' prefactura abierta' : ' prefacturas abiertas'), s: 'Por ' + fmt(_prefs.reduce((a, x) => a + Number(x.total || 0), 0)) + ' sin facturar', a: 'Ver', fn: "window.nxPosTab('prefhist')" });
+      if (_facHoy === null) facHoyCargar();
+      else if (_facHoy.n) out.push({ ic: 'ti-chart-line', t: 'Hoy: ' + _facHoy.n + (_facHoy.n === 1 ? ' factura' : ' facturas') + ' · ' + fmt(_facHoy.total), s: 'Ticket promedio ' + fmt(_facHoy.total / _facHoy.n) + (_facHoy.anul ? ' · ' + _facHoy.anul + ' anulada(s)' : '') });
+    }
+    return out.slice(0, 4);
+  }
+  function facSugRepintar() { const os = document.getElementById('facOtrasSlot'); if (os) os.innerHTML = facOtrasHTML(); }
+  function facCompCargar() {
+    const base = Array.from(new Set(_cart.map(x => String(x.producto_id)))).sort(), key = base.join(',');
+    if (_facComp.key === key) return;
+    _facComp = { key: key, ids: null, fuente: '' };
+    const disp = p => p && p.activo !== false && (p.tipo === 'servicio' || stockDisponible(p) > 0);
+    getAPI().get('pos_venta_items', 'select=venta_id&producto_id=in.(' + base.join(',') + ')&limit=300')
+      .then(r => { const vids = Array.from(new Set((r || []).map(x => x.venta_id))).slice(0, 150); return vids.length ? getAPI().get('pos_venta_items', 'select=venta_id,producto_id&venta_id=in.(' + vids.join(',') + ')') : []; })
+      .catch(() => [])
+      .then(rows => {
+        if (_facComp.key !== key) return;
+        const cnt = {}, ya = {};
+        (rows || []).forEach(x => { const id = String(x.producto_id), k = x.venta_id + '|' + id; if (base.includes(id) || ya[k]) return; ya[k] = 1; cnt[id] = (cnt[id] || 0) + 1; });
+        let ids = Object.keys(cnt).filter(id => disp(_prods.find(p => String(p.id) === id))).sort((a, b) => cnt[b] - cnt[a]);
+        _facComp.fuente = ids.length ? 'ventas' : '';
+        if (ids.length < 3) {
+          // Sin historial suficiente: accesorios con stock para celulares.
+          const cat = id => { const p = _prods.find(x => String(x.id) === id); const k = p && (_cats || []).find(c => String(c.id) === String(p.categoria_id)); return k ? String(k.nombre || '') : ''; };
+          if (base.some(id => /celular/i.test(cat(id)))) {
+            const extra = _prods.filter(p => /accesorio/i.test(cat(String(p.id))) && disp(p) && !ids.includes(String(p.id)) && !base.includes(String(p.id))).sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0)).map(p => String(p.id));
+            ids = ids.concat(extra); if (!_facComp.fuente && extra.length) _facComp.fuente = 'stock';
+          }
+        }
+        _facComp.ids = ids.slice(0, 6);
+        facSugRepintar();
+      });
+  }
+  function facHoyCargar() {
+    if (_facHoyCargando) return; _facHoyCargando = true;
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    getAPI().get('pos_ventas', 'select=total,estado&created_at=gte.' + encodeURIComponent(d.toISOString()) + '&limit=2000')
+      .then(r => { const ok = (r || []).filter(v => v.estado !== 'anulada'); _facHoy = { n: ok.length, total: ok.reduce((a, v) => a + Number(v.total || 0), 0), anul: (r || []).length - ok.length }; })
+      .catch(() => { _facHoy = { n: 0, total: 0, anul: 0 }; })
+      .then(() => { _facHoyCargando = false; facSugRepintar(); });
+  }
+  // Retomar una venta en espera DESDE Factura y quedarse en Factura.
+  window.nxFacRetomar = async function (id) { await window.nxVentaRetomar(id); if (_cart.length) window.nxPosTab('factura'); };
+  function facUltHTML() {
+    if (_facRecientes === null) { facUltCargar(); return '<div class="facUltV">Cargando…</div>'; }
+    if (!_facRecientes.length) return '<div class="facUltV">Todavía no hay facturas.</div>';
+    return _facRecientes.map(v => {
+      const an = v.estado === 'anulada' || v.anulada;
+      const d = new Date(v.created_at || v.fecha || Date.now()), p2 = x => String(x).padStart(2, '0');
+      const cuando = d.toDateString() === new Date().toDateString() ? 'Hoy ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) : p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
+      return `<div class="facUltR${an ? ' an' : ''}" role="button" tabindex="0" onclick="window.nxFacVerVenta('${v.id}')" onkeydown="if(event.key==='Enter'){this.click()}"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c" title="${esc(cuando)}${an ? ' · Anulada' : ''}">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b><span class="facUltAc"><button type="button" title="Reimprimir ticket" aria-label="Reimprimir ticket" onclick="event.stopPropagation();window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i></button>${!an && facPuedeAnular() ? `<button type="button" class="dg" title="Anular" aria-label="Anular" onclick="event.stopPropagation();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i></button>` : ''}</span></div>`;
+    }).join('');
+  }
+  function facUltCargar() {
+    if (_facRecCargando) return; _facRecCargando = true;
+    getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,estado,fecha,created_at&order=created_at.desc&limit=3')
+      .then(r => { _facRecientes = r || []; }).catch(() => { _facRecientes = []; })
+      .then(() => { _facRecCargando = false; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); });
+  }
+  function facUltRefrescar() { _facHoy = null; _facRecientes = null; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); }
   function renderFactura() {
     nxPfEnsureCSS();
     if (!_prods.length) {
@@ -1146,13 +1570,7 @@
 
           <div class="facPie">
             <div class="facOtras">
-              <div class="plab">Otras acciones</div>
-              <div class="opts">
-                <button type="button" class="opt" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Guardar cotización</button>
-                <button type="button" class="opt" onclick="window.nxPosTab('prefhist')"><i class="ti ti-files"></i> Prefacturas</button>
-                <button type="button" class="opt" onclick="window.nxPosTab('ventas')"><i class="ti ti-history"></i> Historial</button>
-                <button type="button" class="opt" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
-              </div>
+              <div id="facOtrasSlot">${facOtrasHTML()}</div>
               ${pre ? `<details class="nx-inv-notedet" style="margin:11px 0 0"${_facNota ? ' open' : ''}>
                 <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones al documento'}</summary>
                 <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
@@ -1161,7 +1579,7 @@
             <div class="facTot" id="facResumen"></div>
           </div>
         </div>
-        <div class="keys"><span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar carrito</span></div>
+        <div class="keys"><span><b>F2</b> Buscar producto</span>${esPreTab() ? "" : "<span><b>F4</b> Guardar</span><span><b>F6</b> Guardar+Imprimir</span><span><b>F7</b> Guardar+WhatsApp</span><span><b>F8</b> Imprimir</span>"}<span><b>F10</b> Limpiar carrito</span></div>
       </div>
     </div>`;
   }
@@ -1257,7 +1675,9 @@
     } else { reg.favShown = []; reg.recShown = []; }
     const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
     reg.filas = filas; reg.navOrder = navOrder;
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
+    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>`
+      // Fase 1 (portado de STUDIO 59.87): crear el cliente desde aquí con la MISMA ficha de Entidades, y queda elegido.
+      + `<div class="pf2clirow pf2cliNuevo" onclick="window.nxPosCliCrear('${modalId}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b><i class="ti ti-user-plus" aria-hidden="true"></i> Crear cliente nuevo</b><span>${ql ? 'Con «' + esc(String(q).trim()) + '» · ficha completa de Entidades' : 'Ficha completa de Entidades'}</span></div>` + secciones + resultsHtml;
   }
   function nxPosCliRegistrarReciente(modalId, c) {
     const snap = nxPosCliSnap(c);
@@ -1292,6 +1712,17 @@
     const vivo = _clientes.find(c => String(c.id) === String(snap.__id));
     if (kind === 'rec' && vivo) nxPosCliRegistrarReciente(modalId, vivo);
     nxPosCliTerminar(modalId, vivo || { id: snap.__id, nombre: snap.__t });
+  };
+  // Crear cliente desde «Elegir cliente»: abre la ficha de Entidades (la misma del módulo Entidades) con lo que se
+  // escribió en el buscador, y al guardar lo deja elegido donde se estaba (Factura, Vender, Cotización, CRM…).
+  window.nxPosCliCrear = function (modalId) {
+    const reg = window.__nxPosCliReg[modalId] || {};
+    const q = String(val(modalId + 'Q') || '').trim(), dig = q.replace(/\D/g, '');
+    const defs = { es_cliente: true };
+    if (q && dig.length >= 7 && dig.length === q.replace(/[\s()+-]/g, '').length) defs.telefono = q; else if (q) defs.nombre = q;
+    const onPick = reg.onPick;
+    cerrarModal(modalId); delete window.__nxPosCliReg[modalId];
+    abrirEntidad(null, defs, function (c) { if (c) { try { nxPosCliRegistrarReciente(modalId, c); } catch (e) {} } if (typeof onPick === 'function') onPick(c); });
   };
   function nxPosCliTerminar(modalId, c) {
     const reg = window.__nxPosCliReg[modalId];
@@ -1893,7 +2324,7 @@
         <td style="font-size:11.5px">${esc(x.detalle || '')}</td>
         <td style="text-align:right;white-space:nowrap;font-size:11px">${x.monto != null ? fmt(x.monto) : (x.fecha ? fechaDMY(x.fecha) : '')}</td>
       </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#475569;padding:20px;font-size:12px">Sin documentos</td></tr>';
-    wrap.innerHTML = `<div class="tw"><table style="width:100%;font-size:12px"><thead><tr><th>Número</th><th>Documento</th><th>Detalle</th><th style="text-align:right">Monto/Fecha</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    wrap.innerHTML = `<div class="tw"><table style="width:100%;font-size:12px"><thead><tr><th>Número</th><th>Documento</th><th>Detalle</th><th style="text-align:right">Monto/Fecha</th></tr></thead><tbody data-pag10="sec-historial">${filas}</tbody></table></div>`;
   }
   window.nxSecHistAllFiltrar = function (q) { pintarSecHistAll(q); };
   const SEC_FUENTE = {
@@ -2095,7 +2526,7 @@
         <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar vendedor" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('') : '<tr><td colspan="4" class="emptyrow">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
     return ajCard('ti-user-dollar', 'green', 'Vendedores y comisiones', 'Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.') +
-      `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody data-pag10="vendedores">${filas}</tbody></table></div>
       <button class="ab g2 sm" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button></div>`;
   }
   window.nxVendNuevo = function () { abrirVend(null); };
@@ -2293,7 +2724,7 @@
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
           ${serLista}
         </td>
-        <td data-l="Precio" class="r"><input class="pin" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
+        <td data-l="Precio" class="r"><input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
         <td data-l="Desc."><div class="dsc"><input inputmode="decimal" aria-label="Descuento de ${esc(it.nombre)}" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$" aria-label="Cambiar tipo de descuento a porcentaje o monto">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
         <td data-l="Importe" class="r imp">${fmt(lineImporte(it))}</td>
@@ -2308,17 +2739,21 @@
     // cobrar" se quitaron por redundantes — repetían el TOTAL y todos abrían la misma ventana).
     const res = document.getElementById('facResumen'); if (!res) return;
     const pre = esPreTab();
-    res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
+    // En pantalla el subtotal va SIN redondear, para que Subtotal + ITBIS ± Redondeo = Total cuadre a simple vista.
+    res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal - (t.redondeo || 0))}</b></div>
       ${t.descuento > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
       <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      ${t.redondeo ? `<div class="tr"><span>Redondeo</span><b>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</b></div>` : ''}
       <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
       <div class="acc">
         ${pre ? `<button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar(true)" title="Guardar e imprimir" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>` : ''}
         ${pre
           ? `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} style="background:#6d28d9" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>`
-          : `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>`}
+          : `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacAccion('guardar')"><i class="ti ti-device-floppy"></i> Guardar</button>`}
       </div>
-      <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>`;
+      <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>
+      ${pre ? '' : `<div class="facSmart" aria-live="polite">${facSmartHTML()}</div>`}`;
+    try { const os = document.getElementById('facOtrasSlot'); if (os) os.innerHTML = facOtrasHTML(); } catch (e) {}
     try { facBarraSync(); } catch (e) {}
   }
   // ── Motor COMPARTIDO de "barra de acciones fija" (spec ChatGPT, piloteado primero en Factura
@@ -2339,24 +2774,470 @@
     bar.innerHTML = html;
     document.body.appendChild(bar);
     if (fabEl) fabEl.classList.add('nxFabLift');
+    nxBarAlinear();
   }
+  // Pedido del dueño (24-sep): la barra de botones va AL MISMO NIVEL de la ventana del documento — mismos
+  // bordes izquierdo y derecho que la tarjeta de Factura/Prefactura (o el formulario de Compra), en vez
+  // de un ancho fijo de pantalla. En móvil (< 861 px) sigue de borde a borde.
+  function nxBarAlinear() {
+    var bar = document.querySelector('.nxFacBar'); if (!bar) return;
+    var a = document.querySelector('#v-pos .nxDocCard') || document.querySelector('#v-pos .nxPrForm');
+    if (window.innerWidth < 861 || !a) { bar.style.left = bar.style.width = bar.style.right = bar.style.transform = ''; return; }
+    var r = a.getBoundingClientRect(); if (!(r.width > 0)) return;
+    bar.style.left = Math.round(r.left) + 'px'; bar.style.width = Math.round(r.width) + 'px'; bar.style.right = 'auto'; bar.style.transform = 'none';
+    try {
+      if (window.ResizeObserver && bar.__ancla !== a) { if (bar.__ro) bar.__ro.disconnect(); bar.__ancla = a; bar.__ro = new ResizeObserver(function () { nxBarAlinear(); }); bar.__ro.observe(a); bar.__ro.observe(document.body); }
+    } catch (e) {}
+  }
+  if (!window.__nxBarAlinearRes) { window.__nxBarAlinearRes = true; window.addEventListener('resize', function () { nxBarAlinear(); }); }
   // Barra de Factura/Prefactura. Refleja EXACTAMENTE los botones del pie (.acc/.cancel) con las
   // MISMAS funciones — cero lógica de cobro nueva. Se recrea en cada pintarFactura (estado
   // habilitado/deshabilitado en vivo) y se quita en renderPOS (cambio de pestaña) y nav() (salir
   // del POS).
+  // ── Acciones inteligentes de Factura (59.12) — pedido del dueño: «Guardar, Guardar+Imprimir,
+  // Imprimir, Guardar+WhatsApp, Anular y Cancelar, que no sean simples botones». Cero lógica de
+  // cobro nueva: «Guardar» ES cobrar (nxPosCobrar → nxPosConfirmar, con todas sus validaciones);
+  // la intención solo decide qué pasa DESPUÉS de guardar (imprimir en el formato preferido o abrir
+  // WhatsApp). Imprimir/WhatsApp/Anular sin artículos actúan sobre la ÚLTIMA factura guardada en
+  // esta pantalla; con artículos, Imprimir es la vista previa (no fiscal).
+  let _facWaTel = '';        // número elegido para WhatsApp cuando el cliente no tiene uno registrado
+  let _facUlt = null;        // última factura guardada desde Factura
+  let _facVentana = null;    // ventana abierta EN el clic: Safari bloquea las que se abren después de esperar
+  let _facIntentOk = '';     // intención del cobro que se está confirmando
+  let _facGuardoOk = false;
+  function facTomarVentana() { const w = _facVentana; _facVentana = null; return (w && !w.closed) ? w : null; }
+  function facAbrirVentana(txt) {
+    try {
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(bizNom()) + '</title><body style="margin:0;font:15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center;height:90vh;color:#555;background:#faf9f6">' + esc(txt || 'Preparando…') + '</body>');
+        // Cerrar el flujo: así el documento real (ticket/factura) REEMPLAZA este aviso en vez de pegarse debajo.
+        w.document.close();
+      }
+      return w;
+    } catch (e) { return null; }
+  }
+  function facSoltarVentana(mine, ms) { setTimeout(() => { if (mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} } }, ms); }
+  function facFmt() { try { return localStorage.getItem('nx_fac_fmt') === 'carta' ? 'carta' : 'ticket'; } catch (e) { return 'ticket'; } }
+  window.nxFacFmtSet = function (f) { try { localStorage.setItem('nx_fac_fmt', f === 'carta' ? 'carta' : 'ticket'); } catch (e) {} try { pintarFactura(); } catch (e) {} };
+  function facPuedeAnular() { return ['admin', 'gerente'].includes(rolEfectivo()); }
+  function facTelCliente() { const c = clienteSel(); return c ? waNum(c.telefono) : ''; }
+  function facNumTxt(u) { return u ? (u.numero_factura || ('No. ' + (u.numero || ''))) : ''; }
+  // Lo que falta para poder guardar: la MISMA validación que hace nxPosConfirmar, pero antes de abrir
+  // el cobro y con el arreglo a un toque (nxFacArreglar).
+  function facChequeo() {
+    if (!_cart.length) return { ok: false, txt: 'Agrega artículos para guardar', fix: () => window.nxProdPicker('factura') };
+    for (let i = 0; i < _cart.length; i++) {
+      const it = _cart[i]; const p = _prods.find(x => String(x.id) === String(it.producto_id));
+      if (p && p.serial && (it.seriales || []).length < Number(it.cantidad)) return { ok: false, txt: 'Falta el IMEI de ' + p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')', fix: () => window.nxFacSerial(i) };
+      if (p && Number(it.precio || 0) <= 0) return { ok: false, txt: p.nombre + ' no tiene precio' };
+    }
+    if (_facCredito && !_factCli) return { ok: false, txt: 'A crédito necesita un cliente', fix: () => window.nxFacCliToggle() };
+    return { ok: true };
+  }
+  window.nxFacArreglar = function () { const c = facChequeo(); if (!c.ok && c.fix) c.fix(); };
+  // Botones con su propósito: `why` dice EXACTAMENTE qué va a pasar (o por qué no se puede).
+  function facAcciones() {
+    const hay = _cart.length > 0, u = _facUlt, chk = facChequeo(), tel = facTelCliente();
+    const c = clienteSel(); const quien = c ? String(c.nombre || '').split(' ')[0] : 'el cliente';
+    const ok = hay && chk.ok, fmtTxt = facFmt() === 'carta' ? 'la factura (carta)' : 'el ticket';
+    const cond = _facCredito ? ' a crédito' : '';
+    const waUlt = !hay && u && !u.anulada;
+    return [
+      { k: 'cancelar', ic: 'ti-x', t: hay ? 'Cancelar' : 'Limpiar', on: hay || !!u || !!_factCli || _facCredito, cls: 'fbS',
+        why: hay ? 'Descarta los artículos y el cliente sin guardar nada' : 'Deja la pantalla lista para una factura nueva' },
+      { k: 'anular', ic: 'ti-ban', t: 'Anular', on: facPuedeAnular() && !hay, cls: 'fbS fbDanger',
+        why: !facPuedeAnular() ? 'Solo el administrador o el gerente puede anular' : hay ? 'Termina o cancela la factura en curso para anular otra'
+          : (u && !u.anulada) ? 'Anula ' + facNumTxt(u) + ', devuelve el stock y revierte el asiento' : 'Busca la factura que quieres anular' },
+      { k: 'reimp', ic: 'ti-printer', t: 'Imprimir', key: 'F8', on: hay || !!u, cls: 'fbS',
+        why: hay ? 'Vista previa de lo que hay en pantalla (sin guardar, no es fiscal)' : u ? 'Reimprime ' + facNumTxt(u) + ' como ' + (facFmt() === 'carta' ? 'factura carta' : 'ticket') : 'No hay nada que imprimir todavía' },
+      { k: 'wa', ic: 'ti-brand-whatsapp', t: waUlt ? 'WhatsApp' : 'Guardar+WhatsApp', key: 'F7', on: ok || waUlt, cls: 'fbW',
+        why: waUlt ? 'Envía ' + facNumTxt(u) + ' por WhatsApp' + (u.waTel ? ' (···' + u.waTel.slice(-4) + ')' : '')
+          : !ok ? chk.txt : tel ? 'Cobra, guarda y abre WhatsApp de ' + quien + ' (···' + tel.slice(-4) + ') con la factura' : 'Cobra, guarda y te pide el número de WhatsApp' },
+      { k: 'imprimir', ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', on: ok, cls: 'fbG2',
+        why: ok ? 'Cobra, guarda' + cond + ' e imprime ' + fmtTxt : chk.txt },
+      { k: 'guardar', ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', on: ok, cls: 'fbP',
+        why: ok ? 'Cobra y guarda la factura' + cond : chk.txt }
+    ];
+  }
+  // Panel de estado (en el pie, junto al total): qué falta, cómo se imprime, última factura.
+  function facSmartHTML() {
+    const chk = facChequeo(), u = _facUlt, f = facFmt();
+    const est = !_cart.length
+      ? (u ? `<div class="fsE ok"><i class="ti ti-circle-check"></i><span><b>${esc(facNumTxt(u))}</b> ${u.anulada ? 'anulada' : 'guardada'} · ${fmt(u.total)}</span></div>` : `<div class="fsE"><i class="ti ti-info-circle"></i><span>Agrega artículos para empezar</span></div>`)
+      : chk.ok
+        ? `<div class="fsE ok"><i class="ti ti-circle-check"></i><span>Lista para guardar · ${_facCredito ? 'Crédito' : 'Contado'} · ${esc((clienteSel() || {}).nombre || 'Consumidor final')}</span></div>`
+        : `<div class="fsE warn"><i class="ti ti-alert-triangle"></i><span>${esc(chk.txt)}</span>${chk.fix ? '<button type="button" onclick="window.nxFacArreglar()">Resolver</button>' : ''}</div>`;
+    return `${est}<div class="fsF"><span>Imprimir como</span><div class="fsSeg" role="group" aria-label="Formato de impresión"><button type="button" class="${f === 'ticket' ? 'on' : ''}" aria-pressed="${f === 'ticket'}" onclick="window.nxFacFmtSet('ticket')"><i class="ti ti-receipt"></i> Ticket</button><button type="button" class="${f === 'carta' ? 'on' : ''}" aria-pressed="${f === 'carta'}" onclick="window.nxFacFmtSet('carta')"><i class="ti ti-file-invoice"></i> Carta</button></div></div>`;
+  }
   function facBarraSync() {
     var mostrar = (_posTab === 'factura' || _posTab === 'prefactura');
     if (mostrar) { var vpos = document.getElementById('v-pos'); mostrar = !!(vpos && vpos.classList.contains('on')); }
     if (!mostrar) { nxStickyBarSet('nxFacBar', null); return; }
     var pre = esPreTab(), dis = _cart.length ? '' : 'disabled';
-    var html = pre
-      ? '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar prefactura"><i class="ti ti-x"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar(true)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
-        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>'
-      : '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar factura"><i class="ti ti-x"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar()" aria-label="Guardar borrador (prefactura)"><i class="ti ti-device-floppy"></i></button>'
-        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>';
+    var html;
+    if (pre) {
+      html = docBarraHTML('pref', totales().total);
+    } else {
+      var t = totales();
+      html = '<button type="button" class="fbC fbMas" onclick="window.nxFacAccHoja()" aria-label="Todas las acciones" aria-haspopup="dialog"><i class="ti ti-dots"></i></button>'
+        + '<span class="fbT"><small>Total</small><b>' + fmt(t.total) + '</b></span>'
+        + facAcciones().map(function (a) {
+          return '<button type="button" class="fbA ' + a.cls + '" data-k="' + a.k + '"' + (a.on ? '' : ' aria-disabled="true"') + ' title="' + esc(a.why) + (a.key ? ' (' + a.key + ')' : '') + '" aria-label="' + esc(a.t + ': ' + a.why) + '" onclick="window.nxFacAccion(\'' + a.k + '\')"><i class="ti ' + a.ic + '" aria-hidden="true"></i><span class="fbL">' + esc(a.t) + '</span>' + (a.key ? '<kbd>' + a.key + '</kbd>' : '') + '</button>';
+        }).join('');
+    }
     nxStickyBarSet('nxFacBar', html);
+    var bar = document.getElementById('nxFacBar'); if (bar) bar.classList.add('nxFacBar6');
+  }
+  // Hoja con TODAS las acciones y su propósito (en el móvil la barra solo muestra Guardar).
+  window.nxFacAccHoja = function () {
+    cerrarModal('nxFacAccSheet');
+    const ov = document.createElement('div'); ov.id = 'nxFacAccSheet'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    const acc = facAcciones().slice().reverse();
+    ov.innerHTML = `<div class="modal nxFacAccM" role="dialog" aria-label="Acciones de la factura">
+      <div class="fahd"><b>Acciones de la factura</b><span>${esc(fmt(totales().total))}</span></div>
+      ${acc.map(a => `<button type="button" class="faIt ${a.cls}"${a.on ? '' : ' aria-disabled="true"'} onclick="document.getElementById('nxFacAccSheet').remove();window.nxFacAccion('${a.k}')"><i class="ti ${a.ic}" aria-hidden="true"></i><span><b>${esc(a.t)}</b><small>${esc(a.why)}</small></span>${a.key ? `<kbd>${a.key}</kbd>` : ''}</button>`).join('')}
+      <div class="faFmt">${facSmartHTML().replace(/^[\s\S]*?(<div class="fsF">)/, '$1')}</div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  function facImprimir(u) {
+    if (facFmt() === 'carta' || u.anulada || !u._v) {
+      if (!_facVentana) _facVentana = facAbrirVentana('Preparando la factura…');
+      facSoltarVentana(_facVentana, 20000);
+      window.nxFacDocVenta(u.id);
+    } else ticketHTML(u._v);
+  }
+  function facWAUrl(u) {
+    const v = u._v || {};
+    const c = u.cliente_id ? _clientes.find(x => String(x.id) === String(u.cliente_id)) : null;
+    const num = u.waTel || (c ? waNum(c.telefono) : '');
+    if (!num) return '';
+    const items = (v._items || []).map(it => Number(it.cantidad || 0) + ' x ' + it.nombre + (it.serial ? ' (IMEI ' + it.serial + ')' : '')).join('\n');
+    const cred = Number(v.credito_monto || 0);
+    const msg = 'Hola' + (u.cliente_nombre ? ' ' + String(u.cliente_nombre).split(' ')[0] : '') + ', gracias por tu compra en ' + bizNom() + '.\n'
+      + 'Factura ' + facNumTxt(u) + (v.ncf ? ' · NCF ' + v.ncf : '') + ' · ' + fechaDMY(v.fecha || hoy()) + '\n\n'
+      + (items ? items + '\n\n' : '')
+      + 'TOTAL: ' + fmt(u.total)
+      + (cred > 0 ? '\nPagado: ' + fmt(Number(u.total || 0) - cred) + '\nPendiente a crédito: ' + fmt(cred) : '')
+      + '\n\nConserva este mensaje como constancia de tu compra.';
+    return 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  }
+  function facWA(u) {
+    const url = facWAUrl(u);
+    const w = facTomarVentana();
+    if (!url) { if (w) try { w.close(); } catch (e) {} toast('err', 'Sin número de WhatsApp', 'Toca WhatsApp y escribe el número'); return; }
+    if (w) { try { w.location.href = url; return; } catch (e) {} }
+    const o = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!o) toast('warn', 'Permite las ventanas emergentes', 'O usa «Enviar por WhatsApp» en la ventana de venta');
+  }
+  function facPedirTel(nombre, doc) {
+    const t = prompt('¿A qué WhatsApp se envía ' + (doc || 'la factura') + '?\n' + (nombre ? nombre + ' no tiene teléfono registrado.' : 'Consumidor final: escribe el número.'), '');
+    if (t === null) return null;
+    const n = waNum(t);
+    if (!n) { toast('err', 'Número no válido', 'Escribe 10 dígitos, ej. 809 555 1234'); return null; }
+    return n;
+  }
+  // Se llama desde nxPosConfirmar justo después de guardar la venta.
+  function facTrasGuardar(v) {
+    const pg = document.getElementById('nxPosPago');
+    const intent = _facIntentOk || (pg && pg.dataset.intent) || '';
+    if (_posTab !== 'factura' || !intent) return;
+    _facGuardoOk = true;
+    _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, waTel: _facWaTel, anulada: false, _v: v };
+    _facWaTel = '';
+    if (pg) pg.dataset.intent = '';
+    facUltRefrescar();
+    if (intent === 'imprimir') facImprimir(_facUlt);
+    else if (intent === 'wa') facWA(_facUlt);
+    try { pintarFactura(); } catch (e) {}
+  }
+  // Botón «Confirmar» del cobro cuando se llegó por una acción de Factura: abre la ventana de
+  // impresión/WhatsApp en el mismo toque y, si el cobro no se completa, la cierra.
+  window.nxFacConfirmar = async function () {
+    const pg = document.getElementById('nxPosPago'); const intent = (pg && pg.dataset.intent) || 'guardar';
+    _facIntentOk = intent; _facGuardoOk = false;
+    if (intent === 'wa' || intent === 'imprimir') { if (_facVentana) { try { _facVentana.close(); } catch (e) {} } _facVentana = facAbrirVentana(intent === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…'); }
+    const mine = _facVentana;
+    try { await window.nxPosConfirmar(); }
+    finally {
+      _facIntentOk = '';
+      if (!_facGuardoOk && mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} }
+      else if (mine && _facVentana === mine) facSoltarVentana(mine, 20000);
+    }
+  };
+  // Anular UNA factura por id desde Factura (barra, «Anular factura» o la hoja de búsqueda). La
+  // anulación en sí es la de siempre (nxPosAnularVenta: confirmación, stock, asiento inverso).
+  window.nxFacAnularId = async function (id) {
+    if (!facPuedeAnular()) { toast('warn', 'Anular', 'Solo el administrador o el gerente puede anular'); return; }
+    try {
+      if (!(_ventas || []).find(x => String(x.id) === String(id))) {
+        let r = null; try { r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + id); } catch (e) {}
+        const u0 = _facUlt && String(_facUlt.id) === String(id) ? _facUlt : null;
+        const row = (r || []).find(x => String(x.id) === String(id)) || (u0 && u0._v ? Object.assign({}, u0._v, { _items: undefined, estado: 'completada' }) : null);
+        if (!row) { toast('err', 'Factura no encontrada'); return; }
+        _ventas = _ventas || []; _ventas.unshift(row);
+      }
+      await window.nxPosAnularVenta(id);
+      const r2 = await getAPI().get('pos_ventas', 'select=id,estado&id=eq.' + id);
+      const anulada = !!(r2 && r2[0] && r2[0].estado === 'anulada');
+      if (_facUlt && String(_facUlt.id) === String(id)) _facUlt.anulada = anulada;
+      else if (anulada && !_cart.length) { const v = (_ventas || []).find(x => String(x.id) === String(id)); if (v) _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, anulada: true }; }
+    } catch (e) { toast('err', 'No se pudo anular', String((e && e.message) || e).slice(0, 120)); }
+    facUltRefrescar();
+    try { pintarFactura(); } catch (e) {}
+  };
+  window.nxFacAccion = async function (a) {
+    if (_posTab !== 'factura') return;
+    const lista = facAcciones(); const def = lista.find(x => x.k === a);
+    if (def && !def.on) { toast('warn', def.t, def.why); if (a !== 'anular') window.nxFacArreglar(); return; }
+    const u = _facUlt;
+    if (a === 'cancelar') {
+      const tenia = _cart.length;
+      if (tenia || _factCli || _facCredito) window.nxFacCancelar();
+      if (!_cart.length) { _facUlt = null; _facWaTel = ''; }
+      if (!tenia) try { pintarFactura(); } catch (e) {}
+      return;
+    }
+    if (a === 'reimp') {
+      if (_cart.length) { window.nxFacVistaPrevia(); return; }
+      if (u) facImprimir(u);
+      return;
+    }
+    if (a === 'anular') {
+      if (!facPuedeAnular()) return;
+      if (!u || u.anulada) { window.nxFacHist('anular'); return; }
+      await window.nxFacAnularId(u.id);
+      return;
+    }
+    if (a === 'wa' && !_cart.length && u) {
+      if (!facWAUrl(u)) { const n = facPedirTel(u.cliente_nombre); if (!n) return; u.waTel = n; }
+      facWA(u);
+      return;
+    }
+    // Guardar / Guardar+Imprimir / Guardar+WhatsApp → mismo cobro de siempre
+    if (a === 'wa') {
+      if (!facTelCliente()) { const n = facPedirTel((clienteSel() || {}).nombre); if (!n) return; _facWaTel = n; }
+      else _facWaTel = '';
+    }
+    window.nxFacFacturar();
+    const pg = document.getElementById('nxPosPago'); if (!pg) return;
+    pg.dataset.intent = a;
+    const go = pg.querySelector('.nxPgGo');
+    if (go) {
+      go.setAttribute('onclick', 'window.nxFacConfirmar()');
+      go.innerHTML = a === 'imprimir' ? '<i class="ti ti-printer"></i> Guardar e imprimir'
+        : a === 'wa' ? '<i class="ti ti-brand-whatsapp"></i> Guardar y enviar'
+        : '<i class="ti ti-check"></i> Guardar venta';
+    }
+  };
+  // Atajos: F4 Guardar · F6 Guardar+Imprimir · F7 Guardar+WhatsApp · F8 Imprimir (solo en Factura)
+  if (!window.__nxFacAccKeys) {
+    window.__nxFacAccKeys = true;
+    document.addEventListener('keydown', function (e) {
+      if (_posTab !== 'factura' || document.querySelector('.overlay.open, .overlay.on')) return;
+      const m = { F4: 'guardar', F6: 'imprimir', F7: 'wa', F8: 'reimp' }[e.key];
+      if (m) { e.preventDefault(); window.nxFacAccion(m); }
+    });
+  }
+  // ── Acciones inteligentes de DOCUMENTOS (59.13) — mismo motor que Factura para Prefactura,
+  // Cotización, Reparación (recepción), Nota de crédito, Apartado y Compra. Pedido del dueño: «los
+  // botones no solo en Factura sino en las demás ventanas que se requieran». Cada ventana SOLO lleva
+  // las acciones que tienen sentido para ese documento (no se inventan anulaciones que el sistema no
+  // tiene). Guardar sigue siendo la función de siempre de cada módulo; cuando termina, el módulo avisa
+  // con docGuardado() y el motor hace lo que se pidió (imprimir o abrir WhatsApp).
+  const _docUlt = {};
+  function docGuardado(tipo, d) { _docUlt[tipo] = Object.assign({ tipo: tipo, en: Date.now() }, d); }
+  function docItemsTxt(arr) { return (arr || []).map(it => Number(it.cantidad || it.cant || 1) + ' x ' + (it.nombre || '')).join('\n'); }
+  function docTelCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? (c.telefono || '') : ''; }
+  function docNomCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? c.nombre : ''; }
+  // Cada documento: qué hay, qué falta, a quién se le escribe y qué acciones aplican.
+  const DOC_CFG = {
+    pref: {
+      nom: 'prefactura', modal: null,
+      acciones: ['cancelar', 'anular', 'reimp', 'wa', 'imprimir', 'guardar'],
+      listo: () => _cart.length ? { ok: true } : { ok: false, txt: 'Agrega artículos a la prefactura', fix: () => window.nxProdPicker('factura') },
+      hay: () => _cart.length > 0,
+      tel: () => { const c = clienteSel(); return c ? c.telefono : ''; }, cli: () => (clienteSel() || {}).nombre || '',
+      guardar: () => window.nxPrefGuardar(),
+      vistaPrevia: () => window.nxFacVistaPrevia(),
+      anular: d => window.nxPrefAnular(d.id), puedeAnular: () => true,
+      cancelar: () => window.nxFacCancelar()
+    },
+    cot: {
+      nom: 'cotización', modal: 'nxCotForm',
+      acciones: ['cancelar', 'reimp', 'wa', 'imprimir', 'guardar'],
+      listo: () => (_cotEdit && _cotEdit.lineas && _cotEdit.lineas.length) ? { ok: true } : { ok: false, txt: 'Agrega al menos un producto', fix: () => { const b = document.getElementById('cotBuscar'); if (b) b.focus(); } },
+      tel: () => docTelCli(_cotEdit && _cotEdit.cliente_id), cli: () => (_cotEdit && _cotEdit.cliente_nombre) || '',
+      guardar: () => window.nxCotGuardar(),
+      // Imprimir: si se está editando una cotización ya guardada, imprime esa (lo guardado)
+      actual: () => (_cotEdit && _cotEdit.id) ? { imprimir: () => window.nxCotImprimir(_cotEdit.id), numero: _cotEdit.numero } : null,
+      cancelar: () => cerrarModal('nxCotForm')
+    },
+    rep: {
+      nom: 'orden de reparación', modal: 'nxRepM',
+      acciones: ['cancelar', 'wa', 'imprimir', 'guardar'],
+      listo: () => (val('repCli').trim() && val('repEq').trim() && val('repFalla').trim()) ? { ok: true } : { ok: false, txt: 'Cliente, equipo y falla son obligatorios', fix: () => { const e = ['repCli', 'repEq', 'repFalla'].map(i => document.getElementById(i)).find(x => x && !x.value.trim()); if (e) e.focus(); } },
+      tel: () => val('repTel'), cli: () => val('repCli').trim(),
+      guardar: () => window.nxRepGuardar(),
+      cancelar: () => cerrarModal('nxRepM')
+    },
+    dev: {
+      nom: 'nota de crédito', modal: 'nxDevForm',
+      acciones: ['cancelar', 'wa', 'imprimir', 'guardar'],
+      listo: () => (_devEdit && _devEdit.lineas && _devEdit.lineas.some(l => Number(l.cant || 0) > 0)) ? { ok: true } : { ok: false, txt: 'Indica al menos una cantidad a devolver' },
+      tel: () => docTelCli(_devEdit && _devEdit.venta && _devEdit.venta.cliente_id), cli: () => (_devEdit && _devEdit.venta && _devEdit.venta.cliente_nombre) || '',
+      guardar: () => window.nxDevGuardar(),
+      cancelar: () => cerrarModal('nxDevForm')
+    },
+    apa: {
+      nom: 'apartado', art: 'el', modal: 'nxApaM',
+      acciones: ['cancelar', 'wa', 'guardar'],
+      listo: () => (val('apDesc').trim() && val('apCli').trim() && moneyVal('apTot') > 0) ? { ok: true } : { ok: false, txt: 'Artículo, cliente y precio total son obligatorios', fix: () => { const e = ['apDesc', 'apCli', 'apTot'].map(i => document.getElementById(i)).find(x => x && !String(x.value).trim()); if (e) e.focus(); } },
+      tel: () => val('apTel'), cli: () => val('apCli').trim(),
+      guardar: () => window.nxApaGuardarNuevo(),
+      cancelar: () => cerrarModal('nxApaM')
+    },
+    comp: {
+      nom: 'compra', modal: null,
+      acciones: ['cancelar', 'imprimir', 'guardar'],
+      listo: () => _compraItems.length ? { ok: true } : { ok: false, txt: 'Agrega al menos un artículo a la compra', fix: () => { const b = document.querySelector('#v-pos [id^="compArt"], #v-pos input[list]'); if (b) b.focus(); } },
+      hay: () => _compraItems.length > 0,
+      guardar: () => window.nxPosGuardarCompra(),
+      cancelar: () => window.nxPosCompraCancelar()
+    }
+  };
+  const DOC_BTN = {
+    guardar: { ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', cls: 'fbP' },
+    imprimir: { ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', cls: 'fbG2' },
+    wa: { ic: 'ti-brand-whatsapp', t: 'Guardar+WhatsApp', key: 'F7', cls: 'fbW' },
+    reimp: { ic: 'ti-printer', t: 'Imprimir', key: 'F8', cls: 'fbS' },
+    anular: { ic: 'ti-ban', t: 'Anular', cls: 'fbS fbDanger' },
+    cancelar: { ic: 'ti-x', t: 'Cancelar', cls: 'fbS' }
+  };
+  function docAcciones(tipo) {
+    const C = DOC_CFG[tipo], el = (C.art || 'la') + ' ' + C.nom, chk = C.listo(), u = _docUlt[tipo];
+    const hay = C.hay ? C.hay() : true, act = C.actual ? C.actual() : null;
+    const tel = C.tel ? waNum(C.tel()) : '', quien = (C.cli ? C.cli() : '').split(' ')[0] || 'el cliente';
+    return C.acciones.map(k => {
+      const b = Object.assign({ k: k }, DOC_BTN[k]);
+      if (k === 'guardar') { b.on = chk.ok; b.why = chk.ok ? 'Guarda ' + el : chk.txt; }
+      if (k === 'imprimir') { b.on = chk.ok; b.why = chk.ok ? 'Guarda ' + el + ' y ' + (C.art === 'el' ? 'lo' : 'la') + ' imprime' : chk.txt; }
+      if (k === 'wa') {
+        const reenv = !hay && u; if (reenv) b.t = 'WhatsApp';
+        b.on = chk.ok || !!reenv;
+        b.why = reenv ? 'Envía ' + (u.numero || el) + ' por WhatsApp' : !chk.ok ? chk.txt : tel ? 'Guarda y abre WhatsApp de ' + quien + ' (···' + tel.slice(-4) + ') con ' + el : 'Guarda y te pide el número de WhatsApp';
+      }
+      if (k === 'reimp') {
+        if (C.vistaPrevia && hay) { b.on = true; b.why = 'Vista previa de lo que hay en pantalla (sin guardar)'; }
+        else if (act) { b.on = true; b.why = 'Imprime ' + (act.numero || el) + ' tal como está guardada'; }
+        else if (u && u.imprimir) { b.on = true; b.why = 'Reimprime ' + (u.numero || el); }
+        else { b.on = false; b.why = 'Guarda primero para poder imprimir'; }
+      }
+      if (k === 'anular') { b.on = !!u && !u.anulada && C.puedeAnular(); b.why = !u ? 'Se activa después de guardar' : u.anulada ? (u.numero || '') + ' ya está anulada' : 'Anula ' + (u.numero || el); }
+      if (k === 'cancelar') { b.on = true; b.t = (C.modal || hay) ? 'Cancelar' : 'Limpiar'; b.why = C.modal ? 'Cierra sin guardar' : hay ? 'Descarta lo que hay en pantalla sin guardar' : 'Deja la pantalla lista para empezar'; }
+      return b;
+    });
+  }
+  function docBtnHTML(tipo, a) {
+    return '<button type="button" class="fbA ' + a.cls + '" data-k="' + a.k + '"' + (a.on ? '' : ' aria-disabled="true"') + ' title="' + esc(a.why) + (a.key ? ' (' + a.key + ')' : '') + '" aria-label="' + esc(a.t + ': ' + a.why) + '" onclick="window.nxDocAccion(\'' + tipo + '\',\'' + a.k + '\')"><i class="ti ' + a.ic + '" aria-hidden="true"></i><span class="fbL">' + esc(a.t) + '</span>' + (a.key ? '<kbd>' + a.key + '</kbd>' : '') + '</button>';
+  }
+  // Pie de las ventanas (modales): los botones + una línea que dice qué hace el que tienes encima.
+  function docAccPieHTML(tipo) {
+    return '<div class="docAcc" data-tipo="' + tipo + '"><div class="docAccBtns">' + docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join('') + '</div><div class="docAccWhy" aria-live="polite"></div></div>';
+  }
+  window.nxDocAccRefrescar = function (tipo) {
+    document.querySelectorAll('.docAcc[data-tipo="' + tipo + '"] .docAccBtns').forEach(el => { el.innerHTML = docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join(''); });
+  };
+  function docBarraHTML(tipo, total) {
+    return '<button type="button" class="fbC fbMas" onclick="window.nxDocAccHoja(\'' + tipo + '\')" aria-label="Todas las acciones" aria-haspopup="dialog"><i class="ti ti-dots"></i></button>'
+      + '<span class="fbT"><small>Total</small><b>' + fmt(total) + '</b></span>'
+      + docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join('');
+  }
+  window.nxDocAccHoja = function (tipo) {
+    cerrarModal('nxFacAccSheet');
+    const ov = document.createElement('div'); ov.id = 'nxFacAccSheet'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxFacAccM" role="dialog" aria-label="Acciones">
+      <div class="fahd"><b>Acciones ${DOC_CFG[tipo].art === 'el' ? 'del' : 'de la'} ${esc(DOC_CFG[tipo].nom)}</b></div>
+      ${docAcciones(tipo).slice().reverse().map(a => `<button type="button" class="faIt ${a.cls}"${a.on ? '' : ' aria-disabled="true"'} onclick="document.getElementById('nxFacAccSheet').remove();window.nxDocAccion('${tipo}','${a.k}')"><i class="ti ${a.ic}" aria-hidden="true"></i><span><b>${esc(a.t)}</b><small>${esc(a.why)}</small></span>${a.key ? `<kbd>${a.key}</kbd>` : ''}</button>`).join('')}
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  function docWA(d, tel) {
+    const num = waNum(tel || d.tel || docTelCli(d.cliente_id));
+    const w = facTomarVentana();
+    if (!num || !d.waTxt) { if (w) try { w.close(); } catch (e) {} toast('err', 'Sin número de WhatsApp'); return; }
+    const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(d.waTxt);
+    if (w) { try { w.location.href = url; return; } catch (e) {} }
+    if (!window.open(url, '_blank', 'noopener,noreferrer')) toast('warn', 'Permite las ventanas emergentes');
+  }
+  window.nxDocAccion = async function (tipo, k) {
+    const C = DOC_CFG[tipo]; if (!C) return;
+    const def = docAcciones(tipo).find(x => x.k === k);
+    if (def && !def.on) { toast('warn', def.t, def.why); const c = C.listo(); if (!c.ok && c.fix && k !== 'anular' && k !== 'reimp') c.fix(); return; }
+    const u = _docUlt[tipo];
+    if (k === 'cancelar') { C.cancelar(); if (!C.modal && !(C.hay && C.hay())) { delete _docUlt[tipo]; } try { docRepintar(tipo); } catch (e) {} return; }
+    if (k === 'reimp') {
+      if (C.vistaPrevia && C.hay && C.hay()) { C.vistaPrevia(); return; }
+      const act = C.actual ? C.actual() : null;
+      if (act) { act.imprimir(); return; }
+      if (u && u.imprimir) u.imprimir();
+      return;
+    }
+    if (k === 'anular') { if (u) { await C.anular(u); u.anulada = true; try { docRepintar(tipo); } catch (e) {} } return; }
+    if (k === 'wa' && !(C.hay ? C.hay() : true) && u) {
+      let tel = u.tel || docTelCli(u.cliente_id);
+      if (!waNum(tel)) { const n = facPedirTel(u.nombre, (C.art || 'la') + ' ' + C.nom); if (!n) return; u.tel = tel = n; }
+      docWA(u, tel); return;
+    }
+    // Guardar / Guardar+Imprimir / Guardar+WhatsApp
+    let tel = '';
+    if (k === 'wa') { tel = waNum(C.tel ? C.tel() : ''); if (!tel) { const n = facPedirTel(C.cli ? C.cli() : '', (C.art || 'la') + ' ' + C.nom); if (!n) return; tel = n; } }
+    if (k !== 'guardar') { if (_facVentana) { try { _facVentana.close(); } catch (e) {} } _facVentana = facAbrirVentana(k === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…'); }
+    const mine = _facVentana, antes = _docUlt[tipo];
+    try { await C.guardar(); } catch (e) {}
+    const d = _docUlt[tipo];
+    if (!d || d === antes) { if (mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} } return; }
+    if (k === 'wa') { d.tel = tel; docWA(d, tel); }
+    else if (k === 'imprimir') { if (d.imprimir) d.imprimir(); else { facTomarVentana(); try { mine && mine.close(); } catch (e) {} } }
+    if (mine && _facVentana === mine) facSoltarVentana(mine, 20000);
+    try { docRepintar(tipo); } catch (e) {}
+  };
+  function docRepintar(tipo) {
+    if (tipo === 'pref') { try { pintarFactura(); } catch (e) {} }
+    else if (tipo === 'comp') { try { compBarraSync(); } catch (e) {} }
+    else window.nxDocAccRefrescar(tipo);
+  }
+  // Atajos en las ventanas: F4 Guardar · F6 Guardar+Imprimir · F7 Guardar+WhatsApp · F8 Imprimir
+  if (!window.__nxDocAccKeys) {
+    window.__nxDocAccKeys = true;
+    document.addEventListener('keydown', function (e) {
+      const m = { F4: 'guardar', F6: 'imprimir', F7: 'wa', F8: 'reimp' }[e.key]; if (!m) return;
+      const box = document.querySelector('.overlay.open .docAcc[data-tipo]');
+      let tipo = box ? box.getAttribute('data-tipo') : null;
+      if (!tipo && !document.querySelector('.overlay.open, .overlay.on')) tipo = _posTab === 'prefactura' ? 'pref' : (_posTab === 'compras' && _compraVista === 'nueva') ? 'comp' : null;
+      if (!tipo || DOC_CFG[tipo].acciones.indexOf(m) < 0) return;
+      e.preventDefault(); window.nxDocAccion(tipo, m);
+    });
+  }
+  // Mientras escriben en una ventana, los botones se re-evalúan (qué falta / a quién se envía).
+  if (!window.__nxDocAccLive) {
+    window.__nxDocAccLive = true;
+    let _t = null;
+    const vivo = function (e) {
+      const box = e.target && e.target.closest && e.target.closest('.overlay.open');
+      const d = box && box.querySelector('.docAcc[data-tipo]'); if (!d) return;
+      clearTimeout(_t); _t = setTimeout(() => window.nxDocAccRefrescar(d.getAttribute('data-tipo')), 250);
+    };
+    document.addEventListener('input', vivo, true); document.addEventListener('change', vivo, true); document.addEventListener('click', vivo, true);
+    // Línea «qué hace este botón» debajo de los botones de la ventana
+    const why = function (e) {
+      const b = e.target && e.target.closest && e.target.closest('.docAcc .fbA'); if (!b) return;
+      const w = b.closest('.docAcc').querySelector('.docAccWhy'); if (w) w.textContent = b.getAttribute('title') || '';
+    };
+    document.addEventListener('pointerover', why, true); document.addEventListener('focusin', why, true);
   }
   // Stepper de cantidad del rediseño (respeta stock al subir; ajusta combos)
   window.nxFacQtyStep = function (i, d) { const it = _cart[i]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; const _old = Number(it.cantidad || 0); const n = Math.max(0, _old + d); if (n === 0) { _cart.splice(i, 1); } else { it.cantidad = n; ajustarCombos(it.producto_id, n - _old); } pintarFactura(); };
@@ -2425,6 +3306,9 @@
     cerrarModal('nxPosPago');
     _pgTab = 'efe';
     const cliTxt = (() => { const c = _factCli ? _clientes.find(x => String(x.id) === String(_factCli)) : null; return c ? esc((c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '')) : 'Consumidor final'; })();
+    // El cliente llega AUTOMÁTICO desde Vender/Factura («Facturar a»). En la ventana de cobro solo el
+    // administrador puede cambiarlo o quitarlo; los demás roles lo ven fijo con un candado.
+    const cliFijo = !_posCobroCliEditable();
     const campo = (id, lb) => `<div class="nxPgF"><label class="nxPgFl" for="${id}">${lb}</label><input id="${id}" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>`;
     const ov = document.createElement('div'); ov.id = 'nxPosPago'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -2434,7 +3318,7 @@
           <button class="nxPgX" type="button" aria-label="Cerrar" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-x"></i></button>
           <div class="nxPgLb">TOTAL A COBRAR</div>
           <div class="nxPgTot" id="posTotalLbl">${fmt(t.total)}</div>
-          <div class="nxPgCli" id="posCliBtn" tabindex="0" role="button" aria-label="Elegir cliente" onclick="window.nxPosCobroCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><button type="button" class="nxPgCliX" id="posCliXBtn" aria-label="Quitar cliente" style="display:${_factCli ? '' : 'none'}" onclick="window.nxPosCobroCliClear(event)"><i class="ti ti-x"></i></button><i class="ti ti-chevron-down" id="posCliChev" style="opacity:.6;display:${_factCli ? 'none' : ''}"></i></div>
+          ${cliFijo ? `<div class="nxPgCli nxPgCliFijo" id="posCliBtn" aria-label="Cliente de la venta (solo el administrador puede cambiarlo)" title="Solo el administrador puede cambiar el cliente"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><i class="ti ti-lock" aria-hidden="true"></i></div>` : `<div class="nxPgCli" id="posCliBtn" tabindex="0" role="button" aria-label="Elegir cliente" onclick="window.nxPosCobroCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><button type="button" class="nxPgCliX" id="posCliXBtn" aria-label="Quitar cliente" style="display:${_factCli ? '' : 'none'}" onclick="window.nxPosCobroCliClear(event)"><i class="ti ti-x"></i></button><i class="ti ti-chevron-down" id="posCliChev" style="opacity:.6;display:${_factCli ? 'none' : ''}"></i></div>`}
           <input type="hidden" id="posCliId" value="${esc(_factCli || '')}">
         </div>
         <div class="nxPgTabs" role="tablist">${PG_MET.map(m => `<button type="button" role="tab" class="nxPgTab${m[0] === 'efe' ? ' on' : ''}" id="pgt_${m[0]}" onclick="window.nxPagoTab('${m[0]}')">${m[3]}</button>`).join('')}</div>
@@ -2498,7 +3382,8 @@
     const qz = document.getElementById('pgQuick');
     if (qz) qz.innerHTML = (k === 'efe' ? PG_QUICK_EFE : PG_QUICK_OTRO).map(q => `<button type="button" onclick="window.nxPagoQuick('${q[1]}')">${q[0]}</button>`).join('');
     const c = leerCobro(); const big = document.getElementById('payBig');
-    if (big) big.value = Math.round(c.total).toLocaleString('en-US');
+    // Total de la venta (ya en pesos enteros, ver totales()) con el formato «1,250.00».
+    if (big) big.value = (window.nxMoney && window.nxMoney.fixed) ? window.nxMoney.fixed(c.total) : r2(c.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     window.nxPagoBigIn();
   };
   // El campo grande es un ESPEJO: escribe en el campo real del método activo
@@ -2513,9 +3398,9 @@
     const c = leerCobro();
     let n;
     if (v === 'T') n = c.total;
-    else if (v === 'M') n = Math.round(c.total / 2);
+    else if (v === 'M') n = r2(c.total / 2);
     else n = parseMoney(big.value) + Number(v);
-    big.value = Math.round(Math.max(0, n)).toLocaleString('en-US');
+    big.value = (window.nxMoney && window.nxMoney.fixed) ? window.nxMoney.fixed(Math.max(0, n)) : r2(Math.max(0, n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     window.nxPagoBigIn();
   };
   window.nxPagoOpts = function () { const b = document.getElementById('pgOpts'); if (b) b.style.display = (b.style.display === 'block') ? 'none' : 'block'; };
@@ -2549,12 +3434,16 @@
       toast('info', 'Precios al nivel de ' + (c ? (c.nombre || 'ese cliente') : 'consumidor final'), 'Total: ' + fmt(_antes) + ' → ' + fmt(_dsp));
     }
   }
-  window.nxPosCobroCliToggle = function () { nxPosClienteAbrir('nxPosCobroCliM', _posCobroCliAplicar); };
+  function _posCobroCliEditable() { return rolEfectivo() === 'admin'; }
+  window.nxPosCobroCliToggle = function () {
+    if (!_posCobroCliEditable()) { toast('warn', 'Cliente fijo', 'Solo el administrador puede cambiar el cliente al cobrar.'); return; }
+    nxPosClienteAbrir('nxPosCobroCliM', _posCobroCliAplicar);
+  };
   // Botón ✕ dedicado dentro del chip — antes la única forma de quitar el cliente era reabrir el
   // buscador entero y tocar "— Consumidor final —" hasta arriba. Un toque, sin abrir nada.
   window.nxPosCobroCliClear = function (ev) {
     if (ev) { ev.stopPropagation(); ev.preventDefault(); }
-    if (!val('posCliId')) return;
+    if (!val('posCliId') || !_posCobroCliEditable()) return;
     _posCobroCliAplicar(null);
   };
   window.nxPosCobroCalc = function () {
@@ -2567,7 +3456,7 @@
     const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Crédito' : 'Pendiente';
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
-    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px"><i class="ti ti-alert-triangle"></i> Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
+    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px"><i class="ti ti-alert-triangle"></i> Quedan ' + fmt(c.credito) + ' a crédito: ' + (_posCobroCliEditable() ? 'elige un cliente.' : 'el cliente se elige en «Facturar a» antes de cobrar.') + '</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
     try {
       const fb = document.getElementById('finBox'), cfg = document.getElementById('finCfg'), chk = document.getElementById('finChk'), pv = document.getElementById('finPrev');
       if (fb) fb.style.display = (c.credito > 0 && cliId) ? '' : 'none';
@@ -2989,6 +3878,7 @@
       _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos';
       const view = document.getElementById('v-pos'); if (view && (_posTab === 'vender' || _posTab === 'factura')) renderPOS(view);
       _posVentaExito(ventaTicket);
+      try { facTrasGuardar(ventaTicket); } catch (e) {}
     } catch (e) {
       // Solo se libera la reserva IMEI si la venta NUNCA llegó a existir. Una venta ya
       // creada no se revierte por este catch — REGLAMENTOS §2 regla 10.
@@ -3031,7 +3921,7 @@
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   window.nxPosTicket = async function (ventaId) {
     let v = _ventas.find(x => String(x.id) === String(ventaId));
@@ -3179,7 +4069,7 @@
         document.getElementById('bW').addEventListener('click',function(){window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(WA),'_blank')});
       <\/script>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el documento'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el documento'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   // Arma el documento con lo que hay AHORA en pantalla (no guarda nada)
   function facDocDesdeCarrito() {
@@ -3481,6 +4371,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 @media (min-width:700px){.nxPf .preciosFlat{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .nxPf .preciosFlat .fld label{font-size:11.5px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--pf-txt2)}
 .nxPf .inw .cur{position:absolute;left:11px;color:var(--pf-txt3);font-size:13px;font-weight:800}
+.inw .cur+input{padding-left:44px!important}
 .nxPf .reglas{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid var(--pf-line);border-radius:11px}
 .nxPf .reglas .ic{width:28px;height:28px;border-radius:8px;background:var(--pf-bg);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .nxPf .reglas select,.nxPf .reglas input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-weight:700;font-size:12px;color:var(--pf-txt);outline:0}
@@ -3673,6 +4564,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .pf2clirow:hover{background:var(--pf-bg)}
 .nxPf .pf2clirow b{font-size:12.5px;color:var(--pf-txt)}
 .nxPf .pf2clirow span{font-size:10.5px;color:var(--pf-txt3)}
+.pf2cliNuevo b{color:var(--pf-blue,#2563EB)}.pf2cliNuevo b i{font-size:14px;vertical-align:-2px}
 .nxPf .pf2cliinfo{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 16px 3px;font-size:11.5px;color:var(--pf-txt2)}
 .nxPf .card .pf2cliinfo{padding-left:0;padding-right:0}
 .nxPf .pf2cliinfo-i{display:inline-flex;align-items:center;gap:5px;font-weight:600}
@@ -4050,8 +4942,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                 <div class="card">
                   <h4><span class="bdg purple"><i class="ti ti-receipt-2"></i></span> Compra y fiscalidad</h4>
                   <div class="cols" style="display:flex;flex-direction:column;gap:12px">
-                    <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                    ${puedeVerMin() ? `<div class="fld"><label><i class="ti ti-lock"></i> Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                    <div class="fld"><label>Costo</label><div class="inw"><span class="cur">RD$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                    ${puedeVerMin() ? `<div class="fld"><label><i class="ti ti-lock"></i> Precio mínimo</label><div class="inw"><span class="cur">RD$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
                     <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                     <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
                     ${!p ? `<div class="fld"><label>Stock inicial</label><div class="inw"><i class="ti ti-stack-2"></i><input id="ppStk" inputmode="numeric" value="0" placeholder="0"></div><div style="font-size:10px;color:var(--pf-txt3)">Cantidad inicial disponible en inventario.</div></div>` : ''}
@@ -4103,7 +4995,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
               <div class="card">
                 <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de venta <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por el nivel seleccionado arriba</span></h4>
                 <div class="g2">
-                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">RD$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
@@ -5025,7 +5917,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
         </div>
         <div id="devTot" class="nxAsTot"></div>
-        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxDevForm').remove()">Cancelar</button><button class="btn bghost" type="button" onclick="window.nxDevGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button><button class="btn bc1" type="button" onclick="window.nxDevGuardar()"><i class="ti ti-check"></i> Emitir devolución</button></div>
+        ${docAccPieHTML('dev')}
       </div>`;
     document.body.appendChild(ov);
     pintarDevLineas();
@@ -5087,6 +5979,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
       // asiento contable inverso a la venta
       try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
+      docGuardado('dev', { id: dev.id, numero: dev.numero || numero, total: t.total, cliente_id: v.cliente_id, nombre: v.cliente_nombre || '', imprimir: () => nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v })),
+        waTxt: 'Hola' + (v.cliente_nombre ? ' ' + String(v.cliente_nombre).split(' ')[0] : '') + ', registramos tu devolución en ' + bizNom() + '.\nNota de crédito ' + (dev.numero || numero) + (ncfDev ? ' · NCF ' + ncfDev : '') + '\nFactura ' + (v.numero_factura || v.numero || '') + '\n\n' + docItemsTxt(lineas) + '\n\nTOTAL: ' + fmt(t.total) + ' · ' + metodo });
       cerrarModal('nxDevForm');
       toast('ok', 'Devolución emitida', (ncfDev ? 'NCF ' + ncfDev + ' · ' : '') + fmt(t.total));
       if (imprimir) nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
@@ -5118,7 +6012,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(dev.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(dev.itbis)}</td></tr><tr class="gran"><td>TOTAL DEVUELTO</td><td class="r">${fmt(dev.total)}</td></tr></table>
         <div class="muted" style="margin-top:8px">Forma de devolución: ${esc(dev.metodo || '')}</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   // ══════════════ HISTORIAL DE NOTAS DE CRÉDITO (mismo patrón detallado que Facturas) ══════════════
   function ncFiltradas() {
@@ -5185,7 +6079,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
       </div>
       <div class="kpirow" id="ncKpis">${kpisNC()}</div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('nc', _ncSort, 'numero', 'No. NC')}${thSort('nc', _ncSort, 'fecha', 'Fecha')}${thSort('nc', _ncSort, 'cliente', 'Cliente')}${thSort('nc', _ncSort, 'ncf', 'NCF')}${thSort('nc', _ncSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="ncBody">${filasNC()}</tbody></table></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('nc', _ncSort, 'numero', 'No. NC')}${thSort('nc', _ncSort, 'fecha', 'Fecha')}${thSort('nc', _ncSort, 'cliente', 'Cliente')}${thSort('nc', _ncSort, 'ncf', 'NCF')}${thSort('nc', _ncSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="ncBody" data-pag10="notas-credito">${filasNC()}</tbody></table></div>
     </div>`;
   }
   function pintarNC() { const b = document.getElementById('ncBody'); if (b) b.innerHTML = filasNC(); const k = document.getElementById('ncKpis'); if (k) k.innerHTML = kpisNC(); }
@@ -5222,7 +6116,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
       </div>
       <div id="histKpis" class="kpirow">${kpisHistorial()}</div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="tw-hist" style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="tw-hist" style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody" data-pag10="historial-ventas">${filasHistorial()}</tbody></table></div>
     </div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
@@ -5261,13 +6155,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="ab g2 sm" type="button" onclick="window.nxEntNueva()"><i class="ti ti-plus"></i> Nueva entidad</button>
         <div class="chiprow">${chip('todas', 'Todas')}${chip('clientes', 'Clientes')}${chip('proveedores', 'Proveedores')}${chip('empleados', 'Empleados')}${chip('bancos', 'Bancos')}</div>
       </div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Código</th><th>Nombre</th><th style="text-align:center">Tipo</th><th>Roles</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Código</th><th>Nombre</th><th style="text-align:center">Tipo</th><th>Roles</th><th></th></tr></thead><tbody data-pag10="entidades">${filas}</tbody></table></div>
     </div>`;
   }
   window.nxEntFiltro = function (k) { _entFiltro = k; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxEntNueva = function () { abrirEntidad(null, { es_cliente: true }); };
   window.nxEntEdit = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
-  function abrirEntidad(c, defs) {
+  // alGuardar(cliente): para quien abre la ficha desde otro módulo (elegir cliente, CRM, financiamiento).
+  let _entAlGuardar = null;
+  function abrirEntidad(c, defs, alGuardar) {
+    _entAlGuardar = typeof alGuardar === 'function' ? alGuardar : null;
     nxPfEnsureCSS();
     cerrarModal('nxEntForm');
     const e = c || defs || {};
@@ -5317,7 +6214,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
             <div class="g2">
               <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${(e.nivel_id ? String(e.nivel_id) === String(n.id) : String(n.id) === String(nivelPorDefectoId())) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
-              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">RD$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
             </div>
           </div>
           <div class="card" id="entWaBox">
@@ -5398,7 +6295,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (dup) {
         const porQue = (cedN && (dup.cedula || '').replace(/\D/g, '') === cedN) ? 'la misma cédula/RNC' : 'el mismo teléfono';
         const ok = confirm('Ya existe "' + (dup.nombre || '') + '" (' + (dup.codigo || 's/código') + ') con ' + porQue + '.\n\nAceptar = crear otra de todos modos.\nCancelar = abrir la que ya existe.');
-        if (!ok) { cerrarModal('nxEntForm'); abrirEntidad(dup, null); return; }
+        if (!ok) { const cb = _entAlGuardar; cerrarModal('nxEntForm'); abrirEntidad(dup, null, cb); return; }
       }
     }
     if (!body.codigo) body.codigo = entCodigoAuto(body);
@@ -5414,6 +6311,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
       mergeProvEntidades(); mergeVendedorEntidades();
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+      const cb = _entAlGuardar; _entAlGuardar = null;
+      if (cb && entId) { const ent = _clientes.find(x => String(x.id) === String(entId)); if (ent) { try { cb(ent); } catch (e) {} } }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   // Crea/actualiza la ficha de RRHH enlazada a una entidad-empleado (salario/puesto se completan en RRHH)
@@ -5433,7 +6332,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const conDeuda = lista.filter(c => saldoCli(c) > 0).length;
     const filas = lista.length ? lista.map(c => {
       const sal = saldoCli(c);
-      return `<tr data-row tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
+      return `<tr data-row data-q="${esc(normBusca([c.nombre, c.cedula, c.telefono, c.codigo].join(' ')))}" tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
         <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
         <td style="text-align:right;white-space:nowrap"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxCliente360('${c.id}')" title="Ver 360°" aria-label="Ver ficha 360 del cliente"><i class="ti ti-id-badge-2"></i></button></td>
@@ -5445,8 +6344,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody id="nxCliTb" data-pag10="clientes">${filas}${lista.length ? '<tr class="nxSinRes" style="display:none"><td colspan="3" class="emptyrow">Ningún cliente coincide con la búsqueda.</td></tr>' : ''}</tbody></table></div>
     </div>`;
   }
   window.nxPosNuevoCli = function () { abrirEntidad(null, { es_cliente: true }); };
@@ -6053,7 +6952,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c sal">SALDO PENDIENTE: ${fmt(saldo)}</div>
         <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${fechaDMY(isoHoy())}.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosTicketVenta = async function (ventaId) {
     let v = _ventas.find(x => String(x.id) === String(ventaId));
@@ -6132,7 +7031,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${cv2() ? '<button class="btn bsm bghost" type="button" onclick="window.nxPosCxpAbrir()"><i class="ti ti-file-invoice"></i> Cuentas por pagar</button>' : ''}
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button>
       </div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody>${comprasHTML}</tbody></table></div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody data-pag10="compras">${comprasHTML}</tbody></table></div>
     </div>`;
   }
 
@@ -6217,10 +7116,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     var mostrar = (_posTab === 'compras' && _compraVista === 'nueva');
     if (mostrar) { var vpos = document.getElementById('v-pos'); mostrar = !!(vpos && vpos.classList.contains('on')); }
     if (!mostrar) { nxStickyBarSet('nxCompBar', null); return; }
-    var html = '<button type="button" class="fbC" onclick="window.nxPosCompraCancelar()" aria-label="Cancelar compra"><i class="ti ti-x"></i></button>'
-      + '<button type="button" class="fbG" onclick="window.nxPosGuardarCompra(1)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
-      + '<button type="button" class="fbP" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button>';
+    var html = docBarraHTML('comp', _compraItems.reduce(function (s, it) { return s + Number(it.costo || 0) * Number(it.cantidad || 0); }, 0));
     nxStickyBarSet('nxCompBar', html);
+    var cb = document.getElementById('nxCompBar'); if (cb) cb.classList.add('nxFacBar6');
   }
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
   // ── Opener genérico de las lupas de Compra (proveedor/empleado). El artículo tiene el suyo aparte
@@ -6399,7 +7297,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    if (cv2()) { pintarCompraItemsV2(cont); return; }
+    if (cv2()) { pintarCompraItemsV2(cont); try { compBarraSync(); } catch (e) {} return; }
+    try { compBarraSync(); } catch (e) {}
     cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
@@ -6473,6 +7372,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
       _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
+      docGuardado('comp', { id: compra.id, numero: compra.numero, total: subtotal, imprimir: async () => { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) {} window.nxCompraImprimir(compra.id); } });
       _compraItems = []; _compraVista = 'lista';
       await cargarComprasTab(); await cargarPOS();
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -6520,7 +7420,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Cant.</th><th>Artículo</th><th class="r">Costo</th><th class="r">Importe</th></tr></thead><tbody>${filas}<tr style="font-weight:800"><td colspan="3" class="r">TOTAL</td><td class="r">${fmt(c.total)}</td></tr></tbody></table>
         ${imeis.length ? `<div style="margin-top:10px;font-weight:800;font-size:11px">IMEI / SERIALES RECIBIDOS (${imeis.length})</div><table><thead><tr><th>#</th><th>IMEI / Serial</th><th>Equipo</th><th>Estado</th></tr></thead><tbody>${imFilas}</tbody></table>` : ''}
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosDelCompra = async function (id) {
     if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
@@ -6624,7 +7524,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxCxpKpi warn"><div class="l">Vence ≤ 7 d</div><div class="v">${fmt(sum(prox))}</div><div class="s">${prox.length} factura${prox.length === 1 ? '' : 's'}</div></div>
       </div>
       <div class="nxCxpFiltros"><select id="cxpProv" aria-label="Proveedor" onchange="window.nxPosCxpFiltrar()"><option value="">Todos los proveedores</option>${provs.map(p => `<option value="${p.id}"${String(p.id) === _cxpFiltroProv ? ' selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select><select id="cxpEstado" aria-label="Estado" onchange="window.nxPosCxpFiltrar()">${[['pendientes', 'Pendientes'], ['vencidas', 'Vencidas'], ['pagadas', 'Pagadas'], ['todas', 'Todas']].map(o => `<option value="${o[0]}"${o[0] === _cxpFiltroEstado ? ' selected' : ''}>${o[1]}</option>`).join('')}</select></div>
-      <div class="nxCxpList">${cards}</div>
+      <div class="nxCxpList" data-pag10="cxp">${cards}</div>
       <div class="nxCxpActs"><button class="btn bsm bghost" type="button" onclick="window.nxPosCxpEstadoCuenta()"><i class="ti ti-printer"></i> Estado de cuenta</button><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button></div>
       <div class="nxCxpNota">Los saldos se calculan por factura: total − abonos registrados. El estado (pendiente / parcial / pagada) y los días al vencimiento salen de la fecha de vencimiento de cada compra a crédito.</div>
     </div>`;
@@ -6710,7 +7610,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="muted c">${prov ? 'Proveedor: <b>' + esc(prov) + '</b> · ' : ''}Filtro: ${esc({ pendientes: 'Pendientes', vencidas: 'Vencidas', pagadas: 'Pagadas', todas: 'Todas' }[_cxpFiltroEstado] || '')} · ${fD(hoy())}</div>
       <table><thead><tr><th>Compra</th><th>${prov ? 'Fecha' : 'Proveedor / fecha'}</th><th>Vence</th><th class="r">Total</th><th class="r">Pagado</th><th class="r">Saldo</th><th>Estado</th></tr></thead><tbody>${filas || '<tr><td colspan="7" class="c">Sin facturas</td></tr>'}<tr class="tot"><td colspan="3">TOTAL (${rows.length})</td><td class="r">${fmt2(tot('total'))}</td><td class="r">${fmt2(tot('pagado'))}</td><td class="r">${fmt2(tot('saldo'))}</td><td></td></tr></tbody></table>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   // ── Gastos de importación en Nueva compra (v2) ──
   window.nxCompGastoSync = function () {
@@ -6954,7 +7854,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosDenom = function () {
     let sum = 0;
-    document.querySelectorAll('#cierreDenoms [data-den]').forEach(inp => { const d = Number(inp.getAttribute('data-den')); const q = Number(inp.value) || 0; const st = d * q; sum += st; const lbl = document.querySelector('#cierreDenoms [data-densub="' + d + '"]'); if (lbl) lbl.textContent = 'RD$ ' + st.toLocaleString('en-US'); });
+    document.querySelectorAll('#cierreDenoms [data-den]').forEach(inp => { const d = Number(inp.getAttribute('data-den')); const q = Number(inp.value) || 0; const st = d * q; sum += st; const lbl = document.querySelector('#cierreDenoms [data-densub="' + d + '"]'); if (lbl) lbl.textContent = fmt(st); });
     const c = document.getElementById('cierreContado'); if (c) c.value = sum.toLocaleString('en-US');
     window.nxPosCierreCalc();
   };
@@ -7024,7 +7924,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${c.notas ? '<div class="muted" style="text-align:left;margin-top:6px">📝 ' + esc(c.notas) + '</div>' : ''}
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:16px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -7209,7 +8109,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevaCuenta()"><i class="ti ti-plus"></i> Nueva cuenta</button>
         <span style="font-size:11px;color:#475569;align-self:center">${_cuentas.length} cuentas</span>
       </div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th style="text-align:center">Naturaleza</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th style="text-align:center">Naturaleza</th><th></th></tr></thead><tbody data-pag10="cta-plan">${filas}</tbody></table></div>`;
   }
 
   function ctaDiario() {
@@ -7222,7 +8122,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const badge = a.tipo === 'venta' ? '<span class="nxCtaOrig">auto · venta</span>' : a.tipo === 'manual' ? '' : `<span class="nxCtaOrig">${esc(a.tipo)}</span>`;
       return `<div class="nxCtaAs">
         <div class="nxCtaAsHd"><div>${a.numero ? '<span class="nxFacCod" style="color:#6d28d9">' + esc(a.numero) + '</span> · ' : ''}<b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || 'Asiento')} ${badge}</div>${a.tipo === 'manual' ? `<button class="nxPosX" title="Eliminar" onclick="window.nxCtaDelAsiento('${a.id}')" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button>` : ''}</div>
-        <table class="nxCtaAsT"><thead><tr><th>Cód.</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td></tr></tbody></table>
+        <table class="nxCtaAsT"><thead><tr><th>Cód.</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody data-pag10="cta-diario">${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td></tr></tbody></table>
       </div>`;
     }).join('');
     return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>${bloques}`;
@@ -7241,7 +8141,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       let saldo = 0;
       const filas = movs.map(m => { saldo += (c.naturaleza === 'deudora' ? (m.debe - m.haber) : (m.haber - m.debe)); return `<tr><td>${fechaDMY(m.fecha)}</td><td>${esc(m.concepto || '')}</td><td style="text-align:right">${m.debe ? fmt(m.debe) : ''}</td><td style="text-align:right">${m.haber ? fmt(m.haber) : ''}</td><td style="text-align:right;font-weight:700">${fmt(saldo)}</td></tr>`; }).join('');
       const td = movs.reduce((s, m) => s + m.debe, 0), th = movs.reduce((s, m) => s + m.haber, 0);
-      cuerpo = movs.length ? `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th><th style="text-align:right">Saldo</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td colspan="2" style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td><td style="text-align:right;font-weight:800">${fmt(saldo)}</td></tr></tbody></table></div>` : '<div style="text-align:center;padding:24px;color:#475569;font-size:12.5px">Sin movimientos en el período.</div>';
+      cuerpo = movs.length ? `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th><th style="text-align:right">Saldo</th></tr></thead><tbody data-pag10="cta-mayor">${filas}<tr class="nxCtaAsTot"><td colspan="2" style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td><td style="text-align:right;font-weight:800">${fmt(saldo)}</td></tr></tbody></table></div>` : '<div style="text-align:center;padding:24px;color:#475569;font-size:12.5px">Sin movimientos en el período.</div>';
     }
     return `<div class="nxFacF" style="max-width:420px;margin-bottom:12px"><label>Cuenta</label><select onchange="window.nxCtaMayorSel(this.value)"><option value="">— Elegir cuenta —</option>${opts}</select></div>${cuerpo}`;
   }
@@ -7438,7 +8338,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${cuerpo}
         <div class="muted" style="margin-top:18px">Generado el ${fechaDMY(isoHoy())} · NEXUS PRO</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ── Editor de asiento manual ──
@@ -7470,7 +8370,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const wrap = document.getElementById('asLineas'); if (!wrap) return;
     _asEdit.lineas.forEach((l, i) => {
       const cs = wrap.querySelector(`[data-asc="${i}"]`), db = wrap.querySelector(`[data-asd="${i}"]`), cr = wrap.querySelector(`[data-ash="${i}"]`);
-      if (cs) l.cuenta_id = cs.value; if (db) l.debito = db.value; if (cr) l.credito = cr.value;
+      // Debe/haber llegan con coma de miles: se guardan como número limpio (strip) para que Number() los lea bien.
+      const lim = x => window.nxMoney ? window.nxMoney.strip(x) : x;
+      if (cs) l.cuenta_id = cs.value; if (db) l.debito = lim(db.value); if (cr) l.credito = lim(cr.value);
     });
     const f = document.getElementById('asF'), c = document.getElementById('asC');
     if (f) _asEdit.fecha = f.value; if (c) _asEdit.concepto = c.value;
@@ -7479,8 +8381,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const wrap = document.getElementById('asLineas'); if (!wrap || !_asEdit) return;
     wrap.innerHTML = _asEdit.lineas.map((l, i) => `<div class="nxAsRow">
         <select data-asc="${i}" onchange="window.nxAsTotals()">${asientoCtaOpts(l.cuenta_id)}</select>
-        <input data-asd="${i}" inputmode="numeric" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
-        <input data-ash="${i}" inputmode="numeric" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
+        <input data-asd="${i}" data-nx-money="sinsigno" inputmode="decimal" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
+        <input data-ash="${i}" data-nx-money="sinsigno" inputmode="decimal" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
         <button aria-label="Quitar esta línea" class="nxPosX" type="button" onclick="window.nxAsDelLinea(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button>
       </div>`).join('');
     pintarAsTot();
@@ -7643,7 +8545,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     nxPfEnsureCSS();
     const filas = _cotizaciones.length ? _cotizaciones.map(c => {
       const est = cotVigente(c);
-      return `<tr data-row tabindex="0" role="button" onclick="window.nxCotEditar('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxCotEditar('${c.id}')}">
+      return `<tr data-row data-q="${esc(normBusca([c.numero, c.cliente_nombre].join(' ')))}" tabindex="0" role="button" onclick="window.nxCotEditar('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxCotEditar('${c.id}')}">
         <td style="font-weight:800;font-family:var(--mono,monospace);color:var(--pf-blue-d)">${esc(c.numero || '')}</td>
         <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:var(--pf-txt3)">${fechaDMY(c.fecha)}</div></td>
         <td style="text-align:center">${cotEstadoBadge(est)}</td>
@@ -7657,8 +8559,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </tr>`;
     }).join('') : `<tr><td colspan="5" class="emptyrow">Aún no hay cotizaciones. Crea la primera.</td></tr>`;
     return `<div class="nxPf">
-      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Buscar por número o cliente" aria-label="Buscar cotización" oninput="window.nxFiltrarFilas('nxCotTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="nxCotTb" data-pag10="cotizaciones">${filas}<tr class="nxSinRes" style="display:none"><td colspan="5" class="emptyrow">Ninguna cotización coincide con la búsqueda.</td></tr></tbody></table></div>
     </div>`;
   }
   window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); };
@@ -7703,11 +8605,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <div class="fld"><label>Notas (opcional)</label><div class="inw"><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div></div>
           </div>
         </div>
-        <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
-          <button class="ab g3" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button>
-          <button class="ab g2" type="button" onclick="window.nxCotGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
-          <button class="ab g1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>
-        </div>
+        ${docAccPieHTML('cot')}
       </div>`;
     document.body.appendChild(ov);
     pintarCotTabla();
@@ -7733,7 +8631,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const filas = _cotEdit.lineas.map((l, i) => `<tr>
         <td class="nxFacDesc">${esc(l.nombre)}</td>
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
-        <td class="nxFacPre"><input inputmode="numeric" value="${Math.round(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
+        <td class="nxFacPre"><input data-nx-money="sinsigno" inputmode="decimal" value="${r2(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
         <td class="nxFacImp">${fmt(lineImporte(l))}</td>
         <td class="nxFacDel"><button aria-label="Quitar este producto" onclick="window.nxCotDel(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></td>
       </tr>`).join('');
@@ -7763,6 +8661,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         } catch (eDiff) { console.warn('motor de documentos (diff cotización):', eDiff); }
       }
       _cotEditSnapshot = null;
+      docGuardado('cot', { id: cotId, numero: numero, total: body.total, cliente_id: body.cliente_id, nombre: body.cliente_nombre || '', imprimir: () => { if (!_cotizaciones.find(x => String(x.id) === String(cotId))) _cotizaciones.unshift(Object.assign({ id: cotId }, body)); window.nxCotImprimir(cotId); },
+        waTxt: 'Hola' + (body.cliente_nombre ? ' ' + String(body.cliente_nombre).split(' ')[0] : '') + ', te comparto la cotización ' + numero + ' de ' + bizNom() + ':\n\n' + docItemsTxt(_cotEdit.lineas) + '\n\nTOTAL: ' + fmt(body.total) + '\nVálida por ' + (body.validez_dias || 15) + ' días.' });
       cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
       await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
       if (imprimir) window.nxCotImprimir(cotId);
@@ -7800,7 +8700,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${c.notas ? `<div class="muted" style="margin-top:10px"><b>Notas:</b> ${esc(c.notas)}</div>` : ''}
         <div class="muted" style="margin-top:16px">Esta cotización es un presupuesto y no constituye una factura. Precios sujetos a cambio después de la fecha de validez.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ════════════════════════════════════════════════════════════════════
@@ -7903,7 +8803,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const porAlm = _almacenes.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${_almacenes.map(a => `<span class="nxAlmChip">${esc(a.nombre)}: <b>${fmtN(stockEnAlm(_invProdSel, a.id))}</b></span>`).join('')}</div>` : '';
       detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock total: ${fmtN(p ? p.stock : 0)})</span><span style="display:flex;gap:6px"><button class="btn bsm bghost" onclick="window.nxInvKardexImprimir('${_invProdSel}')"><i class="ti ti-printer"></i> Imprimir</button><button aria-label="Cerrar" class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></span></div>
         ${porAlm}
-        <div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${filas}</tbody></table></div></div>`;
+        <div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody data-pag10="kardex-producto">${filas}</tbody></table></div></div>`;
     }
     let almSec = '';
     if (!_almacenes.length) {
@@ -7912,8 +8812,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const cards = _almacenes.map(a => `<div class="nxAlmCard"><div style="min-width:0"><b>${esc(a.nombre)}</b>${a.es_principal ? ' <span class="nxEntRol">Principal</span>' : ''}<div style="font-size:10px;color:#475569">${esc(a.direccion || '')}</div></div><div style="text-align:right;white-space:nowrap"><div style="font-weight:800;color:#0d9488">${fmtN(almTotalUnidades(a.id))}</div><div style="font-size:9px;color:#94a3b8">unidades</div></div></div>`).join('');
       almSec = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-building-warehouse"></i> Almacenes</span><span style="display:flex;gap:6px">${_almacenes.length > 1 ? '<button class="btn bsm bc1" onclick="window.nxAlmTransferir()"><i class="ti ti-transfer"></i> Transferencia</button>' : ''}<button class="btn bsm bghost" onclick="window.nxAlmNuevo()"><i class="ti ti-plus"></i> Almacén</button></span></div><div class="nxAlmGrid">${cards}</div></div>`;
     }
-    const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody>${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button aria-label="Ajustar el inventario de este artículo" class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
-    const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${_invMovs.slice(0, 60).map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
+    const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody data-pag10="bajo-stock">${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button aria-label="Ajustar el inventario de este artículo" class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
+    const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody data-pag10="movimientos-inv">${_invMovs.map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
     return `<div class="nxPf nxInvWrap"><div class="kpirow" style="margin-bottom:12px">
         ${kpi('Productos', fmtN(prods.length), '#2563eb')}
         ${kpi('Valor a costo', fmt(valCosto), '#0891b2')}
@@ -7954,7 +8854,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="muted">Producto: <b>${esc(p.nombre)}</b>${p.codigo ? ' · Cód: ' + esc(p.codigo) : ''} · Stock total: <b>${fmtN(p.stock)}</b>${porAlm ? '<br>Por almacén: ' + porAlm : ''}<br>Generado: ${fechaDMY(isoHoy())}</div>
         <table><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Cant.</th><th class="r">Stock</th><th>Referencia</th></tr></thead><tbody>${filas}</tbody></table>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxInvAjustarProd = function (id) {
     cerrarModal('nxInvAjuste');
@@ -8150,7 +9050,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td class="nxFacDel"><button aria-label="Quitar esta línea" onclick="window.nxTransDel(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></td>
       </tr>${serRow}`;
     }).join('');
-    wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Artículo</th><th style="text-align:center">Disp. origen</th><th style="text-align:right">Cantidad</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Artículo</th><th style="text-align:center">Disp. origen</th><th style="text-align:right">Cantidad</th><th></th></tr></thead><tbody data-pag10="transferencias">${filas}</tbody></table></div>`;
   }
   // Transferencia con IMEI atómica: TODO el despacho (numeración, seriales, stock de los 2
   // almacenes, kardex) es UNA sola llamada RPC transaccional (pos_transferir_stock) — reemplaza
@@ -8207,7 +9107,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${t.notas ? `<div class="muted"><b>Notas:</b> ${esc(t.notas)}</div>` : ''}
         <div class="fz"><div>Entregado por</div><div>Recibido por</div></div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el despacho'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el despacho'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -8258,7 +9158,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button class="ab g2 sm" type="button" onclick="window.nxCrmNueva()"><i class="ti ti-plus"></i> Nueva oportunidad</button>
         <div class="chiprow">${chip('abiertas', 'Abiertas')}${chip('nuevo', 'Nuevo')}${chip('contactado', 'Contactado')}${chip('cotizado', 'Cotizado')}${chip('ganado', 'Ganadas')}${chip('perdido', 'Perdidas')}</div>
       </div>
-      <div>${cards}</div>
+      <div data-pag10="crm-pos">${cards}</div>
     </div>`;
   }
   window.nxCrmFiltro = function (k) { _crmFiltro = k; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
@@ -8310,7 +9210,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="card">
             <h4><span class="bdg green"><i class="ti ti-calendar-stats"></i></span> Seguimiento</h4>
             <div class="g2" style="margin-bottom:10px">
-              <div class="fld"><label>Monto estimado</label><div class="inw"><span class="cur">$</span><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Monto estimado</label><div class="inw"><span class="cur">RD$</span><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0" style="padding-left:24px"></div></div>
               <div class="fld"><label>Próxima acción</label><div class="inw"><input type="date" id="crProx" value="${esc((e.proxima_accion || '').slice(0, 10))}"></div></div>
             </div>
             <div class="fld" style="margin-bottom:10px"><label>Fuente</label><div class="inw"><input id="crFuente" class="no-upper" value="${esc(e.fuente || '')}" placeholder="Referido, redes..."></div></div>
@@ -8452,7 +9352,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Vendedor</th><th class="r">Ventas</th><th class="r">Monto</th><th class="r">% base</th><th class="r">Comisión</th></tr></thead><tbody>${filas}<tr class="tot"><td>TOTALES</td><td class="r"></td><td class="r">${fmt(tM)}</td><td class="r"></td><td class="r">${fmt(tC)}</td></tr></tbody></table>
         ${huboEspecial ? '<div class="muted">* La comisión ya incluye artículos con una comisión especial propia (distinta al % base del vendedor), configurada en su ficha en Inventario → Ventas.</div>' : ''}
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxRepImei = function () {
     cerrarModal('nxRepImeiM');
@@ -8515,7 +9415,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>NCF</th><th>Fecha</th><th>Cliente</th><th class="r">Monto sin ITBIS</th><th class="r">ITBIS</th><th class="r">Total</th></tr></thead><tbody>${filas}<tr class="tot"><td colspan="3" class="r">TOTALES</td><td class="r">${fmt(mSin)}</td><td class="r">${fmt(mItb)}</td><td class="r">${fmt(mTot)}</td></tr></tbody></table>
         <div class="muted" style="margin-top:14px">Base para el formato 607 de la DGII. Verifica los datos del cliente (RNC/Cédula) antes de declarar.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ════════════════════════════════════════════════════════════════════
@@ -8566,7 +9466,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Nómina mensual (bruto)', fmt(nomMensual), 'var(--pf-blue)')}
       </div>
       <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhNuevoEmp()"><i class="ti ti-plus"></i> Nuevo empleado</button></div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Salario</th><th style="text-align:center">Pago</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Salario</th><th style="text-align:center">Pago</th><th></th></tr></thead><tbody data-pag10="empleados">${filas}</tbody></table></div>`;
   }
 
   function rhNominas() {
@@ -8581,7 +9481,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </tr>`;
     }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Aún no has generado nóminas.</td></tr>';
     return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhGenerar()"><i class="ti ti-calculator"></i> Generar nómina</button></div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Período</th><th style="text-align:center">Estado</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Período</th><th style="text-align:center">Estado</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody data-pag10="nominas">${filas}</tbody></table></div>`;
   }
 
   function rhNominaDetalle(n) {
@@ -8817,7 +9717,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:18px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
 
@@ -9029,18 +9929,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
           <div class="g2">
-            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
-            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">RD$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">RD$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
           </div>
           <div class="fld" style="margin-top:10px"><label>Técnico</label><div class="inw"><i class="ti ti-user-cog"></i><input id="repTec" class="no-upper" placeholder="Quién repara"></div></div>
           <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
-        <button class="ab g3" type="button" onclick="document.getElementById('nxRepM').remove()">Cancelar</button>
-        <button class="ab g2" type="button" onclick="window.nxRepGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
-        <button class="ab g1" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Guardar</button>
-      </div>
+      ${docAccPieHTML('rep')}
     </div>`;
     document.body.appendChild(ov); scanMoney(ov); window.nxRepEstim();
   };
@@ -9064,6 +9960,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (abono > 0 && _caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Avance reparación ' + numero + ' · ' + d.cliente_nombre, fecha: new Date().toISOString() }); } catch (e) {} }
       if (abono > 0) { try { await postAsientoServicio('Avance reparación ' + numero + ' · ' + d.cliente_nombre, abono, 'Efectivo', rep.id || null); } catch (e) {} }
       try { window.logAudit && window.logAudit('REP_RECIBIDA', numero + ' · ' + eq + ' · ' + d.cliente_nombre, 'Reparaciones'); } catch (e) {}
+      docGuardado('rep', { id: rep.id || null, numero: numero, total: Number(d.presupuesto || 0), nombre: d.cliente_nombre, tel: d.cliente_telefono || '', imprimir: () => window.nxRepImprimir(rep.id || null, rep),
+        waTxt: 'Hola ' + String(d.cliente_nombre || '').split(' ')[0] + ', recibimos tu ' + eq + ' en ' + bizNom() + '.\nOrden: ' + numero + '\nFalla: ' + falla + (Number(d.presupuesto || 0) > 0 ? '\nPresupuesto: ' + fmt(d.presupuesto) : '') + (abono > 0 ? '\nAvance recibido: ' + fmt(abono) : '') + '\n\nTe avisamos cuando esté listo.' });
       cerrarModal('nxRepM'); toast('ok', 'Equipo recibido', numero);
       if (imprimir) window.nxRepImprimir(rep.id || null, rep);
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
@@ -9108,8 +10006,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
           <div class="g2">
-            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div></div>
-            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">RD$</span><input id="repPre2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">RD$</span><input id="repAbo2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
           </div>
           ${r.estado !== 'entregado' ? `<div class="nxRepEstim" id="nxRepEstimBox2" style="margin-top:10px"></div>${_posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:8px;font-size:11.5px;color:var(--pf-txt3)">Al entregar se le darán ${_posCfg.garantia_rep_dias} día(s) de garantía.</div>` : ''}` : `<div style="margin-top:10px;font-size:12px;color:var(--pf-green);font-weight:800"><i class="ti ti-circle-check"></i> Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${gi ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${gi.vigente ? 'var(--pf-green)' : 'var(--pf-red)'}"><i class="ti ti-shield-check"></i> Garantía ${gi.vigente ? 'vigente hasta' : 'vencida el'} ${gi.fecha}</div>` : ''}`}
         </div>
@@ -9142,7 +10040,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
       <div class="mt"><span><i class="ti ti-check"></i> Entregar y cobrar</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepEnt').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(r.equipo || '')} · ${esc(r.cliente_nombre || '')} · resta <b style="color:#dc2626">${fmt(resto)}</b></div>
-      <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${Math.round(resto).toLocaleString('en-US')}"></div>
+      <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${r2(resto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"></div>
       <div class="fr"><label>Método</label><select id="reMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
       <div class="fr" style="margin-top:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" id="reItbis" style="width:17px;height:17px"> ¿Esta reparación lleva ITBIS (18%)?</label></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxRepEntregarGo('${id}')"><i class="ti ti-check"></i> Entregar equipo</button></div>
@@ -9189,7 +10087,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxRepImprimir = function (id, repObj) {
     const r = repObj || _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     const f = (l, v) => v ? `<tr><td style="color:#64748b;white-space:nowrap;padding:4px 8px 4px 0">${l}</td><td style="font-weight:700">${esc(v)}</td></tr>` : '';
     const g = garantiaInfo(r);
     const garantiaLinea = g ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${g.vigente ? '#166534' : '#991b1b'}">Garantía de esta reparación ${g.vigente ? 'hasta' : 'vencida el'} ${g.fecha}</div>` : (r.estado !== 'entregado' && _posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:6px;font-size:11px;color:#64748b">Esta reparación incluye ${_posCfg.garantia_rep_dias} día(s) de garantía a partir de la entrega.</div>` : '');
@@ -10081,7 +10979,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="nxFP-tabs" id="finTabs">${finTabsHTML()}</div>
       <div class="nxFP-searchRow"><span id="finQLupa"></span></div>
       <div class="nxFP-listHead" id="finListHead"><span>LISTA DE FINANCIAMIENTOS</span><span id="finTotalLbl">Total: ${finFiltrados().length} préstamos</span></div>
-      <div id="finList">${finListaHTML()}</div>
+      <div id="finList" data-pag10="fin-prestamos">${finListaHTML()}</div>
       <div class="nxFP-dash">
         <div class="nxFP-dcard"><div class="nxFP-dico"><i class="ti ti-calendar-dollar"></i></div><div><div class="nxFP-dlbl">CUOTAS DEL MES</div><div class="nxFP-dval">${fmt(mes.esperado)}</div><div class="nxFP-dsub">Esperado</div></div></div>
         <div class="nxFP-dcard"><div class="nxFP-dico green"><i class="ti ti-circle-check"></i></div><div><div class="nxFP-dlbl">COBRADO DEL MES</div><div class="nxFP-dval">${fmt(mes.cobradoMes)}</div><div class="nxFP-dsub">${mes.pctMes}% del esperado</div></div></div>
@@ -10165,7 +11063,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
     const rows = cuotasDe(id).map(c => `<tr><td>#${c.numero}</td><td>${String(c.fecha_venc).slice(0, 10)}</td><td style="text-align:right">${fmt(c.monto)}</td><td style="text-align:center">${c.pagado ? '<i class="ti ti-circle-check"></i> Pagada' : ''}</td></tr>`).join('');
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Acuerdo de pago</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"><style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;padding:28px;color:#1e293b;max-width:560px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;text-align:center}h2{font-size:12px;text-align:center;color:#64748b;font-weight:600;margin:2px 0 16px}p{line-height:1.55;text-align:justify}table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}th{background:#f8fafc;text-align:left;padding:6px 8px;border-bottom:2px solid #1e293b;font-size:10px;text-transform:uppercase}td{padding:6px 8px;border-bottom:1px solid #e2e8f0}.fir{margin-top:54px;display:flex;justify-content:space-between;gap:24px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
       <h1>${esc(biz)}</h1><h2>ACUERDO DE PAGO EN CUOTAS · ${new Date().toLocaleDateString('es-DO')}</h2>
       <p>El cliente <b>${esc(f.cliente_nombre || '')}</b> adquirió <b>${esc(f.descripcion || '')}</b> por un total de <b>${fmt(f.monto_total)}</b>, entregando un inicial de <b>${fmt(f.inicial)}</b> y financiando <b>${fmt(f.monto_financiado)}</b> en <b>${f.cuotas_total} cuota(s) ${esc(f.frecuencia || '')}(es)</b> de <b>${fmt(f.cuota_monto)}</b>, según el calendario siguiente:</p>
@@ -10210,7 +11108,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c sal">TOTAL VENCIDO: ${fmt(granTotal)}</div>
         <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${new Date().toLocaleDateString('es-DO')}.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
 
@@ -10251,6 +11149,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     const anulada = !!(v.anulada || v.estado === 'anulada');
     const tipoLbl = (NCF_TIPOS.find(t => t[0] === (v.tipo_comprobante || 'sin')) || [null, 'Sin comprobante'])[1];
+    // En Factura con el carrito vacío, la factura consultada pasa a ser «la de pantalla»: la barra
+    // (Imprimir / WhatsApp / Anular) actúa sobre ella. Nunca se carga al carrito ni se re-cobra.
+    if (_posTab === 'factura' && !_cart.length) { _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, anulada: anulada }; _facWaTel = ''; try { pintarFactura(); } catch (e) {} }
     const filas = items.length ? items.map(it => `<tr><td data-l="Cant.">${Number(it.cantidad || 0)}</td><td data-l="Artículo">${esc(it.nombre || '')}</td><td class="r" data-l="Precio">${fmt(it.precio || 0)}</td><td class="r" data-l="Importe">${fmt(it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('')
       : '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px">Sin artículos</td></tr>';
     cerrarModal('nxFacVerM');
@@ -10278,7 +11179,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button type="button" class="nx-inv-btn" onclick="window.nxPosTicketVenta('${v.id}')"><i class="ti ti-receipt"></i> Ticket</button>
         <button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDocCadena('pos_ventas','${v.id}')"><i class="ti ti-git-branch"></i> Ver cadena</button>
         ${anulada ? '' : `<button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDevNueva('${v.id}')"><i class="ti ti-receipt-refund"></i> Nota de crédito</button>
-        <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxPosAnularVenta('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
+        <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
       </div>
     </div>`;
     document.body.appendChild(ov);
@@ -10314,6 +11215,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (doc) _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id };
       }
       const nItemsPref = _cart.length;
+      if (r && r[0]) { const _pid = r[0].id; docGuardado('pref', { id: _pid, numero: numero, total: t.total, cliente_id: cli ? cli.id : null, nombre: cli ? cli.nombre : '', imprimir: () => { if (!(_prefHist || []).find(x => String(x.id) === String(_pid))) _prefHist.unshift(r[0]); window.nxPHImprimir(_pid); },
+        waTxt: 'Hola' + (cli ? ' ' + String(cli.nombre).split(' ')[0] : '') + ', te comparto la prefactura ' + numero + ' de ' + bizNom() + ':\n\n' + docItemsTxt(_cart) + '\n\nTOTAL: ' + fmt(t.total) + '\n\nCuando quieras la facturamos.' }); }
       _cart = []; _facNota = ''; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
       if (r && r[0] && window.nxReciboAnimado) {
@@ -10573,7 +11476,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div class="chiprow" style="margin-bottom:12px">${pill('todas', 'Todas')}${pill('abiertas', 'Abiertas')}${pill('facturadas', 'Facturadas')}${pill('anuladas', 'Anuladas')}</div>
       <div class="kpirow" id="phKpis">${kpisPH()}</div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('ph', _phSort, 'numero', 'No. PF')}${thSort('ph', _phSort, 'fecha', 'Fecha')}${thSort('ph', _phSort, 'cliente', 'Cliente')}${thSort('ph', _phSort, 'estado', 'Estado')}${thSort('ph', _phSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="phBody">${filasPH()}</tbody></table></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('ph', _phSort, 'numero', 'No. PF')}${thSort('ph', _phSort, 'fecha', 'Fecha')}${thSort('ph', _phSort, 'cliente', 'Cliente')}${thSort('ph', _phSort, 'estado', 'Estado')}${thSort('ph', _phSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="phBody" data-pag10="prefacturas-hist">${filasPH()}</tbody></table></div>
     </div>`;
   }
   function pintarPH() { const b = document.getElementById('phBody'); if (b) b.innerHTML = filasPH(); const k = document.getElementById('phKpis'); if (k) k.innerHTML = kpisPH(); }
@@ -10631,7 +11534,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${p.notas ? `<div class="muted" style="margin-top:8px;padding-top:8px;border-top:1px dashed #ccc"><b>Nota / condiciones:</b> ${esc(p.notas)}</div>` : ''}
         <div class="muted" style="margin-top:8px">Documento no fiscal. No es una factura — vale como cotización / proforma.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
@@ -10886,16 +11789,20 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
-  let _fhPage = 0, _fhQ = '';
+  let _fhPage = 0, _fhQ = '', _fhModo = '';
   // Modal arma su cáscara UNA vez; ni el buscador ni la paginación destruyen el input
   // al usarse (antes se reconstruía TODO el modal por cada letra/página y se
   // re-enfocaba a mano como parche).
-  window.nxFacHist = function () {
+  // modo '' = ver · 'anular' = tocar una factura la anula · 'nc' = abre su devolución / nota de crédito.
+  window.nxFacHist = function (modo) {
+    _fhModo = modo === 'anular' || modo === 'nc' ? modo : '';
+    if (_fhModo === 'anular' && !facPuedeAnular()) { toast('warn', 'Anular', 'Solo el administrador o el gerente puede anular'); return; }
+    const tit = _fhModo === 'anular' ? '<i class="ti ti-ban" style="color:#b42318"></i> ¿Qué factura vas a anular?' : _fhModo === 'nc' ? '<i class="ti ti-receipt-refund"></i> ¿De qué factura es la devolución?' : '<i class="ti ti-file-invoice"></i> Facturas generadas';
     cerrarModal('nxFacHistM');
     const ov = document.createElement('div'); ov.id = 'nxFacHistM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-file-invoice"></i> Facturas generadas</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      <div class="mt"><span>${tit}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
       ${posBuscador({ id: 'fhQ', placeholder: 'Buscar por número o cliente…', value: _fhQ, oninput: 'window.nxFacHistRows(0, this.value)' })}
       <div id="nxFacHistRows" style="overflow-y:auto;flex:1"></div>
       <div id="nxFacHistNav"></div>
@@ -10914,11 +11821,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         .catch(() => { window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHistRows(_fhPage); });
     }
     let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
+    if (_fhModo) lista = lista.filter(v => !(v.anulada || v.estado === 'anulada'));
     if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
+    const abrir = _fhModo === 'anular' ? 'window.nxFacAnularId' : _fhModo === 'nc' ? 'window.nxDevNueva' : 'window.nxFacVerVenta';
     const pags = Math.max(1, Math.ceil(lista.length / 10));
     if (_fhPage >= pags) _fhPage = pags - 1;
     const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
-    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
+    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();${abrir}('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800"><i class="ti ti-chevron-right"></i></span></div>`).join('')
@@ -10966,7 +11875,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return `<div class="nxPf">
       <div class="toolbar2" style="justify-content:flex-end"><button class="ab g2 sm" type="button" onclick="window.nxApaNuevo()"><i class="ti ti-plus"></i> Nuevo apartado</button></div>
       ${kpis}
-      ${rows}
+      <div data-pag10="apartados">${rows}</div>
     </div>`;
   }
   window.nxApaNuevo = function () {
@@ -10991,13 +11900,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Precio y plazo</h4>
           <div class="g2" style="margin-bottom:10px">
-            <div class="fld"><label>Precio TOTAL *</label><div class="inw"><span class="cur">$</span><input id="apTot" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
-            <div class="fld"><label>Abono inicial</label><div class="inw"><span class="cur">$</span><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Precio TOTAL *</label><div class="inw"><span class="cur">RD$</span><input id="apTot" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Abono inicial</label><div class="inw"><span class="cur">RD$</span><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
           </div>
           <div class="fld"><label>Días de plazo</label><div class="inw"><input id="apDias" inputmode="numeric" value="30"></div></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0"><button class="ab g3" type="button" onclick="document.getElementById('nxApaM').remove()">Cancelar</button><button class="ab g1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
+      ${docAccPieHTML('apa')}
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };
@@ -11020,6 +11929,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         try { await postAsientoServicio('Abono apartado ' + numero + ' · ' + cli.toUpperCase(), abono, 'Efectivo', a.id); } catch (e) {}
       }
       try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + cli.toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
+      if (a) docGuardado('apa', { id: a.id, numero: numero, total: total, nombre: cli.toUpperCase(), tel: val('apTel').trim(),
+        waTxt: 'Hola ' + cli.split(' ')[0] + ', tu apartado en ' + bizNom() + ' quedó registrado.\n' + numero + ' · ' + desc + '\nPrecio: ' + fmt(total) + '\nAbonado: ' + fmt(abono || 0) + '\nFalta: ' + fmt(total - (abono || 0)) + '\nFecha límite: ' + lim.split('-').reverse().join('/') });
       cerrarModal('nxApaM'); toast('ok', 'Apartado creado', numero);
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
@@ -11040,7 +11951,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <div style="font-size:11.5px;color:var(--pf-txt2);margin-bottom:10px">${esc(a.descripcion || '')} · ${esc(a.cliente_nombre || '')} · falta <b style="color:var(--pf-red)">${fmt(falta)}</b></div>
           <div class="g2">
-            <div class="fld"><label>Monto</label><div class="inw"><span class="cur">$</span><input id="apMonto" data-nx-money inputmode="numeric" value="${Math.round(falta).toLocaleString('en-US')}" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Monto</label><div class="inw"><span class="cur">RD$</span><input id="apMonto" data-nx-money inputmode="numeric" value="${r2(falta).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" style="padding-left:24px"></div></div>
             <div class="fld"><label>Método</label><div class="inw"><select id="apMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><i class="ti ti-chevron-down chev"></i></div></div>
           </div>
         </div>
@@ -11481,9 +12392,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function finV2RecargarLedger() {
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
     const [fins, fcuo, finpag, so] = await Promise.all([
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300')
     ]);
     if (fins) _fins = fins; if (fcuo) _finCuotas = fcuo; if (finpag) _finPagos = finpag; if (so) _finSols = so;
@@ -11629,7 +12540,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div class="nxF2Chips">${chips.map(c => `<button type="button" class="nxF2Chip ${_finV2Filtro === c[0] ? 'on' : ''}" onclick="window.nxFinV2Filtro('${c[0]}')">${c[1]} · ${c[2]}</button>`).join('')}</div>
       <div class="nxF2F" style="margin-bottom:8px"><input type="search" placeholder="Nombre, cédula, teléfono o código…" value="${esc(_finV2Q)}" oninput="window.nxFinV2Buscar(this.value)" autocomplete="off"></div>
-      <div id="finV2Lista">${finV2ListaHTML()}</div>
+      <div id="finV2Lista" data-pag10="fin-cartera">${finV2ListaHTML()}</div>
       <div class="nxF2G2" style="margin-top:10px">
         <button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinCarteraVencida()"><i class="ti ti-report-money" style="color:var(--f2-blue)"></i> Reporte de cartera</button>
         <button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinV2Excel()"><i class="ti ti-file-spreadsheet" style="color:var(--f2-blue)"></i> Exportar Excel</button>
@@ -11702,7 +12613,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finRefsDe(cliId) { return _finRefs.filter(r => String(r.cliente_id) === String(cliId)); }
   function finHistorialCli(cliId) {
     const fs = _fins.filter(f => String(f.cliente_id) === String(cliId));
-    if (!fs.length) return { txt: 'Sin historial de crédito en STUDIO', ok: true };
+    if (!fs.length) return { txt: 'Sin historial de crédito en ' + bizNom(), ok: true };
     const act = fs.filter(f => f.estado === 'activo'); const venc = act.filter(f => finV2EstadoFin(f).key === 'vencido');
     if (venc.length) return { txt: venc.length + ' financiamiento(s) con cuotas vencidas', ok: false };
     const sal = fs.filter(f => f.estado === 'saldado').length;
@@ -11921,7 +12832,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   window.nxFinV2Contrato = function (id) {
     const f = finFinDe(id); if (!f) return;
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     const firmas = `<div class="fir"><div>${f.firma_tienda ? '<img src="' + f.firma_tienda + '" style="max-height:60px"><br>' : ''}Por ${esc(empNom())}${f.firma_tienda_por ? ' · ' + esc(f.firma_tienda_por) : ''}</div><div>${f.firma_cliente ? '<img src="' + f.firma_cliente + '" style="max-height:60px"><br>' : ''}${esc(f.cliente_nombre || '')}${f.firma_cliente_en ? ' · ' + new Date(f.firma_cliente_en).toLocaleString('es-DO') : ' (pendiente de firma)'}</div></div>`;
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${firmas}<script>window.print();</` + `script></body></html>`);
     w.document.close();
