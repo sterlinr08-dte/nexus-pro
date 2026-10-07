@@ -8819,7 +8819,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.17';
+const APP_VERSION='59.18';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -14234,7 +14234,7 @@ async function regAbono(){
     toast('ok','Pago registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago registrado',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
-      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
+      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase(),compartirImagen:true},
       [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
        {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
@@ -14277,7 +14277,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     nxReciboAnimado({empresa:CFG.empNom,titulo:'Pago a deuda anterior',cliente:c.nom,monto,
       filas:[{label:'Método',valor:metodo},{label:'Referencia',valor:refValor||'—'},{label:'Póliza',valor:c.numero_poliza||'—'}],
-      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase()},
+      folio:'ABO-'+String(r.abono_id||'').slice(-8).toUpperCase(),compartirImagen:true},
       [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
        {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
@@ -16636,8 +16636,82 @@ window.nxReciboAnimado=function(datos,acciones){
   });
   const btnClose=ov.querySelector('[data-close="1"]');if(btnClose)btnClose.onclick=()=>ov.remove();
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  // «Compartir imagen» (07-oct-2026, solo donde el módulo lo pide con datos.compartirImagen):
+  // el PNG se prepara AL ABRIR, porque iOS solo deja abrir el compartir nativo dentro del mismo toque.
+  // A diferencia de las demás acciones, NO cierra la tarjeta: después de compartir se puede tocar WhatsApp o Cerrar.
+  if(datos.compartirImagen){
+    const acts=ov.querySelector('.nxRA-acts');
+    const b=document.createElement('button');b.type='button';b.className='nxRA-btn';b.setAttribute('data-share-img','1');
+    b.innerHTML='<i class="ti ti-share"></i> Compartir imagen';
+    acts.insertBefore(b,acts.querySelector('[data-close="1"]'));
+    let archivo=null;
+    try{_nxRAImagenBlob(datos,montoTxt,bl=>{archivo=bl?_nxRAArchivo(bl,datos):null;});}catch(_e){}
+    b.onclick=function(){
+      if(!archivo){try{archivo=_nxRAArchivo(_nxRADataURLaBlob(_nxRAImagenCanvas(datos,montoTxt).toDataURL('image/png')),datos);}catch(_e){}}
+      if(!archivo){if(typeof toast==='function')toast('err','No se pudo preparar la imagen','');return;}
+      _nxRACompartir(archivo);
+    };
+  }
   requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('on')));
 };
+// Dibuja el recibo tal como se ve en pantalla (papel blanco, empresa, título, cliente, filas,
+// monto, código de barras, folio y fecha) en un canvas a 3x para que se lea nítido en WhatsApp.
+function _nxRAImagenCanvas(datos,montoTxt){
+  const S=3,W=360,PX=24,PAD=22,ff="'Segoe UI',system-ui,-apple-system,sans-serif",mono="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+  const filas=(datos.filas||[]).filter(f=>f&&(f.label||f.valor));
+  const plano=s=>String(s==null?'':s).replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').trim();
+  const pw=W-PX*2,H=PAD+40+8+14+22+(datos.cliente?18:0)+30+filas.length*20+10+44+48+(datos.folio?16:0)+16+PAD+24;
+  const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;
+  const g=cv.getContext('2d');g.scale(S,S);
+  g.fillStyle='#eef2f7';g.fillRect(0,0,W,H);
+  const top=20,bottom=H-24;
+  // papel con sombra suave y borde inferior en zigzag (como el ticket de la pantalla)
+  g.save();g.shadowColor='rgba(15,23,42,.18)';g.shadowBlur=18;g.shadowOffsetY=8;
+  g.beginPath();g.moveTo(PX,top);g.lineTo(PX+pw,top);g.lineTo(PX+pw,bottom);
+  const dien=8;for(let x=PX+pw;x>PX;x-=dien*2){g.lineTo(Math.max(PX,x-dien),bottom+dien);g.lineTo(Math.max(PX,x-dien*2),bottom);}
+  g.lineTo(PX,top);g.closePath();g.fillStyle='#fff';g.fill();g.restore();
+  const cx=W/2,ajusta=(t,max)=>{t=String(t);if(g.measureText(t).width<=max)return t;while(t.length>1&&g.measureText(t+'…').width>max)t=t.slice(0,-1);return t+'…';};
+  let y=top+PAD;
+  // ícono: círculo teal con visto
+  g.fillStyle='rgba(28,162,164,.12)';g.beginPath();g.arc(cx,y+19,19,0,Math.PI*2);g.fill();
+  g.strokeStyle='#1ca2a4';g.lineWidth=2.6;g.lineCap='round';g.lineJoin='round';
+  g.beginPath();g.moveTo(cx-8,y+19);g.lineTo(cx-2.5,y+25);g.lineTo(cx+8.5,y+13);g.stroke();
+  y+=40+8;g.textAlign='center';g.textBaseline='top';
+  g.fillStyle='#94a3b8';g.font='800 10.5px '+ff;g.fillText(ajusta(plano(datos.empresa).toUpperCase(),pw-28),cx,y);y+=14;
+  g.fillStyle='#0f172a';g.font='800 15px '+ff;g.fillText(ajusta(plano(datos.titulo||'Pago recibido'),pw-28),cx,y);y+=22;
+  if(datos.cliente){g.fillStyle='#475569';g.font='400 11.5px '+ff;g.fillText(ajusta(plano(datos.cliente),pw-28),cx,y);y+=18;}
+  y+=10;g.strokeStyle='#dde3ea';g.lineWidth=2;g.setLineDash([6,5]);g.beginPath();g.moveTo(PX+18,y);g.lineTo(PX+pw-18,y);g.stroke();g.setLineDash([]);y+=20;
+  filas.forEach(f=>{
+    g.textAlign='left';g.fillStyle='#475569';g.font='400 11px '+ff;const lb=plano(f.label);g.fillText(lb,PX+18,y);
+    const lw=g.measureText(lb).width;g.textAlign='right';g.fillStyle='#0f172a';g.font='700 11px '+ff;
+    g.fillText(ajusta(plano(f.valor),pw-36-lw-12),PX+pw-18,y);y+=20;
+  });
+  y+=10;g.textAlign='center';g.fillStyle='#0f172a';
+  let fs=26;g.font='900 '+fs+'px '+mono;const mt=plano(montoTxt);while(fs>14&&g.measureText(mt).width>pw-28){fs--;g.font='900 '+fs+'px '+mono;}
+  g.fillText(mt,cx,y+(26-fs)/2);y+=44;
+  // código de barras: mismo patrón que la pantalla (2 / 2 / 1 / 4 px), al 82 % del ancho
+  const bw=pw*.82,bx=cx-bw/2;g.fillStyle='rgba(15,23,42,.85)';
+  for(let x=0;x<bw;x+=9){g.fillRect(bx+x,y,Math.min(2,bw-x),34);if(x+4<bw)g.fillRect(bx+x+4,y,1,34);}
+  y+=40;g.fillStyle='#94a3b8';
+  if(datos.folio){g.font='400 9.5px '+mono;try{g.letterSpacing='1px';}catch(_e){}g.fillText(plano(datos.folio),cx,y);try{g.letterSpacing='0px';}catch(_e){}y+=16;}
+  const d=new Date(),dd=n=>String(n).padStart(2,'0');
+  g.font='400 9.5px '+ff;g.fillText(dd(d.getDate())+'/'+dd(d.getMonth()+1)+'/'+d.getFullYear()+' · '+dd(d.getHours())+':'+dd(d.getMinutes()),cx,y);
+  return cv;
+}
+function _nxRAImagenBlob(datos,montoTxt,cb){const cv=_nxRAImagenCanvas(datos,montoTxt);if(cv.toBlob)cv.toBlob(bl=>cb(bl),'image/png');else cb(_nxRADataURLaBlob(cv.toDataURL('image/png')));}
+function _nxRADataURLaBlob(u){const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:'image/png'});}
+function _nxRAArchivo(blob,datos){
+  const base=String(datos.folio||'pago').replace(/[^A-Za-z0-9-]+/g,'-').replace(/^-+|-+$/g,'')||'pago';
+  try{return new File([blob],'recibo-'+base+'.png',{type:'image/png'});}catch(_e){blob.name='recibo-'+base+'.png';return blob;}
+}
+// Compartir nativo con el archivo solo (sin texto: en iPhone, WhatsApp descarta la imagen si va con texto).
+// Donde el teléfono o el navegador no comparten archivos, se descarga.
+function _nxRACompartir(archivo){
+  const bajar=()=>{try{const u=URL.createObjectURL(archivo),a=document.createElement('a');a.href=u;a.download=archivo.name||'recibo.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);if(typeof toast==='function')toast('ok','Recibo descargado',archivo.name||'');}catch(_e){if(typeof toast==='function')toast('err','No se pudo descargar','');}};
+  let puede=false;try{puede=!!(navigator.share&&navigator.canShare&&archivo instanceof File&&navigator.canShare({files:[archivo]}));}catch(_e){}
+  if(!puede)return bajar();
+  navigator.share({files:[archivo]}).catch(e=>{if(e&&e.name==='AbortError')return;bajar();});
+}
 
 // ── Auto-facturación mejorada ───────────────────────────────────────────────
 let _autoFactLock=false;

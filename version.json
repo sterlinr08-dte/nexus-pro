@@ -1,7 +1,16 @@
 {
-  "version": "59.17",
+  "version": "59.18",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.18",
+      "fecha": "2026-10-07",
+      "notas": [
+        "Recibo de Seguros: nuevo botón «Compartir imagen» debajo del recibo animado que sale al registrar un pago (normal o de deuda anterior).",
+        "Arma una imagen del recibo con la empresa, el cliente, el método, la referencia, la póliza, el monto, el folio y la fecha, y abre el compartir del teléfono para mandarla por WhatsApp o por donde quieras. En la computadora la descarga.",
+        "El botón WhatsApp sigue igual; Financiamiento y POS no cambian."
+      ]
+    },
     {
       "version": "59.17",
       "fecha": "2026-10-07",
