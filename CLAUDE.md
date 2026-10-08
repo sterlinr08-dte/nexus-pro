@@ -76,6 +76,37 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 - No tocar datos históricos ni hacer reparaciones masivas sin autorización específica.
 - Antes de cambios de dinero, cobros, transferencias, comisiones o cierres, auditar primero la fuente de verdad y evitar doble contabilización.
 
+## Regla del dueño: usar SIEMPRE las skills instaladas (08-oct-2026)
+
+> «Siempre tener en cuenta, siempre, siempre… todas las skills que hemos instalado, para las cosas que vamos necesitando o que podamos sacarle provecho según vayamos desarrollando o programando.»
+
+**Antes de empezar cualquier tarea:**
+- revisar la lista de skills disponibles (`.claude/skills/` de este repo y las que anuncie la sesión);
+- usar la que corresponda **sin esperar a que el dueño la nombre**;
+- si una skill puede mejorar el trabajo aunque no se haya pedido (diseño, seguridad, video, revisión), proponerla o aplicarla;
+- si se combinan varias, decirlo.
+
+**Catálogo (por necesidad):**
+
+| Necesidad | Skills |
+|---|---|
+| Diseño / pantallas | `apple-design`, `frontend-design`, `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `review-animations`, `animation-vocabulary`, `canvas-design` |
+| Seguridad | `security-audit` (Cloudflare; auditoría completa solo si se pide), `penetration-testing-with-strix`, `fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`, `managed-pentesting-with-strix`, `gstack-cso` |
+| Código y revisión | `gstack-review`, `gstack-investigate`, `gstack-plan-eng-review`, `gstack-spec`, `gstack-health`, `ponytail*` (simplificar), `senior-architect`, `webapp-testing`, `gstack-careful` / `gstack-guard` / `gstack-freeze` (seguridad al editar) |
+| Video y reels | `hyperframes` (entrada) → `product-launch-video`, `embedded-captions`, `talking-head-recut`, `music-to-video`, `motion-graphics`, `slideshow`, `faceless-explainer`, `general-video`, `media-use`, `hyperframes-*`; `remotion-*`. Para personas y escenas con IA: Buzzy (MCP). |
+| Redes sociales | `ver-video-redes` (bajar y analizar reels de Instagram/TikTok por enlace) |
+| Negocio | `lead-research-assistant`, `invoice-organizer`, `gstack-plan-ceo-review`, `gstack-retro` |
+
+**Otros repos:**
+- `studio-rd`: `impeccable`, `remotion-*`, `security-audit`, `studio-automatizaciones`.
+- `bayolcell-taller`: `apple-design`, `impeccable`, `nexus-*`, `security-audit`, `supabase`, `supabase-postgres-best-practices`.
+
+**Reglas de uso:**
+- HyperFrames siempre con la telemetría apagada (`HYPERFRAMES_NO_TELEMETRY=1`, `DO_NOT_TRACK=1`).
+- Nunca usar `npx hyperframes usage`.
+- No conectar cuentas ni gastar en servicios de pago sin el OK del dueño.
+- Las skills nuevas se revisan antes de instalarlas y quedan con su bitácora.
+
 ## Estado estable reciente
 
 ### Rollback visual
