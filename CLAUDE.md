@@ -80,6 +80,8 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 
 > «Siempre tener en cuenta, siempre, siempre… todas las skills que hemos instalado, para las cosas que vamos necesitando o que podamos sacarle provecho según vayamos desarrollando o programando.»
 
+**Lista completa de herramientas y conectores (skills + MCP + estado): [`HERRAMIENTAS.md`](HERRAMIENTAS.md). Leerla al empezar cada pedido.**
+
 **Antes de empezar cualquier tarea:**
 - revisar la lista de skills disponibles (`.claude/skills/` de este repo y las que anuncie la sesión);
 - usar la que corresponda **sin esperar a que el dueño la nombre**;
