@@ -44,6 +44,7 @@
 | **`ver-video-redes`** (skill) | Pasar un enlace de Instagram, TikTok, Facebook o YouTube: baja el video, saca los cuadros y el audio, y compara canciones. | Instalada (nexus-pro). Funciona con publicaciones públicas. |
 | **`analizar-instagram`** (skill, BAYOL) | Leer el perfil completo, ver qué publicación funcionó mejor, sacar los precios de los flyers y guardar la guía de marca. | Creada en bayolcell-taller. Para el perfil completo hace falta Supermetrics autorizado. |
 | **Supermetrics** (MCP) | Datos de Instagram y Facebook: publicaciones, likes, vistas, alcance, mejores Reels, seguidores y **perfiles públicos de la competencia** (`IGPD2`, vía oficial de Meta). | **Conectado (09-oct-2026)** con la cuenta bayolcellsrl@gmail.com, «Team bayolcellsrl», Facebook «Bayol Cell RD». Prueba gratis hasta ~21-oct. |
+| **Instagram de la competencia (Meta directo)** | Gratis y fijo: lee perfiles públicos de las tiendas que se vigilan (y @bayolcell) todos los días a las 6:15 a. m. y a pedido. Datos en las tablas `ig_competencia_*` de BAYOL. | Creado 09-oct-2026 (función `instagram-competencia`). **Falta el permiso de Meta** (`IG_GRAPH_TOKEN`), que pone el dueño. |
 | **`precios-competencia`** (skill, BAYOL) | «Mira el perfil de X y mándame los precios»: lee Instagram por Supermetrics (respaldo: TikTok público) y compara con el catálogo y los flyers de BAYOL. | Creada en bayolcell-taller. |
 | **Windsor.ai** (MCP) | Datos de redes y anuncios. También puede publicar imágenes en Instagram o responder comentarios, solo con aprobación. | Conectado. Requiere conectar cada cuenta. |
 | **Meta Ads** (MCP) | Biblioteca de anuncios (ver qué anuncios corre la competencia en RD), campañas, públicos y promocionar publicaciones. | Conectado. Crear o pausar anuncios solo con orden del dueño. |
@@ -81,7 +82,7 @@ En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) est
 | «Hazme un video o reel» | `hyperframes` + Buzzy para escenas + revisión cuadro por cuadro |
 | «Mira este video de Instagram/TikTok» | `ver-video-redes` |
 | «Qué está funcionando en mi Instagram» | `analizar-instagram` + Supermetrics |
-| «Qué hace la competencia» | Biblioteca de anuncios de Meta + Firecrawl + Supermetrics (perfiles públicos) |
+| «Qué hace la competencia» | Tablas `ig_competencia_*` (Meta directo) + Biblioteca de anuncios de Meta + Firecrawl; Supermetrics de respaldo |
 | «Mejora esta pantalla» | `apple-design` / `impeccable` / `ui-ux-pro-max` |
 | «Revisa la seguridad» | `security-audit` |
 | «Algo falla» | `gstack-investigate` + Sentry + Supabase logs |
