@@ -1,7 +1,15 @@
 {
-  "version": "59.18",
+  "version": "59.19",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.19",
+      "fecha": "2026-10-09",
+      "notas": [
+        "Listas sin efecto de rueda: en Clientes, Facturas y las demás listas todas las filas se ven igual de nítidas, derechas y del mismo tamaño, sin desenfoque ni inclinación al desplazar.",
+        "No cambia ningún dato, botón ni orden de la lista; solo se quitó el efecto visual."
+      ]
+    },
     {
       "version": "59.18",
       "fecha": "2026-10-07",
