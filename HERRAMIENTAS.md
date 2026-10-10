@@ -50,6 +50,21 @@
 | **Zernio** | Bandeja de mensajes de WhatsApp, Instagram y Messenger de los CRM (BAYOL, STUDIO). | En uso por los CRM. |
 | **Firecrawl** (MCP) | Buscar en la web y leer páginas: competencia, tendencias, precios públicos. | Conectado. |
 
+### Marketing, anuncios y SEO (skills de terceros revisadas, 10-oct-2026)
+Copiadas solo como instrucciones, sin programas. Licencias en `.claude/skills/LICENCIAS-TERCEROS.md`.
+
+| Necesidad | Skills |
+|---|---|
+| Contexto del negocio (primero) | `product-marketing` |
+| Textos, ofertas y persuasión | `copywriting`, `copy-editing`, `offers`, `marketing-psychology` |
+| Redes y contenido | `social`, `content-strategy`, `influencer-marketing`, `image` |
+| WhatsApp y SMS | `sms` (con la nota de que RD usa +1 pero no es EE. UU.) |
+| Referidos y reseñas | `referrals` |
+| Plan y competencia | `marketing-plan`, `competitor-profiling` |
+| Páginas web | `cro`, `analytics` |
+| Anuncios (Meta) | `ads` (base), `ads-meta`, `ads-creative`, `ads-competitor`, `ads-plan`, `ads-create`, `ads-math`, `ads-budget`. **Solo lectura: ningún cambio en campañas sin aprobación del dueño.** |
+| SEO y Google Maps | `seo-local`, `seo-maps`, `seo-technical`, `seo-page`, `seo-schema`, `seo-sitemap`, `seo-images`, `seo-content`, `seo-plan` |
+
 ### Diseño de pantallas y páginas
 `apple-design`, `frontend-design`, `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `review-animations`, `animation-vocabulary`, `canvas-design`.
 
@@ -86,3 +101,6 @@ En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) est
 | «Revisa la seguridad» | `security-audit` |
 | «Algo falla» | `gstack-investigate` + Sentry + Supabase logs |
 | «Haz una campaña» | Meta Ads (con aprobación) + video con HyperFrames |
+| «Revisa mis anuncios» | `ads-meta` + Meta Ads (solo lectura) |
+| «Mejora este texto u oferta» | `copywriting` / `offers` |
+| «Que salgamos en Google o Maps» | `seo-local` + `seo-maps` |

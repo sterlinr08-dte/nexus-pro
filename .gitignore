@@ -2,3 +2,6 @@ node_modules/
 package-lock.json
 package.json
 graphify-out/
+
+# Salidas de la skill claude-ads (no se guardan en el repo)
+.claude-ads/

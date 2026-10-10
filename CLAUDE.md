@@ -98,6 +98,7 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 | Video y reels | `hyperframes` (entrada) → `product-launch-video`, `embedded-captions`, `talking-head-recut`, `music-to-video`, `motion-graphics`, `slideshow`, `faceless-explainer`, `general-video`, `media-use`, `hyperframes-*`; `remotion-*`. Para personas y escenas con IA: Buzzy (MCP). |
 | Redes sociales | `ver-video-redes` (bajar y analizar reels de Instagram/TikTok por enlace) |
 | Negocio | `lead-research-assistant`, `invoice-organizer`, `gstack-plan-ceo-review`, `gstack-retro` |
+| Marketing, anuncios y SEO (10-oct-2026) | `product-marketing`, `copywriting`, `copy-editing`, `offers`, `marketing-psychology`, `social`, `content-strategy`, `influencer-marketing`, `image`, `sms`, `referrals`, `marketing-plan`, `competitor-profiling`, `cro`, `analytics`; anuncios `ads` + `ads-meta`, `ads-creative`, `ads-competitor`, `ads-plan`, `ads-create`, `ads-math`, `ads-budget` (solo lectura); SEO `seo-local`, `seo-maps`, `seo-technical`, `seo-page`, `seo-schema`, `seo-sitemap`, `seo-images`, `seo-content`, `seo-plan` |
 
 **Otros repos:**
 - `studio-rd`: `impeccable`, `remotion-*`, `security-audit`, `studio-automatizaciones`.
