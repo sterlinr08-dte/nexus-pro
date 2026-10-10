@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@1.10.1",
+        "--no-usage-statistics",
+        "--no-performance-crux",
+        "--headless",
+        "--isolated",
+        "--executable-path",
+        "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+        "--chrome-arg=--no-sandbox"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "shadcn@4.21.4", "mcp"]
+    }
+  }
+}

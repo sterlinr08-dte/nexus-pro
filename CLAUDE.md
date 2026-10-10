@@ -92,7 +92,7 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 
 | Necesidad | Skills |
 |---|---|
-| Diseño / pantallas | `apple-design`, `frontend-design`, `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `review-animations`, `animation-vocabulary`, `canvas-design` |
+| Diseño / pantallas | `impeccable`, `apple-design`, `frontend-design`, `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `review-animations`, `animation-vocabulary`, `canvas-design`; conectores `chrome-devtools` (revisar páginas en Chrome, sin estadísticas a Google) y `shadcn` (referencia de componentes) |
 | Seguridad | `security-audit` (Cloudflare; auditoría completa solo si se pide), `penetration-testing-with-strix`, `fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`, `managed-pentesting-with-strix`, `gstack-cso` |
 | Código y revisión | `gstack-review`, `gstack-investigate`, `gstack-plan-eng-review`, `gstack-spec`, `gstack-health`, `ponytail*` (simplificar), `senior-architect`, `webapp-testing`, `gstack-careful` / `gstack-guard` / `gstack-freeze` (seguridad al editar) |
 | Video y reels | `hyperframes` (entrada) → `product-launch-video`, `embedded-captions`, `talking-head-recut`, `music-to-video`, `motion-graphics`, `slideshow`, `faceless-explainer`, `general-video`, `media-use`, `hyperframes-*`; `remotion-*`. Para personas y escenas con IA: Buzzy (MCP). |

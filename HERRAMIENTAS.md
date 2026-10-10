@@ -68,7 +68,11 @@ Copiadas solo como instrucciones, sin programas. Licencias en `.claude/skills/LI
 ### Diseño de pantallas y páginas
 `apple-design`, `frontend-design`, `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `review-animations`, `animation-vocabulary`, `canvas-design`.
 
-En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) está conectado para diseños.
+`impeccable` (pbakaus, Apache 2.0) está en los tres repos desde el 10-oct-2026. **Figma** (MCP) está conectado para diseños.
+
+**Conectores del proyecto (`.mcp.json` de nexus-pro, 10-oct-2026):**
+- **chrome-devtools** (Google, Apache 2.0, v1.10.1 fija): abre páginas en Chrome y revisa consola, red, rendimiento (Lighthouse), estilos y accesibilidad. Con `--no-usage-statistics` y `--no-performance-crux` (sin datos a Google). En la nube no abre sitios HTTPS externos (el navegador no confía en el certificado del proxy, igual que Playwright): sirve para las páginas servidas en local (`python3 -m http.server`).
+- **shadcn** (MIT, v4.21.4 fija): busca componentes y ejemplos del registro de shadcn/ui. Solo instala componentes en proyectos React con shadcn; nuestros sistemas son HTML/JS, así que sirve como referencia de diseño.
 
 ### Seguridad
 - `security-audit`, de Cloudflare. La auditoría completa se hace solo si se pide.
