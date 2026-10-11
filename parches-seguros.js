@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6024'):'?b=6024';
-    }catch(e){return '?b=6024';}
+      return base?(base+'&b=6025'):'?b=6025';
+    }catch(e){return '?b=6025';}
   }
 
   function load(src,done){
@@ -108,7 +108,10 @@
     ['js','parches-render-estable.js'],
     ['css','parches-fase1-ui-motion.css'],
     ['css','parches-motion-fase2.css'],
-    ['js','parches-motion-fase2.js']
+    ['js','parches-motion-fase2.js'],
+    /* 59.20 (dueño 11-oct-2026): avisos de pagos y WhatsApp en una isla negra arriba (estilo Dynamic Island).
+       Para quitarla, borrar esta línea; o en un equipo, localStorage.nxIslaAvisos='0'. */
+    ['js','parches-isla-avisos.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución

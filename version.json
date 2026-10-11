@@ -1,7 +1,17 @@
 {
-  "version": "59.19",
+  "version": "59.20",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.20",
+      "fecha": "2026-10-11",
+      "notas": [
+        "Isla de avisos: los pagos y los mensajes de WhatsApp ahora aparecen en una píldora negra arriba al centro que se estira, muestra el aviso y se recoge, como la isla del iPhone.",
+        "Pagos: «Pago registrado», «Pago validado», «Abono registrado» y los demás pagos hechos salen ahí con su monto. Si entra un pago por validar nuevo, te avisa y al tocarlo abre Solicitudes.",
+        "WhatsApp: muestra quién escribió y el mensaje; al tocarlo abre ese chat. No avisa de chats silenciados ni del chat que ya tienes abierto.",
+        "En el iPhone con isla, con la app abierta desde el ícono, la píldora sale justo debajo de la isla del teléfono. Desliza hacia arriba para quitarla."
+      ]
+    },
     {
       "version": "59.19",
       "fecha": "2026-10-09",
