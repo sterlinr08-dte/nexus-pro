@@ -83,6 +83,7 @@ En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) est
 |---|---|---|
 | **The Kitchen**: https://www.dqnamo.com/kitchen (estudio dqnamo, Londres; reel de @adrien.ninet `DeO7DugISSR`) | Piezas que parecen objetos reales. Cada una tiene su página `/experiments/<nombre>` con el código: Receipt Printer, Hold to Confirm, Dynamic Button, Ticket, Stamp, Tactile Button, Scramble Text, Cassette Player, Magnetic Drop Zone, Playing Cards, Scroll Fade List, Animated Signature, Logo Trace Loader, Iridescent Foil, Model Selector. | **Impresora de recibos** para `nxReciboAnimado` (Seguros, Financiamiento y POS): impresora con «Imprimiendo recibo…» que pasa a «Pago completo ✓», y el papel sale a tirones. **Mantén presionado para confirmar**: anular o reversar pagos y eliminar abonos, en NEXUS y STUDIO. **Boleto perforado**: rifas de NEXUS y rifa de Bayol. **Botón que cambia**: «Registrar pago» → «Registrando…» → «Listo ✓». **Firma que se dibuja sola**: firma del financiamiento. |
 | **Originkit**: https://www.originkit.dev (beta, ~590 efectos gratis; reel de @aiboy.ai `DayD735y1oB`) | Fondos, textos, cursores, galerías, botones, cargadores y 3D. Se puede copiar el código, usar en Framer o conectar por MCP (pide cuenta y clave). | Para logins y portadas: Kinetic Grid (malla que sigue el dedo), Particle Sphere (esfera de puntitos), Text Morph (texto que se transforma) y Proximity Orbit (círculo de fotos de clientes). |
+| **GetLayers AI**: https://www.getlayers.ai (agencia Textura; reel de @textura.us `DeMmzkxMpFZ`) | Instrucciones listas («prompts») para que la IA haga páginas web de cine: 54 plantillas de página completa, escenas 3D, secciones, fondos y degradados. Se copia la instrucción y se le pasa a Claude. **Muchas son Premium, de pago.** | Para portadas públicas: la tienda STUDIO, la web de Bayol Cell o una portada de NEXUS PRO. La cafetería «Brewns» tiene una impresora térmica que saca el recibo, la misma idea que la de Kitchen. Las de pago, solo con el OK del dueño. |
 | **Avisos «Dynamic Island»**: reel de @adrien.ninet `DeWaJ8PgQK8` (proyecto `rit3zh/expo-dynamic-notifications`, React Native) | Avisos que salen de la isla del iPhone. | **Hecho** en NEXUS PRO 59.20 (`parches-isla-avisos.js`, rama `claude/isla-avisos`), pendiente de publicar. |
 
 ### Seguridad
@@ -113,7 +114,7 @@ En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) est
 | «Qué está funcionando en mi Instagram» | `analizar-instagram` + Supermetrics |
 | «Qué hace la competencia» | Biblioteca de anuncios de Meta + Firecrawl + Supermetrics (perfiles públicos) |
 | «Mejora esta pantalla» | `apple-design` / `impeccable` / `ui-ux-pro-max` |
-| «Quiero un efecto, una animación o algo más bonito» | Primero las **Referencias de diseño** (Kitchen, Originkit) + `apple-design` |
+| «Quiero un efecto, una animación o algo más bonito» | Primero las **Referencias de diseño** (Kitchen, Originkit, GetLayers) + `apple-design` |
 | «Revisa la seguridad» | `security-audit` |
 | «Algo falla» | `gstack-investigate` + Sentry + Supabase logs |
 | «Haz una campaña» | Meta Ads (con aprobación) + video con HyperFrames |
