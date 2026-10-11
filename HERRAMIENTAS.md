@@ -70,6 +70,21 @@ Copiadas solo como instrucciones, sin programas. Licencias en `.claude/skills/LI
 
 En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) está conectado para diseños.
 
+### Referencias de diseño que mandó el dueño (11-oct-2026)
+**Regla del dueño:** «Ese link que te envié es para tomarlo como referencia para cuando queramos algo; tú lo tomas de ahí.» Cuando pida un efecto, una animación o algo «más bonito», **mirar primero estas referencias** y proponer la pieza que encaje.
+
+**Cómo se usan:**
+- Están hechas en React o Framer, y nuestras apps usan HTML y JavaScript normal. Se **rehacen** en nuestro código, como la isla de avisos de NEXUS 59.20. No se pega su código sin revisar antes la licencia de esa pieza.
+- No se conecta su MCP ni se crean cuentas en esas páginas sin el OK del dueño.
+- Los efectos pesados (3D, partículas, fondos animados) van solo en portadas, logins o páginas públicas, nunca en pantallas de trabajo. Por eso el dueño quitó la rueda de las listas en NEXUS 59.19.
+- Siempre con «reducir movimiento», con la línea gráfica de cada negocio y probado en iPhone.
+
+| Referencia | Qué trae | Ideas ya vistas para nosotros |
+|---|---|---|
+| **The Kitchen**: https://www.dqnamo.com/kitchen (estudio dqnamo, Londres; reel de @adrien.ninet `DeO7DugISSR`) | Piezas que parecen objetos reales. Cada una tiene su página `/experiments/<nombre>` con el código: Receipt Printer, Hold to Confirm, Dynamic Button, Ticket, Stamp, Tactile Button, Scramble Text, Cassette Player, Magnetic Drop Zone, Playing Cards, Scroll Fade List, Animated Signature, Logo Trace Loader, Iridescent Foil, Model Selector. | **Impresora de recibos** para `nxReciboAnimado` (Seguros, Financiamiento y POS): impresora con «Imprimiendo recibo…» que pasa a «Pago completo ✓», y el papel sale a tirones. **Mantén presionado para confirmar**: anular o reversar pagos y eliminar abonos, en NEXUS y STUDIO. **Boleto perforado**: rifas de NEXUS y rifa de Bayol. **Botón que cambia**: «Registrar pago» → «Registrando…» → «Listo ✓». **Firma que se dibuja sola**: firma del financiamiento. |
+| **Originkit**: https://www.originkit.dev (beta, ~590 efectos gratis; reel de @aiboy.ai `DayD735y1oB`) | Fondos, textos, cursores, galerías, botones, cargadores y 3D. Se puede copiar el código, usar en Framer o conectar por MCP (pide cuenta y clave). | Para logins y portadas: Kinetic Grid (malla que sigue el dedo), Particle Sphere (esfera de puntitos), Text Morph (texto que se transforma) y Proximity Orbit (círculo de fotos de clientes). |
+| **Avisos «Dynamic Island»**: reel de @adrien.ninet `DeWaJ8PgQK8` (proyecto `rit3zh/expo-dynamic-notifications`, React Native) | Avisos que salen de la isla del iPhone. | **Hecho** en NEXUS PRO 59.20 (`parches-isla-avisos.js`, rama `claude/isla-avisos`), pendiente de publicar. |
+
 ### Seguridad
 - `security-audit`, de Cloudflare. La auditoría completa se hace solo si se pide.
 - `penetration-testing-with-strix`, `fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`, `managed-pentesting-with-strix`, `gstack-cso`.
@@ -98,6 +113,7 @@ En bayolcell-taller y studio-rd también está `impeccable`. **Figma** (MCP) est
 | «Qué está funcionando en mi Instagram» | `analizar-instagram` + Supermetrics |
 | «Qué hace la competencia» | Biblioteca de anuncios de Meta + Firecrawl + Supermetrics (perfiles públicos) |
 | «Mejora esta pantalla» | `apple-design` / `impeccable` / `ui-ux-pro-max` |
+| «Quiero un efecto, una animación o algo más bonito» | Primero las **Referencias de diseño** (Kitchen, Originkit) + `apple-design` |
 | «Revisa la seguridad» | `security-audit` |
 | «Algo falla» | `gstack-investigate` + Sentry + Supabase logs |
 | «Haz una campaña» | Meta Ads (con aprobación) + video con HyperFrames |
