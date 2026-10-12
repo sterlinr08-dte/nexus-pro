@@ -76,8 +76,12 @@ const MEDIR = () => {
   // Escena del modo claro: el gris #EEF1F5 de la base (más exigente para el texto oscuro que el blanco del velo).
   const ESCENA = { r: 238, g: 241, b: 245, a: 1 };
   const promedio = (img) => { const cc = (img.match(/rgba?\([^)]+\)/g) || []).map(parse).filter(Boolean); if (!cc.length) return null; const sa = cc.reduce((s, c) => s + c.a, 0) || 1; return cc.reduce((s, c) => ({ r: s.r + c.r * c.a / sa, g: s.g + c.g * c.a / sa, b: s.b + c.b * c.a / sa, a: s.a + c.a / cc.length }), { r: 0, g: 0, b: 0, a: 0 }); };
+  // Capas de un background-image (separadas por comas de primer nivel). El panel del menú lleva adornos arriba (la luz de la
+  // esquina, la curva del pie): para el contraste cuenta la capa base, la última con degradado.
+  const capasImg = (img) => { const out = []; let d = 0, cur = ''; for (const ch of img || '') { if (ch === '(') d++; if (ch === ')') d--; if (ch === ',' && d === 0) { out.push(cur.trim()); cur = ''; } else cur += ch; } if (cur.trim()) out.push(cur.trim()); return out; };
+  const base = (img) => { const g = capasImg(img).filter(c => /gradient/.test(c) && !/^url/.test(c)); return g.length ? promedio(g[g.length - 1]) : null; };
   // El menú pinta su panel en un seudoelemento (::before en la computadora, ::after en el cajón): cuenta como capa del menú.
-  const panelMenu = (a) => { if (a.id !== 'sbEl') return null; const cs = getComputedStyle(a, innerWidth <= 768 ? '::after' : '::before'); if (cs.display === 'none') return null; const m = promedio(cs.backgroundImage); const bg = parse(cs.backgroundColor); return m && bg && bg.a > 0 ? over(m, bg) : m || (bg && bg.a > 0 ? bg : null); };
+  const panelMenu = (a) => { if (a.id !== 'sbEl') return null; const cs = getComputedStyle(a, innerWidth <= 768 ? '::after' : '::before'); if (cs.display === 'none') return null; const m = base(cs.backgroundImage); const bg = parse(cs.backgroundColor); return m && bg && bg.a > 0 ? over(m, bg) : m || (bg && bg.a > 0 ? bg : null); };
   const fondo = (el) => {
     const capas = [];
     for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
@@ -96,7 +100,7 @@ const MEDIR = () => {
     // Fondo efectivo de un elemento (o del ::before/::after que hace de panel): luminancia y saturación.
     fondoDe(sel, ps) {
       const el = typeof sel === 'string' ? document.querySelector(sel) : sel; if (!el) return null;
-      if (ps) { const cs = getComputedStyle(el, ps); const m = /gradient/.test(cs.backgroundImage) ? promedio(cs.backgroundImage) : null; const bg = parse(cs.backgroundColor); let c = ESCENA; if (bg && bg.a > 0) c = over(bg, c); if (m) c = over(m, c); return { lum: +lum(c).toFixed(3), sat: Math.round(sat(c)), bgc: cs.backgroundColor, img: cs.backgroundImage.slice(0, 160), blur: cs.backdropFilter || cs.webkitBackdropFilter || 'none', display: cs.display }; }
+      if (ps) { const cs = getComputedStyle(el, ps); const m = /gradient/.test(cs.backgroundImage) ? base(cs.backgroundImage) : null; const bg = parse(cs.backgroundColor); let c = ESCENA; if (bg && bg.a > 0) c = over(bg, c); if (m) c = over(m, c); return { lum: +lum(c).toFixed(3), sat: Math.round(sat(c)), bgc: cs.backgroundColor, img: cs.backgroundImage.slice(0, 160), blur: cs.backdropFilter || cs.webkitBackdropFilter || 'none', display: cs.display }; }
       const c = fondo(el); return { lum: +lum(c).toFixed(3), sat: Math.round(sat(c)) };
     },
     // Todo texto visible con letras o cifras: contraste contra su fondo compuesto.
@@ -269,8 +273,12 @@ const esPildoraBlanca = (p) => p && /rgb\(255, 255, 255\)/.test(p.img) && p.lbl 
     ok(v && v.borde === 'rgba(15, 23, 42, 0.14)', W + `Nuevo cliente: campos con filo gris, sin el borde morado (${v && v.borde})`);
     ok(v && v.t.bajo3.length === 0, W + `Nuevo cliente: ${v && v.t.total} textos, ninguno bajo 3:1 (bajo 4.5:1: ${v && v.t.bajo45})`, v && v.t.bajo3.slice(0, 5));
     if (v && v.id) {
-      await page.evaluate((id) => { const x = document.getElementById(id) || document.querySelector(`[name="${id}"]`); x && x.focus(); }, v.id); await sleep(250);
-      const f = await page.evaluate((id) => { const x = document.getElementById(id) || document.querySelector(`[name="${id}"]`); const cs = getComputedStyle(x); return { b: cs.borderTopColor, sh: cs.boxShadow }; }, v.id);
+      // (otra pantalla visitada antes puede pedir el foco con retraso: si se lo quita al campo, se vuelve a enfocar una vez y se anota)
+      const enfocar = () => page.evaluate((id) => { const x = document.getElementById(id) || document.querySelector(`[name="${id}"]`); x && x.focus(); }, v.id);
+      const medirFoco = () => page.evaluate((id) => { const x = document.getElementById(id) || document.querySelector(`[name="${id}"]`); const cs = getComputedStyle(x); const a = document.activeElement; return { b: cs.borderTopColor, sh: cs.boxShadow, foco: a === x, activo: a && (a.tagName + '#' + a.id) }; }, v.id);
+      await enfocar(); await sleep(250);
+      let f = await medirFoco();
+      if (!f.foco) { console.log('INFO  ' + W + `Nuevo cliente: el foco se fue a ${f.activo}; se vuelve a enfocar el campo`); await enfocar(); await sleep(250); f = await medirFoco(); }
       ok(f.b === 'rgb(37, 99, 235)' && AZUL.test(f.sh), W + 'Nuevo cliente: al enfocar, filo y anillo azul', f);
     }
     await page.screenshot({ path: OUT + `${width}-nuevo-cliente.png` });
