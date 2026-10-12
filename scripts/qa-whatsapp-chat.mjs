@@ -367,15 +367,12 @@ async function menuMensaje(page, ctx, sel) {
       ok(r && r.lum < 0.2 && r.n === 6 && r.tt === 'none', `${tag} panel del clip en cristal oscuro (6 opciones, texto natural)`, r);
       await page.evaluate(() => document.querySelectorAll('.nxWaChatPop').forEach(x => x.remove()));
 
-      // 9) botón flotante: oculto y estable con el chat abierto (solo móvil)
+      // 9) 59.21 (dueño 11-oct-2026): ya no hay botón flotante ☰; nada flota sobre el micrófono ni las burbujas
       if (movil) {
-        const muestras = await page.evaluate(() => new Promise(res => { const out = []; const f = document.querySelector('.nx-fab'); if (!f) return res(null); let n = 0; const t = setInterval(() => { const cs = getComputedStyle(f); out.push([cs.opacity, cs.visibility, cs.pointerEvents]); if (++n >= 25) { clearInterval(t); res(out); } }, 100); }));
-        const oculto = muestras && muestras.every(m => m[0] === '0' && m[1] === 'hidden' && m[2] === 'none');
-        const tapa = await page.evaluate(() => { const f = document.querySelector('.nx-fab'), b = f.getBoundingClientRect(); const e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return e && f.contains(e); });
-        ok(muestras && oculto && !tapa && (await page.evaluate(() => document.body.classList.contains('nxWaChatOpen'))), `${tag} botón flotante oculto y sin parpadeo durante 2,5 s con el chat abierto (body.nxWaChatOpen)`, muestras && muestras.filter(m => m[0] !== '0').slice(0, 3));
+        const sinFab = await page.evaluate(() => !document.querySelector('.nx-fab'));
+        ok(sinFab && (await page.evaluate(() => document.body.classList.contains('nxWaChatOpen'))), `${tag} sin botón flotante ☰ con el chat abierto (body.nxWaChatOpen)`);
         await page.evaluate(() => nxWaCerrarDetalleMob()); await sleep(900);
-        const vuelve = await page.evaluate(() => { const f = document.querySelector('.nx-fab'); const cs = getComputedStyle(f); return { op: cs.opacity, vis: cs.visibility, body: document.body.classList.contains('nxWaChatOpen') }; });
-        ok(vuelve.op === '1' && vuelve.vis === 'visible' && !vuelve.body, `${tag} al volver a la lista el botón flotante reaparece`, vuelve);
+        ok(await page.evaluate(() => !document.querySelector('.nx-fab') && !document.body.classList.contains('nxWaChatOpen')), `${tag} al volver a la lista tampoco aparece el botón flotante`);
       }
 
       ok(errs.length === 0, `${tag}: sin errores de consola`, errs.slice(0, 5));

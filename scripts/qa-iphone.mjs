@@ -169,14 +169,15 @@ async function movil(browser, w, h, rol) {
   ok(lleno(r.p), `${tag} notificaciones: panel a todo el ancho (x ${r.p && r.p.l}–${r.p && r.p.r})`, r.p);
   ok(r.riel.every(p => !p.riel), `${tag} notificaciones: nada de un riel encima (x=10..80)`, r.riel.filter(p => p.riel).slice(0, 4));
   await shot('notificaciones');
-  // 3) Hoja del botón flotante
+  // 3) Sin botón flotante ☰ (dueño 11-oct-2026, 59.21): lo que abría su hoja «MENÚ» está en el cajón ☰ de la cabecera
   await page.evaluate(() => window.__qi.cerrar()); await sleep(300);
-  await page.click('.nx-fab'); await sleep(700);
-  r = await page.evaluate(() => ({ s: window.__qi.rect('.mobile-more-sheet-clean.open'), riel: window.__qi.riel(140, 560), fabArriba: (() => { const f = document.querySelector('.nx-fab'); const b = f.getBoundingClientRect(); const e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!(e && f.contains(e)); })() }));
-  ok(lleno(r.s), `${tag} menú del botón flotante: la hoja a todo el ancho (x ${r.s && r.s.l}–${r.s && r.s.r})`, r.s);
-  ok(r.riel.every(p => !p.riel), `${tag} menú del botón flotante: nada de un riel encima (x=10..80)`, r.riel.filter(p => p.riel).slice(0, 4));
-  ok(r.fabArriba, `${tag} menú del botón flotante: la ✕ del botón sigue tocable para cerrar`);
-  await shot('fab-menu');
+  r = await page.evaluate(() => ({ fab: !!document.querySelector('.nx-fab'), hoja: !!document.querySelector('.mobile-more-sheet-clean'),
+    faltan: ['dashboard', 'clientes', 'polizas', 'facturas', 'rep-agente'].filter(v => !document.querySelector(`#sbEl [onclick^="nav('${v}'"]`)),
+    usuarios: !!document.querySelector('#sbEl [onclick^="navConfig(6"]'), config: !!document.querySelector('#sbEl [onclick^="toggleConfig"]'),
+    proceso: !!document.querySelector(`#v-clientes [onclick*="switchCliTab('proceso')"]`),
+    cobros: !!document.querySelector(`#v-facturas [onclick*="switchTab('cob')"]`), historial: !!document.querySelector(`#v-facturas [onclick*="switchTab('pagos')"]`) }));
+  ok(!r.fab && !r.hoja, `${tag} sin botón flotante ☰ abajo a la derecha ni su hoja «MENÚ»`, r);
+  ok(!r.faltan.length && r.usuarios && r.config && r.proceso && r.cobros && r.historial, `${tag} el cajón ☰ y las pestañas tienen todo lo del menú flotante: Inicio, Clientes (En proceso), Pólizas, Facturas (Cobros, Historial), Reporte agente, Configuración y Usuarios`, r);
   await page.evaluate(() => window.__qi.cerrar()); await sleep(300);
   // 4) Ventanas
   for (const [nom, js] of [['modal-abono', "nav('clientes',null);setTimeout(()=>abrirAbono(ST.clientes[0].id),300)"], ['modal-nuevo-cliente', "nav('clientes',null);setTimeout(()=>abrirNuevoCli(),300)"]]) {

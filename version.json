@@ -8,7 +8,10 @@
       "notas": [
         "Modo oscuro más oscuro y en gris grafito: se quitó el tono azul del fondo, del menú, de las tarjetas y de los paneles de WhatsApp.",
         "Las tarjetas, los paneles y el menú son un poco transparentes y dejan ver el fondo borroso. La barra de arriba sigue sólida, como la elegiste.",
-        "Los botones y el color de acento siguen en azul NEXUS, y los mensajes que envías en WhatsApp siguen en azul. El modo claro no cambia."
+        "Los botones y el color de acento siguen en azul NEXUS, y los mensajes que envías en WhatsApp siguen en azul. El modo claro no cambia.",
+        "Se quitó el botón redondo ☰ de abajo a la derecha del celular. Todo lo que abría sigue en el menú ☰ de arriba (Inicio, Clientes, Pólizas, Facturas con Cobros e Historial, Reportes, Configuración y Usuarios).",
+        "Botones con mejor acabado en modo oscuro: los principales (Registrar pago, Guardar, Cobrar) tienen luz arriba y una base más oscura, como un botón físico que se hunde al tocarlo; pestañas y botones pequeños en píldora, iguales en todas las pantallas.",
+        "Pestañas de Facturas en filas parejas, la pestaña elegida ya no cambia de ancho, «Llamar» sin subrayado y cifras de ancho fijo para que los montos no se muevan."
       ]
     },
     {

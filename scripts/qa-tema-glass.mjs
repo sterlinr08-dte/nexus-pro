@@ -367,15 +367,9 @@ async function recorrer(page, tag, rol, width, tema, capturar) {
     ok(abierto && sb.r.total > 8 && sb.r.oscuroSobreOscuro.length === 0 && sb.r.claroSobreClaro.length === 0 && /rgba\(46, 49, 56, 0\.58\)/.test(sb.a) && /blur\((2\d|[3-9]\d)px\)/.test(sb.blur), `390 cajón móvil de siempre: abre con nombres, cristal grafito (59.21) y ${sb.r.total} rótulos legibles`, sb);
     await page.screenshot({ path: OUT + PFX + 'menu-390.png' });
     await page.evaluate(() => { try { closeMobSB(); } catch (e) {} }); await sleep(600);
-    const fab = await page.$('.nx-fab');
-    if (fab) {
-      const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.nx-fab')).backgroundColor);
-      await fab.click(); await sleep(700);
-      const hoja = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? { bg: getComputedStyle(s).backgroundColor, t: window.__tgo.textos('.mobile-more-sheet-clean.open') } : null; });
-      const hojaL = await page.evaluate(() => { const s = document.querySelector('.mobile-more-sheet-clean.open'); return s ? window.__tgo.claras('.mobile-more-sheet-clean.open') : null; });
-      ok(bg === 'rgb(37, 99, 235)' && hoja && /gradient/.test(await page.evaluate(() => getComputedStyle(document.querySelector('.mobile-more-sheet-clean.open')).backgroundImage)) && hojaL && hojaL.malos.length === 0 && hoja.t.oscuroSobreOscuro.length + hoja.t.claroSobreClaro.length === 0 && hoja.t.bajo3.length === 0, `390 botón flotante azul NEXUS y su menú en hoja oscura legible (58.91)`, { bg, hoja, hojaL });
-      await page.screenshot({ path: OUT + PFX + 'fab-menu-390.png' });
-    }
+    // 59.21 (dueño 11-oct-2026): se quitó el botón flotante ☰ de abajo a la derecha; lo que abría está en el cajón ☰
+    const sinFab = await page.evaluate(() => ({ fab: !!document.querySelector('.nx-fab'), hoja: !!document.querySelector('.mobile-more-sheet-clean') }));
+    ok(!sinFab.fab && !sinFab.hoja, '390 sin botón flotante ☰ abajo a la derecha ni su hoja «MENÚ» (dueño 11-oct)', sinFab);
     ok(V.errs.length === 0, '390 menú/botón flotante: sin errores de consola', V.errs.slice(0, 4));
     await V.ctx.close();
     // Login con el tema (sin sesión): el <html> ya trae la clase y el splash usa la escena.

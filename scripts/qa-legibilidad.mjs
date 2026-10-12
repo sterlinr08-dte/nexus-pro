@@ -160,7 +160,7 @@ const VISTAS = [
   ['modal-nuevo-cliente', "nav('clientes',null);setTimeout(()=>abrirNuevoCli(),300)"], ['modal-abono', "nav('clientes',null);setTimeout(()=>abrirAbono(ST.clientes[0].id),300)"],
   ['busqueda', "nav('dashboard',null);setTimeout(()=>{abrirGlobalSearch();const i=document.getElementById('gsInput');if(i){i.value='mar';i.dispatchEvent(new Event('input',{bubbles:true}))}},300)"],
   ['notificaciones', "nav('dashboard',null);setTimeout(()=>toggleNotif(),300)"],
-  ['fab-menu', "nav('dashboard',null);setTimeout(()=>document.querySelector('.nx-fab')&&document.querySelector('.nx-fab').click(),300)"],
+  // 59.21: sin botón flotante ☰ (el dueño lo quitó); ya no hay pantalla «fab-menu»
 ];
 const VISTAS_ADMIN = [['comisiones', "nav('comisiones',null)"], ['mayor', "nav('mayor',null)"], ['asientos', "nav('asientos',null)"], ['balance', "nav('balance',null)"], ['pyg', "nav('pyg',null)"],
   ['rep-agente', "nav('rep-agente',null)"], ['rep-plan', "nav('rep-plan',null)"], ['rep-empresa', "nav('rep-empresa',null)"], ['rep-aging', "nav('rep-aging',null)"], ['dgii', "nav('dgii',null)"],
