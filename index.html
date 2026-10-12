@@ -5066,6 +5066,58 @@ html.tema-glass-oscuro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disab
 html.tema-glass-oscuro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disabled):not(#nxb):not(#nxb):not(#nxb):active{background:rgba(22,163,74,.24)!important}
 html.tema-glass-oscuro #tbCob .nxCobCard.u-ok .cbBtn.cobrar i{color:#86EFAC!important}
 </style>
+<!-- ═══ HOY, EN VIVO (59.21, dueño 11-oct-2026: «Haz la gráfica en vivo de lo cobrado»). La idea viene de Liveline
+     (Benji Taylor, licencia MIT, benji.org/liveline), rehecha en JavaScript normal con <canvas>; no se copió código.
+     Solo pinta: los números son los de «Cobrado hoy» (ver nxCVDatos en el script). Para quitarla: borrar este <style>,
+     la tarjeta #nxCV del Inicio y el bloque «HOY, EN VIVO» del script (o window.NX_COBRO_VIVO=false la oculta). -->
+<style id="nxCobVivoCSS">
+html.nx-ig #nxIG .nxCV{--cv-line:#2563EB;--cv-fill:rgba(37,99,235,.16);--cv-fill0:rgba(37,99,235,0);--cv-ayer:#94A3B8;--cv-grid:#EEF2F7;--cv-txt:#64748B;--cv-ring:#fff;
+  display:flex;flex-direction:column;gap:6px;padding:16px 16px 12px}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV{--cv-line:#60A5FA;--cv-fill:rgba(59,130,246,.24);--cv-fill0:rgba(59,130,246,0);--cv-ayer:rgba(203,213,225,.45);--cv-grid:rgba(255,255,255,.08);--cv-txt:#BCC7D6;--cv-ring:#1B1D22}
+html.nx-ig #nxIG .nxCV[hidden]{display:none}
+html.nx-ig #nxIG .nxCV-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
+html.nx-ig #nxIG .nxCV-tit{display:flex;align-items:center;gap:8px;min-width:0}
+html.nx-ig #nxIG .nxCV-tit b{font-size:15px;line-height:20px;font-weight:700;white-space:nowrap}
+html.nx-ig #nxIG .nxCV-live{display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:16px;font-weight:700;color:#15803D;background:#DCFCE7;border-radius:999px;padding:1px 8px 1px 7px;white-space:nowrap}
+html.nx-ig #nxIG .nxCV-live i{position:relative;width:6px;height:6px;border-radius:50%;background:#22C55E}
+html.nx-ig #nxIG .nxCV-live i:after{content:"";position:absolute;inset:-3px;border-radius:50%;background:#22C55E;opacity:0;animation:nxCVlive 1.8s ease-out infinite}
+html.nx-ig #nxIG .nxCV-live.off{color:#64748B;background:#F1F5F9}html.nx-ig #nxIG .nxCV-live.off i{background:#94A3B8}html.nx-ig #nxIG .nxCV-live.off i:after{animation:none}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-live.off{color:#BCC7D6;background:rgba(255,255,255,.08)}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-live{background:rgba(34,197,94,.16);color:#86EFAC}
+html.nx-ig #nxIG .nxCV-ver{font-size:12px!important;line-height:16px;font-weight:600;color:var(--ig-blue)!important;padding:6px 2px!important;white-space:nowrap}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-ver{color:#93C5FD!important}
+html.nx-ig #nxIG .nxCV-sum{display:flex;align-items:flex-end;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+html.nx-ig #nxIG .nxCV-total{font-size:26px;line-height:32px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+html.nx-ig #nxIG .nxCV-meta,html.nx-ig #nxIG .nxCV-cmp{font-size:12px;line-height:16px;min-height:16px;color:var(--ig-steel);font-weight:500;font-variant-numeric:tabular-nums}
+html.nx-ig #nxIG .nxCV-cmp{font-weight:600;text-align:right}
+html.nx-ig #nxIG .nxCV-cmp b.up{color:#15803D}html.nx-ig #nxIG .nxCV-cmp b.dn{color:#B45309}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-cmp b.up{color:#86EFAC}html.tema-glass-oscuro.nx-ig #nxIG .nxCV-cmp b.dn{color:#FCD34D}
+html.nx-ig #nxIG .nxCV-plot{position:relative;height:150px;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.nx-ig #nxIG .nxCV-plot canvas{display:block;width:100%;height:100%}
+html.nx-ig #nxIG .nxCV-now{position:absolute;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--cv-line);box-shadow:0 0 0 3px var(--cv-ring);pointer-events:none}
+html.nx-ig #nxIG .nxCV-now:after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--cv-line);opacity:0;animation:nxCVpulso 2s ease-out infinite}
+html.nx-ig #nxIG .nxCV-mas{position:absolute;font-size:13px;line-height:16px;font-weight:800;color:#15803D;background:var(--cv-ring);border-radius:999px;padding:3px 8px;box-shadow:0 6px 16px -8px rgba(2,6,23,.55);white-space:nowrap;pointer-events:none;opacity:0;transform:translate(calc(-100% - 14px),-50%);animation:nxCVmas 2.6s cubic-bezier(.22,1,.36,1) forwards}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-mas{color:#86EFAC}
+html.nx-ig #nxIG .nxCV-tip{position:absolute;top:2px;transform:translateX(-50%);background:var(--ig-blue);color:#fff;font-size:12px;line-height:16px;font-weight:700;border-radius:10px;padding:5px 9px;white-space:nowrap;pointer-events:none;z-index:2;box-shadow:0 8px 20px -10px rgba(2,6,23,.7)}
+html.nx-ig #nxIG .nxCV-tip small{display:block;font-size:11px;font-weight:600;opacity:.9;color:#fff!important}
+html.nx-ig #nxIG .nxCV-tip[hidden],html.nx-ig #nxIG .nxCV-now[hidden]{display:none}
+html.nx-ig #nxIG .nxCV-ax{display:flex;justify-content:space-between;font-size:12px;line-height:16px;height:16px;color:var(--ig-mute)}
+html.tema-glass-oscuro.nx-ig #nxIG .nxCV-ax span{color:#BCC7D6}
+@keyframes nxCVlive{0%{transform:scale(.6);opacity:.6}80%,100%{transform:scale(2.2);opacity:0}}
+@keyframes nxCVpulso{0%{transform:scale(.6);opacity:.75}100%{transform:scale(1.9);opacity:0}}
+@keyframes nxCVmas{0%{opacity:0;transform:translate(calc(-100% - 14px),-10%)}14%{opacity:1;transform:translate(calc(-100% - 14px),-50%)}74%{opacity:1;transform:translate(calc(-100% - 14px),-50%)}100%{opacity:0;transform:translate(calc(-100% - 14px),-120%)}}
+@media (max-width:768px){
+  html.nx-ig #nxIG .nxCV{padding:14px 12px 10px}
+  html.nx-ig #nxIG .nxCV-total{font-size:22px;line-height:28px}
+  html.nx-ig #nxIG .nxCV-cmp{flex-basis:100%;text-align:left} /* en su propia línea desde el primer cuadro: al llegar el texto nada salta */
+  html.nx-ig #nxIG .nxCV-plot{height:132px}
+}
+@media (prefers-reduced-motion:reduce){
+  html.nx-ig #nxIG .nxCV-live i:after,html.nx-ig #nxIG .nxCV-now:after,html.nx-ig #nxIG .nxCV-mas{animation:none!important}
+  html.nx-ig #nxIG .nxCV-now:after{opacity:0}
+  html.nx-ig #nxIG .nxCV-mas{opacity:1}
+}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -5529,6 +5581,25 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
                   <div class="nxIG-card" id="nxIGk4" role="button" tabindex="0" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Facturas atrasadas — ver la lista">
                     <div class="nxIG-kt"><span>Atrasadas</span><span class="nxIG-chip dn" id="nxIGk4c"></span></div><div class="nxIG-kv" id="nxIGk4v"><span class="nxIG-sk">00</span></div><div class="nxIG-viz r" id="nxIGk4z"></div><div class="nxIG-ks" id="nxIGk4s">facturas de meses anteriores</div></div>
                 </div>
+                <!-- 59.21 (dueño 11-oct-2026: «Haz la gráfica en vivo de lo cobrado»): «Hoy, en vivo». Lo cobrado hoy, hora
+                     por hora, con los MISMOS abonos de «Cobrado hoy» (los de rChartCobros, agrupados con fechaRD). La pinta
+                     nxCVPintar(); medidas finales desde el primer cuadro para que nada salte al llegar los datos. -->
+                <section class="nxIG-card nxCV" id="nxCV" aria-labelledby="nxCVt">
+                  <div class="nxCV-head">
+                    <div class="nxCV-tit"><b id="nxCVt">Hoy, en vivo</b><span class="nxCV-live" id="nxCVlive"><i aria-hidden="true"></i><span>en vivo</span></span></div>
+                    <button type="button" class="nxCV-ver" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)">Ver pagos</button>
+                  </div>
+                  <div class="nxCV-sum">
+                    <div><div class="nxCV-total" id="nxCVtot"><span class="nxIG-sk">RD$ 0,000</span></div><div class="nxCV-meta" id="nxCVmeta">&nbsp;</div></div>
+                    <div class="nxCV-cmp" id="nxCVcmp">&nbsp;</div>
+                  </div>
+                  <div class="nxCV-plot" id="nxCVplot">
+                    <canvas id="nxCVcv" role="img" aria-label="Gráfica de lo cobrado hoy, hora por hora"></canvas>
+                    <div class="nxCV-now" id="nxCVnow" hidden></div>
+                    <div class="nxCV-tip" id="nxCVtip" hidden></div>
+                  </div>
+                  <div class="nxCV-ax" id="nxCVax" aria-hidden="true"><span>&nbsp;</span></div>
+                </section>
                 <div class="nxIG-row2">
                   <div class="nxIG-card" id="nxIGch" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Cobros del ciclo — ver el historial de pagos">
                     <div class="nxIG-ct"><div><b>Cobros del ciclo</b><small id="nxIGchs">Lo cobrado cada día del ciclo 20 → 20</small></div><span class="nxIG-pill" id="nxIGchp">ciclo 20 → 20</span></div>
@@ -11602,6 +11673,7 @@ function nxIGCiclo(c){
   nxIGSet('nxIGk1c',_nxIG.hoyCobros?escHtml(nxIGPl(_nxIG.hoyCobros,'pago')):'');
   const siete=[];for(let i=6;i>=0;i--)siete.push(porDia[nxIGSumaDias(hoy,-i)]||0);
   nxIGSet('nxIGk1z',nxIGBarras(siete,6));
+  try{nxCVDatos(c.abonos);}catch(e){console.error('[Hoy en vivo]',e);}   // 59.21: «Hoy, en vivo», con estos mismos abonos
   // Ciclo actual
   const ini=cicloInicio(c.mc.anio,c.mc.mes);let nm=c.mc.mes+1,na=c.mc.anio;if(nm>12){nm=1;na++;}
   const fin=cicloInicio(na,nm),N=Math.max(2,diasEntre(ini,fin));
@@ -11649,6 +11721,204 @@ function nxIGSub(){
   const seg=t?t.filter(x=>x.vence_en&&fechaRD(x.vence_en)===hoy).length:null;
   const cob=_nxIG.hoyCobros==null?'…':nxIGPl(_nxIG.hoyCobros,'cobro');
   nxIGSet('nxIGSub',`Hoy llevas <b>${cob}</b>`+(seg==null?'':` y tienes <b>${nxIGPl(seg,'seguimiento')}</b> para hoy`));
+}
+
+// ── HOY, EN VIVO (59.21) ─────────────────────────────────────────────────────────────────────────────────────────────
+// Dueño 11-oct-2026: «Haz la gráfica en vivo de lo cobrado». Idea de Liveline (Benji Taylor, MIT, benji.org/liveline)
+// rehecha aquí con <canvas>; no se copió código.
+// · Números: los MISMOS de «Cobrado hoy». nxIGCiclo() le pasa la misma lista de abonos que baja rChartCobros() y aquí se
+//   filtra igual (fechaRD(a.fecha)===hoyRD(), suma de Number(a.monto)). No se calcula dinero de otra forma.
+// · Hora de cada pago: la de a.fecha en hora de RD (UTC−4, como fechaRD). Auditado en producción el 11-oct: los 168
+//   abonos de los últimos 60 días guardan la hora real del registro. Si alguno trae solo la fecha, va al inicio del día.
+// · En vivo: en este equipo, regAbono() ya llama a rDash() → rChartCobros() → nxIGCiclo() → nxCVDatos() y la línea sube
+//   sola. Pagos de OTROS agentes: mientras el Inicio está a la vista, cada 30 s se leen solo los abonos de hoy (fecha,
+//   monto y cliente_id; lectura) y, si cambió el total o la cantidad, se llama a rChartCobros(), que repinta «Cobrado
+//   hoy», el ciclo y esta gráfica con los mismos datos. Realtime no se toca. Con error de red espera más (hasta 5 min).
+// · Interruptor: window.NX_COBRO_VIVO=false oculta la tarjeta.
+const _nxCV={hoy:'',pagos:[],ayer:[],total:0,n:0,listo:false,anim:null,raf:0,hover:null,geo:null,clientes:{},timer:0,yTope:0,
+  pollMs:30000,pollBusy:false,pollPrimera:false,ro:null,ev:false};
+function nxCVOn(){
+  const card=document.getElementById('nxCV');if(!card)return false;
+  const on=window.NX_COBRO_VIVO!==false&&nxIGOn();
+  if(card.hidden===on)card.hidden=!on;
+  return on;
+}
+function nxCVMinRD(f){ // minutos desde las 00:00 de RD; null si la fecha no trae hora
+  const s=String(f||'');if(s.length<=10)return null;
+  const t=Date.parse(s);if(isNaN(t))return null;
+  const d=new Date(t-4*3600000);return d.getUTCHours()*60+d.getUTCMinutes()+d.getUTCSeconds()/60;
+}
+function nxCVAhora(){const d=new Date(Date.now()-4*3600000);return d.getUTCHours()*60+d.getUTCMinutes()+d.getUTCSeconds()/60;}
+function nxCVHora(min){min=Math.max(0,Math.min(1439,Math.floor(min)));const h=Math.floor(min/60),m=min%60;return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h<12?'a. m.':'p. m.');}
+function nxCVHoraCorta(min){const h=Math.floor(Math.max(0,Math.min(1439,min))/60);return (h%12||12)+' '+(h<12?'a. m.':'p. m.');}
+function nxCVLista(abonos,iso){
+  const out=[];
+  (abonos||[]).forEach(a=>{if(!a||!a.fecha||fechaRD(a.fecha)!==iso)return;const m=nxCVMinRD(a.fecha);
+    out.push({min:m==null?0:m,sinHora:m==null,monto:Number(a.monto)||0,fecha:a.fecha});});
+  return out.sort((x,y)=>x.min-y.min);
+}
+function nxCVHasta(lista,min){let s=0;for(const q of lista){if(q.min>min)break;s+=q.monto;}return s;}
+function nxCVSinMov(){return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}
+function nxCVVisible(){const v=document.getElementById('v-dashboard');return !!(v&&v.classList.contains('on'))&&!document.hidden;}
+function nxCVNice(v){if(!(v>0))return 1000;const k=Math.pow(10,Math.floor(Math.log10(v))),f=v/k;return ([1,1.2,1.5,2,2.5,3,4,5,6,8,10].find(x=>f<=x)||10)*k;}
+function nxCVCliente(q){
+  const id=_nxCV.clientes[q.fecha+'|'+Math.round(q.monto)];if(!id)return '';
+  const c=((window.ST||ST||{}).clientes||[]).find(x=>String(x.id)===String(id));return c?c.nom:'';
+}
+
+// Llega desde nxIGCiclo() con TODOS los abonos (los mismos de «Cobrado hoy»).
+function nxCVDatos(abonos){
+  if(!nxCVOn())return;
+  const hoy=hoyRD(),pagos=nxCVLista(abonos,hoy),ayer=nxCVLista(abonos,nxIGSumaDias(hoy,-1));
+  const total=pagos.reduce((s,q)=>s+q.monto,0);
+  const antes=_nxCV.listo&&_nxCV.hoy===hoy?{pagos:_nxCV.pagos,total:_nxCV.total}:null;
+  const cambio=!!antes&&(pagos.length!==_nxCV.n||Math.round(total)!==Math.round(antes.total));
+  Object.assign(_nxCV,{hoy,pagos,ayer,total,n:pagos.length,listo:true});
+  nxCVArrancar();
+  if(cambio)nxCVAnimar(antes);else if(!_nxCV.anim)nxCVPintar();
+}
+function nxCVAnimar(antes){
+  if(_nxCV.raf){cancelAnimationFrame(_nxCV.raf);_nxCV.raf=0;}
+  const dif=_nxCV.total-antes.total;
+  if(nxCVSinMov()||document.hidden){_nxCV.anim=null;nxCVPintar();return;}
+  const t0=performance.now(),D=950;
+  _nxCV.anim={antes,p:0,yTope:_nxCV.yTope};
+  const paso=t=>{const u=Math.min(1,(t-t0)/D);_nxCV.anim.p=1-Math.pow(1-u,3);nxCVPintar();
+    if(u<1)_nxCV.raf=requestAnimationFrame(paso);else{_nxCV.raf=0;_nxCV.anim=null;nxCVPintar();}};
+  _nxCV.raf=requestAnimationFrame(paso);
+  if(dif>0.5){const plot=document.getElementById('nxCVplot');if(plot){plot.querySelectorAll('.nxCV-mas').forEach(e=>e.remove());
+    const e=document.createElement('div');e.className='nxCV-mas';e.textContent='+'+fmt(dif);plot.appendChild(e);setTimeout(()=>e.remove(),2800);}}
+}
+
+function nxCVPintar(){
+  if(!nxCVOn()||!_nxCV.listo)return;
+  const card=document.getElementById('nxCV'),plot=document.getElementById('nxCVplot'),cv=document.getElementById('nxCVcv');
+  if(!card||!plot||!cv)return;
+  const an=_nxCV.anim,p=an?an.p:1,pagos=_nxCV.pagos,ayer=_nxCV.ayer,n=_nxCV.n;
+  const ahora=Math.min(1440,nxCVAhora());
+  // Cabecera: el total cuenta hacia arriba mientras sube la línea
+  const vTot=fmt(an?an.antes.total+(_nxCV.total-an.antes.total)*p:_nxCV.total);
+  const eTot=document.getElementById('nxCVtot');if(eTot&&eTot.textContent!==vTot)eTot.textContent=vTot;
+  const ult=n?pagos[n-1]:null;
+  nxIGSet('nxCVmeta',escHtml(n?nxIGPl(n,'pago')+(ult.sinHora?'':' · el último a las '+nxCVHora(ult.min)):'Todavía no hay cobros hoy'));
+  const ayerAhora=nxCVHasta(ayer,ahora);
+  let cmp='&nbsp;';
+  if(ayer.length){cmp=escHtml('Ayer a esta hora: '+fmt(ayerAhora));
+    if(ayerAhora>0){const d=Math.round((_nxCV.total-ayerAhora)/ayerAhora*100);cmp+=` <b class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d)}%</b>`;}}
+  nxIGSet('nxCVcmp',cmp);
+  if(!an)cv.setAttribute('aria-label',`Lo cobrado hoy: ${fmt(_nxCV.total)} en ${nxIGPl(n,'pago')}`+(ult&&!ult.sinHora?`, el último a las ${nxCVHora(ult.min)}`:'')+'.'+(ayer.length?` Ayer a esta hora: ${fmt(ayerAhora)}.`:''));
+  // Lienzo (si la vista está oculta mide 0: se pinta al volver, lo avisa el ResizeObserver)
+  const W=plot.clientWidth,H=plot.clientHeight;if(!W||!H)return;
+  const dpr=Math.min(3,window.devicePixelRatio||1),cw=Math.round(W*dpr),ch=Math.round(H*dpr);
+  if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
+  const g=cv.getContext('2d');if(!g)return;
+  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const cs=getComputedStyle(card),col=(k,d)=>cs.getPropertyValue(k).trim()||d;
+  const cLine=col('--cv-line','#2563EB'),cFill=col('--cv-fill','rgba(37,99,235,.16)'),cAyer=col('--cv-ayer','#94A3B8'),
+    cGrid=col('--cv-grid','#EEF2F7'),cTxt=col('--cv-txt','#64748B'),cRing=col('--cv-ring','#fff');
+  // Ventana: desde las 6 a. m. (o la hora del primer pago, si fue antes) hasta un poco después de ahora
+  const primero=n?Math.min(pagos[0].min,ahora):ahora;
+  const x0=Math.min(360,Math.floor(primero/60)*60);
+  const x1=Math.min(1440,Math.max(ahora+Math.max(20,(ahora-x0)*0.05),x0+240));
+  // Tope de la escala con margen: solo crece cuando la línea pasa del 92 % (así, casi siempre que entra un pago, la punta
+  // sube a la vista en vez de reacomodarse toda la gráfica) y se achica si el total baja mucho (día nuevo, reverso).
+  const maxN=Math.max(_nxCV.total,nxCVHasta(ayer,x1));
+  let yN=_nxCV.yTope||0;if(!yN||maxN>yN*0.92||maxN*3<yN)yN=nxCVNice(Math.max(1,maxN)*1.25);
+  if(!an)_nxCV.yTope=yN;
+  const yA=an&&an.yTope?an.yTope:yN,yMax=yA+(yN-yA)*p;
+  const pT=18,pB=6,X=m=>(m-x0)/(x1-x0)*W,Y=v=>pT+(1-v/yMax)*(H-pT-pB);
+  // Cada pago sube en ~6 px y termina justo a su hora (así la punta de «ahora» siempre muestra el total completo)
+  const h=Math.max(0.5,6*(x1-x0)/W),S=u=>u<=0?0:u>=1?1:u*u*(3-2*u);
+  const val=(lista,m)=>{let v=0;for(const q of lista){if(q.min-h>m)break;v+=q.monto*S((m-q.min+h)/h);}return v;};
+  const vHoy=m=>{const vn=val(pagos,m);if(!an)return vn;const va=val(an.antes.pagos,m);return va+(vn-va)*p;};
+  // Rejilla con su monto
+  g.lineWidth=1;g.strokeStyle=cGrid;g.fillStyle=cTxt;g.font='600 10px '+(cs.fontFamily||'system-ui,sans-serif');g.textBaseline='bottom';
+  // (los montos de la rejilla son los del tope final: mientras la escala se acomoda no pasan por cifras raras)
+  [0,.5,1].forEach(f=>{const y=Math.round(Y(yMax*f))+.5;g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();if(f>0)g.fillText(fmt(yN*f),2,y-3);});
+  // Ayer (rayas)
+  if(ayer.length){g.save();g.setLineDash([4,4]);g.strokeStyle=cAyer;g.lineWidth=1.5;g.beginPath();
+    for(let px=0;px<=W;px+=2){const y=Y(val(ayer,x0+px/W*(x1-x0)));px?g.lineTo(px,y):g.moveTo(px,y);}g.stroke();g.restore();}
+  // Hoy: área y línea hasta «ahora»
+  const xh=Math.max(0,Math.min(W,X(ahora))),yh=Y(vHoy(ahora));
+  const pts=[];for(let px=0;px<xh;px+=2)pts.push([px,Y(vHoy(x0+px/W*(x1-x0)))]);pts.push([xh,yh]);
+  const gr=g.createLinearGradient(0,pT,0,H);gr.addColorStop(0,cFill);gr.addColorStop(1,col('--cv-fill0','rgba(37,99,235,0)'));
+  g.beginPath();g.moveTo(pts[0][0],H-pB);pts.forEach(q=>g.lineTo(q[0],q[1]));g.lineTo(xh,H-pB);g.closePath();g.fillStyle=gr;g.fill();
+  g.beginPath();pts.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.strokeStyle=cLine;g.lineWidth=2.5;g.lineJoin='round';g.lineCap='round';g.stroke();
+  // Cada pago, un punto (si no son demasiados)
+  if(n<=40)pagos.forEach(q=>{const x=X(q.min);if(x>xh+.5)return;g.beginPath();g.arc(x,Y(vHoy(q.min)),3,0,Math.PI*2);g.fillStyle=cRing;g.fill();g.lineWidth=2;g.strokeStyle=cLine;g.stroke();});
+  // Guía del dedo o del mouse
+  const hv=_nxCV.hover;
+  if(hv){const x=Math.max(0,Math.min(xh,hv.x));g.save();g.globalAlpha=.55;g.strokeStyle=cTxt;g.setLineDash([3,3]);g.beginPath();g.moveTo(Math.round(x)+.5,pT-8);g.lineTo(Math.round(x)+.5,H-pB);g.stroke();g.restore();
+    g.beginPath();g.arc(x,Y(vHoy(x0+x/W*(x1-x0))),4.5,0,Math.PI*2);g.fillStyle=cLine;g.fill();}
+  // Punta que late en «ahora» (DOM, para que el latido no repinte el lienzo) y el «+RD$» que sube
+  const now=document.getElementById('nxCVnow');if(now){now.hidden=false;now.style.left=xh+'px';now.style.top=yh+'px';}
+  plot.querySelectorAll('.nxCV-mas').forEach(e=>{e.style.left=xh+'px';e.style.top=yh+'px';});
+  const mid=Math.round((x0+Math.min(ahora,x1))/2/60)*60;
+  nxIGSet('nxCVax',`<span>${nxCVHoraCorta(x0)}</span><span>${mid>x0+59&&mid<ahora-59?nxCVHoraCorta(mid):''}</span><span>ahora</span>`);
+  _nxCV.geo={x0,x1,W,xh,X,Y,pagos,ayer};
+}
+
+// Tocar o pasar el mouse por la gráfica: hora y monto (y el cliente, si se conoce)
+function nxCVScrub(ev){
+  const plot=document.getElementById('nxCVplot');if(!plot||!_nxCV.listo)return;
+  const r=plot.getBoundingClientRect();_nxCV.hover={x:ev.clientX-r.left};if(!_nxCV.anim)nxCVPintar();
+  const geo=_nxCV.geo,tip=document.getElementById('nxCVtip');if(!geo||!tip)return;
+  const xc=Math.max(0,Math.min(geo.xh,_nxCV.hover.x)),m=geo.x0+xc/geo.W*(geo.x1-geo.x0);
+  let cerca=null,dmin=10;geo.pagos.forEach(q=>{const d=Math.abs(geo.X(q.min)-xc);if(d<dmin){dmin=d;cerca=q;}});
+  let html;
+  if(cerca){const nom=nxCVCliente(cerca);
+    html=escHtml((cerca.sinHora?'Hoy':nxCVHora(cerca.min))+' · +'+fmt(cerca.monto))+(nom?`<small>${escHtml(nom)}</small>`:'')+`<small>${escHtml('Llevabas '+fmt(nxCVHasta(geo.pagos,cerca.min)))}</small>`;}
+  else html=escHtml(nxCVHora(m)+' · '+fmt(nxCVHasta(geo.pagos,m)))+(geo.ayer.length?`<small>${escHtml('Ayer a esa hora: '+fmt(nxCVHasta(geo.ayer,m)))}</small>`:'');
+  if(tip.innerHTML!==html)tip.innerHTML=html;tip.hidden=false;
+  const tw=tip.offsetWidth;tip.style.left=Math.max(tw/2,Math.min(geo.W-tw/2,xc))+'px';
+}
+function nxCVEventos(){
+  if(_nxCV.ev)return;const plot=document.getElementById('nxCVplot');if(!plot)return;_nxCV.ev=true;
+  let tOcultar=0;
+  const fin=()=>{clearTimeout(tOcultar);_nxCV.hover=null;const t=document.getElementById('nxCVtip');if(t)t.hidden=true;if(!_nxCV.anim)nxCVPintar();};
+  plot.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.buttons)nxCVScrub(e);});
+  plot.addEventListener('pointerdown',e=>{clearTimeout(tOcultar);nxCVScrub(e);});
+  plot.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse'){clearTimeout(tOcultar);tOcultar=setTimeout(fin,1800);}});
+  plot.addEventListener('pointercancel',fin);
+  plot.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')fin();});
+}
+function nxCVArrancar(){
+  nxCVEventos();
+  if(!_nxCV.ro&&window.ResizeObserver){const plot=document.getElementById('nxCVplot');
+    if(plot){let pend=0;_nxCV.ro=new ResizeObserver(()=>{if(pend)return;pend=requestAnimationFrame(()=>{pend=0;if(!_nxCV.anim)nxCVPintar();});});_nxCV.ro.observe(plot);}}
+  if(!_nxCV.timer){
+    const vuelta=()=>{_nxCV.timer=setTimeout(vuelta,_nxCV.pollMs);nxCVLatido();};
+    _nxCV.timer=setTimeout(vuelta,_nxCV.pollMs);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)nxCVLatido();});
+  }
+  if(!_nxCV.pollPrimera){_nxCV.pollPrimera=true;setTimeout(nxCVConsultar,2500);}   // trae los clientes para la etiqueta
+}
+function nxCVLatido(){
+  if(!nxCVOn()||!_nxCV.listo||!nxCVVisible())return;
+  if(hoyRD()!==_nxCV.hoy){if(typeof rChartCobros==='function')rChartCobros();return;}   // pasó la medianoche
+  if(!_nxCV.anim)nxCVPintar();   // «ahora» avanza
+  nxCVConsultar();
+}
+// Solo lectura: los abonos de hoy (desde las 00:00 de RD = 04:00 UTC). Si cambió algo, rChartCobros() repinta todo igual.
+async function nxCVConsultar(){
+  if(_nxCV.pollBusy||!nxCVOn()||!nxCVVisible()||typeof API==='undefined'||!API.url)return;
+  if(navigator.onLine===false){nxCVEnVivo(false);return;}
+  _nxCV.pollBusy=true;
+  try{
+    const hoy=hoyRD();
+    const filas=await API.get('abonos','select=fecha,monto,cliente_id&fecha=gte.'+hoy+'T04:00:00Z&order=fecha.asc')||[];
+    const lista=(Array.isArray(filas)?filas:[]).filter(a=>a&&a.fecha&&fechaRD(a.fecha)===hoy);
+    const cli={};lista.forEach(a=>{cli[a.fecha+'|'+Math.round(Number(a.monto)||0)]=a.cliente_id;});_nxCV.clientes=cli;
+    const tot=lista.reduce((s,a)=>s+(Number(a.monto)||0),0);
+    _nxCV.pollMs=30000;nxCVEnVivo(true);
+    if(_nxCV.listo&&hoy===_nxCV.hoy&&(lista.length!==_nxCV.n||Math.round(tot)!==Math.round(_nxCV.total))&&typeof rChartCobros==='function')rChartCobros();
+  }catch(e){_nxCV.pollMs=Math.min(300000,_nxCV.pollMs*2);nxCVEnVivo(false);}
+  finally{_nxCV.pollBusy=false;}
+}
+// «en vivo» solo cuando la última consulta salió bien; si no, «sin conexión» (gris, sin latido)
+function nxCVEnVivo(ok){
+  const e=document.getElementById('nxCVlive');if(!e)return;
+  e.classList.toggle('off',!ok);const t=e.querySelector('span');const txt=ok?'en vivo':'sin conexión';if(t&&t.textContent!==txt)t.textContent=txt;
 }
 
 function nxIGCal(delta){_nxIG.calOff+=delta;nxIGCalPintar();}
