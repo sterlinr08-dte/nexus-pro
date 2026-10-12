@@ -5011,6 +5011,61 @@ html.tema-glass-oscuro body :is(#app,.overlay) :is(.btn,.sf-btn,.nxft-tab,.cbBtn
   html.tema-glass-oscuro{--nxb-cara:none}
 }
 </style>
+<!-- ═══ COBROS «NIVEL PRO» (59.21, dueño 11-oct-2026: «¿se le puede mejorar la pantalla de cobros y corregir algunos
+     detalles?»). Solo forma y orden; la lógica de cobros (rCob, abrirAbono, filtros) no cambia.
+     · Resumen: en el celular «Deuda total» arriba y a lo ancho (es la cifra que importa) y debajo «Con deuda» y «Al día»
+       lado a lado (antes 2 + 1 con «Al día» suelto).
+     · Lupa y filtros en una sola fila (ver el marcado de #panelCob).
+     · Tarjetas: etiquetas en una fila; «Deuda anterior» se oculta cuando es RD$ 0; el pendiente más grande; el ícono de
+       COBRAR en blanco (era verde oscuro sobre verde y no se veía); en la computadora, dos tarjetas por fila.
+     · Modo oscuro: los círculos con iniciales y el ícono del agente dejan el morado viejo y van en el azul de NEXUS
+       (el triángulo rojo de «Sin agente» trae su color en línea y lo sigue pintando el tema).
+     · Celular: el nombre del cliente queda pegado a su agente. El nombre es un botón (abre el resumen) y la regla de
+       toque de 44 px (parches-fase1-ui-motion.css) lo estiraba y dejaba un hueco; el área de toque sigue en 44 px
+       con un ::after invisible.
+     · Clientes al día: COBRAR en tono suave (sigue sirviendo para un pago adelantado); el verde fuerte queda para
+       quien debe, así se ve de un vistazo a quién hay que cobrar.
+     Para deshacer: borrar este <style> y volver a las dos filas del marcado de #panelCob. -->
+<style id="nxCobrosPro">
+#panelCob .nxCobTools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+@media (max-width:620px){
+  #cobResumen .sf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #cobResumen .sf-kpi.warn{grid-column:1/-1;order:-1}
+  #cobResumen .sf-kpi.warn .v{font-size:22px}
+}
+#tbCob .nxCobCard .cbBadges{flex-direction:row;flex-wrap:wrap;justify-content:flex-end;max-width:52%}
+@media (max-width:620px){
+  /* lupa + 2 filtros en una fila: sin el ícono de cabecera ni la rayita del chip (el ícono y el texto ya dicen qué filtran) */
+  #panelCob .nxCobTools .nfcBtn>i.ti:first-child,#panelCob .nxCobTools .nfcBtn .nfcDiv{display:none!important}
+  #panelCob .nxCobTools{flex-wrap:nowrap}
+  #panelCob .nxCobTools>span:first-child{flex:none}
+  #panelCob .nxCobTools .nfcWrap{min-width:0;flex:0 1 auto}
+  #panelCob .nxCobTools .nfcBtn{max-width:100%;padding:0 11px!important;gap:5px!important}
+  #panelCob .nxCobTools .nfcLbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* el nombre a lo ancho; las etiquetas bajan debajo del agente, alineadas con el nombre */
+  #tbCob .nxCobCard .cbHead{flex-wrap:wrap}
+  #tbCob .nxCobCard .cbBadges{order:3;flex:1 1 100%;max-width:none;justify-content:flex-start;padding-left:54px}
+}
+#tbCob .nxCobCard .cbFoot .cbAmt:first-child:has(.cbV.gray){display:none}
+#tbCob .nxCobCard .cbAmt+.cbAmt .cbV{font-size:17px}
+#tbCob .nxCobCard .cbBtn.cobrar i{color:#fff!important}
+@media (min-width:1100px){
+  #tbCob.nxCobCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  #tbCob.nxCobCards>:not(.nxCobCard){grid-column:1/-1}
+}
+html.tema-glass-oscuro #tbCob .nxCobCard .cbAv{background:rgba(59,130,246,.22)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro #tbCob .nxCobCard .cbAg i:not([style]){color:inherit!important;opacity:.8}
+html.tema-glass-oscuro #fAgenteCobChip .nfcOico{color:inherit!important}
+@media (max-width:768px){
+  #tbCob .nxCobCard .cbNm{min-height:0;position:relative;z-index:1}
+  #tbCob .nxCobCard .cbNm::after{content:"";position:absolute;inset:-10px 0 -17px}
+}
+html:not(.tema-glass-oscuro) #tbCob .nxCobCard.u-ok .cbBtn.cobrar{background:#ECFDF3!important;color:#15803D!important;border-color:#BBF7D0!important;box-shadow:none!important}
+html:not(.tema-glass-oscuro) #tbCob .nxCobCard.u-ok .cbBtn.cobrar i{color:#16A34A!important}
+html.tema-glass-oscuro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disabled):not(#nxb):not(#nxb):not(#nxb){background:rgba(22,163,74,.14)!important;background-image:none!important;border-color:rgba(134,239,172,.28)!important;color:#BBF7D0!important;box-shadow:inset 0 0 0 1px rgba(134,239,172,.22)!important}
+html.tema-glass-oscuro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disabled):not(#nxb):not(#nxb):not(#nxb):active{background:rgba(22,163,74,.24)!important}
+html.tema-glass-oscuro #tbCob .nxCobCard.u-ok .cbBtn.cobrar i{color:#86EFAC!important}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -5699,14 +5754,14 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
               <button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             </div>
             <div id="cobResumen"></div>
-            <div class="frow" style="margin-bottom:6px">
-              <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
-                   El input sigue existiendo OCULTO para que rCob() lea el término igual que siempre. -->
+            <!-- 59.21 (dueño 11-oct-2026: «mejorar la pantalla de cobros»): lupa y filtros en UNA fila, como en Facturas
+                 (antes la lupa iba sola y los dos filtros en otra caja, uno debajo del otro). Los <select> siguen siendo la
+                 fuente de verdad que lee rCob(); los chips (nxFiltroSel) solo los dibujan encima.
+                 NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML. El input sigue existiendo OCULTO. -->
+            <div class="frow nxCobTools">
               <span id="cobQLupa"></span><input id="cobQ" type="hidden" value="">
-            </div>
-            <div class="frow">
               <select id="fAgenteCob" onchange="rCob()" class="nxFsel"><option value="">Todos los agentes</option></select><span id="fAgenteCobChip"></span>
-              <select id="fCobEst" onchange="rCob()" class="nxFsel"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
+              <select id="fCobEst" onchange="rCob()" class="nxFsel"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select><span id="fCobEstChip"></span>
             </div>
             <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
           </div>
@@ -7926,7 +7981,12 @@ function pintarFiltrosFact(){
       nxFiltroSel('fAnio','fAnioChip',FILTRO_ANIO);
       nxFiltroSel('fAgenteFact','fAgenteFactChip',FILTRO_AGT);}catch(e){console.error(e);}
 }
-function pintarFiltrosCob(){try{nxFiltroSel('fAgenteCob','fAgenteCobChip',FILTRO_AGT);}catch(e){console.error(e);}}
+// 59.21: en Cobros los dos filtros van como chips en la fila de la lupa; sin filtro dicen «Agente» y «Estado»
+// (antes «Todos los agentes» salía cortado y el estado era un <select> suelto en otra fila).
+const FILTRO_ESTCOB={ico:'ti-circle-dot',titulo:'Estado',icoTodos:'ti-list',todos:'Estado',
+  iconos:{deuda:'ti-alert-triangle',aldia:'ti-circle-check'},colores:{deuda:'#ea580c',aldia:'#16a34a'}};
+function pintarFiltrosCob(){try{nxFiltroSel('fAgenteCob','fAgenteCobChip',Object.assign({},FILTRO_AGT,{todos:'Agente'}));
+      nxFiltroSel('fCobEst','fCobEstChip',FILTRO_ESTCOB);}catch(e){console.error(e);}}
 function pintarFiltrosCli(){
   try{nxFiltroSel('fPlan','fPlanChip',FILTRO_PLAN);
       nxFiltroSel('fEst','fEstChip',FILTRO_ESTCLI);
