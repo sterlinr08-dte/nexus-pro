@@ -10,7 +10,8 @@
 //  · Préstamos: la barra inferior a ancho completo, 5 botones sin montarse; toques de la barra superior ≥ 44 px;
 //  · entrada (390×664): «Entrar al sistema» visible sin desplazar y texto de ejemplo ≥ 4.5:1;
 //  · tema oscuro: íconos planos (sin degradado, brillo ::after, sombra interna difusa ni drop-shadow) y en el tema
-//    clásico el coloreado de íconos (colorize de parches-seguros-base, apagado en glass-oscuro desde 58.92) sigue igual.
+//    clásico el coloreado de íconos (colorize de parches-seguros-base, apagado en glass-oscuro desde 58.92) sigue igual con el
+//    modo claro apagado (nx_claro_off); 59.22: con el modo claro (html.tema-claro) los íconos son planos, como en el grafito.
 // Uso: node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta QA_PFX=v5- node scripts/qa-iphone.mjs
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -27,7 +28,7 @@ const qa = (p) => new Promise((r) => http.get(BASE + '/__qa/' + p, (res) => { le
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const ID = { admin: '00000000-0000-4000-8000-000000000001', agente: '00000000-0000-4000-8000-000000000002' };
 
-async function abrir(browser, { w, h, rol, login = false, tema = null }) {
+async function abrir(browser, { w, h, rol, login = false, tema = null, claroOff = false }) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: w < 769, hasTouch: w < 769, locale: 'es-DO', timezoneId: 'America/Santo_Domingo' });
   const page = await ctx.newPage(); const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
@@ -38,14 +39,15 @@ async function abrir(browser, { w, h, rol, login = false, tema = null }) {
     if (TABLER && /tabler-icons\.woff2/.test(u)) return r.fulfill({ path: path.join(TABLER, 'fonts', 'tabler-icons.woff2'), contentType: 'font/woff2' });
     if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); }
     return r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); } catch (e) { /* contexto cerrado */ } });
-  await page.addInitScript(({ rol, id, login, tema }) => {
+  await page.addInitScript(({ rol, id, login, tema, claroOff }) => {
     if (tema) localStorage.setItem('nx_tema', tema); else localStorage.removeItem('nx_tema');
     localStorage.removeItem('nx_tgo_off');
+    if (claroOff) localStorage.setItem('nx_claro_off', '1'); else localStorage.removeItem('nx_claro_off');
     if (login) return;
     localStorage.setItem('nx_auth_mode', 'legacy');
     sessionStorage.setItem('nx_sesion', JSON.stringify({ id, nom: rol === 'admin' ? 'Esterlin Espinal' : 'Robinson Perez', rol, cargo: rol.toUpperCase(), organizacion_id: '00000000-0000-4000-8000-000000000009', inicio: Date.now() }));
     sessionStorage.setItem('nx_sesion_actividad', String(Date.now())); sessionStorage.setItem('nx_ya_saludo', '1');
-  }, { rol, id: ID[rol], login, tema });
+  }, { rol, id: ID[rol], login, tema, claroOff });
   await page.goto(BASE + '/index.html', { waitUntil: 'load' });
   if (!login) {
     await page.waitForFunction(() => typeof ST !== 'undefined' && (ST.clientes || []).length > 0, null, { timeout: 25000 });
@@ -275,21 +277,39 @@ async function movil(browser, w, h, rol) {
     await ctx.close();
   }
 
-  // Tema clásico: el coloreado de íconos sigue igual; y al pasar a glass-oscuro en vivo se aplana.
+  // 59.22 — Modo claro (Clásico con html.tema-claro): íconos planos como en el grafito, también al cambiar de tema en vivo.
   {
     await qa('tema/clasico');
     const { ctx, page, errs } = await abrir(browser, { w: 390, h: 844, rol: 'admin', tema: 'clasico' });
     await page.evaluate(H);
     await ir(page, "nav('clientes',null)");
+    const cuenta = () => page.evaluate(() => ({ claro: document.documentElement.classList.contains('tema-claro'), n: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, bg: getComputedStyle(document.querySelector('.sf-kpi .ic i.ti')).backgroundImage }));
+    let r = await cuenta();
+    ok(r.claro && r.n === 0 && !/gradient/.test(r.bg), `modo claro: html.tema-claro y los íconos planos, sin bolitas de color (${r.n})`, r);
+    await page.evaluate(() => aplicarTema('glass-oscuro', false)); await sleep(500);
+    r = await cuenta();
+    ok(!r.claro && r.n === 0, `modo claro → glass-oscuro en vivo: sigue plano y sin tema-claro`, r);
+    await page.evaluate(() => aplicarTema('clasico', false)); await sleep(700);
+    r = await cuenta();
+    ok(r.claro && r.n === 0, `glass-oscuro → modo claro en vivo: vuelve tema-claro y sigue plano`, r);
+    ok(errs.length === 0, 'modo claro: sin errores de consola', errs.slice(0, 4));
+    await ctx.close();
+  }
+  // Clásico con el modo claro APAGADO (nx_claro_off): el coloreado de íconos sigue igual; y al pasar a glass-oscuro en vivo se aplana.
+  {
+    await qa('tema/clasico');
+    const { ctx, page, errs } = await abrir(browser, { w: 390, h: 844, rol: 'admin', tema: 'clasico', claroOff: true });
+    await page.evaluate(H);
+    await ir(page, "nav('clientes',null)");
     let r = await page.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), n: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, bg: (document.querySelector('.sf-kpi .ic i.ti') || {}).style?.background || '' }));
-    ok(!r.cls && r.n > 3 && /gradient/.test(r.bg), `clásico: los íconos sueltos conservan su color por nombre (${r.n} coloreados)`, r);
+    ok(!r.cls && r.n > 3 && /gradient/.test(r.bg), `clásico (modo claro apagado): los íconos sueltos conservan su color por nombre (${r.n} coloreados)`, r);
     await page.evaluate(() => aplicarTema('glass-oscuro', false)); await sleep(500);
     r = await page.evaluate(() => ({ n: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, bg: getComputedStyle(document.querySelector('.sf-kpi .ic i.ti')).backgroundImage }));
     ok(r.n === 0 && !/gradient/.test(r.bg), `cambio en vivo a glass-oscuro: los íconos quedan planos`, r);
     await page.evaluate(() => aplicarTema('clasico', false)); await sleep(700);
     r = await page.evaluate(() => [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length);
     ok(r > 3, `cambio en vivo de vuelta a clásico: vuelve el color por nombre (${r})`);
-    ok(errs.length === 0, 'clásico: sin errores de consola', errs.slice(0, 4));
+    ok(errs.length === 0, 'clásico (modo claro apagado): sin errores de consola', errs.slice(0, 4));
     await ctx.close(); await qa('tema/none');
   }
   await browser.close();

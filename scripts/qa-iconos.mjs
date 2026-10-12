@@ -5,7 +5,8 @@
 //  · los tiles (ícono protagonista: cifras, accesos rápidos, cabeceras, pestañas de Configuración) son cuadrados con radio ≥ 25 % del
 //    lado, relleno translúcido sin degradado y glifo centrado;
 //  · ningún ícono visible tiene degradado de fondo ni brillo ::after; tamaños de glifo en botones y tiles dentro de {18,20,22,24,28,32};
-//  · Clásico no cambia (conserva el coloreado por nombre y no recibe los tokens --nx-ico-*).
+//  · 59.22: el modo claro (Clásico con html.tema-claro) recorre las mismas pantallas con las mismas reglas (mismo sistema,
+//    tonos para fondo claro); con el interruptor apagado (nx_claro_off) el Clásico de antes no cambia (coloreado por nombre, sin tokens).
 // Uso: PORT=8957 node scripts/qa-crm-mock-server.js &   QA_BASE=http://127.0.0.1:8957 QA_OUT=/ruta node scripts/qa-iconos.mjs
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -23,7 +24,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const ID = { admin: '00000000-0000-4000-8000-000000000001', agente: '00000000-0000-4000-8000-000000000002' };
 const UA_IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
-async function abrir(browser, { width, rol, mirror }) {
+async function abrir(browser, { width, rol, mirror, claroOff }) {
   const ctx = await browser.newContext({ viewport: { width, height: width < 500 ? 844 : 800 }, hasTouch: width < 500, isMobile: width < 500, userAgent: width < 500 ? UA_IPHONE : undefined, locale: 'es-DO', timezoneId: 'America/Santo_Domingo' });
   const page = await ctx.newPage();
   const errs = [];
@@ -37,10 +38,11 @@ async function abrir(browser, { width, rol, mirror }) {
     return r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); } catch (e) { /* contexto cerrado */ } });
   await page.addInitScript(({ rol, id, mirror }) => {
     if (mirror) localStorage.setItem('nx_tema', mirror); else localStorage.removeItem('nx_tema'); localStorage.removeItem('nx_tgo_off');
+    if (claroOff) localStorage.setItem('nx_claro_off', '1'); else localStorage.removeItem('nx_claro_off');
     localStorage.setItem('nx_auth_mode', 'legacy');
     sessionStorage.setItem('nx_sesion', JSON.stringify({ id, nom: rol === 'admin' ? 'Esterlin Espinal' : 'Robinson Perez', rol, cargo: rol.toUpperCase(), organizacion_id: '00000000-0000-4000-8000-000000000009', inicio: Date.now() }));
     sessionStorage.setItem('nx_sesion_actividad', String(Date.now())); sessionStorage.setItem('nx_ya_saludo', '1'); sessionStorage.setItem('nx_splash_shown', '1');
-  }, { rol, id: ID[rol], mirror });
+  }, { rol, id: ID[rol], mirror, claroOff });
   await page.goto(BASE + '/index.html', { waitUntil: 'load' });
   await page.waitForFunction(() => typeof ST !== 'undefined' && (ST.clientes || []).length > 0, null, { timeout: 25000 });
   await sleep(2500);
@@ -125,11 +127,16 @@ const MEDIR = () => {
 
 (async () => {
   const browser = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
-  await qa('prospectos/reset'); await qa('orgtipo/seguros'); await qa('tema/none');
+  await qa('prospectos/reset'); await qa('orgtipo/seguros');
+  // 59.22: el mismo recorrido en el grafito (por defecto) y en el modo claro (Clásico + html.tema-claro)
+  for (const TEMA of ['glass-oscuro', 'clasico']) {
+  const CLARO = TEMA === 'clasico';
+  await qa(CLARO ? 'tema/clasico' : 'tema/none');
   for (const width of [390, 1280]) {
-    const tag = `${width}-admin`;
-    console.log(`\n=== ${tag} glass-oscuro ===`);
-    const A = await abrir(browser, { width, rol: 'admin' });
+    const tag = `${width}-admin${CLARO ? ' claro' : ''}`;
+    console.log(`\n=== ${tag} ${TEMA} ===`);
+    const A = await abrir(browser, { width, rol: 'admin', mirror: CLARO ? 'clasico' : undefined });
+    if (CLARO) ok(await A.page.evaluate(() => document.documentElement.classList.contains('tema-claro') && !document.documentElement.classList.contains('tema-glass-oscuro')), `${tag}: html.tema-claro (gemelo claro del grafito)`);
     await A.page.addInitScript(MEDIR); await A.page.evaluate(MEDIR);
     const tk = await A.page.evaluate(() => window.__ico.tokens());
     ok(tk.sm === '18px' && tk.md === '20px' && tk.r === '28%', `${tag}: tokens de iconografía en :root (--nx-ico-sm 18, --nx-ico-md 20, radio de tile 28 %)`, tk);
@@ -148,7 +155,7 @@ const MEDIR = () => {
         const ico = await A.page.evaluate(() => { const i = document.querySelector('.nxSf table.sf-fact td[data-lb="Cobro"] .btn i.ti'); if (!i) return null; const cs = getComputedStyle(i); return { cls: i.className, bg: cs.backgroundColor, b: cs.borderTopWidth, fs: cs.fontSize, disp: cs.display }; });
         ok(ico && /ti-cash/.test(ico.cls) && /rgba\(0, 0, 0, 0\)|transparent/.test(ico.bg) && ico.b === '0px' && ico.fs === '18px', `${tag} facturas: el botón COBRAR lleva ti-cash sin caja (glifo 18 px)`, ico);
         const wa = await A.page.evaluate(() => { const i = document.querySelector('.nxSf table.sf-fact td[data-lb="Acciones"] .btn i.ti-brand-whatsapp'); if (!i) return null; const cs = getComputedStyle(i); return { color: cs.color, bg: cs.backgroundColor, b: cs.borderTopWidth, fs: cs.fontSize }; });
-        ok(wa && wa.color === 'rgb(74, 222, 128)' && wa.b === '0px' && /rgba\(0, 0, 0, 0\)/.test(wa.bg), `${tag} facturas: WhatsApp de la tarjeta en verde, sin caja`, wa);
+        ok(wa && wa.color === (CLARO ? 'rgb(21, 128, 61)' : 'rgb(74, 222, 128)') && wa.b === '0px' && /rgba\(0, 0, 0, 0\)/.test(wa.bg), `${tag} facturas: WhatsApp de la tarjeta en verde, sin caja`, wa);
         if (width === 390) { try { const h = A.page.locator('.nxSf table.sf-fact tbody tr').first(); await h.scrollIntoViewIfNeeded(); await h.screenshot({ path: OUT + PFX + 'cobros-390-tarjeta.png' }); } catch (e) {} }
       }
       if (['inicio', 'clientes', 'cobros', 'config', 'facturas-atrasadas'].includes(nom)) await A.page.screenshot({ path: OUT + PFX + `${nom}-${width}.png` });
@@ -157,12 +164,14 @@ const MEDIR = () => {
     ok(A.errs.length === 0, `${tag}: sin errores de consola en todo el recorrido`, A.errs.slice(0, 5));
     await A.ctx.close();
   }
-  // Clásico (1280, admin): no recibe los tokens y conserva su coloreado por nombre (colorize en parches-seguros-base.js).
+  }
+  // Clásico con el modo claro APAGADO (interruptor nx_claro_off, 1280, admin): el de antes — no recibe los tokens y conserva su
+  // coloreado por nombre (colorize en parches-seguros-base.js).
   await qa('tema/clasico');
-  const B = await abrir(browser, { width: 1280, rol: 'admin', mirror: 'clasico' });
+  const B = await abrir(browser, { width: 1280, rol: 'admin', mirror: 'clasico', claroOff: true });
   await B.page.evaluate(MEDIR);
-  const c = await B.page.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), tk: window.__ico.tokens(), coloreados: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, kpi: (() => { const i = document.querySelector('.sf-kpi .ic i.ti, #v-dashboard .kpi i.ti'); return i ? getComputedStyle(i).backgroundImage.slice(0, 40) : null; })() }));
-  ok(!c.cls && c.tk.sm === '' && c.tk.r === '' && c.coloreados > 3, `clásico: sin tokens --nx-ico-* y con el coloreado por nombre intacto (${c.coloreados} íconos coloreados)`, c);
+  const c = await B.page.evaluate(() => ({ cls: document.documentElement.classList.contains('tema-glass-oscuro'), claro: document.documentElement.classList.contains('tema-claro'), tk: window.__ico.tokens(), coloreados: [...document.querySelectorAll('i.ti')].filter(e => /gradient/.test(e.getAttribute('style') || '')).length, kpi: (() => { const i = document.querySelector('.sf-kpi .ic i.ti, #v-dashboard .kpi i.ti'); return i ? getComputedStyle(i).backgroundImage.slice(0, 40) : null; })() }));
+  ok(!c.cls && !c.claro && c.tk.sm === '' && c.tk.r === '' && c.coloreados > 3, `clásico con el modo claro apagado: sin tokens --nx-ico-* y con el coloreado por nombre intacto (${c.coloreados} íconos coloreados)`, c);
   await B.ctx.close();
   await browser.close();
   console.log(`\n${pass} PASS · ${fail} FAIL · capturas en ${OUT}`);

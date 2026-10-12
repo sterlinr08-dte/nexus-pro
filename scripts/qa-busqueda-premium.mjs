@@ -215,7 +215,7 @@ async function probarModulo(page, w, nom, js, campo, filas, oculto, texto, titul
     ok(errs.length === 0, 'reduced-motion: sin errores de consola', errs.slice(0, 4));
     await ctx.close();
   }
-  // Tema clásico: mismo comportamiento con el acento morado del sistema (solo captura + humo)
+  // Tema clásico (59.22: modo claro, gemelo del grafito): mismo comportamiento, con el acento azul NEXUS (antes el morado) — captura + humo
   {
     await qa('tema/clasico');
     const { ctx, page, errs } = await abrir(browser, { w: 1280, h: 800, rol: 'admin', tema: 'clasico' });
@@ -226,7 +226,7 @@ async function probarModulo(page, w, nom, js, campo, filas, oculto, texto, titul
     const e = await page.evaluate((s) => window.__bp.estado(s), '#nbiIn_cliQ');
     const borde = await page.evaluate(() => getComputedStyle(document.querySelector('#nbiIn_cliQ').closest('.nxBusca')).borderTopColor);
     ok(e && e.abierto && e.foco, 'clásico 1280: abre y enfoca igual', e);
-    ok(/rgb\(109, 40, 217\)/.test(borde), `clásico 1280: borde con el acento morado del sistema (${borde})`, borde);
+    ok(/rgb\(37, 99, 235\)/.test(borde), `clásico 1280 (modo claro): borde con el acento azul NEXUS (${borde})`, borde);
     await page.screenshot({ path: OUT + 'clientes-1280-clasico-abierto.png' });
     ok(errs.length === 0, 'clásico: sin errores de consola', errs.slice(0, 4));
     await ctx.close(); await qa('tema/none');

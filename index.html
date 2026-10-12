@@ -5452,6 +5452,14 @@ html.tema-claro ::-webkit-scrollbar-thumb{background:rgba(15,23,42,.18)!importan
 html.tema-claro body button,html.tema-claro body [role=button],html.tema-claro body .ni,html.tema-claro body .btn{touch-action:manipulation}
 /* WhatsApp: «Reintentar» de un mensaje que no salió, rojo sólido y legible (venía rosa claro sobre rosa: casi no se leía) */
 html.tema-claro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaMsgMeta .nxWaRetry{background:#DC2626!important;color:#fff!important;border:0!important;box-shadow:none!important}
+/* entrada (sigue oscura en los dos modos): el escudo igual que en el grafito (el sistema de íconos planos ya le da la forma) */
+html.tema-claro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.08)!important;box-shadow:none!important;color:#BFDBFE!important}
+html.tema-claro #loginScreen .lshield::before{display:none!important}
+html.tema-claro #loginScreen .lshield i{filter:none!important;color:#BFDBFE!important}
+/* Cobros: el ícono del agente con el color de su texto (venía morado), como en el grafito */
+html.tema-claro #tbCob .nxCobCard .cbAg i:not([style]){color:inherit!important;opacity:.8}
+/* Cobros: COBRAR de quien está al día, suave y plano (sin la base y el halo del botón principal; mismo criterio del grafito) */
+html.tema-claro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disabled):not(#nxb):not(#nxb):not(#nxb){background:#ECFDF3!important;background-image:none!important;border-color:#BBF7D0!important;color:#15803D!important;box-shadow:none!important}
 /* ── 10 · «reducir transparencia» (iPhone → Accesibilidad): todo el cristal pasa a blanco sólido ── */
 @media (prefers-reduced-transparency:reduce){
   html.tema-claro{--tgc-card:#FFFFFF}
