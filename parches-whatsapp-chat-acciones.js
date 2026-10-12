@@ -22,6 +22,12 @@
     return m?m[1]:null;
   }
   function clienteActual(){
+    // 59.21: primero el vínculo real del chat abierto (hilo.cliente_id); el nombre de la cabecera queda de respaldo
+    try{
+      const hid=typeof window.nxWaHiloAbierto==='function'?window.nxWaHiloAbierto():null;
+      const h=hid&&typeof window.nxWaHilos==='function'?(window.nxWaHilos()||[]).find(x=>String(x.id)===String(hid)):null;
+      if(h&&h.cliente_id){const cv=clientes().find(x=>String(x&&x.id)===String(h.cliente_id));if(cv)return cv;}
+    }catch(e){}
     const head=$('#v-waInbox .nxWaHead');if(!head)return null;
     const nombre=($('.nxWaClientName',head)||$('.nxWaHeadName',head))?.textContent||'';
     const k=norm(nombre);if(!k)return null;
@@ -29,6 +35,9 @@
     return xs.length===1?xs[0]:null;
   }
   function telefonoCliente(c){return String(c?.wa||c?.tel||'').replace(/\D/g,'');}
+  // 59.21: lo que debe el cliente, para mostrarlo junto a «Cobrar»
+  function deudaCliente(c){if(!c)return 0;try{return typeof pendTot==='function'?Number(pendTot(c))||0:(typeof pend==='function'?Number(pend(c))||0:0);}catch(e){return 0;}}
+  function fmtMonto(n){try{return typeof fmt==='function'?fmt(n):'RD$ '+Math.round(n).toLocaleString('es-DO');}catch(e){return 'RD$ '+n;}}
 
   function css(){
     if($('#nxWaChatAccCss'))return;
@@ -72,6 +81,7 @@ body.tema-premium .nxWaChatPop,body.tema-premium .nxWaModalCard{background:#1722
 /* 58.94 · Glass oscuro: menú ⋮, clip, ventanas (contacto, fondo, elegir contacto, destacados) y «Subiendo…» en cristal oscuro */
 html.tema-glass-oscuro .nxWaChatPop,html.tema-glass-oscuro .nxWaModalCard{background:rgba(30,32,38,.97);border-color:rgba(190,200,215,.15);box-shadow:0 28px 70px -34px rgba(0,0,0,.85)}
 html.tema-glass-oscuro .nxWaChatPop button,html.tema-glass-oscuro .nxWaModalHead b{color:#E2E8F0}html.tema-glass-oscuro .nxWaChatPop button{text-transform:none}html.tema-glass-oscuro .nxWaChatPop button:hover{background:rgba(255,255,255,.08)}html.tema-glass-oscuro .nxWaChatPop button i{color:#93C5FD}html.tema-glass-oscuro .nxWaChatPop .sep{background:rgba(190,200,215,.12)}html.tema-glass-oscuro .nxWaChatPop .danger,html.tema-glass-oscuro .nxWaChatPop .danger i{color:#FCA5A5}html.tema-glass-oscuro .nxWaChatPop .arr{color:#9FB3D1}
+/* 59.21: «Cobrar» del menú del chat — ícono verde, lo que debe a la derecha, apagado si el chat no tiene cliente */.nxWaChatPop button.nxWaCobrar i{color:#15803d!important}.nxWaChatPop button .monto{margin-left:auto;font-style:normal;font-size:12px;font-weight:800;color:#b42318;font-variant-numeric:tabular-nums;white-space:nowrap}.nxWaChatPop button .monto.sin{color:#8295b4;font-weight:600;font-size:11px}.nxWaChatPop button:disabled{opacity:.55;cursor:default}.nxWaChatPop button:disabled:hover{background:transparent}html.tema-glass-oscuro .nxWaChatPop button.nxWaCobrar i,body.tema-premium .nxWaChatPop button.nxWaCobrar i{color:#86EFAC!important}html.tema-glass-oscuro .nxWaChatPop button .monto,body.tema-premium .nxWaChatPop button .monto{color:#FCA5A5}html.tema-glass-oscuro .nxWaChatPop button .monto.sin,body.tema-premium .nxWaChatPop button .monto.sin{color:#9FB3D1}.nxWaAttachGrid button[data-k="pago"] i{color:#15803d!important}html.tema-glass-oscuro .nxWaAttachGrid button[data-k="pago"] i{background:rgba(34,197,94,.16)!important;color:#86EFAC!important;border-color:rgba(74,222,128,.32)!important}
 html.tema-glass-oscuro .nxWaAttachGrid button i{background:rgba(59,130,246,.18)!important;color:#93C5FD!important;border:1px solid rgba(147,197,253,.28)}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(2) i{background:rgba(236,72,153,.16)!important;color:#F9A8D4!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(3) i{background:rgba(139,92,246,.18)!important;color:#C4B5FD!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(4) i{background:rgba(34,197,94,.14)!important;color:#4ADE80!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(5) i{background:rgba(245,158,11,.14)!important;color:#FBBF24!important}html.tema-glass-oscuro .nxWaAttachGrid button:nth-child(6) i{background:rgba(14,165,233,.16)!important;color:#7DD3FC!important}
 html.tema-glass-oscuro .nxWaModalHead{border-color:rgba(190,200,215,.12)}html.tema-glass-oscuro .nxWaModalHead button{background:rgba(255,255,255,.08);color:#CBD5E1}html.tema-glass-oscuro .nxWaModalBody{color:#CBD5E1}
 html.tema-glass-oscuro .nxWaContactPick,html.tema-glass-oscuro .nxWaMediaItem{background:rgba(255,255,255,.06);border-color:rgba(190,200,215,.13);color:#CBD5E1}html.tema-glass-oscuro .nxWaContactPick b{color:#F1F5F9}html.tema-glass-oscuro .nxWaContactPick span{color:#9FB3D1}html.tema-glass-oscuro .nxWaContactPick .av{background:rgba(37,99,235,.28);color:#BFDBFE}
@@ -118,14 +128,18 @@ html.tema-glass-oscuro .nxWaStarRow{background:rgba(255,255,255,.06);border-colo
     closePop();
     const c=clienteActual();
     const p=document.createElement('div');p.className='nxWaChatPop nxWaMainMenu';
+    const deuda=deudaCliente(c);
+    /* 59.21 (dueño 11-oct-2026: «un botón de cobrar ahí mismo, para más rápido»): «Cobrar» va primero; abre la misma
+       ventana de pago de siempre (abrirAbono) con el cliente del chat. Antes era «Registrar pago», en 6.º lugar. */
     p.innerHTML=`
+      <button data-a="pago" class="nxWaCobrar" ${c?'':'disabled'}><i class="ti ti-cash"></i><span>Cobrar</span>${c?(deuda>0?`<em class="monto">${esc(fmtMonto(deuda))}</em>`:''):'<em class="monto sin">Sin cliente</em>'}</button>
+      <div class="sep"></div>
       <button data-a="buscar"><i class="ti ti-search"></i><span>Buscar</span></button>
       <button data-a="media"><i class="ti ti-photo"></i><span>Multimedia, enlaces y docs</span></button>
       <button data-a="wall"><i class="ti ti-wallpaper"></i><span>Fondo de pantalla</span></button>
       <div class="sep"></div>
       <button data-a="contact"><i class="ti ti-user"></i><span>Ver contacto</span></button>
       <button data-a="crm" ${c?'':'disabled'}><i class="ti ti-briefcase"></i><span>Abrir ficha CRM</span></button>
-      <button data-a="pago" ${c?'':'disabled'}><i class="ti ti-cash"></i><span>Registrar pago</span></button>
       <button data-a="unread"><i class="ti ti-mail"></i><span>Marcar como no leído</span></button>
       <button data-a="starred"><i class="ti ti-star"></i><span>Mensajes destacados</span></button>
       <div class="sep"></div>
@@ -242,7 +256,7 @@ html.tema-glass-oscuro .nxWaStarRow{background:rgba(255,255,255,.06);border-colo
       <button data-k="document"><i class="ti ti-file-text"></i><span>Documento</span></button>
       <button data-k="camera"><i class="ti ti-camera"></i><span>Cámara</span></button>
       <button data-k="gallery"><i class="ti ti-photo"></i><span>Galería</span></button>
-      <button data-k="pago"><i class="ti ti-cash"></i><span>Pagar</span></button>
+      <button data-k="pago"><i class="ti ti-cash"></i><span>Cobrar</span></button>
       <button data-k="location"><i class="ti ti-map-pin"></i><span>Ubicación</span></button>
       <button data-k="contact"><i class="ti ti-user"></i><span>Contacto</span></button>
     </div>`;

@@ -358,6 +358,16 @@ async function menuMensaje(page, ctx, sel) {
       await clic(page, '#v-waInbox .nxWaChatMoreBtn'); await sleep(600);
       r = await page.evaluate(() => { const p = document.querySelector('.nxWaChatPop.nxWaMainMenu'); if (!p) return null; const f = window.__wa.fondo(p); return { items: [...p.querySelectorAll('button')].map(b => b.innerText.trim()), lum: +window.__wa.lum(f).toFixed(3), tt: getComputedStyle(p.querySelector('button')).textTransform }; });
       ok(r && r.lum < 0.2 && r.tt === 'none' && r.items.includes('Mensajes destacados'), `${tag} menú ⋮ oscuro, texto natural, con «Mensajes destacados»`, r);
+      // 59.21 (dueño 11-oct-2026): «Cobrar» primero (antes «Registrar pago», 6.º); abre la ventana de pago del cliente del chat
+      ok(r && /^Cobrar/.test(r.items[0] || '') && !r.items.some(t => /Registrar pago/.test(t)), `${tag} menú ⋮: «Cobrar» es la primera opción («${r && r.items[0]}»)`, r && r.items);
+      const cobrar = await page.evaluate(() => { const bt = document.querySelector('.nxWaMainMenu [data-a="pago"]'); return bt ? { dis: bt.disabled, txt: bt.innerText.trim() } : null; });
+      if (cobrar && !cobrar.dis) {
+        await clic(page, '.nxWaMainMenu [data-a="pago"]'); await sleep(700);
+        const pg = await page.evaluate(() => ({ abierto: !!document.querySelector('#mAbono.open'), cli: typeof abonoCliId !== 'undefined' ? abonoCliId : null, chat: !!document.querySelector('#nxWaMsgsBox') }));
+        ok(pg.abierto && pg.cli && pg.chat, `${tag} «Cobrar» del menú ⋮ abre «Registrar pago» encima del chat (cliente ${pg.cli})`, pg);
+        await page.evaluate(() => { try { closeM('mAbono'); } catch (e) {} }); await sleep(300);
+        await clic(page, '#v-waInbox .nxWaChatMoreBtn'); await sleep(600);
+      } else ok(cobrar && cobrar.dis && /Sin cliente/.test(cobrar.txt), `${tag} «Cobrar» apagado con «Sin cliente» en un chat sin cliente`, cobrar);
       await clic(page, '.nxWaMainMenu [data-a="starred"]'); await sleep(900);
       r = await page.evaluate(() => { const ov = document.querySelector('.nxWaStarredOv'); if (!ov) return null; return { rows: [...ov.querySelectorAll('.nxWaStarRow span')].map(s => s.textContent), lum: +window.__wa.lum(window.__wa.fondo(ov.querySelector('.nxWaModalCard'))).toFixed(3) }; });
       ok(r && r.rows.length >= 1 && r.rows.some(t => /reenviado desde otro chat/.test(t)) && r.lum < 0.2 && LOG.some(l => l === 'rpc:destacados'), `${tag} Mensajes destacados: panel oscuro con ${r && r.rows.length} destacado(s) vía RPC whatsapp_mensajes_destacados`, r);
@@ -365,6 +375,8 @@ async function menuMensaje(page, ctx, sel) {
       await clic(page, '#v-waInbox .nxWaComposer .nxWaIconBtn'); await sleep(600);
       r = await page.evaluate(() => { const p = document.querySelector('.nxWaAttachPop'); if (!p) return null; return { lum: +window.__wa.lum(window.__wa.fondo(p)).toFixed(3), n: p.querySelectorAll('button').length, tt: getComputedStyle(p.querySelector('button')).textTransform }; });
       ok(r && r.lum < 0.2 && r.n === 6 && r.tt === 'none', `${tag} panel del clip en cristal oscuro (6 opciones, texto natural)`, r);
+      const clipTxt = await page.evaluate(() => [...document.querySelectorAll('.nxWaAttachPop button')].map(b => b.innerText.trim()));
+      ok(clipTxt.includes('Cobrar') && !clipTxt.includes('Pagar'), `${tag} clip: «Cobrar» (antes «Pagar»)`, clipTxt);
       await page.evaluate(() => document.querySelectorAll('.nxWaChatPop').forEach(x => x.remove()));
 
       // 9) 59.21 (dueño 11-oct-2026): ya no hay botón flotante ☰; nada flota sobre el micrófono ni las burbujas

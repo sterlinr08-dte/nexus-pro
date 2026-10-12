@@ -102,6 +102,12 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco input.nxB
 .nxWaListMenu button:active{background:rgba(255,255,255,.14)!important}
 .nxWaListMenu button .sub{margin-left:auto;font-size:14px;color:#9FB3D1}
 .nxWaListMenu button.rojo{color:#FCA5A5}
+/* 59.21: «Cobrar» (dueño 11-oct-2026): ícono verde, lo que debe a la derecha; apagado si el chat no tiene cliente */
+.nxWaListMenu button.cobrar i.ti{color:#86EFAC!important}/* !important: «button .ti{color:inherit!important}» de parches-seguros-base.js pinta todos los íconos del color del texto */
+.nxWaListMenu button .monto{margin-left:auto;font-size:12px;font-weight:800;color:#FCA5A5;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nxWaListMenu button .sin{margin-left:auto;font-size:11px;font-weight:600;color:#9FB3D1;white-space:nowrap}
+.nxWaListMenu button:disabled{opacity:.55;cursor:default}
+.nxWaListMenu button:disabled:hover{background:transparent!important}
 /* 59.21: en el tema oscuro el menú y el panel de emojis van en grafito (el tema claro sigue igual) */
 html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,.96);--nxwa-pop-edge:rgba(190,200,215,.16)}
 @keyframes nxWaLmIn{from{opacity:0;transform:scale(.96) translateY(4px)}to{opacity:1;transform:none}}
@@ -132,6 +138,18 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
   const silenciado=h=>{try{return !!(window.nxWaHiloSilenciado&&window.nxWaHiloSilenciado(h));}catch(e){return false;}};
   const accion=(id,a,v)=>{try{return window.nxWaHiloAccion?window.nxWaHiloAccion(id,a,v):Promise.resolve(false);}catch(e){return Promise.resolve(false);}};
   const nombreDe=row=>(row&&$('.nxWaWho b',row)?.textContent||'').trim();
+  /* 59.21 — «Cobrar» desde el menú de la conversación (dueño 11-oct-2026: «un botón de cobrar ahí mismo, para más
+     rápido»). Usa el vínculo real del chat (hilo.cliente_id) y abre la ventana de pago de siempre (abrirAbono):
+     no hay lógica de dinero nueva. Solo donde existe esa ventana (Seguros). */
+  const clientesST=()=>{try{return (window.ST||ST||{}).clientes||[];}catch(e){return [];}};
+  const cobroDe=h=>{
+    if(typeof window.abrirAbono!=='function')return null;
+    const c=h&&h.cliente_id?clientesST().find(x=>String(x.id)===String(h.cliente_id))||null:null;
+    if(!c)return {c:null,monto:0};
+    let monto=0;try{monto=typeof pendTot==='function'?Number(pendTot(c))||0:(typeof pend==='function'?Number(pend(c))||0:0);}catch(e){}
+    return {c,monto};
+  };
+  const fmtMonto=n=>{try{return typeof fmt==='function'?fmt(n):'RD$ '+Math.round(n).toLocaleString('es-DO');}catch(e){return 'RD$ '+n;}};
 
   /* ── Menú contextual (pulsación larga / clic derecho) ── */
   function cerrarMenu(){const m=$('.nxWaListMenu');if(m)m.remove();}
@@ -149,7 +167,10 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
     const it=(k,ico,txt,extra)=>'<button type="button" data-k="'+k+'"'+(extra||'')+'><i class="ti '+ico+'"></i><span>'+esc(txt)+'</span>'+(k==='silenciar'?'<i class="ti ti-chevron-right sub"></i>':'')+'</button>';
     const principal=()=>{
       const noLeidos=Number(h.no_leidos_count)>0;
+      const cb=cobroDe(h);
       m.innerHTML='<div class="cab">'+esc(nombreDe(row)||'Conversación')+'</div>'
+        +(cb?(cb.c?'<button type="button" class="cobrar" data-k="cobrar"><i class="ti ti-cash"></i><span>Cobrar</span>'+(cb.monto>0?'<span class="monto">'+esc(fmtMonto(cb.monto))+'</span>':'')+'</button>'
+          :'<button type="button" class="cobrar" data-k="cobrar" disabled title="Vincula este chat a un cliente para cobrar"><i class="ti ti-cash"></i><span>Cobrar</span><span class="sin">Sin cliente</span></button>'):'')
         +(sop.fijar?it(h.fijado_at?'desfijar':'fijar',h.fijado_at?'ti-pinned-off':'ti-pin',h.fijado_at?'Desfijar chat':'Fijar chat'):'')
         +(sop.silenciar?(silenciado(h)?it('silencio_quitar','ti-bell','Dejar de silenciar'):it('silenciar','ti-bell-off','Silenciar notificaciones')):'')
         +(sop.archivar?it(h.archivado_at?'desarchivar':'archivar',h.archivado_at?'ti-archive-off':'ti-archive',h.archivado_at?'Desarchivar chat':'Archivar chat'):'')
@@ -167,6 +188,13 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
     m.addEventListener('click',async e=>{
       const b=e.target.closest('[data-k]');if(!b)return;e.preventDefault();e.stopPropagation();
       const k=b.dataset.k;
+      if(k==='cobrar'){
+        cerrarMenu();
+        const cb=cobroDe(h);
+        if(!cb||!cb.c)return toastSafe('info','Este chat no tiene cliente vinculado');
+        try{window.abrirAbono(cb.c.id);}catch(err){toastSafe('err','No se pudo abrir el cobro',err&&err.message||'');}
+        return;
+      }
       if(k==='silenciar'){submenu();colocar(m,x,y);return;}
       if(k==='volver'){principal();colocar(m,x,y);return;}
       cerrarMenu();

@@ -174,10 +174,10 @@ async function movil(browser, w, h, rol) {
   r = await page.evaluate(() => ({ fab: !!document.querySelector('.nx-fab'), hoja: !!document.querySelector('.mobile-more-sheet-clean'),
     faltan: ['dashboard', 'clientes', 'polizas', 'facturas', 'rep-agente'].filter(v => !document.querySelector(`#sbEl [onclick^="nav('${v}'"]`)),
     usuarios: !!document.querySelector('#sbEl [onclick^="navConfig(6"]'), config: !!document.querySelector('#sbEl [onclick^="toggleConfig"]'),
-    proceso: !!document.querySelector(`#v-clientes [onclick*="switchCliTab('proceso')"]`),
+    proceso: !!document.querySelector('#v-clientes #cliTabProc'), // «En proceso» ahora es la pestaña «Novedades» (parches-clientes-novedades.js)
     cobros: !!document.querySelector(`#v-facturas [onclick*="switchTab('cob')"]`), historial: !!document.querySelector(`#v-facturas [onclick*="switchTab('pagos')"]`) }));
   ok(!r.fab && !r.hoja, `${tag} sin botón flotante ☰ abajo a la derecha ni su hoja «MENÚ»`, r);
-  ok(!r.faltan.length && r.usuarios && r.config && r.proceso && r.cobros && r.historial, `${tag} el cajón ☰ y las pestañas tienen todo lo del menú flotante: Inicio, Clientes (En proceso), Pólizas, Facturas (Cobros, Historial), Reporte agente, Configuración y Usuarios`, r);
+  ok(!r.faltan.length && r.usuarios && r.config && r.proceso && r.cobros && r.historial, `${tag} el cajón ☰ y las pestañas tienen todo lo del menú flotante: Inicio, Clientes (Novedades = en proceso), Pólizas, Facturas (Cobros, Historial), Reporte agente, Configuración y Usuarios`, r);
   await page.evaluate(() => window.__qi.cerrar()); await sleep(300);
   // 4) Ventanas
   for (const [nom, js] of [['modal-abono', "nav('clientes',null);setTimeout(()=>abrirAbono(ST.clientes[0].id),300)"], ['modal-nuevo-cliente', "nav('clientes',null);setTimeout(()=>abrirNuevoCli(),300)"]]) {

@@ -191,7 +191,10 @@ async function suite(browser, movil) {
   else await page.click(`#nxWaLista .nxWaRow[data-hilo="${ID.ana}"]`, { button: 'right' });
   await sleep(300);
   let menu = await page.evaluate(() => { const m = document.querySelector('.nxWaListMenu'); if (!m) return null; const rc = m.getBoundingClientRect(); return { items: [...m.querySelectorAll('button')].map(x => x.textContent.trim()), bg: getComputedStyle(m).backgroundColor, dentro: rc.left >= 0 && rc.right <= innerWidth && rc.top >= 0 && rc.bottom <= innerHeight, chatAbierto: !!document.querySelector('#v-waInbox.nxWaChatOpen') || !!document.querySelector('#nxWaMsgsBox') }; });
-  ok(menu && menu.items.join('|') === 'Fijar chat|Silenciar notificaciones|Archivar chat|Marcar como leído', `${tag} C: menú de la fila con Fijar / Silenciar / Archivar / Marcar como leído`, menu);
+  // 59.21 (dueño 11-oct-2026): «Cobrar» va primero en el menú de la conversación, con lo que debe el cliente
+  ok(menu && /^Cobrar/.test(menu.items[0] || '') && menu.items.slice(1).join('|') === 'Fijar chat|Silenciar notificaciones|Archivar chat|Marcar como leído', `${tag} C: menú de la fila con Cobrar / Fijar / Silenciar / Archivar / Marcar como leído`, menu);
+  const cob = await page.evaluate(() => { const bt = document.querySelector('.nxWaListMenu [data-k="cobrar"]'); if (!bt) return null; const m = bt.querySelector('.monto'); return { dis: bt.disabled, monto: m ? m.textContent.trim() : '', ico: getComputedStyle(bt.querySelector('i.ti')).color }; });
+  ok(cob && !cob.dis && /^RD\$ [\d,]+$/.test(cob.monto) && /rgb\(134, 239, 172\)/.test(cob.ico), `${tag} C: «Cobrar» activo, ícono verde y lo que debe a la derecha (${cob?.monto})`, cob);
   ok(menu && esOscuro(menu.bg) && menu.dentro && !menu.chatAbierto, `${tag} C: menú oscuro (${menu?.bg}), dentro de pantalla y sin abrir el chat`, menu);
   if (movil) await page.screenshot({ path: OUT + 'menu-fila-390.png' });
   await page.click('.nxWaListMenu [data-k="fijar"]'); await sleep(400);
@@ -217,6 +220,23 @@ async function suite(browser, movil) {
   ok(/nxWaUnread/.test((await infoFila(page, ID.juan)).cls), `${tag} C: la fila pasa a no leída`);
   await page.keyboard.press('Escape');
   ok(await page.evaluate(() => !document.querySelector('.nxWaListMenu')), `${tag} C: el menú se cierra`);
+  // «Cobrar» abre la ventana de pago de siempre con el cliente vinculado al chat, sin abrir el chat
+  b = await caja(page, ID.ana);
+  if (movil) await touch(ctx, page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { holdMs: 750 }); else await page.click(`#nxWaLista .nxWaRow[data-hilo="${ID.ana}"]`, { button: 'right' });
+  await sleep(250);
+  await page.click('.nxWaListMenu [data-k="cobrar"]'); await sleep(700);
+  const pago = await page.evaluate(() => ({ abierto: !!document.querySelector('#mAbono.open, #mAbono .overlay.open, .overlay.open #btnAbo') || (document.getElementById('mAbono') && getComputedStyle(document.getElementById('mAbono')).display !== 'none' && document.getElementById('mAbono').classList.contains('open')), cli: typeof abonoCliId !== 'undefined' ? abonoCliId : null, menu: !!document.querySelector('.nxWaListMenu'), chat: !!document.querySelector('#v-waInbox.nxWaChatOpen') }));
+  ok(pago.abierto && pago.cli === U(202) && !pago.menu && !pago.chat, `${tag} C: «Cobrar» abre «Registrar pago» del cliente del chat (${pago.cli}) sin abrir el chat`, pago);
+  await page.evaluate(() => { try { closeM('mAbono'); } catch (e) {} }); await sleep(300);
+  // un chat sin cliente vinculado: «Cobrar» apagado con «Sin cliente»
+  const sinCli = await page.evaluate((hid) => { const hs = window.nxWaHilos() || []; const i = hs.findIndex(x => x.id === hid); if (i < 0) return null; window.__qaHiloOrig = hs[i]; hs[i] = Object.assign({}, hs[i], { cliente_id: null }); return true; }, ID.juan);
+  b = await caja(page, ID.juan);
+  if (movil) await touch(ctx, page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { holdMs: 750 }); else await page.click(`#nxWaLista .nxWaRow[data-hilo="${ID.juan}"]`, { button: 'right' });
+  await sleep(250);
+  const cobSin = await page.evaluate(() => { const bt = document.querySelector('.nxWaListMenu [data-k="cobrar"]'); return bt ? { dis: bt.disabled, txt: bt.textContent.trim() } : null; });
+  ok(sinCli && cobSin && cobSin.dis && /Sin cliente/.test(cobSin.txt), `${tag} C: chat sin cliente vinculado: «Cobrar» apagado con «Sin cliente»`, cobSin);
+  await page.keyboard.press('Escape'); await sleep(150);
+  await page.evaluate((hid) => { const hs = window.nxWaHilos() || []; const i = hs.findIndex(x => x.id === hid); if (i >= 0 && window.__qaHiloOrig) hs[i] = window.__qaHiloOrig; }, ID.juan); // deja el hilo como estaba
 
   // F. título con contador y notificación sonora
   await page.evaluate(() => { Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true }); window.nxWaTituloBadge(); });
@@ -382,7 +402,7 @@ async function suiteSinColumnas(browser) {
   const b = await caja(page, ID.ana);
   await touch(ctx, page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { holdMs: 750 }); await sleep(300);
   const items = await page.evaluate(() => [...document.querySelectorAll('.nxWaListMenu button')].map(x => x.textContent.trim()));
-  ok(items.join('|') === 'Marcar como leído', `390 sin columnas: el menú solo ofrece Marcar como leído`, items);
+  ok(/^Cobrar/.test(items[0] || '') && items.slice(1).join('|') === 'Marcar como leído', `390 sin columnas: el menú solo ofrece Cobrar y Marcar como leído (59.21: «Cobrar» no depende de esas columnas)`, items);
   await page.click('.nxWaListMenu [data-k="leido"]'); await sleep(300);
   ok(log.rpc.some(x => x.fn === 'whatsapp_marcar_hilo_leido' && x.b?.p_hilo_id === ID.ana), `390 sin columnas: «Marcar como leído» llama a rpc/whatsapp_marcar_hilo_leido`);
   const y = b.y + b.height / 2, x0 = b.x + b.width - 30; const n = nWa(log);

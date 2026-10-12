@@ -679,7 +679,7 @@
     if (!isMobile()) return;
     /* 59.21 (dueño 11-oct-2026: «Quita el botón que está en la parte inferior derecho tipo sándwich»): el botón
        flotante ☰ y su hoja «MENÚ» ya no se crean. Todo lo que abrían sigue en el cajón ☰ de la cabecera: Inicio,
-       Clientes (pestaña En proceso), Pólizas, Facturas (pestañas Cobros e Historial), Reporte agente,
+       Clientes (pestaña Novedades, la de «en proceso»), Pólizas, Facturas (pestañas Cobros e Historial), Reporte agente,
        Configuración y Usuarios. Para volver a tenerlo: window.NX_FAB_MENU = true antes de cargar este archivo. */
     if (window.NX_FAB_MENU !== true) return;
     crearFAB();
