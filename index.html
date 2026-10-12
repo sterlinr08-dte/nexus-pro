@@ -5265,7 +5265,7 @@ html.tema-claro body nav#sbEl.sb .nx-mc-out{color:#64748B}
     --nx-mc-line:linear-gradient(90deg,transparent,rgba(255,255,255,.26),transparent);
     --nx-mc-pill:linear-gradient(180deg,#FFFFFF 0%,#EEF4FF 100%);
     --nx-mc-pill-sh:inset 0 1px 0 #fff,0 8px 18px -10px rgba(10,25,80,.7)}
-  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='104' viewBox='0 0 288 104'%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18 L288 104 L0 104 Z' fill='white' fill-opacity='.075'/%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18' fill='none' stroke='white' stroke-opacity='.30' stroke-width='1.2'/%3E%3C/svg%3E") left bottom/288px 104px no-repeat,var(--nx-mc-glass)!important;
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{background:radial-gradient(120% 46% at 0% 0%,rgba(255,255,255,.16),transparent 62%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='104' viewBox='0 0 288 104'%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18 L288 104 L0 104 Z' fill='white' fill-opacity='.075'/%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18' fill='none' stroke='white' stroke-opacity='.30' stroke-width='1.2'/%3E%3C/svg%3E") left bottom/288px 104px no-repeat,var(--nx-mc-glass)!important;
     border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 24px 50px -26px rgba(30,64,175,.65)!important}
   html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 30px 70px -24px rgba(30,64,175,.6),18px 0 48px -22px rgba(15,23,42,.25)!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni-i,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni>i.ni-i{background:transparent!important;box-shadow:none!important;color:rgba(255,255,255,.92)!important}
@@ -5307,6 +5307,38 @@ html.tema-claro body nav#sbEl.sb .nx-mc-out{color:#64748B}
 /* «reducir transparencia»: el riel pasa a azul sólido (el resto del cristal, a blanco: sección 10) */
 @media (min-width:769px) and (prefers-reduced-transparency:reduce){
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) #sbContab,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) #sbConfig{background:#1D4ED8!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+/* apertura del riel azul (dueño 12-oct: «una mezcla con diseño y animación cuando la barra se vaya abrir»). Se abre
+   decenas de veces al día: corta y sin estorbar (skills emil-design-eng y apple-design).
+   · Cascada: el nombre de cada fila entra después del de arriba (20 ms), deslizándose 8 px y enfocándose (desenfoque de 2 px).
+   · Reflejo: un brillo de cristal cruza el azul una vez al abrir (capa ::after, libre en la computadora con estos temas).
+   · Luz: un resplandor suave arriba a la izquierda le da volumen al azul.
+   · Cierre más rápido que la apertura y sin rebote (0,3 s); la apertura conserva el resorte del grafito.
+   · Con «reducir movimiento»: sin cascada, sin reflejo ni desplazamiento, solo el fundido (regla del menú de cristal). */
+@media (min-width:769px){
+  html.tema-claro{--nx-mc-dur:.3s;--nx-mc-ease:cubic-bezier(.23,1,.32,1)}
+  html.tema-claro.nx-mc-open{--nx-mc-dur:.42s;--nx-mc-ease:cubic-bezier(.32,1.18,.36,1)}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(1){--nx-i:1}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(2){--nx-i:2}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(3){--nx-i:3}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(4){--nx-i:4}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(5){--nx-i:5}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(6){--nx-i:6}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(7){--nx-i:7}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(8){--nx-i:8}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(9){--nx-i:9}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(10){--nx-i:10}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(11){--nx-i:11}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(12){--nx-i:12}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(13){--nx-i:13}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(14){--nx-i:14}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(15){--nx-i:15}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(16){--nx-i:16}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(17){--nx-i:17}html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nav>:nth-child(18){--nx-i:18}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-top,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .nx-mc-search{--nx-i:0}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-ft{--nx-i:16}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni:not(#sbContab *):not(#sbConfig *)>.ni-l,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-top>:not(.sb-mk),html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .nx-mc-st,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-u>div:not(.sb-av){filter:blur(2px);
+    transition:opacity .1s ease,transform .1s ease,filter .1s ease}
+  html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni:not(#sbContab *):not(#sbConfig *)>.ni-l,html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-top>:not(.sb-mk),html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .nx-mc-st,html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-u>div:not(.sb-av){filter:none;
+    transition:opacity .26s cubic-bezier(.23,1,.32,1) calc(70ms + var(--nx-i,0)*20ms),transform .34s cubic-bezier(.23,1,.32,1) calc(70ms + var(--nx-i,0)*20ms),filter .26s ease calc(70ms + var(--nx-i,0)*20ms)}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::after{content:''!important;display:block!important;position:absolute!important;top:0!important;left:0!important;bottom:0!important;right:auto!important;height:auto!important;
+    width:var(--nx-mc-w)!important;border-radius:26px!important;z-index:0!important;pointer-events:none!important;opacity:0;
+    background-image:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.22) 46%,rgba(255,255,255,.06) 54%,transparent 70%)!important;
+    background-repeat:no-repeat!important;background-size:250% 100%!important;background-position:110% 0;
+    transition:width var(--nx-mc-dur) var(--nx-mc-ease)}
+  html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::after{animation:nxRielReflejo .75s cubic-bezier(.23,1,.32,1) .05s 1 both}
+  /* con el menú abierto flotando sobre el contenido, la luz de vidrio (parches-vidrio-global, capa por encima de todo) se pintaba
+     encima del azul al señalar una tarjeta que el menú tapa en parte: se apaga mientras el menú está abierto (sus filas tienen su propio resaltado) */
+  html.tema-claro.nx-mc-open body>.nx-vidrio{opacity:0!important;transition:none!important}
+}
+@keyframes nxRielReflejo{0%{opacity:0;background-position:110% 0}22%{opacity:1}100%{opacity:0;background-position:-10% 0}}
+@media (min-width:769px) and (prefers-reduced-motion:reduce){
+  html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::after{animation:none!important}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni:not(#sbContab *):not(#sbConfig *)>.ni-l,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-top>:not(.sb-mk),html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .nx-mc-st,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-u>div:not(.sb-av){filter:none!important}
 }
 /* cajón ☰ del celular (cristal blanco, elegido en píldora azul): la rayita de brillo del elegido (dueño, 02-oct) va en blanco;
    la regla general de los temas claros la pinta azul y sobre la píldora azul no se veía */
