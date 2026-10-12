@@ -342,6 +342,22 @@ async function menuMensaje(page, ctx, sel) {
       const mp = await page.evaluate(() => { const p = document.querySelector('.nxWaMsgPro'); if (!p) return null; const bs = [...p.querySelectorAll('button')]; const b1 = bs[1] || bs[0]; const cs = getComputedStyle(b1); const cob = p.querySelector('[data-act="cobrar"]');
         return { primero: (bs[0] && bs[0].innerText.trim()) || '', cobDis: cob ? cob.disabled : null, borde: cs.borderLeftWidth, sombra: cs.boxShadow, alto: b1.offsetHeight /* alto del renglón sin la escala de la animación de entrada (.98 → 1) */, sel: getComputedStyle(document.querySelector('#v-waInbox .nxWaBub')).webkitUserSelect || getComputedStyle(document.querySelector('#v-waInbox .nxWaBub')).userSelect }; });
       ok(mp && /^Cobrar/.test(mp.primero) && mp.borde === '0px' && !/rgba\(255, 255, 255, 0\.9\)/.test(mp.sombra) && mp.alto >= 44, `${tag} menú del mensaje: «Cobrar» primero («${mp && mp.primero}») y renglones lisos de ${mp && mp.alto} px`, mp);
+      // 59.21: el menú creció (44 px y «Cobrar»): en el último mensaje, con la barra de inicio del iPhone (34 px, app abierta
+      // desde el ícono), queda entero encima de ella
+      if (movil) {
+        const cdpSA = await ctx.newCDPSession(page);
+        const sa = (b) => cdpSA.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, topMax: 0, bottom: b, bottomMax: b, left: 0, leftMax: 0, right: 0, rightMax: 0 } }).then(() => true).catch(() => false);
+        if (await sa(34)) {
+          const ultimo = await page.evaluate(() => { const ws = [...document.querySelectorAll('#nxWaMsgsBox .nxWaBubWrap[id^="nxWaMsg-"]')]; return ws.length ? '#' + ws[ws.length - 1].id : null; });
+          const mu = ultimo && await menuMensaje(page, ctx, ultimo);
+          const cajaMenu = await page.evaluate(() => { const p = document.querySelector('.nxWaMsgPro'); if (!p) return null; const r = p.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), alto: innerHeight, n: p.querySelectorAll('button').length }; });
+          ok(mu && cajaMenu && cajaMenu.n >= 6 && cajaMenu.top >= 0 && cajaMenu.bottom <= cajaMenu.alto - 34, `${tag} menú del último mensaje: entero y encima de la barra de inicio del iPhone (abajo ${cajaMenu && cajaMenu.bottom} de ${cajaMenu && cajaMenu.alto - 34})`, cajaMenu);
+          await page.evaluate(() => document.querySelectorAll('.nxWaMsgPro,.nxWaCtx').forEach(x => x.remove()));
+          await sa(0);
+        } else ok(false, `${tag} no se pudo simular la barra de inicio del iPhone`);
+        await cdpSA.detach().catch(() => {});
+        mn = await menuMensaje(page, ctx, selLeido); // vuelve a dejar abierto el menú del mensaje leído para los pasos que siguen
+      }
       if (movil) ok(mp && mp.sel === 'none', `${tag} al mantener presionado un mensaje no se selecciona el texto (user-select ${mp && mp.sel})`, mp);
       await clic(page, '.nxWaMsgPro [data-act="info"]'); await sleep(500);
       r = await page.evaluate(() => { const ov = document.querySelector('.nxWaModalOv'); if (!ov) return null; const dts = [...ov.querySelectorAll('dt')].map(d => d.textContent); const f = window.__wa.fondo(ov.querySelector('.nxWaModalCard')); return { dts, lum: +window.__wa.lum(f).toFixed(3) }; });

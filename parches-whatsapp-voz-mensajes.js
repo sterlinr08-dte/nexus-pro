@@ -94,7 +94,7 @@ html.tema-glass-oscuro .nxWaMsgInfo dt{color:#9FB3D1}html.tema-glass-oscuro .nxW
    renglones lisos de 44 px con separadores finos, grupos separados por una franja, «Cobrar» primero y en verde.
    La capa global nx-semi-glass-global-css (parches-seguros-base.js) pinta TODO <button> con borde morado, brillo blanco
    y sombra (!important): por eso cada renglón parecía una tarjeta. Aquí se anula solo dentro de este menú. */
-.nxWaMsgPro{padding:0!important;overflow:hidden;border-radius:16px!important;width:min(260px,calc(100vw - 20px))!important;-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4)}
+.nxWaMsgPro{padding:0!important;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;border-radius:16px!important;width:min(260px,calc(100vw - 20px))!important;-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4)}
 .nxWaMsgPro button{border:0!important;box-shadow:none!important;border-radius:0!important;min-height:44px!important;margin:0!important;padding:0 16px!important;gap:12px!important;font-size:14px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important}
 .nxWaMsgPro button+button{border-top:1px solid rgba(15,39,78,.08)!important}
 .nxWaMsgPro button i{font-size:18px!important;width:22px!important}
@@ -202,8 +202,13 @@ html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nx
   }
 
   function viewport(){const v=window.visualViewport;return v?{left:v.offsetLeft||0,top:v.offsetTop||0,width:v.width||innerWidth,height:v.height||innerHeight}:{left:0,top:0,width:innerWidth,height:innerHeight};}
+  // 59.21: franja de la barra de inicio del iPhone (app abierta desde el ícono); 0 en la computadora y en Safari con barra.
+  function safeBottom(){try{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;bottom:0;width:0;height:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d);const v=parseFloat(getComputedStyle(d).paddingBottom)||0;d.remove();return v;}catch(e){return 0;}}
+  /* 59.21: el menú creció (renglones de 44 px y «Cobrar»). Se mide con offsetWidth/offsetHeight: getBoundingClientRect
+     llegaba encogido por la animación de entrada (scale .98) y el menú quedaba pegado al borde de abajo. Abajo deja libre
+     la barra de inicio del iPhone, y si no cabe entero (p. ej. con el teclado abierto) se desplaza por dentro. */
   function placeMenu(p,id){
-    requestAnimationFrame(()=>{if(!p?.isConnected)return;const vp=viewport(),w=document.getElementById('nxWaMsg-'+id),r=w?.getBoundingClientRect(),pr=p.getBoundingClientRect(),M=9;let left=r?(w?.classList.contains('out')?r.left-pr.width-6:r.right+6):vp.left+vp.width-pr.width-M;let top=r?r.top:vp.top+40;if(left<vp.left+M||left+pr.width>vp.left+vp.width-M){left=Math.max(vp.left+M,Math.min((r?.right||vp.left+vp.width)-pr.width,vp.left+vp.width-pr.width-M));top=(r?.bottom||top)+4;}top=Math.max(vp.top+M,Math.min(top,vp.top+vp.height-pr.height-M));p.style.left=Math.round(left)+'px';p.style.top=Math.round(top)+'px';});
+    requestAnimationFrame(()=>{if(!p?.isConnected)return;const vp=viewport(),w=document.getElementById('nxWaMsg-'+id),r=w?.getBoundingClientRect(),M=9,MB=Math.max(M,safeBottom()+6);p.style.maxHeight=Math.max(160,Math.floor(vp.height-M-MB))+'px';const pr={width:p.offsetWidth,height:p.offsetHeight};let left=r?(w?.classList.contains('out')?r.left-pr.width-6:r.right+6):vp.left+vp.width-pr.width-M;let top=r?r.top:vp.top+40;if(left<vp.left+M||left+pr.width>vp.left+vp.width-M){left=Math.max(vp.left+M,Math.min((r?.right||vp.left+vp.width)-pr.width,vp.left+vp.width-pr.width-M));top=(r?.bottom||top)+4;}top=Math.max(vp.top+M,Math.min(top,vp.top+vp.height-pr.height-MB));p.style.left=Math.round(left)+'px';p.style.top=Math.round(top)+'px';});
   }
   function closeMsgMenus(){ $$('.nxWaMsgPro,.nxWaCtx').forEach(x=>x.remove()); }
   // Badge con la reacción del agente (.ag) y la del cliente (.cl, la pinta el núcleo desde

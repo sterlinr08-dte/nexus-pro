@@ -237,6 +237,24 @@ async function suite(browser, movil) {
   ok(sinCli && cobSin && cobSin.dis && /Sin cliente/.test(cobSin.txt), `${tag} C: chat sin cliente vinculado: «Cobrar» apagado con «Sin cliente»`, cobSin);
   await page.keyboard.press('Escape'); await sleep(150);
   await page.evaluate((hid) => { const hs = window.nxWaHilos() || []; const i = hs.findIndex(x => x.id === hid); if (i >= 0 && window.__qaHiloOrig) hs[i] = window.__qaHiloOrig; }, ID.juan); // deja el hilo como estaba
+  // 59.21: el menú tiene un renglón más («Cobrar»): en el último chat, con la barra de inicio del iPhone (34 px, app abierta
+  // desde el ícono), queda encima de ella
+  if (movil) {
+    const cdpSA = await ctx.newCDPSession(page);
+    const sa = (n) => cdpSA.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, topMax: 0, bottom: n, bottomMax: n, left: 0, leftMax: 0, right: 0, rightMax: 0 } }).then(() => true).catch(() => false);
+    if (await sa(34)) {
+      const ultima = await page.evaluate(() => { const rs = [...document.querySelectorAll('#nxWaLista .nxWaRow')].filter(r => !r.closest('.nxWaArchSec') && r.getBoundingClientRect().height > 0); const r = rs[rs.length - 1]; if (!r) return null; r.scrollIntoView({ block: 'end' }); return r.dataset.hilo; });
+      await sleep(400);
+      b = ultima && await caja(page, ultima);
+      if (b) { await touch(ctx, page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { holdMs: 750 }); await sleep(250); }
+      const mm = await page.evaluate(() => { const m = document.querySelector('.nxWaListMenu'); if (!m) return null; const r = m.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), alto: innerHeight }; });
+      ok(mm && mm.top >= 0 && mm.bottom <= mm.alto - 34, `${tag} C: el menú del último chat queda encima de la barra de inicio del iPhone (abajo ${mm && mm.bottom} de ${mm && mm.alto - 34})`, mm);
+      await page.keyboard.press('Escape'); await sleep(150);
+      await page.evaluate(() => { const m = document.querySelector('.nxWaListMenu'); if (m) m.remove(); });
+      await sa(0);
+    } else ok(false, `${tag} no se pudo simular la barra de inicio del iPhone`);
+    await cdpSA.detach().catch(() => {});
+  }
 
   // F. título con contador y notificación sonora
   await page.evaluate(() => { Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true }); window.nxWaTituloBadge(); });

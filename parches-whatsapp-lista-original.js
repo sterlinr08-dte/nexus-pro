@@ -153,11 +153,14 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
 
   /* ── Menú contextual (pulsación larga / clic derecho) ── */
   function cerrarMenu(){const m=$('.nxWaListMenu');if(m)m.remove();}
+  // 59.21: el menú tiene un renglón más («Cobrar»); abajo deja libre la barra de inicio del iPhone (app abierta desde el
+  // ícono). safeBottom() es 0 en la computadora y en Safari con su barra.
+  function safeBottom(){try{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;bottom:0;width:0;height:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d);const v=parseFloat(getComputedStyle(d).paddingBottom)||0;d.remove();return v;}catch(e){return 0;}}
   function colocar(el,x,y){
     const vv=window.visualViewport;const vw=vv?.width||innerWidth,vh=vv?.height||innerHeight,ox=vv?.offsetLeft||0,oy=vv?.offsetTop||0;
-    const w=el.offsetWidth||240,h=el.offsetHeight||200;
+    const w=el.offsetWidth||240,h=el.offsetHeight||200,mb=Math.max(8,safeBottom()+6);
     el.style.left=Math.max(8+ox,Math.min(x,vw+ox-w-8))+'px';
-    el.style.top=Math.max(8+oy,Math.min(y,vh+oy-h-8))+'px';
+    el.style.top=Math.max(8+oy,Math.min(y,vh+oy-h-mb))+'px';
   }
   function abrirMenu(row,x,y){
     cerrarMenu();
