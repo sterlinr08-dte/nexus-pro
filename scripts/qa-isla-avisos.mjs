@@ -89,7 +89,9 @@ const A3 = { abono_id: 'a3', cliente: 'Rosa Jimenez', monto: 2000, metodo: 'Tran
   { const { ctx, page, errs } = await abrir(b, { w: 390, h: 844, iphone: true, inset: 59, instalada: true });
     await hardware(page, 59);
     ok(await page.evaluate(() => window.__nxIslaAvisos20261011 === true && !!(window.toast && window.toast.__nxIsla)), 'la capa carga y envuelve window.toast');
-    ok(await page.evaluate(() => [...document.scripts].some(s => /parches-isla-avisos\.js\?.*b=6025/.test(s.src))), 'el cargador la pide con el build nuevo (b=6025)');
+    // el build sale de parches-seguros.js (así la prueba no se rompe en cada versión)
+    const BUILD = (require('fs').readFileSync(new URL('../parches-seguros.js', import.meta.url), 'utf8').match(/&b=(\d+)/) || [])[1];
+    ok(BUILD && await page.evaluate(b => [...document.scripts].some(s => new RegExp('parches-isla-avisos\\.js\\?.*b=' + b).test(s.src)), BUILD), `el cargador la pide con el build actual (b=${BUILD})`);
     // Ancho cuadro por cuadro mientras se abre.
     await page.evaluate(() => { window.__qaAnchos = []; const t0 = performance.now(); const f = () => { const el = document.getElementById('nxIsla'); if (el) window.__qaAnchos.push(Math.round(el.getBoundingClientRect().width)); if (performance.now() - t0 < 1400) requestAnimationFrame(f); }; requestAnimationFrame(f); });
     await wa(page, 'h1', 'María Pérez', 'Buenas, ¿ya salió mi póliza?');

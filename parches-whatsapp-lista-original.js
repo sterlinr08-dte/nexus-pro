@@ -62,7 +62,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaArchRow i.ti{color:#9FB3D1!impo
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaArchRow .nxWaArchCount{color:#93C5FD}
 #v-waInbox .nxWaSoundToggle{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border:1px solid rgba(148,163,184,.22);border-radius:50%;background:rgba(255,255,255,.76);color:#1d4ed8;cursor:pointer;font-size:14px}
 #v-waInbox .nxWaSoundToggle.off{color:#94a3b8}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle{background:rgba(255,255,255,.07)!important;border:1px solid rgba(147,179,221,.22)!important;color:#BFDBFE!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle{background:rgba(255,255,255,.07)!important;border:1px solid rgba(190,200,215,.16)!important;color:#BFDBFE!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle.off{color:#7C8DA6!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaSoundToggle i{color:inherit!important}
 @media(min-width:761px){
@@ -94,7 +94,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco input.nxB
   #v-waInbox .nxWaListTools.nxWaBpLista:not(.nxWaSearchFolded) .nxWaListCaption{display:flex!important}
   #v-waInbox .nxWaListTools.nxWaBpLista:not(.nxWaSearchFolded) .nxWaSoundToggle{display:grid}
 }
-.nxWaListMenu{position:fixed;z-index:100320;min-width:224px;max-width:min(92vw,300px);padding:6px;border-radius:14px;background:rgba(14,28,52,.94);border:1px solid rgba(147,179,221,.22);box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;font-family:inherit;text-transform:none;animation:nxWaLmIn .14s ease both}
+.nxWaListMenu{position:fixed;z-index:100320;min-width:224px;max-width:min(92vw,300px);padding:6px;border-radius:14px;background:var(--nxwa-pop,rgba(14,28,52,.94));border:1px solid var(--nxwa-pop-edge,rgba(147,179,221,.22));box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;font-family:inherit;text-transform:none;animation:nxWaLmIn .14s ease both}
 .nxWaListMenu .cab{padding:8px 12px 6px;font-size:11px;color:#9FB3D1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxWaListMenu button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0!important;border-radius:10px;background:transparent!important;box-shadow:none!important;color:#F1F5F9;font:inherit;font-size:13px;text-align:left;cursor:pointer;text-transform:none}
 .nxWaListMenu button i.ti{font-size:17px;color:#BFDBFE;width:20px;text-align:center;background:none!important;box-shadow:none!important;filter:none!important;-webkit-text-fill-color:currentColor!important}
@@ -102,8 +102,10 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaListTools .nxbp-marco input.nxB
 .nxWaListMenu button:active{background:rgba(255,255,255,.14)!important}
 .nxWaListMenu button .sub{margin-left:auto;font-size:14px;color:#9FB3D1}
 .nxWaListMenu button.rojo{color:#FCA5A5}
+/* 59.21: en el tema oscuro el menú y el panel de emojis van en grafito (el tema claro sigue igual) */
+html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,.96);--nxwa-pop-edge:rgba(190,200,215,.16)}
 @keyframes nxWaLmIn{from{opacity:0;transform:scale(.96) translateY(4px)}to{opacity:1;transform:none}}
-.nxWaEmojiPanel{position:fixed;z-index:100330;width:340px;max-width:calc(100vw - 16px);height:330px;display:flex;flex-direction:column;border-radius:16px;background:rgba(14,28,52,.96);border:1px solid rgba(147,179,221,.22);box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;overflow:hidden;text-transform:none;animation:nxWaLmIn .14s ease both}
+.nxWaEmojiPanel{position:fixed;z-index:100330;width:340px;max-width:calc(100vw - 16px);height:330px;display:flex;flex-direction:column;border-radius:16px;background:var(--nxwa-pop-2,rgba(14,28,52,.96));border:1px solid var(--nxwa-pop-edge,rgba(147,179,221,.22));box-shadow:0 22px 50px -24px rgba(0,0,0,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);color:#F1F5F9;overflow:hidden;text-transform:none;animation:nxWaLmIn .14s ease both}
 .nxWaEmojiPanel.abajo{left:0!important;width:100%!important;max-width:none;border-radius:16px 16px 0 0;height:300px}
 .nxWaEmojiPanel .cab{display:flex;align-items:center;gap:6px;padding:8px 8px 4px}
 .nxWaEmojiPanel .cab input{flex:1;min-width:0;height:34px!important;border:0!important;border-radius:10px!important;padding:0 12px!important;background:rgba(255,255,255,.08)!important;color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9!important;box-shadow:none!important;font:inherit;font-size:14px!important;outline:none;text-transform:none!important}

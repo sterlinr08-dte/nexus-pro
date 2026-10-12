@@ -28,6 +28,8 @@ const TABLER = process.env.QA_TABLER || '';
 let pass = 0, fail = 0;
 const ok = (c, m, extra) => { if (c) { pass++; console.log('PASS  ' + m); } else { fail++; console.log('FAIL  ' + m + (extra !== undefined ? ' :: ' + JSON.stringify(extra).slice(0, 700) : '')); } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// 59.21: «oscuro» = canales ≤ 60 y casi opaco (el tema oscuro pasó de azul noche a grafito; la prueba no ata el tono)
+const esOscuro = c => { const m = /rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/.exec(c || ''); return !!m && Math.max(+m[1], +m[2], +m[3]) <= 60 && (m[4] === undefined || +m[4] >= .9); };
 const nWa = log => log.rpc.filter(x => /^whatsapp_/.test(x.fn)).length; // solo RPC del Buzón (la app también llama a mi_es_superadmin, etc.)
 const U = n => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
 const hace = ms => new Date(Date.now() - ms).toISOString();
@@ -190,7 +192,7 @@ async function suite(browser, movil) {
   await sleep(300);
   let menu = await page.evaluate(() => { const m = document.querySelector('.nxWaListMenu'); if (!m) return null; const rc = m.getBoundingClientRect(); return { items: [...m.querySelectorAll('button')].map(x => x.textContent.trim()), bg: getComputedStyle(m).backgroundColor, dentro: rc.left >= 0 && rc.right <= innerWidth && rc.top >= 0 && rc.bottom <= innerHeight, chatAbierto: !!document.querySelector('#v-waInbox.nxWaChatOpen') || !!document.querySelector('#nxWaMsgsBox') }; });
   ok(menu && menu.items.join('|') === 'Fijar chat|Silenciar notificaciones|Archivar chat|Marcar como leído', `${tag} C: menú de la fila con Fijar / Silenciar / Archivar / Marcar como leído`, menu);
-  ok(menu && /rgba?\(14, 28, 52/.test(menu.bg) && menu.dentro && !menu.chatAbierto, `${tag} C: menú oscuro, dentro de pantalla y sin abrir el chat`, menu);
+  ok(menu && esOscuro(menu.bg) && menu.dentro && !menu.chatAbierto, `${tag} C: menú oscuro (${menu?.bg}), dentro de pantalla y sin abrir el chat`, menu);
   if (movil) await page.screenshot({ path: OUT + 'menu-fila-390.png' });
   await page.click('.nxWaListMenu [data-k="fijar"]'); await sleep(400);
   ok(log.rpc.some(x => x.fn === 'whatsapp_hilo_fijar' && x.b?.p_hilo_id === ID.ana && x.b?.p_fijar === true), `${tag} C: «Fijar chat» llama a rpc/whatsapp_hilo_fijar`, log.rpc);
@@ -261,7 +263,9 @@ async function suite(browser, movil) {
   ok(m0 && !m0.abierto && m0.w <= 52 && m0.w >= 40 && m0.h <= 52 && m0.dentro && m0.toggleEnMarco && m0.expanded === 'false', `${tag} H: cerrado = círculo ≤ 52 px (${m0?.w}×${m0?.h}) con la lupa de visual-v4 dentro del marco premium`, m0);
   ok(m0 && m0.lupasVisibles === 1 && m0.lupasDom === 1 && m0.labelOculto, `${tag} H: una sola lupa en la cabecera (el campo viejo .nxWaSearch queda oculto)`, m0);
   ok(m0 && m0.captionVis && m0.bellVis && !m0.solapa && m0.derechaDeCampana && m0.enCabecera && m0.bCabe, `${tag} H: círculo a la derecha de la campana, dentro de la cabecera, sin montarse sobre «Conversaciones»`, m0);
-  ok(m0 && /rgba?\(14, 28, 52/.test(m0.bg) && /rgb\(37, 99, 235\)/.test(m0.borde) && /rgb\(37, 99, 235\)/.test(m0.lupaColor), `${tag} H: paleta azul del Buzón (cristal rgba(14,28,52,.82), acento #2563EB) sin heredar el fondo/borde de .nxWaSearch`, m0);
+  // 59.21: el cristal sale del token del tema (--nxbp-fondo; grafito desde 59.21, antes azul noche); se compara contra el token resuelto
+  const fondoTk = await page.evaluate(() => { const i = document.createElement('i'); i.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--nxbp-fondo').trim(); document.body.appendChild(i); const c = getComputedStyle(i).backgroundColor; i.remove(); return c; });
+  ok(m0 && m0.bg === fondoTk && /rgb\(37, 99, 235\)/.test(m0.borde) && /rgb\(37, 99, 235\)/.test(m0.lupaColor), `${tag} H: paleta del Buzón (cristal = --nxbp-fondo del tema, ${fondoTk}; acento #2563EB) sin heredar el fondo/borde de .nxWaSearch`, { ...m0, fondoTk });
   await page.screenshot({ path: OUT + `inbox-${tag}-cerrado.png` });
   const nF0 = await filasVis();
   await page.click('#v-waInbox .nxWaListTools .nxBusca-lupa', { noWaitAfter: true });
@@ -334,7 +338,7 @@ async function suite(browser, movil) {
   ok(val0 === 'Hola, te escribo por la póliza', `${tag} E: el borrador se restaura al abrir el chat («${val0}»)`);
   await page.click('#v-waInbox .nxWaRefEmoji'); await sleep(400);
   let em = await page.evaluate(() => { const p = document.querySelector('.nxWaEmojiPanel'); if (!p) return null; const rc = p.getBoundingClientRect(); return { cats: p.querySelectorAll('.cats button').length, botones: p.querySelectorAll('.grid [data-e]').length, bg: getComputedStyle(p).backgroundColor, w: rc.width, dentro: rc.left >= 0 && rc.right <= innerWidth + 1 && rc.bottom <= innerHeight + 1, abajo: p.classList.contains('abajo') }; });
-  ok(em && em.cats === 6 && em.botones > 50 && /rgba?\(14, 28, 52/.test(em.bg) && em.dentro, `${tag} D: selector de emojis oscuro con 6 categorías`, em);
+  ok(em && em.cats === 6 && em.botones > 50 && esOscuro(em.bg) && em.dentro, `${tag} D: selector de emojis oscuro (${em?.bg}) con 6 categorías`, em);
   if (movil) ok(em && em.abajo && Math.round(em.w) === 390, `390 D: en móvil ocupa todo el ancho al pie`, em);
   await page.fill('.nxWaEmojiPanel input', 'gracias'); await sleep(150);
   em = await page.evaluate(() => [...document.querySelectorAll('.nxWaEmojiPanel .grid [data-e]')].map(b => b.dataset.e));

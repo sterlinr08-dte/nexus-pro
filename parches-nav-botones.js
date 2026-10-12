@@ -57,7 +57,7 @@
     'html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n):focus-visible{outline:2px solid #60A5FA;outline-offset:2px}',
     '@media (prefers-reduced-motion:reduce){html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n){transition:background-color .15s ease!important}html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n).nxp,html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n):active{transform:none!important}html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n)[data-nxin]{animation:nxNavFade .2s ease both!important}html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n)[data-nxin] i,html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n) i{animation:none!important;transform:none!important}}',
     '@keyframes nxNavFade{from{opacity:0}to{opacity:1}}',
-    '@media (prefers-reduced-transparency:reduce){html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n){-webkit-backdrop-filter:none;backdrop-filter:none;background:#24406C!important}}',
+    '@media (prefers-reduced-transparency:reduce){html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n){-webkit-backdrop-filter:none;backdrop-filter:none;background:#262A31!important}}',
     '@media (prefers-contrast:more){html.tema-glass-oscuro .modal>.mt [data-nxnav]:not(#_n):not(#_n){border-color:rgba(255,255,255,.6)!important}}'
   ].join('\n');
 

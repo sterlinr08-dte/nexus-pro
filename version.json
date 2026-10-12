@@ -1,7 +1,16 @@
 {
-  "version": "59.20",
+  "version": "59.21",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.21",
+      "fecha": "2026-10-11",
+      "notas": [
+        "Modo oscuro más oscuro y en gris grafito: se quitó el tono azul del fondo, del menú, de las tarjetas y de los paneles de WhatsApp.",
+        "Las tarjetas, los paneles y el menú son un poco transparentes y dejan ver el fondo borroso. La barra de arriba sigue sólida, como la elegiste.",
+        "Los botones y el color de acento siguen en azul NEXUS, y los mensajes que envías en WhatsApp siguen en azul. El modo claro no cambia."
+      ]
+    },
     {
       "version": "59.20",
       "fecha": "2026-10-11",

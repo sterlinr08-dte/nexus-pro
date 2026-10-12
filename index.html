@@ -21,12 +21,12 @@ d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-gla
    decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
 window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;
 var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add('tgo-foto');};
-i.src=(window.innerWidth<=768?'assets/fondo-login-movil.webp':'assets/fondo-login.webp');};
+i.src=(window.innerWidth<=768?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after */
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro')window.nxTgoFoto();
 /* 58.97: color de arranque del tema (= --tgo-bg del bloque style#nxTemaGlassOscuro; así la intensidad del fondo se cambia en un solo sitio) */
-window.nxTgoBg=function(){var c='';try{c=getComputedStyle(d).getPropertyValue('--tgo-bg').trim();}catch(e){}return c||'#10203A';};})();</script>
+window.nxTgoBg=function(){var c='';try{c=getComputedStyle(d).getPropertyValue('--tgo-bg').trim();}catch(e){}return c||'#0E1013';};})();</script>
 <script id="nxTituloMovil">/* 58.93 — título de la barra del celular: el Buzón no pasa por nav() y dejaba el título de la pantalla anterior
    (TITLES no tenía waInbox); y los títulos largos se achican hasta caber (mín. 11 px) en vez de cortarse. */
 (function(){
@@ -3163,7 +3163,7 @@ html.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(255,
      tooltip (hover/foco/toque largo), Contabilidad y Configuración abren un panel flotante al lado; SIN barra superior:
      sus acciones son la fila de cabecera del panel principal de cristal (.main). Móvil (≤768 px): el cajón de siempre
      y una cabecera mínima (menú + título + campana + actualizar), sin barra inferior.
-   · Cristal azul noche rgba(30,50,86,.56) (58.97; antes rgba(30,50,86,.62)), bordes rgba(255,255,255,.08); un solo acento: azul NEXUS #2563EB.
+   · Cristal GRAFITO rgba(28,30,35,.50) (59.21, 11-oct-2026, dueño: «más oscuro, un poco transparente, un poquito borroso»; antes azul noche rgba(30,50,86,.56)), bordes rgba(255,255,255,.08); un solo acento: azul NEXUS #2563EB.
      58.91: tarjetas, KPI, tablas, formularios, modales, menús y avisos también en cristal oscuro con texto claro
      (antes blancos), como el panel derecho del Inicio — ver «TODO OSCURO» más abajo. Sin tocar parches-whatsapp-*.
    · Móvil / modo liviano / prefers-reduced-transparency: sin desenfoque, cristal = grafito sólido.
@@ -3173,8 +3173,8 @@ html.tema-glass-oscuro{
   --tgo-blue:#2563EB;--tgo-blue-d:#1D4ED8;--tgo-blue-l:#EFF6FF;--tgo-ink:#0F172A;--tgo-steel:#64748B;
   --tgo-tx:#F8FAFC;--tgo-tx2:#E2E8F0;--tgo-tx3:#BCC7D6;/* 58.97 cristal más claro: paleta de texto un paso más clara (tx2 #CBD5E1→#E2E8F0, tx3 #94A3B8→#BCC7D6, rojo #FCA5A5→#FECACA, ámbar #FBBF24→#FDE68A, azul #93C5FD→#BFDBFE, verde #4ADE80→#86EFAC) *//* 58.97 cristal más claro: todo el terciario #94A3B8 del tema → #A8B5C7 */
   /* 58.97 «cristal más claro»: rgba(30,50,86,.62) → rgba(30,50,86,.56); sólidos y hojas un paso más claros (ver bitácora) */
-  --tgo-glass:rgba(30,50,86,.56);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.08);
-  --tgo-solid:#182C4C;--tgo-solid-2:#10203A;
+  --tgo-glass:rgba(28,30,35,.50);--tgo-glass-2:rgba(255,255,255,.07);--tgo-line:rgba(255,255,255,.08);
+  --tgo-solid:#1D1F24;--tgo-solid-2:#121418;
   --tgo-card-shadow:0 8px 22px -12px rgba(2,8,20,.40);--tgo-panel-shadow:0 24px 48px -30px rgba(2,8,20,.55);
   --tgo-blur:blur(26px) saturate(1.2);
   /* acento único del sistema → azul NEXUS */
@@ -3186,14 +3186,15 @@ html.tema-glass-oscuro{
      de 58.96, cambiar SOLO estas 9 variables (ver docs/bitacora/2026-09-30-*-claude.md «fondo un poco más claro»):
        actual 58.96 : velo .58→.74 · viñeta .70 · base #0B1628/#08101C/#050A14 · glow .10 · bg #08101C
        A            : velo .44→.60 · viñeta .55 · base #102040/#0C1A30/#081326 · glow .14 · bg #0C1A30
-       B (defecto)  : velo .32→.48 · viñeta .42 · base #16294D/#10203A/#0B1730 · glow .18 · bg #10203A
+       B            : velo .32→.48 · viñeta .42 · base #16294D/#10203A/#0B1730 · glow .18 · bg #10203A (azul noche, 58.97–59.20)
+       C (defecto)  : grafito 59.21 — velo .46→.62 · viñeta .52 · base #16181C/#0E1013/#08090B · glow gris .06 · bg #0E1013 · fotos *-grafito.webp
      --tgo-bg es también el color de arranque (splash, cargador y meta theme-color, leído por script#nxTemaBodyOn y
      aplicarTema) para que no haya parpadeo de otro color al abrir. */
-  --tgo-bg:#10203A;
-  --tgo-base-1:#16294D;--tgo-base-2:#10203A;--tgo-base-3:#0B1730;
-  --tgo-glow:rgba(37,99,235,.18);
-  --tgo-velo-a:rgba(4,9,20,.32);--tgo-velo-b:rgba(4,9,20,.48);
-  --tgo-vineta:rgba(2,6,15,.42);
+  --tgo-bg:#0E1013;
+  --tgo-base-1:#16181C;--tgo-base-2:#0E1013;--tgo-base-3:#08090B;
+  --tgo-glow:rgba(140,155,180,.06);
+  --tgo-velo-a:rgba(6,7,9,.46);--tgo-velo-b:rgba(6,7,9,.62);
+  --tgo-vineta:rgba(3,4,6,.52);
   background:var(--tgo-bg)!important;
 }
 /* ── escena: degradado cálido inmediato (marcador de posición) + foto real desenfocada que entra con fundido ── */
@@ -3211,9 +3212,9 @@ html.tema-glass-oscuro::after{content:'';position:fixed;inset:0;z-index:-1;point
 html.tema-glass-oscuro.tgo-foto::after{opacity:1;will-change:opacity;
   /* 58.92: mismo fondo que la pantalla de inicio de sesión (login-bg.jpg, nítido) con el mismo velo azul noche */
   /* 58.97: viñeta y velo con las variables de intensidad (--tgo-vineta, --tgo-velo-a/b) */
-  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login.webp) center/cover no-repeat;
+  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-grafito.webp) center/cover no-repeat;
 }
-@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-movil.webp) center/cover no-repeat}}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-movil-grafito.webp) center/cover no-repeat}}
 @media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
 html.tema-glass-oscuro #nxBgPhoto{display:none!important}
 html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
@@ -3221,7 +3222,7 @@ html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .
 html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:var(--tgo-bg) radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%)!important}
 html.tema-glass-oscuro .nxs-badge i{color:#93C5FD}
 /* login: tarjeta de cristal oscuro con el acento azul */
-html.tema-glass-oscuro .lbox{background:rgba(30,50,86,.76)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
+html.tema-glass-oscuro .lbox{background:rgba(30,32,38,.74)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
 
 /* ── menú lateral: cristal oscuro, ítem activo = píldora azul ── */
 html.tema-glass-oscuro body nav#sbEl.sb .ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-i{background:transparent!important;box-shadow:none!important;color:#E2E8F0!important}
@@ -3290,7 +3291,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{
     position:fixed!important;left:100px!important;top:auto!important;bottom:12px!important;width:256px!important;z-index:1100!important;
     max-height:calc(100vh - 24px)!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overflow-x:hidden!important;
-    padding:40px 8px 8px!important;border-radius:20px!important;background:linear-gradient(180deg,#1E365A,#152A4A)!important;border:1px solid rgba(255,255,255,.10)!important;
+    padding:40px 8px 8px!important;border-radius:20px!important;background:linear-gradient(180deg,#24272D,#1B1D22)!important;border:1px solid rgba(255,255,255,.10)!important;
     box-shadow:0 20px 40px -24px rgba(0,0,0,.6)!important;
     transition:opacity .15s ease,visibility .15s ease!important;scrollbar-width:thin}
   html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{
@@ -3317,9 +3318,9 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
 @media (max-width:768px){
   /* carril: misma silueta (máscara existente), ahora pizarra oscura; panel que se abre: cristal oscuro sólido (el panel con alfa dejaba ver la pantalla detrás en Chromium) */
   html.tema-glass-oscuro body nav#sbEl.sb{box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#1E365A 0%,#10203A 100%)!important;background-size:auto!important;background-position:0 0!important}
+  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#24272D 0%,#121418 100%)!important;background-size:auto!important;background-position:0 0!important}
   html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open.nx-accordion-open::after{
-    background-image:linear-gradient(180deg,#1A2F50 0%,#10203A 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
+    background-image:linear-gradient(180deg,#1F2126 0%,#121418 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
   html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
   /* 30-sep: íconos del cajón ☰ un poco más presentes: 15→18 px en un círculo de 30→36 px, centrado donde estaba (parches-sidebar-curva los pone en absoluto: left 15/-15 → 12/-18); la fila sigue en 44 px */
@@ -3342,7 +3343,7 @@ html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
   /* Panel principal: tinte cálido SIN backdrop-filter (el fondo ya viene desenfocado; desenfocar en vivo un panel de
      pantalla completa era lo más caro al desplazar). */
   html.tema-glass-oscuro body .main::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:24px;border:1px solid var(--tgo-line);
-    background:rgba(30,50,86,.66);box-shadow:0 24px 48px -30px rgba(2,8,20,.55)}
+    background:rgba(22,24,28,.56);box-shadow:0 24px 48px -30px rgba(2,8,20,.55)}
   html.tema-glass-oscuro body .tnav{height:auto!important;min-height:72px!important;margin:0!important;padding:18px 20px 10px 26px!important;
     background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:12px!important}
   html.tema-glass-oscuro body .tnav .tn-tog{display:none!important} /* el riel no se colapsa: no hay nada que abrir */
@@ -3356,12 +3357,14 @@ html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
     font-size:14px;font-weight:400;color:#E2E8F0;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary .ti{color:#E2E8F0!important}
   html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary kbd{order:2;background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.2)!important;color:#E2E8F0!important;font-size:11px!important}
-  html.tema-glass-oscuro body .tnav .notif-badge{box-shadow:0 0 0 2px #1A2F50}
+  html.tema-glass-oscuro body .tnav .notif-badge{box-shadow:0 0 0 2px #1A1D24}
   html.tema-glass-oscuro body .content{padding-top:8px!important}
 }
 /* MÓVIL: cabecera mínima de cristal (menú + título + campana + actualizar), fija arriba; sin barra inferior */
 @media (max-width:768px){
-  html.tema-glass-oscuro body .tnav{background:rgba(30,50,86,.92)!important;border:1px solid var(--tgo-line)!important;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)!important;
+  /* 59.21: el mismo grafito sólido que pinta después parches-sidebar-curva.css (barra de vidrio del 02-oct, «sin neblina
+     encima del contenido»); antes azul rgba(30,50,86,.92) hasta que llegaba esa capa */
+  html.tema-glass-oscuro body .tnav{background:#15181e linear-gradient(180deg,#1e222a 0%,#171a21 55%,#13161b 100%)!important;border:1px solid var(--tgo-line)!important;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)!important;
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
   html.tema-glass-oscuro body .tnav .pttl{display:block!important;flex:1 1 auto;min-width:0;max-width:none!important;font-size:17px!important;font-weight:700!important;overflow:hidden;text-overflow:ellipsis}
 }
@@ -3373,26 +3376,26 @@ html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
    · Superficie de tarjeta (--tgo-card): blanco al 6 % dentro del panel principal (escritorio); en el celular, que no
      tiene panel principal, grafito al 80 % (como los paneles del Inicio en el celular).
    · Superficie interna (--tgo-sub): blanco al 6 % sobre lo que haya debajo (tarjeta dentro de tarjeta, filas, chips).
-   · Campos: relleno oscuro, texto #F1F5F9, marcador #94A3B8 (≥4.5:1), borde #7A8CA8 (≥3:1), anillo azul al enfocar.
+   · Campos: relleno oscuro, texto #F1F5F9, marcador #94A3B8 (≥4.5:1), borde #737B88 (≥3:1), anillo azul al enfocar.
    · Especificidad: donde un módulo usa #id (+!important), la regla del tema suma :not(#tgo) (un id que no existe)
      en vez de pelear con más !important. ═══ */
 html.tema-glass-oscuro{
   color-scheme:dark;
   --tgo-card:rgba(255,255,255,.09);--tgo-sub:rgba(255,255,255,.09);--tgo-well:rgba(0,0,0,.18);--tgo-hover:rgba(255,255,255,.14);
   --tgo-edge:rgba(255,255,255,.10);--tgo-edge-2:rgba(255,255,255,.16);
-  --tgo-sheet:linear-gradient(180deg,#1E365A 0%,#152A4A 100%);--tgo-sheet-solid:#1A2F50;
-  --tgo-field:#142440;--tgo-field-edge:#7A8CA8;--tgo-ph:#BCC7D6;--tgo-focus:#60A5FA;
+  --tgo-sheet:linear-gradient(180deg,#24272D 0%,#1B1D22 100%);--tgo-sheet-solid:#1F2126;
+  --tgo-field:#17191D;--tgo-field-edge:#737B88;--tgo-ph:#BCC7D6;--tgo-focus:#60A5FA;
   --tgo-t1:#F1F5F9;--tgo-t2:#E2E8F0;--tgo-t3:#BCC7D6;
   --tgo-ok:#86EFAC;--tgo-ok-l:rgba(34,197,94,.16);--tgo-warn:#FEF3C7;/* 58.97: #FBBF24 → #FCD34D (fondo más claro) */--tgo-warn-l:rgba(245,158,11,.16);
   --tgo-err:#FECACA;--tgo-err-s:#F87171;--tgo-err-l:rgba(239,68,68,.18);--tgo-info:#BFDBFE;--tgo-info-l:rgba(59,130,246,.20);
   /* tokens del sistema (los usan cientos de estilos escritos a mano: style="background:var(--bg3)") */
-  --bg0:#221D1A;--bg1:rgba(255,255,255,.06);--bg2:#142440;--bg3:rgba(255,255,255,.05);--bg4:rgba(255,255,255,.08);
+  --bg0:#221D1A;--bg1:rgba(255,255,255,.06);--bg2:#17191D;--bg3:rgba(255,255,255,.05);--bg4:rgba(255,255,255,.08);
   --tx1:#F1F5F9;--tx2:#E2E8F0;--tx3:#BCC7D6;/* 58.97: #94A3B8 → #A8B5C7 (fondo más claro; ver bitácora) */--border:rgba(255,255,255,.10);--border-light:rgba(255,255,255,.06);
   --c1:#93C5FD;--c2:#BFDBFE;--c3:#FECACA;--c4:#FEF3C7;--c5:#86EFAC;
   --shadow-sm:none;--shadow:0 8px 22px -14px rgba(0,0,0,.5);--shadow-md:0 12px 28px -16px rgba(0,0,0,.55);--shadow-lg:0 20px 44px -20px rgba(0,0,0,.6);
   color:#F1F5F9;
 }
-@media (max-width:768px){html.tema-glass-oscuro{--tgo-card:rgba(30,50,86,.76)}}
+@media (max-width:768px){html.tema-glass-oscuro{--tgo-card:rgba(30,32,38,.62)}} /* 59.21: grafito translúcido sobre la foto ya desenfocada (antes azul .76) */
 html.tema-glass-oscuro body{color:#F1F5F9}
 
 /* ── tarjetas, KPI, paneles ── */
@@ -3455,7 +3458,7 @@ html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif
 html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) input:disabled,html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) select:disabled,html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) textarea:disabled{opacity:.6}
 /* select: flecha clara (el sistema dibuja la suya en background-image con !important) */
 html.tema-glass-oscuro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.nxFP) select:not(#tgo){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23D6D3D1' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:10px 6px!important}
-html.tema-glass-oscuro select option,html.tema-glass-oscuro select optgroup{background:#152A4A;color:#F1F5F9}
+html.tema-glass-oscuro select option,html.tema-glass-oscuro select optgroup{background:#1B1D22;color:#F1F5F9}
 /* campos «transparentes» dentro de un buscador con marco propio: sin segundo marco */
 html.tema-glass-oscuro :is(#app,.overlay) :is(.nxBusca,.nxCrmSearch,.gs-input-wrap) input:not(#tgo):not(#tgo2):not(#tgo3){background-color:transparent!important;border:0!important;box-shadow:none!important}
 html.tema-glass-oscuro input[type=checkbox],html.tema-glass-oscuro input[type=radio]{accent-color:#3B82F6}
@@ -3466,7 +3469,7 @@ html.tema-glass-oscuro input::-webkit-calendar-picker-indicator{filter:invert(.8
 /* ── modales y hojas: cristal grafito sólido sobre el velo ── */
 html.tema-glass-oscuro .overlay{background:rgba(12,9,7,.62)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
 html.tema-glass-oscuro .overlay .modal:not(#tgo),html.tema-glass-oscuro .modal:not(#tgo),html.tema-glass-oscuro .nxCrmDialog,html.tema-glass-oscuro .cs-panel{
-  --nm-bg:#1A2F50;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F1F5F9;--nm-tx2:#E2E8F0;--nm-accent:#BFDBFE;
+  --nm-bg:#1F2126;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F1F5F9;--nm-tx2:#E2E8F0;--nm-accent:#BFDBFE;
   --pill-bg:rgba(255,255,255,.05);--pill-hi:rgba(255,255,255,.08);--pill-lo:rgba(0,0,0,.30);--pill-accent:#BFDBFE;
   background:var(--tgo-sheet)!important;border:1px solid rgba(255,255,255,.12)!important;color:var(--tgo-t1)!important;
   box-shadow:0 30px 70px -24px rgba(0,0,0,.75)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -3497,7 +3500,7 @@ html.tema-glass-oscuro .cfg-indicator{background:var(--tgo-blue)!important;backg
 html.tema-glass-oscuro .cs-h{background:linear-gradient(135deg,#1D4ED8,#2563EB)!important}
 
 /* ── Inicio glass: la escena global reemplaza la sombra propia del #nxIG ── */
-html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(30,50,86,.66);--ig-line:rgba(255,255,255,.08);--ig-steel:#BCC7D6;--ig-mute:#BCC7D6;--ig-ink:#F1F5F9}
+html.tema-glass-oscuro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;--ig-glass:rgba(22,24,28,.56);--ig-line:rgba(255,255,255,.08);--ig-steel:#BCC7D6;--ig-mute:#BCC7D6;--ig-ink:#F1F5F9}
 /* sin desenfoque en vivo en los paneles del Inicio: el fondo ya viene desenfocado */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 @media (min-width:769px){
@@ -3506,7 +3509,7 @@ html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!impo
   html.tema-glass-oscuro.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(255,255,255,.05)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
   html.tema-glass-oscuro.nx-ig #nxIG .nxIG-search{display:none!important}
 }
-@media (max-width:768px){html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{background:rgba(30,50,86,.86)!important}}
+@media (max-width:768px){html.tema-glass-oscuro.nx-ig #nxIG .nxIG-glass{background:rgba(30,32,38,.78)!important}}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-days .d{color:#BCC7D6}
 /* 58.91: KPI, gráfica y prospectos del Inicio en cristal como el panel derecho (el azul «Ciclo actual» sigue de acento) */
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card{background:rgba(255,255,255,.06);color:#F1F5F9;box-shadow:inset 0 0 0 1px var(--ig-line)}
@@ -3520,7 +3523,7 @@ html.tema-glass-oscuro.nx-ig #nxIG .nxIG-card .nxIG-bar{background:rgba(255,255,
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-pill{border-color:rgba(255,255,255,.16);color:#E2E8F0}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ax span{color:#BCC7D6}
 html.tema-glass-oscuro.nx-ig #nxIG #nxIGch line,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-plot line{stroke:rgba(255,255,255,.10)!important}
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-dot{background:#152A4A}
+html.tema-glass-oscuro.nx-ig #nxIG .nxIG-dot{background:#1B1D22}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-tag{background:rgba(59,130,246,.22);color:#DBEAFE}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-stack .nxIG-av{border-color:#3A332F;color:#1E3A8A}
 html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ag small.neg,html.tema-glass-oscuro.nx-ig #nxIG .nxIG-amt small.neg{color:#FECACA}
@@ -3586,7 +3589,7 @@ html.tema-glass-oscuro .nxSf .fc-av{background:linear-gradient(135deg,#DC2626,#B
 html.tema-glass-oscuro #cnt #v-clientes,html.tema-glass-oscuro #cnt #v-facturas,html.tema-glass-oscuro #cnt #v-cliente360,html.tema-glass-oscuro #cnt #v-polizas,
 html.tema-glass-oscuro #cnt #v-rep-agente,html.tema-glass-oscuro #cnt #v-rep-plan,html.tema-glass-oscuro #cnt #v-rep-empresa,html.tema-glass-oscuro #cnt #v-rep-aging{
   --pill-bg:rgba(255,255,255,.05);--pill-hi:rgba(255,255,255,.07);--pill-lo:rgba(0,0,0,.30);--pill-accent:#BFDBFE;
-  --nm-bg:#1A2F50;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F1F5F9;--nm-tx2:#E2E8F0;--nm-accent:#BFDBFE}
+  --nm-bg:#1F2126;--nm-hi:rgba(255,255,255,.05);--nm-lo:rgba(0,0,0,.45);--nm-tx:#F1F5F9;--nm-tx2:#E2E8F0;--nm-accent:#BFDBFE}
 /* pestañas (todas las .nxft-tabs): carril de cristal, activa = píldora azul */
 html.tema-glass-oscuro #cnt .nxft-tabs:not(#tgo){background:rgba(255,255,255,.05)!important;background-image:none!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt .nxft-tab:not(.nxft-add):not(.nxft-alert):not(#tgo){background:transparent!important;color:#E2E8F0!important;box-shadow:none!important}
@@ -3633,7 +3636,7 @@ html.tema-glass-oscuro #v-cliente360 .c360-tbl{background:var(--tgo-card);border
 html.tema-glass-oscuro #v-cliente360 .c360-tbl th{color:#BCC7D6;background:rgba(255,255,255,.05)}
 html.tema-glass-oscuro #v-cliente360 .c360-tbl td{color:#F1F5F9}
 html.tema-glass-oscuro #v-cliente360 .c360-empty-tab{color:#E2E8F0}
-html.tema-glass-oscuro #v-cliente360.nxCrm #c360TabsBar{background:rgba(30,50,86,.92)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro #v-cliente360.nxCrm #c360TabsBar{background:rgba(26,28,33,.92)!important;border-color:var(--tgo-edge)!important}
 html.tema-glass-oscuro #v-cliente360.nxCrm #c360TabsBar .is-active{background:var(--tgo-blue)!important;color:#fff!important}
 
 /* ── Clientes/Ficha en modo CRM y tarjetas CRM compartidas ── */
@@ -3699,13 +3702,13 @@ html.tema-glass-oscuro .nxCrmModal{background:rgba(12,9,7,.62)!important}
 html.tema-glass-oscuro .nxCrmDialog>p,html.tema-glass-oscuro .nxCrmDialog .nxCrmSub,html.tema-glass-oscuro .nxOpsField label,html.tema-glass-oscuro .nxCrmPickList button span,html.tema-glass-oscuro .nxCrmPickList .vacio{color:#E2E8F0!important}
 html.tema-glass-oscuro .nxCrmDialog h2,html.tema-glass-oscuro .nxCrmDialog h3,html.tema-glass-oscuro .nxCrmSec h4{color:#F1F5F9!important}
 html.tema-glass-oscuro .nxOpsFoot button:not(.primary):not(.danger),html.tema-glass-oscuro .nxCrmBtn:not(tgo-x):not(.primary):not(.danger){background:rgba(255,255,255,.07)!important;border-color:var(--tgo-edge-2)!important;color:#DBEAFE!important}
-html.tema-glass-oscuro .nxCrmPickList:not(.tgo-x):not(tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmPickList button:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmOpciones button:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmChipsEt button:not(.on){background:#1A2F50!important;border-color:var(--tgo-edge-2)!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxCrmPickList:not(.tgo-x):not(tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmPickList button:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmOpciones button:not(.tgo-x):not(tgo-x),html.tema-glass-oscuro .nxCrmChipsEt button:not(.on){background:#1F2126!important;border-color:var(--tgo-edge-2)!important;color:#F1F5F9!important}
 html.tema-glass-oscuro .nxCrmPickList button:hover:not(tgo-x),html.tema-glass-oscuro .nxCrmPickList button.is-hl,html.tema-glass-oscuro .nxCrmPickList button:focus:not(tgo-x),html.tema-glass-oscuro .nxCrmOpciones button:hover:not(tgo-x){background:rgba(59,130,246,.2)!important}
 html.tema-glass-oscuro .nxCrmOpciones button i{color:#BFDBFE}html.tema-glass-oscuro .nxCrmOpciones button.perdida i{color:#FECACA}
 html.tema-glass-oscuro .nxCrmPickSel{color:#86EFAC}html.tema-glass-oscuro .nxCrmPick>i{color:#BCC7D6}
 html.tema-glass-oscuro .nxCrmLost{background:var(--tgo-err-l)!important;border-color:rgba(248,113,113,.3)!important;color:#FECACA!important}
 html.tema-glass-oscuro .nxCrmLink2{color:#BFDBFE!important}
-html.tema-glass-oscuro .nxOpsFoot{background:linear-gradient(180deg,rgba(38,33,30,0),#152A4A 35%)!important}
+html.tema-glass-oscuro .nxOpsFoot{background:linear-gradient(180deg,rgba(38,33,30,0),#1B1D22 35%)!important}
 
 /* ── Configuración ── */
 html.tema-glass-oscuro .cfg-tabs-bar{background:rgba(255,255,255,.05)!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
@@ -3720,7 +3723,7 @@ html.tema-glass-oscuro .tema-opcion{border-color:var(--tgo-edge-2)!important}
 html.tema-glass-oscuro .tema-opcion.tema-sel{border-color:#93C5FD!important;box-shadow:0 0 0 2px rgba(96,165,250,.35)!important}
 
 /* ── menús, avisos, búsqueda global, notificaciones ── */
-html.tema-glass-oscuro .toast{background:#1A2F50!important;color:#F1F5F9!important;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 36px -14px rgba(0,0,0,.7)!important}
+html.tema-glass-oscuro .toast{background:#1F2126!important;color:#F1F5F9!important;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 36px -14px rgba(0,0,0,.7)!important}
 html.tema-glass-oscuro .toast .ti-ic{background:rgba(255,255,255,.08)!important;box-shadow:none!important}
 html.tema-glass-oscuro .toast.ok .ti-ic{color:#86EFAC}html.tema-glass-oscuro .toast.er .ti-ic,html.tema-glass-oscuro .toast.err .ti-ic{color:#FECACA}
 html.tema-glass-oscuro .toast .ti-x{color:#BCC7D6}html.tema-glass-oscuro .toast *{border-color:var(--tgo-edge)}
@@ -3818,7 +3821,7 @@ html.tema-glass-oscuro .nxnov-new{background:var(--tgo-blue)!important}
 
 /* ── Financiamiento / Préstamos (.nxFP): tokens neumórficos --nf-* y superficies en cristal; el héroe morado se queda ── */
 html.tema-glass-oscuro .nxFPShell{--nf-bg:rgba(255,255,255,.06);--nf-shd:rgba(0,0,0,.40);--nf-shl:rgba(255,255,255,.03);--nf-ink:#F1F5F9;--nf-ink2:#E2E8F0;--nf-ink3:#BCC7D6;
-  --nf-ac1:#2563EB;--nf-ac2:#1D4ED8;--nf-glass-bg:rgba(30,50,86,.86);--nf-glass-hi:rgba(255,255,255,.10);--nf-glass-shadow:0 24px 56px rgba(0,0,0,.35);
+  --nf-ac1:#2563EB;--nf-ac2:#1D4ED8;--nf-glass-bg:rgba(30,32,38,.78);--nf-glass-hi:rgba(255,255,255,.10);--nf-glass-shadow:0 24px 56px rgba(0,0,0,.35);
   --nf-convex:none;--nf-convex-sm:none;--nf-concave:inset 0 0 0 1px rgba(255,255,255,.08);background:transparent!important;color:#F1F5F9}
 html.tema-glass-oscuro #cnt .nxFP-card:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-kpi:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-dcard:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-qbtn:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-empty:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-tblWrap:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-cobSide:not(#tgo),html.tema-glass-oscuro #cnt .nxFP-repCard:not(#tgo){background:var(--tgo-card)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt .nxFP-empty{border-style:dashed!important;border-color:rgba(255,255,255,.2)!important}
@@ -3854,7 +3857,7 @@ html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-navItem.on,html.tema-gla
 html.tema-glass-oscuro #cnt .nxFP-navItem:not(.on):not(.active),html.tema-glass-oscuro #cnt .nxFP-sideBack:not(.tgo-x):not(.tgo-x):not(tgo-x):not(tgo-x),html.tema-glass-oscuro #cnt .nxFP-side span:not(.tgo-x):not(.tgo-x):not(tgo-x){color:#E2E8F0!important}
 html.tema-glass-oscuro #cnt #v-prestamos p{color:#E2E8F0}
 /* barra inferior propia de Financiamiento (≤900 px) */
-html.tema-glass-oscuro .nxFP-dock{background:rgba(30,50,86,.96)!important;border-color:var(--tgo-edge)!important}
+html.tema-glass-oscuro .nxFP-dock{background:rgba(26,28,33,.95)!important;border-color:var(--tgo-edge)!important}
 html.tema-glass-oscuro .nxFP-dockBtn:not(.on){color:#E2E8F0!important}
 html.tema-glass-oscuro .nxFP-dockSheet{background:var(--tgo-sheet)!important;color:#F1F5F9!important}
 
@@ -4052,7 +4055,7 @@ html.tema-glass-oscuro #cnt #v-waInbox .nxWaTag.warn{background:var(--tgo-warn-l
 html.tema-glass-oscuro #cnt #v-waInbox .nxWaHead{background:rgba(255,255,255,.06)!important;background-image:none!important;border-color:var(--tgo-edge)!important;box-shadow:none!important;color:#F1F5F9!important}
 html.tema-glass-oscuro #cnt #v-waInbox .nxWaDaySep{background:rgba(255,255,255,.08)!important;color:#E2E8F0!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt #v-waInbox .nxWaMsgText{color:#F1F5F9}
-html.tema-glass-oscuro #cnt #v-waInbox .nxWaBubMenu,html.tema-glass-oscuro #cnt #v-waInbox .nxWaMsgDrop{background:rgba(30,50,86,.92)!important;color:#E2E8F0!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
+html.tema-glass-oscuro #cnt #v-waInbox .nxWaBubMenu,html.tema-glass-oscuro #cnt #v-waInbox .nxWaMsgDrop{background:rgba(26,28,33,.92)!important;color:#E2E8F0!important;border-color:var(--tgo-edge)!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt #v-waInbox :is(.nxWaBubMenu,.nxWaMsgDrop) i{color:#E2E8F0!important}
 html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefTextPill{background:rgba(255,255,255,.07)!important;border-color:var(--tgo-edge-2)!important;box-shadow:none!important}
 html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefTextPill input:not(#tgo):not(#tgo2):not(#tgo3),html.tema-glass-oscuro #cnt #v-waInbox .nxWaRefTextPill textarea:not(#tgo):not(#tgo2):not(#tgo3){background:transparent!important;border:0!important;box-shadow:none!important;color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9}
@@ -4088,10 +4091,10 @@ html.tema-glass-oscuro .cfg-tab:not(.active-tab) span,html.tema-glass-oscuro .cf
 /* 58.92 (30-sep-2026) — Buzón de WhatsApp con el diseño del WhatsApp original en modo oscuro, en AZUL (pedido del dueño: «las ventanas verde ponla azul, como WhatsApp, y toda la iconografía»).
    Arregla además el chat ilegible de 58.91 (las capas parches-whatsapp-* pintan burbujas claras con !important).
    Solo colores: todas las funciones y acciones (responder, reaccionar, adjuntar, audio, plantillas, buscar, menú) siguen igual. */
-html.tema-glass-oscuro body #cnt #v-waInbox{/* 58.97: paleta un paso más clara (antes #10203A/#14284A/#1C365E/#24406C) */--wa-bg:#10203A;--wa-panel:#14284A;--wa-head:#1C365E;--wa-in:#24406C;--wa-out:#2563EB;--wa-input:#24406C;--wa-txt:#F1F5F9;--wa-sub:#B8C7DE;--wa-green:#2563EB;--wa-check:#DBEAFE;--wa-sep:#1A3260;--wa-line:rgba(147,179,221,.16)}
+html.tema-glass-oscuro body #cnt #v-waInbox{/* 59.21: grafito (azul noche hasta 59.20: #10203A/#14284A/#1C365E/#24406C) */--wa-bg:#121418;--wa-panel:#16181C;--wa-head:#1E2126;--wa-in:#262A31;--wa-out:#2563EB;--wa-input:#262A31;--wa-txt:#F1F5F9;--wa-sub:#B4BCC8;--wa-green:#2563EB;--wa-check:#DBEAFE;--wa-sep:#22252B;--wa-line:rgba(190,200,215,.12)}
 /* columnas */
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaDetailCol,.nxWaDetalle){background:var(--wa-bg)!important;background-image:none!important;border-color:var(--wa-line)!important;box-shadow:none!important}
-html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs{background-color:var(--wa-bg)!important;background-image:radial-gradient(rgba(147,179,221,.08) 1px,transparent 1.4px),radial-gradient(rgba(147,179,221,.05) 1px,transparent 1.4px)!important;background-size:22px 22px,22px 22px!important;background-position:0 0,11px 11px!important}
+html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs{background-color:var(--wa-bg)!important;background-image:radial-gradient(rgba(190,200,215,.06) 1px,transparent 1.4px),radial-gradient(rgba(190,200,215,.04) 1px,transparent 1.4px)!important;background-size:22px 22px,22px 22px!important;background-position:0 0,11px 11px!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaListCol,.nxWaCol:not(.nxWaDetailCol)){background:var(--wa-panel)!important;background-image:none!important;border-color:var(--wa-line)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaListTools,.nxWaListScroll){background:transparent!important;background-image:none!important}
 /* cabecera del chat */
@@ -4155,7 +4158,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxWaProKpi,.nxWaUhdKpiIcon) i.t
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKicker"],[class*="Eyebrow"]){background:rgba(37,99,235,.18)!important;background-image:none!important;border:1px solid rgba(147,197,253,.28)!important;color:#BFDBFE!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeBadge,[class*="UhdKicker"],[class*="Eyebrow"]) i{color:#BFDBFE!important}
 /* 58.92: títulos superiores del Buzón en azul (cabecera WhatsApp/Inbox, cifras, barra de conversaciones) */
-html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead,.nxWaProKpi,.nxWaProHead,.nxWaListTools){background:rgba(20,41,75,.78)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:none!important}
+html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead,.nxWaProKpi,.nxWaProHead,.nxWaListTools){background:rgba(30,32,38,.78)!important;background-image:none!important;border:1px solid rgba(190,200,215,.13)!important;box-shadow:none!important}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProKpi.on{background:rgba(37,99,235,.35)!important;border-color:rgba(147,197,253,.45)!important}
 html.tema-glass-oscuro body #cnt #v-waInbox :is(.nxCrmHomeHead h1,.nxWaProKpi .v,.nxWaListTools b){color:#F1F5F9!important}
 /* ═══ 58.95 (30-sep-2026) — Hotfix «conversaciones de WhatsApp con fondo blanco / ilegibles» en Glass oscuro. Solo colores.
@@ -4171,52 +4174,52 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaMsgs .nxWaBub.out :is(.nxWaAudi
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaBtnRecordatorio{background:var(--wa-green);background-image:none;color:#fff;box-shadow:none}
 html.tema-glass-oscuro body #cnt #v-waInbox .nxWaLatest{background:var(--wa-head);border-color:var(--wa-line);color:#DBEAFE;box-shadow:0 4px 12px -6px rgba(0,0,0,.6)}
 /* hoja de Contactos / Bauches (#nxWaCtxOverlay, hija de <body>) */
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxSheet:not(#tgo){background:rgba(13,28,53,.97)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:0 30px 80px -38px rgba(0,0,0,.85)!important;color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxHead:not(#tgo){background:#1C365E!important;background-image:none!important;border-bottom:1px solid rgba(147,179,221,.16)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxSheet:not(#tgo){background:rgba(22,24,28,.97)!important;background-image:none!important;border:1px solid rgba(190,200,215,.13)!important;box-shadow:0 30px 80px -38px rgba(0,0,0,.85)!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxHead:not(#tgo){background:#1E2126!important;background-image:none!important;border-bottom:1px solid rgba(190,200,215,.12)!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxIcon:not(#tgo){background:rgba(37,99,235,.28)!important;background-image:none!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxTitle b:not(#tgo){color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxTitle span:not(#tgo){color:#B8C7DE!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxClose:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(147,179,221,.22)!important;color:#E2E8F0!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxTitle span:not(#tgo){color:#B4BCC8!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxClose:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(190,200,215,.16)!important;color:#E2E8F0!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxBody:not(#tgo){background:transparent!important;background-image:none!important;color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearch:not(#tgo){background:linear-gradient(180deg,rgba(13,28,53,.98) 72%,rgba(13,28,53,0))!important}
-html.tema-glass-oscuro .nxWaCtxOverlay :is(.nxWaUhdSearchBox,.nxWaUhdTune):not(#tgo){background:#24406C!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearch:not(#tgo){background:linear-gradient(180deg,rgba(22,24,28,.98) 72%,rgba(22,24,28,0))!important}
+html.tema-glass-oscuro .nxWaCtxOverlay :is(.nxWaUhdSearchBox,.nxWaUhdTune):not(#tgo){background:#262A31!important;background-image:none!important;border-color:rgba(190,200,215,.16)!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdTune.on:not(#tgo){background:rgba(37,99,235,.35)!important}
 html.tema-glass-oscuro .nxWaCtxOverlay :is(.nxWaUhdSearchBox i,.nxWaUhdTune):not(#tgo){color:#BFDBFE!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearchBox input:not(#tgo){color:#F1F5F9!important;-webkit-text-fill-color:#F1F5F9!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdSearchBox input:not(#tgo)::placeholder{color:#BCC7D6!important;-webkit-text-fill-color:#BCC7D6!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs:not(#tgo){background:transparent!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#E2E8F0!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(190,200,215,.16)!important;color:#E2E8F0!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactTabs button.on:not(#tgo){background:#2563EB!important;background-image:none!important;border-color:#2563EB!important;color:#fff!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactList:not(#tgo){background:transparent!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact:not(#tgo){background:rgba(255,255,255,.05)!important;background-image:none!important;border-color:rgba(147,179,221,.16)!important;box-shadow:none!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact:not(#tgo){background:rgba(255,255,255,.05)!important;background-image:none!important;border-color:rgba(190,200,215,.12)!important;box-shadow:none!important;color:#F1F5F9!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact:not(#tgo):hover{border-color:rgba(147,197,253,.4)!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av:not(#tgo){background:rgba(37,99,235,.28)!important;background-image:none!important;border-color:transparent!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-err:not(#tgo){background:rgba(239,68,68,.2)!important;color:#FECACA!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-warn:not(#tgo){background:rgba(245,158,11,.2)!important;color:#FEF3C7!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .av.av-ok:not(#tgo){background:rgba(34,197,94,.18)!important;color:#86EFAC!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .tx b:not(#tgo){color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .tx span:not(#tgo){color:#B8C7DE!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(147,179,221,.2)!important;color:#E2E8F0!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .tx span:not(#tgo){color:#B4BCC8!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st:not(#tgo){background:rgba(255,255,255,.08)!important;border-color:rgba(190,200,215,.15)!important;color:#E2E8F0!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.err:not(#tgo){background:rgba(239,68,68,.18)!important;border-color:rgba(252,165,165,.3)!important;color:#FECACA!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.warn:not(#tgo){background:rgba(245,158,11,.18)!important;border-color:rgba(251,191,36,.3)!important;color:#FEF3C7!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .st.ok:not(#tgo){background:rgba(34,197,94,.16)!important;border-color:rgba(74,222,128,.3)!important;color:#86EFAC!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContact .chev:not(#tgo){color:#BCC7D6!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults:not(#tgo){color:#B8C7DE!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults:not(#tgo){color:#B4BCC8!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults i:not(#tgo){background:rgba(37,99,235,.22)!important;color:#BFDBFE!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaUhdNoResults b:not(#tgo){color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot:not(#tgo){background:rgba(13,28,53,.96)!important;background-image:none!important;border-top-color:rgba(147,179,221,.16)!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(147,179,221,.22)!important;color:#DBEAFE!important;box-shadow:none!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot:not(#tgo){background:rgba(22,24,28,.96)!important;background-image:none!important;border-top-color:rgba(190,200,215,.12)!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button:not(#tgo){background:rgba(255,255,255,.07)!important;background-image:none!important;border-color:rgba(190,200,215,.16)!important;color:#DBEAFE!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button.primary:not(#tgo){background:rgba(37,99,235,.35)!important;border-color:rgba(147,197,253,.4)!important;color:#DBEAFE!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaContactsFoot button.admin:not(#tgo){background:rgba(139,92,246,.18)!important;border-color:rgba(196,181,253,.3)!important;color:#DDD6FE!important}
 /* bauches pendientes: tarjeta oscura, Aplicar en verde, Descartar en rojo */
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend:not(#tgo){background:rgba(255,255,255,.06)!important;background-image:none!important;border:1px solid rgba(147,179,221,.18)!important;box-shadow:none!important;color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend:not(#tgo){background:rgba(255,255,255,.06)!important;background-image:none!important;border:1px solid rgba(190,200,215,.13)!important;box-shadow:none!important;color:#F1F5F9!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend b:not(#tgo){color:#F1F5F9!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend div[style*="color"]:not(#tgo){color:#B8C7DE!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend div[style*="color"]:not(#tgo){color:#B4BCC8!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend span[style*="color"]:not(#tgo){color:#FECACA!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend img:not(#tgo){background:#24406C!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend img:not(#tgo){background:#262A31!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend button:not(#tgo){background:rgba(239,68,68,.16)!important;background-image:none!important;border-color:rgba(252,165,165,.3)!important;color:#FECACA!important;box-shadow:none!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaPend button.primary:not(#tgo){background:#15803D!important;border-color:#15803D!important;color:#fff!important}
-html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty:not(#tgo){color:#B8C7DE!important}
+html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty:not(#tgo){color:#B4BCC8!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty b:not(#tgo){color:#F1F5F9!important}
 html.tema-glass-oscuro .nxWaCtxOverlay .nxWaCtxEmpty i:not(#tgo){background:rgba(34,197,94,.16)!important;color:#86EFAC!important}
 /* 58.92: cifras del Buzón ordenadas en el celular (antes 5 columnas de ~50 px: rótulos montados y cortados).
@@ -4315,11 +4318,11 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glas
 @media(max-width:768px){
   /* Campos del login del tema oscuro: los mismos colores de campo que el resto del sistema (--tgo-field, borde
      --tgo-field-edge ≥3:1) y texto de ejemplo ≥4.5:1 (antes #64748B sobre #0F172A, 3.7:1). */
-  html.tema-glass-oscuro #loginScreen .lfr input{background:var(--tgo-field,#142440)!important;border-color:var(--tgo-field-edge,#7A8CA8)!important;color:var(--tgo-t1,#F1F5F9)!important}
+  html.tema-glass-oscuro #loginScreen .lfr input{background:var(--tgo-field,#17191D)!important;border-color:var(--tgo-field-edge,#737B88)!important;color:var(--tgo-t1,#F1F5F9)!important}
   html.tema-glass-oscuro #loginScreen .lfr input:focus{border-color:#93C5FD!important;box-shadow:0 0 0 3px rgba(96,165,250,.35)!important}
   html.tema-glass-oscuro #loginScreen .lfr input::placeholder{color:var(--tgo-ph,#94A3B8)!important;opacity:1}
   html.tema-glass-oscuro #loginScreen .lfi i{color:var(--tgo-ph,#94A3B8)!important}
-  html.tema-glass-oscuro #loginScreen .lchk input{background-color:var(--tgo-field,#142440)!important;border-color:var(--tgo-field-edge,#7A8CA8)!important}
+  html.tema-glass-oscuro #loginScreen .lchk input{background-color:var(--tgo-field,#17191D)!important;border-color:var(--tgo-field-edge,#737B88)!important}
 }
 
 /* ═══ Iconografía del tema oscuro — 58.94 (dueño, 30-sep-2026, captura iPhone de Cobros: «corregir todos esos iconos que se ven así
@@ -4508,7 +4511,7 @@ html.tema-glass-oscuro .nxTPanelH small{color:#BCC7D6!important}
    Se estiliza el círculo compacto (.nxBusca.nxBusca-c) desde el primer pintado para que no salte cuando monta la capa.
    No toca #v-waInbox ni parches-whatsapp-*. */
 :root{--nxbp-d:46px;--nxbp-acento:#6d28d9;--nxbp-halo:rgba(109,40,217,.28);--nxbp-fondo:#fff;--nxbp-tx:#0f172a;--nxbp-ph:#94a3b8;--nxbp-x:#f1f5f9;--nxbp-x-tx:#475569}
-html.tema-glass-oscuro{--nxbp-acento:#2563EB;--nxbp-halo:rgba(37,99,235,.35);--nxbp-fondo:rgba(30,50,86,.80);--nxbp-tx:#F1F5F9;--nxbp-ph:#BCC7D6;--nxbp-x:rgba(255,255,255,.12);--nxbp-x-tx:#E2E8F0}
+html.tema-glass-oscuro{--nxbp-acento:#2563EB;--nxbp-halo:rgba(37,99,235,.35);--nxbp-fondo:rgba(30,32,38,.80);--nxbp-tx:#F1F5F9;--nxbp-ph:#BCC7D6;--nxbp-x:rgba(255,255,255,.12);--nxbp-x-tx:#E2E8F0}
 @media(max-width:768px){:root{--nxbp-d:52px}}
 /* círculo compacto antes/después de montar: mismo tamaño y borde (sin salto al cargar la capa) */
 .nxBusca.nxBusca-c:not(.open){width:var(--nxbp-d);min-width:var(--nxbp-d);flex-basis:var(--nxbp-d);height:var(--nxbp-d);border-radius:999px;border:2px solid var(--nxbp-acento);box-shadow:none}
@@ -4577,7 +4580,7 @@ html.tema-glass-oscuro .nxbp-marco .nxBusca-x{background:var(--nxbp-x)!important
 html.tema-glass-oscuro{
   --nx-mc-w:76px;--nx-mc-open:288px;
   --nx-mc-dur:.42s;--nx-mc-ease:cubic-bezier(.32,1.18,.36,1);--nx-mc-out:cubic-bezier(.22,1,.36,1);
-  --nx-mc-glass:linear-gradient(180deg,rgba(42,64,102,.60) 0%,rgba(20,36,64,.62) 100%);/* 58.97: un paso más claro */
+  --nx-mc-glass:linear-gradient(180deg,rgba(46,49,56,.58) 0%,rgba(22,24,28,.62) 100%);/* 59.21 grafito (antes azul rgba(42,64,102,.60)→rgba(20,36,64,.62)) */
   --nx-mc-edge:rgba(255,255,255,.09);
   --nx-mc-line:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);
   --nx-mc-blur:blur(28px) saturate(140%);
@@ -4601,7 +4604,7 @@ html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{display:block;transition:transform var(--nx-mc-dur) var(--nx-mc-ease)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:active .nx-mc-c{transform:scale(.92)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible{outline:0}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #10203A,0 0 0 4px #93C5FD}
+html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #121418,0 0 0 4px #93C5FD}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p{height:30px;padding:0 12px;border-radius:14px;background:#F8FAFC;color:#1D4ED8;font-size:13px;font-weight:700;line-height:28px;white-space:nowrap;text-transform:none!important;letter-spacing:0!important;
   box-shadow:0 6px 14px -6px rgba(0,0,0,.7);opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .14s ease,transform .18s var(--nx-mc-out)}
 html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;height:44px;min-height:0!important;margin:2px 0 0;padding:0 16px 0 19px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
@@ -4941,7 +4944,7 @@ html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgPoder.falta{backgrou
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) .pgOkPoder{background:rgba(34,197,94,.14);color:#86EFAC}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgOkTit,.pgOkMonto){color:#fff}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m) :is(.pgOkDet,.pgOkPend){color:var(--tgo-t2)}
-html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe{background:linear-gradient(180deg,rgba(21,42,74,0) 0%,#152A4A 22%)!important;border:0!important}
+html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe{background:linear-gradient(180deg,rgba(27,29,34,0) 0%,#1B1D22 22%)!important;border:0!important}
 html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe .btn:not(.bxl){background:rgba(255,255,255,.08)!important;color:var(--tgo-t1)!important;border:1px solid var(--tgo-edge)!important;box-shadow:none!important}
 @media (prefers-reduced-motion:reduce){#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn{transition:none}#mAbono .nxPago:not(#_n):not(#_m) .aboQbtn:active{transform:none}}
 </style>
@@ -8509,7 +8512,7 @@ function rApariencia(){
   if(!cont)return;
   const temaActual=nxPref('tema',nxTemaDefecto());
   const temas=[
-    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0B1220,#26334A 60%,#2563EB)'}]:[]),
+    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0E1013,#2A2D33 60%,#2563EB)'}]:[]),
     {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
     {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
@@ -8819,7 +8822,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.20';
+const APP_VERSION='59.21';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
