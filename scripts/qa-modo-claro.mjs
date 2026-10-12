@@ -5,13 +5,14 @@
 //  · acento único azul NEXUS (--c1 #2563EB) e íconos planos (sin bolitas 3D de color);
 //  · 390×844 (UA iPhone) y 1280×800: Inicio, Clientes, Cobros, Pólizas y WhatsApp sin superficies grandes oscuras ni textos bajo 3:1;
 //  · barra de arriba: botones de cristal claro con el ícono #334155 (sin «caramelo» 3D); título en el celular;
-//  · menú = RIEL AZUL NEXUS (dueño, 12-oct): cajón ☰ (390) y riel (1280) en azul con desenfoque, nombres blancos legibles sobre
-//    el azul, el elegido en píldora blanca con el texto azul; en la computadora la rayita de brillo del elegido (dueño, 02-oct)
-//    y la píldora sigue a WhatsApp y al CRM (marcan su botón por su cuenta); nombre y rol del usuario sin montarse;
+//  · menú: en la computadora (1280), RIEL AZUL NEXUS (dueño, 12-oct: «Solamente en la Pc»): azul con desenfoque, nombres
+//    blancos legibles sobre el azul, el elegido en píldora blanca con el texto azul y su rayita de brillo (dueño, 02-oct), y la
+//    píldora sigue a WhatsApp y al CRM (marcan su botón por su cuenta). En el celular (390), el cajón ☰ sigue en cristal blanco
+//    con el elegido en píldora azul y la rayita en blanco; nombre y rol del usuario sin montarse;
 //  · ventana «Nuevo cliente»: hoja blanca, campos con filo gris (sin el borde morado) y anillo azul al enfocar;
 //  · WhatsApp: la regla del aviso vacío pinta el ícono (no el texto «ea4a»);
 //  · Configuración → Apariencia: la opción se llama «Claro»; botón sol/luna con su nombre; claro ⇄ grafito en vivo;
-//  · «reducir transparencia» (si el Chromium de pruebas la emula): riel en azul sólido y panel principal en blanco sólido, sin desenfoque;
+//  · «reducir transparencia» (si el Chromium de pruebas la emula): riel en azul sólido y barra/panel principal en blanco sólido, sin desenfoque;
 //  · interruptor por equipo nx_claro_off=1: el Clásico de antes (acento morado, sin html.tema-claro, foto nítida, carril de 210 px);
 //  · sin errores de consola.
 // Uso: PORT=8975 node scripts/qa-crm-mock-server.js &   QA_BASE=http://127.0.0.1:8975 QA_OUT=/ruta node scripts/qa-modo-claro.mjs
@@ -213,11 +214,13 @@ const esPildoraBlanca = (p) => p && /rgb\(255, 255, 255\)/.test(p.img) && p.lbl 
       const m = await page.evaluate(() => {
         const sb = document.getElementById('sbEl'), un = sb.querySelector('.sb-u .sb-un'), ur = sb.querySelector('.sb-u .sb-ur');
         const a = un && un.getBoundingClientRect(), b = ur && ur.getBoundingClientRect();
-        return { abierto: /mob-open/.test(sb.className), panel: window.__qc.fondoDe(sb, '::after'), pil: window.__qc.pildora(), t: window.__qc.textos('#sbEl'),
+        const mv = sb.querySelector('#sbNav .ni.on > .nx-marca.v');
+        return { abierto: /mob-open/.test(sb.className), panel: window.__qc.fondoDe(sb, '::after'), pil: window.__qc.pildora(), t: window.__qc.textos('#sbEl'), raya: mv && getComputedStyle(mv).backgroundImage.slice(0, 90),
           monta: a && b && b.width && a.width ? !(a.bottom <= b.top + 1 || b.bottom <= a.top + 1 || a.right <= b.left || b.right <= a.left) : null, nom: un && un.textContent.trim(), rol: ur && ur.textContent.trim() };
       });
-      ok(m.abierto && esPanelAzul(m.panel), `${W}cajón ☰: riel azul NEXUS (luminancia ${m.panel.lum}, ${m.panel.blur})`, m.panel);
-      ok(esPildoraBlanca(m.pil) && m.pil.dy <= 2 && m.pil.op > 0.9, `${W}cajón ☰: el activo (${m.pil && m.pil.on}) en píldora blanca con el azul`, m.pil);
+      ok(m.abierto && m.panel.lum > 0.8 && m.panel.blur !== 'none', `${W}cajón ☰: cristal blanco (luminancia ${m.panel.lum}, ${m.panel.blur}); el riel azul es solo de la computadora`, m.panel);
+      ok(m.pil && AZUL.test(m.pil.img + m.pil.bg) && m.pil.lbl === 'rgb(255, 255, 255)' && m.pil.dy <= 2 && m.pil.op > 0.9, `${W}cajón ☰: el activo (${m.pil && m.pil.on}) en píldora azul con el texto blanco`, m.pil);
+      ok(/rgb\(255, 255, 255\)/.test(m.raya || ''), `${W}cajón ☰: la rayita de brillo del elegido se ve (blanca sobre la píldora azul)`, m.raya);
       ok(m.monta === false, `${W}cajón ☰: nombre («${m.nom}») y rol («${m.rol}») sin montarse`, m);
       ok(m.t.total > 8 && m.t.bajo3.length === 0, `${W}cajón ☰: ${m.t.total} rótulos legibles (bajo 4.5:1: ${m.t.bajo45})`, m.t.bajo3.slice(0, 5));
       await page.screenshot({ path: OUT + `${width}-cajon.png` });
