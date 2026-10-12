@@ -19,6 +19,9 @@ window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=win
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
 d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
+/* 59.22: premium y glass viven en <body>: la clase se pone en cuanto el parser crea el <body> (el aviso del MutationObserver corre antes
+   del siguiente pintado), así el primer cuadro ya sale con su tema aunque el <head> pese más; nxTemaBodyOn lo repite por si acaso. */
+if(t==='premium'||t==='glass'){var cb=t==='premium'?'tema-premium':'tema-glass';try{var mo=new MutationObserver(function(){if(document.body){document.body.classList.add(cb);mo.disconnect();}});mo.observe(d,{childList:true});}catch(e){}}
 /* Foto de fondo (58.90): se pide aquí mismo, solo con este tema; mientras llega se ve el degradado del CSS y, al
    terminar de cargar, html.tgo-foto la muestra con un fundido (capa fija: no mueve nada de la página). */
 /* 58.90 (velocidad): se pide después de `load` y en un momento libre: durante la carga la tapa el splash y descargarla/
@@ -5265,14 +5268,14 @@ html.tema-claro body nav#sbEl.sb .nx-mc-out{color:#64748B}
     --nx-mc-line:linear-gradient(90deg,transparent,rgba(255,255,255,.26),transparent);
     --nx-mc-pill:linear-gradient(180deg,#FFFFFF 0%,#EEF4FF 100%);
     --nx-mc-pill-sh:inset 0 1px 0 #fff,0 8px 18px -10px rgba(10,25,80,.7)}
-  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{background:radial-gradient(120% 46% at 0% 0%,rgba(255,255,255,.16),transparent 62%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='104' viewBox='0 0 288 104'%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18 L288 104 L0 104 Z' fill='white' fill-opacity='.075'/%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18' fill='none' stroke='white' stroke-opacity='.30' stroke-width='1.2'/%3E%3C/svg%3E") left bottom/288px 104px no-repeat,var(--nx-mc-glass)!important;
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{background:radial-gradient(120% 42% at 0% 0%,rgba(255,255,255,.12),transparent 60%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='104' viewBox='0 0 288 104'%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18 L288 104 L0 104 Z' fill='white' fill-opacity='.075'/%3E %3Cpath d='M0 30 C 62 6 128 46 196 26 C 236 14 266 12 288 18' fill='none' stroke='white' stroke-opacity='.30' stroke-width='1.2'/%3E%3C/svg%3E") left bottom/288px 104px no-repeat,var(--nx-mc-glass)!important;
     border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 24px 50px -26px rgba(30,64,175,.65)!important}
   html.tema-claro.nx-mc-open body nav#sbEl.sb:not(#_n):not(#_n):not(#_n)::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 30px 70px -24px rgba(30,64,175,.6),18px 0 48px -22px rgba(15,23,42,.25)!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni-i,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni>i.ni-i{background:transparent!important;box-shadow:none!important;color:rgba(255,255,255,.92)!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni-l{color:#fff!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni.on .ni-i,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni.on>i.ni-i{color:#1D4ED8!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ni.on .ni-l{color:#1D4ED8!important;font-weight:600!important}
-  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ss{color:#DBEAFE!important}
+  html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .ss{color:#EEF4FF!important} /* #DBEAFE daba 4,16:1 sobre lo más claro del azul (medido con píxeles reales) */
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-nm,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-un{color:#fff!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-sm,html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-ur{color:#DBEAFE!important}
   html.tema-claro body nav#sbEl.sb:not(#_n):not(#_n):not(#_n) .sb-mk{background:#fff!important;color:#1D4ED8!important;box-shadow:0 8px 18px -8px rgba(10,25,80,.6)!important}
