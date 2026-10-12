@@ -36,7 +36,7 @@ async function abrir(browser, { width, rol, mirror, claroOff }) {
     if (TABLER && /tabler-icons\.woff2/.test(u)) return r.fulfill({ path: path.join(TABLER, 'fonts', 'tabler-icons.woff2'), contentType: 'font/woff2' });
     if (/supabase\.co\//.test(u)) { const resp = await r.fetch({ url: u.replace(/^https:\/\/[^/]+/, BASE + '/supa') }); return r.fulfill({ response: resp }); }
     return r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); } catch (e) { /* contexto cerrado */ } });
-  await page.addInitScript(({ rol, id, mirror }) => {
+  await page.addInitScript(({ rol, id, mirror, claroOff }) => {
     if (mirror) localStorage.setItem('nx_tema', mirror); else localStorage.removeItem('nx_tema'); localStorage.removeItem('nx_tgo_off');
     if (claroOff) localStorage.setItem('nx_claro_off', '1'); else localStorage.removeItem('nx_claro_off');
     localStorage.setItem('nx_auth_mode', 'legacy');
