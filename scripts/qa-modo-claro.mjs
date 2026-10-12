@@ -232,6 +232,21 @@ const esPildoraBlanca = (p) => p && /rgb\(255, 255, 255\)/.test(p.img) && p.lbl 
       ok(m.main.lum > 0.8, `${W}panel principal en cristal claro (luminancia ${m.main.lum})`, m.main);
       ok(esPildoraBlanca(m.pil) && m.pil.dy <= 2, `${W}riel: el activo (${m.pil && m.pil.on}) en píldora blanca con el azul`, m.pil);
       ok(m.pil && m.pil.raya && m.pil.raya.disp === 'block' && AZUL.test(m.pil.raya.img), `${W}riel: la rayita de brillo del elegido se ve (azul sobre la píldora)`, m.pil && m.pil.raya);
+      // Apertura (dueño 12-oct: «una mezcla con diseño y animación»): cerrado rápido sin rebote; al abrir, reflejo y cascada.
+      const dur0 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--nx-mc-dur').trim());
+      await page.mouse.move(700, 420); await page.click('#sbEl .nx-mc-tg'); await sleep(120);
+      const ap = await page.evaluate(() => {
+        const sb = document.getElementById('sbEl'), ls = [...sb.querySelectorAll('#sbNav .ni:not(#sbContab *):not(#sbConfig *) > .ni-l')].filter(l => l.getBoundingClientRect().height > 0);
+        const d = (l) => parseFloat(getComputedStyle(l).transitionDelay) || 0;
+        const v = document.querySelector('body > .nx-vidrio');
+        return { abierto: document.documentElement.classList.contains('nx-mc-open'), dur: getComputedStyle(document.documentElement).getPropertyValue('--nx-mc-dur').trim(),
+          reflejo: getComputedStyle(sb, '::after').animationName, d1: ls.length && d(ls[0]), dN: ls.length && d(ls[ls.length - 1]), n: ls.length, vidrio: v ? getComputedStyle(v).opacity : 'sin capa' };
+      });
+      ok(dur0 === '.3s' && ap.abierto && ap.dur === '.42s', `${W}riel: abre con resorte (${ap.dur}) y cierra más rápido sin rebote (${dur0})`, { dur0, ap });
+      ok(ap.reflejo === 'nxRielReflejo', `${W}riel: al abrir, el reflejo de cristal cruza el azul`, ap);
+      ok(ap.n >= 8 && ap.dN > ap.d1 + 0.1, `${W}riel: los nombres entran en cascada (${Math.round(ap.d1 * 1000)} → ${Math.round(ap.dN * 1000)} ms, ${ap.n} filas)`, ap);
+      ok(ap.vidrio === 'sin capa' || ap.vidrio === '0', `${W}riel abierto: la luz de vidrio no se pinta encima del menú`, ap.vidrio);
+      await sleep(900); await page.click('#sbEl .nx-mc-tg'); await page.mouse.move(700, 420); await sleep(700);
       const tr = await page.evaluate(() => window.__qc.textos('#sbEl'));
       ok(tr.total >= 2 && tr.bajo3.length === 0, `${W}riel: rótulos legibles sobre el azul (${tr.total}; bajo 4.5:1: ${tr.bajo45})`, tr.bajo3.slice(0, 5));
       for (const [nom, js, id] of [['WhatsApp', "nav('waInbox')", 'nxWaInboxNav'], ['CRM', "nav('crm')", 'nxCrmNav']]) {
