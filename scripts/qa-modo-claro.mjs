@@ -5,12 +5,13 @@
 //  · acento único azul NEXUS (--c1 #2563EB) e íconos planos (sin bolitas 3D de color);
 //  · 390×844 (UA iPhone) y 1280×800: Inicio, Clientes, Cobros, Pólizas y WhatsApp sin superficies grandes oscuras ni textos bajo 3:1;
 //  · barra de arriba: botones de cristal claro con el ícono #334155 (sin «caramelo» 3D); título en el celular;
-//  · cajón ☰ (390): cristal claro, ítem activo en píldora azul, nombre y rol del usuario sin montarse;
-//  · riel (1280): cristal claro, píldora azul en el ítem activo, y la píldora sigue a WhatsApp y al CRM (marcan su botón por su cuenta);
+//  · menú = RIEL AZUL NEXUS (dueño, 12-oct): cajón ☰ (390) y riel (1280) en azul con desenfoque, nombres blancos legibles sobre
+//    el azul, el elegido en píldora blanca con el texto azul; en la computadora la rayita de brillo del elegido (dueño, 02-oct)
+//    y la píldora sigue a WhatsApp y al CRM (marcan su botón por su cuenta); nombre y rol del usuario sin montarse;
 //  · ventana «Nuevo cliente»: hoja blanca, campos con filo gris (sin el borde morado) y anillo azul al enfocar;
 //  · WhatsApp: la regla del aviso vacío pinta el ícono (no el texto «ea4a»);
 //  · Configuración → Apariencia: la opción se llama «Claro»; botón sol/luna con su nombre; claro ⇄ grafito en vivo;
-//  · «reducir transparencia» (si el Chromium de pruebas la emula): riel y panel principal en blanco sólido, sin desenfoque;
+//  · «reducir transparencia» (si el Chromium de pruebas la emula): riel en azul sólido y panel principal en blanco sólido, sin desenfoque;
 //  · interruptor por equipo nx_claro_off=1: el Clásico de antes (acento morado, sin html.tema-claro, foto nítida, carril de 210 px);
 //  · sin errores de consola.
 // Uso: PORT=8975 node scripts/qa-crm-mock-server.js &   QA_BASE=http://127.0.0.1:8975 QA_OUT=/ruta node scripts/qa-modo-claro.mjs
@@ -74,12 +75,15 @@ const MEDIR = () => {
   // Escena del modo claro: el gris #EEF1F5 de la base (más exigente para el texto oscuro que el blanco del velo).
   const ESCENA = { r: 238, g: 241, b: 245, a: 1 };
   const promedio = (img) => { const cc = (img.match(/rgba?\([^)]+\)/g) || []).map(parse).filter(Boolean); if (!cc.length) return null; const sa = cc.reduce((s, c) => s + c.a, 0) || 1; return cc.reduce((s, c) => ({ r: s.r + c.r * c.a / sa, g: s.g + c.g * c.a / sa, b: s.b + c.b * c.a / sa, a: s.a + c.a / cc.length }), { r: 0, g: 0, b: 0, a: 0 }); };
+  // El menú pinta su panel en un seudoelemento (::before en la computadora, ::after en el cajón): cuenta como capa del menú.
+  const panelMenu = (a) => { if (a.id !== 'sbEl') return null; const cs = getComputedStyle(a, innerWidth <= 768 ? '::after' : '::before'); if (cs.display === 'none') return null; const m = promedio(cs.backgroundImage); const bg = parse(cs.backgroundColor); return m && bg && bg.a > 0 ? over(m, bg) : m || (bg && bg.a > 0 ? bg : null); };
   const fondo = (el) => {
     const capas = [];
     for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
       const cs = getComputedStyle(a);
       if (/gradient/.test(cs.backgroundImage) && !/url\(/.test(cs.backgroundImage)) { const m = promedio(cs.backgroundImage); if (m) { capas.push(m); if (m.a >= 0.99) break; } }
       const bg = parse(cs.backgroundColor); if (bg && bg.a > 0) { capas.push(bg); if (bg.a >= 0.99) break; }
+      const pm = panelMenu(a); if (pm) { capas.push(pm); if (pm.a >= 0.99) break; }
     }
     let c = ESCENA; for (let i = capas.length - 1; i >= 0; i--) c = over(capas[i], c); return c;
   };
@@ -133,7 +137,9 @@ const MEDIR = () => {
       const sp = document.body.classList.contains('spring-nav') && ind && getComputedStyle(ind).display !== 'none';
       const el = sp ? ind : on; if (!el || !on) return null;
       const a = el.getBoundingClientRect(), o = on.getBoundingClientRect(), cs = getComputedStyle(el);
-      return { spring: !!sp, dy: Math.round(Math.abs(a.top - o.top)), h: Math.round(a.height), op: +cs.opacity, img: cs.backgroundImage.slice(0, 120), bg: cs.backgroundColor, on: on.id || (on.querySelector('.ni-l') || on).textContent.trim() };
+      const lbl = on.querySelector('.ni-l'), ico = on.querySelector('.ni-i'), raya = sp ? getComputedStyle(ind, '::after') : null;
+      return { spring: !!sp, dy: Math.round(Math.abs(a.top - o.top)), h: Math.round(a.height), op: +cs.opacity, img: cs.backgroundImage.slice(0, 120), bg: cs.backgroundColor, on: on.id || (lbl || on).textContent.trim(),
+        lbl: lbl && getComputedStyle(lbl).color, ico: ico && getComputedStyle(ico).color, raya: raya && { disp: raya.display, img: raya.backgroundImage.slice(0, 90) } };
     },
   };
 };
@@ -148,6 +154,9 @@ async function ir(page, js) {
 const VISTAS = [['inicio', "nav('dashboard',null)"], ['clientes', "nav('clientes',null)"], ['cobros', "nav('facturas',null);setTimeout(()=>switchTab('cobros'),250)"],
   ['polizas', "nav('polizas',null)"], ['whatsapp', "nav('waInbox',null)"]];
 const AZUL = /37, 99, 235/;
+// Riel azul: panel azul NEXUS translúcido; el elegido, píldora blanca (degradado blanco → #EEF4FF) con el texto y el ícono #1D4ED8.
+const esPanelAzul = (p) => p && p.lum < 0.3 && p.sat > 120 && p.blur !== 'none';
+const esPildoraBlanca = (p) => p && /rgb\(255, 255, 255\)/.test(p.img) && p.lbl === 'rgb(29, 78, 216)' && p.ico === 'rgb(29, 78, 216)';
 
 (async () => {
   const browser = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
@@ -207,8 +216,8 @@ const AZUL = /37, 99, 235/;
         return { abierto: /mob-open/.test(sb.className), panel: window.__qc.fondoDe(sb, '::after'), pil: window.__qc.pildora(), t: window.__qc.textos('#sbEl'),
           monta: a && b && b.width && a.width ? !(a.bottom <= b.top + 1 || b.bottom <= a.top + 1 || a.right <= b.left || b.right <= a.left) : null, nom: un && un.textContent.trim(), rol: ur && ur.textContent.trim() };
       });
-      ok(m.abierto && m.panel.lum > 0.8 && m.panel.blur !== 'none', `${W}cajón ☰: cristal claro (luminancia ${m.panel.lum}, ${m.panel.blur})`, m.panel);
-      ok(m.pil && AZUL.test(m.pil.img + m.pil.bg) && m.pil.dy <= 2 && m.pil.op > 0.9, `${W}cajón ☰: el activo (${m.pil && m.pil.on}) en píldora azul`, m.pil);
+      ok(m.abierto && esPanelAzul(m.panel), `${W}cajón ☰: riel azul NEXUS (luminancia ${m.panel.lum}, ${m.panel.blur})`, m.panel);
+      ok(esPildoraBlanca(m.pil) && m.pil.dy <= 2 && m.pil.op > 0.9, `${W}cajón ☰: el activo (${m.pil && m.pil.on}) en píldora blanca con el azul`, m.pil);
       ok(m.monta === false, `${W}cajón ☰: nombre («${m.nom}») y rol («${m.rol}») sin montarse`, m);
       ok(m.t.total > 8 && m.t.bajo3.length === 0, `${W}cajón ☰: ${m.t.total} rótulos legibles (bajo 4.5:1: ${m.t.bajo45})`, m.t.bajo3.slice(0, 5));
       await page.screenshot({ path: OUT + `${width}-cajon.png` });
@@ -216,9 +225,12 @@ const AZUL = /37, 99, 235/;
     } else {
       await ir(page, "nav('clientes',null)");
       const m = await page.evaluate(() => ({ w: Math.round(document.getElementById('sbEl').getBoundingClientRect().width), panel: window.__qc.fondoDe('#sbEl', '::before'), main: window.__qc.fondoDe('.main', '::before'), pil: window.__qc.pildora() }));
-      ok(m.w >= 76 && m.w <= 84 && m.panel.lum > 0.8 && m.panel.blur !== 'none', `${W}riel: ${m.w} px de cristal claro (luminancia ${m.panel.lum})`, m);
+      ok(m.w >= 76 && m.w <= 84 && esPanelAzul(m.panel), `${W}riel: ${m.w} px en azul NEXUS (luminancia ${m.panel.lum})`, m);
       ok(m.main.lum > 0.8, `${W}panel principal en cristal claro (luminancia ${m.main.lum})`, m.main);
-      ok(m.pil && AZUL.test(m.pil.img + m.pil.bg) && m.pil.dy <= 2, `${W}riel: el activo (${m.pil && m.pil.on}) en píldora azul`, m.pil);
+      ok(esPildoraBlanca(m.pil) && m.pil.dy <= 2, `${W}riel: el activo (${m.pil && m.pil.on}) en píldora blanca con el azul`, m.pil);
+      ok(m.pil && m.pil.raya && m.pil.raya.disp === 'block' && AZUL.test(m.pil.raya.img), `${W}riel: la rayita de brillo del elegido se ve (azul sobre la píldora)`, m.pil && m.pil.raya);
+      const tr = await page.evaluate(() => window.__qc.textos('#sbEl'));
+      ok(tr.total >= 2 && tr.bajo3.length === 0, `${W}riel: rótulos legibles sobre el azul (${tr.total}; bajo 4.5:1: ${tr.bajo45})`, tr.bajo3.slice(0, 5));
       for (const [nom, js, id] of [['WhatsApp', "nav('waInbox')", 'nxWaInboxNav'], ['CRM', "nav('crm')", 'nxCrmNav']]) {
         await ir(page, js); await sleep(400);
         const p = await page.evaluate(() => window.__qc.pildora());
@@ -271,7 +283,7 @@ const AZUL = /37, 99, 235/;
         const rt = await page.evaluate((m) => m ? { barra: window.__qc.fondoDe('.tnav', null), bc: getComputedStyle(document.querySelector('.tnav')).backgroundColor, bf: getComputedStyle(document.querySelector('.tnav')).backdropFilter }
           : { panel: window.__qc.fondoDe('#sbEl', '::before'), main: window.__qc.fondoDe('.main', '::before') }, width < 500);
         if (width < 500) ok(rt.bc === 'rgb(255, 255, 255)' && rt.bf === 'none', W + 'reducir transparencia: barra blanca sólida, sin desenfoque', rt);
-        else ok(rt.panel.bgc === 'rgb(255, 255, 255)' && rt.panel.blur === 'none' && rt.main.bgc === 'rgb(255, 255, 255)' && rt.main.blur === 'none', W + 'reducir transparencia: riel y panel principal blancos sólidos, sin desenfoque', rt);
+        else ok(rt.panel.bgc === 'rgb(29, 78, 216)' && !/gradient|url/.test(rt.panel.img) && rt.panel.blur === 'none' && rt.main.bgc === 'rgb(255, 255, 255)' && rt.main.blur === 'none', W + 'reducir transparencia: riel azul sólido y panel principal blanco sólido, sin desenfoque', rt);
       } else console.log('INFO  ' + W + 'este Chromium no emula prefers-reduced-transparency: se omite');
       await cdp.send('Emulation.setEmulatedMedia', { features: [] });
     } catch (x) { console.log('INFO  ' + W + 'reducir transparencia no disponible: ' + x.message); }
