@@ -337,6 +337,12 @@ async function menuMensaje(page, ctx, sel) {
       if (movil) { const lp = await menuPorPulsacionLarga(page, ctx, selLeido); ok(lp && lp.items.includes('Responder') && lp.items.includes('Borrar para mí'), `${tag} pulsación larga (520 ms) abre el menú del mensaje`, lp); }
       let mn = await menuMensaje(page, ctx, selLeido);
       ok(mn && mn.lum < 0.2 && mn.tt === 'none' && mn.items.includes('Destacar') && mn.items.includes('Borrar para mí') && mn.items.includes('Info del mensaje'), `${tag} menú de mensaje en cristal oscuro (lum ${mn && mn.lum}) con Destacar y Borrar para mí, texto natural`, mn);
+      // 59.21 (dueño 11-oct-2026: «mejorar ese menú y agregarle el botón de pago»): «Cobrar» primero; renglones lisos de 44 px
+      // (sin el borde morado ni el brillo que la capa global ponía a todo <button>); en el celular el texto del mensaje no se selecciona
+      const mp = await page.evaluate(() => { const p = document.querySelector('.nxWaMsgPro'); if (!p) return null; const bs = [...p.querySelectorAll('button')]; const b1 = bs[1] || bs[0]; const cs = getComputedStyle(b1); const cob = p.querySelector('[data-act="cobrar"]');
+        return { primero: (bs[0] && bs[0].innerText.trim()) || '', cobDis: cob ? cob.disabled : null, borde: cs.borderLeftWidth, sombra: cs.boxShadow, alto: Math.round(b1.getBoundingClientRect().height), sel: getComputedStyle(document.querySelector('#v-waInbox .nxWaBub')).webkitUserSelect || getComputedStyle(document.querySelector('#v-waInbox .nxWaBub')).userSelect }; });
+      ok(mp && /^Cobrar/.test(mp.primero) && mp.borde === '0px' && !/rgba\(255, 255, 255, 0\.9\)/.test(mp.sombra) && mp.alto >= 44, `${tag} menú del mensaje: «Cobrar» primero («${mp && mp.primero}») y renglones lisos de ${mp && mp.alto} px`, mp);
+      if (movil) ok(mp && mp.sel === 'none', `${tag} al mantener presionado un mensaje no se selecciona el texto (user-select ${mp && mp.sel})`, mp);
       await clic(page, '.nxWaMsgPro [data-act="info"]'); await sleep(500);
       r = await page.evaluate(() => { const ov = document.querySelector('.nxWaModalOv'); if (!ov) return null; const dts = [...ov.querySelectorAll('dt')].map(d => d.textContent); const f = window.__wa.fondo(ov.querySelector('.nxWaModalCard')); return { dts, lum: +window.__wa.lum(f).toFixed(3) }; });
       ok(r && r.dts.includes('Entregado') && r.dts.includes('Leído') && r.lum < 0.2, `${tag} Info del mensaje muestra Entregado y Leído en ventana oscura`, r);

@@ -90,6 +90,33 @@ html.tema-glass-oscuro #v-waInbox .nxWaReactionBadge{background:#1F2126!importan
 html.tema-glass-oscuro .nxWaForwardRow,html.tema-glass-oscuro .nxWaForwardSearch input{background:rgba(255,255,255,.06);border-color:rgba(190,200,215,.13);color:#F1F5F9}
 html.tema-glass-oscuro .nxWaForwardSearch input{background:rgba(255,255,255,.06)!important;background-image:none!important;-webkit-text-fill-color:#F1F5F9}/* 58.95: la capa semi-glass global pinta input{background:rgba(255,255,255,.78)!important} → campo blanco con letra clara */html.tema-glass-oscuro .nxWaForwardSearch{border-color:rgba(190,200,215,.12)}html.tema-glass-oscuro .nxWaForwardRow b{color:#F1F5F9}html.tema-glass-oscuro .nxWaForwardRow span,html.tema-glass-oscuro .nxWaForwardRow i{color:#9FB3D1}html.tema-glass-oscuro .nxWaForwardRow .av{background:rgba(37,99,235,.28);color:#BFDBFE}
 html.tema-glass-oscuro .nxWaMsgInfo dt{color:#9FB3D1}html.tema-glass-oscuro .nxWaMsgInfo dd{color:#F1F5F9}html.tema-glass-oscuro .nxWaMsgInfo .ok{color:#4ADE80}html.tema-glass-oscuro .nxWaMsgInfo .bad{color:#FCA5A5}
+/* 59.21 (dueño 11-oct-2026: «mejorar ese menú y agregarle el botón de pago»): menú del mensaje como el del iPhone —
+   renglones lisos de 44 px con separadores finos, grupos separados por una franja, «Cobrar» primero y en verde.
+   La capa global nx-semi-glass-global-css (parches-seguros-base.js) pinta TODO <button> con borde morado, brillo blanco
+   y sombra (!important): por eso cada renglón parecía una tarjeta. Aquí se anula solo dentro de este menú. */
+.nxWaMsgPro{padding:0!important;overflow:hidden;border-radius:16px!important;width:min(260px,calc(100vw - 20px))!important;-webkit-backdrop-filter:blur(24px) saturate(1.4);backdrop-filter:blur(24px) saturate(1.4)}
+.nxWaMsgPro button{border:0!important;box-shadow:none!important;border-radius:0!important;min-height:44px!important;margin:0!important;padding:0 16px!important;gap:12px!important;font-size:14px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important}
+.nxWaMsgPro button+button{border-top:1px solid rgba(15,39,78,.08)!important}
+.nxWaMsgPro button i{font-size:18px!important;width:22px!important}
+.nxWaMsgPro .sep{height:6px!important;margin:0!important;background:rgba(15,39,78,.06)!important}
+.nxWaMsgPro button.nxWaCobrar i{color:#15803d!important}
+.nxWaMsgPro button .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxWaMsgPro button .monto{margin-left:auto;font-style:normal;font-size:12px;font-weight:800;color:#b42318;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nxWaMsgPro button .monto.sin{color:#8295b4;font-weight:600;font-size:11px}
+.nxWaMsgPro button:disabled{opacity:.55;cursor:default}
+.nxWaMsgPro .nxWaReactTray{padding:8px!important}.nxWaMsgPro .nxWaReactTray button{border-top:0!important}
+html.tema-glass-oscuro .nxWaMsgPro{background:rgba(30,32,38,.92)!important;border-color:rgba(255,255,255,.10)!important;box-shadow:0 24px 60px -24px rgba(0,0,0,.85)!important}
+html.tema-glass-oscuro .nxWaMsgPro button{color:#F1F5F9!important}
+html.tema-glass-oscuro .nxWaMsgPro button+button{border-top-color:rgba(255,255,255,.07)!important}
+html.tema-glass-oscuro .nxWaMsgPro button:hover,html.tema-glass-oscuro .nxWaMsgPro button:active{background:rgba(255,255,255,.08)!important}
+html.tema-glass-oscuro .nxWaMsgPro .sep{background:rgba(0,0,0,.28)!important}
+html.tema-glass-oscuro .nxWaMsgPro button.nxWaCobrar i{color:#86EFAC!important}
+html.tema-glass-oscuro .nxWaMsgPro button .monto{color:#FCA5A5}
+html.tema-glass-oscuro .nxWaMsgPro button .monto.sin{color:#9FB3D1}
+html.tema-glass-oscuro .nxWaMsgPro .danger,html.tema-glass-oscuro .nxWaMsgPro .danger i{color:#FCA5A5!important}
+@media (prefers-reduced-transparency:reduce){.nxWaMsgPro{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}html.tema-glass-oscuro .nxWaMsgPro{background:#1E2126!important}}
+/* al mantener presionado un mensaje en el celular no se selecciona el texto ni sale la burbuja del iPhone (para copiar está «Copiar») */
+@media (hover:none) and (pointer:coarse){#v-waInbox .nxWaBub{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
 .nxWaConfirmBody{padding:14px 14px 6px;font-size:11px;line-height:1.5;color:#506078}.nxWaConfirmFoot{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px 14px}.nxWaConfirmFoot button{height:40px;border-radius:12px;padding:0 14px;font:inherit;font-size:10.5px;font-weight:900;cursor:pointer;border:1px solid #dce4ef;background:#fff;color:#52627b}.nxWaConfirmFoot button.danger{border:0;background:#c43224;color:#fff}
 html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nxWaConfirmFoot button{background:rgba(255,255,255,.07);border-color:rgba(190,200,215,.15);color:#E2E8F0}html.tema-glass-oscuro .nxWaConfirmFoot button.danger{background:#DC2626;border:0;color:#fff}
 `;
@@ -196,12 +223,40 @@ html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nx
     const emojis=['👍','❤️','😂','😮','😢','🙏'];p.innerHTML=`<div class="nxWaReactTray">${emojis.map(x=>`<button type="button" data-emoji="${x}" class="${m.reaccion_agente===x?'on':''}">${x}</button>`).join('')}${m.reaccion_agente?'<button type="button" class="nxWaReactRemove" data-remove><i class="ti ti-x"></i> Quitar reacción</button>':''}</div>`;
     $$('[data-emoji]',p).forEach(b=>b.addEventListener('click',async()=>{const em=b.dataset.emoji;closeMsgMenus();await reactTo(id,em);}));$('[data-remove]',p)?.addEventListener('click',async()=>{closeMsgMenus();await reactTo(id,'');});placeMenu(p,id);
   }
+  /* 59.21 (dueño 11-oct-2026): «Cobrar» en el menú del mensaje. Usa el vínculo real del chat (hilo.cliente_id) y abre la
+     ventana de pago de siempre (abrirAbono). Si el mensaje es una foto que mandó el cliente, «Cobrar con este
+     comprobante» la deja adjunta como en «Aplicar como pago» de los bauches (nxBaucheAsignarExterno + revisión que se
+     cierra sola al registrar, ver nxWaAplicarBauche/nxWaResolverTrasAbono en parches-whatsapp-inbox.js). Sin lógica de dinero nueva. */
+  function cobroDeMensaje(m){
+    if(!m||typeof window.abrirAbono!=='function')return null;
+    let h=null;try{h=(typeof window.nxWaHilos==='function'?window.nxWaHilos():[]).find(x=>String(x.id)===String(m.hilo_id||hiloActualId()))||null;}catch(e){}
+    const c=h&&h.cliente_id?clientes().find(x=>String(x&&x.id)===String(h.cliente_id))||null:null;
+    let monto=0;if(c){try{monto=typeof pendTot==='function'?Number(pendTot(c))||0:(typeof pend==='function'?Number(pend(c))||0:0);}catch(e){}}
+    const foto=String(m.direccion)==='in'&&/^(imagen|image|foto)$/i.test(String(m.tipo_contenido||''))&&!!m.media_path;
+    return {c,monto,foto};
+  }
+  function fmtMonto(n){try{return typeof fmt==='function'?fmt(n):'RD$ '+Math.round(n).toLocaleString('es-DO');}catch(e){return 'RD$ '+n;}}
+  function cobrarHtml(m){
+    const cb=cobroDeMensaje(m);if(!cb)return '';
+    const txt=cb.foto?'Cobrar con este comprobante':'Cobrar';
+    const der=cb.c?(cb.monto>0?`<em class="monto">${esc(fmtMonto(cb.monto))}</em>`:''):'<em class="monto sin">Sin cliente</em>';
+    return `<button type="button" class="nxWaCobrar" data-act="cobrar" ${cb.c?'':'disabled'}><i class="ti ${cb.foto?'ti-receipt':'ti-cash'}"></i><span class="t">${txt}</span>${der}</button><div class="sep"></div>`;
+  }
+  async function cobrarDesdeMensaje(m){
+    const cb=cobroDeMensaje(m);if(!cb||!cb.c)return toastSafe('info','Este chat no tiene cliente vinculado');
+    if(cb.foto&&String(m.revision_pago_estado||'')==='pendiente'){
+      if(window.__nxWaRevisionPendiente&&window.__nxWaRevisionPendiente!==m.id)toastSafe('info','Aviso','Había otro bauche esperando cobro: quedó pendiente, revísalo aparte.');
+      window.__nxWaRevisionPendiente=m.id;window.__nxWaRevisionPendienteCliente=String(cb.c.id);
+    }
+    try{window.abrirAbono(cb.c.id);}catch(e){return toastSafe('err','No se pudo abrir el cobro',String(e&&e.message||e));}
+    if(cb.foto){try{const url=await signedMediaUrl(m.media_path);setTimeout(()=>{try{if(window.nxBaucheAsignarExterno)window.nxBaucheAsignarExterno('wa-media:'+m.media_path,url);}catch(_e){}},180);}catch(e){toastSafe('info','No se pudo adjuntar la foto','Adjúntala con «Foto / archivo».');}}
+  }
   async function openMsgMenu(event,id){
     event?.preventDefault?.();event?.stopPropagation?.();closeMsgMenus();
     const p=document.createElement('div');p.className='nxWaMsgPro';p.dataset.id=id;p.innerHTML='<button type="button" disabled><i class="ti ti-loader-2"></i> Cargando…</button>';document.body.appendChild(p);placeMenu(p,id);
     let m=null;try{m=await fetchMsg(id);}catch(e){}if(!m){try{m=window.nxWaMensajeCargado?.(id)||null;}catch(e){}}if(!p.isConnected)return;if(!m){p.innerHTML='<button type="button" data-act="reply"><i class="ti ti-corner-up-left"></i> Responder</button>';}
-    else p.innerHTML=`<button type="button" data-act="reply"><i class="ti ti-corner-up-left"></i> Responder</button><button type="button" data-act="react"><i class="ti ti-mood-smile"></i> Reaccionar${m.reaccion_agente?' · '+esc(m.reaccion_agente):''}</button>${m.cuerpo&&!/^\[?(imagen|audio|video|documento|sticker)\]?$/i.test(String(m.cuerpo).trim())?'<button type="button" data-act="copy"><i class="ti ti-copy"></i> Copiar</button>':''}<button type="button" data-act="forward"><i class="ti ti-share-3"></i> Reenviar</button><button type="button" data-act="star"><i class="ti ${m.destacado_at?'ti-star-off':'ti-star'}"></i> ${m.destacado_at?'Quitar destacado':'Destacar'}</button><button type="button" data-act="info"><i class="ti ti-info-circle"></i> Info del mensaje</button><div class="sep"></div>${m.direccion==='out'&&m.estado==='fallido'?'<button type="button" class="danger" data-act="retry"><i class="ti ti-refresh"></i> Reintentar</button>':''}<button type="button" class="danger" data-act="hide"><i class="ti ti-trash"></i> Borrar para mí</button>`;
-    p.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;e.stopPropagation();const a=b.dataset.act;if(a==='reply'){closeMsgMenus();try{window.nxWaSetRespuesta?.(id);}catch(_e){}}else if(a==='react'&&m){reactionTray(p,m,id);}else if(a==='copy'&&m){closeMsgMenus();try{await navigator.clipboard.writeText(String(m.cuerpo||''));toastSafe('ok','Mensaje copiado');}catch(_e){toastSafe('err','No se pudo copiar');}}else if(a==='forward'&&m){closeMsgMenus();openForward(m);}else if(a==='star'&&m){closeMsgMenus();toggleStar(m);}else if(a==='hide'&&m){closeMsgMenus();confirmHide(m);}else if(a==='info'&&m){closeMsgMenus();openInfo(m);}else if(a==='retry'){closeMsgMenus();try{window.nxWaReintentarMensaje?.(id);}catch(_e){}}});
+    else p.innerHTML=`${cobrarHtml(m)}<button type="button" data-act="reply"><i class="ti ti-corner-up-left"></i> Responder</button><button type="button" data-act="react"><i class="ti ti-mood-smile"></i> Reaccionar${m.reaccion_agente?' · '+esc(m.reaccion_agente):''}</button>${m.cuerpo&&!/^\[?(imagen|audio|video|documento|sticker)\]?$/i.test(String(m.cuerpo).trim())?'<button type="button" data-act="copy"><i class="ti ti-copy"></i> Copiar</button>':''}<button type="button" data-act="forward"><i class="ti ti-share-3"></i> Reenviar</button><button type="button" data-act="star"><i class="ti ${m.destacado_at?'ti-star-off':'ti-star'}"></i> ${m.destacado_at?'Quitar destacado':'Destacar'}</button><button type="button" data-act="info"><i class="ti ti-info-circle"></i> Info del mensaje</button><div class="sep"></div>${m.direccion==='out'&&m.estado==='fallido'?'<button type="button" class="danger" data-act="retry"><i class="ti ti-refresh"></i> Reintentar</button>':''}<button type="button" class="danger" data-act="hide"><i class="ti ti-trash"></i> Borrar para mí</button>`;
+    p.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;e.stopPropagation();const a=b.dataset.act;if(a==='cobrar'&&m){closeMsgMenus();cobrarDesdeMensaje(m);}else if(a==='reply'){closeMsgMenus();try{window.nxWaSetRespuesta?.(id);}catch(_e){}}else if(a==='react'&&m){reactionTray(p,m,id);}else if(a==='copy'&&m){closeMsgMenus();try{await navigator.clipboard.writeText(String(m.cuerpo||''));toastSafe('ok','Mensaje copiado');}catch(_e){toastSafe('err','No se pudo copiar');}}else if(a==='forward'&&m){closeMsgMenus();openForward(m);}else if(a==='star'&&m){closeMsgMenus();toggleStar(m);}else if(a==='hide'&&m){closeMsgMenus();confirmHide(m);}else if(a==='info'&&m){closeMsgMenus();openInfo(m);}else if(a==='retry'){closeMsgMenus();try{window.nxWaReintentarMensaje?.(id);}catch(_e){}}});
     placeMenu(p,id);setTimeout(()=>document.addEventListener('click',()=>p.remove(),{once:true}),0);
   }
   // Destacar / quitar destacado: RPC whatsapp_mensaje_destacar (compartido para toda la agencia).
