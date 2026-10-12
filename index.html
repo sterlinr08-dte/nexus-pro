@@ -5460,6 +5460,25 @@ html.tema-claro #loginScreen .lshield i{filter:none!important;color:#BFDBFE!impo
 html.tema-claro #tbCob .nxCobCard .cbAg i:not([style]){color:inherit!important;opacity:.8}
 /* Cobros: COBRAR de quien está al día, suave y plano (sin la base y el halo del botón principal; mismo criterio del grafito) */
 html.tema-claro body #app #tbCob .nxCobCard.u-ok .cbBtn.cobrar:not(:disabled):not(#nxb):not(#nxb):not(#nxb){background:#ECFDF3!important;background-image:none!important;border-color:#BBF7D0!important;color:#15803D!important;box-shadow:none!important}
+/* ── 11 · contraste: lo que la medición de qa-tema-glass dejaba bajo 4.5:1 en el modo claro ── */
+html.tema-claro .notif-badge{background:#DC2626!important}
+html.tema-claro body nav#sbEl.sb .ss{color:#475569!important}
+html.tema-claro.nx-ig #nxIG .nxIG-days .o{color:#64748B}
+html.tema-claro.nx-ig #nxIG .nxIG-days .g{color:#166534}
+html.tema-claro.nx-ig #nxIG .nxIG-pc.hl p{color:#EFF6FF}
+html.tema-claro.nx-ig #nxIG .nxIG-pc.hl .nxIG-tag{background:#1E40AF!important;color:#fff!important}
+html.tema-claro.nx-ig #nxIG .nxIG-pc.hl .nxIG-av:not(#tgc){background:rgba(255,255,255,.1)!important}
+html.tema-claro .ncf-badge{background:#FFFBEB!important;color:#B45309!important;border-color:#FDE68A!important}
+html.tema-claro .bC4,html.tema-claro .badge.bC4{color:#B45309!important}
+/* ventanas neumórficas (pago, nuevo cliente, usuarios…): el gris de rótulos y opciones un paso más oscuro (#8791a3 = 3:1) */
+html.tema-claro :is(#mAbono,#mCli,#mInhab,#mEmp,#mAgente,#mAsiento,#mUsuario,#mHistCobros) .modal{--nm-tx2:#5B6577}
+/* Atención prioritaria y textos que van directo sobre la escena */
+html.tema-claro .nxSf .fc-days{background:#DC2626}html.tema-claro .nxSf .sf-fancard.warn .fc-days{background:#B45309}
+html.tema-claro .nxSf .fc-rank,html.tema-claro .nxSf .fc-ars{color:#475569}
+html.tema-claro #cnt .nxSf .sf-fansub,html.tema-claro #cnt .nxSf .sf-fancnt,html.tema-claro #cnt .nxCrmHead p{color:#475569!important}
+html.tema-claro #cnt .nxOpsDue.bad{color:#B91C1C!important}
+html.tema-claro #cnt #v-waInbox .nxCrmHomeHead p,html.tema-claro #cnt #v-waInbox .nxWaListCount{color:#475569!important}
+html.tema-claro #cnt #v-waInbox .nxCrmHomeBadge{color:#15803D!important}
 /* ── 10 · «reducir transparencia» (iPhone → Accesibilidad): todo el cristal pasa a blanco sólido ── */
 @media (prefers-reduced-transparency:reduce){
   html.tema-claro{--tgc-card:#FFFFFF}
