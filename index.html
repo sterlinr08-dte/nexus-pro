@@ -5576,6 +5576,96 @@ html.tema-claro #cnt .nxSf .sf-fansub,html.tema-claro #cnt .nxSf .sf-fancnt,html
 html.tema-claro #cnt .nxOpsDue.bad{color:#B91C1C!important}
 html.tema-claro #cnt #v-waInbox .nxCrmHomeHead p,html.tema-claro #cnt #v-waInbox .nxWaListCount{color:#475569!important}
 html.tema-claro #cnt #v-waInbox .nxCrmHomeBadge{color:#15803D!important}
+/* ── 12 · Préstamos y Punto de venta: contraste (dueño 12-oct: «Ahora mejora el contraste de Préstamos y Punto de venta»). Solo el claro;
+   el oscuro y el clásico de antes no cambian. Medido con scripts/qa-claro-modulos.mjs: cada texto contra su fondo real, pantalla por pantalla.
+   · rótulos grises (#94a3b8 ≈ 2.4:1, #9aa0ba, #8b85a8 del menú de abajo) → #5B6577 (≥ 5.2:1 en los fondos claros);
+   · textos de apoyo (#64748b, #666d8c) → #475569 / #4E5470 (≥ 6.3:1);
+   · verde, ámbar, naranja, rojo, cian, verde azulado y rosado de cifras y etiquetas → su tono 700 (≥ 4.5:1, también sobre su fondo pálido);
+   · el acento verde azulado (#1ca2a4) de pestañas y píldoras activas → el azul NEXUS del claro;
+   · el héroe morado: rótulos en blanco pleno (antes al 75–90 %). ── */
+/* fichas de color de los dos módulos (el resto de sus reglas las usa) */
+html.tema-claro .nxFPShell:not(#_n){--nf-ink2:#4E5470}
+html.tema-claro :is(#v-pos,#v-multiempresa,.nxPf,.modal.nxPrForm):not(#_n),html.tema-claro body.org-tienda:not(#_n){--nx-steel:#475569;--nx-mute:#5B6577}
+html.tema-claro .nxPf:not(#_n){--pf-green:#15803D;--pf-red:#B91C1C;--pf-orange:#B45309;--pf-pill-accent:#1D4ED8}
+/* Préstamos: rótulos, subtítulos y notas → #5B6577; textos de apoyo y encabezados de tabla → #475569 (lo que el claro ya dejaba oscuro en las
+   celdas de las tablas —fecha próxima, días, cédula, último pago— no se toca) */
+html.tema-claro :is(.nxFP-secTitle,.nxFP-listHead,.nxFP-gLbl,.nxFP-dlbl,.nxFP-dsub,.nxFP-topSub,.nxFP-kpiLbl,.nxFP-kpiSub,.nxFP-legPct,.nxFP-pgInfo,.nxFP-popHead span,.nxFP-popGrp,.nxFP-repEmpty,.nxFP-repFootLbl,.nxFP-repMuted,.nxFP-repPerNote,.nxFP-repTit span,.nxFP-tSub,.nxFP-cobEmpty,.nxFP-cobSideRow.big span,.nxPrTlTxt span,.ev-asfch,.ev-aslbl,.ev-cdlbl,.ev-cliempty,.ev-gsub,.ev-hint,.ev-opt,.ev-slmm,.ev-slnum span,.hc-cdl,.hc-empty,.hc-est,.hc-hglbl,.hc-kl,.hc-note,.hc-sub):not(#_n){color:#5B6577!important}
+html.tema-claro :is(.nxFP-tbl.nxFP-cobTbl td,.hc-tbl tbody td):not(#_n)::before{color:#5B6577!important}
+html.tema-claro :is(.nxFP-cardMeta,.nxFP-empty p,.nxFP-cobSideTit,.nxFP-tbl thead th,.hc-tbl thead th,.nxFP-tAcc button,.nxFP-popBack,.ev-paso,.ev-qlbl,.ev-qrow,.ev-rsrow,.ev-sdesc,.hc-eye,.hc-leg,.hc-prow,.hc-recsub,.hc-scorerow,.hc-tlm):not(#_n){color:#475569!important}
+html.tema-claro .nxFP-menuBtn:not(#_n){color:#64748B!important}
+html.tema-claro :is(.nxPrAcc.wa,.nxPrAcc.wa i):not(#_n){color:#15803D!important}html.tema-claro :is(.nxPrAcc.del,.nxPrAcc.del i):not(#_n){color:#B91C1C!important}
+/* pestañas y periodos: la inactiva en gris oscuro, la activa en azul (antes verde azulado ≈ 2.4:1 sobre el gris de la píldora) */
+html.tema-claro :is(.nxFP-tab,.ev-tab,.hc-tab,.nxFP-perBtn):not(.on):not(#_n){color:#475569!important}
+html.tema-claro :is(.nxFP-tab,.ev-tab,.hc-tab).on:not(#_n){color:#1D4ED8!important}
+html.tema-claro .nxFP-tab .nxFP-tabN:not(#_n){color:#475569!important}html.tema-claro .nxFP-tab.on .nxFP-tabN:not(#_n){background:rgba(29,78,216,.12)!important;color:#1D4ED8!important}
+/* menú de abajo en el celular (Dashboard · Cobranza · Cuotas · Clientes · Más) */
+html.tema-claro .nxFP-dockBtn:not(.on):not(#_n){color:#565D78!important}
+/* héroe morado de Financiamiento y el azul de Cuotas del POS: rótulos y tendencia en blanco pleno (antes al 75–90 %, o verde menta ≈ 3.2:1) */
+html.tema-claro :is(.nxFP-hAeb,.nxFP-hAsub,.nxFP-hAsl,.nxFP-heroLbl,.nxFP-heroSub,.nxFP-heroTrend,.nxFP-heroStatLbl):not(#_n){opacity:1!important}
+html.tema-claro .nxFP-hAsub b:not(#_n){color:#fff!important}html.tema-claro .nxFP-heroTrend .up:not(#_n){color:#ECFDF5!important}html.tema-claro .nxFP-heroTrend .down:not(#_n){color:#FEE2E2!important}
+@media (max-width:640px){html.tema-claro .nxFP-hAst .nxFP-hAsl:not(#_n){color:#5B6577!important}}
+/* estados */
+html.tema-claro :is(.nxFP-badge.activo,.nxFP-tBadge.activo,.nxFP-tBadge.aldia):not(#_n){color:#166534!important}
+html.tema-claro .nxFP-badge.pagado:not(#_n){color:#1D4ED8!important}
+html.tema-claro :is(.nxFP-badge.vencido,.nxFP-tBadge.morareciente):not(#_n){color:#92400E!important}html.tema-claro .nxFP-tBadge.porvencer:not(#_n){color:#854D0E!important}
+html.tema-claro :is(.nxFP-badge.en_mora,.nxFP-tBadge.vencido,.nxFP-tdn,.nxFP-repFootVal.danger,.nxFP-gVal.danger,.nxFP-tDiasV.late,.nxFP-tVencido.late):not(#_n){color:#B91C1C!important}
+html.tema-claro .nxFP-badge.cancelado:not(#_n){color:#475569!important}html.tema-claro .nxFP-tup:not(#_n){color:#15803D!important}
+/* iniciales de los clientes: los colores claros de la paleta pasan a su tono 700 (blanco ≥ 5:1). El avatar pequeño de Cobranza lleva
+   la clase «sm», que también es la de tarjeta (.sm) en Seguros: la capa de superficies le ponía fondo blanco y las iniciales blancas desaparecían. */
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#4f46e5"],[style*="background:#4f46e5;"],[style^="background: rgb(79, 70, 229)"],[style*="; background: rgb(79, 70, 229)"]):not(#_n){background:#4F46E5!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#7c3aed"],[style*="background:#7c3aed;"],[style^="background: rgb(124, 58, 237)"],[style*="; background: rgb(124, 58, 237)"]):not(#_n){background:#7C3AED!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#0891b2"],[style*="background:#0891b2;"],[style^="background: rgb(8, 145, 178)"],[style*="; background: rgb(8, 145, 178)"]):not(#_n){background:#0E7490!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#059669"],[style*="background:#059669;"],[style^="background: rgb(5, 150, 105)"],[style*="; background: rgb(5, 150, 105)"]):not(#_n){background:#047857!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#d97706"],[style*="background:#d97706;"],[style^="background: rgb(217, 119, 6)"],[style*="; background: rgb(217, 119, 6)"]):not(#_n){background:#B45309!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#dc2626"],[style*="background:#dc2626;"],[style^="background: rgb(220, 38, 38)"],[style*="; background: rgb(220, 38, 38)"]):not(#_n){background:#DC2626!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#db2777"],[style*="background:#db2777;"],[style^="background: rgb(219, 39, 119)"],[style*="; background: rgb(219, 39, 119)"]):not(#_n){background:#BE185D!important;background-image:none!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style$="background:#0284c7"],[style*="background:#0284c7;"],[style^="background: rgb(2, 132, 199)"],[style*="; background: rgb(2, 132, 199)"]):not(#_n){background:#0369A1!important;background-image:none!important}
+html.tema-claro .nxFP-avatar.sm:not(#_n){-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;box-shadow:none!important}
+/* Punto de venta: los botones pequeños («ab … sm») sufrían el mismo choque con .sm: «Nueva cotización», «Nuevo cliente», «Guardar ajustes»…
+   salían blancos sobre blanco. Vuelven a su color: azul, verde y rojo sólidos con letra blanca; el neutro, blanco con borde. */
+html.tema-claro .nxPf .ab.sm:not(#_n){background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}
+html.tema-claro .nxPf .ab.sm.g1:not(#_n){background-color:var(--pf-green)!important;color:#fff!important;border:0!important}
+html.tema-claro .nxPf .ab.sm.g2:not(#_n){background-color:var(--pf-blue)!important;color:#fff!important;border:0!important}
+html.tema-claro .nxPf .ab.sm.g4:not(#_n){background-color:var(--pf-red)!important;color:#fff!important;border:0!important}
+html.tema-claro .nxPf .ab.sm.g3:not(#_n){background-color:#fff!important;color:#334155!important;border:1.5px solid rgba(15,23,42,.14)!important}
+/* botón principal azul de los dos módulos (Abrir caja, Ajustar inventario, Registrar pago…): el brillo de arriba del acabado «nivel pro»
+   lo aclaraba detrás de la letra (4.46:1); en estos módulos el azul va un tono más hondo y el texto queda ≥ 5.5:1 */
+html.tema-claro :is(#v-pos,.nxPf,.nxPrForm) .btn.bc1:not(:disabled):not(#_n):not(#_n):not(#_n):not(#_n){background-color:#1D4ED8!important}  /* 4 × :not(#_n): le gana a la regla general de los botones «nivel pro» (§6) */
+@media (hover:hover){html.tema-claro :is(#v-pos,.nxPf,.nxPrForm) .btn.bc1:not(:disabled):hover:not(#_n):not(#_n):not(#_n):not(#_n){background-color:#1E40AF!important}}
+/* «SMS» de un cliente que no aceptó avisos automáticos: antes azul al 50 % (≈ 2.1:1); ahora gris entero, se lee y se nota que no está disponible */
+html.tema-claro .nxPf .ab[data-consiente="0"]:not(#_n){opacity:1!important;color:#5B6577!important}
+/* Punto de venta: rótulos con color fijo en su CSS */
+html.tema-claro :is(.nxAppSecT,.nxTVEmpty,.nxUnivHint,.nxUnivCat,.nxRepNum span):not(#_n),html.tema-claro :is(#v-pos,.nxPf) :is(.plab,.dtit,.npfx,.docTbl thead th,.keys):not(#_n){color:#5B6577!important}
+html.tema-claro :is(.nxUnivRowS,.nxTKpiL,.nxTKpiS,.nxTVNm small,.nxTPanelH small,.nxProdFootTxt):not(#_n){color:#475569!important}
+html.tema-claro :is(#v-pos,.nxPf) :is(.chip,.vchip,.seg button):not(.on):not(#_n),html.tema-claro :is(.nxInvPill,.nxFacSubTab,.entTab,.nxClaveTab):not(.on):not(#_n){color:#475569!important}
+html.tema-claro :is(#v-pos,.nxPf) :is(.chip,.vchip,.seg button).on:not(#_n),html.tema-claro :is(.nxInvPill,.nxFacSubTab,.entTab,.nxClaveTab).on:not(#_n){color:#1D4ED8!important}
+html.tema-claro .nxInvPill span:not(#_n){opacity:1!important}
+html.tema-claro .vstkb.ok:not(#_n){color:#166534!important}html.tema-claro .vstkb.low:not(#_n){color:#92400E!important}html.tema-claro .vstkb.out:not(#_n){color:#B91C1C!important}
+/* reparaciones: el color de cada columna (Recibido, Diagnóstico, Listo…) viene en la variable --rc del style="" */
+html.tema-claro :is([style*="--rc:#64748b"],[style*="--rc: #64748b"]):not(#_n){--rc:#475569!important}
+html.tema-claro :is([style*="--rc:#d97706"],[style*="--rc: #d97706"]):not(#_n){--rc:#B45309!important}
+html.tema-claro :is([style*="--rc:#16a34a"],[style*="--rc: #16a34a"]):not(#_n){--rc:#15803D!important}
+/* Punto de venta: menú lateral oscuro — los títulos de sección (PRINCIPAL, INVENTARIO…) y los textos chicos un paso más claros */
+html.tema-claro body .nxTSide .nxTSec:not(#_n){color:rgba(231,234,242,.58)!important}
+html.tema-claro body .nxTSide :is(.nxTBiz small,.nxTUser span):not(#_n){color:rgba(231,234,242,.66)!important}
+/* Punto de venta en el celular: el menú cerrado se asomaba como una franja oscura de 16 px a la izquierda (el #v-pos lleva transform y
+   filter de la entrada, así que el cajón «fijo» se mide desde el panel y no desde la pantalla). Cerrado queda oculto después de salir. */
+@media (max-width:860px){html.tema-claro #v-pos .nxTSide:not(.open):not(#_n){visibility:hidden;transition:transform .26s cubic-bezier(.4,0,.2,1),visibility 0s linear .26s}}
+/* Historial: la venta anulada ya no se ve al 50 % (texto ilegible); queda en gris con el total tachado y su etiqueta ANULADA */
+html.tema-claro #histBody tr[style*="opacity:.5"]:not(#_n),html.tema-claro #histBody tr[style*="opacity: 0.5"]:not(#_n){opacity:1!important;background:#F8FAFC}
+html.tema-claro #histBody :is(tr[style*="opacity:.5"],tr[style*="opacity: 0.5"]) > td:not(#_n){color:#5B6577!important}html.tema-claro #histBody :is(tr[style*="opacity:.5"],tr[style*="opacity: 0.5"]) > td:nth-child(5):not(#_n){text-decoration:line-through}
+/* colores escritos en el HTML de los dos módulos (style="color:…"), solo dentro de ellos. Las celdas de tabla (td, th) quedan como estaban:
+   el claro ya las deja en tinta oscura. */
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#94a3b8"],[style*=";color:#94a3b8"],[style^="color: rgb(148, 163, 184)"],[style*="; color: rgb(148, 163, 184)"],[style^="color:#9ca3af"],[style*=";color:#9ca3af"],[style^="color: rgb(156, 163, 175)"],[style*="; color: rgb(156, 163, 175)"],[style^="color:#a0aec0"],[style*=";color:#a0aec0"],[style^="color: rgb(160, 174, 192)"],[style*="; color: rgb(160, 174, 192)"]):not(td):not(th):not(#_n){color:#5B6577!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#64748b"],[style*=";color:#64748b"],[style^="color: rgb(100, 116, 139)"],[style*="; color: rgb(100, 116, 139)"]):not(td):not(th):not(#_n){color:#475569!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#16a34a"],[style*=";color:#16a34a"],[style^="color: rgb(22, 163, 74)"],[style*="; color: rgb(22, 163, 74)"],[style^="color:#22c55e"],[style*=";color:#22c55e"],[style^="color: rgb(34, 197, 94)"],[style*="; color: rgb(34, 197, 94)"],[style^="color:#10b981"],[style*=";color:#10b981"],[style^="color: rgb(16, 185, 129)"],[style*="; color: rgb(16, 185, 129)"]):not(td):not(th):not(#_n){color:#15803D!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#059669"],[style*=";color:#059669"],[style^="color: rgb(5, 150, 105)"],[style*="; color: rgb(5, 150, 105)"]):not(td):not(th):not(#_n){color:#047857!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#d97706"],[style*=";color:#d97706"],[style^="color: rgb(217, 119, 6)"],[style*="; color: rgb(217, 119, 6)"],[style^="color:#f59e0b"],[style*=";color:#f59e0b"],[style^="color: rgb(245, 158, 11)"],[style*="; color: rgb(245, 158, 11)"],[style^="color:#eab308"],[style*=";color:#eab308"],[style^="color: rgb(234, 179, 8)"],[style*="; color: rgb(234, 179, 8)"],[style^="color:#ca8a04"],[style*=";color:#ca8a04"],[style^="color: rgb(202, 138, 4)"],[style*="; color: rgb(202, 138, 4)"]):not(td):not(th):not(#_n){color:#B45309!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#ea580c"],[style*=";color:#ea580c"],[style^="color: rgb(234, 88, 12)"],[style*="; color: rgb(234, 88, 12)"],[style^="color:#f97316"],[style*=";color:#f97316"],[style^="color: rgb(249, 115, 22)"],[style*="; color: rgb(249, 115, 22)"]):not(td):not(th):not(#_n){color:#C2410C!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#dc2626"],[style*=";color:#dc2626"],[style^="color: rgb(220, 38, 38)"],[style*="; color: rgb(220, 38, 38)"],[style^="color:#ef4444"],[style*=";color:#ef4444"],[style^="color: rgb(239, 68, 68)"],[style*="; color: rgb(239, 68, 68)"],[style^="color:#e11d48"],[style*=";color:#e11d48"],[style^="color: rgb(225, 29, 72)"],[style*="; color: rgb(225, 29, 72)"]):not(td):not(th):not(#_n){color:#B91C1C!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#0891b2"],[style*=";color:#0891b2"],[style^="color: rgb(8, 145, 178)"],[style*="; color: rgb(8, 145, 178)"],[style^="color:#06b6d4"],[style*=";color:#06b6d4"],[style^="color: rgb(6, 182, 212)"],[style*="; color: rgb(6, 182, 212)"],[style^="color:#0284c7"],[style*=";color:#0284c7"],[style^="color: rgb(2, 132, 199)"],[style*="; color: rgb(2, 132, 199)"]):not(td):not(th):not(#_n){color:#0E7490!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#0d9488"],[style*=";color:#0d9488"],[style^="color: rgb(13, 148, 136)"],[style*="; color: rgb(13, 148, 136)"],[style^="color:#14b8a6"],[style*=";color:#14b8a6"],[style^="color: rgb(20, 184, 166)"],[style*="; color: rgb(20, 184, 166)"],[style^="color:#1ca2a4"],[style*=";color:#1ca2a4"],[style^="color: rgb(28, 162, 164)"],[style*="; color: rgb(28, 162, 164)"]):not(td):not(th):not(#_n){color:#0F766E!important}
+html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nxPr"],#evAmort,#nxFPDockHost) :is([style^="color:#db2777"],[style*=";color:#db2777"],[style^="color: rgb(219, 39, 119)"],[style*="; color: rgb(219, 39, 119)"],[style^="color:#ec4899"],[style*=";color:#ec4899"],[style^="color: rgb(236, 72, 153)"],[style*="; color: rgb(236, 72, 153)"]):not(td):not(th):not(#_n){color:#BE185D!important}
 /* ── 10 · «reducir transparencia» (iPhone → Accesibilidad): todo el cristal pasa a blanco sólido ── */
 @media (prefers-reduced-transparency:reduce){
   html.tema-claro{--tgc-card:#FFFFFF}
@@ -9504,7 +9594,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.22';
+const APP_VERSION='59.23';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

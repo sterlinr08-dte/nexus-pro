@@ -1,7 +1,18 @@
 {
-  "version": "59.22",
+  "version": "59.23",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.23",
+      "fecha": "2026-10-12",
+      "notas": [
+        "Modo claro: Préstamos y Punto de venta se leen mejor. Los rótulos grises (por ejemplo «Interés cobrado», «Lista de préstamos», las categorías de los productos o «Sin ventas hoy todavía») ahora son más oscuros, y los montos y etiquetas en verde, naranja y rojo usan un tono más firme.",
+        "Punto de venta: los botones «Nueva cotización», «Nuevo cliente», «Nueva entidad», «Nuevo apartado», «Guardar ajustes» y otros salían blancos sobre blanco y no se veían en el modo claro; ya salen en azul, verde o rojo.",
+        "Préstamos → Cobranza: las iniciales de los clientes vuelven a verse. Las pestañas y filtros activos de los dos módulos se marcan en azul, como el resto del modo claro.",
+        "Punto de venta en el celular: el menú ya no se asoma como una franja oscura a la izquierda. En el Historial, la venta anulada se lee (gris, con el total tachado y su etiqueta ANULADA).",
+        "El modo oscuro, el Premium y el Liquid Glass no cambian."
+      ]
+    },
     {
       "version": "59.22",
       "fecha": "2026-10-12",
