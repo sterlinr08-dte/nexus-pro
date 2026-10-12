@@ -35,7 +35,7 @@
 #v-waInbox .nxWaLatestCount{position:absolute;top:-7px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#2563eb;color:#fff;font-size:9.5px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 2px rgba(10,22,40,.9)}
 #v-waInbox .nxWaLatestCount:empty{display:none}
 #v-waInbox .nxWaEmpty.nxWaEmptyPolished{display:grid;place-items:center;align-content:center;gap:7px;min-height:160px;color:#64748b}
-#v-waInbox .nxWaEmpty.nxWaEmptyPolished:before{content:"\ea4a";font-family:"tabler-icons";width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(37,99,235,.07);color:#2563eb;font-size:17px}
+#v-waInbox .nxWaEmpty.nxWaEmptyPolished:before{content:"\\ea4a";font-family:"tabler-icons";width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(37,99,235,.07);color:#2563eb;font-size:17px}
 body.tema-premium #v-waInbox .nxWaListCaption b{color:#f8fafc}
 body.tema-premium #v-waInbox .nxWaListCaption span{color:#9fb0c7}
 body.tema-premium #v-waInbox .nxWaSearchToggle,body.tema-premium #v-waInbox .nxWaLatest{background:rgba(15,23,42,.72);border-color:rgba(148,163,184,.13);color:#93c5fd}

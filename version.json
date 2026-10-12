@@ -1,7 +1,21 @@
 {
-  "version": "59.21",
+  "version": "59.22",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.22",
+      "fecha": "2026-10-12",
+      "notas": [
+        "Modo claro nuevo: es el mismo diseño del modo oscuro, en blanco. Menú de íconos que se abre con su píldora azul, cabecera con la búsqueda, cajón ☰ de cristal en el celular, ventanas con la ✕ redonda y los botones con acabado «nivel pro».",
+        "El fondo es la misma oficina de siempre, ahora suave y borrosa con un velo blanco, para que todo se lea bien. Tarjetas, tablas y ventanas en blanco limpio, sin los bordes morados ni los botones metálicos.",
+        "Un solo color de acento, el azul NEXUS, como en el modo oscuro. Los botones de la barra de arriba ya no son de colores (verde, naranja y morado): son de cristal claro, y el título de la pantalla se ve también en el celular.",
+        "El Inicio en modo claro también es claro (antes salía con el panel azul oscuro). La pantalla de carga también es clara: ya no hay un destello oscuro al abrir.",
+        "Íconos planos en el modo claro, como en el oscuro (sin las bolitas 3D de colores).",
+        "En Configuración → Apariencia, la opción se llama ahora «Claro». El botón sol/luna dice a qué modo lleva.",
+        "Arreglos: en WhatsApp, donde no hay mensajes salía el texto «ea4a» en vez del ícono; el botón «Reintentar» de un mensaje que no salió ahora se lee; la píldora azul del menú ahora sigue a la pantalla abierta (al entrar a WhatsApp, CRM o Solicitudes se quedaba marcada la anterior).",
+        "El modo oscuro, el Premium y el Liquid Glass no cambian."
+      ]
+    },
     {
       "version": "59.21",
       "fecha": "2026-10-11",

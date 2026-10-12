@@ -11933,7 +11933,8 @@
   // 58.92 (30-sep-2026, dueño: «quita esos iconos 3D, ponlos contemporáneos al tema actual»): con el tema
   // Glass oscuro los íconos quedan planos (línea Tabler); se quita la bolita de color que este bloque pinta
   // en línea con !important (ninguna hoja de estilos puede taparla). Los otros temas siguen igual.
-  function oscuro(){ try { return document.documentElement.classList.contains('tema-glass-oscuro'); } catch (e) { return false; } }
+  // 59.22: el modo claro (html.tema-claro) también lleva los íconos planos del grafito
+  function oscuro(){ try { var c = document.documentElement.classList; return c.contains('tema-glass-oscuro') || c.contains('tema-claro'); } catch (e) { return false; } }
   function aplanar(root){
     var list = (root || document).querySelectorAll('i.ti[data-nxc]');
     for (var i = 0; i < list.length; i++) { var el = list[i]; el.style.removeProperty('background'); el.style.removeProperty('box-shadow'); el.removeAttribute('data-nxc'); }

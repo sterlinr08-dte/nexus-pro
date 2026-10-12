@@ -8,25 +8,31 @@
      html.tema-glass-oscuro de inmediato. Sin preferencia guardada = tema por defecto (glass-oscuro).
      Las reglas viven en el bloque style#nxTemaGlassOscuro al final del <head>, todas bajo html.tema-glass-oscuro.
      INTERRUPTOR GENERAL: NX_TEMA_GLASS_OSCURO=false → nadie lo ve, el tema por defecto vuelve a «clasico»
-     y la opción desaparece de Configuración. En un solo equipo: localStorage.setItem('nx_tgo_off','1'). -->
-<script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true;(function(){var d=document.documentElement,t=null;
-try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;}catch(e){}
+     y la opción desaparece de Configuración. En un solo equipo: localStorage.setItem('nx_tgo_off','1').
+     59.22 — MODO CLARO (el «Clásico» que pone el botón sol/luna): html.tema-claro, también antes del primer pintado. Es el
+     gemelo claro del grafito: misma estructura (riel, cabecera, cajón, ventanas, íconos, botones) y su propia paleta en
+     style#nxTemaClaro. INTERRUPTOR: NX_TEMA_CLARO=false → el Clásico vuelve a ser el de antes (59.21); en un solo equipo:
+     localStorage.setItem('nx_claro_off','1'). -->
+<script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true,NX_TEMA_CLARO=true;(function(){var d=document.documentElement,t=null;
+try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;if(localStorage.getItem('nx_claro_off')==='1')NX_TEMA_CLARO=false;}catch(e){}
 window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
-d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');
+d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
 /* Foto de fondo (58.90): se pide aquí mismo, solo con este tema; mientras llega se ve el degradado del CSS y, al
    terminar de cargar, html.tgo-foto la muestra con un fundido (capa fija: no mueve nada de la página). */
 /* 58.90 (velocidad): se pide después de `load` y en un momento libre: durante la carga la tapa el splash y descargarla/
    decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
-window.nxTgoFoto=function(){if(window.__nxTgoFoto)return;window.__nxTgoFoto=1;
-var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add('tgo-foto');};
-i.src=(window.innerWidth<=768?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after */
+/* 59.22: cada tema pide la suya una sola vez: grafito → html.tgo-foto; modo claro (la oficina de siempre, ya desenfocada) → html.tgc-foto */
+window.nxTgoFoto=function(){var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
+var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add(claro?'tgc-foto':'tgo-foto');};
+var m=window.innerWidth<=768;i.src=claro?(m?'assets/fondo-oficina-claro-movil.webp':'assets/fondo-oficina-claro.webp'):(m?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after (59.22: y html.tgc-foto::after) */
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
-if(t==='glass-oscuro')window.nxTgoFoto();
-/* 58.97: color de arranque del tema (= --tgo-bg del bloque style#nxTemaGlassOscuro; así la intensidad del fondo se cambia en un solo sitio) */
-window.nxTgoBg=function(){var c='';try{c=getComputedStyle(d).getPropertyValue('--tgo-bg').trim();}catch(e){}return c||'#0E1013';};})();</script>
+if(t==='glass-oscuro'||d.classList.contains('tema-claro'))window.nxTgoFoto();
+/* 58.97: color de arranque del tema (= --tgo-bg del bloque style#nxTemaGlassOscuro; así la intensidad del fondo se cambia en un solo sitio).
+   59.22: en el modo claro, --tgo-bg es el de style#nxTemaClaro. */
+window.nxTgoBg=function(){var c='';try{c=getComputedStyle(d).getPropertyValue('--tgo-bg').trim();}catch(e){}return c||(d.classList.contains('tema-claro')?'#EEF1F5':'#0E1013');};})();</script>
 <script id="nxTituloMovil">/* 58.93 — título de la barra del celular: el Buzón no pasa por nav() y dejaba el título de la pantalla anterior
    (TITLES no tenía waInbox); y los títulos largos se achican hasta caber (mín. 11 px) en vez de cortarse. */
 (function(){
@@ -3198,7 +3204,7 @@ html.tema-glass-oscuro{
   background:var(--tgo-bg)!important;
 }
 /* ── escena: degradado cálido inmediato (marcador de posición) + foto real desenfocada que entra con fundido ── */
-html.tema-glass-oscuro::before{
+html:is(.tema-glass-oscuro,.tema-claro)::before{
   content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
   /* 58.92: escena azul noche como el login (marcador mientras llega la foto) */
   background:radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%),linear-gradient(180deg,var(--tgo-base-1) 0%,var(--tgo-base-2) 60%,var(--tgo-base-3) 100%);
@@ -3206,20 +3212,20 @@ html.tema-glass-oscuro::before{
 /* La foto viene YA desenfocada en el archivo (desenfoque 18 px + saturación 1.05 horneados con Pillow, 17 KB / 9 KB):
    sin filter en CSS, la capa fija no se vuelve a desenfocar en cada cuadro. Capas propias (will-change) para que el
    desplazamiento no repinte el fondo. */
-html.tema-glass-oscuro::before{will-change:transform}
+html:is(.tema-glass-oscuro,.tema-claro)::before{will-change:transform}
 /* La capa de la foto no tiene imagen hasta html.tgo-foto (así el CSS no la descarga ni la pinta durante la carga) */
-html.tema-glass-oscuro::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
+html:is(.tema-glass-oscuro,.tema-claro)::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s ease}
 html.tema-glass-oscuro.tgo-foto::after{opacity:1;will-change:opacity;
   /* 58.92: mismo fondo que la pantalla de inicio de sesión (login-bg.jpg, nítido) con el mismo velo azul noche */
   /* 58.97: viñeta y velo con las variables de intensidad (--tgo-vineta, --tgo-velo-a/b) */
   background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-grafito.webp) center/cover no-repeat;
 }
 @media (max-width:768px){html.tema-glass-oscuro.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-login-movil-grafito.webp) center/cover no-repeat}}
-@media (prefers-reduced-motion:reduce){html.tema-glass-oscuro::after{transition:none}}
-html.tema-glass-oscuro #nxBgPhoto{display:none!important}
-html.tema-glass-oscuro body,html.tema-glass-oscuro #app,html.tema-glass-oscuro .abody,html.tema-glass-oscuro .main,html.tema-glass-oscuro .content{background:transparent!important}
+@media (prefers-reduced-motion:reduce){html:is(.tema-glass-oscuro,.tema-claro)::after{transition:none}}
+html:is(.tema-glass-oscuro,.tema-claro) #nxBgPhoto{display:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body,html:is(.tema-glass-oscuro,.tema-claro) #app,html:is(.tema-glass-oscuro,.tema-claro) .abody,html:is(.tema-glass-oscuro,.tema-claro) .main,html:is(.tema-glass-oscuro,.tema-claro) .content{background:transparent!important}
 /* splash y cargador: misma escena (sin salto de color al entrar a la app) */
-html.tema-glass-oscuro #nxSplash,html.tema-glass-oscuro #nxLoader{background:var(--tgo-bg) radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%)!important}
+html:is(.tema-glass-oscuro,.tema-claro) #nxSplash,html:is(.tema-glass-oscuro,.tema-claro) #nxLoader{background:var(--tgo-bg) radial-gradient(60% 50% at 50% 40%,var(--tgo-glow),transparent 70%)!important}
 html.tema-glass-oscuro .nxs-badge i{color:#93C5FD}
 /* login: tarjeta de cristal oscuro con el acento azul */
 html.tema-glass-oscuro .lbox{background:rgba(30,32,38,.74)!important;border-color:rgba(255,255,255,.10)!important;border-radius:24px!important}
@@ -3242,123 +3248,123 @@ html.tema-glass-oscuro body nav#sbEl.sb .spring-glow{display:none!important}
 @media (min-width:769px){
   /* El cristal vive en ::before: sin backdrop-filter en la nav, los paneles flotantes y tooltips (position:fixed)
      se ubican respecto a la ventana y no quedan recortados. */
-  html.tema-glass-oscuro body nav#sbEl.sb,html.tema-glass-oscuro body nav#sbEl.sb.col,html.tema-glass-oscuro body.tema-glass nav#sbEl.sb{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.col,html:is(.tema-glass-oscuro,.tema-claro) body.tema-glass nav#sbEl.sb{
     width:76px!important;min-width:76px!important;flex:0 0 76px!important;margin:12px 0 12px 12px!important;height:calc(100% - 24px)!important;
     border-radius:24px!important;border:0!important;background:transparent!important;box-shadow:none!important;
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important;position:relative!important;z-index:60!important;
     isolation:isolate;transition:none!important;padding-top:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before{
     content:''!important;display:block!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;z-index:-1!important;
     border-radius:24px;border:1px solid var(--tgo-line);background:var(--tgo-glass)!important;box-shadow:var(--tgo-panel-shadow);
     -webkit-mask-image:none!important;mask-image:none!important;-webkit-filter:none!important;filter:none!important;
     -webkit-backdrop-filter:var(--tgo-blur);backdrop-filter:var(--tgo-blur)}
-  html.tema-glass-oscuro body nav#sbEl.sb::after{display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top{justify-content:center!important;padding:16px 0 10px!important;background:transparent!important;border:0!important;margin:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top>:not(.sb-mk){display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-mk{width:40px!important;height:40px!important;border-radius:12px!important;margin:0!important;font-size:19px}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none;padding:4px 0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav::-webkit-scrollbar{display:none}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::after{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top{justify-content:center!important;padding:16px 0 10px!important;background:transparent!important;border:0!important;margin:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top>:not(.sb-mk){display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-mk{width:40px!important;height:40px!important;border-radius:12px!important;margin:0!important;font-size:19px}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none;padding:4px 0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav::-webkit-scrollbar{display:none}
   /* secciones: el orden se mantiene; el rótulo pasa a una línea fina */
-  html.tema-glass-oscuro body nav#sbEl.sb .ss{height:1px!important;min-height:0!important;margin:10px 20px!important;padding:0!important;overflow:hidden!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss{height:1px!important;min-height:0!important;margin:10px 20px!important;padding:0!important;overflow:hidden!important;
     color:transparent!important;background:var(--tgo-line)!important;font-size:0!important}
   /* ítems del riel: cuadro de 48 px, solo ícono */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
     width:48px!important;height:48px!important;min-height:48px!important;margin:4px auto!important;padding:0!important;gap:0!important;
     justify-content:center!important;align-items:center!important;border-radius:14px!important;position:relative!important;
     transform:none!important;overflow:visible!important;background-image:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i){display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *) .ni-i{margin:0!important;font-size:23px!important;width:38px!important;height:38px!important;min-width:38px!important} /* 30-sep: ícono 19→23 px, círculo 30→38 px (cuadro de 48 px, riel de 76 px sin cambio) */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b{display:none!important} /* conteos: siguen en cada pantalla */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i){display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *) .ni-i{margin:0!important;font-size:23px!important;width:38px!important;height:38px!important;min-width:38px!important} /* 30-sep: ícono 19→23 px, círculo 30→38 px (cuadro de 48 px, riel de 76 px sin cambio) */
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b{display:none!important} /* conteos: siguen en cada pantalla */
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
   /* activo: cuadro azul (el indicador de resorte existente, ahora cuadrado y centrado) */
-  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:50%!important;right:auto!important;width:48px!important;margin-left:-24px!important;border-radius:14px!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .spring-ind{left:50%!important;right:auto!important;width:48px!important;margin-left:-24px!important;border-radius:14px!important;
     border:0!important;background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.8)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on{background:transparent!important}
-  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on{background:transparent!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue)!important}
   /* activo dentro de un panel flotante: se ilumina el ícono padre y el indicador se esconde */
-  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) .spring-ind,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) .spring-ind{opacity:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2{background:var(--tgo-blue)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab .ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2 .ni-i{color:#fff!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) .spring-ind,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) .spring-ind{opacity:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2{background:var(--tgo-blue)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbContab .ni.on) #niContab .ni-i,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbNav:has(#sbConfig .ni.on) #niAdmin2 .ni-i{color:#fff!important}
   /* tooltip con el nombre (hover y foco de teclado). position:fixed sin «top»: queda centrado en su ítem */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u::after{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u::after{
     content:attr(aria-label);position:fixed;left:100px;z-index:1200;pointer-events:none;opacity:0;transform:translateX(-4px);
     transition:opacity .12s ease,transform .12s ease;white-space:nowrap;padding:7px 11px;border-radius:10px;
     background:rgba(28,25,23,.96);color:#F8FAFC;font-size:13px;font-weight:600;line-height:18px;letter-spacing:0;text-transform:none;
     border:1px solid var(--tgo-line);box-shadow:0 12px 28px -12px rgba(0,0,0,.6);display:block!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):hover::after,html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):focus-visible::after,
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.tgo-tip::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u:hover::after,html.tema-glass-oscuro body nav#sbEl.sb .sb-u:focus-visible::after{opacity:1;transform:none}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):hover::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):focus-visible::after,
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.tgo-tip::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u:hover::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u:focus-visible::after{opacity:1;transform:none}
   /* paneles flotantes de Contabilidad y Configuración (los mismos acordeones, abiertos al lado del riel) */
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig{
     position:fixed!important;left:100px!important;top:auto!important;bottom:12px!important;width:256px!important;z-index:1100!important;
     max-height:calc(100vh - 24px)!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overflow-x:hidden!important;
     padding:40px 8px 8px!important;border-radius:20px!important;background:linear-gradient(180deg,#24272D,#1B1D22)!important;border:1px solid rgba(255,255,255,.10)!important;
     box-shadow:0 20px 40px -24px rgba(0,0,0,.6)!important;
     transition:opacity .15s ease,visibility .15s ease!important;scrollbar-width:thin}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab::before,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig::before{
     position:absolute;top:14px;left:18px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#BCC7D6}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before{content:'Contabilidad'}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{content:'Configuración'}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbContab[style*="max-height:0"],
-  html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height: 0"],html.tema-glass-oscuro body nav#sbEl.sb #sbConfig[style*="max-height:0"]{opacity:0;visibility:hidden;pointer-events:none}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab::before{content:'Contabilidad'}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig::before{content:'Configuración'}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab[style*="max-height: 0"],html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab[style*="max-height:0"],
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig[style*="max-height: 0"],html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig[style*="max-height:0"]{opacity:0;visibility:hidden;pointer-events:none}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni{
     height:44px!important;min-height:44px!important;margin:2px 0!important;padding:0 12px!important;gap:10px!important;justify-content:flex-start!important;
     border-radius:12px!important;transform:none!important;background-image:none!important} /* 30-sep: 40→44 px de alto por ítem */
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni .ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni .ni-i{font-size:17px!important;width:32px!important;height:32px!important;min-width:32px!important} /* 30-sep: ícono 15→17 px */
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni .ni-l,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni .ni-l{display:block!important;opacity:1!important;width:auto!important;max-width:none!important;margin:0!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni .ni-i,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni .ni-i{font-size:17px!important;width:32px!important;height:32px!important;min-width:32px!important} /* 30-sep: ícono 15→17 px */
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni .ni-l{display:block!important;opacity:1!important;width:auto!important;max-width:none!important;margin:0!important;
     color:#E2E8F0!important;font-size:14px!important;text-transform:none!important;transform:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none!important;padding:0!important;box-shadow:none!important;border:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni.on,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni.on{background:var(--tgo-blue)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni.on .ni-l,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni.on .ni-l{color:#fff!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni.on,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni.on{background:var(--tgo-blue)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni.on .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni.on .ni-l{color:#fff!important}
   /* usuario al pie del riel: solo el avatar (toque = cerrar sesión, como siempre) */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{margin-top:auto!important;flex:0 0 auto;background:transparent!important;border:0!important;padding:10px 0 14px!important;display:flex;justify-content:center}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{margin:0!important;padding:0!important;width:44px!important;height:44px!important;min-height:44px;border-radius:50%!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft{margin-top:auto!important;flex:0 0 auto;background:transparent!important;border:0!important;padding:10px 0 14px!important;display:flex;justify-content:center}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u{margin:0!important;padding:0!important;width:44px!important;height:44px!important;min-height:44px;border-radius:50%!important;
     justify-content:center!important;background:transparent!important;border:0!important;box-shadow:none!important;position:relative;transform:none!important;opacity:1!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u>div:not(.sb-av){display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-av{width:40px!important;height:40px!important;margin:0!important;font-size:14px!important;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u>div:not(.sb-av){display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-av{width:40px!important;height:40px!important;margin:0!important;font-size:14px!important;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
 }
 @media (max-width:768px){
   /* carril: misma silueta (máscara existente), ahora pizarra oscura; panel que se abre: cristal oscuro sólido (el panel con alfa dejaba ver la pantalla detrás en Chromium) */
-  html.tema-glass-oscuro body nav#sbEl.sb{box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#24272D 0%,#121418 100%)!important;background-size:auto!important;background-position:0 0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open.nx-accordion-open::after{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb{box-shadow:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#24272D 0%,#121418 100%)!important;background-size:auto!important;background-position:0 0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open.nx-accordion-open::after{
     background-image:linear-gradient(180deg,#1F2126 0%,#121418 100%)!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u{background:transparent!important;border-color:var(--tgo-line)!important;box-shadow:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-i{background:var(--tgo-blue)!important;border-radius:50%!important}
   /* 30-sep: íconos del cajón ☰ un poco más presentes: 15→18 px en un círculo de 30→36 px, centrado donde estaba (parches-sidebar-curva los pone en absoluto: left 15/-15 → 12/-18); la fila sigue en 44 px */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ni-i{width:36px!important;height:36px!important;min-width:36px!important;font-size:18px!important;left:12px!important;margin-top:-18px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l{background:rgba(37,99,235,.22)!important;box-shadow:none!important;border-color:transparent!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni>i.ni-i{width:36px!important;height:36px!important;min-width:36px!important;font-size:18px!important;left:12px!important;margin-top:-18px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-l{background:rgba(37,99,235,.22)!important;box-shadow:none!important;border-color:transparent!important}
 }
 
 /* ── SIN BARRA SUPERIOR (escritorio): el panel principal de cristal (.main) lleva arriba una fila de cabecera con el
    título, la píldora de búsqueda y las mismas acciones de la barra (mismo <header class="tnav">, sin duplicar nada) ── */
-html.tema-glass-oscuro body .tnav .ti{background:none!important;box-shadow:none!important;color:#E2E8F0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-html.tema-glass-oscuro body .tnav .ti::after,html.tema-glass-oscuro body .tnav .tn-tog::after,html.tema-glass-oscuro body .tnav .tn-b::after,html.tema-glass-oscuro body .tnav .tn-b::before,html.tema-glass-oscuro body .tnav .tn-tog::before{display:none!important}
-html.tema-glass-oscuro body .tnav .tn-b,html.tema-glass-oscuro body .tnav .tn-tog{background:rgba(255,255,255,.08)!important;background-image:none!important;border:1px solid rgba(255,255,255,.12)!important;
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav .ti{background:none!important;box-shadow:none!important;color:#E2E8F0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav .ti::after,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog::after,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b::after,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b::before,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog::before{display:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog{background:rgba(255,255,255,.08)!important;background-image:none!important;border:1px solid rgba(255,255,255,.12)!important;
   color:#E2E8F0!important;box-shadow:none!important;filter:none!important}
-html.tema-glass-oscuro body .tnav #btnRefrescar{background:rgba(255,255,255,.08)!important;background-image:none!important;color:#E2E8F0!important;box-shadow:none!important}
-@media (hover:hover){html.tema-glass-oscuro body .tnav .tn-b:hover,html.tema-glass-oscuro body .tnav .tn-tog:hover{background:rgba(255,255,255,.15)!important}}
-html.tema-glass-oscuro body .tnav .tn-b:focus-visible,html.tema-glass-oscuro body .tnav .tn-tog:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
-html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav #btnRefrescar{background:rgba(255,255,255,.08)!important;background-image:none!important;color:#E2E8F0!important;box-shadow:none!important}
+@media (hover:hover){html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b:hover,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog:hover{background:rgba(255,255,255,.15)!important}}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b:focus-visible,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog:focus-visible{outline:2px solid #93C5FD!important;outline-offset:2px}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav .pttl{color:#F8FAFC!important}
 @media (min-width:769px){
-  html.tema-glass-oscuro body .main{position:relative!important;isolation:isolate;margin:12px 12px 12px 12px!important;border-radius:24px!important;overflow:hidden!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .main{position:relative!important;isolation:isolate;margin:12px 12px 12px 12px!important;border-radius:24px!important;overflow:hidden!important}
   /* Panel principal: tinte cálido SIN backdrop-filter (el fondo ya viene desenfocado; desenfocar en vivo un panel de
      pantalla completa era lo más caro al desplazar). */
-  html.tema-glass-oscuro body .main::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:24px;border:1px solid var(--tgo-line);
+  html:is(.tema-glass-oscuro,.tema-claro) body .main::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:24px;border:1px solid var(--tgo-line);
     background:rgba(22,24,28,.56);box-shadow:0 24px 48px -30px rgba(2,8,20,.55)}
-  html.tema-glass-oscuro body .tnav{height:auto!important;min-height:72px!important;margin:0!important;padding:18px 20px 10px 26px!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav{height:auto!important;min-height:72px!important;margin:0!important;padding:18px 20px 10px 26px!important;
     background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:12px!important}
-  html.tema-glass-oscuro body .tnav .tn-tog{display:none!important} /* el riel no se colapsa: no hay nada que abrir */
-  html.tema-glass-oscuro body .tnav #pttl{font-size:22px!important;font-weight:700!important;letter-spacing:-.01em!important;line-height:1.2!important}
-  html.tema-glass-oscuro body .tnav .tn-r{gap:8px!important;align-items:center!important}
-  html.tema-glass-oscuro body .tnav .tn-b{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;border-radius:999px!important;justify-content:center!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-tog{display:none!important} /* el riel no se colapsa: no hay nada que abrir */
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav #pttl{font-size:22px!important;font-weight:700!important;letter-spacing:-.01em!important;line-height:1.2!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-r{gap:8px!important;align-items:center!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;border-radius:999px!important;justify-content:center!important}
   /* búsqueda global: píldora ancha como en la referencia (misma acción ⌘K) */
-  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary{order:-1;width:clamp(200px,24vw,320px)!important;justify-content:flex-start!important;padding:0 8px 0 16px!important;gap:10px!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b.tn-b-primary{order:-1;width:clamp(200px,24vw,320px)!important;justify-content:flex-start!important;padding:0 8px 0 16px!important;gap:10px!important;
     background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.14)!important;color:#E2E8F0!important}
-  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary::after{content:'Buscar cliente, póliza o cédula…';display:block!important;flex:1;min-width:0;text-align:left;
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b.tn-b-primary::after{content:'Buscar cliente, póliza o cédula…';display:block!important;flex:1;min-width:0;text-align:left;
     font-size:14px;font-weight:400;color:#E2E8F0;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary .ti{color:#E2E8F0!important}
-  html.tema-glass-oscuro body .tnav .tn-b.tn-b-primary kbd{order:2;background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.2)!important;color:#E2E8F0!important;font-size:11px!important}
-  html.tema-glass-oscuro body .tnav .notif-badge{box-shadow:0 0 0 2px #1A1D24}
-  html.tema-glass-oscuro body .content{padding-top:8px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b.tn-b-primary .ti{color:#E2E8F0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-b.tn-b-primary kbd{order:2;background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.2)!important;color:#E2E8F0!important;font-size:11px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .notif-badge{box-shadow:0 0 0 2px #1A1D24}
+  html:is(.tema-glass-oscuro,.tema-claro) body .content{padding-top:8px!important}
 }
 /* MÓVIL: cabecera mínima de cristal (menú + título + campana + actualizar), fija arriba; sin barra inferior */
 @media (max-width:768px){
@@ -3366,7 +3372,7 @@ html.tema-glass-oscuro body .tnav .pttl{color:#F8FAFC!important}
      encima del contenido»); antes azul rgba(30,50,86,.92) hasta que llegaba esa capa */
   html.tema-glass-oscuro body .tnav{background:#15181e linear-gradient(180deg,#1e222a 0%,#171a21 55%,#13161b 100%)!important;border:1px solid var(--tgo-line)!important;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)!important;
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-  html.tema-glass-oscuro body .tnav .pttl{display:block!important;flex:1 1 auto;min-width:0;max-width:none!important;font-size:17px!important;font-weight:700!important;overflow:hidden;text-overflow:ellipsis}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav .pttl{display:block!important;flex:1 1 auto;min-width:0;max-width:none!important;font-size:17px!important;font-weight:700!important;overflow:hidden;text-overflow:ellipsis}
 }
 
 /* ═══ 58.91 — TODO OSCURO: el lenguaje del panel derecho del Inicio (cristal grafito, bordes finos claros, texto
@@ -3544,7 +3550,7 @@ html.tema-glass-oscuro.nx-ig #nxIG #nxIGav{background:var(--tgo-blue)!important;
 }
 
 /* ── íconos de menú y barra: sin el «vidrio» de 2 px que dibujaba un disco oscuro sobre el cristal ── */
-html.tema-glass-oscuro body nav#sbEl.sb .ti,html.tema-glass-oscuro body .tnav .ti{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ti,html:is(.tema-glass-oscuro,.tema-claro) body .tnav .ti{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 
 /* ── textos que se apoyan directo sobre la escena (títulos de página y de sección fuera de tarjeta) ── */
 html.tema-glass-oscuro #cnt .nxCrmHead h1,html.tema-glass-oscuro #cnt .nxSf .sf-fantitle h2{color:#F8FAFC!important}
@@ -3974,51 +3980,51 @@ html.tema-glass-oscuro body button:not(.tgo-x),html.tema-glass-oscuro body [role
 
 /* ═══ ajustes de maquetación que traía 58.90 (sin cambios) ═══ */
 /* textos cortados con «…» donde sí hay espacio: 2 líneas (KPI del Inicio, prospectos, KPI de Cliente 360). */
-html.tema-glass-oscuro.nx-ig #nxIG .nxIG-ks{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-html.tema-glass-oscuro #cnt #v-crm .nxProsMeta{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .nxSf .sf-kpi .sub,html.tema-glass-oscuro #v-cliente360 .sf-kpi .lb,html.tema-glass-oscuro #v-cliente360 .sf-kpi .sub{white-space:normal!important;overflow:visible!important}
+html:is(.tema-glass-oscuro,.tema-claro).nx-ig #nxIG .nxIG-ks{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html:is(.tema-glass-oscuro,.tema-claro) #cnt #v-crm .nxProsMeta{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .nxSf .sf-kpi .lb,html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .nxSf .sf-kpi .sub,html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-kpi .lb,html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-kpi .sub{white-space:normal!important;overflow:visible!important}
 /* títulos largos en la cabecera móvil: 2 líneas en vez de «…» */
 @media (max-width:768px){
-  html.tema-glass-oscuro body .tnav #pttl{font-size:15px!important;line-height:1.15!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  html.tema-glass-oscuro #cnt #v-facturas .nxft-tab{white-space:normal!important;line-height:1.15;text-align:center}
+  html:is(.tema-glass-oscuro,.tema-claro) body .tnav #pttl{font-size:15px!important;line-height:1.15!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt #v-facturas .nxft-tab{white-space:normal!important;line-height:1.15;text-align:center}
 }
 /* Financiamiento: las 4 cifras del héroe no caben en 2 columnas con el riel a 390 px → una columna ≤480 px */
 @media (max-width:640px){
-  html.tema-glass-oscuro #cnt .nxFP-hAL,html.tema-glass-oscuro #cnt .nxFP-hAR{min-width:0!important}
-  html.tema-glass-oscuro #cnt .nxFP-hAst{min-width:0}
-  html.tema-glass-oscuro #cnt .nxFP-hAst > div:last-child{min-width:0}
-  html.tema-glass-oscuro #cnt .nxFP-hAsv{overflow-wrap:anywhere}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAL,html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAR{min-width:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAst{min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAst > div:last-child{min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAsv{overflow-wrap:anywhere}
 }
-@media (max-width:480px){html.tema-glass-oscuro #cnt .nxFP-hAR{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
+@media (max-width:480px){html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxFP-hAR{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
 /* Cliente 360: la fila de acciones y los datos de la cabecera caben en el panel (mismo arreglo que el modo CRM) */
-html.tema-glass-oscuro #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-width:100%}
+html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-actions{flex-wrap:wrap;min-width:0;max-width:100%}
 @media (max-width:900px){
-  html.tema-glass-oscuro #v-cliente360 .c360-shell{align-items:stretch}
-  html.tema-glass-oscuro #v-cliente360 .c360-main{width:100%;max-width:100%;min-width:0}
-  html.tema-glass-oscuro #v-cliente360 .sf-head,html.tema-glass-oscuro #v-cliente360 .sf-facts{flex-wrap:wrap;min-width:0;max-width:100%}
-  html.tema-glass-oscuro #v-cliente360 .sf-head>*{min-width:0}
-  html.tema-glass-oscuro #v-cliente360 .sf-facts{flex:1 1 100%;gap:10px 14px}
-  html.tema-glass-oscuro #v-cliente360 .sf-fact{flex:1 1 30%;min-width:0}
-  html.tema-glass-oscuro #v-cliente360 .sf-actions{flex:1 1 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-  html.tema-glass-oscuro #v-cliente360 .sf-actions .sf-btn{min-height:44px;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  html.tema-glass-oscuro #v-cliente360 #c360TabsBar{max-width:100%}
-  html.tema-glass-oscuro #v-cliente360 .c360-tabbody{max-width:100%;overflow-x:auto}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .c360-shell{align-items:stretch}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .c360-main{width:100%;max-width:100%;min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-head,html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-facts{flex-wrap:wrap;min-width:0;max-width:100%}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-head>*{min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-facts{flex:1 1 100%;gap:10px 14px}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-fact{flex:1 1 30%;min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-actions{flex:1 1 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-actions .sf-btn{min-height:44px;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 #c360TabsBar{max-width:100%}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .c360-tabbody{max-width:100%;overflow-x:auto}
 }
 @media (max-width:480px){
-  html.tema-glass-oscuro #v-cliente360 .sf-actions .sf-btn{padding-left:6px!important;padding-right:6px!important;gap:4px;font-size:11px!important}
-  html.tema-glass-oscuro #v-cliente360 .sf-kpis{grid-template-columns:minmax(0,1fr)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-actions .sf-btn{padding-left:6px!important;padding-right:6px!important;gap:4px;font-size:11px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) #v-cliente360 .sf-kpis{grid-template-columns:minmax(0,1fr)!important}
 }
 /* Clientes a 390 px: «ASEGURADAS» cabe en su recuadro */
 @media (max-width:480px){
-  html.tema-glass-oscuro #cnt .nxCrmPulse > div{padding-left:6px!important;padding-right:6px!important;min-width:0}
-  html.tema-glass-oscuro #cnt .nxCrmPulse span{font-size:10px!important;letter-spacing:0!important}
-  html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi{flex-direction:column;align-items:flex-start;gap:8px}
-  html.tema-glass-oscuro #cnt #v-clientes .sf-kpis .sf-kpi > div:last-child{min-width:0;width:100%}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxCrmPulse > div{padding-left:6px!important;padding-right:6px!important;min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt .nxCrmPulse span{font-size:10px!important;letter-spacing:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt #v-clientes .sf-kpis .sf-kpi{flex-direction:column;align-items:flex-start;gap:8px}
+  html:is(.tema-glass-oscuro,.tema-claro) #cnt #v-clientes .sf-kpis .sf-kpi > div:last-child{min-width:0;width:100%}
 }
 /* Cajón móvil abierto: el nombre/rol del usuario empieza en la columna de los nombres del menú */
 @media (max-width:768px){
-  html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u > div:not(.sb-av){padding-left:85px;min-width:0}
-  html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u .sb-un,html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u .sb-ur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-u > div:not(.sb-av){padding-left:85px;min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-u .sb-un,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-u .sb-ur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 /* Login: rótulos claros sobre el cristal oscuro */
 html.tema-glass-oscuro #loginScreen .lfr label,html.tema-glass-oscuro #loginScreen .lchk label{color:#E2E8F0!important}
@@ -4342,7 +4348,7 @@ html.tema-glass-oscuro body #cnt #v-waInbox .nxWaProActs > button,html.tema-glas
        máximo, glifo al 50-56 % del lado, centrado. El contenedor lleva el tinte; el <i> de dentro nunca lleva caja propia.
      · Un solo trazo (Tabler outline), sin degradados, brillos, sombras internas ni 3D. Tonos: azul (acción/info), verde (dinero, WhatsApp,
        confirmado), ámbar (pendiente/atención/vencimiento), rojo (vencido/eliminar), gris azulado (sistema). */
-html.tema-glass-oscuro{
+html:is(.tema-glass-oscuro,.tema-claro){
   --nx-ico-sm:18px;--nx-ico-md:20px;--nx-ico-lg:24px;
   --nx-ico-tile-sm:32px;--nx-ico-tile:40px;--nx-ico-tile-lg:44px;--nx-ico-tile-r:28%;
   --nx-ico-tint-blue:59,130,246;--nx-ico-blue:147,197,253;--nx-ico-tint-green:34,197,94;--nx-ico-green:74,222,128;
@@ -4351,31 +4357,31 @@ html.tema-glass-oscuro{
   --ico-t:var(--nx-ico-blue);--ico-f:var(--nx-ico-tint-blue);--ico-fa:.16}
 /* 1 · Base: la esfera global .ti (morado→cian con brillo ::after, de parches-seguros-base) queda en glifo plano. Solo se tocan las
    propiedades que esa base pone (:where = misma especificidad baja), así los contextos que ya la anulan siguen igual. */
-html.tema-glass-oscuro :where(.ti){background:none;color:rgb(var(--ico-t));box-shadow:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
-html.tema-glass-oscuro .ti::after{content:none!important;background:none!important}
-html.tema-glass-oscuro .tnav .tn-tog::after,html.tema-glass-oscuro .tnav .tn-b:not(.tn-b-primary)::after{background:none!important;box-shadow:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) :where(.ti){background:none;color:rgb(var(--ico-t));box-shadow:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+html:is(.tema-glass-oscuro,.tema-claro) .ti::after{content:none!important;background:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) .tnav .tn-tog::after,html:is(.tema-glass-oscuro,.tema-claro) .tnav .tn-b:not(.tn-b-primary)::after{background:none!important;box-shadow:none!important}
 /* La paleta «ICONOS SEMÁNTICOS COLOR 3D VIBRANTE» (.kpi/.qa/.sm/.nc i.ti-*) pinta degradados con !important: se apagan sin dar caja. */
-html.tema-glass-oscuro :is(.kpi,.qa,.sm,.nc) i.ti{background-image:none!important;box-shadow:none!important;border:0!important;filter:none!important;text-shadow:none!important;animation:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.kpi,.qa,.sm,.nc) i.ti{background-image:none!important;box-shadow:none!important;border:0!important;filter:none!important;text-shadow:none!important;animation:none!important}
 /* 2 · Glifo dentro de botones, píldoras, chips, pestañas, filas, celdas y notas: sin caja, sin borde, centrado. */
-html.tema-glass-oscuro :is(button:not(.cfg-tab),.btn,.sf-btn,.cbBtn,.maBtn,.sfr-cob,.nxft-tab,.nfcBtn,.nxVistaOpt,.nxpag-btn,.nxBusca-lupa,.cliCard-more,.fc-ico,.echip,.tn-b,.tn-tog,.pill,.chip,.badge,.sfr-prev,.sfr-ref,.deuda-prev,.nxCrmHomeBadge,.nxSL-recibir-note,.aboLnk,.aboNote,.aboFact,.lfi,.inw,summary,label,td,th) i.ti,
-html.tema-glass-oscuro body #cnt .sf-btn i.ti{
+html:is(.tema-glass-oscuro,.tema-claro) :is(button:not(.cfg-tab),.btn,.sf-btn,.cbBtn,.maBtn,.sfr-cob,.nxft-tab,.nfcBtn,.nxVistaOpt,.nxpag-btn,.nxBusca-lupa,.cliCard-more,.fc-ico,.echip,.tn-b,.tn-tog,.pill,.chip,.badge,.sfr-prev,.sfr-ref,.deuda-prev,.nxCrmHomeBadge,.nxSL-recibir-note,.aboLnk,.aboNote,.aboFact,.lfi,.inw,summary,label,td,th) i.ti,
+html:is(.tema-glass-oscuro,.tema-claro) body #cnt .sf-btn i.ti{
   background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;
   width:auto!important;height:auto!important;min-width:0!important;padding:0!important;filter:none!important;text-shadow:none!important;
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 /* tamaño óptico y alineación con el texto (inline-flex + line-height 1: el glifo Tabler queda centrado en la altura de x del rótulo) */
-html.tema-glass-oscuro :is(.btn,.sf-btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn,.nxVistaOpt,.echip,.nxCrmHomeBadge,.tn-b-primary) i.ti{font-size:var(--nx-ico-sm)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
-html.tema-glass-oscuro :is(.btn.bsm.bghost,.nxBusca-lupa,.cliCard-more,.fc-ico,.nxpag-btn,.tn-b:not(.tn-b-primary),.tn-tog,.nxSf table.sf-fact td[data-lb="Acciones"] .btn) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn,.sf-btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn,.nxVistaOpt,.echip,.nxCrmHomeBadge,.tn-b-primary) i.ti{font-size:var(--nx-ico-sm)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn.bsm.bghost,.nxBusca-lupa,.cliCard-more,.fc-ico,.nxpag-btn,.tn-b:not(.tn-b-primary),.tn-tog,.nxSf table.sf-fact td[data-lb="Acciones"] .btn) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;flex:none}
 /* barra de arriba (☰, campana, actualizar): parches-seguros-base fija 16 px con `.tn-r > #btnRefrescar i` (1,1,1) !important → un solo tamaño md */
-html.tema-glass-oscuro body .tnav :is(.tn-tog,#btnRefrescar,.notif-bell) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important}
-html.tema-glass-oscuro :is(.btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn):has(>i.ti){gap:8px}
-html.tema-glass-oscuro :is(.btn,.nxft-tab,.nfcBtn) i.ti:is(.ti-chevron-down,.ti-chevron-up,.ti-chevron-right,.ti-chevron-left){opacity:.75}
+html:is(.tema-glass-oscuro,.tema-claro) body .tnav :is(.tn-tog,#btnRefrescar,.notif-bell) i.ti{font-size:var(--nx-ico-md)!important;line-height:1!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn,.cbBtn,.maBtn,.nxft-tab,.nfcBtn):has(>i.ti){gap:8px}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn,.nxft-tab,.nfcBtn) i.ti:is(.ti-chevron-down,.ti-chevron-up,.ti-chevron-right,.ti-chevron-left){opacity:.75}
 /* color semántico del glifo en botones translúcidos (en botones sólidos hereda el color del texto) */
-html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-brand-whatsapp,.ti-cash,.ti-wallet,.ti-coin,.ti-circle-check,.ti-shield-check){color:rgb(var(--nx-ico-green))!important}
-html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-alert-triangle,.ti-alert-circle,.ti-bell,.ti-clock,.ti-hourglass,.ti-star){color:rgb(var(--nx-ico-amber))!important}
-html.tema-glass-oscuro :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5)) i.ti:is(.ti-trash,.ti-ban,.ti-circle-x,.ti-cash-off,.ti-user-x){color:rgb(var(--nx-ico-red))!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-brand-whatsapp,.ti-cash,.ti-wallet,.ti-coin,.ti-circle-check,.ti-shield-check){color:rgb(var(--nx-ico-green))!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5),.nxft-tab,.nfcBtn) i.ti:is(.ti-alert-triangle,.ti-alert-circle,.ti-bell,.ti-clock,.ti-hourglass,.ti-star){color:rgb(var(--nx-ico-amber))!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.btn:not(.bc1):not(.bxl):not(.bc3):not(.bc5)) i.ti:is(.ti-trash,.ti-ban,.ti-circle-x,.ti-cash-off,.ti-user-x){color:rgb(var(--nx-ico-red))!important}
 /* 3 · Tiles cuyo contenedor es el propio <i>: cifras del tablero clásico, título de tarjeta, cabeceras de sección, accesos rápidos del
    Inicio (en su píldora), pestañas de Configuración y filas del menú de acciones. */
-html.tema-glass-oscuro :is(#v-dashboard .kpi i.ti,#v-dashboard .sm i.ti,#v-dashboard .qa i.qa-ico,html.tema-glass-oscuro body #nxIG .nxIG-acc .qa-g .qa i.qa-ico,.nc .ct>i.ti,.nxSL-section-title>i.ti,.nxSf .sf-fantitle h2 i.ti,.cfg-tab i,.acc-menu button>i.ti){
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi i.ti,#v-dashboard .sm i.ti,#v-dashboard .qa i.qa-ico,html:is(.tema-glass-oscuro,.tema-claro) body #nxIG .nxIG-acc .qa-g .qa i.qa-ico,.nc .ct>i.ti,.nxSL-section-title>i.ti,.nxSf .sf-fantitle h2 i.ti,.cfg-tab i,.acc-menu button>i.ti){
   --nx-tile:var(--nx-tile-set,var(--nx-ico-tile-sm));--nx-tile-fs:var(--nx-tile-fs-set,var(--nx-ico-sm));
   width:var(--nx-tile)!important;height:var(--nx-tile)!important;min-width:var(--nx-tile)!important;max-width:none!important;flex:none;
   display:inline-flex!important;align-items:center!important;justify-content:center!important;
@@ -4385,41 +4391,41 @@ html.tema-glass-oscuro :is(#v-dashboard .kpi i.ti,#v-dashboard .sm i.ti,#v-dashb
   box-shadow:none!important;filter:none!important;text-shadow:none!important;animation:none!important;transform:none!important;
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important;padding:0!important;opacity:1!important;position:static!important}
 /* tamaño por contexto: se declara en el padre (heredado) porque una regla menos específica sobre el mismo <i> perdería la cascada */
-html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,.cfg-tab){--nx-tile-set:var(--nx-ico-tile);--nx-tile-fs-set:var(--nx-ico-md)}
-html.tema-glass-oscuro .cfg-tab i{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
-html.tema-glass-oscuro .cfg-tab.active-tab i{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1;border-color:transparent!important}
-html.tema-glass-oscuro .cfg-tab:hover i{transform:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,.cfg-tab){--nx-tile-set:var(--nx-ico-tile);--nx-tile-fs-set:var(--nx-ico-md)}
+html:is(.tema-glass-oscuro,.tema-claro) .cfg-tab i{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
+html:is(.tema-glass-oscuro,.tema-claro) .cfg-tab.active-tab i{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1;border-color:transparent!important}
+html:is(.tema-glass-oscuro,.tema-claro) .cfg-tab:hover i{transform:none!important}
 /* Accesos rápidos del Inicio: la capa del Inicio glass escondía también ::before de .qa-ico (que en Tabler ES el dibujo del ícono) */
-html.tema-glass-oscuro body #nxIG .nxIG-acc .qa-g .qa i.qa-ico::before{display:block!important;line-height:1!important}
+html:is(.tema-glass-oscuro,.tema-claro) body #nxIG .nxIG-acc .qa-g .qa i.qa-ico::before{display:block!important;line-height:1!important}
 /* 4 · Tiles cuyo contenedor es otro elemento (ya teñido por el tema): esquinas continuas en el contenedor y glifo limpio dentro. */
-html.tema-glass-oscuro :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield){border-radius:var(--nx-ico-tile-r)!important;corner-shape:squircle;background-image:none!important;box-shadow:none!important;filter:none!important;animation:none!important}
-html.tema-glass-oscuro :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield) i.ti{
+html:is(.tema-glass-oscuro,.tema-claro) :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield){border-radius:var(--nx-ico-tile-r)!important;corner-shape:squircle;background-image:none!important;box-shadow:none!important;filter:none!important;animation:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.sf-kpi .ic,.nxCrmAtt .ic,.nxFP-dico,.nxFP-emptyIco,.nxFP-hAsi,.nxFP-qico,.nxFP-sideLogo,.nxTLogo,.nxSL-head-icon,.mobile-more-sheet-clean .icon,.nxCrmAv,.toast .ti-ic,#mAbono .aboAv,#mAbono .aboToggleIc,#mAbono .aboSummaryIc,#mAbono .aboShield,#loginScreen .lshield) i.ti{
   background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;
   width:auto!important;height:auto!important;min-width:0!important;padding:0!important;margin:0!important;color:inherit!important;
   font-size:var(--nx-tile-fs,var(--nx-ico-sm))!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;filter:none!important;text-shadow:none!important}
-html.tema-glass-oscuro :is(.nxFP-hAsi,.nxFP-sideLogo,.nxTLogo,.toast .ti-ic,.mobile-more-sheet-clean .icon,.nxSL-head-icon){--nx-tile-fs:var(--nx-ico-md)}
-html.tema-glass-oscuro :is(.nxFP-emptyIco,.nxFP-qico,#loginScreen .lshield){--nx-tile-fs:var(--nx-ico-lg)}
-html.tema-glass-oscuro body .nxFPShell .nxFP-side .nxFP-sideLogo,html.tema-glass-oscuro .nxTLogo{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
-html.tema-glass-oscuro .nxFP-hAsi{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
-html.tema-glass-oscuro .nxFP-hAsi.warn{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
-html.tema-glass-oscuro .nxSL-head-icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
-html.tema-glass-oscuro .mobile-more-sheet-clean .icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
-html.tema-glass-oscuro #mAbono .aboSummaryIc{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1}
-html.tema-glass-oscuro #mAbono .aboShield{--ico-t:255,255,255;--ico-f:255,255,255;--ico-fa:.16;background:rgba(var(--ico-f),var(--ico-fa))!important;color:#fff!important;border:0!important}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.nxFP-hAsi,.nxFP-sideLogo,.nxTLogo,.toast .ti-ic,.mobile-more-sheet-clean .icon,.nxSL-head-icon){--nx-tile-fs:var(--nx-ico-md)}
+html:is(.tema-glass-oscuro,.tema-claro) :is(.nxFP-emptyIco,.nxFP-qico,#loginScreen .lshield){--nx-tile-fs:var(--nx-ico-lg)}
+html:is(.tema-glass-oscuro,.tema-claro) body .nxFPShell .nxFP-side .nxFP-sideLogo,html:is(.tema-glass-oscuro,.tema-claro) .nxTLogo{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxFP-hAsi{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxFP-hAsi.warn{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
+html:is(.tema-glass-oscuro,.tema-claro) .nxSL-head-icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html:is(.tema-glass-oscuro,.tema-claro) .mobile-more-sheet-clean .icon{background:rgba(var(--ico-f),var(--ico-fa))!important;color:rgb(var(--ico-t))!important;border:1px solid rgba(var(--ico-t),.08)!important}
+html:is(.tema-glass-oscuro,.tema-claro) #mAbono .aboSummaryIc{--ico-t:255,255,255;--ico-f:37,99,235;--ico-fa:1}
+html:is(.tema-glass-oscuro,.tema-claro) #mAbono .aboShield{--ico-t:255,255,255;--ico-f:255,255,255;--ico-fa:.16;background:rgba(var(--ico-f),var(--ico-fa))!important;color:#fff!important;border:0!important}
 /* 5 · Tono por significado en los tiles que son el propio <i> (por nombre del ícono o por la categoría c-* de los accesos rápidos). */
-html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-cash,.ti-coin,.ti-currency-dollar,.ti-moneybag,.ti-pig-money,.ti-receipt,.ti-receipt-2,.ti-report-money,.ti-wallet,.ti-check,.ti-circle-check,.ti-shield-check,.ti-thumb-up,.ti-brand-whatsapp,.ti-list-check,.qa-ico.c-verde,.qa-ico.c-esmeralda),
-html.tema-glass-oscuro .nxSL-section-recibir .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-green>i.ti{--ico-t:var(--nx-ico-green);--ico-f:var(--nx-ico-tint-green);--ico-fa:.14}
-html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-alert-circle,.ti-alert-triangle,.ti-bell,.ti-clock,.ti-clock-hour-4,.ti-flame,.ti-hourglass,.ti-trophy,.ti-bolt,.ti-crown,.ti-diamond,.ti-medal,.ti-star,.ti-calendar-event,.ti-file-alert,.ti-folder-open,.qa-ico.c-ambar,.qa-ico.c-naranja),
-html.tema-glass-oscuro .nxSL-section-pend .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-amber>i.ti{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
-html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-ban,.ti-circle-x,.ti-flag,.ti-logout,.ti-power,.ti-trash,.ti-x,.ti-user-exclamation,.ti-cash-off,.ti-calendar-x,.ti-user-x,.qa-ico.c-rojo,.qa-ico.c-rosa),
-html.tema-glass-oscuro .acc-i-red>i.ti{--ico-t:var(--nx-ico-red);--ico-f:var(--nx-ico-tint-red);--ico-fa:.14}
-html.tema-glass-oscuro :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.acc-menu button) :is(.ti-adjustments,.ti-adjustments-horizontal,.ti-database,.ti-settings,.ti-tool,.ti-tools,.ti-history),
-html.tema-glass-oscuro .nxSL-section-historial .nxSL-section-title>i.ti,html.tema-glass-oscuro .acc-i-gray>i.ti{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-cash,.ti-coin,.ti-currency-dollar,.ti-moneybag,.ti-pig-money,.ti-receipt,.ti-receipt-2,.ti-report-money,.ti-wallet,.ti-check,.ti-circle-check,.ti-shield-check,.ti-thumb-up,.ti-brand-whatsapp,.ti-list-check,.qa-ico.c-verde,.qa-ico.c-esmeralda),
+html:is(.tema-glass-oscuro,.tema-claro) .nxSL-section-recibir .nxSL-section-title>i.ti,html:is(.tema-glass-oscuro,.tema-claro) .acc-i-green>i.ti{--ico-t:var(--nx-ico-green);--ico-f:var(--nx-ico-tint-green);--ico-fa:.14}
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-alert-circle,.ti-alert-triangle,.ti-bell,.ti-clock,.ti-clock-hour-4,.ti-flame,.ti-hourglass,.ti-trophy,.ti-bolt,.ti-crown,.ti-diamond,.ti-medal,.ti-star,.ti-calendar-event,.ti-file-alert,.ti-folder-open,.qa-ico.c-ambar,.qa-ico.c-naranja),
+html:is(.tema-glass-oscuro,.tema-claro) .nxSL-section-pend .nxSL-section-title>i.ti,html:is(.tema-glass-oscuro,.tema-claro) .acc-i-amber>i.ti{--ico-t:var(--nx-ico-amber);--ico-f:var(--nx-ico-tint-amber);--ico-fa:.14}
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.nxSf .sf-fantitle h2,.acc-menu button) :is(.ti-ban,.ti-circle-x,.ti-flag,.ti-logout,.ti-power,.ti-trash,.ti-x,.ti-user-exclamation,.ti-cash-off,.ti-calendar-x,.ti-user-x,.qa-ico.c-rojo,.qa-ico.c-rosa),
+html:is(.tema-glass-oscuro,.tema-claro) .acc-i-red>i.ti{--ico-t:var(--nx-ico-red);--ico-f:var(--nx-ico-tint-red);--ico-fa:.14}
+html:is(.tema-glass-oscuro,.tema-claro) :is(#v-dashboard .kpi,#v-dashboard .sm,#v-dashboard .qa,#nxIG .nxIG-acc .qa,.nc .ct,.nxSL-section-title,.acc-menu button) :is(.ti-adjustments,.ti-adjustments-horizontal,.ti-database,.ti-settings,.ti-tool,.ti-tools,.ti-history),
+html:is(.tema-glass-oscuro,.tema-claro) .nxSL-section-historial .nxSL-section-title>i.ti,html:is(.tema-glass-oscuro,.tema-claro) .acc-i-gray>i.ti{--ico-t:var(--nx-ico-neutral);--ico-f:var(--nx-ico-tint-neutral);--ico-fa:.06}
 /* 6 · Botones redondos de una sola acción en tarjetas (WhatsApp, teléfono, ⋮): 40-44 px, relleno translúcido, glifo de 20 px centrado. */
-html.tema-glass-oscuro .nxSf .fc-ico,html.tema-glass-oscuro .cliCard-more{width:40px!important;height:40px!important;border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:0!important;box-shadow:none!important}
-html.tema-glass-oscuro .nxSf .fc-ico.wa{color:rgb(var(--nx-ico-green))!important;background:rgba(var(--nx-ico-tint-green),.14)!important}
-html.tema-glass-oscuro .nxSf .fc-ico.call{color:rgb(var(--nx-ico-blue))!important;background:rgba(var(--nx-ico-tint-blue),.16)!important}
-html.tema-glass-oscuro .nxSf table.sf-fact td[data-lb="Acciones"] .btn{min-width:44px;min-height:40px;padding:0 14px}
+html:is(.tema-glass-oscuro,.tema-claro) .nxSf .fc-ico,html:is(.tema-glass-oscuro,.tema-claro) .cliCard-more{width:40px!important;height:40px!important;border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:0!important;box-shadow:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxSf .fc-ico.wa{color:rgb(var(--nx-ico-green))!important;background:rgba(var(--nx-ico-tint-green),.14)!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxSf .fc-ico.call{color:rgb(var(--nx-ico-blue))!important;background:rgba(var(--nx-ico-tint-blue),.16)!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxSf table.sf-fact td[data-lb="Acciones"] .btn{min-width:44px;min-height:40px;padding:0 14px}
 /* ── avatares con iniciales: círculo plano teñido, letras claras, sin brillo ni sombra ── */
 html.tema-glass-oscuro .nxSf .fc-avwrap{filter:none!important}
 html.tema-glass-oscuro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(252,165,165,.35)}
@@ -4430,10 +4436,10 @@ html.tema-glass-oscuro #nxIG .nxIG-av:not(#tgo){background:rgba(59,130,246,.32)!
 html.tema-glass-oscuro #nxIG .nxIG-prof .nxIG-av:not(#tgo){background:#2563EB!important;color:#fff!important}
 html.tema-glass-oscuro #nxIG .nxIG-pc.hl .nxIG-av:not(#tgo){background:rgba(255,255,255,.1)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important} /* 30-sep: .2→.1 (4.45→5.7:1) */
 html.tema-glass-oscuro :is(.cli-row,#cnt) .av{box-shadow:none!important;background-image:none!important}
-html.tema-glass-oscuro nav#sbEl .sb-av{box-shadow:none!important;background-image:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) nav#sbEl .sb-av{box-shadow:none!important;background-image:none!important}
 /* logo del riel: cuadro azul plano sin brillo */
-html.tema-glass-oscuro nav#sbEl .sb-mk::after,html.tema-glass-oscuro nav#sbEl .sb-mk::before{background:none!important;box-shadow:none!important}
-html.tema-glass-oscuro .nxOptIco.logo{box-shadow:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) nav#sbEl .sb-mk::after,html:is(.tema-glass-oscuro,.tema-claro) nav#sbEl .sb-mk::before{background:none!important;box-shadow:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) .nxOptIco.logo{box-shadow:none!important}
 /* ── entrada: escudo y campo de usuario planos (sin halo azul que respira ni sombra del ícono) ── */
 html.tema-glass-oscuro #loginScreen .lshield{background:rgba(59,130,246,.16)!important;border:1px solid rgba(147,197,253,.08)!important;box-shadow:none!important;color:#BFDBFE!important}
 html.tema-glass-oscuro #loginScreen .lshield::before{display:none!important}
@@ -4577,7 +4583,7 @@ html.tema-glass-oscuro .nxbp-marco .nxBusca-x{background:var(--nxbp-x)!important
      tema (misma especificidad, más tarde en la cascada) y suman !important solo donde la regla que sustituyen ya lo lleva. -->
 <script id="nxMenuCristalOn">(function(){try{if(localStorage.getItem('nx_menu_cristal')==='1')document.documentElement.classList.add('nx-mc-open');}catch(e){}})();</script>
 <style id="nxMenuCristal">
-html.tema-glass-oscuro{
+html:is(.tema-glass-oscuro,.tema-claro){
   --nx-mc-w:76px;--nx-mc-open:288px;
   --nx-mc-dur:.42s;--nx-mc-ease:cubic-bezier(.32,1.18,.36,1);--nx-mc-out:cubic-bezier(.22,1,.36,1);
   --nx-mc-glass:linear-gradient(180deg,rgba(46,49,56,.58) 0%,rgba(22,24,28,.62) 100%);/* 59.21 grafito (antes azul rgba(42,64,102,.60)→rgba(20,36,64,.62)) */
@@ -4585,202 +4591,202 @@ html.tema-glass-oscuro{
   --nx-mc-line:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);
   --nx-mc-blur:blur(28px) saturate(140%);
 }
-html.tema-glass-oscuro.nx-mc-open{--nx-mc-w:288px}
+html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open{--nx-mc-w:288px}
 /* 58.98 — píldora del ítem activo (pedido del dueño: «redondearlo»): misma geometría para activo, hover y pressed */
-html.tema-glass-oscuro{--nx-mc-pill:linear-gradient(180deg,#2563EB 0%,#1E50D6 100%);--nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -8px rgba(37,99,235,.9);--nx-mc-r:14px}
+html:is(.tema-glass-oscuro,.tema-claro){--nx-mc-pill:linear-gradient(180deg,#2563EB 0%,#1E50D6 100%);--nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -8px rgba(37,99,235,.9);--nx-mc-r:14px}
 /* en los demás temas las piezas propias no existen visualmente (el JS las crea una sola vez; el tema puede cambiar en vivo) */
-html:not(.tema-glass-oscuro) .nx-mc-tg,html:not(.tema-glass-oscuro) .nx-mc-search,html:not(.tema-glass-oscuro) .nx-mc-out{display:none!important}
+html:not(.tema-glass-oscuro,.tema-claro) .nx-mc-tg,html:not(.tema-glass-oscuro,.tema-claro) .nx-mc-search,html:not(.tema-glass-oscuro,.tema-claro) .nx-mc-out{display:none!important}
 /* ── piezas que pone parches-menu-cristal.js (chevron del canto, buscador, salida) ── */
 /* (los dos <button> llevan !important contra la regla global de botones «píldora» de parches-seguros-base: borde, sombra, radio y mayúsculas) */
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{position:absolute;z-index:5;display:flex;align-items:center;gap:8px;height:34px;min-height:0!important;margin:0;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg{position:absolute;z-index:5;display:flex;align-items:center;gap:8px;height:34px;min-height:0!important;margin:0;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
   cursor:pointer;font:inherit;text-transform:none!important;letter-spacing:0!important;-webkit-tap-highlight-color:transparent}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#3B82F6,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#3B82F6,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
   box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .16s var(--nx-mc-out),box-shadow .2s ease}
 /* 59.01: el botón que abre el menú se nota (34 px, azul con brillo); late las primeras veces hasta que se usa */
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:hover .nx-mc-c{box-shadow:0 8px 20px -6px rgba(37,99,235,1),0 0 0 3px rgba(147,197,253,.45),inset 0 1px 0 rgba(255,255,255,.3);transform:scale(1.06)}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg:hover .nx-mc-c{box-shadow:0 8px 20px -6px rgba(37,99,235,1),0 0 0 3px rgba(147,197,253,.45),inset 0 1px 0 rgba(255,255,255,.3);transform:scale(1.06)}
 @keyframes nxMcHint{0%,100%{box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),0 0 0 0 rgba(96,165,250,.6)}50%{box-shadow:0 6px 16px -6px rgba(37,99,235,.95),0 0 0 2px rgba(255,255,255,.22),0 0 0 10px rgba(96,165,250,0)}}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:nxMcHint 1.6s ease-out 3}
-@media (prefers-reduced-motion:reduce){html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:none}}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{display:block;transition:transform var(--nx-mc-dur) var(--nx-mc-ease)}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:active .nx-mc-c{transform:scale(.92)}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible{outline:0}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #121418,0 0 0 4px #93C5FD}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p{height:30px;padding:0 12px;border-radius:14px;background:#F8FAFC;color:#1D4ED8;font-size:13px;font-weight:700;line-height:28px;white-space:nowrap;text-transform:none!important;letter-spacing:0!important;
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:nxMcHint 1.6s ease-out 3}
+@media (prefers-reduced-motion:reduce){html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg.nx-mc-hint .nx-mc-c{animation:none}}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c i{display:block;transition:transform var(--nx-mc-dur) var(--nx-mc-ease)}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg:active .nx-mc-c{transform:scale(.92)}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg:focus-visible{outline:0}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #121418,0 0 0 4px #93C5FD}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-p{height:30px;padding:0 12px;border-radius:14px;background:#F8FAFC;color:#1D4ED8;font-size:13px;font-weight:700;line-height:28px;white-space:nowrap;text-transform:none!important;letter-spacing:0!important;
   box-shadow:0 6px 14px -6px rgba(0,0,0,.7);opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .14s ease,transform .18s var(--nx-mc-out)}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;height:44px;min-height:0!important;margin:2px 0 0;padding:0 16px 0 19px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;height:44px;min-height:0!important;margin:2px 0 0;padding:0 16px 0 19px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
   cursor:pointer;font:inherit;color:#BCC7D6;text-align:left;text-transform:none!important;letter-spacing:0!important;-webkit-tap-highlight-color:transparent}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-si{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;color:#E2E8F0;transition:background .15s ease}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-st{flex:1 1 auto;min-width:0;height:36px;box-sizing:border-box;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);padding:0 14px;display:flex;align-items:center;
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-si{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;color:#E2E8F0;transition:background .15s ease}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-st{flex:1 1 auto;min-width:0;height:36px;box-sizing:border-box;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);padding:0 14px;display:flex;align-items:center;
   font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#BCC7D6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search:focus-visible{outline:0}
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search:focus-visible .nx-mc-si{box-shadow:0 0 0 2px #93C5FD}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search:focus-visible{outline:0}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search:focus-visible .nx-mc-si{box-shadow:0 0 0 2px #93C5FD}
 @media (hover:hover){
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search:hover .nx-mc-si{background:rgba(255,255,255,.06)}
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search:hover .nx-mc-st{border-color:rgba(255,255,255,.2);color:#E2E8F0}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search:hover .nx-mc-si{background:rgba(255,255,255,.06)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search:hover .nx-mc-st{border-color:rgba(255,255,255,.2);color:#E2E8F0}
 }
-html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18px;line-height:1;color:#BCC7D6;flex:0 0 auto}
+html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-out{margin-left:auto;font-size:18px;line-height:1;color:#BCC7D6;flex:0 0 auto}
 
 /* ══ ESCRITORIO: riel de cristal que se expande flotando sobre el contenido ══ */
 @media (min-width:769px){
   /* ventana de cristal: tinte azul noche con volumen (más claro arriba), hairline de luz, brillo interior, desenfoque fuerte */
-  html.tema-glass-oscuro body nav#sbEl.sb::before{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before{
     right:auto!important;width:var(--nx-mc-w)!important;border-radius:26px;border:1px solid var(--nx-mc-edge);
     background:var(--nx-mc-glass)!important;-webkit-backdrop-filter:var(--nx-mc-blur);backdrop-filter:var(--nx-mc-blur);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 48px -30px rgba(2,8,20,.55);
     transition:width var(--nx-mc-dur) var(--nx-mc-ease),box-shadow .3s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 70px -24px rgba(2,8,20,.8),18px 0 48px -22px rgba(2,8,20,.65)}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 70px -24px rgba(2,8,20,.8),18px 0 48px -22px rgba(2,8,20,.65)}
   /* el riel sigue midiendo 76 px en el flujo (.main no se mueve); sus tres piezas se ensanchan y desbordan sobre el contenido */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-nav,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft{
     width:var(--nx-mc-w)!important;box-sizing:border-box;transition:width var(--nx-mc-dur) var(--nx-mc-ease)}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav{padding:0 0 6px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav{padding:0 0 6px!important}
   /* chevron del canto: centrado en la fila del logo, pegado al borde derecho del panel */
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{top:21px;left:calc(var(--nx-mc-w) - 17px);transition:left var(--nx-mc-dur) var(--nx-mc-ease)}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-c i{transform:rotate(180deg)}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-p{opacity:1;transform:none;pointer-events:auto;transition-delay:.14s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg{top:21px;left:calc(var(--nx-mc-w) - 17px);transition:left var(--nx-mc-dur) var(--nx-mc-ease)}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .nx-mc-c i{transform:rotate(180deg)}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .nx-mc-p{opacity:1;transform:none;pointer-events:auto;transition-delay:.14s}
   /* cabecera: escudo en la columna de íconos (centro x=38) + nombre que aparece al expandir */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top{justify-content:flex-start!important;gap:12px!important;padding:18px 16px 10px 18px!important;overflow:hidden;position:relative}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top>:not(.sb-mk){display:block!important;min-width:0;white-space:nowrap;opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .sb-top>:not(.sb-mk){opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nm{font-size:16px;font-weight:700;letter-spacing:-.01em;color:#F8FAFC!important;line-height:1.2}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-sm{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top{justify-content:flex-start!important;gap:12px!important;padding:18px 16px 10px 18px!important;overflow:hidden;position:relative}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top>:not(.sb-mk){display:block!important;min-width:0;white-space:nowrap;opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .sb-top>:not(.sb-mk){opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nm{font-size:16px;font-weight:700;letter-spacing:-.01em;color:#F8FAFC!important;line-height:1.2}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-sm{display:none!important}
   /* buscador: lupa en la columna de íconos; la píldora aparece al expandir (misma búsqueda global ⌘K) */
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-st{opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-st{opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-st{opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .nx-mc-st{opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
   /* rótulos de sección: hairline que se desvanece en los extremos + rótulo pequeño en mayúsculas con tracking */
-  html.tema-glass-oscuro body nav#sbEl.sb .ss{height:auto!important;min-height:0!important;margin:6px 0 2px!important;padding:14px 0 6px!important;position:relative;overflow:visible!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss{height:auto!important;min-height:0!important;margin:6px 0 2px!important;padding:14px 0 6px!important;position:relative;overflow:visible!important;
     color:#BCC7D6!important;background:none!important;font-family:inherit;font-size:10px!important;font-weight:600;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;text-align:center;
     transition:padding var(--nx-mc-dur) var(--nx-mc-ease)}
-  html.tema-glass-oscuro body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ss{text-align:left;padding-left:22px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .ss{text-align:left;padding-left:22px!important}
   /* ítems (58.98): píldora redondeada dentro del panel. Riel: cuadro 48×48 centrado (margen 14); expandido: 44 px de alto con
      10 px a cada lado (paso de fila constante: 52 px, el ícono no se mueve: 14+5+19 = 10+9+19 = 38). Activo, hover y pressed
      comparten radio y márgenes. El alto y el padding cambian al instante (el indicador de resorte los mide al toque); solo el
      margen lateral y el ancho acompañan al panel con la misma curva. */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){
     width:auto!important;box-sizing:border-box;height:48px!important;min-height:48px!important;margin:2px 14px!important;padding:0 12px 0 5px!important;gap:14px!important;
     justify-content:flex-start!important;border:0!important;border-radius:var(--nx-mc-r)!important;transition:background .15s ease,margin var(--nx-mc-dur) var(--nx-mc-ease)} /* border:0 — parches-sidebar-curva pone un borde transparente de 1 px que corría ícono y contador 1 px */
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){height:44px!important;min-height:44px!important;margin:4px 10px!important;padding:0 12px 0 9px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):active{background:rgba(255,255,255,.1)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:focus-visible{outline-offset:2px!important;border-radius:var(--nx-mc-r)}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *){height:44px!important;min-height:44px!important;margin:4px 10px!important;padding:0 12px 0 9px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):active{background:rgba(255,255,255,.1)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:focus-visible{outline-offset:2px!important;border-radius:var(--nx-mc-r)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{
     display:block!important;flex:0 0 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;
     font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;line-height:1;color:#E2E8F0!important;
     opacity:0;transform:translateX(-8px);pointer-events:none;transition:opacity .12s ease,transform .12s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{opacity:1;transform:none;pointer-events:auto;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni#niSolicit:not(#sbContab *):not(#sbConfig *)>.ni-l{text-transform:lowercase!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni#niSolicit:not(#sbContab *):not(#sbConfig *)>.ni-l::first-letter{text-transform:uppercase}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *)>.ni-l{color:#fff!important;font-weight:600!important}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{opacity:1;transform:none;pointer-events:auto;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni#niSolicit:not(#sbContab *):not(#sbConfig *)>.ni-l{text-transform:lowercase!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni#niSolicit:not(#sbContab *):not(#sbConfig *)>.ni-l::first-letter{text-transform:uppercase}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *)>.ni-l{color:#fff!important;font-weight:600!important}
   /* chevron/«ADMIN» de los desplegables: fuera (los paneles flotantes ya llevan su rótulo) */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i):not(.ni-l):not(.ni-b){display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>:not(.ni-i):not(.ni-l):not(.ni-b){display:none!important}
   /* contadores existentes (Clientes, Pólizas, Solicitudes): visibles al expandir solo si la pantalla no los tiene apagados */
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b:not([style*="display: none"]):not([style*="display:none"]){
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-b:not([style*="display: none"]):not([style*="display:none"]){
     display:inline-flex!important;align-items:center;justify-content:center;margin:0 0 0 auto!important;min-width:20px;height:20px;padding:0 6px!important;box-sizing:border-box;border-radius:10px;
     background:#EF4444!important;color:#fff!important;font-size:11px!important;font-weight:700;line-height:1;opacity:0;animation:nxMcIn .26s ease .16s forwards}
   @keyframes nxMcIn{to{opacity:1}}
   /* activo (58.98): píldora azul con degradado sutil, brillo interior arriba y halo; es el indicador de resorte existente (se mueve
      entre ítems con su física) y sus lados siguen al panel con la misma curva que el ancho. Sin resorte activo, .ni.on lleva lo mismo. */
-  html.tema-glass-oscuro body nav#sbEl.sb .spring-ind{left:14px!important;right:14px!important;width:auto!important;margin:0!important;border-radius:var(--nx-mc-r)!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .spring-ind{left:14px!important;right:14px!important;width:auto!important;margin:0!important;border-radius:var(--nx-mc-r)!important;
     background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important;transition:left var(--nx-mc-dur) var(--nx-mc-ease),right var(--nx-mc-dur) var(--nx-mc-ease),opacity .15s}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .spring-ind{left:10px!important;right:10px!important}
-  html.tema-glass-oscuro body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .spring-ind{left:10px!important;right:10px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body:not(.spring-nav) nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *){background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
   /* tooltips del riel: no cuando las etiquetas están a la vista */
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .sb-u::after{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .sb-u::after{display:none!important}
   /* paneles flotantes de Contabilidad/Configuración: mismo cristal y siguen al borde del panel */
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig{
     left:calc(var(--nx-mc-w) + 24px)!important;border-radius:24px!important;border:1px solid var(--nx-mc-edge)!important;
     background:var(--nx-mc-glass)!important;-webkit-backdrop-filter:var(--nx-mc-blur);backdrop-filter:var(--nx-mc-blur);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 70px -24px rgba(2,8,20,.8)!important;
     transition:left var(--nx-mc-dur) var(--nx-mc-ease),opacity .15s ease,visibility .15s ease!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab::before,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig::before{font-size:10px;letter-spacing:.12em;font-weight:600}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab::before,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig::before{font-size:10px;letter-spacing:.12em;font-weight:600}
   /* tarjeta de usuario al pie: avatar en la columna de íconos; nombre, rol y salida al expandir (mismo toque = cerrar sesión) */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{justify-content:flex-start!important;padding:10px 10px 12px!important;position:relative;overflow:hidden}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{width:100%!important;box-sizing:border-box;height:52px!important;min-height:52px!important;border-radius:14px!important;justify-content:flex-start!important;padding:0 10px!important;gap:12px!important;transition:background .15s ease}
-  @media (hover:hover){html.tema-glass-oscuro body nav#sbEl.sb .sb-u:hover{background:rgba(255,255,255,.06)!important}}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-av{width:36px!important;height:36px!important;font-size:13px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u>div:not(.sb-av){display:block!important;min-width:0;opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .sb-u>div:not(.sb-av){opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-un{font-size:14px;font-weight:600;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ur{font-size:11px;font-family:inherit;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-out{opacity:0;transition:opacity .12s ease}
-  html.tema-glass-oscuro.nx-mc-open body nav#sbEl.sb .nx-mc-out{opacity:1;transition:opacity .26s ease .14s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft{justify-content:flex-start!important;padding:10px 10px 12px!important;position:relative;overflow:hidden}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u{width:100%!important;box-sizing:border-box;height:52px!important;min-height:52px!important;border-radius:14px!important;justify-content:flex-start!important;padding:0 10px!important;gap:12px!important;transition:background .15s ease}
+  @media (hover:hover){html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u:hover{background:rgba(255,255,255,.06)!important}}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-av{width:36px!important;height:36px!important;font-size:13px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u>div:not(.sb-av){display:block!important;min-width:0;opacity:0;transform:translateX(-8px);transition:opacity .12s ease,transform .12s ease}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .sb-u>div:not(.sb-av){opacity:1;transform:none;transition:opacity .26s ease .1s,transform .34s var(--nx-mc-out) .1s}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-un{font-size:14px;font-weight:600;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ur{font-size:11px;font-family:inherit;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-out{opacity:0;transition:opacity .12s ease}
+  html:is(.tema-glass-oscuro,.tema-claro).nx-mc-open body nav#sbEl.sb .nx-mc-out{opacity:1;transition:opacity .26s ease .14s}
 }
 
 /* ══ CELULAR: el cajón ☰ (mismo nav) con el mismo lenguaje ══ */
 @media (max-width:768px){
-  html.tema-glass-oscuro body nav#sbEl.sb,html.tema-glass-oscuro body nav#sbEl.sb.col,html.tema-glass-oscuro body nav#sbEl.sb.mob-open,html.tema-glass-oscuro body nav#sbEl.sb.col.mob-open{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.col,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.col.mob-open{
     top:0!important;height:100dvh!important;width:min(300px,86vw)!important;border-radius:0 28px 28px 0!important;overflow:hidden!important;
     background:transparent!important;box-shadow:none!important;isolation:isolate}
-  html.tema-glass-oscuro body nav#sbEl.sb.mob-open{transition:transform .42s cubic-bezier(.32,.72,0,1)!important;box-shadow:0 30px 70px -20px rgba(2,8,20,.8),18px 0 48px -24px rgba(2,8,20,.6)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb:not(.mob-open){transition:transform .3s cubic-bezier(.32,.72,0,1),visibility 0s linear .3s!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::before{display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open::after,html.tema-glass-oscuro body nav#sbEl.sb.mob-open.nx-accordion-open::after{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open{transition:transform .42s cubic-bezier(.32,.72,0,1)!important;box-shadow:0 30px 70px -20px rgba(2,8,20,.8),18px 0 48px -24px rgba(2,8,20,.6)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb:not(.mob-open){transition:transform .3s cubic-bezier(.32,.72,0,1),visibility 0s linear .3s!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open.nx-accordion-open::after{
     content:'';position:absolute;inset:0!important;top:0!important;bottom:0!important;left:0!important;width:auto!important;transform:none!important;transition:none!important;z-index:0;
     border-radius:0 28px 28px 0!important;border:1px solid var(--nx-mc-edge)!important;border-left:0!important;
     background:var(--nx-mc-glass)!important;background-image:var(--nx-mc-glass)!important;background-size:auto!important;background-position:0 0!important;
     -webkit-backdrop-filter:var(--nx-mc-blur);backdrop-filter:var(--nx-mc-blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)!important}
-  html.tema-glass-oscuro body #mobOverlay{background:rgba(2,8,20,.45)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body #mobOverlay{background:rgba(2,8,20,.45)!important}
   /* cabecera: escudo + NEXUS PRO + chevron ‹ (cierra) */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top{display:flex!important;align-items:center!important;gap:12px!important;padding:14px 56px 10px 16px!important;border:0!important;position:relative}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-mk{position:static!important;transform:none!important;width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important;margin:0!important;font-size:19px}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-top>div:not(.sb-mk){margin:0!important;min-width:0}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nm{font-size:16px!important;font-weight:700!important;letter-spacing:-.01em!important;color:#F8FAFC!important;margin:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-sm{display:none!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg{top:calc(20px + env(safe-area-inset-top,0px));right:14px;left:auto}
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c{width:32px;height:32px}
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{transform:rotate(180deg)} /* ‹ = cerrar */
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p{display:none}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top{display:flex!important;align-items:center!important;gap:12px!important;padding:14px 56px 10px 16px!important;border:0!important;position:relative}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-mk{position:static!important;transform:none!important;width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important;margin:0!important;font-size:19px}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top>div:not(.sb-mk){margin:0!important;min-width:0}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nm{font-size:16px!important;font-weight:700!important;letter-spacing:-.01em!important;color:#F8FAFC!important;margin:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-sm{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg{top:calc(20px + env(safe-area-inset-top,0px));right:14px;left:auto}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c{width:32px;height:32px}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c i{transform:rotate(180deg)} /* ‹ = cerrar */
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-p{display:none}
   /* lista de borde a borde (la barra activa llega a los dos cantos) y tarjeta de usuario al pie */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-nav,html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-nav{padding:0 0 8px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-ft{margin-top:auto!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-nav{padding:0 0 8px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-ft{margin-top:auto!important}
   /* buscador */
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-search{padding:0 16px 0 18px!important;height:46px}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-search{padding:0 16px 0 18px!important;height:46px}
   /* rótulos de sección */
-  html.tema-glass-oscuro body nav#sbEl.sb .ss{height:auto!important;margin:6px 0 2px!important;padding:14px 0 6px 22px!important;position:relative;overflow:visible!important;text-align:left;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss{height:auto!important;margin:6px 0 2px!important;padding:14px 0 6px 22px!important;position:relative;overflow:visible!important;text-align:left;
     color:#BCC7D6!important;background:none!important;font-family:inherit!important;font-size:11px!important;font-weight:600;letter-spacing:.12em!important;text-transform:uppercase;line-height:1;white-space:nowrap}
-  html.tema-glass-oscuro body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
   /* filas: 48 px, ícono (círculo de 36) a la izquierda, etiqueta normal de 14 px; activo (58.98) = píldora azul con 12 px a cada lado,
      radio 14 (el ícono sigue en x=18 y el texto en x=70: 12+6 y 12+58) */
-  html.tema-glass-oscuro body nav#sbEl.sb .ni{position:relative;height:48px!important;min-height:48px!important;margin:1px 12px!important;padding:0 12px 0 58px!important;gap:8px!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni{position:relative;height:48px!important;min-height:48px!important;margin:1px 12px!important;padding:0 12px 0 58px!important;gap:8px!important;
     border-radius:var(--nx-mc-r)!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;transform:none!important;align-items:center}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni{height:44px!important;min-height:44px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ni-i{position:absolute!important;left:6px!important;top:50%!important;width:36px!important;height:36px!important;min-width:36px!important;margin:-18px 0 0!important;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni{height:44px!important;min-height:44px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni>i.ni-i{position:absolute!important;left:6px!important;top:50%!important;width:36px!important;height:36px!important;min-width:36px!important;margin:-18px 0 0!important;
     font-size:20px!important;background:transparent!important;border-radius:50%!important;box-shadow:none!important;color:#E2E8F0!important;display:flex!important;align-items:center;justify-content:center}
-  html.tema-glass-oscuro body nav#sbEl.sb #sbContab .ni>i.ni-i,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig .ni>i.ni-i{font-size:18px!important;left:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni:active{background:rgba(255,255,255,.08)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on{background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on>i.ni-i,html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-i{background:transparent!important;color:#fff!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-l,html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on .ni-l{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab .ni>i.ni-i,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig .ni>i.ni-i{font-size:18px!important;left:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni:active{background:rgba(255,255,255,.08)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on,html:is(.tema-glass-oscuro,.tema-claro) body.spring-nav nav#sbEl.sb .ni.on{background:var(--tgo-blue) var(--nx-mc-pill)!important;box-shadow:var(--nx-mc-pill-sh)!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on>i.ni-i,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-i{background:transparent!important;color:#fff!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body.spring-nav nav#sbEl.sb .ni.on .ni-l{
     font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;line-height:1.2!important;color:#E2E8F0!important;
     background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;border-radius:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni.on .ni-l,html.tema-glass-oscuro body.spring-nav nav#sbEl.sb .ni.on .ni-l{color:#fff!important;font-weight:600!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #niSolicit .ni-l{text-transform:lowercase!important;display:block!important}
-  html.tema-glass-oscuro body nav#sbEl.sb #niSolicit .ni-l::first-letter{text-transform:uppercase}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni>i.ti-chevron-down{font-size:14px!important;color:#BCC7D6!important;margin-left:auto!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-b{margin:0 0 0 auto!important;min-width:20px;height:20px;padding:0 6px!important;box-sizing:border-box;border-radius:10px!important;display:inline-flex;align-items:center;justify-content:center;
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni.on .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body.spring-nav nav#sbEl.sb .ni.on .ni-l{color:#fff!important;font-weight:600!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #niSolicit .ni-l{text-transform:lowercase!important;display:block!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #niSolicit .ni-l::first-letter{text-transform:uppercase}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni>i.ti-chevron-down{font-size:14px!important;color:#BCC7D6!important;margin-left:auto!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni .ni-b{margin:0 0 0 auto!important;min-width:20px;height:20px;padding:0 6px!important;box-sizing:border-box;border-radius:10px!important;display:inline-flex;align-items:center;justify-content:center;
     background:#EF4444!important;color:#fff!important;font-size:11px!important;font-weight:700;line-height:1}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-b[style*="display: none"],html.tema-glass-oscuro body nav#sbEl.sb .ni .ni-b[style*="display:none"]{display:none!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni .ni-b[style*="display: none"],html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni .ni-b[style*="display:none"]{display:none!important}
   /* tarjeta de usuario al pie (toque = cerrar sesión, como siempre) */
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft{position:relative;border:0!important;padding:8px 10px calc(10px + env(safe-area-inset-bottom,0px))!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ft::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-u{display:flex!important;align-items:center!important;gap:12px!important;min-height:52px!important;padding:6px 10px!important;margin:0!important;border-radius:14px!important;box-sizing:border-box}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-av{position:static!important;transform:none!important;width:40px!important;height:40px!important;min-width:40px!important;margin:0!important;font-size:14px!important}
-  html.tema-glass-oscuro body nav#sbEl.sb.mob-open .sb-u>div:not(.sb-av){padding-left:0!important;min-width:0;flex:1 1 auto}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-un{font-size:14px!important;font-weight:600!important;line-height:1.2;text-transform:none!important;letter-spacing:0!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .sb-ur{font-size:11px!important;font-family:inherit!important;letter-spacing:.02em!important;line-height:1.2;color:#BCC7D6!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft{position:relative;border:0!important;padding:8px 10px calc(10px + env(safe-area-inset-bottom,0px))!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft::before{content:'';position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--nx-mc-line)}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u{display:flex!important;align-items:center!important;gap:12px!important;min-height:52px!important;padding:6px 10px!important;margin:0!important;border-radius:14px!important;box-sizing:border-box}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-av{position:static!important;transform:none!important;width:40px!important;height:40px!important;min-width:40px!important;margin:0!important;font-size:14px!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb.mob-open .sb-u>div:not(.sb-av){padding-left:0!important;min-width:0;flex:1 1 auto}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-un{font-size:14px!important;font-weight:600!important;line-height:1.2;text-transform:none!important;letter-spacing:0!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ur{font-size:11px!important;font-family:inherit!important;letter-spacing:.02em!important;line-height:1.2;color:#BCC7D6!important}
 }
 /* transparencia reducida: el cristal vuelve a ser sólido (misma regla del tema, repetida porque aquí se fijó el fondo con !important) */
 @media (prefers-reduced-transparency:reduce){
-  html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body nav#sbEl.sb::after,html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::after,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig{
     background:var(--tgo-solid)!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 }
 /* movimiento reducido: sin resorte ni desplazamiento, solo fundidos cortos (parches-fase1-ui-motion ya deja toda transición en .01 ms) */
 @media (prefers-reduced-motion:reduce){
-  html.tema-glass-oscuro body nav#sbEl.sb::before,html.tema-glass-oscuro body nav#sbEl.sb .sb-top,html.tema-glass-oscuro body nav#sbEl.sb .sb-nav,html.tema-glass-oscuro body nav#sbEl.sb .sb-ft,
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-tg,html.tema-glass-oscuro body nav#sbEl.sb .ss,html.tema-glass-oscuro body nav#sbEl.sb #sbContab,html.tema-glass-oscuro body nav#sbEl.sb #sbConfig{transition-duration:0s!important;transition-delay:0s!important}
-  html.tema-glass-oscuro body nav#sbEl.sb .ni-l,html.tema-glass-oscuro body nav#sbEl.sb .sb-top>:not(.sb-mk),html.tema-glass-oscuro body nav#sbEl.sb .sb-u>div:not(.sb-av),html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-st,
-  html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-p,html.tema-glass-oscuro body nav#sbEl.sb .nx-mc-c i{transform:none!important;transition:opacity .15s ease!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb::before,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-nav,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-ft,
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ss,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbContab,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb #sbConfig{transition-duration:0s!important;transition-delay:0s!important}
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .ni-l,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-top>:not(.sb-mk),html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .sb-u>div:not(.sb-av),html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-st,
+  html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-p,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c i{transform:none!important;transition:opacity .15s ease!important}
 }
 </style>
 <style id="nxPagoV3">
@@ -4961,7 +4967,7 @@ html.tema-glass-oscuro #mAbono .nxPago:not(#_n):not(#_m)>.fe .btn:not(.bxl){back
      · Enlaces con forma de botón, sin subrayado (LLAMAR en Cliente 360). Cifras de ancho fijo en vistas y ventanas.
      Las reglas llevan :not(#nxb) para ganar a las de color del tema sin reescribirlas. Para deshacer: borrar este <style>. -->
 <style id="nxBotonesPro">
-html.tema-glass-oscuro{
+html:is(.tema-glass-oscuro,.tema-claro){
   --nxb-cara:linear-gradient(180deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,0) 40%); /* la luz se queda en el borde de arriba: detrás del texto el color es el de siempre (contraste intacto) */
   --nxb-filo:inset 0 1px 0 rgba(255,255,255,.26);
   --nxb-filo-2:inset 0 1px 0 rgba(255,255,255,.07);
@@ -4971,44 +4977,44 @@ html.tema-glass-oscuro{
 /* Alcance: las pantallas de Seguros, Contabilidad y Reportes y los pies de las ventanas. Fuera quedan los módulos con
    diseño propio: Inicio (#nxIG), WhatsApp, Punto de venta, Préstamos, Rifas y demás. */
 /* ── principales sólidos: cara + base de 2 px (la base cambia de color con el botón) ── */
-html.tema-glass-oscuro body :is(#app,.overlay) :is(.modal .fe .btn.bc1,.modal .fe .btn.bxl,.modal .fe .btn.bc5,.modal .fe .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bxl,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc1:not(.bsm),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bsm.bc1:not(:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) *),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc5,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn.primary,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCobCard .cbBtn.cobrar,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.nxft-add,#v-crm button.primary,.nxOpsFoot .primary):not(:disabled):not(#nxb):not(#nxb){
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(.modal .fe .btn.bc1,.modal .fe .btn.bxl,.modal .fe .btn.bc5,.modal .fe .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bxl,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc1:not(.bsm),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bsm.bc1:not(:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) *),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc5,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn.primary,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCobCard .cbBtn.cobrar,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.nxft-add,#v-crm button.primary,.nxOpsFoot .primary):not(:disabled):not(#nxb):not(#nxb){
   background-image:var(--nxb-cara)!important;
   box-shadow:var(--nxb-filo),0 2px 0 var(--nxb-base),0 10px 22px -14px var(--nxb-luz)!important}
-html.tema-glass-oscuro body :is(#app,.overlay) :is(.modal .fe .btn.bc1,.modal .fe .btn.bxl,.modal .fe .btn.bc5,.modal .fe .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bxl,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc1:not(.bsm),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bsm.bc1:not(:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) *),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc5,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn.primary,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCobCard .cbBtn.cobrar,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.nxft-add,#v-crm button.primary,.nxOpsFoot .primary):not(:disabled):not(#nxb):not(#nxb):active{
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(.modal .fe .btn.bc1,.modal .fe .btn.bxl,.modal .fe .btn.bc5,.modal .fe .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bxl,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc1:not(.bsm),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bsm.bc1:not(:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) *),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc5,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn.bc3,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn.primary,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCobCard .cbBtn.cobrar,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.nxft-add,#v-crm button.primary,.nxOpsFoot .primary):not(:disabled):not(#nxb):not(#nxb):active{
   box-shadow:var(--nxb-filo),0 1px 0 var(--nxb-base)!important}
 /* ── segmento elegido (pestañas, filtros del CRM): misma cara, base de 1 px ── */
-html.tema-glass-oscuro body #cnt :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.is-active:not(.nxft-add),#v-crm .nxCrmSeg button.on,#v-crm .nxCrmChips button.on):not(#nxb):not(#nxb):not(#nxb){
+html:is(.tema-glass-oscuro,.tema-claro) body #cnt :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab.is-active:not(.nxft-add),#v-crm .nxCrmSeg button.on,#v-crm .nxCrmChips button.on):not(#nxb):not(#nxb):not(#nxb){
   background-image:var(--nxb-cara)!important;
   box-shadow:var(--nxb-filo),0 1px 0 var(--nxb-base),0 8px 18px -12px var(--nxb-luz)!important}
-html.tema-glass-oscuro body :is(#app,.overlay) :is(.btn.bc5,.cbBtn.cobrar,.nxft-tab.nxft-add):not(#nxb){--nxb-base:#14532D;--nxb-luz:rgba(22,163,74,.8)}
-html.tema-glass-oscuro body :is(#app,.overlay) .btn.bc3:not(#nxb){--nxb-base:#7F1D1D;--nxb-luz:rgba(220,38,38,.8)}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(.btn.bc5,.cbBtn.cobrar,.nxft-tab.nxft-add):not(#nxb){--nxb-base:#14532D;--nxb-luz:rgba(22,163,74,.8)}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) .btn.bc3:not(#nxb){--nxb-base:#7F1D1D;--nxb-luz:rgba(220,38,38,.8)}
 /* el botón «Registrar» de la ventana de pago: misma cara y base, con sus formas */
-html.tema-glass-oscuro body #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:not(:disabled):not(#nxb){
+html:is(.tema-glass-oscuro,.tema-claro) body #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:not(:disabled):not(#nxb){
   background-image:var(--nxb-cara)!important;box-shadow:var(--nxb-filo),0 2px 0 var(--nxb-base),0 10px 22px -14px var(--nxb-luz)!important}
-html.tema-glass-oscuro body #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:not(:disabled):not(#nxb):active{box-shadow:var(--nxb-filo),0 1px 0 var(--nxb-base)!important}
+html:is(.tema-glass-oscuro,.tema-claro) body #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:not(:disabled):not(#nxb):active{box-shadow:var(--nxb-filo),0 1px 0 var(--nxb-base)!important}
 /* ── secundarios: filo de luz arriba; al presionar, hundido ── */
-html.tema-glass-oscuro body :is(#app,.overlay) :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1,.modal .fe .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn:not(.primary),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .cuBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .fc-ficha,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nfcBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCrmLink:not(.primary),#v-crm .nxCrmTopActs button:not(.primary)):not(:disabled):not(#nxb):not(#nxb){
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1,.modal .fe .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn:not(.primary),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .cuBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .fc-ficha,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nfcBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCrmLink:not(.primary),#v-crm .nxCrmTopActs button:not(.primary)):not(:disabled):not(#nxb):not(#nxb){
   box-shadow:var(--nxb-filo-2)!important}
-html.tema-glass-oscuro body :is(#app,.overlay) :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1,.modal .fe .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn:not(.primary),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .cuBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .fc-ficha,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nfcBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCrmLink:not(.primary),#v-crm .nxCrmTopActs button:not(.primary)):not(:disabled):not(#nxb):not(#nxb):active{
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1,.modal .fe .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn:not(.primary),:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .cuBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .fc-ficha,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nfcBtn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxCrmLink:not(.primary),#v-crm .nxCrmTopActs button:not(.primary)):not(:disabled):not(#nxb):not(#nxb):active{
   box-shadow:var(--nxb-hundido)!important}
 /* ── forma por función: píldora en pestañas, chips y botones de las vistas; 14 px en ventanas y en la cuadrícula de Cliente 360 ── */
-html.tema-glass-oscuro body #cnt :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn,#v-crm .nxCrmTopActs button,#v-crm .nxCrmSeg button,#v-crm .nxCrmChips button):not(#nxb):not(#nxb){border-radius:999px!important}
-html.tema-glass-oscuro body :is(#app,.overlay) .nxOptChip:not(#mAbono *):not(#nxb):not(#nxb){border-radius:999px!important}
-html.tema-glass-oscuro body :is(#app,.overlay) :is(.modal .fe .btn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn):not(#nxb):not(#nxb){border-radius:14px!important}
+html:is(.tema-glass-oscuro,.tema-claro) body #cnt :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .btn,#v-crm .nxCrmTopActs button,#v-crm .nxCrmSeg button,#v-crm .nxCrmChips button):not(#nxb):not(#nxb){border-radius:999px!important}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) .nxOptChip:not(#mAbono *):not(#nxb):not(#nxb){border-radius:999px!important}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(.modal .fe .btn,:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .sf-btn):not(#nxb):not(#nxb){border-radius:14px!important}
 /* ── misma letra en la pestaña activa y en las demás (sin cambio de ancho al tocarla) ── */
-html.tema-glass-oscuro body #cnt :is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab:not(#nxb):not(#nxb){font-weight:700!important}
+html:is(.tema-glass-oscuro,.tema-claro) body #cnt :is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas) .nxft-tab:not(#nxb):not(#nxb){font-weight:700!important}
 /* ── pestañas de Facturas en filas parejas (antes 4 + 2, con «Novedades» suelta a la derecha) ── */
-html.tema-glass-oscuro body #v-facturas .nxft-tabs .nxnov-quick:not(#nxb){margin-left:0!important}
-@media (min-width:620px){html.tema-glass-oscuro body #v-facturas .nxft-tabs:not(#nxb){grid-template-columns:repeat(3,minmax(0,1fr))!important}}
-@media (min-width:1240px){html.tema-glass-oscuro body #v-facturas .nxft-tabs:not(#nxb){grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
+html:is(.tema-glass-oscuro,.tema-claro) body #v-facturas .nxft-tabs .nxnov-quick:not(#nxb){margin-left:0!important}
+@media (min-width:620px){html:is(.tema-glass-oscuro,.tema-claro) body #v-facturas .nxft-tabs:not(#nxb){grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media (min-width:1240px){html:is(.tema-glass-oscuro,.tema-claro) body #v-facturas .nxft-tabs:not(#nxb){grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
 /* ── enlaces con forma de botón, sin subrayado ── */
-html.tema-glass-oscuro body :is(a.sf-btn,a.btn,a.fc-ficha,a.cuBtn):not(#nxb){text-decoration:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(a.sf-btn,a.btn,a.fc-ficha,a.cuBtn):not(#nxb){text-decoration:none!important}
 /* ── cifras de ancho fijo ── */
-html.tema-glass-oscuro body :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas),.overlay .modal){font-variant-numeric:tabular-nums}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(:is(#v-facturas,#v-clientes,#v-cliente360,#v-polizas,#v-crm,#v-solicitudes,#v-config,#v-custodia,#v-comisiones,#v-mayor,#v-asientos,#v-balance,#v-pyg,#v-dgii,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging,#v-agentes,#v-empresas),.overlay .modal){font-variant-numeric:tabular-nums}
 /* ── botones deshabilitados: planos ── */
-html.tema-glass-oscuro body :is(#app,.overlay) :is(.btn,.sf-btn,.nxft-tab,.cbBtn):disabled:not(#nxb){background-image:none!important;box-shadow:none!important}
+html:is(.tema-glass-oscuro,.tema-claro) body :is(#app,.overlay) :is(.btn,.sf-btn,.nxft-tab,.cbBtn):disabled:not(#nxb){background-image:none!important;box-shadow:none!important}
 @media (prefers-reduced-transparency:reduce){
-  html.tema-glass-oscuro{--nxb-cara:none}
+  html:is(.tema-glass-oscuro,.tema-claro){--nxb-cara:none}
 }
 </style>
 <!-- ═══ COBROS «NIVEL PRO» (59.21, dueño 11-oct-2026: «¿se le puede mejorar la pantalla de cobros y corregir algunos
@@ -5119,11 +5125,346 @@ html.tema-glass-oscuro.nx-ig #nxIG .nxCV-ax span{color:#BCC7D6}
   html.nx-ig #nxIG .nxCV-mas{opacity:1}
 }
 </style>
+<!-- ═══ MODO CLARO «gemelo del grafito» (59.22, dueño 12-oct-2026: «Ahora vamos con el modo claro») ═══
+     El «Clásico» (el que pone el botón sol/luna) pasa a ser el mismo sistema que el grafito, en claro: riel de íconos que se
+     expande, cabecera dentro del panel principal, cajón ☰ de cristal, ventanas con ✕ redonda, íconos planos y botones
+     «nivel pro». La ESTRUCTURA es la misma regla del grafito, compartida con html:is(.tema-glass-oscuro,.tema-claro) (misma
+     especificidad: el grafito queda idéntico); aquí solo van la PALETA clara y las reglas que el claro necesita aparte.
+     · Escena: la misma oficina del Clásico, desenfocada en el archivo (assets/fondo-oficina-claro*.webp, 7 KB / 4 KB) con
+       velo blanco; sin desenfoque en vivo (batería).
+     · Cristal blanco, líneas rgba(15,23,42,.08), texto #0F172A / #334155 / #64748B, un solo acento: azul NEXUS #2563EB.
+     · Interruptor: NX_TEMA_CLARO=false en el <head> (todos) o localStorage nx_claro_off='1' (un equipo). Para quitarlo del
+       todo: borrar este <style>, la clase tema-claro del <head>/aplicarTema y devolver los :is(...) a html.tema-glass-oscuro. -->
+<style id="nxTemaClaro">
+/* ── 0 · tokens ── */
+html.tema-claro{
+  color-scheme:light;
+  /* escena (el grafito usa los mismos nombres: así las reglas compartidas toman estos valores) */
+  --tgo-bg:#EEF1F5;--tgo-base-1:#F6F8FB;--tgo-base-2:#EEF1F5;--tgo-base-3:#E6EAF0;--tgo-glow:rgba(255,255,255,.65);
+  --tgc-velo-a:rgba(248,250,252,.40);--tgc-velo-b:rgba(241,245,249,.56);
+  /* cristal, líneas y acento */
+  --tgo-blue:#2563EB;--tgo-blue-d:#1D4ED8;--tgo-blue-l:#EFF6FF;
+  --tgo-glass:rgba(255,255,255,.66);--tgo-line:rgba(15,23,42,.08);--tgo-solid:#FFFFFF;--tgo-solid-2:#F8FAFC;
+  --tgo-panel-shadow:0 24px 48px -30px rgba(15,23,42,.30);--tgo-blur:blur(26px) saturate(1.5);
+  /* texto y superficies del claro */
+  --tgc-t1:#0F172A;--tgc-t2:#334155;--tgc-t3:#64748B;--tgc-ph:#64748B;
+  --tgc-card:rgba(255,255,255,.88);--tgc-edge:rgba(15,23,42,.08);--tgc-edge-2:rgba(15,23,42,.13);
+  --tgc-card-sh:0 1px 2px rgba(15,23,42,.04),0 10px 26px -18px rgba(15,23,42,.30);
+  --tgc-fill:rgba(15,23,42,.04);--tgc-fill-2:rgba(15,23,42,.07);--tgc-focus:#2563EB;
+  /* menú de cristal (style#nxMenuCristal) */
+  --nx-mc-glass:linear-gradient(180deg,rgba(255,255,255,.82) 0%,rgba(248,250,252,.76) 100%);
+  --nx-mc-edge:rgba(15,23,42,.08);
+  --nx-mc-line:linear-gradient(90deg,transparent,rgba(15,23,42,.10),transparent);
+  --nx-mc-pill:linear-gradient(180deg,#2563EB 0%,#1E50D6 100%);
+  --nx-mc-pill-sh:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px -8px rgba(37,99,235,.55);
+  --nx-mc-blur:blur(28px) saturate(160%);
+  /* acento único (antes morado #6d28d9 en el Clásico) */
+  --c1:#2563EB;--c2:#1D4ED8;--c1a:rgba(37,99,235,.08);--c2a:rgba(29,78,216,.08);
+  --gradient-primary:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);--sidebar-active:rgba(37,99,235,.9);
+  --nxbp-acento:#2563EB;--nxbp-halo:rgba(37,99,235,.24);
+  /* íconos planos (style#nxIphone5893, compartido): mismo sistema, tonos para fondo claro (glifo ≥4.5:1 sobre su tinte) */
+  --nx-ico-tint-blue:37,99,235;--nx-ico-blue:29,78,216;--nx-ico-tint-green:22,163,74;--nx-ico-green:21,128,61;
+  --nx-ico-tint-amber:245,158,11;--nx-ico-amber:180,83,9;--nx-ico-tint-red:239,68,68;--nx-ico-red:185,28,28;
+  --nx-ico-tint-neutral:15,23,42;--nx-ico-neutral:71,85,105;
+  --ico-t:var(--nx-ico-blue);--ico-f:var(--nx-ico-tint-blue);--ico-fa:.10;
+  /* botones «nivel pro» (style#nxBotonesPro, compartido): misma cara y base en los sólidos; en los secundarios, filo blanco
+     y una sombra corta (en el blanco un filo de luz solo no se ve); al presionar, hundido suave */
+  --nxb-cara:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 40%);
+  --nxb-filo:inset 0 1px 0 rgba(255,255,255,.28);
+  --nxb-filo-2:inset 0 1px 0 #fff,0 1px 2px rgba(15,23,42,.07);
+  --nxb-hundido:inset 0 1px 3px rgba(15,23,42,.18);
+  --nxb-base:#1E3A8A;--nxb-luz:rgba(37,99,235,.45);
+  /* capa «semi-glass» global (parches-seguros-base): sus mismos tokens sin el morado */
+  --nx-text:#0F172A;--nx-muted:#475569;--nx-glass:rgba(255,255,255,.86);--nx-glass-strong:rgba(255,255,255,.94);--nx-border:rgba(15,23,42,.08);
+  --nx-shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px -18px rgba(15,23,42,.28);
+  --nx-shadow-soft:0 1px 2px rgba(15,23,42,.04),0 10px 26px -18px rgba(15,23,42,.30);
+  background:var(--tgo-bg)!important;
+}
+/* ── 1 · escena: la oficina ya desenfocada con velo blanco (entra con fundido al cargar, como el grafito) ── */
+html.tema-claro.tgc-foto::after{opacity:1;will-change:opacity;
+  background:linear-gradient(180deg,var(--tgc-velo-a) 0%,var(--tgc-velo-b) 100%),url(assets/fondo-oficina-claro.webp) center/cover no-repeat}
+@media (max-width:768px){html.tema-claro.tgc-foto::after{background:linear-gradient(180deg,var(--tgc-velo-a) 0%,var(--tgc-velo-b) 100%),url(assets/fondo-oficina-claro-movil.webp) center/cover no-repeat}}
+html.tema-claro .nxs-brand{color:#0F172A}html.tema-claro .nxs-tag{color:#64748B}html.tema-claro .nxs-badge i{color:#2563EB}
+
+/* ── 2 · menú lateral: cristal blanco, ítem activo = píldora azul ── */
+html.tema-claro body nav#sbEl.sb .ni-i,html.tema-claro body nav#sbEl.sb .ni .ni-i{background:transparent!important;box-shadow:none!important;color:#334155!important}
+html.tema-claro body nav#sbEl.sb .ni-i::after,html.tema-claro body nav#sbEl.sb .ti::after,html.tema-claro .tnav .ti::after{display:none!important}
+html.tema-claro body nav#sbEl.sb .ni:hover .ni-i{color:#0F172A!important}
+html.tema-claro body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
+html.tema-claro body nav#sbEl.sb .ni-l{color:#334155!important}
+html.tema-claro body nav#sbEl.sb .ni.on .ni-l{color:#fff!important}
+html.tema-claro body nav#sbEl.sb .ss{color:#64748B!important}
+html.tema-claro body nav#sbEl.sb .sb-nm,html.tema-claro body nav#sbEl.sb .sb-un{color:#0F172A!important}
+html.tema-claro body nav#sbEl.sb .sb-sm,html.tema-claro body nav#sbEl.sb .sb-ur{color:#64748B!important}
+html.tema-claro body nav#sbEl.sb .ni-b{background:rgba(15,23,42,.07)!important;color:#334155!important}
+html.tema-claro body nav#sbEl.sb .ni i.ti-chevron-down{color:#64748B!important;background:none!important;box-shadow:none!important}
+html.tema-claro body nav#sbEl.sb .sb-mk{background:var(--tgo-blue)!important;box-shadow:0 8px 20px -8px rgba(37,99,235,.55)!important}
+html.tema-claro body nav#sbEl.sb .spring-glow,html.tema-claro body nav#sbEl.sb .spring-ind::after{display:none!important}
+@media (hover:hover){html.tema-claro body nav#sbEl.sb .ni:not(.on):hover{background:rgba(15,23,42,.05)!important;box-shadow:none!important}}
+/* riel de escritorio (reglas compartidas del grafito): foco, nombre flotante, paneles de Contabilidad/Configuración, avatar */
+@media (min-width:769px){
+  html.tema-claro body nav#sbEl.sb .ni:focus-visible{outline:2px solid #2563EB!important}
+  html.tema-claro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)::after,html.tema-claro body nav#sbEl.sb .sb-u::after{
+    background:rgba(255,255,255,.97);color:#0F172A;border:1px solid rgba(15,23,42,.08);box-shadow:0 12px 28px -12px rgba(15,23,42,.35)}
+  html.tema-claro body nav#sbEl.sb #sbContab::before,html.tema-claro body nav#sbEl.sb #sbConfig::before{color:#64748B}
+  html.tema-claro body nav#sbEl.sb #sbContab .ni .ni-l,html.tema-claro body nav#sbEl.sb #sbConfig .ni .ni-l{color:#334155!important}
+  html.tema-claro body nav#sbEl.sb #sbContab .ni.on .ni-l,html.tema-claro body nav#sbEl.sb #sbConfig .ni.on .ni-l{color:#fff!important}
+  html.tema-claro body nav#sbEl.sb .sb-av{box-shadow:0 0 0 2px #fff,0 2px 6px rgba(15,23,42,.18)}
+}
+/* ── 3 · menú de cristal (style#nxMenuCristal, compartido): los colores fijos del grafito en claro ── */
+html.tema-claro body nav#sbEl.sb .nx-mc-c{box-shadow:0 6px 16px -6px rgba(37,99,235,.6),0 0 0 2px #fff,inset 0 1px 0 rgba(255,255,255,.3)}
+html.tema-claro body nav#sbEl.sb .nx-mc-tg:hover .nx-mc-c{box-shadow:0 8px 20px -6px rgba(37,99,235,.7),0 0 0 3px rgba(191,219,254,.9),inset 0 1px 0 rgba(255,255,255,.3)}
+html.tema-claro body nav#sbEl.sb .nx-mc-tg:focus-visible .nx-mc-c{box-shadow:0 0 0 2px #fff,0 0 0 4px #2563EB}
+html.tema-claro body nav#sbEl.sb .nx-mc-p{background:#fff;color:#1D4ED8;box-shadow:0 6px 14px -6px rgba(15,23,42,.35),0 0 0 1px rgba(15,23,42,.06)}
+html.tema-claro body nav#sbEl.sb .nx-mc-search{color:#64748B}
+html.tema-claro body nav#sbEl.sb .nx-mc-si{color:#334155}
+html.tema-claro body nav#sbEl.sb .nx-mc-st{border:1px solid rgba(15,23,42,.10);background:rgba(15,23,42,.035);color:#64748B}
+html.tema-claro body nav#sbEl.sb .nx-mc-search:focus-visible .nx-mc-si{box-shadow:0 0 0 2px #2563EB}
+@media (hover:hover){
+  html.tema-claro body nav#sbEl.sb .nx-mc-search:hover .nx-mc-si{background:rgba(15,23,42,.05)}
+  html.tema-claro body nav#sbEl.sb .nx-mc-search:hover .nx-mc-st{border-color:rgba(15,23,42,.18);color:#334155}
+  html.tema-claro body nav#sbEl.sb .sb-u:hover{background:rgba(15,23,42,.05)!important}
+}
+html.tema-claro body nav#sbEl.sb .nx-mc-out{color:#64748B}
+@media (min-width:769px){
+  html.tema-claro body nav#sbEl.sb::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 24px 48px -30px rgba(15,23,42,.30)}
+  html.tema-claro.nx-mc-open body nav#sbEl.sb::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 30px 70px -24px rgba(15,23,42,.32),18px 0 48px -22px rgba(15,23,42,.18)}
+  html.tema-claro body nav#sbEl.sb .sb-nm{color:#0F172A!important}
+  html.tema-claro body nav#sbEl.sb .ss{color:#64748B!important}
+  html.tema-claro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *):active{background:rgba(15,23,42,.07)!important}
+  html.tema-claro body nav#sbEl.sb .ni:not(#sbContab *):not(#sbConfig *)>.ni-l{color:#334155!important}
+  html.tema-claro body nav#sbEl.sb .ni.on:not(#sbContab *):not(#sbConfig *)>.ni-l{color:#fff!important}
+  html.tema-claro body nav#sbEl.sb #sbContab,html.tema-claro body nav#sbEl.sb #sbConfig{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 30px 70px -24px rgba(15,23,42,.35)!important}
+}
+/* cajón ☰ del celular */
+@media (max-width:768px){
+  html.tema-claro body nav#sbEl.sb.mob-open{box-shadow:0 30px 70px -20px rgba(15,23,42,.35),18px 0 48px -24px rgba(15,23,42,.22)!important}
+  html.tema-claro body nav#sbEl.sb::after,html.tema-claro body nav#sbEl.sb.mob-open::after,html.tema-claro body nav#sbEl.sb.mob-open.nx-accordion-open::after{box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important}
+  html.tema-claro body #mobOverlay{background:rgba(15,23,42,.28)!important}
+  html.tema-claro body nav#sbEl.sb .sb-nm{color:#0F172A!important}
+  html.tema-claro body nav#sbEl.sb .ss{color:#64748B!important}
+  html.tema-claro body nav#sbEl.sb .ni>i.ni-i{color:#334155!important}
+  html.tema-claro body nav#sbEl.sb .ni:active{background:rgba(15,23,42,.06)!important}
+  html.tema-claro body nav#sbEl.sb .ni .ni-l{color:#334155!important}
+  html.tema-claro body nav#sbEl.sb .ni.on .ni-l,html.tema-claro body.spring-nav nav#sbEl.sb .ni.on .ni-l{color:#fff!important}
+  html.tema-claro body nav#sbEl.sb .ni.on>i.ni-i,html.tema-claro body nav#sbEl.sb .ni.on .ni-i{color:#fff!important}
+  html.tema-claro body nav#sbEl.sb .ni>i.ti-chevron-down{color:#64748B!important}
+  html.tema-claro body nav#sbEl.sb .sb-ur{color:#64748B!important}
+}
+
+/* ── 4 · cabecera: botones de cristal claro (antes «caramelo» verde, ámbar y morado) ── */
+html.tema-claro body .tnav{--tnb-accent:#2563EB;--tnb-accent2:#1D4ED8}
+html.tema-claro body .tnav .ti{color:#334155!important}
+html.tema-claro body .tnav .tn-b,html.tema-claro body .tnav .tn-tog,html.tema-claro body .tnav #btnRefrescar{
+  background:rgba(255,255,255,.78)!important;background-image:none!important;border:1px solid rgba(15,23,42,.10)!important;color:#334155!important;
+  box-shadow:0 1px 2px rgba(15,23,42,.06)!important}
+html.tema-claro body .tnav #btnRefrescar i,html.tema-claro body .tnav .notif-bell i,html.tema-claro body .tnav .tn-tog i{color:#334155!important}
+@media (hover:hover){html.tema-claro body .tnav .tn-b:hover,html.tema-claro body .tnav .tn-tog:hover,html.tema-claro body .tnav #btnRefrescar:hover{background:#fff!important;border-color:rgba(15,23,42,.16)!important}}
+html.tema-claro body .tnav .tn-b:focus-visible,html.tema-claro body .tnav .tn-tog:focus-visible{outline:2px solid #2563EB!important}
+html.tema-claro body .tnav .pttl{color:#0F172A!important}
+html.tema-claro body .tnav .notif-badge{box-shadow:0 0 0 2px #fff}
+/* sin conexión: el ☰ se tiñe de rojo (en el claro de antes era la bola roja) */
+html.tema-claro body .tnav .tn-tog.nx-offline{background:#FEF2F2!important;border-color:rgba(220,38,38,.35)!important}
+html.tema-claro body .tnav .tn-tog.nx-offline i{color:#B91C1C!important}
+@media (min-width:769px){
+  /* panel principal de cristal blanco, sin desenfoque en vivo (la foto ya viene desenfocada) */
+  html.tema-claro body .main::before{background:rgba(255,255,255,.56);border-color:rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 24px 48px -30px rgba(15,23,42,.28)}
+  /* búsqueda global: píldora gris claro con su atajo */
+  html.tema-claro body .tnav .tn-b.tn-b-primary{background:rgba(15,23,42,.045)!important;border-color:rgba(15,23,42,.08)!important;color:#475569!important;box-shadow:none!important}
+  html.tema-claro body .tnav .tn-b.tn-b-primary::after{color:#64748B}
+  html.tema-claro body .tnav .tn-b.tn-b-primary .ti{color:#475569!important}
+  html.tema-claro body .tnav .tn-b.tn-b-primary kbd{background:#fff!important;border-color:rgba(15,23,42,.12)!important;color:#475569!important}
+}
+@media (max-width:768px){
+  /* la barra blanca de vidrio del 02-oct («sin neblina encima del contenido») con el borde y la sombra del grafito, en claro */
+  html.tema-claro body .tnav{border:1px solid rgba(15,23,42,.08)!important;box-shadow:0 14px 30px -20px rgba(15,23,42,.30)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+
+/* ── 5 · ventanas: ✕ y ‹ redondas (parches-nav-botones.js, compartido): gris claro con el glifo oscuro, como en el iPhone.
+   Esa capa llega después por el cargador: aquí va un :not(#_n) más para ganarle sin pelear con !important ── */
+html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n){background:rgba(15,23,42,.06)!important;border:1px solid rgba(15,23,42,.06)!important;box-shadow:none!important;color:#334155!important}
+@media (hover:hover){html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n):hover{background:rgba(15,23,42,.10)!important}}
+html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n).nxp,html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n):active{background:rgba(15,23,42,.14)!important;box-shadow:inset 0 1px 2px rgba(15,23,42,.12)!important}
+html.tema-claro .modal>.mt[data-nxhead][data-nxswipe]>[data-nxtitle]::before{background:rgba(15,23,42,.18)}
+html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n):focus-visible{outline:2px solid #2563EB}
+@media (prefers-reduced-transparency:reduce){html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n){background:#E2E8F0!important}}
+@media (prefers-contrast:more){html.tema-claro .modal>.mt [data-nxnav]:not(#_n):not(#_n):not(#_n){border-color:rgba(15,23,42,.5)!important}}
+/* ── 6 · superficies: la capa «semi-glass» (parches-seguros-base) sin el morado; vidrio blanco nítido, sin desenfoque en vivo
+   (la escena ya viene desenfocada: el mismo criterio del grafito). El «cristalizado» de las cifras (dueño, 30-ago) se mantiene:
+   blanco al 80 % que deja ver la escena. ── */
+html.tema-claro .nc,html.tema-claro .kpi,html.tema-claro .kg>div,html.tema-claro .cfg-panel .nc,
+html.tema-claro .card:not(.nxFP-dockSheet),html.tema-claro .sm:not(.nxFP-dockSheet),html.tema-claro .box:not(.nxFP-dockSheet),html.tema-claro .panel:not(.nxFP-dockSheet){
+  background:var(--tgc-card)!important;background-image:none!important;border:1px solid var(--tgc-edge)!important;box-shadow:var(--tgc-card-sh)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-claro .nc{border-radius:16px!important}
+@media (hover:hover){html.tema-claro :is(.nc,.card,.kpi,.sm,.qa):hover{border-color:var(--tgc-edge-2)!important;box-shadow:0 1px 2px rgba(15,23,42,.05),0 16px 32px -20px rgba(15,23,42,.34)!important}}
+/* tablas: cabecera neutra, filas con un tinte azul muy suave al pasar, sin la sombra blanca del «texto 3D» */
+html.tema-claro .tw{background:var(--tgc-card)!important;border:1px solid var(--tgc-edge)!important;box-shadow:var(--tgc-card-sh)!important}
+html.tema-claro .nc .tw,html.tema-claro .modal .tw{background:transparent!important;box-shadow:none!important}
+html.tema-claro thead,html.tema-claro thead tr{background:transparent!important;background-image:none!important}
+html.tema-claro thead th:not([style*="background"]),html.tema-claro table th:not([style*="background"]){background:rgba(248,250,252,.96)!important;background-image:none!important;border-color:var(--tgc-edge)!important}
+html.tema-claro thead th:not([style*="color"]),html.tema-claro table th:not([style*="color"]){color:#475569!important}
+html.tema-claro :where(#cnt,.overlay) tbody tr:hover{background:rgba(37,99,235,.04)!important}
+html.tema-claro table td,html.tema-claro table th,html.tema-claro .nxSL-table td,html.tema-claro .nxSL-table th,html.tema-claro .nxDC-table td,html.tema-claro .nxDC-table th{text-shadow:none!important}
+/* botones de toda la app: sin el borde morado ni la sombra larga de la capa global (los de diseño propio, más específicos, siguen igual) */
+html.tema-claro :where(.btn,button,.bsm,.bxl){border-color:rgba(15,23,42,.10)!important;box-shadow:0 1px 2px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.9)!important}
+/* principales: azul NEXUS sólido (antes degradado morado); rojo y verde sólidos */
+html.tema-claro .bc1,html.tema-claro .btn.bxl{background:var(--tgo-blue)!important;background-image:none!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+@media (hover:hover){html.tema-claro .bc1:hover,html.tema-claro .btn.bxl:hover{background:var(--tgo-blue-d)!important;border-color:var(--tgo-blue-d)!important}}
+html.tema-claro .bc3{background:#DC2626!important;background-image:none!important;border-color:#DC2626!important;color:#fff!important}
+html.tema-claro .bc5,html.tema-claro #cnt .btn.bc5,html.tema-claro .overlay .btn.bc5{background:#15803D!important;background-image:none!important;border-color:#15803D!important;color:#fff!important}
+html.tema-claro .btn.bc1 i,html.tema-claro .btn.bxl i,html.tema-claro .btn.bc3 i,html.tema-claro .btn.bc5 i{color:#fff!important}
+/* campos: blanco con borde pizarra y anillo azul al enfocar (antes borde morado con sombra). La ventana de pago (#mAbono,
+   neumórfica, pedido del dueño) y el Buzón (diseño de WhatsApp) siguen con lo suyo. */
+html.tema-claro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif-panel,.nxFP) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=button]):not([type=submit]),select,textarea):not(#v-waInbox *):not(#mAbono *){
+  border-color:rgba(15,23,42,.14)!important;box-shadow:none!important}
+html.tema-claro :is(#app,.overlay,.cs-panel,.nxCrmDialog,.gs-panel,.notif-panel,.nxFP) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=button]):not([type=submit]),select,textarea):not(#v-waInbox *):not(#mAbono *):focus{
+  border-color:#2563EB!important;box-shadow:0 0 0 3px rgba(37,99,235,.16)!important;outline:none!important}
+html.tema-claro :is(#app,.overlay) :is(.nxBusca,.nxCrmSearch,.gs-input-wrap) input:not(#tgc):not(#tgc2):not(#tgc3){border:0!important;box-shadow:none!important;background-color:transparent!important}
+html.tema-claro :is(#app,.overlay) input::placeholder,html.tema-claro :is(#app,.overlay) textarea::placeholder{color:#64748B}
+html.tema-claro input[type=checkbox],html.tema-claro input[type=radio]{accent-color:#2563EB}
+/* ventanas: hoja blanca nítida sobre un velo suave (antes vidrio translúcido con borde morado); la de pago conserva su diseño */
+html.tema-claro .overlay{background:rgba(15,23,42,.30)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+html.tema-claro .overlay .modal:not(#mAbono .modal):not(#tgc),html.tema-claro .nxCrmDialog,html.tema-claro .cs-panel{
+  background:linear-gradient(180deg,#FFFFFF 0%,#F8FAFC 100%)!important;border:1px solid rgba(15,23,42,.08)!important;
+  box-shadow:0 30px 70px -24px rgba(15,23,42,.40)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-claro .modal{border-radius:20px!important}
+/* menús, avisos y notificaciones: misma hoja blanca */
+html.tema-claro .notif-panel,html.tema-claro .gs-box,html.tema-claro .acc-menu,html.tema-claro .dropdown,html.tema-claro .nfcMenu,html.tema-claro .nfcPop,html.tema-claro .nfcList,html.tema-claro .nfcDrop{
+  background:rgba(255,255,255,.97)!important;background-image:none!important;border:1px solid rgba(15,23,42,.08)!important;box-shadow:0 24px 56px -24px rgba(15,23,42,.38)!important}
+
+/* ── 7 · vistas de Seguros, Contabilidad y Reportes: lo metálico (gris con acento verde azulado, 28-ago) pasa a blanco plano con
+   el acento azul; mismo lenguaje que el grafito ── */
+html.tema-claro #cnt #v-clientes,html.tema-claro #cnt #v-facturas,html.tema-claro #cnt #v-cliente360,html.tema-claro #cnt #v-polizas,
+html.tema-claro #cnt #v-rep-agente,html.tema-claro #cnt #v-rep-plan,html.tema-claro #cnt #v-rep-empresa,html.tema-claro #cnt #v-rep-aging,html.tema-claro #csPanel{
+  --pill-bg:#FFFFFF;--pill-hi:#FFFFFF;--pill-lo:rgba(15,23,42,.08);--pill-accent:#1D4ED8;
+  --nm-bg:#FFFFFF;--nm-hi:rgba(255,255,255,0);--nm-lo:rgba(15,23,42,.08);--nm-tx:#0F172A;--nm-tx2:#475569;--nm-accent:#1D4ED8}
+/* fichas (.nxSf): mismos tokens, valor claro nítido */
+html.tema-claro .nxSf,html.tema-claro{--sf-card:var(--tgc-card);--sf-line:rgba(15,23,42,.08);--sf-primary-l:rgba(37,99,235,.10);--sf-tx2:#475569;--sf-tx3:#64748B}
+html.tema-claro #cnt .nxSf .sf-kpi,html.tema-claro .nxSf .sf-kpi{background:var(--tgc-card)!important;background-image:none!important;border:1px solid var(--tgc-edge)!important;box-shadow:var(--tgc-card-sh)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.tema-claro .nxSf .sf-head,html.tema-claro .nxSf .sf-panel,html.tema-claro .nxSf .sf-tl-b{background:var(--tgc-card)!important;border-color:var(--tgc-edge)!important;box-shadow:var(--tgc-card-sh)!important}
+html.tema-claro .nxSf .sf-panel .sf-tl-b,html.tema-claro .nxSf .sf-panel .sf-panel{background:rgba(248,250,252,.9)!important;box-shadow:none!important}
+html.tema-claro .nxSf .sf-qa-tile{background:rgba(248,250,252,.9)!important;border-color:var(--tgc-edge)!important}
+/* Atención prioritaria: tarjeta blanca con el tinte de su estado y avatar plano (antes bloque rojo en 3D) */
+html.tema-claro .nxSf .sf-fancard{background:radial-gradient(120% 90% at 100% 0%,rgba(239,68,68,.09),transparent 55%),rgba(255,255,255,.88)!important;
+  border:1px solid rgba(239,68,68,.20)!important;box-shadow:var(--tgc-card-sh)!important}
+html.tema-claro .nxSf .sf-fancard.warn{background:radial-gradient(120% 90% at 100% 0%,rgba(245,158,11,.10),transparent 55%),rgba(255,255,255,.88)!important;border-color:rgba(245,158,11,.24)!important}
+html.tema-claro .nxSf .fc-avwrap{filter:none!important}
+html.tema-claro .nxSf .fc-avring{border-radius:50%!important;background:none!important;animation:none!important;box-shadow:inset 0 0 0 1px rgba(239,68,68,.25)}
+html.tema-claro .nxSf .sf-fancard.warn .fc-avring{box-shadow:inset 0 0 0 1px rgba(245,158,11,.30)}
+html.tema-claro .nxSf .fc-av:not(#tgc){border-radius:50%!important;background:#FEE2E2!important;color:#B91C1C!important;box-shadow:none!important;transform:none!important}
+html.tema-claro .nxSf .sf-fancard.warn .fc-av:not(#tgc){background:#FEF3C7!important;color:#B45309!important}
+/* pestañas (todas las .nxft-tabs): carril blanco, activa = píldora azul */
+html.tema-claro #cnt .nxft-tabs:not(#tgc){background:rgba(255,255,255,.72)!important;background-image:none!important;border:1px solid var(--tgc-edge)!important;box-shadow:none!important}
+html.tema-claro #cnt .nxft-tab:not(.nxft-add):not(.nxft-alert):not(#tgc){background:transparent!important;background-image:none!important;color:#334155!important;box-shadow:none!important;border-color:transparent!important}
+@media (hover:hover){html.tema-claro #cnt .nxft-tab:not(.nxft-add):not(#tgc):hover{background:rgba(15,23,42,.05)!important;color:#0F172A!important}}
+html.tema-claro #cnt .nxft-tab.is-active:not(.nxft-add):not(#tgc){background:var(--tgo-blue)!important;color:#fff!important;box-shadow:0 6px 16px -8px rgba(37,99,235,.55)!important}
+html.tema-claro #cnt .nxft-tab.is-active:not(.nxft-add):not(#tgc) i.ti{color:#fff!important}
+html.tema-claro #cnt .nxft-tab.nxft-alert:not(.is-active):not(#tgc){background:rgba(239,68,68,.10)!important;color:#B91C1C!important}
+html.tema-claro #cnt .nxft-tab .nxft-cnt:not(#tgc){background:rgba(15,23,42,.07)!important;color:inherit!important}
+html.tema-claro #cnt .nxft-tab.is-active .nxft-cnt:not(#tgc){background:rgba(0,0,0,.18)!important;color:#fff!important}
+html.tema-claro #cnt .nxft-tab.nxft-add,html.tema-claro #cnt .nxSL-action-green{background:#047857!important;background-image:none!important;color:#fff!important}
+/* botones de las vistas y botones pequeños de las tablas (Editar, WhatsApp, PDF…): blancos con filo fino */
+html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360,#v-rep-agente,#v-rep-plan,#v-rep-empresa,#v-rep-aging) .btn:not(.bc1):not(.bc3):not(.bc5):not(.bxl):not([style*="color:#fff"]):not([style*="color: rgb(255, 255, 255)"]):not(#tgc){
+  background:#fff!important;background-image:none!important;border:1px solid rgba(15,23,42,.12)!important;box-shadow:none!important;color:#334155!important}
+html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1:not(#tgc){background:rgba(37,99,235,.08)!important;background-image:none!important;border:1px solid rgba(37,99,235,.22)!important;box-shadow:none!important;color:#1D4ED8!important}
+html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bsm.bc1 i{color:#1D4ED8!important}
+html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bwa:not(#tgc),html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bwa i{color:#15803D!important}
+html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bc4:not(#tgc),html.tema-claro #cnt :is(#v-clientes,#v-facturas,#v-polizas,#v-cliente360) .btn.bc4 i{color:#B45309!important}
+html.tema-claro #cnt #v-cliente360 .sf-btn:not(.primary):not(.ok):not(#tgc){background:#fff!important;border:1px solid rgba(15,23,42,.12)!important;color:#334155!important}
+html.tema-claro #cnt #v-cliente360 .sf-btn.primary:not(#tgc){background:var(--tgo-blue)!important;border-color:var(--tgo-blue)!important;color:#fff!important}
+html.tema-claro #cnt #v-cliente360 .sf-btn.ok:not(#tgc){background:#F0FDF4!important;border:1px solid rgba(22,163,74,.25)!important;color:#15803D!important}
+/* filtros tipo chip (nfcBtn), buscador con lupa y vista */
+html.tema-claro .nfcBtn:not(#tgc){background:#fff!important;background-image:none!important;border:1px solid rgba(15,23,42,.12)!important;color:#334155!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (hover:hover){html.tema-claro .nfcBtn:not(#tgc):hover{border-color:rgba(37,99,235,.35)!important}}
+html.tema-claro .nfcBtn *{color:inherit}
+html.tema-claro .nxBusca{background:#fff!important;border-color:rgba(15,23,42,.14)!important}
+html.tema-claro .nxBusca:focus-within{border-color:#2563EB!important;box-shadow:0 0 0 3px rgba(37,99,235,.16)!important}
+html.tema-claro #cnt .nxVistaTog{background:rgba(15,23,42,.05)!important;background-image:none!important;border:1px solid var(--tgc-edge)!important;box-shadow:none!important}
+html.tema-claro #cnt .nxVistaTog button{color:#334155!important;background:transparent!important;box-shadow:none!important}
+html.tema-claro #cnt .nxVistaTog button:is(.on,.is-active,.active,[aria-pressed=true]){background:#fff!important;color:#0F172A!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important}
+/* cabecera de Clientes (pulso) */
+html.tema-claro #cnt .nxCrmPulse>div{background:var(--tgc-card)!important;border-color:var(--tgc-edge)!important}
+/* avatares con iniciales y botones redondos de una sola acción: planos, sin brillo ni sombra */
+html.tema-claro :is(.cli-row,#cnt) .av{box-shadow:none!important;background-image:none!important}
+html.tema-claro nav#sbEl .sb-av{background:var(--tgo-blue)!important;color:#fff!important}
+html.tema-claro #cnt .cbAv{box-shadow:none!important}
+/* fila de filtros (lupa + chips): carril neutro (antes degradado índigo/celeste/violeta) */
+html.tema-claro .nfcRow{background:rgba(15,23,42,.03)!important;background-image:none!important;border:1px solid var(--tgc-edge)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* botones principales: el color va en background-color. La «cara» de nxBotonesPro ocupa background-image, y varios de estos
+   traían su azul como degradado (Registrar pago, Cobros del CRM): sin esto quedaban transparentes */
+html.tema-claro body :is(#app,.overlay) :is(.modal .fe .btn.bc1,.modal .fe .btn.bxl,.btn.bxl,.btn.bc1:not(.bsm),.sf-btn.primary,#v-crm button.primary,.nxOpsFoot .primary):not(:disabled):not(#nxb):not(#nxb):not(#nxb){background-color:#2563EB!important;color:#fff!important}
+html.tema-claro body :is(#app,.overlay) :is(.btn.bc5,.nxft-tab.nxft-add):not(:disabled):not(#nxb):not(#nxb):not(#nxb){background-color:#15803D!important;color:#fff!important}
+html.tema-claro body :is(#app,.overlay) .btn.bc3:not(:disabled):not(#nxb):not(#nxb):not(#nxb){background-color:#DC2626!important;color:#fff!important}
+html.tema-claro body #mAbono .nxPago:not(#_n):not(#_m)>.fe #btnAbo:not(:disabled):not(#nxb):not(#nxb){background-color:#2563EB!important;color:#fff!important}
+html.tema-claro body #cnt #v-crm :is(.nxCrmSeg,.nxCrmChips) button.on:not(#nxb):not(#nxb):not(#nxb){background-color:#2563EB!important;color:#fff!important;border-color:transparent!important}
+
+/* ── 8 · Inicio claro: la escena reemplaza el velo oscuro propio del #nxIG (el panel azul noche que el Inicio traía en todos
+   los temas); paneles de cristal blanco, tarjetas blancas con filo fino; «Ciclo actual» sigue azul (acento) ── */
+html.tema-claro.nx-ig #nxIG{background:transparent!important;box-shadow:none!important;color:#0F172A;
+  --ig-glass:rgba(255,255,255,.56);--ig-glass2:rgba(255,255,255,.66);--ig-line:rgba(15,23,42,.08);--ig-steel:#64748B;--ig-mute:#64748B;--ig-ink:#0F172A}
+html.tema-claro.nx-ig #nxIG .nxIG-glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 24px 48px -30px rgba(15,23,42,.28)!important}
+@media (min-width:769px){
+  /* dentro del panel principal: el panel izquierdo se funde con él; su buscador es el de la cabecera (una sola vez) */
+  html.tema-claro.nx-ig #nxIG .nxIG-main.nxIG-glass{background:transparent!important;border-color:transparent!important;box-shadow:none!important;padding-top:4px}
+  html.tema-claro.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(255,255,255,.5)!important;box-shadow:none!important}
+  html.tema-claro.nx-ig #nxIG .nxIG-search{display:none!important}
+}
+@media (max-width:768px){html.tema-claro.nx-ig #nxIG .nxIG-glass{background:rgba(255,255,255,.62)!important}}
+html.tema-claro.nx-ig #nxIG .nxIG-card{box-shadow:0 0 0 1px rgba(15,23,42,.06),0 10px 26px -18px rgba(15,23,42,.30)}
+html.tema-claro.nx-ig #nxIG .nxIG-hi .nxIG-h{color:#0F172A}
+html.tema-claro.nx-ig #nxIG .nxIG-hi p{color:#475569}
+html.tema-claro.nx-ig #nxIG .nxIG-hi p b{color:#0F172A}
+html.tema-claro.nx-ig #nxIG .nxIG-search{background:#fff!important;border:1px solid rgba(15,23,42,.10)!important;color:#64748B!important}
+@media (hover:hover){html.tema-claro.nx-ig #nxIG .nxIG-search:hover{background:#fff!important;border-color:rgba(15,23,42,.18)!important}}
+html.tema-claro.nx-ig #nxIG .nxIG-sec button{color:#1D4ED8!important}
+html.tema-claro.nx-ig #nxIG .nxIG-msg{color:#64748B}
+html.tema-claro.nx-ig #nxIG .nxIG-av:not(#tgc){background:#DBEAFE!important;color:#1D4ED8!important;border-color:#fff!important;box-shadow:none!important}
+html.tema-claro.nx-ig #nxIG .nxIG-prof .nxIG-av:not(#tgc),html.tema-claro.nx-ig #nxIG #nxIGav{background:#2563EB!important;background-image:none!important;color:#fff!important}
+html.tema-claro.nx-ig #nxIG .nxIG-pc.hl .nxIG-av:not(#tgc){background:rgba(255,255,255,.16)!important;color:#fff!important;border-color:rgba(255,255,255,.4)!important}
+/* columna derecha: perfil, cifras, calendario y agenda sobre el cristal blanco */
+html.tema-claro.nx-ig #nxIG .nxIG-prof b,html.tema-claro.nx-ig #nxIG .nxIG-stats b,html.tema-claro.nx-ig #nxIG .nxIG-calh,html.tema-claro.nx-ig #nxIG .nxIG-it b,html.tema-claro.nx-ig #nxIG .nxIG-sec{color:#0F172A}
+html.tema-claro.nx-ig #nxIG .nxIG-stats b.bad{color:#B91C1C}
+html.tema-claro.nx-ig #nxIG .nxIG-prima{color:#475569}html.tema-claro.nx-ig #nxIG .nxIG-prima b{color:#0F172A}
+html.tema-claro.nx-ig #nxIG .nxIG-calh button{color:#475569!important}
+html.tema-claro.nx-ig #nxIG .nxIG-days{color:#334155}
+html.tema-claro.nx-ig #nxIG .nxIG-days .d{color:#64748B}
+html.tema-claro.nx-ig #nxIG .nxIG-days .o{color:#94A3B8}
+html.tema-claro.nx-ig #nxIG .nxIG-days .g{background:rgba(22,163,74,.14);color:#15803D}
+html.tema-claro.nx-ig #nxIG .nxIG-it .ic.b{background:rgba(37,99,235,.10);color:#1D4ED8}
+html.tema-claro.nx-ig #nxIG .nxIG-it .ic.g{background:rgba(22,163,74,.12);color:#15803D}
+html.tema-claro.nx-ig #nxIG .nxIG-it .ic.a{background:rgba(217,119,6,.12);color:#B45309}
+html.tema-claro.nx-ig #nxIG .nxIG-it time{color:#475569}html.tema-claro.nx-ig #nxIG .nxIG-it time.bad{color:#B91C1C}
+html.tema-claro.nx-ig #nxIG .nxIG-glass .nxIG-sk{background:linear-gradient(90deg,rgba(15,23,42,.05),rgba(15,23,42,.09),rgba(15,23,42,.05));background-size:200% 100%}
+/* accesos rápidos: píldoras blancas con filo fino */
+html.tema-claro.nx-ig #nxIG .nxIG-acc .qa-g .qa{background:#fff!important;border:1px solid rgba(15,23,42,.10)!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important}
+@media (hover:hover){html.tema-claro.nx-ig #nxIG .nxIG-acc .qa-g .qa:hover{background:#fff!important;border-color:rgba(37,99,235,.35)!important}}
+html.tema-claro.nx-ig #nxIG .nxIG-acc .qa-g .qa .qa-l{color:#334155!important}
+/* ── 9 · detalles: búsqueda global, avatares de Cobros, foco, barras de desplazamiento y toques ── */
+html.tema-claro .gs-overlay{background:rgba(15,23,42,.30)!important}
+html.tema-claro .gs-box .gs-input:not(#tgc){background:transparent!important;border:0!important;border-bottom:1px solid rgba(15,23,42,.10)!important;box-shadow:none!important;caret-color:#2563EB}
+html.tema-claro #cnt .nxCobCard .cbAv:not(#tgc){background:#DBEAFE!important;background-image:none!important;color:#1D4ED8!important;box-shadow:none!important}
+html.tema-claro #cnt button:focus-visible,html.tema-claro #cnt [role=button]:focus-visible,html.tema-claro #cnt a:focus-visible,html.tema-claro #cnt .btn:focus-visible,html.tema-claro #cnt .nxft-tab:focus-visible,
+html.tema-claro .overlay button:focus-visible,html.tema-claro .overlay [role=button]:focus-visible,html.tema-claro .overlay a:focus-visible,html.tema-claro .overlay .btn:focus-visible{outline:2px solid #2563EB!important;outline-offset:2px!important}
+html.tema-claro body .content,html.tema-claro .overlay,html.tema-claro .modal{scrollbar-color:rgba(15,23,42,.18) transparent;scrollbar-width:thin}
+html.tema-claro ::-webkit-scrollbar-track{background:transparent!important}
+html.tema-claro ::-webkit-scrollbar-thumb{background:rgba(15,23,42,.18)!important}
+html.tema-claro body button,html.tema-claro body [role=button],html.tema-claro body .ni,html.tema-claro body .btn{touch-action:manipulation}
+/* WhatsApp: «Reintentar» de un mensaje que no salió, rojo sólido y legible (venía rosa claro sobre rosa: casi no se leía) */
+html.tema-claro body #cnt #v-waInbox .nxWaMsgs .nxWaBub .nxWaMsgMeta .nxWaRetry{background:#DC2626!important;color:#fff!important;border:0!important;box-shadow:none!important}
+/* ── 10 · «reducir transparencia» (iPhone → Accesibilidad): todo el cristal pasa a blanco sólido ── */
+@media (prefers-reduced-transparency:reduce){
+  html.tema-claro{--tgc-card:#FFFFFF}
+  html.tema-claro body .tnav,html.tema-claro body nav#sbEl.sb::before,html.tema-claro body .main::before,html.tema-claro body nav#sbEl.sb #sbContab,html.tema-claro body nav#sbEl.sb #sbConfig,
+  html.tema-claro.nx-ig #nxIG .nxIG-glass{background:#FFFFFF!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html.tema-claro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(15,23,42,.45)!important}
+}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
 (function(){var t=document.documentElement.getAttribute('data-nx-tema');if(t==='premium')document.body.classList.add('tema-premium');else if(t==='glass')document.body.classList.add('tema-glass');
-else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',window.nxTgoBg());}})();</script>
+else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-claro')){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',window.nxTgoBg());}})();</script>
 
 <!-- Fondo real fijo (30-ago-2026): position:fixed al viewport, NO background-attachment:fixed
      dentro de .content (buggy en iOS Safari) — así la foto se ve completa, encuadrada al tamaño
@@ -5495,6 +5836,23 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       window.nxSidebarSpringSync(true);
       document.body.classList.add('spring-nav');
       window.addEventListener('resize', function(){ window.nxSidebarSpringSync(true); });
+      // 59.22: varios módulos marcan su botón con .on por su cuenta (WhatsApp, CRM, Préstamos, Punto de venta, Rifas…) y la
+      // píldora se quedaba en la pantalla anterior: en el modo claro el ícono activo (blanco) desaparecía. La píldora sigue
+      // sola cualquier cambio de .on dentro del menú (un solo ajuste por cuadro; la píldora cambia su style, no su clase).
+      try{
+        var pend = false;
+        new MutationObserver(function(muts){
+          if (pend) return;
+          for (var i = 0; i < muts.length; i++){
+            var t = muts[i].target;
+            if (t && t.classList && t.classList.contains('ni') && (t.classList.contains('on') !== /(^|\s)on(\s|$)/.test(muts[i].oldValue || ''))){
+              pend = true;
+              requestAnimationFrame(function(){ pend = false; window.nxSidebarSpringSync(); });
+              return;
+            }
+          }
+        }).observe(container, { subtree: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+      }catch(e){}
     })();
     </script>
     <script id="nxTgoRail">
@@ -5511,7 +5869,7 @@ else if(t==='glass-oscuro'){var m=document.querySelector('meta[name="theme-color
       }catch(e){}}
       etiquetar();
       try{new MutationObserver(etiquetar).observe(sb,{childList:true,subtree:true,characterData:true});}catch(e){}
-      function riel(){return document.documentElement.classList.contains('tema-glass-oscuro')&&window.innerWidth>768;}
+      function riel(){var c=document.documentElement.classList;return (c.contains('tema-glass-oscuro')||c.contains('tema-claro'))&&window.innerWidth>768;} /* 59.22: el modo claro usa el mismo riel */
       function abiertoC(){try{return !!_contabAbierto;}catch(e){return false;}}
       function abiertoS(){try{return !!_configAbierto;}catch(e){return false;}}
       function cerrar(excepto){try{if(excepto!=='c'&&abiertoC())toggleContab();if(excepto!=='s'&&abiertoS())toggleConfig();}catch(e){}}
@@ -8585,7 +8943,7 @@ function aplicarTema(tema,guardar){
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
-  html.classList.remove('tema-glass-oscuro');
+  html.classList.remove('tema-glass-oscuro','tema-claro');
   let temaReal=tema;
   // AUTO: seguir preferencia del dispositivo
   if(tema==='auto'){
@@ -8595,16 +8953,19 @@ function aplicarTema(tema,guardar){
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
   else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
-  // clasico = sin clase (diseño por defecto)
+  // clasico = sin clase en <body>; 59.22: con el modo claro encendido lleva html.tema-claro (también la pone el <head>)
+  else if(temaReal==='clasico'&&window.NX_TEMA_CLARO){html.classList.add('tema-claro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}}
   html.setAttribute('data-nx-tema',temaReal);
   // Espejo local del tema: SOLO para pintar el primer cuadro (login, splash, recarga) con el tema correcto antes de
   // que llegue la preferencia de la base, que sigue siendo la fuente de verdad.
   try{localStorage.setItem('nx_tema',tema);}catch(e){}
-  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',temaReal==='glass-oscuro'?window.nxTgoBg():'#1e3a6e');}catch(e){}
+  try{const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',(temaReal==='glass-oscuro'||html.classList.contains('tema-claro'))?window.nxTgoBg():'#1e3a6e');}catch(e){}
   // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
   // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
   const iconTop=document.getElementById('iconDarkMode');
   if(iconTop)iconTop.className='ti '+((temaReal==='premium'||temaReal==='glass-oscuro')?'ti-sun':'ti-moon');
+  // 59.22: el nombre del botón dice a qué modo lleva (antes siempre «Modo oscuro»)
+  try{const b=document.getElementById('btnDarkMode');if(b){const t=(temaReal==='premium'||temaReal==='glass-oscuro')?'Modo claro':'Modo oscuro';b.title=t;b.setAttribute('aria-label',t);}}catch(e){}
   // Guardar preferencia
   if(guardar!==false)nxPrefSet('tema',tema);   // preferencia -> base, no navegador
   // Actualizar selección visual en el panel
@@ -8708,7 +9069,9 @@ function rApariencia(){
   const temaActual=nxPref('tema',nxTemaDefecto());
   const temas=[
     ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0E1013,#2A2D33 60%,#2563EB)'}]:[]),
-    {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
+    // 59.22: con el modo claro encendido, «Clásico» es el gemelo claro del Glass oscuro (mismo id, la preferencia guardada no cambia)
+    (window.NX_TEMA_CLARO?{id:'clasico',nom:'CLARO',desc:'El mismo diseño del Glass oscuro, en blanco: cristal claro y acento azul NEXUS',ico:'☀️',preview:'linear-gradient(135deg,#EEF1F5,#FFFFFF 60%,#2563EB)'}
+      :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
     {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
     {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
@@ -9017,7 +9380,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.21';
+const APP_VERSION='59.22';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

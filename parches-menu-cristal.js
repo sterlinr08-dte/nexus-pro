@@ -5,13 +5,14 @@
    · glifo de salida en la tarjeta de usuario (el toque sigue siendo cerrar sesión, como siempre);
    · estado expandido/contraído en localStorage 'nx_menu_cristal' (script#nxMenuCristalOn lo aplica antes del primer pintado);
    · en el celular, deslizar el cajón hacia la izquierda lo sigue 1:1 y lo cierra.
-   Solo actúa con html.tema-glass-oscuro; sin dependencias; no toca navegación, acordeones ni datos. */
+   Solo actúa con html.tema-glass-oscuro (59.22: y con html.tema-claro, el modo claro gemelo); sin dependencias; no toca
+   navegación, acordeones ni datos. */
 (function () {
   'use strict';
   if (window.__nxMenuCristal) return;
   window.__nxMenuCristal = true;
   var KEY = 'nx_menu_cristal', html = document.documentElement;
-  function glass() { return html.classList.contains('tema-glass-oscuro'); }
+  function glass() { return html.classList.contains('tema-glass-oscuro') || html.classList.contains('tema-claro'); } // 59.22: también el modo claro (mismo menú)
   function movil() { return window.innerWidth <= 768; }
   function abierto() { return html.classList.contains('nx-mc-open'); }
 
