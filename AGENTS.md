@@ -10,7 +10,8 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en NEXUS PRO em
 3. `docs/bitacora/README.md` — cómo se escribe la bitácora.
 4. Las **cinco entradas más recientes** de `docs/bitacora/` (orden alfabético = cronológico), sean `-claude.md` o `-chatgpt.md`.
 5. `REGLAMENTOS.md` y `POLITICA-SEGURIDAD.md` cuando el cambio toque reglas de negocio o seguridad.
-6. El código real que se va a tocar (`index.html`, `parches-seguros-base.js`, `parches-whatsapp-*.js`, `parches-pos.js`, `supabase/`). Nunca asumir cómo funciona un módulo sin leerlo.
+6. `HERRAMIENTAS.md` (skills y conectores) y `docs/TRASPASO-CLAUDE.md` (lo que sabe Claude: recetas, trampas y estado de todos los trabajos al 13-oct-2026).
+7. El código real que se va a tocar (`index.html`, `parches-seguros-base.js`, `parches-whatsapp-*.js`, `parches-pos.js`, `supabase/`). Nunca asumir cómo funciona un módulo sin leerlo.
 
 ## 2. Dónde escribir
 
