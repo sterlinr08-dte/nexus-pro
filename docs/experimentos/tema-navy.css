@@ -19,3 +19,9 @@ html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG{--ig-glass:rgba(8,30,70,.56);--ig-li
 @media (max-width:768px){html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-glass{background:rgba(9,32,74,.78)!important}}
 html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(120,170,255,.06)!important}
 html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-card{background:rgba(120,170,255,.08)}
+/* Navy + mar de fondo (dueño 14-oct-2026: «ponle la playa de fondo»): foto aérea de olas, ya desenfocada en el archivo */
+html.tema-glass-oscuro.tgo-navy{--tgo-velo-a:rgba(4,22,56,.34);--tgo-velo-b:rgba(3,16,42,.56);--tgo-vineta:rgba(2,10,28,.50)}
+html.tema-glass-oscuro.tgo-navy.tgo-foto::after,html.tema-glass-oscuro.tgo-navy::after{opacity:1!important;
+  background:radial-gradient(ellipse 1400px 1000px at 50% 45%,transparent 35%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy.webp) center/cover no-repeat!important}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy.tgo-foto::after,html.tema-glass-oscuro.tgo-navy::after{
+  background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy-movil.webp) center/cover no-repeat!important}}
