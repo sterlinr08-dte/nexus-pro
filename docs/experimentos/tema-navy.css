@@ -1,0 +1,21 @@
+/* Experimento «Navy Blue» #062045 (referencia dyslove.design, dueño 14-oct-2026) — solo cambia los tokens del Glass oscuro */
+html.tema-glass-oscuro.tgo-navy{
+  --tgo-bg:#051A3A;
+  --tgo-base-1:#0B2B5C;--tgo-base-2:#062045;--tgo-base-3:#03122B;
+  --tgo-glow:rgba(90,150,255,.16);
+  --tgo-velo-a:rgba(4,20,52,.52);--tgo-velo-b:rgba(3,14,38,.70);
+  --tgo-vineta:rgba(2,10,28,.58);
+  --tgo-glass:rgba(12,38,84,.50);--tgo-glass-2:rgba(170,205,255,.08);--tgo-line:rgba(170,205,255,.12);
+  --tgo-solid:#0B2550;--tgo-solid-2:#061A3A;
+  --tgo-card-shadow:0 10px 26px -14px rgba(0,6,20,.55);--tgo-panel-shadow:0 26px 52px -30px rgba(0,6,20,.7);
+  --tgo-blue:#3B82F6;--tgo-blue-d:#2563EB;
+  --c1:#3B82F6;--c2:#2563EB;--c1a:rgba(59,130,246,.12);--c2a:rgba(59,130,246,.12);
+  --gradient-primary:linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%);
+  --sidebar-active:rgba(59,130,246,.9);
+}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy{--tgo-card:rgba(10,34,78,.62)}}
+/* Inicio (#nxIG): sus paneles tienen colores propios; aquí van en azul marino */
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG{--ig-glass:rgba(8,30,70,.56);--ig-line:rgba(170,205,255,.12)}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-glass{background:rgba(9,32,74,.78)!important}}
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(120,170,255,.06)!important}
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-card{background:rgba(120,170,255,.08)}
