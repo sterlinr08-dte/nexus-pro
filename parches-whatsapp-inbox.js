@@ -518,10 +518,29 @@
     // -- este refresco corre en cada evento de Realtime de CUALQUIER hilo, asi que es mucho mas
     // frecuente que el de un solo hilo. Se deja "hilos" como estaba y se reintenta solo.
     try { hilos = await A.get('whatsapp_hilos', 'order=ultimo_mensaje_at.desc.nullslast&limit=100&select=*') || []; } catch (e) { return; }
+    cargadoUnaVez = true;
     if (hiloAbiertoId) await cargarMensajes(hiloAbiertoId);
     pintar();
   }
   window.nxWaRecargar = () => cargar();
+  // 59.26 (dueño 14-oct, «lo guardado primero», idea de Raycast): mientras la lista no ha llegado NUNCA, no se dice
+  // «0 conversaciones» ni «Todavia no han llegado mensajes» (era mentira); se ven filas de espera. Y la lista se
+  // precarga EN MEMORIA poco después de entrar al sistema, así al abrir el Buzón ya está. Nada se guarda en el
+  // equipo (regla del dueño: «nada en localStorage»; los chats llevan teléfonos y mensajes).
+  let cargadoUnaVez = false;
+  window.nxWaCargadoUnaVez = () => cargadoUnaVez;
+  function precargar() {
+    let n = 0;
+    const t = () => {
+      n++;
+      let listo = false;
+      try { const S = window.ST || (typeof ST !== 'undefined' ? ST : null); listo = !!(api()?.url && S && (S.clientes || []).length); } catch (e) {}
+      if (!listo) { if (n < 120) setTimeout(t, 1000); return; }
+      const ir = () => { if (!cargadoUnaVez) cargarSeguro(); };
+      if ('requestIdleCallback' in window) requestIdleCallback(ir, { timeout: 4000 }); else setTimeout(ir, 1500);
+    };
+    setTimeout(t, 1500);
+  }
   function api() { try { return getAPI(); } catch (e) { return null; } }
 
   async function urlFirmada(path) {
@@ -897,15 +916,16 @@
     const conBauche = hilos.filter(waTieneBauchePendiente).length;
     const conCobro = hilos.filter(h => waPendienteCliente(clienteDeHilo(h)) > 0).length;
     const continuidad = hilos.filter(h => { const ep = waEstadoPoliza(clienteDeHilo(h)); return ep.est === 'vencida' || ep.est === 'gracia'; }).length;
+    const vk = n => cargadoUnaVez || hilos.length ? n : '<span class="nxSkNum" aria-label="cargando">—</span>';
     const kpi = (key, label, val, sub) => `<button class="nxWaProKpi ${waFiltro === key ? 'on' : ''}" onclick="nxWaFiltro('${key}')"><div class="l">${esc(label)}</div><div class="v">${val}</div><div class="s">${esc(sub)}</div></button>`;
     const html = `<section class="nxWaPro">
       <div class="nxWaProHead"><div><h3>Centro WhatsApp Pro</h3><p>Prioriza clientes por factura, cobro, póliza por vencer, bauches y conversaciones sin vincular.</p></div></div>
       <div class="nxWaProGrid">
-        ${kpi('todos', 'Conversaciones', hilos.length, conCliente.length + ' vinculadas')}
-        ${kpi('no_leidos', 'Sin responder', noLeidos, 'mensajes nuevos')}
-        ${kpi('cobro', 'Cobranza', conCobro, 'clientes con balance')}
-        ${kpi('continuidad', 'Póliza', continuidad, 'por vencer')}
-        ${kpi('sin_cliente', 'Sin vincular', sinCliente, 'telefono suelto')}
+        ${kpi('todos', 'Conversaciones', vk(hilos.length), conCliente.length + ' vinculadas')}
+        ${kpi('no_leidos', 'Sin responder', vk(noLeidos), 'mensajes nuevos')}
+        ${kpi('cobro', 'Cobranza', vk(conCobro), 'clientes con balance')}
+        ${kpi('continuidad', 'Póliza', vk(continuidad), 'por vencer')}
+        ${kpi('sin_cliente', 'Sin vincular', vk(sinCliente), 'telefono suelto')}
       </div>
       <div class="nxWaProActs">
         <button class="primary" onclick="nxWaAbrirCobranza()"><i class="ti ti-cash"></i> Cobranza</button>
@@ -1306,6 +1326,12 @@
   function pintarLista() {
     const cont = $('#nxWaLista'); if (!cont) return;
     const lista = hilosFiltrados();
+    if (!hilos.length && !cargadoUnaVez) {
+      if (cont.__nxHtml === 'sk') return;
+      cont.__nxHtml = 'sk';
+      cont.innerHTML = Array.from({ length: 7 }, () => '<div class="nxWaSkRow" aria-hidden="true"><i></i><div><b></b><span></span></div></div>').join('') + '<span class="nxSrOnly" role="status">Cargando conversaciones…</span>';
+      return;
+    }
     if (!hilos.length) { cont.__nxHtml = ''; cont.innerHTML = '<div class="nxWaEmpty">Todavia no han llegado mensajes.</div>'; return; }
     if (!lista.length) { cont.__nxHtml = ''; cont.innerHTML = '<div class="nxWaEmpty">No hay conversaciones en este filtro.</div>'; return; }
     const fila = h => {
@@ -2273,7 +2299,7 @@
   }
 
   function start() {
-    css(); ensureMenu(); patchNav(); iniciarRealtime();
+    css(); ensureMenu(); patchNav(); iniciarRealtime(); precargar();
     // Controles del reproductor de audio: en fase de captura para que el arrastre de la barra no
     // dispare el «deslizar para responder» ni la pulsación larga de la burbuja (atributos en línea).
     document.addEventListener('click', manejarClickAudio, true);

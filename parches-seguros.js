@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6028'):'?b=6028';
-    }catch(e){return '?b=6028';}
+      return base?(base+'&b=6030'):'?b=6030';
+    }catch(e){return '?b=6030';}
   }
 
   function load(src,done){
@@ -114,7 +114,11 @@
     ['js','parches-isla-avisos.js'],
     /* 59.24 (dueño 14-oct-2026): números que ruedan, barra de pasos en formularios largos y «Más» en la ficha del
        cliente (ideas de beUI). Para quitarla, borrar esta línea; o en un equipo, localStorage.nxBeuiPro='0'. */
-    ['js','parches-beui-pro.js']
+    ['js','parches-beui-pro.js'],
+    /* 59.26 (dueño 14-oct-2026, «aplica las 4», ideas de Raycast): línea fina de progreso, filas de espera en vez de
+       ruedas, «Deshacer» al archivar un chat y campos de teléfono/cédula que se forman solos con el cursor en su sitio.
+       Para quitarla, borrar esta línea; o en un equipo, localStorage.nxRapidez='0'. */
+    ['js','parches-rapidez.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
