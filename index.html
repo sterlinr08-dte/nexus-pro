@@ -13,12 +13,12 @@
      gemelo claro del grafito: misma estructura (riel, cabecera, cajón, ventanas, íconos, botones) y su propia paleta en
      style#nxTemaClaro. INTERRUPTOR: NX_TEMA_CLARO=false → el Clásico vuelve a ser el de antes (59.21); en un solo equipo:
      localStorage.setItem('nx_claro_off','1'). -->
-<script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true,NX_TEMA_CLARO=true;(function(){var d=document.documentElement,t=null;
-try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;if(localStorage.getItem('nx_claro_off')==='1')NX_TEMA_CLARO=false;}catch(e){}
+<script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true,NX_TEMA_CLARO=true,NX_TEMA_NAVY=true;(function(){var d=document.documentElement,t=null;
+try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;if(localStorage.getItem('nx_claro_off')==='1')NX_TEMA_CLARO=false;if(localStorage.getItem('nx_navy_off')==='1')NX_TEMA_NAVY=false;}catch(e){}
 window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
-d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
+d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro'){d.classList.add('tema-glass-oscuro');if(NX_TEMA_NAVY)d.classList.add('tgo-navy');}else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
 /* 59.22: premium y glass viven en <body>: la clase se pone en cuanto el parser crea el <body> (el aviso del MutationObserver corre antes
    del siguiente pintado), así el primer cuadro ya sale con su tema aunque el <head> pese más; nxTemaBodyOn lo repite por si acaso. */
 if(t==='premium'||t==='glass'){var cb=t==='premium'?'tema-premium':'tema-glass';try{var mo=new MutationObserver(function(){if(document.body){document.body.classList.add(cb);mo.disconnect();}});mo.observe(d,{childList:true});}catch(e){}}
@@ -29,7 +29,7 @@ if(t==='premium'||t==='glass'){var cb=t==='premium'?'tema-premium':'tema-glass';
 /* 59.22: cada tema pide la suya una sola vez: grafito → html.tgo-foto; modo claro (la oficina de siempre, ya desenfocada) → html.tgc-foto */
 window.nxTgoFoto=function(){var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
 var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add(claro?'tgc-foto':'tgo-foto');};
-var m=window.innerWidth<=768;i.src=claro?(m?'assets/fondo-oficina-claro-movil.webp':'assets/fondo-oficina-claro.webp'):(m?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after (59.22: y html.tgc-foto::after) */
+var m=window.innerWidth<=768;var nv=d.classList.contains('tgo-navy');i.src=claro?(m?'assets/fondo-oficina-claro-movil.webp':'assets/fondo-oficina-claro.webp'):nv?(m?'assets/fondo-mar-navy-movil.webp':'assets/fondo-mar-navy.webp'):(m?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.29: azul marino → fotos del mar *//* 59.21: las mismas fotos que pinta html.tgo-foto::after (59.22: y html.tgc-foto::after) */
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
 if(document.readyState==='complete')libre();else window.addEventListener('load',libre,{once:true});};
 if(t==='glass-oscuro'||d.classList.contains('tema-claro'))window.nxTgoFoto();
@@ -3405,6 +3405,33 @@ html.tema-glass-oscuro{
   color:#F1F5F9;
 }
 @media (max-width:768px){html.tema-glass-oscuro{--tgo-card:rgba(30,32,38,.62)}} /* 59.21: grafito translúcido sobre la foto ya desenfocada (antes azul .76) */
+/* ═══ 59.29 — AZUL MARINO CON MAR DE FONDO (dueño 14-oct-2026, referencia «Navy Blue» #062045 de @dyslove.design: «Fondo»)
+   Solo cambia colores y la foto del Glass oscuro: html.tgo-navy la pone el <head> antes del primer pintado (NX_TEMA_NAVY).
+   INTERRUPTOR: NX_TEMA_NAVY=false → vuelve el grafito 59.21; en un solo equipo: localStorage.setItem('nx_navy_off','1').
+   Fotos generadas con IA (olas vistas desde arriba), desenfoque 7 px horneado: assets/fondo-mar-navy(-movil).webp. ═══ */
+html.tema-glass-oscuro.tgo-navy{
+  --tgo-bg:#051A3A;--tgo-base-1:#0B2B5C;--tgo-base-2:#062045;--tgo-base-3:#03122B;--tgo-glow:rgba(90,150,255,.16);
+  --tgo-velo-a:rgba(4,22,56,.34);--tgo-velo-b:rgba(3,16,42,.56);--tgo-vineta:rgba(2,10,28,.50);
+  --tgo-glass:rgba(12,38,84,.50);--tgo-glass-2:rgba(170,205,255,.08);--tgo-line:rgba(170,205,255,.12);
+  --tgo-solid:#0B2550;--tgo-solid-2:#061A3A;
+  --tgo-card-shadow:0 10px 26px -14px rgba(0,6,20,.55);--tgo-panel-shadow:0 26px 52px -30px rgba(0,6,20,.7);
+  /* acento: el mismo azul NEXUS #2563EB (con letra blanca encima da 5.2:1; #3B82F6 daba 3.7:1) y bordes de campos sin cambiar */
+  --bg0:#0A1C3A;--bg2:#0B1F42;--tgo-field:#0A1A36;--tgo-field-edge:#8A9AB8;
+}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy{--tgo-card:rgba(10,34,78,.62)}}
+html.tema-glass-oscuro.tgo-navy.tgo-foto::after{
+  background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy.webp) center/cover no-repeat}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy-movil.webp) center/cover no-repeat}}
+html.tema-glass-oscuro.tgo-navy body:not(.tema-premium) .tnav{background:#0B2550 linear-gradient(180deg,#10306A 0%,#0B2550 55%,#081C40 100%)!important}
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG{--ig-glass:rgba(8,30,70,.56);--ig-line:rgba(170,205,255,.12)}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-glass{background:rgba(9,32,74,.78)!important}}
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(120,170,255,.06)!important}
+html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-card{background:rgba(120,170,255,.08)}
+html.tema-glass-oscuro.tgo-navy .lbox{background:rgba(10,34,78,.74)!important}
+/* menú lateral: el riel de cristal y el carril móvil en azul marino (antes grafito) */
+html.tema-glass-oscuro.tgo-navy{--nx-mc-glass:linear-gradient(180deg,rgba(22,56,118,.60) 0%,rgba(8,30,70,.64) 100%)}
+@media (max-width:768px){html.tema-glass-oscuro.tgo-navy body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#12336E 0%,#061A3A 100%)!important}}
+@media (min-width:769px){html.tema-glass-oscuro.tgo-navy body .main::before{background:rgba(8,30,70,.52)}}
 html.tema-glass-oscuro body{color:#F1F5F9}
 
 /* ── tarjetas, KPI, paneles ── */
@@ -9157,7 +9184,7 @@ function aplicarTema(tema,guardar){
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
-  html.classList.remove('tema-glass-oscuro','tema-claro');
+  html.classList.remove('tema-glass-oscuro','tema-claro','tgo-navy');
   let temaReal=tema;
   // AUTO: seguir preferencia del dispositivo
   if(tema==='auto'){
@@ -9166,7 +9193,7 @@ function aplicarTema(tema,guardar){
   }
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
-  else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
+  else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');if(window.NX_TEMA_NAVY)html.classList.add('tgo-navy');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // 59.29: azul marino con mar de fondo // vive en <html>: el <head> la pone antes de pintar
   // clasico = sin clase en <body>; 59.22: con el modo claro encendido lleva html.tema-claro (también la pone el <head>)
   else if(temaReal==='clasico'&&window.NX_TEMA_CLARO){html.classList.add('tema-claro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}}
   html.setAttribute('data-nx-tema',temaReal);
@@ -9282,7 +9309,7 @@ function rApariencia(){
   if(!cont)return;
   const temaActual=nxPref('tema',nxTemaDefecto());
   const temas=[
-    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)',ico:'🌃',preview:'linear-gradient(135deg,#0E1013,#2A2D33 60%,#2563EB)'}]:[]),
+    ...(window.NX_TEMA_GLASS_OSCURO?[{id:'glass-oscuro',nom:'GLASS OSCURO',desc:(window.NX_TEMA_NAVY?'Azul marino con el mar de fondo y cristal en todas las pantallas (recomendado)':'Cristal oscuro en todas las pantallas y acento azul NEXUS (recomendado)'),ico:'🌃',preview:'linear-gradient(135deg,#0E1013,#2A2D33 60%,#2563EB)'}]:[]),
     // 59.22: con el modo claro encendido, «Clásico» es el gemelo claro del Glass oscuro (mismo id, la preferencia guardada no cambia)
     (window.NX_TEMA_CLARO?{id:'clasico',nom:'CLARO',desc:'El mismo diseño del Glass oscuro, en blanco: cristal claro y acento azul NEXUS',ico:'☀️',preview:'linear-gradient(135deg,#EEF1F5,#FFFFFF 60%,#2563EB)'}
       :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
@@ -9594,7 +9621,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.28';
+const APP_VERSION='59.29';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
