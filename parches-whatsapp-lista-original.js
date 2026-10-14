@@ -126,7 +126,24 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
 .nxWaEmojiPanel .grid button{height:38px;border:0!important;border-radius:9px;background:transparent!important;box-shadow:none!important;font-size:24px;line-height:1;cursor:pointer;padding:0}
 .nxWaEmojiPanel .grid button:hover,.nxWaEmojiPanel .grid button:focus-visible{background:rgba(255,255,255,.1)!important;outline:none}
 .nxWaEmojiPanel .grid .vacio{grid-column:1/-1;padding:24px 8px;text-align:center;font-size:12px;color:#9FB3D1}
-@media(prefers-reduced-motion:reduce){.nxWaListMenu,.nxWaEmojiPanel{animation:none!important}#v-waInbox .nxWaRow.nxWaSnap{transition:none!important}}
+/* 59.24 — fila deslizable estilo Mail (idea beUI «Swipeable List") */
+#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSwiping,#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSnap,#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaAbierta{transform:translateX(var(--nx-sw,0px))!important}
+#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSwiping{transition:none!important}
+#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSnap{transition:transform .34s cubic-bezier(.22,1,.36,1)!important}
+#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSnapLento{transition:transform .24s cubic-bezier(.4,0,1,1)!important}
+#v-waInbox .nxWaRowWrap .nxWaSwipeBg{border-radius:inherit}
+#v-waInbox .nxWaRowWrap .nxWaSwipeBg i.ti{font-size:19px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+#v-waInbox .nxWaRowWrap .nxWaSwipeBg.nxWaSwListo i.ti{transform:scale(1.22)}
+#v-waInbox .nxWaRowWrap .nxWaSwipeBg.izq.nxWaSwListo{background:#1d4ed8}
+#v-waInbox .nxWaRowWrap .nxWaSwipeBg.nxWaSwBtns{padding:0;gap:0;background:#2563eb;pointer-events:auto;justify-content:flex-end}
+#v-waInbox .nxWaSwBtn{flex:0 0 72px;width:72px;height:100%;border:0;border-radius:0;margin:0;padding:0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;font:600 11px/1.1 inherit;letter-spacing:.01em;cursor:pointer;box-shadow:none;-webkit-tap-highlight-color:transparent;transition:flex-basis .22s cubic-bezier(.22,1,.36,1),opacity .18s ease}
+#v-waInbox .nxWaSwBtn.cobrar{background:#16a34a}
+#v-waInbox .nxWaSwBtn.cobrar[aria-disabled="true"]{background:#94a3b8}
+#v-waInbox .nxWaSwBtn.arch{background:#2563eb}
+#v-waInbox .nxWaSwBtn:active{filter:brightness(.9)}
+#v-waInbox .nxWaSwipeBg.nxWaSwBtns.nxWaSwListo .nxWaSwBtn.cobrar{flex-basis:0;opacity:0;overflow:hidden;padding:0}
+#v-waInbox .nxWaSwipeBg.nxWaSwBtns.nxWaSwListo .nxWaSwBtn.arch{flex:1 1 auto}
+@media(prefers-reduced-motion:reduce){.nxWaListMenu,.nxWaEmojiPanel{animation:none!important}#v-waInbox .nxWaRow.nxWaSnap{transition:none!important}#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSnap,#v-waInbox #nxWaLista .nxWaRowWrap .nxWaRow.nxWaSnapLento{transition:none!important}#v-waInbox .nxWaSwBtn,#v-waInbox .nxWaSwipeBg i.ti{transition:none!important}}
 `;
     document.head.appendChild(s);
   }
@@ -226,30 +243,78 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
   // con cada evento de Realtime o del polling y el nodo original puede quedar suelto a mitad del gesto.
   // Tras una pulsación larga o un deslizamiento, el navegador dispara un «click» al soltar: se
   // traga ese primer click (no hay pointerdown nuevo en medio) para que no abra el chat ni toque el menú.
-  let g=null,tragarClick=false;
+  // 59.24 (dueño 14-oct-2026, idea de beUI «Swipeable List»): deslizar a la izquierda deja la fila ABIERTA con
+  // dos botones (Cobrar · Archivar), como Mail del iPhone; un deslizamiento largo archiva directo. A la derecha
+  // sigue marcando leído / no leído. Pasado el umbral el ícono crece (y vibra en Android); fuera del recorrido la
+  // fila se frena (rubber band) en vez de chocar. La posición va en la variable --nx-sw para ganarle a las capas
+  // de animación que fijan transform con !important (:active, hover).
+  let g=null,tragarClick=false,abierta=null; // abierta = id del hilo con los botones a la vista
+  const SW_BTN=72,SW_ABRIR=56,SW_LARGO=220,SW_DER=80;
   const filaDe=t=>t&&t.closest?t.closest('#nxWaLista .nxWaRow'):null;
   const filaPorId=id=>id?document.querySelector('#nxWaLista .nxWaRow[data-hilo="'+id+'"]'):null;
+  const sinMov=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}};
+  const freno=(d,lim)=>{const a=Math.abs(d);if(a<=lim)return d;const extra=a-lim;return Math.sign(d)*(lim+extra*0.35/(1+extra/240));};
+  const tic=()=>{try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}};
+  const ponX=(row,x)=>{
+    row.style.setProperty('--nx-sw',x+'px');row.style.transform='translateX('+x+'px)';
+    // El fondo solo se ve en el hueco que deja la fila (las filas del tema cristal son semitransparentes).
+    const bg=row.parentElement&&row.parentElement.querySelector('.nxWaSwipeBg');
+    if(bg)bg.style.clipPath=x<0?'inset(0 0 0 calc(100% - '+Math.abs(x)+'px))':(x>0?'inset(0 calc(100% - '+x+'px) 0 0)':'inset(0 0 0 100%)');
+  };
+  const anchoBotones=h=>(cobroDe(h)?2:1)*SW_BTN;
   function bgSwipe(row,lado){
     const wrap=row.parentElement;if(!wrap||!wrap.classList.contains('nxWaRowWrap'))return null;
     let bg=$('.nxWaSwipeBg',wrap);
     if(!bg){bg=document.createElement('div');bg.className='nxWaSwipeBg';wrap.insertBefore(bg,row);}
+    if(bg.dataset.lado===lado)return bg;
+    bg.dataset.lado=lado;
     const h=hiloDe(row);
-    if(lado==='der'){bg.className='nxWaSwipeBg der';bg.innerHTML='<i class="ti '+(h?.archivado_at?'ti-archive-off':'ti-archive')+'"></i>'+(h?.archivado_at?'Desarchivar':'Archivar');}
-    else{const nl=Number(h?.no_leidos_count)>0;bg.className='nxWaSwipeBg izq';bg.innerHTML='<i class="ti '+(nl?'ti-mail-opened':'ti-mail')+'"></i>'+(nl?'Leído':'No leído');}
+    if(lado==='der'){
+      const cb=cobroDe(h),arch=!!h?.archivado_at;
+      bg.className='nxWaSwipeBg der nxWaSwBtns';
+      bg.innerHTML=(cb?'<button type="button" class="nxWaSwBtn cobrar" data-sw="cobrar"'+(cb.c?'':' aria-disabled="true"')+'><i class="ti ti-cash"></i><span>'+(cb.c?'Cobrar':'Sin cliente')+'</span></button>':'')
+        +'<button type="button" class="nxWaSwBtn arch" data-sw="archivar"><i class="ti '+(arch?'ti-archive-off':'ti-archive')+'"></i><span>'+(arch?'Desarchivar':'Archivar')+'</span></button>';
+    }else{const nl=Number(h?.no_leidos_count)>0;bg.className='nxWaSwipeBg izq';bg.innerHTML='<i class="ti '+(nl?'ti-mail-opened':'ti-mail')+'"></i><span>'+(nl?'Leído':'No leído')+'</span>';}
     return bg;
   }
-  function limpiarSwipe(row){
-    row.classList.remove('nxWaSwiping');row.classList.add('nxWaSnap');row.style.transform='';
-    const bg=row.parentElement&&$('.nxWaSwipeBg',row.parentElement);if(bg)bg.style.opacity='0';
-    setTimeout(()=>{row.classList.remove('nxWaSnap');if(bg)bg.remove();},220);
+  function soltar(row,x,lento){
+    row.classList.remove('nxWaSwiping');
+    if(!sinMov()){row.classList.add('nxWaSnap');if(lento)row.classList.add('nxWaSnapLento');}
+    ponX(row,x);
   }
+  function limpiarSwipe(row){
+    if(!row)return;
+    if(abierta===row.dataset.hilo)abierta=null;
+    row.classList.remove('nxWaAbierta');soltar(row,0);
+    const bg=row.parentElement&&$('.nxWaSwipeBg',row.parentElement);if(bg){bg.style.opacity='0';bg.classList.remove('nxWaSwListo');}
+    setTimeout(()=>{if(abierta===row.dataset.hilo)return;row.classList.remove('nxWaSnap','nxWaSnapLento');row.style.transform='';row.style.removeProperty('--nx-sw');if(bg&&!row.classList.contains('nxWaSwiping'))bg.remove();},300);
+  }
+  function cerrarAbierta(){const r=filaPorId(abierta);abierta=null;if(r)limpiarSwipe(r);}
+  function abrirFila(row,h){
+    abierta=row.dataset.hilo;row.classList.add('nxWaAbierta');
+    const bg=bgSwipe(row,'der');if(bg){bg.style.opacity='1';bg.classList.remove('nxWaSwListo');}
+    soltar(row,-anchoBotones(h));
+  }
+  // La lista se repinta sola (Realtime): si había una fila abierta, se vuelve a dejar abierta sin animación.
+  document.addEventListener('nxwa:lista',()=>{
+    if(!abierta)return;const row=filaPorId(abierta);if(!row){abierta=null;return;}
+    if(row.classList.contains('nxWaAbierta'))return;
+    const h=hiloDe(row);if(!h){abierta=null;return;}
+    row.classList.add('nxWaAbierta');const bg=bgSwipe(row,'der');if(bg)bg.style.opacity='1';ponX(row,-anchoBotones(h));
+  });
   document.addEventListener('pointerdown',e=>{
     tragarClick=false;
     if(e.button!==0&&e.pointerType==='mouse')return;
+    if(abierta){
+      if(e.target.closest&&e.target.closest('.nxWaSwBtn'))return; // botones de la fila abierta: los maneja su click
+      const r=filaDe(e.target);
+      if(r&&r.dataset.hilo===abierta){tragarClick=true;cerrarAbierta();return;} // tocar la fila abierta solo la cierra
+      cerrarAbierta();
+    }
     const row=filaDe(e.target);if(!row)return;
     if(e.target.closest('button,a,input'))return;
     const hid=row.dataset.hilo;
-    g={hid,x0:e.clientX,y0:e.clientY,dx:0,modo:null,id:e.pointerId,timer:null};
+    g={hid,x0:e.clientX,y0:e.clientY,dx:0,modo:null,id:e.pointerId,timer:null,listo:false};
     g.timer=setTimeout(()=>{if(!g||g.hid!==hid||g.modo)return;g.modo='lp';tragarClick=true;const r=filaPorId(hid);if(r)abrirMenu(r,e.clientX,e.clientY);try{navigator.vibrate&&navigator.vibrate(12);}catch(_e){}},520);
   },true);
   document.addEventListener('pointermove',e=>{
@@ -263,31 +328,64 @@ html.tema-glass-oscuro{--nxwa-pop:rgba(26,28,33,.94);--nxwa-pop-2:rgba(26,28,33,
     if(g&&g.modo==='swipe'){
       e.preventDefault();
       const row=filaPorId(g.hid);if(!row)return;
-      row.classList.add('nxWaSwiping');
-      const max=120;g.dx=Math.max(-max,Math.min(max,dx));
-      row.style.transform='translateX('+g.dx+'px)';
-      const bg=bgSwipe(row,g.dx<0?'der':'izq');if(bg)bg.style.opacity=String(Math.min(1,Math.abs(g.dx)/60));
+      row.classList.remove('nxWaSnap','nxWaSnapLento');row.classList.add('nxWaSwiping');
+      const h=hiloDe(row);
+      g.dx=dx<0?freno(dx,SW_LARGO+40):freno(dx,SW_DER+40);
+      ponX(row,g.dx);
+      const bg=bgSwipe(row,g.dx<0?'der':'izq');
+      if(bg){
+        bg.style.opacity=String(Math.min(1,Math.abs(g.dx)/48));
+        const listo=g.dx<0?g.dx<=-SW_LARGO:g.dx>=SW_DER;
+        if(listo!==g.listo){g.listo=listo;bg.classList.toggle('nxWaSwListo',listo);if(listo)tic();}
+      }
+      if(g.dx<0&&h&&!cobroDe(h))bg&&bg.classList.add('uno');
     }
   },{passive:false,capture:true});
   async function terminarSwipe(cancelado){
     const s=g;g=null;if(!s)return;clearTimeout(s.timer);
     if(s.modo!=='swipe')return;
     const row=filaPorId(s.hid);if(!row)return;const h=hiloDe(row);tragarClick=true;
-    if(cancelado||Math.abs(s.dx)<80||!h){limpiarSwipe(row);return;}
+    if(cancelado||!h){limpiarSwipe(row);return;}
     if(s.dx<0){
-      if(!soporta().archivar){limpiarSwipe(row);return;}
-      row.classList.remove('nxWaSwiping');row.classList.add('nxWaSnap');row.style.transform='translateX(-110%)';
-      const ok=await accion(h.id,'archivar',!h.archivado_at);
-      if(!ok)limpiarSwipe(row);else toastSafe('ok',h.archivado_at?'Chat archivado':'Chat desarchivado');
-    }else{
-      limpiarSwipe(row);
-      const nl=Number(h.no_leidos_count)>0;
-      const ok=await accion(h.id,nl?'leido':'no_leido');
-      if(ok)toastSafe('ok',nl?'Marcado como leído':'Marcado como no leído');
+      if(!soporta().archivar&&!cobroDe(h)){limpiarSwipe(row);return;}
+      if(s.dx<=-SW_LARGO&&soporta().archivar){ // deslizamiento largo: archiva directo
+        abierta=null;row.classList.remove('nxWaAbierta');soltar(row,-Math.round(row.offsetWidth*1.1),true);
+        const ok=await accion(h.id,'archivar',!h.archivado_at);
+        if(!ok)limpiarSwipe(row);else toastSafe('ok',h.archivado_at?'Chat archivado':'Chat desarchivado');
+        return;
+      }
+      if(s.dx<=-SW_ABRIR){abrirFila(row,h);return;}
+      limpiarSwipe(row);return;
     }
+    if(s.dx<SW_DER){limpiarSwipe(row);return;}
+    limpiarSwipe(row);
+    const nl=Number(h.no_leidos_count)>0;
+    const ok=await accion(h.id,nl?'leido':'no_leido');
+    if(ok)toastSafe('ok',nl?'Marcado como leído':'Marcado como no leído');
   }
   document.addEventListener('pointerup',e=>{if(g&&e.pointerId===g.id)terminarSwipe(false);},true);
   document.addEventListener('pointercancel',e=>{if(g&&e.pointerId===g.id)terminarSwipe(true);},true);
+  // Botones de la fila abierta.
+  document.addEventListener('click',async e=>{
+    const b=e.target.closest&&e.target.closest('#nxWaLista .nxWaSwBtn');if(!b)return;
+    e.preventDefault();e.stopPropagation();
+    const row=b.parentElement&&b.parentElement.parentElement&&$('.nxWaRow',b.parentElement.parentElement);
+    const h=row&&hiloDe(row);if(!h){cerrarAbierta();return;}
+    if(b.dataset.sw==='cobrar'){
+      const cb=cobroDe(h);
+      if(!cb||!cb.c){toastSafe('info','Este chat no tiene cliente vinculado');return;}
+      cerrarAbierta();
+      try{window.abrirAbono(cb.c.id);}catch(err){toastSafe('err','No se pudo abrir el cobro',err&&err.message||'');}
+      return;
+    }
+    if(b.dataset.sw==='archivar'){
+      abierta=null;row.classList.remove('nxWaAbierta');soltar(row,-Math.round(row.offsetWidth*1.1),true);
+      const ok=await accion(h.id,'archivar',!h.archivado_at);
+      if(!ok)limpiarSwipe(row);else toastSafe('ok',h.archivado_at?'Chat archivado':'Chat desarchivado');
+    }
+  },true);
+  // Al desplazar la lista, la fila abierta se cierra (como en Mail).
+  document.addEventListener('scroll',e=>{if(abierta&&e.target&&e.target.id==='nxWaLista')cerrarAbierta();},true);
   document.addEventListener('click',e=>{
     if(!tragarClick)return;
     tragarClick=false;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();

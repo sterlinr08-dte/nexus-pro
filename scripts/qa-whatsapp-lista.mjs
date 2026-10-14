@@ -352,12 +352,38 @@ async function suite(browser, movil) {
     b = await caja(page, ID.mercedes);
     const y = b.y + b.height / 2, x0 = b.x + b.width - 30;
     const rpcAntes = log.rpc.length;
-    await touch(ctx, page, [0, 20, 50, 90, 130, 160].map(d => ({ x: x0 - d, y })), { esperaEntre: 40 });
+    // 59.24: deslizar un poco deja la fila ABIERTA con Cobrar · Archivar (estilo Mail); no archiva todavía
+    await touch(ctx, page, [0, 20, 50, 80, 110].map(d => ({ x: x0 - d, y })), { esperaEntre: 40 });
     await sleep(500);
+    const abierta = await page.evaluate(id => {
+      const r = document.querySelector('#nxWaLista .nxWaRow[data-hilo="' + id + '"]'); const w = r && r.parentElement;
+      const bs = w ? [...w.querySelectorAll('.nxWaSwBtn')].map(b => { const q = b.getBoundingClientRect(); return { t: b.textContent.trim(), w: Math.round(q.width), vis: q.width > 40 && getComputedStyle(b).visibility !== 'hidden' }; }) : [];
+      const m = r ? new DOMMatrix(getComputedStyle(r).transform) : null;
+      return { abierta: !!r?.classList.contains('nxWaAbierta'), x: m ? Math.round(m.m41) : null, bs, chat: document.querySelector('#v-waInbox').classList.contains('nxWaChatOpen') };
+    }, ID.mercedes);
+    ok(abierta.abierta && abierta.bs.length === 2 && abierta.bs[0].t === 'Cobrar' && /Archivar/.test(abierta.bs[1].t) && abierta.bs.every(b => b.vis) && abierta.x <= -140 && !abierta.chat, `390 C: deslizar un poco abre la fila con «Cobrar» y «Archivar» a la vista`, abierta);
+    ok(!log.rpc.slice(rpcAntes).some(x => x.fn === 'whatsapp_hilo_archivar'), `390 C: abrir la fila todavía no archiva`);
+    await page.screenshot({ path: OUT + 'inbox-390-fila-abierta.png' });
+    const bA = await page.evaluate(id => { const w = document.querySelector('#nxWaLista .nxWaRow[data-hilo="' + id + '"]').parentElement; const q = w.querySelector('.nxWaSwBtn.arch').getBoundingClientRect(); return { x: q.x + q.width / 2, y: q.y + q.height / 2 }; }, ID.mercedes);
+    await page.touchscreen.tap(bA.x, bA.y); await sleep(600);
     const ar = log.rpc.slice(rpcAntes).find(x => x.fn === 'whatsapp_hilo_archivar');
-    ok(ar && ar.b?.p_hilo_id === ID.mercedes && ar.b?.p_archivar === true, `390 C: deslizar a la izquierda archiva (rpc/whatsapp_hilo_archivar)`, log.rpc.slice(rpcAntes));
+    ok(ar && ar.b?.p_hilo_id === ID.mercedes && ar.b?.p_archivar === true, `390 C: tocar «Archivar» archiva (rpc/whatsapp_hilo_archivar)`, log.rpc.slice(rpcAntes));
     const arch3 = await page.evaluate(() => ({ n: document.querySelector('#nxWaLista .nxWaArchCount')?.textContent, chat: document.querySelector('#v-waInbox').classList.contains('nxWaChatOpen') }));
     ok(arch3.n === '3' && !arch3.chat, `390 C: pasa a Archivados (3) sin abrir el chat`, arch3);
+    // tocar una fila abierta solo la cierra (no abre el chat)
+    b = await caja(page, ID.ana);
+    await touch(ctx, page, [0, 20, 50, 80, 110].map(d => ({ x: b.x + b.width - 30 - d, y: b.y + b.height / 2 })), { esperaEntre: 40 });
+    await sleep(450);
+    await page.touchscreen.tap(b.x + 60, b.y + b.height / 2); await sleep(500);
+    const cerro = await page.evaluate(id => ({ abierta: !!document.querySelector('#nxWaLista .nxWaRow[data-hilo="' + id + '"]')?.classList.contains('nxWaAbierta'), chat: document.querySelector('#v-waInbox').classList.contains('nxWaChatOpen') }), ID.ana);
+    ok(!cerro.abierta && !cerro.chat, `390 C: tocar la fila abierta la cierra sin abrir el chat`, cerro);
+    // deslizamiento largo: archiva directo
+    b = await caja(page, ID.miguel);
+    const rpcL = log.rpc.length;
+    await touch(ctx, page, [0, 30, 80, 140, 200, 260, 310].map(d => ({ x: b.x + b.width - 20 - d, y: b.y + b.height / 2 })), { esperaEntre: 40 });
+    await sleep(600);
+    const arL = log.rpc.slice(rpcL).find(x => x.fn === 'whatsapp_hilo_archivar');
+    ok(arL && arL.b?.p_hilo_id === ID.miguel && arL.b?.p_archivar === true, `390 C: deslizar largo archiva directo`, log.rpc.slice(rpcL));
     b = await caja(page, ID.ana);
     const rpcV = nWa(log);
     await touch(ctx, page, [0, 15, 40, 80, 120].map(d => ({ x: b.x + 120, y: b.y + b.height / 2 + d })), { esperaEntre: 40 });
