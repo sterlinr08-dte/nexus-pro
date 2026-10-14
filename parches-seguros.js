@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6027'):'?b=6027';
-    }catch(e){return '?b=6027';}
+      return base?(base+'&b=6028'):'?b=6028';
+    }catch(e){return '?b=6028';}
   }
 
   function load(src,done){
@@ -111,7 +111,10 @@
     ['js','parches-motion-fase2.js'],
     /* 59.20 (dueño 11-oct-2026): avisos de pagos y WhatsApp en una isla negra arriba (estilo Dynamic Island).
        Para quitarla, borrar esta línea; o en un equipo, localStorage.nxIslaAvisos='0'. */
-    ['js','parches-isla-avisos.js']
+    ['js','parches-isla-avisos.js'],
+    /* 59.24 (dueño 14-oct-2026): números que ruedan, barra de pasos en formularios largos y «Más» en la ficha del
+       cliente (ideas de beUI). Para quitarla, borrar esta línea; o en un equipo, localStorage.nxBeuiPro='0'. */
+    ['js','parches-beui-pro.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
