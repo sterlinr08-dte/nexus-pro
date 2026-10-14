@@ -1,4 +1,4 @@
-// QA de Facturas → Cobros (59.21, 11-oct-2026): resumen, lupa y filtros en una fila, tarjetas y COBRAR.
+// QA de Facturas → Cobros (59.21, 11-oct-2026; filas en 2 líneas 59.27, 14-oct): resumen, lupa y filtros en una fila, filas y COBRAR.
 // Solo forma y orden: rCob(), abrirAbono() y los filtros no cambian. Datos de la REST simulada; los casos raros
 // (referencia, cliente sin agente) se ponen en memoria de la página, sin tocar el servidor.
 // Uso: PORT=8942 node scripts/qa-crm-mock-server.js &   QA_OUT=/ruta node scripts/qa-cobros.mjs
@@ -24,7 +24,7 @@ async function abrir(b, w, tema) {
   await page.addInitScript((t) => { localStorage.setItem('nx_auth_mode', 'legacy'); localStorage.setItem('nx_tema', t); sessionStorage.setItem('nx_sesion', JSON.stringify({ id: '00000000-0000-4000-8000-000000000001', nom: 'Esterlin Espinal', rol: 'admin', cargo: 'ADMIN', organizacion_id: '00000000-0000-4000-8000-000000000009', inicio: Date.now() })); sessionStorage.setItem('nx_sesion_actividad', String(Date.now())); sessionStorage.setItem('nx_ya_saludo', '1'); }, tema);
   await page.goto(BASE + '/index.html'); await page.waitForTimeout(4500);
   await page.evaluate(() => { nav('facturas', null); setTimeout(() => switchTab('cob'), 250); });
-  await page.waitForFunction(() => document.querySelectorAll('#tbCob .nxCobCard').length > 0, null, { timeout: 8000 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelectorAll('#tbCob .nxCobFila').length > 0, null, { timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(900);
   return { ctx, page, errs };
 }
@@ -75,82 +75,69 @@ async function recorrido(b, w, tema) {
     ok(kpi.warn && kpi.err && kpi.ok && Math.abs(kpi.warn.y - kpi.err.y) < 2 && Math.abs(kpi.warn.y - kpi.ok.y) < 2, `${et} los 3 del resumen en una fila`, kpi);
   }
 
-  // 3) Tarjetas
-  const tarjetas = await page.evaluate(() => Array.from(document.querySelectorAll('#tbCob .nxCobCard')).map(c => {
+  // 3) Filas en dos líneas (59.27, reel «6 movimientos»): quién · cuánto · cómo está; monto en un solo lugar
+  const filas = await page.evaluate(() => Array.from(document.querySelectorAll('#tbCob .nxCobFila')).map(c => {
     const R = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, b: r.bottom, r: r.right }; };
-    const nm = c.querySelector('.cbNm'), ag = c.querySelector('.cbAg'), bd = c.querySelector('.cbBadges'), btn = c.querySelector('.cbBtn.cobrar');
-    const amts = Array.from(c.querySelectorAll('.cbFoot .cbAmt'));
+    const nm = c.querySelector('.cfNm'), tot = c.querySelector('.cfTot'), btn = c.querySelector('.cfCobrar'), sub = c.querySelector('.cfSub');
     const bcs = getComputedStyle(btn);
-    return { cls: c.className, id: (btn.getAttribute('onclick') || '').match(/'([^']+)'/)?.[1], nm: R(nm), ag: R(ag), bd: R(bd), card: R(c),
-      ant: amts[0] && { gris: !!amts[0].querySelector('.cbV.gray'), disp: getComputedStyle(amts[0]).display },
-      pendFs: amts[1] && parseFloat(getComputedStyle(amts[1].querySelector('.cbV')).fontSize),
-      btnBg: bcs.backgroundColor, btnImg: bcs.backgroundImage, btnColor: bcs.color, icoColor: getComputedStyle(btn.querySelector('i')).color,
-      refColor: nm.querySelector('span') ? getComputedStyle(nm.querySelector('span')).color : null,
-      sinAgColor: ag.querySelector('span[style*="ef4444"]') ? getComputedStyle(ag.querySelector('span[style*="ef4444"]')).color : null,
-      sinAgIco: ag.querySelector('i[style*="ef4444"]') ? getComputedStyle(ag.querySelector('i[style*="ef4444"]')).color : null };
+    return { cls: c.className, id: c.dataset.cli, fila: R(c), nm: R(nm), tot: R(tot), btn: R(btn), sub: R(sub), totTxt: tot.textContent.trim(), totFs: parseFloat(getComputedStyle(tot).fontSize),
+      ant: !!c.querySelector('.cfAnt'), btnBg: bcs.backgroundColor, btnColor: bcs.color, icoColor: getComputedStyle(btn.querySelector('i')).color,
+      refColor: nm.querySelector('.cfRef') ? getComputedStyle(nm.querySelector('.cfRef')).color : null,
+      sinAgColor: sub.querySelector('.cfSinAg') ? getComputedStyle(sub.querySelector('.cfSinAg')).color : null };
   }));
-  ok(tarjetas.length > 0, `${et} hay tarjetas de cobro (${tarjetas.length})`);
-  const deben = tarjetas.filter(t => /u-(crit|warn)/.test(t.cls)), aldia = tarjetas.filter(t => /u-ok/.test(t.cls));
-  ok(deben.length > 0 && aldia.length > 0, `${et} hay clientes con deuda (${deben.length}) y al día (${aldia.length}) para comparar`);
-  // nombre pegado al agente (antes, en el celular, la regla de toque de 44 px dejaba un hueco)
-  const huecos = tarjetas.map(t => Math.round(t.ag.y - t.nm.b));
-  ok(huecos.every(h => h >= 0 && h <= 6), `${et} el nombre queda pegado a su agente (hueco ${Math.max(...huecos)}px)`, huecos);
+  ok(filas.length > 0, `${et} hay filas de cobro (${filas.length})`);
+  const deben = filas.filter(t => /\b(pend|parcial)\b/.test(t.cls)), aldia = filas.filter(t => /\baldia\b/.test(t.cls));
+  ok(deben.length > 0 && aldia.length > 0, `${et} hay clientes con deuda (${deben.length}) y al día (${aldia.length})`);
+  ok(filas.every(t => t.fila.h <= (w < 500 ? 90 : 64)), `${et} cada fila es baja (${w < 500 ? '≤ 90' : '≤ 64'} px): ${Math.max(...filas.map(t => Math.round(t.fila.h)))} px`, filas.map(t => Math.round(t.fila.h)));
+  ok(new Set(filas.map(t => Math.round(t.tot.r))).size === 1, `${et} los montos quedan alineados en una sola columna a la derecha`, filas.map(t => Math.round(t.tot.r)));
+  ok(new Set(filas.map(t => Math.round(t.fila.w))).size === 1, `${et} todas las filas miden lo mismo de ancho`, filas.map(t => Math.round(t.fila.w)));
   if (w < 500) {
-    ok(tarjetas.every(t => t.bd.y >= t.ag.b - 1), `${et} las etiquetas bajan debajo del agente`);
-    ok(tarjetas.every(t => t.nm.w > 200), `${et} el nombre usa todo el ancho de la tarjeta`, tarjetas.map(t => Math.round(t.nm.w)));
-    // el área de toque del nombre sigue en 44 px (::after invisible): se prueba tocando por encima y por debajo del texto
-    const t0 = tarjetas[0];
-    const toque = await page.evaluate(([x, y1, y2]) => [document.elementFromPoint(x, y1), document.elementFromPoint(x, y2)].map(e => !!(e && e.closest('.cbNm'))), [t0.nm.x + 12, t0.nm.y - 8, t0.nm.b + 14]);
-    ok(toque[0] && toque[1], `${et} el nombre se puede tocar en 44 px de alto aunque el texto mida menos`, toque);
+    ok(filas.every(t => Math.abs((t.nm.y + t.nm.h / 2) - (t.tot.y + t.tot.h / 2)) < 6 && t.sub.y >= t.nm.b - 2 && t.btn.y >= t.tot.b - 6), `${et} dos líneas: nombre y monto arriba; estado, agente y COBRAR abajo`);
   } else {
-    ok(tarjetas.every(t => t.bd.y < t.ag.b), `${et} en la computadora las etiquetas van a la derecha del nombre`);
+    ok(filas.every(t => Math.abs((t.nm.y + t.nm.h / 2) - (t.tot.y + t.tot.h / 2)) < 6 && Math.abs((t.btn.y + t.btn.h / 2) - (t.tot.y + t.tot.h / 2)) < 6), `${et} en la computadora todo va en una sola línea`);
   }
-  ok(tarjetas.every(t => !t.ant || (t.ant.gris ? t.ant.disp === 'none' : t.ant.disp !== 'none')), `${et} «Deuda anterior» solo se ve cuando hay deuda anterior`);
-  ok(tarjetas.every(t => t.pendFs >= 17), `${et} el pendiente se ve grande (17px)`);
-  // COBRAR: verde fuerte con ícono blanco para quien debe; suave para quien está al día
+  ok(filas.every(t => t.btn.h >= 36 && t.btn.w >= 44), `${et} COBRAR se puede tocar (≥ 36 × 44 px, más 6 px de margen invisible)`, filas.map(t => [Math.round(t.btn.h), Math.round(t.btn.w)]));
+  ok(filas.every(t => t.totFs >= 14), `${et} el monto se ve grande (${filas[0] && filas[0].totFs}px)`);
   const blanco = 'rgb(255, 255, 255)';
-  ok(deben.every(t => t.icoColor === blanco && t.btnColor === blanco), `${et} COBRAR de quien debe: texto e ícono blancos`, deben.map(t => [t.btnColor, t.icoColor]));
-  const alfa = c => { const m = c.match(/[\d.]+/g); return m ? (m[3] !== undefined ? +m[3] : 1) : 0; };
-  ok(deben.every(t => alfa(t.btnBg) === 1 && /rgb\((1[0-9]|2[0-9]), (1[2-6][0-9]), (4[0-9]|6[0-9]|7[0-9])\)/.test(t.btnBg)), `${et} COBRAR de quien debe: verde sólido`, deben.map(t => t.btnBg));
-  if (oscuro) {
-    ok(aldia.every(t => alfa(t.btnBg) < 0.3 && t.btnImg === 'none'), `${et} COBRAR de quien está al día: tono suave`, aldia.map(t => t.btnBg));
-    ok(aldia.every(t => t.btnColor === 'rgb(187, 247, 208)' && t.icoColor === 'rgb(134, 239, 172)'), `${et} COBRAR al día: texto e ícono verdes claros`, aldia.map(t => [t.btnColor, t.icoColor]));
-  } else {
-    ok(aldia.every(t => t.btnBg === 'rgb(236, 253, 243)' && t.btnColor === 'rgb(21, 128, 61)'), `${et} COBRAR de quien está al día: verde claro con texto verde`, aldia.map(t => [t.btnBg, t.btnColor]));
-  }
-  const conRef = tarjetas.find(t => t.id === raros.ref), sinAg = tarjetas.find(t => t.id === raros.sinAg);
-  if (oscuro) {
-    // la referencia (#7c3aed en línea) y «Sin agente» (#ef4444 en línea) los aclara el tema; aquí solo se comprueba que siguen así
-    ok(conRef && conRef.refColor === 'rgb(191, 219, 254)', `${et} la referencia del cliente se lee (la aclara el tema)`, conRef && conRef.refColor);
-    ok(sinAg && sinAg.sinAgColor === 'rgb(254, 202, 202)' && sinAg.sinAgIco === sinAg.sinAgColor, `${et} «Sin agente» y su triángulo en rojo claro (no en gris)`, sinAg && [sinAg.sinAgColor, sinAg.sinAgIco]);
-  } else {
-    ok(conRef && conRef.refColor === 'rgb(124, 58, 237)', `${et} tarjeta blanca: la referencia sigue en su morado`, conRef && conRef.refColor);
-    ok(sinAg && sinAg.sinAgColor === 'rgb(239, 68, 68)' && sinAg.sinAgIco === 'rgb(154, 52, 18)', `${et} tarjeta blanca: «Sin agente» y su triángulo con sus colores de siempre`, sinAg && [sinAg.sinAgColor, sinAg.sinAgIco]);
-  }
-  if (w >= 1100) {
-    ok(tarjetas.length >= 2 && Math.abs(tarjetas[0].card.y - tarjetas[1].card.y) < 2 && tarjetas[1].card.x > tarjetas[0].card.r, `${et} dos tarjetas por fila`, tarjetas.slice(0, 2).map(t => t.card));
-  } else {
-    ok(tarjetas.length >= 2 && tarjetas[1].card.y > tarjetas[0].card.b, `${et} una tarjeta por fila`);
-  }
+  const conMonto = deben.filter(t => !/RD\$\s*0(\.00)?$/.test(t.totTxt));
+  ok(conMonto.every(t => t.btnBg === 'rgb(21, 128, 61)' && t.btnColor === blanco && t.icoColor === blanco), `${et} COBRAR de quien debe: verde sólido, texto e ícono blancos`, conMonto.map(t => [t.btnBg, t.btnColor, t.icoColor]));
+  ok(aldia.every(t => /rgba\(0, 0, 0, 0\)|transparent/.test(t.btnBg)), `${et} COBRAR de quien está al día: suave (sin relleno)`, aldia.map(t => t.btnBg));
+  const conRef = filas.find(t => t.id === raros.ref), sinAg = filas.find(t => t.id === raros.sinAg);
+  ok(conRef && conRef.refColor && conRef.refColor !== 'rgb(0, 0, 0)', `${et} la referencia del cliente se ve (${conRef && conRef.refColor})`);
+  ok(sinAg && sinAg.sinAgColor === 'rgb(239, 68, 68)', `${et} «Sin agente» en rojo`, sinAg && sinAg.sinAgColor);
+  const daOk = await page.evaluate(() => Array.from(document.querySelectorAll('#tbCob .nxCobFila')).every(f => { const c = (window.ST || ST).clientes.find(x => String(x.id) === f.dataset.cli); return !!f.querySelector('.cfAnt') === (deudaAnt(c) > 0.009); }));
+  ok(daOk, `${et} «incl. anterior» solo sale cuando hay deuda anterior`);
+  // lo oculto no se borra: tocar la fila abre el detalle en la misma fila (una a la vez)
+  await page.click('#tbCob .nxCobFila:nth-child(1) .cfNm'); await page.waitForTimeout(300);
+  let ab = await page.evaluate(() => Array.from(document.querySelectorAll('#tbCob .nxCobFila')).map(f => ({ ab: f.classList.contains('abierta'), exp: f.querySelector('.cfFila').getAttribute('aria-expanded'), det: !f.querySelector('.cfDet').hidden, btns: f.querySelectorAll('.cfDet .cfBtn').length })));
+  ok(ab[0].ab && ab[0].exp === 'true' && ab[0].det && ab[0].btns === 2 && !(await page.evaluate(() => !!document.querySelector('#mAbono.open'))), `${et} tocar la fila abre su detalle (Ver ficha y WhatsApp) sin abrir el cobro`, ab[0]);
+  await page.click('#tbCob .nxCobFila:nth-child(2) .cfNm'); await page.waitForTimeout(300);
+  ab = await page.evaluate(() => Array.from(document.querySelectorAll('#tbCob .nxCobFila')).map(f => f.classList.contains('abierta')));
+  ok(!ab[0] && ab[1] && ab.filter(Boolean).length === 1, `${et} abrir otra fila cierra la anterior`, ab);
+  await page.click('#tbCob .nxCobFila:nth-child(2) .cfNm'); await page.waitForTimeout(300);
+  ab = await page.evaluate(() => document.querySelectorAll('#tbCob .nxCobFila.abierta').length);
+  ok(ab === 0, `${et} tocarla otra vez la cierra`);
+  if (w < 500) await page.screenshot({ path: path.join(OUT, `cobros-${w}-${tema}-filas.png`) });
+  const tarjetas = filas;
 
   // 4) Filtro Estado desde el chip (como lo usa la persona)
   const elegir = async (v) => {
     await page.click('#fCobEstChip .nfcBtn'); await page.waitForTimeout(350);
     await page.click(`.nfcPanel.open .nfcOpt[data-v="${v}"]`); await page.waitForTimeout(500);
-    return page.evaluate(() => ({ cls: Array.from(document.querySelectorAll('#tbCob .nxCobCard')).map(c => c.className), lbl: (document.querySelector('#fCobEstChip .nfcLbl') || {}).textContent, val: document.getElementById('fCobEst').value }));
+    return page.evaluate(() => ({ cls: Array.from(document.querySelectorAll('#tbCob .nxCobFila')).map(c => c.className), lbl: (document.querySelector('#fCobEstChip .nfcLbl') || {}).textContent, val: document.getElementById('fCobEst').value }));
   };
   let r = await elegir('deuda');
-  ok(r.val === 'deuda' && r.cls.length > 0 && r.cls.every(c => /u-(crit|warn)/.test(c)), `${et} filtro «Con deuda pendiente»: solo quien debe`, r);
+  ok(r.val === 'deuda' && r.cls.length > 0 && r.cls.every(c => /\b(pend|parcial)\b/.test(c)), `${et} filtro «Con deuda pendiente»: solo quien debe`, r);
   ok(/deuda/i.test(r.lbl || ''), `${et} el chip dice el filtro elegido («${r.lbl}»)`);
   r = await elegir('aldia');
-  ok(r.val === 'aldia' && r.cls.length > 0 && r.cls.every(c => /u-ok/.test(c)), `${et} filtro «Al día»: solo quien está al día`, r);
+  ok(r.val === 'aldia' && r.cls.length > 0 && r.cls.every(c => /\baldia\b/.test(c)), `${et} filtro «Al día»: solo quien está al día`, r);
   r = await elegir('');
   ok(r.val === '' && r.cls.length === tarjetas.length && /estado/i.test(r.lbl || ''), `${et} filtro «Todos»: vuelven todas y el chip dice «Estado»`, r);
 
   // 5) COBRAR abre la ventana de pago de siempre con ese cliente
   const primero = deben[0];
   if (primero) {
-    await page.click(`#tbCob .nxCobCard .cbBtn.cobrar[onclick*="${primero.id}"]`); await page.waitForTimeout(900);
+    await page.click(`#tbCob .nxCobFila[data-cli="${primero.id}"] .cfCobrar`); await page.waitForTimeout(900);
     const m = await page.evaluate(() => ({ open: !!document.querySelector('#mAbono.open'), cli: (typeof abonoCliId !== 'undefined' ? abonoCliId : null) }));
     ok(m.open && String(m.cli) === String(primero.id), `${et} COBRAR abre «Registrar pago» con ese cliente`, m);
     await page.evaluate(() => { try { cm('mAbono'); } catch (e) { document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open')); } }); await page.waitForTimeout(400);

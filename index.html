@@ -9594,7 +9594,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.26';
+const APP_VERSION='59.27';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -14077,30 +14077,38 @@ function rCob(){
     return;
   }
   const activosPag=q?activos:activos.slice((_cobPagina-1)*_cobPAGE,_cobPagina*_cobPAGE);
+  // 59.27 (dueño 14-oct-2026, «sigue con las tablas de Cobros»; reel de @designmotionhq «6 movimientos»): cada cliente
+  // en DOS líneas (quién · cuánto · cómo está), el monto en un solo lugar a la derecha, etiqueta solo en lo que confunde
+  // («incl. anterior»), el detalle se abre en la misma fila (no en otra página) y la fila se acomoda a SU ancho (@container),
+  // no al de la pantalla. Las acciones son las mismas de antes: abrirAbono, verCliente, nxCobroWA.
+  _nxCobFilaCSS();
+  tb.classList.add('nxCobFilas');
   tb.innerHTML=activosPag.map(c=>{
-    const da=deudaAnt(c);const pd=pend(c);
+    const da=deudaAnt(c);const pd=pend(c);const tot=Math.max(0,pendTot(c));
     const est=getEst(c);
     const estCls=est==='Al día'?'aldia':est==='Parcial'?'parcial':'pend';
-    const estLbl=est==='Al día'?'AL DÍA':est==='Parcial'?'PARCIAL':'PENDIENTE';
+    const estLbl=est==='Al día'?'Al día':est==='Parcial'?'Parcial':'Pendiente';
     const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));
-    const agHtml=ag?`<i class="ti ti-user"></i> ${escHtml(ag.nom)}`:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> <span style="color:#ef4444">Sin agente</span>';
-    const planBadge=c.plan?`<span class="cbBdg plan">${escHtml(c.plan==='Esencial Plus'?'ESC+':String(c.plan).toUpperCase())}</span>`:'';
-    const urg=estCls==='pend'?'u-crit':estCls==='parcial'?'u-warn':'u-ok';
-    return `<div class="nxCobCard ${urg}">
-      <div class="cbHead">
-        <div class="cbAv">${inits(c.nom)}</div>
-        <div class="cbWho">
-          <div class="cbNm" onclick="verCliente('${c.id}')" style="cursor:pointer" title="Ver resumen del cliente" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${escHtml(c.nom)}${c.referencia?` <span style="color:#7c3aed;font-weight:700;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</div>
-          <div class="cbAg">${agHtml}</div>
-        </div>
-        <div class="cbBadges">${planBadge}<span class="cbBdg ${estCls}">${estLbl}</span></div>
+    const agTxt=ag?escHtml(ag.nom):'<span class="cfSinAg">Sin agente</span>';
+    const plan=c.plan?escHtml(c.plan):'';
+    const id=escHtml(String(c.id));
+    const nm=escHtml(c.nom)+(c.referencia?` <span class="cfRef">(${escHtml(c.referencia)})</span>`:'');
+    return `<div class="nxCobFila ${estCls}" data-cli="${id}">
+      <div class="cfFila" role="button" tabindex="0" aria-expanded="false" onclick="nxCobFilaAbrir(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();nxCobFilaAbrir(this)}">
+        <div class="cfAv" aria-hidden="true">${inits(c.nom)}</div>
+        <div class="cfNm">${nm}</div>
+        <div class="cfTot ${tot>0?'debe':'cero'}">${fmt(tot)}</div>
+        <div class="cfSub"><span class="cfEst ${estCls}">${estLbl}</span><span class="cfAg">${agTxt}</span>${da>0.009?`<span class="cfAnt">incl. anterior ${fmt(da)}</span>`:''}</div>
+        <button type="button" class="cfCobrar ${tot>0?'':'suave'}" onclick="event.stopPropagation();abrirAbono('${id}')"><i class="ti ti-cash" aria-hidden="true"></i> Cobrar</button>
       </div>
-      <div class="cbDiv"></div>
-      <div class="cbFoot">
-        <div class="cbAmt"><div class="cbAl">Deuda anterior</div><div class="cbV ${da>0?'red':'gray'}">${fmt(da)}</div></div>
-        <div class="cbAmt"><div class="cbAl">Pendiente</div><div class="cbV ${pd>0?'red':'gray'}">${fmt(pd)}</div></div>
-        <div class="cbActs">
-          <button class="cbBtn cobrar" onclick="abrirAbono('${c.id}')"><i class="ti ti-cash"></i> COBRAR</button>
+      <div class="cfDet" hidden>
+        <div class="cfDato"><span>Pendiente del mes</span><b>${fmt(pd)}</b></div>
+        <div class="cfDato"><span>Deuda anterior</span><b>${fmt(da)}</b></div>
+        ${plan?`<div class="cfDato"><span>Plan</span><b>${plan}</b></div>`:''}
+        <div class="cfDato"><span>Agente</span><b>${agTxt}</b></div>
+        <div class="cfActs">
+          <button type="button" class="cfBtn" onclick="verCliente('${id}')"><i class="ti ti-user" aria-hidden="true"></i> Ver ficha</button>
+          <button type="button" class="cfBtn wa" onclick="nxCobroWA('${id}')"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> WhatsApp</button>
         </div>
       </div>
     </div>`;
@@ -14113,6 +14121,60 @@ function rCob(){
   }
 }
 function cobIrPag(p){_cobPagina=p;rCob();nxPagScrollTop();}
+function nxCobFilaAbrir(f){
+  const w=f.closest('.nxCobFila'),d=w&&w.querySelector('.cfDet');if(!d)return;
+  const abrir=d.hidden;
+  document.querySelectorAll('#tbCob .nxCobFila.abierta').forEach(x=>{if(x!==w){x.classList.remove('abierta');x.querySelector('.cfDet').hidden=true;x.querySelector('.cfFila').setAttribute('aria-expanded','false');}});
+  d.hidden=!abrir;w.classList.toggle('abierta',abrir);f.setAttribute('aria-expanded',abrir?'true':'false');
+}
+function _nxCobFilaCSS(){
+  if(document.getElementById('nxCobFilaCSS'))return;
+  const st=document.createElement('style');st.id='nxCobFilaCSS';
+  st.textContent=`#tbCob.nxCobFilas{display:flex;flex-direction:column;gap:6px;container-type:inline-size;container-name:cob}
+  .nxCobFila{width:100%;box-sizing:border-box;--cf-bg:#fff;--cf-borde:#eceef3;--cf-tx:#101828;--cf-tx2:#667085;--cf-sep:#eef0f4;--cf-debe:#be123c;border:1px solid var(--cf-borde);background:var(--cf-bg);border-radius:14px;overflow:hidden}
+  html.tema-glass-oscuro .nxCobFila{--cf-bg:var(--tgo-card,rgba(255,255,255,.04));--cf-borde:var(--tgo-edge,rgba(255,255,255,.1));--cf-tx:#F1F5F9;--cf-tx2:#94A3B8;--cf-sep:rgba(255,255,255,.08);--cf-debe:#FDA4AF}
+  .nxCobFila .cfFila{display:grid;grid-template-columns:38px minmax(0,1fr) auto;grid-template-areas:"av nm tot" "av sub btn";column-gap:10px;row-gap:4px;align-items:center;padding:9px 10px 9px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .nxCobFila .cfFila:focus-visible{outline:2px solid #7c3aed;outline-offset:-2px;border-radius:14px}
+  .nxCobFila .cfAv{grid-area:av;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12.5px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);align-self:center}
+  .nxCobFila .cfNm{grid-area:nm;min-width:0;font-weight:800;font-size:14px;line-height:1.25;color:var(--cf-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nxCobFila .cfRef{color:#7c3aed;font-weight:700;font-size:11px}
+  html.tema-glass-oscuro .nxCobFila .cfRef{color:#C4B5FD}
+  .nxCobFila .cfTot{grid-area:tot;justify-self:end;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
+  .nxCobFila .cfTot.debe{color:var(--cf-debe)}.nxCobFila .cfTot.cero{color:var(--cf-tx2);font-weight:700}
+  .nxCobFila .cfSub{grid-area:sub;min-width:0;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--cf-tx2);white-space:nowrap;overflow:hidden}
+  .nxCobFila .cfSub>span{overflow:hidden;text-overflow:ellipsis}
+  .nxCobFila .cfSub>span+span::before{content:"·";margin-right:6px;opacity:.6}
+  .nxCobFila .cfEst{flex:none;display:inline-flex;align-items:center;gap:5px;font-weight:700}
+  .nxCobFila .cfEst::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .nxCobFila .cfEst.pend{color:#e11d48}.nxCobFila .cfEst.parcial{color:#d97706}.nxCobFila .cfEst.aldia{color:#16a34a}
+  html.tema-glass-oscuro .nxCobFila .cfEst.pend{color:#FDA4AF}html.tema-glass-oscuro .nxCobFila .cfEst.parcial{color:#FCD34D}html.tema-glass-oscuro .nxCobFila .cfEst.aldia{color:#86EFAC}
+  .nxCobFila .cfAnt{color:var(--cf-debe);font-weight:600}
+  .nxCobFila .cfSinAg{color:#ef4444;font-weight:700}
+  .nxCobFila .cfCobrar{grid-area:btn;justify-self:end;min-height:36px;min-width:44px;padding:0 12px;border-radius:999px;border:0;background:#15803D;color:#fff;font:800 12px inherit;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:transform .12s ease}
+  .nxCobFila .cfCobrar:active{transform:scale(.96)}
+  .nxCobFila .cfCobrar i{color:inherit!important;font-size:15px}
+  .nxCobFila .cfCobrar.suave{background:transparent;color:#15803D;box-shadow:inset 0 0 0 1px currentColor}
+  html.tema-glass-oscuro .nxCobFila .cfCobrar.suave{color:#86EFAC}
+  .nxCobFila .cfCobrar::after{content:"";position:absolute;inset:-6px -4px}
+  .nxCobFila .cfCobrar{position:relative}
+  .nxCobFila .cfDet{border-top:1px solid var(--cf-sep);padding:10px 12px 12px 60px;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .nxCobFila .cfDet[hidden]{display:none}
+  .nxCobFila .cfDato span{display:block;font-size:10.5px;color:var(--cf-tx2);font-weight:600}
+  .nxCobFila .cfDato b{font-size:13px;color:var(--cf-tx);font-variant-numeric:tabular-nums}
+  .nxCobFila .cfActs{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .nxCobFila .cfBtn{min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--cf-borde);background:transparent;color:var(--cf-tx);font:700 12.5px inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .nxCobFila .cfBtn.wa i{color:#16a34a}
+  .nxCobFila.abierta{border-color:#a78bfa}
+  .nxCobFila.pend{box-shadow:inset 3px 0 0 #e11d48}.nxCobFila.parcial{box-shadow:inset 3px 0 0 #d97706}.nxCobFila.aldia{box-shadow:inset 3px 0 0 #16a34a}
+  @container cob (min-width:700px){
+    .nxCobFila .cfFila{grid-template-columns:38px minmax(0,1.3fr) minmax(0,1.7fr) 130px 118px;grid-template-areas:"av nm sub tot btn";padding:8px 12px;column-gap:14px}
+    .nxCobFila .cfDet{grid-template-columns:repeat(4,minmax(0,1fr)) auto;padding-left:64px}
+    .nxCobFila .cfActs{grid-column:auto;justify-content:flex-end;margin-top:0}
+  }
+  @container cob (max-width:420px){.nxCobFila .cfCobrar i{display:none}.nxCobFila .cfCobrar{padding:0 14px}}
+  @media(prefers-reduced-motion:reduce){.nxCobFila .cfCobrar{transition:none}}`;
+  document.head.appendChild(st);
+}
 // Reusa el mismo Buzón real que el botón WhatsApp de la ficha del cliente (parches-whatsapp-
 // inbox.js) -- ya no arma ni precarga ningún mensaje, el agente lo escribe ahí si hace falta.
 function nxCobroWA(cid){

@@ -70,7 +70,7 @@ const MODULOS = [
   ['clientes', "nav('clientes',null)", '#nbiIn_cliQ', '#tbCli .cli-row', '#cliQ', 'Maria', '#v-clientes .nc .ct'],
   ['polizas', "nav('polizas',null)", '#nbiIn_polQ', '#tbPol tr', '#polQ', 'Maria', '#v-polizas .nc .ct'],
   ['facturas', "nav('facturas',null)", '#nbiIn_factQ', '#tbFact tbody tr', '#factQ', 'Maria', '#panelFact .ct'],
-  ['cobros', "nav('facturas',null);setTimeout(()=>switchTab('cob'),250)", '#nbiIn_cobQ', '#tbCob .nxCobCard', '#cobQ', 'Maria', '#panelCob .ct'],
+  ['cobros', "nav('facturas',null);setTimeout(()=>switchTab('cob'),250)", '#nbiIn_cobQ', '#tbCob .nxCobFila', '#cobQ', 'Maria', '#panelCob .ct'],
   ['pagos', "nav('facturas',null);setTimeout(()=>switchTab('pagos'),250)", '#nbiIn_pgBuscar', '#tbPagos tbody tr', '#pgBuscar', 'Maria', '#panelPagos .ct'],
   ['cliente360', "nav('cliente360',null)", '#c360Q', '#c360Lista .c360-row', null, 'Maria', '#c360Main, .c360-side'],
   ['crm', "nav('crm',null)", '#nxCrmQ', '#v-crm .nxCrmRow', null, 'Maria', '#v-crm .nxCrmHomeHead h1'],
