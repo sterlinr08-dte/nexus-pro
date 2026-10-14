@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6028'):'?b=6028';
-    }catch(e){return '?b=6028';}
+      return base?(base+'&b=6029'):'?b=6029';
+    }catch(e){return '?b=6029';}
   }
 
   function load(src,done){
@@ -114,7 +114,10 @@
     ['js','parches-isla-avisos.js'],
     /* 59.24 (dueño 14-oct-2026): números que ruedan, barra de pasos en formularios largos y «Más» en la ficha del
        cliente (ideas de beUI). Para quitarla, borrar esta línea; o en un equipo, localStorage.nxBeuiPro='0'. */
-    ['js','parches-beui-pro.js']
+    ['js','parches-beui-pro.js'],
+    /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
+       un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
+    ['js','parches-bauche-unico.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución

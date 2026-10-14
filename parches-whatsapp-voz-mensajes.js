@@ -243,12 +243,15 @@ html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nx
   function fmtMonto(n){try{return typeof fmt==='function'?fmt(n):'RD$ '+Math.round(n).toLocaleString('es-DO');}catch(e){return 'RD$ '+n;}}
   function cobrarHtml(m){
     const cb=cobroDeMensaje(m);if(!cb)return '';
+    /* 59.25: un comprobante ya aplicado a un pago no se vuelve a cobrar desde el chat. */
+    if(cb.foto&&String(m.revision_pago_estado||'')==='aplicado')return `<button type="button" class="nxWaCobrar" data-act="cobrar" disabled><i class="ti ti-receipt-off"></i><span class="t">Comprobante ya usado</span><em class="monto sin">Usado</em></button><div class="sep"></div>`;
     const txt=cb.foto?'Cobrar con este comprobante':'Cobrar';
     const der=cb.c?(cb.monto>0?`<em class="monto">${esc(fmtMonto(cb.monto))}</em>`:''):'<em class="monto sin">Sin cliente</em>';
     return `<button type="button" class="nxWaCobrar" data-act="cobrar" ${cb.c?'':'disabled'}><i class="ti ${cb.foto?'ti-receipt':'ti-cash'}"></i><span class="t">${txt}</span>${der}</button><div class="sep"></div>`;
   }
   async function cobrarDesdeMensaje(m){
     const cb=cobroDeMensaje(m);if(!cb||!cb.c)return toastSafe('info','Este chat no tiene cliente vinculado');
+    if(cb.foto&&String(m.revision_pago_estado||'')==='aplicado')return toastSafe('err','Comprobante ya usado','Esta foto ya se aplicó a un pago');
     if(cb.foto&&String(m.revision_pago_estado||'')==='pendiente'){
       if(window.__nxWaRevisionPendiente&&window.__nxWaRevisionPendiente!==m.id)toastSafe('info','Aviso','Había otro bauche esperando cobro: quedó pendiente, revísalo aparte.');
       window.__nxWaRevisionPendiente=m.id;window.__nxWaRevisionPendienteCliente=String(cb.c.id);
