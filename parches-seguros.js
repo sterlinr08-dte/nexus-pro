@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6032'):'?b=6032';
-    }catch(e){return '?b=6032';}
+      return base?(base+'&b=6033'):'?b=6033';
+    }catch(e){return '?b=6033';}
   }
 
   function load(src,done){
@@ -122,7 +122,10 @@
     /* 59.32 (dueño 16-oct-2026, idea de bencho.dev): en «Transferir dinero» el billete se arrastra al agente que
        recibe (solo elige el destino; el envío sigue igual). Para quitarla, borrar esta línea; o en un equipo,
        localStorage.nxArrastrar='0'. */
-    ['js','parches-transferir-arrastrar.js']
+    ['js','parches-transferir-arrastrar.js'],
+    /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
+       un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
+    ['js','parches-bauche-unico.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
