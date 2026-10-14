@@ -1,7 +1,17 @@
 {
-  "version": "59.23",
+  "version": "59.24",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "version": "59.24",
+      "fecha": "2026-10-14",
+      "notas": [
+        "WhatsApp en el celular: desliza un chat un poco a la izquierda y aparecen «Cobrar» y «Archivar»; deslizándolo hasta el final se archiva solo. A la derecha sigue marcando leído o no leído.",
+        "Las cifras de los resúmenes (Cobros, Historial de pagos, Solicitudes, WhatsApp e Inicio) suben rodando hasta su valor cuando cambian.",
+        "Nuevo préstamo: una barra arriba muestra en qué parte vas y te lleva a cada sección con un toque.",
+        "Ficha del cliente en el celular: WhatsApp, Llamar y Registrar pago a la vista; el resto sale con «Más»."
+      ]
+    },
     {
       "version": "59.23",
       "fecha": "2026-10-12",

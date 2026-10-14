@@ -24,17 +24,18 @@
 .nxBePasos button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 6px;border-radius:999px;border:1px solid rgba(124,58,237,.22);background:rgba(124,58,237,.06);color:#475569;font:700 11px/1 inherit;cursor:pointer;box-shadow:none;transition:background .22s ease,color .22s ease,border-color .22s ease,padding .26s cubic-bezier(.22,1,.36,1)}
 .nxBePasos button .n{width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:rgba(124,58,237,.14);color:#6d28d9;font-size:10px;font-weight:800;flex:none;transition:background .22s ease,color .22s ease}
 .nxBePasos button .t{max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .3s cubic-bezier(.22,1,.36,1),opacity .2s ease}
-.nxBePasos button.on{padding:0 12px 0 6px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-color:transparent;color:#fff}
-.nxBePasos button.on .n{background:rgba(255,255,255,.22);color:#fff}
+.nxBePasos button.on{padding:0 12px 0 6px;background:#6d28d9;border-color:transparent;color:#fff}
+.nxBePasos button.on .n{background:rgba(0,0,0,.22);color:#fff}
 .nxBePasos button.on .t{max-width:190px;opacity:1}
-.nxBePasos button.hecho .n{background:#7c3aed;color:#fff}
+.nxBePasos button.hecho .n{background:#6d28d9;color:#fff}
 .nxBePasos button[disabled]{opacity:.45;cursor:default}
 .nxBePasos .barra{height:3px;margin-top:8px;border-radius:3px;background:rgba(124,58,237,.12);overflow:hidden}
 .nxBePasos .barra i{display:block;height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#7c3aed,#a78bfa);transform-origin:left;transform:scaleX(var(--p,0));transition:transform .35s cubic-bezier(.22,1,.36,1)}
 @media(min-width:761px){.nxBePasos button .t{max-width:190px;opacity:1}.nxBePasos button{padding:0 12px 0 6px}}
-html.tema-glass-oscuro .nxBePasos button{color:#CBD5E1;border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.08)}
-html.tema-glass-oscuro .nxBePasos button .n{background:rgba(167,139,250,.18);color:#DDD6FE}
-html.tema-glass-oscuro .nxBePasos button.on{color:#fff}
+html.tema-glass-oscuro .nxBePasos button,.nxBePasos.oscuro button{color:#E2E8F0;border-color:rgba(167,139,250,.28);background:rgba(167,139,250,.10)}
+html.tema-glass-oscuro .nxBePasos button .n,.nxBePasos.oscuro button .n{background:rgba(167,139,250,.22);color:#F5F3FF}
+html.tema-glass-oscuro .nxBePasos button.on,.nxBePasos.oscuro button.on{color:#fff;background:#6d28d9}
+html.tema-glass-oscuro .nxBePasos button.hecho .n,.nxBePasos.oscuro button.hecho .n{background:#6d28d9;color:#fff}
 #v-cliente360 .sf-actions.nxBeMas .sf-btn.nxBeExtra{display:none}
 #v-cliente360 .sf-actions.nxBeMas.abierto .sf-btn.nxBeExtra{display:flex;animation:nxBeEntra .32s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0)*35ms)}
 #v-cliente360 .sf-actions.nxBeMas .nxBeMasBtn i.ti-chevron-down{transition:transform .26s cubic-bezier(.22,1,.36,1)}
@@ -114,6 +115,8 @@ html.tema-glass-oscuro .nxBePasos button.on{color:#fff}
         const f=n=>{for(;n;n=n.parentElement){const c=getComputedStyle(n).backgroundColor;const m=/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(c||'');if(m&&(m[4]===undefined||+m[4]>0.05))return 'rgb('+m[1]+','+m[2]+','+m[3]+')';}return '';};
         const c=f(sc)||(document.documentElement.classList.contains('tema-glass-oscuro')?'rgb(22,24,29)':'rgb(255,255,255)');
         bar.style.background=c;
+        // Los colores del texto siguen al fondo real (hay temas con el formulario oscuro aunque la app esté en claro).
+        const m=/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(c);if(m&&(0.2126*m[1]+0.7152*m[2]+0.0722*m[3])<128)bar.classList.add('oscuro');
         const pt=parseFloat(getComputedStyle(sc).paddingTop)||0;
         if(pt){bar.style.top=(-pt)+'px';bar.style.marginTop=(-pt)+'px';bar.style.paddingTop=(pt>8?pt:8)+'px';}
       }catch(e){}
