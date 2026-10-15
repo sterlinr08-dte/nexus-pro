@@ -555,14 +555,18 @@ Deno.serve(async (req: Request) => {
     }
     // La plantilla del admin tiene un bloque fijo para UN agente (hoy: ROBINSON). Si algún día hay más,
     // los demás se resumen al final de la línea «En proceso» del bloque para no perderlos.
+    // «En su poder» del agente con el desglose, para que el admin sepa exactamente qué tiene y dónde
+    // (decisión del dueño 15-oct-2026). Va dentro de la misma variable: no cambia la plantilla aprobada.
+    const enPoderTxt = (x: any) => fmtCorto(x.enPoder) + (x.efectivo !== null && x.banco !== null
+      ? ` (Efectivo RD$ ${fmtCorto(x.efectivo)} · Banco RD$ ${fmtCorto(x.banco)})` : "");
     function varsAdminV2(i: any, max = 26) {
       const equipo = infos.filter((x) => String(x.a.id) !== String(i.a.id) && !x.esAdmin);
       const ag = equipo[0];
-      const otros = equipo.slice(1).map((x) => ` · ${x.a.nom}: cobró RD$ ${fmtCorto(x.cobrado)}, en su poder RD$ ${fmtCorto(x.enPoder)}`).join("");
+      const otros = equipo.slice(1).map((x) => ` · ${x.a.nom}: cobró RD$ ${fmtCorto(x.cobrado)}, en su poder RD$ ${enPoderTxt(x)}`).join("");
       const bloque = ag
         ? [String(ag.a.nom || "Agente"), fmtCorto(ag.cobrado),
            fmtCorto(ag.entregado) + (ag.recibido > 0.005 ? ` (recibió RD$ ${fmtCorto(ag.recibido)})` : ""),
-           fmtCorto(ag.enPoder), String(ag.atrasados.length), fmtCorto(ag.deben), String(ag.proceso.length) + otros]
+           enPoderTxt(ag), String(ag.atrasados.length), fmtCorto(ag.deben), String(ag.proceso.length) + otros]
         : ["Sin agentes activos", "0", "0", "0", "0", "0", "0"];
       return [fecha, String(i.a.nom || "Admin"), etiqueta, fmtCorto(negocioCiclo), fmtCorto(negocioAnterior),
         fmtCorto(i.inicial), fmtCorto(i.cobrado), fmtCorto(i.recibido), fmtCorto(i.enPoder), dinero(i.efectivo), dinero(i.banco),
