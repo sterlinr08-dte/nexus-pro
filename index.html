@@ -3408,32 +3408,19 @@ html.tema-glass-oscuro{
 }
 @media (max-width:768px){html.tema-glass-oscuro{--tgo-card:rgba(30,32,38,.62)}} /* 59.21: grafito translúcido sobre la foto ya desenfocada (antes azul .76) */
 /* ═══ 59.29 — AZUL MARINO CON MAR DE FONDO (dueño 14-oct-2026, referencia «Navy Blue» #062045 de @dyslove.design: «Fondo»)
-   Solo cambia colores y la foto del Glass oscuro: html.tgo-navy la pone el <head> antes del primer pintado (NX_TEMA_NAVY).
+   Solo cambia el FONDO (color base y foto) del Glass oscuro: html.tgo-navy la pone el <head> antes del primer pintado (NX_TEMA_NAVY).
    INTERRUPTOR: NX_TEMA_NAVY=false → vuelve el grafito 59.21; en un solo equipo: localStorage.setItem('nx_navy_off','1').
    Fotos generadas con IA (olas vistas desde arriba), desenfoque 7 px horneado: assets/fondo-mar-navy(-movil).webp. ═══ */
 html.tema-glass-oscuro.tgo-navy{
+  /* 15-oct-2026 (dueño: «Era el fondo solamente»): solo el FONDO va en azul marino con el mar.
+     Tarjetas, cabecera, menú, panel, login y campos se quedan en el grafito 59.21. */
   --tgo-bg:#051A3A;--tgo-base-1:#0B2B5C;--tgo-base-2:#062045;--tgo-base-3:#03122B;--tgo-glow:rgba(90,150,255,.16);
   --tgo-velo-a:rgba(4,22,56,.34);--tgo-velo-b:rgba(3,16,42,.56);--tgo-vineta:rgba(2,10,28,.50);
-  --tgo-glass:rgba(12,38,84,.50);--tgo-glass-2:rgba(170,205,255,.08);--tgo-line:rgba(170,205,255,.12);
-  --tgo-solid:#0B2550;--tgo-solid-2:#061A3A;
-  --tgo-card-shadow:0 10px 26px -14px rgba(0,6,20,.55);--tgo-panel-shadow:0 26px 52px -30px rgba(0,6,20,.7);
-  /* acento: el mismo azul NEXUS #2563EB (con letra blanca encima da 5.2:1; #3B82F6 daba 3.7:1) y bordes de campos sin cambiar */
-  --bg0:#0A1C3A;--bg2:#0B1F42;--tgo-field:#0A1A36;--tgo-field-edge:#8A9AB8;
+  --tgo-field-edge:#8A9AB8; /* borde de campos un poco más claro: sobre el fondo azul el gris daba 2.7:1 (mínimo 3:1) */
 }
-@media (max-width:768px){html.tema-glass-oscuro.tgo-navy{--tgo-card:rgba(10,34,78,.62)}}
 html.tema-glass-oscuro.tgo-navy.tgo-foto::after{
   background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy.webp) center/cover no-repeat}
 @media (max-width:768px){html.tema-glass-oscuro.tgo-navy.tgo-foto::after{background:radial-gradient(ellipse 900px 1300px at 50% 48%,transparent 30%,var(--tgo-vineta) 100%),linear-gradient(180deg,var(--tgo-velo-a) 0%,var(--tgo-velo-b) 100%),url(assets/fondo-mar-navy-movil.webp) center/cover no-repeat}}
-html.tema-glass-oscuro.tgo-navy body:not(.tema-premium) .tnav{background:#0B2550 linear-gradient(180deg,#10306A 0%,#0B2550 55%,#081C40 100%)!important}
-html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG{--ig-glass:rgba(8,30,70,.56);--ig-line:rgba(170,205,255,.12)}
-@media (max-width:768px){html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-glass{background:rgba(9,32,74,.78)!important}}
-html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-side.nxIG-glass{background:rgba(120,170,255,.06)!important}
-html.tema-glass-oscuro.tgo-navy.nx-ig #nxIG .nxIG-card{background:rgba(120,170,255,.08)}
-html.tema-glass-oscuro.tgo-navy .lbox{background:rgba(10,34,78,.74)!important}
-/* menú lateral: el riel de cristal y el carril móvil en azul marino (antes grafito) */
-html.tema-glass-oscuro.tgo-navy{--nx-mc-glass:linear-gradient(180deg,rgba(22,56,118,.60) 0%,rgba(8,30,70,.64) 100%)}
-@media (max-width:768px){html.tema-glass-oscuro.tgo-navy body nav#sbEl.sb::before{background-image:linear-gradient(165deg,#12336E 0%,#061A3A 100%)!important}}
-@media (min-width:769px){html.tema-glass-oscuro.tgo-navy body .main::before{background:rgba(8,30,70,.52)}}
 html.tema-glass-oscuro body{color:#F1F5F9}
 
 /* ── tarjetas, KPI, paneles ── */
