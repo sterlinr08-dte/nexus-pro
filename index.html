@@ -924,6 +924,8 @@ body.tema-premium #mEmp .modal,body.tema-premium #mAgente .modal,body.tema-premi
   color:var(--nm-tx) !important;
 }
 #mEmp .mt,#mAgente .mt,#mAsiento .mt,#mUsuario .mt{color:var(--nm-tx)}
+.nxUsuChip{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:9px;font-weight:700;vertical-align:middle;white-space:nowrap}.nxUsuChip.si{background:rgba(16,185,129,.14);color:#047857}.nxUsuChip.no{background:rgba(239,68,68,.14);color:#b91c1c}
+html.tema-glass-oscuro .nxUsuChip.si{color:#6EE7B7}html.tema-glass-oscuro .nxUsuChip.no{color:#FCA5A5}
 #mEmp .fr label,#mAgente .fr label,#mAsiento .fr label,#mUsuario .fr label{color:var(--nm-tx2) !important;font-family:inherit}
 #mEmp input,#mAgente input,#mAsiento input,#mUsuario input{
   border:none !important;border-radius:12px !important;background:var(--nm-bg) !important;color:var(--nm-tx) !important;
@@ -9465,27 +9467,88 @@ function renderUsuariosCfg(){
     tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#475569;font-size:12px">🔐 No hay usuarios registrados.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mUsuario\')"><i class="ti ti-plus"></i> Crear usuario</button></td></tr>';
     return;
   }
-  tb.innerHTML=ST.usuarios.map(u=>`<tr>
-    <td style="font-weight:700">${u.nom}</td>
-    <td style="font-family:var(--mono);font-size:9px;color:#6d28d9">${u.login}</td>
-    <td><select onchange="cambiarRol('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
+  // Acceso real (clave en Supabase Auth + perfil). Hasta que llegue la respuesta del
+  // servidor no se marca nada, para no asustar con un «Sin acceso» falso.
+  const acc=window._nxUsuAcceso||null;
+  tb.innerHTML=ST.usuarios.map(u=>{
+    const id=escHtml(u.id),lg=escHtml(u.login||''),info=acc?acc[u.id]:null;
+    const sinAcceso=acc&&!info?.con_acceso;
+    const chip=!acc?'':sinAcceso
+      ?`<span class="nxUsuChip no" title="No puede entrar: le falta la contraseña de acceso">Sin acceso</span>`
+      :`<span class="nxUsuChip si" title="${info?.ultimo_ingreso?'Último ingreso: '+escHtml(new Date(info.ultimo_ingreso).toLocaleString('es-DO')):'Todavía no ha entrado'}">Con acceso</span>`;
+    return `<tr>
+    <td style="font-weight:700">${escHtml(u.nom||'')} ${chip}</td>
+    <td style="font-family:var(--mono);font-size:9px;color:#6d28d9">${lg}</td>
+    <td><select onchange="cambiarRol('${id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
       <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option>
       <option value="supervisor" ${u.rol==='supervisor'?'selected':''}>Supervisor</option>
       <option value="cajero" ${u.rol==='cajero'?'selected':''}>Cajero</option>
       <option value="agente" ${u.rol==='agente'?'selected':''}>Agente</option>
       <option value="cobros" ${u.rol==='cobros'?'selected':''}>Cobros</option>
     </select></td>
-    <td style="color:#475569">${u.cargo||'—'}</td>
-    <td><select onchange="cambiarEstado('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
+    <td style="color:#475569">${escHtml(u.cargo||'—')}</td>
+    <td><select onchange="cambiarEstado('${id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
       <option value="true" ${u.activo?'selected':''}>Activo</option>
       <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
     </select></td>
     <td style="white-space:nowrap;display:flex;gap:4px">
-      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}',this)" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
-      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}',this)" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
-      <button aria-label="Eliminar este usuario" class="btn bsm bc3" onclick="eliminarUsu('${u.id}',this)"><i class="ti ti-minus"></i></button>
+      ${sinAcceso?`<button class="btn bsm bc4" onclick="nxUsuPedirClave('${id}','${lg}','crear_acceso',this)" title="Ponerle contraseña para que pueda entrar"><i class="ti ti-key"></i> Crear acceso</button>`:''}
+      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${id}','${lg}',this)" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
+      ${sinAcceso?'':`<button class="btn bsm bc2" onclick="abrirCambiarPwd('${id}','${lg}',this)" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>`}
+      <button aria-label="Eliminar este usuario" class="btn bsm bc3" onclick="eliminarUsu('${id}',this)"><i class="ti ti-minus"></i></button>
     </td>
-  </tr>`).join('');
+  </tr>`;}).join('');
+  if(!window._nxUsuAccesoPidiendo&&(!acc||Date.now()-(window._nxUsuAccesoT||0)>30000))nxCargarAccesoUsuarios();
+}
+
+// ── Usuarios con acceso real: todo pasa por la función usuarios-acceso ──
+// (crea/actualiza a la vez usuarios_sistema, Supabase Auth y profiles; solo admin
+// y solo dentro de su organización). Antes esta pantalla solo escribía
+// usuarios_sistema y el empleado nuevo no podía entrar.
+async function nxUsuAcc(accion,datos){
+  if(!API.token)throw new Error('Para gestionar usuarios entra con tu usuario y contraseña normales (no en modo legacy).');
+  const r=await fetch(`${API.url}/functions/v1/usuarios-acceso`,{method:'POST',headers:{'apikey':API.key,'Authorization':'Bearer '+API.token,'Content-Type':'application/json'},body:JSON.stringify({accion,...(datos||{})})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||j.error)throw new Error(j.error||('No se pudo completar ('+r.status+')'));
+  return j;
+}
+async function nxCargarAccesoUsuarios(){
+  window._nxUsuAccesoPidiendo=true;
+  try{
+    const j=await nxUsuAcc('lista');
+    const m={};(j.usuarios||[]).forEach(x=>{m[x.usuario_id]=x;});
+    window._nxUsuAcceso=m;window._nxUsuAccesoT=Date.now();
+  }catch(e){window._nxUsuAcceso=null;}
+  window._nxUsuAccesoPidiendo=false;
+  if(window._nxUsuAcceso)renderUsuariosCfg();
+}
+// Contraseña en una ventana propia (prompt() no funciona en la app instalada del iPhone).
+function nxUsuPedirClave(id,login,accion,btn){
+  document.getElementById('nxUsuClaveM')?.remove();
+  const ov=document.createElement('div');ov.id='nxUsuClaveM';ov.className='overlay open';
+  const titulo=accion==='crear_acceso'?'Crear acceso':'Cambiar contraseña';
+  ov.innerHTML=`<div class="modal" style="max-width:380px">
+    <div class="mt"><span><i class="ti ti-key"></i> ${titulo} · ${escHtml(login)}</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="document.getElementById('nxUsuClaveM').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="fr"><label>Contraseña nueva *</label><input type="password" id="nxUsuC1" autocomplete="new-password" placeholder="Mínimo 6 caracteres"/></div>
+    <div class="fr"><label>Repítela *</label><input type="password" id="nxUsuC2" autocomplete="new-password"/></div>
+    <div style="font-size:11px;color:#64748b;margin:6px 0 2px">Entrará con el usuario <b>${escHtml(login)}</b> y esta contraseña.</div>
+    <div class="fe"><button class="btn" onclick="document.getElementById('nxUsuClaveM').remove()">Cancelar</button><button class="btn bxl" id="nxUsuCBtn"><i class="ti ti-check"></i> Guardar</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('nxUsuCBtn').onclick=async function(){
+    const c1=document.getElementById('nxUsuC1').value,c2=document.getElementById('nxUsuC2').value;
+    if(!c1||c1.length<6){toast('err','Contraseña muy corta','Mínimo 6 caracteres');return;}
+    if(c1!==c2){toast('err','No coinciden','Escribe la misma contraseña dos veces');return;}
+    const b=this;b.disabled=true;b.innerHTML='<div class="spin"></div>';
+    try{
+      await nxUsuAcc(accion,{usuario_id:id,clave:c1});
+      ov.remove();
+      logAudit(accion==='crear_acceso'?'ACCESO_CREADO':'CONTRASEÑA_CAMBIADA',`Usuario: ${login}`,'Usuarios');
+      toast('ok',accion==='crear_acceso'?'Acceso creado':'Contraseña actualizada',accion==='crear_acceso'?login+' ya puede entrar':login);
+      if(accion==='crear_acceso'){window._nxUsuAccesoT=0;renderUsuariosCfg();}
+    }catch(e){toast('err','No se pudo',e.message);b.disabled=false;b.innerHTML='<i class="ti ti-check"></i> Guardar';}
+  };
+  setTimeout(()=>document.getElementById('nxUsuC1')?.focus(),50);
 }
 
 // ── Auditoría dentro de Configuración (render directo) ─────────────
@@ -16839,33 +16902,16 @@ function exportarAuditCSV(){
 }
 
 async function cambiarRol(id,rol){
-  try{await API.patch('usuarios_sistema',`id=eq.${id}`,{rol});const u=ST.usuarios.find(x=>x.id===id);if(u)u.rol=rol;logAudit('ROL_CAMBIADO',`Usuario ${u?.login} → ${rol}`);toast('ok','Rol actualizado',rol);}
-  catch(e){toast('err','Error',e.message);}
+  const u=ST.usuarios.find(x=>x.id===id);
+  try{await nxUsuAcc('rol',{usuario_id:id,rol});if(u)u.rol=rol;logAudit('ROL_CAMBIADO',`Usuario ${u?.login} → ${rol}`);toast('ok','Rol actualizado',rol);}
+  catch(e){toast('err','No se pudo cambiar el rol',e.message);renderUsuariosCfg();}
 }
 async function cambiarEstado(id,activo){
-  const v=activo==='true';
-  try{await API.patch('usuarios_sistema',`id=eq.${id}`,{activo:v});const u=ST.usuarios.find(x=>x.id===id);if(u)u.activo=v;logAudit('ESTADO_USUARIO',`${u?.login} → ${v?'ACTIVO':'INACTIVO'}`);toast('ok','Estado actualizado',v?'Activo':'Inactivo');}
-  catch(e){toast('err','Error',e.message);}
+  const v=activo==='true',u=ST.usuarios.find(x=>x.id===id);
+  try{await nxUsuAcc('estado',{usuario_id:id,activo:v});if(u)u.activo=v;logAudit('ESTADO_USUARIO',`${u?.login} → ${v?'ACTIVO':'INACTIVO'}`);toast('ok','Estado actualizado',v?'Activo':'Inactivo (ya no puede entrar)');}
+  catch(e){toast('err','No se pudo cambiar el estado',e.message);renderUsuariosCfg();}
 }
-function abrirCambiarPwd(id, login, btn){
-  const nuevaPwd = prompt(`Nueva contraseña para "${login}":\n(Mínimo 6 caracteres)`);
-  if(!nuevaPwd) return;
-  if(nuevaPwd.length < 6){ toast('err','Contraseña muy corta','Mínimo 6 caracteres'); return; }
-  confirmarCambiarPwd(id, login, nuevaPwd, btn);
-}
-
-async function confirmarCambiarPwd(id, login, pwd, btn){
-  const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
-  try{
-    const pwdHash=await sha256(pwd);
-    await API.patch('usuarios_sistema', `id=eq.${id}`, {pwd:pwdHash});
-    logAudit('CONTRASEÑA_CAMBIADA', `Usuario: ${login}`);
-    toast('ok', 'Contraseña actualizada', login);
-  }catch(e){
-    mostrarError(e.message, 'Al cambiar contraseña de: ' + login);
-  }
-  if(btn){btn.disabled=false;btn.innerHTML=orig;}
-}
+function abrirCambiarPwd(id, login, btn){ nxUsuPedirClave(id, login, 'clave', btn); }
 
 function abrirCambiarLogin(id, loginActual, btn){
   const nuevoLogin = prompt(`Nuevo nombre de usuario para "${loginActual}":\n(Sin espacios, sin caracteres especiales)`);
@@ -16878,23 +16924,38 @@ function abrirCambiarLogin(id, loginActual, btn){
 async function confirmarCambiarLogin(id, loginActual, nuevoLogin, btn){
   const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   try{
-    await API.patch('usuarios_sistema', `id=eq.${id}`, {login: nuevoLogin});
+    await nxUsuAcc('login',{usuario_id:id,login:nuevoLogin});
     const u = ST.usuarios.find(x=>x.id===id);
     if(u) u.login = nuevoLogin;
     logAudit('LOGIN_CAMBIADO', `${loginActual} → ${nuevoLogin}`);
     toast('ok', 'Usuario actualizado', `${loginActual} → ${nuevoLogin}`);
     renderUsuariosCfg();
   }catch(e){
-    if(e.message.includes('unique')) toast('err','Ese usuario ya existe','Elige otro nombre');
-    else mostrarError(e.message, 'Al cambiar nombre de usuario');
+    toast('err','No se pudo cambiar el usuario',e.message);
   }
   if(btn){btn.disabled=false;btn.innerHTML=orig;}
 }
 
-async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';}
-async function eliminarUsu(id,btn){if(!confirm('¿Eliminar usuario?'))return;
+async function guardarUsuario(){
+  const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim().toLowerCase(),rol=document.getElementById('uRol').value,cargo=document.getElementById('uCargo').value.trim();
+  if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}
+  if(!/^[a-z0-9._-]{3,40}$/.test(login)){toast('err','Usuario no válido','De 3 a 40 letras o números, sin espacios');return;}
+  const pwdPlano=document.getElementById('uPwd').value;
+  if(!pwdPlano||pwdPlano.length<6){toast('err','Contraseña insegura','La contraseña debe tener al menos 6 caracteres');return;}
+  const btn=document.getElementById('btnUsu');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
+  try{
+    const j=await nxUsuAcc('crear',{nombre:nom,cargo,login,clave:pwdPlano,rol});
+    if(j.usuario)ST.usuarios.push(j.usuario);
+    window._nxUsuAccesoT=0;
+    logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${rol} · con acceso`,'Usuarios');
+    closeM('mUsuario');renderUsuariosCfg();toast('ok','Usuario creado',`${nom.toUpperCase()} ya puede entrar con «${login}»`);
+    ['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('err','No se pudo crear',e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';
+}
+async function eliminarUsu(id,btn){if(!confirm('¿Eliminar usuario? Se le quita también el acceso.'))return;
   const orig=btn?btn.innerHTML:null;if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
-  try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);renderUsuariosCfg();}catch(e){toast('err','Error',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}}
+  try{const u=ST.usuarios.find(x=>x.id===id);await nxUsuAcc('eliminar',{usuario_id:id});ST.usuarios=ST.usuarios.filter(x=>x.id!==id);logAudit('USUARIO_ELIMINADO',`${u?.login||id}`,'Usuarios');renderUsuariosCfg();toast('ok','Usuario eliminado');}catch(e){toast('err','No se pudo eliminar',e.message);if(btn){btn.disabled=false;btn.innerHTML=orig;}}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════
