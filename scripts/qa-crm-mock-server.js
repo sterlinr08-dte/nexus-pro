@@ -153,6 +153,8 @@ async function rest(req, res, u) {
       if (t.estado !== 'completada') { t.estado = 'completada'; t.completada_en = now(); t.updated_at = now(); ACTS.push({ id: uuid(seq++), cliente_id: t.cliente_id, tipo: 'nota', titulo: ('Tarea completada: ' + t.titulo).slice(0, 160), detalle: null, resultado: null, proxima_accion_en: null, creado_por: null, created_at: now(), updated_at: now() }); }
       return json(res, [{ tarea_id: t.id, actividad_id: null }]);
     }
+    // 59.32: «Transferir dinero» (arrastrar el billete) — el servidor real valida saldo y autoridad; aquí solo responde ok.
+    if (fn === 'transferencias_crear') return json(res, { ok: true, id: uuid(seq++) });
     if (fn === 'seguros_resumen_ciclo_admin' || fn === 'seguros_cierre_ciclo_admin') return json(res, fn === 'seguros_cierre_ciclo_admin' ? [] : CICLO_ADMIN.map(r => ({ ...r, periodo: b.p_periodo })));
     return json(res, null);
   }

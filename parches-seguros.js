@@ -11,8 +11,8 @@
       var base=q>=0?s.slice(q):'';
       /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
          WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6031'):'?b=6031';
-    }catch(e){return '?b=6031';}
+      return base?(base+'&b=6032'):'?b=6032';
+    }catch(e){return '?b=6032';}
   }
 
   function load(src,done){
@@ -118,7 +118,11 @@
     /* 59.26 (dueño 14-oct-2026, «aplica las 4», ideas de Raycast): línea fina de progreso, filas de espera en vez de
        ruedas, «Deshacer» al archivar un chat y campos de teléfono/cédula que se forman solos con el cursor en su sitio.
        Para quitarla, borrar esta línea; o en un equipo, localStorage.nxRapidez='0'. */
-    ['js','parches-rapidez.js']
+    ['js','parches-rapidez.js'],
+    /* 59.32 (dueño 16-oct-2026, idea de bencho.dev): en «Transferir dinero» el billete se arrastra al agente que
+       recibe (solo elige el destino; el envío sigue igual). Para quitarla, borrar esta línea; o en un equipo,
+       localStorage.nxArrastrar='0'. */
+    ['js','parches-transferir-arrastrar.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
