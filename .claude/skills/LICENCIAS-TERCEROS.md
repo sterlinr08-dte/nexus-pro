@@ -85,3 +85,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+
+## video-understand-skills
+- Origen: github.com/jrusso1020/video-understand-skills @ 90b351b (James Russo). Instalada el 17-oct-2026 tras revisión (bitácora `docs/bitacora/2026-10-17-0737-claude.md`).
+- Carpeta: video-understand (SKILL.md con nota de instalación, references y scripts de Python sin cambios).
+- Licencia: MIT declarada en README.md y package.json (el repositorio no trae archivo LICENSE; copia en `video-understand/LICENSE`).
