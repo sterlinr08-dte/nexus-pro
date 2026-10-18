@@ -114,7 +114,7 @@ const leerGlass = (page) => page.evaluate(() => {
     ok(g.agenda === 3, `${tag}: agenda con las 3 próximas tareas pendientes`, g.agenda);
     ok(/Hoy llevas 2 cobros/.test(g.sub) && /seguimiento/.test(g.sub), `${tag}: subtítulo con cobros de hoy y seguimientos («${g.sub}»)`, g.sub);
     if (rol === 'admin') {
-      ok(g.agentes.length === 3 && /Esterlin.*RD\$ 40,000.*RD\$ 60,000 en poder/.test(g.agentes[0]) && /Robinson.*RD\$ 25,000.*RD\$ 5,000 en poder/.test(g.agentes[1]) && /sin movimiento/.test(g.agentes[2]), `${tag}: cobranza por agente = RPC seguros_resumen_ciclo_admin (cobrado validado y saldo, sin sumar transferencias)`, g.agentes);
+      ok(g.agentes.length === 3 && /Esterlin.*RD\$ 40,000.*RD\$ 60,000 en custodia/.test(g.agentes[0]) && /Robinson.*RD\$ 25,000.*RD\$ 5,000 en custodia/.test(g.agentes[1]) && /sin movimiento/.test(g.agentes[2]), `${tag}: cobranza por agente = RPC seguros_resumen_ciclo_admin (cobrado validado y saldo, sin sumar transferencias)`, g.agentes);
     } else {
       const vis = await page.evaluate(() => getComputedStyle(document.getElementById('nxIGagts')).display);
       ok(vis === 'none' && !B.rpcs.some(r => /seguros_resumen_ciclo_admin/.test(r)), `${tag}: agente no ve «Cobranza por agente» ni se llama la RPC de admin`, { vis, rpcs: B.rpcs });

@@ -6326,7 +6326,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
           <div class="ni" onclick="nav('balance',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
           <div class="ni" onclick="nav('pyg',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-chart-line ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">P&amp;G</span></div>
           <div class="ni" onclick="nav('rep-agente',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
-          <div class="ni" id="niCustodia" onclick="nav('custodia',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-wallet ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Dinero en poder</span></div>
+          <div class="ni" id="niCustodia" onclick="nav('custodia',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-wallet ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Custodia de fondos</span></div>
           <div class="ni" onclick="nav('rep-plan',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
           <div class="ni" onclick="nav('rep-empresa',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
           <div class="ni" onclick="nav('rep-aging',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-clock-dollar ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Aging cartera</span></div>
@@ -6606,9 +6606,9 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
                 </div>
                 <div class="nxIG-sec nxIG-adm"><span>Cobranza por agente</span><button type="button" onclick="nav('rep-agente',null)">ver cierre</button></div>
                 <div class="nxIG-agts" id="nxIGagts">
-                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
-                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
-                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en poder</small></div></div></div>
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en custodia</small></div></div></div>
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en custodia</small></div></div></div>
+                  <div class="nxIG-card nxIG-ag"><div class="nxIG-agi"><div class="nxIG-av nxIG-sk">··</div><div class="nxIG-meta"><b class="nxIG-sk">Agente</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span class="nxIG-sk">RD$ 00,000</span><small class="nxIG-sk">RD$ 0 en custodia</small></div></div></div>
                 </div>
                 <div class="nxIG-sec"><span>Accesos rápidos</span></div>
                 <div class="nxIG-acc" id="nxIGacc"></div>
@@ -8150,7 +8150,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:0},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'DASHBOARD',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES',custodia:'DINERO EN PODER','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
+const TITLES={dashboard:'DASHBOARD',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES',custodia:'CUSTODIA DE FONDOS','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -10069,7 +10069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.38';
+const APP_VERSION='59.39';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13224,7 +13224,7 @@ function nxIGPintarAgentes(){
   if(!rows.length){nxIGSet('nxIGagts','<div class="nxIG-msg">Sin agentes en este ciclo.</div>');return;}
   nxIGSet('nxIGagts',rows.map(r=>{
     const cob=num(r.cobrado_validado),sal=num(r.saldo_final),nom=String(r.agente||'Agente');
-    const sub=!cob&&!sal?'sin movimiento':sal<0?`<small class="neg">saldo ${fmt(sal)}</small>`:`${fmt(sal)} en poder`;
+    const sub=!cob&&!sal?'sin movimiento':sal<0?`<small class="neg">saldo ${fmt(sal)}</small>`:`${fmt(sal)} en custodia`;
     return `<div class="nxIG-card nxIG-ag" role="button" tabindex="0" onclick="nav('rep-agente',null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="${escHtml(nom+': cobró '+fmt(cob)+' en el ciclo')}"><div class="nxIG-agi"><div class="nxIG-av">${escHtml(nxIGIni(nom))}</div><div class="nxIG-meta"><b>${escHtml(nom.split(/\s+/).slice(0,2).join(' '))}</b><small>cobró en el ciclo</small></div><div class="nxIG-amt"><span>${fmt(cob)}</span>${sub.startsWith('<small')?sub:`<small>${sub}</small>`}</div></div></div>`;
   }).join(''));
 }
@@ -16826,7 +16826,7 @@ async function rCustodia(){
   if(!_cus.periodo)_cus.periodo=cusPeriodoActual();
   let opts='';const act=cusPeriodoActual();
   for(let i=0;i<12;i++){const k=cusPeriodoMas(act,-i);opts+=`<option value="${k}"${k===_cus.periodo?' selected':''}>${cusPeriodoTxt(k)}${i===0?' · actual':''}</option>`;}
-  box.innerHTML=`<div class="cuWrap"><div class="cuHead"><h2><i class="ti ti-wallet"></i><span>Dinero en poder de cada uno<small>Quién tiene el dinero cobrado y por qué · ciclo del 20 al 20</small></span></h2>
+  box.innerHTML=`<div class="cuWrap"><div class="cuHead"><h2><i class="ti ti-wallet"></i><span>Custodia de fondos por agente<small>Quién custodia el dinero cobrado y por qué · ciclo del 20 al 20</small></span></h2>
     <select class="cuSel" id="cusPer" aria-label="Elegir ciclo" onchange="_cus.periodo=this.value;_cus.sel=null;cusCargar()">${opts}</select>
     <button type="button" class="cuBtn" onclick="cusCargar(true)" aria-label="Actualizar"><i class="ti ti-refresh"></i><span>Actualizar</span></button></div>
     <div id="cusBody"><div class="cuLoad"><div class="spin" style="margin:0 auto 8px"></div>Cargando…</div></div></div>`;
@@ -16923,9 +16923,9 @@ function cusPintar(){
     if(g.desfaseCobro.length||g.desfaseDep.length)avisos.push('Hay depósitos cuyo cobro y entrega quedaron en ciclos distintos (desfase de fechas). Toque para ver cuáles.');
     if(!x.cuadra)avisos.push('El detalle no coincide con las cifras del servidor; se muestran las del servidor.');
     if(Math.abs(cusN(r.diferencia_reconciliacion))>=0.5)avisos.push('El servidor reporta una diferencia de '+fmt(r.diferencia_reconciliacion)+' en la conciliación.');
-    return `<div role="button" tabindex="0" class="cuCard${_cus.sel===String(r.agente_id)?' on':''}" data-ag="${escHtml(r.agente_id)}" onclick="cusVer('${escHtml(r.agente_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="${escHtml(r.agente+': en su poder '+fmt(x.final)+'. Ver movimientos')}">
+    return `<div role="button" tabindex="0" class="cuCard${_cus.sel===String(r.agente_id)?' on':''}" data-ag="${escHtml(r.agente_id)}" onclick="cusVer('${escHtml(r.agente_id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="${escHtml(r.agente+': bajo su custodia '+fmt(x.final)+'. Ver movimientos')}">
       <div class="cuTop"><div class="cuAv${adm?' adm':''}">${escHtml(cusNomCorto(r.agente).slice(0,1))}</div><div class="cuNom"><b>${escHtml(cusNomCorto(r.agente))}</b><span>${adm?'Administración':escHtml(r.cargo||'Agente')}</span></div>
-      <div class="cuPoder"><small>En su poder</small><strong class="cuEnPoder${x.final<0?' neg':''}" data-v="${x.final}">${fmt(x.final)}</strong></div></div>
+      <div class="cuPoder"><small>En custodia</small><strong class="cuEnPoder${x.final<0?' neg':''}" data-v="${x.final}">${fmt(x.final)}</strong></div></div>
       <div class="cuRows">
         ${row('Trae de ciclos anteriores',fmt(x.inicial),'',r.historico_aproximado?'aproximado':'')}
         ${row('Cobró',fmt(r.cobrado_validado),'mas','efectivo '+fmt(x.cobEf)+' · banco '+fmt(x.cobBan))}
@@ -16942,14 +16942,14 @@ function cusPintar(){
       <div class="cuVer"><i class="ti ti-list-details"></i> Ver los movimientos</div></div>`;}).join('');
   body.innerHTML=`<div class="cuTotal" id="cusTot">
       <div><div class="k">Total real cobrado</div><div class="v" id="cusTotCob" data-v="${tot.cob}">${fmt(tot.cob)}</div><div class="s">Efectivo ${fmt(tot.ef)} · banco ${fmt(tot.ban)}</div></div>
-      <div><div class="k">En poder de todos · este ciclo</div><div class="v big" id="cusTotCiclo" data-v="${tot.ciclo}">${fmt(tot.ciclo)}</div><div class="s">Suma de «De este ciclo»</div></div>
+      <div><div class="k">Total en custodia · este ciclo</div><div class="v big" id="cusTotCiclo" data-v="${tot.ciclo}">${fmt(tot.ciclo)}</div><div class="s">Suma de «De este ciclo»</div></div>
       <div><div class="k">Entregado en mano</div><div class="v" id="cusTotMano" data-v="${tot.mano}">${fmt(tot.mano)}</div><div class="s">A la administración</div></div>
       <div><div class="k">Trae de ciclos anteriores</div><div class="v" data-v="${tot.inicial}">${fmt(tot.inicial)}</div><div class="s">${aprox?'⚠ Cifra histórica aproximada':'Saldo al iniciar el ciclo'}</div></div>
-      <div class="cuEq">Cobrado <b>${fmt(tot.cob)}</b> = en poder de todos <b>${fmt(tot.ciclo)}</b> + entregado en mano <b>${fmt(tot.mano)}</b>${Math.abs(tot.ajustes)>=0.5?' − ajustes <b>'+fmt(tot.ajustes)+'</b>':''}. Las transferencias entre agentes (${fmt(tot.transf)}) y los depósitos a cuentas de otros <b>no se suman</b>: solo cambian quién tiene el dinero.</div>
+      <div class="cuEq">Cobrado <b>${fmt(tot.cob)}</b> = total en custodia <b>${fmt(tot.ciclo)}</b> + entregado en mano <b>${fmt(tot.mano)}</b>${Math.abs(tot.ajustes)>=0.5?' − ajustes <b>'+fmt(tot.ajustes)+'</b>':''}. Las transferencias entre agentes (${fmt(tot.transf)}) y los depósitos a cuentas de otros <b>no se suman</b>: solo cambian quién tiene el dinero.</div>
     </div>
     <div class="cuGrid">${cards}</div>
     <div id="cusDet"></div>
-    <div class="cuNota"><b>Cómo se calcula:</b> efectivo, cheque o tarjeta → en poder de quien lo recibió. Transferencia o depósito → en poder del dueño de la cuenta donde cayó, aunque otro haya gestionado el cobro. Los depósitos cuentan cuando se validan. Cifras oficiales del servidor (mismas del cierre por ciclo); esta pantalla no modifica nada.</div>`;
+    <div class="cuNota"><b>Cómo se calcula:</b> efectivo, cheque o tarjeta → bajo custodia de quien lo recibió. Transferencia o depósito → bajo custodia del titular de la cuenta de destino, aunque otro haya gestionado el cobro. Los depósitos cuentan cuando se validan. Cifras oficiales del servidor (mismas del cierre por ciclo); esta pantalla no modifica nada.</div>`;
   if(_cus.sel&&G[_cus.sel])cusDetalle(_cus.sel,false);
 }
 function cusVer(id){
@@ -16969,14 +16969,14 @@ function cusDetalle(id,scroll){
   const ef=g.efectivo.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo||'Efectivo')}${a.referencia&&a.referencia!=='Efectivo'?' · ref. '+escHtml(a.referencia):''}`));
   const propios=g.bancoPropio.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · a su cuenta · lo gestionó la misma persona`))
     .concat(g.recCuenta.map(e=>mov(cusCli(e.cliente_id),e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Depósito')}${e.banco?' '+escHtml(e.banco):''} · a su cuenta · lo gestionó ${escHtml(cusNomCorto(cusAgNom(e.cobrado_por,rows)))}`)))
-    .concat(g.bancoSinCuenta.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · sin cuenta registrada: queda en su poder`,true)));
+    .concat(g.bancoSinCuenta.map(a=>mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · sin cuenta registrada: queda bajo su custodia`,true)));
   const otros=g.depOtros.map(e=>mov(cusCli(e.cliente_id),e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Depósito')}${e.banco?' '+escHtml(e.banco):''} · a la cuenta de ${escHtml(cusNomCorto(cusAgNom(e.agente_id,rows)))}${g.desfaseDep.includes(e)?' · ⚠ el cobro de este depósito cuenta en otro ciclo':''}`,g.desfaseDep.includes(e)))
-    .concat(g.desfaseCobro.map(a=>{const e=g.enPorAbono[a.id];return mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · a la cuenta de ${escHtml(cusNomCorto(cusAgNom(e.agente_id,rows)))} · ⚠ cobrado ${cusFecha(a.fecha)}, validado ${cusFecha(a.validado_at)}: el cobro cuenta en este ciclo pero el depósito se descontó en otro, por eso este monto sigue sumando en su poder`,true);}));
+    .concat(g.desfaseCobro.map(a=>{const e=g.enPorAbono[a.id];return mov(cusCli(a.cliente_id),a.monto,`${cusFecha(fechaAb(a))} · ${escHtml(a.metodo)}${a.banco?' '+escHtml(a.banco):''} · a la cuenta de ${escHtml(cusNomCorto(cusAgNom(e.agente_id,rows)))} · ⚠ cobrado ${cusFecha(a.fecha)}, validado ${cusFecha(a.validado_at)}: el cobro cuenta en este ciclo pero el depósito se descontó en otro, por eso este monto sigue sumando a su custodia`,true);}));
   const mano=g.enMano.map(e=>mov('Entrega a la administración',e.monto,`${cusFecha(e.created_at||e.fecha)} · ${escHtml(e.metodo||'Efectivo')}${e.nota?' · '+escHtml(String(e.nota).slice(0,80)):''}`));
   const trs=g.envio.map(t=>mov('Envió a '+cusNomCorto(cusAgNom(t.hacia_agente,rows)),-cusN(t.monto),`${cusFecha(t.aceptado_en||t.fecha)} · ${escHtml(t.metodo||'')} · confirmada`))
     .concat(g.recibio.map(t=>mov('Recibió de '+cusNomCorto(cusAgNom(t.desde_agente,rows)),t.monto,`${cusFecha(t.aceptado_en||t.fecha)} · ${escHtml(t.metodo||'')} · confirmada`)))
     .concat(g.pend.map(t=>mov((String(t.desde_agente)===id?'Pendiente a ':'Pendiente de ')+cusNomCorto(cusAgNom(String(t.desde_agente)===id?t.hacia_agente:t.desde_agente,rows)),t.monto,`${cusFecha(t.fecha||t.created_at)} · sin confirmar: todavía no cuenta`,true)));
-  const eq=`Trae ${fmt(x.inicial)} + cobró ${fmt(r.cobrado_validado)} + recibió en su cuenta ${fmt(x.recCuenta)} + recibió por transferencia ${fmt(x.recibio)} − depositado en cuentas de otros ${fmt(x.depOtros)} − entregado en mano ${fmt(x.enMano)} − transferido ${fmt(x.envio)}${Math.abs(x.ajustes)>=0.5?' + ajustes '+fmt(x.ajustes):''} = <b>${fmt(x.final)}</b> en su poder.`;
+  const eq=`Trae ${fmt(x.inicial)} + cobró ${fmt(r.cobrado_validado)} + recibió en su cuenta ${fmt(x.recCuenta)} + recibió por transferencia ${fmt(x.recibio)} − depositado en cuentas de otros ${fmt(x.depOtros)} − entregado en mano ${fmt(x.enMano)} − transferido ${fmt(x.envio)}${Math.abs(x.ajustes)>=0.5?' + ajustes '+fmt(x.ajustes):''} = <b>${fmt(x.final)}</b> bajo su custodia.`;
   det.innerHTML=`<div class="cuDet" id="cusDetBox" data-ag="${escHtml(id)}"><div class="cuDetHead"><h3>Movimientos de ${escHtml(cusNomCorto(r.agente))} · ${escHtml(cusPeriodoTxt(_cus.periodo))}</h3><button type="button" class="cuBtn" onclick="cusVer('${escHtml(id)}')" aria-label="Cerrar detalle"><i class="ti ti-x"></i></button></div>
     <div class="cuDebe">${eq}</div>
     ${grp('Efectivo recibido',x.cobEf,ef)}

@@ -1,4 +1,4 @@
-// QA de «Dinero en poder de cada uno» (vista #v-custodia, Contabilidad) — app real contra scripts/qa-crm-mock-server.js,
+// QA de «Custodia de fondos por agente» (antes «Dinero en poder de cada uno») (vista #v-custodia, Contabilidad) — app real contra scripts/qa-crm-mock-server.js,
 // tema Glass oscuro, 390×844 (iPhone) y 1280×800. Intercepta la RPC rpc/seguros_resumen_ciclo_admin y las lecturas REST
 // (abonos, entregas_admin, transferencias_agentes) con un caso realista:
 //  · Robinson cobra 29,500: efectivo 10,000 · transferencia 12,000 a la CUENTA DE ESTERLIN · depósito 3,000 a SU cuenta ·
@@ -95,11 +95,11 @@ async function abrir(browser, width) {
     const { ctx, page, errs, llamadas } = await abrir(browser, w);
     // ── menú: Contabilidad › «Dinero en poder», justo después de «Reporte agente» ──
     const menu = await page.evaluate(() => { const n = document.getElementById('niCustodia'); const p = n && n.previousElementSibling; return { existe: !!n, enContab: !!(n && n.closest('#sbContab')), antes: p ? p.textContent.trim() : '', txt: n ? n.textContent.trim() : '' }; });
-    ok(menu.existe && menu.enContab && /Reporte agente/.test(menu.antes) && menu.txt === 'Dinero en poder', `${w}px menú Contabilidad › «Dinero en poder» después de «Reporte agente»`, menu);
+    ok(menu.existe && menu.enContab && /Reporte agente/.test(menu.antes) && menu.txt === 'Custodia de fondos', `${w}px menú Contabilidad › «Custodia de fondos» después de «Reporte agente»`, menu);
     await page.evaluate(() => nav('custodia', document.getElementById('niCustodia')));
     await page.waitForSelector('#v-custodia .cuCard', { timeout: 10000 }); await sleep(400);
     const vista = await page.evaluate(() => ({ on: document.getElementById('v-custodia').classList.contains('on'), ttl: document.getElementById('pttl').textContent, tema: document.documentElement.classList.contains('tema-glass-oscuro'), sel: document.getElementById('cusPer').value, nOpt: document.getElementById('cusPer').options.length, actual: cusPeriodoActual() }));
-    ok(vista.on && vista.ttl === 'DINERO EN PODER', `${w}px vista visible con título`, vista);
+    ok(vista.on && vista.ttl === 'CUSTODIA DE FONDOS', `${w}px vista visible con título`, vista);
     ok(vista.tema, `${w}px tema Glass oscuro activo por defecto`);
     ok(vista.sel === vista.actual && vista.nOpt === 12, `${w}px selector de ciclo: actual por defecto + 11 anteriores`, vista);
     // ── cifras por agente = servidor ──
@@ -135,7 +135,7 @@ async function abrir(browser, width) {
     await page.click(`#v-custodia .cuCard[data-ag="${R}"]`); await sleep(700);
     const det = await page.evaluate(() => { const b = document.getElementById('cusDetBox'); if (!b) return null; const g = [...b.querySelectorAll('.cuGrp')].map(x => ({ t: x.querySelector('h4 span').textContent, total: x.querySelector('h4 b').textContent, n: x.querySelectorAll('.cuMov').length, txt: x.textContent })); return { eq: b.querySelector('.cuDebe').textContent, g, top: b.getBoundingClientRect().top }; });
     ok(det && det.g.map(x => x.t).join('|') === 'Efectivo recibido|Depósitos a su cuenta|Depósitos a cuentas de otros|Entregas en mano|Transferencias', `${w}px detalle agrupado: efectivo · depósitos a su cuenta · a cuentas de otros · entregas · transferencias`, det && det.g.map(x => x.t));
-    ok(det && /= RD\$ 11,500 en su poder/.test(det.eq), `${w}px detalle: ecuación que termina en lo que tiene en su poder`, det && det.eq);
+    ok(det && /= RD\$ 11,500 bajo su custodia/.test(det.eq), `${w}px detalle: ecuación que termina en lo que tiene en su poder`, det && det.eq);
     const G = t => det.g.find(x => x.t === t);
     ok(G('Efectivo recibido').n === 1 && /Juan Rodriguez/.test(G('Efectivo recibido').txt), `${w}px efectivo: 1 cobro con nombre del cliente`, G('Efectivo recibido'));
     ok(G('Depósitos a su cuenta').n === 1 && /a su cuenta/.test(G('Depósitos a su cuenta').txt), `${w}px depósitos a su cuenta: 3,000`, G('Depósitos a su cuenta'));
