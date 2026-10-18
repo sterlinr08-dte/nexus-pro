@@ -6461,6 +6461,81 @@ html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[styl
 html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[style*="line-height"]{line-height:1.35!important;font-size:14px!important}
 @media (prefers-reduced-motion:reduce){html.nx-csp #csPanel#csPanel#csPanel#csPanel *{transition:none!important}}
 </style>
+<!-- 59.48 (dueño 18-oct-2026, «Clientes»): Clientes compacta en el celular. Capa aislada; solo CSS.
+     Se apaga para todos con NX_CLI_PANE=false, o en un equipo con localStorage.nx_cli_pane_off='1'. -->
+<script id="nxCliPaneOn">var NX_CLI_PANE=true;try{if(NX_CLI_PANE&&localStorage.getItem('nx_cli_pane_off')!=='1')document.documentElement.classList.add('nx-clis');}catch(e){if(NX_CLI_PANE)document.documentElement.classList.add('nx-clis');}</script>
+<style id="nxCliPane">
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmHead h1{text-transform:none!important;letter-spacing:-.01em!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmTag{text-transform:none!important;letter-spacing:0!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .ch .ct,html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .ch .ct-s{text-transform:none!important;letter-spacing:0!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .ch .btn{min-height:44px!important;padding:0 16px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > .btn,html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > div > .btn{width:44px;min-width:44px!important;height:44px!important;padding:0!important;display:inline-grid!important;place-items:center;border-radius:50%!important;font-size:18px!important;flex:none}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts{gap:6px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .sf-fancard :is(button,a,[role=button]):not(.sf-fancard){min-width:44px!important;min-height:44px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmTag{display:inline-flex!important;align-items:center;min-height:44px!important;padding:0 14px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxft-tabs.nxft-flex .nxft-tab{min-height:44px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow :is(button,select,[role=button]){min-height:44px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow .nxVistaTog button{min-height:44px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow #cliQLupa :is(button,.nxBusca-lupa){min-width:44px!important;min-height:44px!important}
+html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cli-main{min-height:44px;align-items:center}
+@media(max-width:720px){
+  /* cabecera: título y las 3 cifras del CRM en una franja baja */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmHead{gap:10px!important;margin-bottom:10px!important;padding:0!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmHead h1{font-size:22px!important;line-height:1.15!important;margin:6px 0 0!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmTag{display:inline-flex!important;align-items:center;min-height:44px;padding:0 14px!important;font-size:13px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmPulse{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;width:100%}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmPulse > div{padding:8px 10px!important;min-height:0!important;border-radius:14px!important;display:block!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmPulse b{font-size:18px!important;line-height:1.2!important;display:block}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxCrmPulse span{font-size:11.5px!important;text-transform:none!important;letter-spacing:0!important;line-height:1.25!important;display:block}
+  /* las 4 cifras grandes: 2 × 2, sin icono, más bajas */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-bottom:12px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis .sf-kpi{padding:10px 12px!important;min-height:0!important;display:block!important;gap:0!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis .sf-kpi .ic{display:none!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis .sf-kpi .lb{font-size:11.5px!important;text-transform:none!important;letter-spacing:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis .sf-kpi .v{font-size:18px!important;line-height:1.2!important;margin:2px 0 0!important;white-space:nowrap}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes #cliKpis .sf-kpi .sub{font-size:11px!important;text-transform:none!important;letter-spacing:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* atención prioritaria: tarjetas más bajas */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .sf-fanrow{padding:8px 4px 14px!important;gap:12px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .sf-fancard{padding:14px!important;width:212px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .sf-fantitle h2{text-transform:none!important;letter-spacing:0!important;font-size:16px!important}
+  /* cada cliente: nombre arriba, datos en 3 columnas, chips y las acciones en una fila */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clilist .clirow{display:grid!important;grid-template-columns:minmax(0,1fr);gap:8px!important;padding:12px 14px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(4) .lb{display:none!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field .badge,html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field .sf-pill,html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field > span{font-size:12px!important;padding:3px 9px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-mid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px!important;align-items:center}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field{min-width:0!important;flex:none!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field .lb{font-size:11px!important;text-transform:none!important;letter-spacing:0!important;margin-bottom:1px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field .v{font-size:13.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(1){order:1}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(5){order:2}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(6){order:3}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(4){order:4}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(2){order:5}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(7){order:6}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(3){order:7;grid-column:1/-1;display:flex!important;gap:6px;align-items:baseline}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(3) .lb::after{content:":"}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:nth-child(3) .v{font-weight:600!important;font-size:13px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-field:is(:nth-child(2),:nth-child(4),:nth-child(7)) :is(.badge,span){text-transform:none!important;letter-spacing:0!important;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center}
+  /* pestañas en una fila que se desliza */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxft-tabs.nxft-flex{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;padding:4px!important;margin-bottom:8px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxft-tabs.nxft-flex::-webkit-scrollbar{display:none}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nxft-tabs.nxft-flex .nxft-tab{flex:none!important;min-height:44px!important;text-transform:none!important;letter-spacing:0!important;font-size:14px!important;padding:0 14px!important}
+  /* filtros: sin la caja, «Ordenar» y la vista en una sola fila */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:8px!important;margin-bottom:10px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:center}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow #cliOrden{min-height:44px!important;height:44px!important;font-size:14px!important;text-transform:none!important;letter-spacing:0!important;flex:1 1 150px!important;width:auto!important;max-width:100%;padding:0 14px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow .nxVistaTog{flex:none;min-height:44px}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .nc > .frow .nxVistaTog button{min-height:44px!important;text-transform:none!important;letter-spacing:0!important;font-size:13px!important;padding:0 12px!important}
+  /* atención prioritaria: tarjeta más baja */
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .sf-fancard [class*="av"]{width:48px!important;height:48px!important;font-size:16px!important}
+
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts{display:flex!important;gap:8px!important;width:100%;margin:0!important;justify-content:stretch!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > .btn,html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > div > .btn{width:44px!important;min-width:44px!important;height:44px!important;padding:0!important;margin:0!important;display:inline-grid!important;place-items:center;border-radius:50%!important;font-size:18px!important}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > .btn.bc1{order:-1;flex:1 1 auto!important;width:auto!important;border-radius:999px!important;display:inline-flex!important;justify-content:center;align-items:center;gap:8px}
+  html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes .clirow .cr-acts > .btn.bc1::after{content:"Cobrar";font-size:15px;font-weight:700}
+}
+@media (prefers-reduced-motion:reduce){html.nx-clis #v-clientes#v-clientes#v-clientes#v-clientes *{transition:none!important}}
+</style>
+
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10444,7 +10519,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.47';
+const APP_VERSION='59.48';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
