@@ -5861,6 +5861,21 @@ html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-pt time.bad{color:#FECACA}
 html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-pt time.bad{color:#B91C1C}
 html.nx-ig.nx-pane #nxIG .nxIG-agenda .nxIG-msg{min-height:148px}
 @media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-pt,html.nx-ig.nx-pane #nxIG .nxIG-prox,html.nx-ig.nx-pane #nxIG .nxIG-ck svg{transition:none!important}}
+/* ── 59.40 parte 4: anillos del ciclo dentro de «Ciclo actual» (en lugar de la barra) ── */
+html.nx-ig.nx-pane #nxIG .nxIG-cyc .nxIG-bar{display:none!important}
+html.nx-ig.nx-pane #nxIG .nxIG-ani{display:flex;align-items:center;gap:14px;min-height:108px}
+html.nx-ig.nx-pane #nxIG .nxIG-ani svg{width:108px;height:108px;flex:none;display:block!important}
+html.nx-ig.nx-pane #nxIG .nxIG-ani .t{stroke:rgb(255 255 255/.16)}
+html.nx-ig.nx-pane #nxIG .nxIG-ani .a{transition:stroke-dasharray 1s var(--pn-ease)}
+html.nx-ig.nx-pane #nxIG .nxIG-ani .a1{stroke:#FFFFFF}html.nx-ig.nx-pane #nxIG .nxIG-ani .a2{stroke:#86EFAC}html.nx-ig.nx-pane #nxIG .nxIG-ani .a3{stroke:#93C5FD}
+html.nx-ig.nx-pane #nxIG .nxIG-ani ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+html.nx-ig.nx-pane #nxIG .nxIG-ani li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px;line-height:16px;color:#EDE9FE}
+html.nx-ig.nx-pane #nxIG .nxIG-ani li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-ani li b{color:#fff;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+html.nx-ig.nx-pane #nxIG .nxIG-ani li i{width:10px;height:10px;border-radius:50%}
+html.nx-ig.nx-pane #nxIG .nxIG-ani .d1{background:#fff}html.nx-ig.nx-pane #nxIG .nxIG-ani .d2{background:#86EFAC}html.nx-ig.nx-pane #nxIG .nxIG-ani .d3{background:#93C5FD}
+@media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-ani .a{transition:none}}
+@container (max-width:330px){html.nx-ig.nx-pane #nxIG .nxIG-ani{flex-direction:column;align-items:stretch;gap:10px}html.nx-ig.nx-pane #nxIG .nxIG-ani svg{align-self:center}}
 /* ── celular ── */
 @media (max-width:768px){
   html.nx-ig.nx-pane #nxIG .nxIG-glass{border-radius:24px!important}
@@ -6595,6 +6610,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
                   <div class="nxIG-cyc" id="nxIGcy" role="button" tabindex="0" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Ciclo actual — ver el historial de pagos">
                     <div class="nxIG-lb" id="nxIGcyl">Ciclo actual</div>
                     <div class="nxIG-split"><div><b id="nxIGcy1"><span class="nxIG-sk">RD$ 00,000</span></b><span>cobrado en el ciclo</span></div><div><b id="nxIGcy2"><span class="nxIG-sk">RD$ 00,000</span></b><span id="nxIGcy2s">ciclo anterior, mismo día</span></div></div>
+                    <div class="nxIG-ani nxIG-pnOn" id="nxIGani" aria-label="Avance del ciclo"><svg viewBox="0 0 120 120" aria-hidden="true"><g fill="none" stroke-width="10" stroke-linecap="round" transform="rotate(-90 60 60)"><circle class="t" cx="60" cy="60" r="54"/><circle class="t" cx="60" cy="60" r="41"/><circle class="t" cx="60" cy="60" r="28"/><circle class="a a1" id="nxIGa1" cx="60" cy="60" r="54" pathLength="100" stroke-dasharray="0 100"/><circle class="a a2" id="nxIGa2" cx="60" cy="60" r="41" pathLength="100" stroke-dasharray="0 100"/><circle class="a a3" id="nxIGa3" cx="60" cy="60" r="28" pathLength="100" stroke-dasharray="0 100"/></g></svg><ul><li><i class="d1"></i><span id="nxIGa1l">Cobrado</span><b id="nxIGa1v">–</b></li><li><i class="d2"></i><span>Clientes al día</span><b id="nxIGa2v">–</b></li><li><i class="d3"></i><span>Días del ciclo</span><b id="nxIGa3v">–</b></li></ul></div>
                     <div><div class="nxIG-bar"><i id="nxIGcyb"></i></div><span class="nxIG-bt" id="nxIGcybt">&nbsp;</span></div>
                   </div>
                 </div>
@@ -10069,7 +10085,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.39';
+const APP_VERSION='59.40';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12678,12 +12694,35 @@ function nxIGPintar(d){
   nxIGSet('nxIGs2',String(d.porVencer));
   nxIGSet('nxIGs2l',escHtml(`Vencen ≤${CFG.alertaDias} d`));
   nxIGSet('nxIGs3',String(d.enProceso));
+  _nxIG.ani=Object.assign(_nxIG.ani||{},{prima:d.prima,alDia,act:d.act});nxIGAnillos();
   nxIGSet('nxIGprima',`Prima mensual <b>${fmt(d.prima)}</b> · cartera activa`+(d.util?` · Utilidad bruta <b>${fmt(d.util.utilidad)}</b> (margen ${d.util.margen}%)`:''));
   nxIGCalPintar();
   nxIGCargarCrm(false);
   if(esAdmin)nxIGCargarAgentes(d.mcKey,false);
 }
 
+// ── 59.40 Inicio en vidrio, parte 4: anillos del ciclo 20 → 20 (dueño: «Publicar y continuar», 18-oct-2026) ──
+// Tres anillos con cifras que el Inicio YA calcula (nada nuevo se consulta ni se cuenta):
+//  1) Cobrado en el ciclo (c.cobCiclo, el mismo de «Ciclo actual») contra la meta: la «Meta cobros» de Configuración →
+//     Metas mensuales si el dueño la puso; si no, la prima mensual de la cartera activa (d.prima, la misma de la columna
+//     derecha). El rótulo dice cuál de las dos es.
+//  2) Clientes al día / clientes activos (los mismos del KPI «Clientes activos»).
+//  3) Días transcurridos del ciclo (día X de N): si el anillo 1 va por detrás del 3, se va atrasado.
+// Solo con la capa #nxInicioPane; sin ella sigue la barra de siempre.
+function nxIGAnillos(){
+  const a=_nxIG.ani||{};if(!document.getElementById('nxIGani'))return;
+  const pct=(v,t)=>t>0?Math.max(0,Math.min(100,Math.round(v/t*100))):0;
+  const set=(id,p)=>{const e=document.getElementById(id);if(e)e.setAttribute('stroke-dasharray',`${Math.max(p,0.001)} 100`);};
+  if(a.cob!=null){
+    const usaMeta=a.meta>0,meta=usaMeta?a.meta:(a.prima||0);
+    nxIGSet('nxIGa1l',usaMeta?'Cobrado (meta)':'Cobrado (prima)');
+    const p1=pct(a.cob,meta);set('nxIGa1',p1);
+    nxIGSet('nxIGa1v',meta>0?`${p1}%`:'–');
+    const li=document.getElementById('nxIGa1v');if(li)li.title=meta>0?`${fmt(a.cob)} de ${fmt(meta)} (${usaMeta?'meta de cobros':'prima mensual de la cartera activa'})`:'Sin meta ni prima mensual';
+    const p3=pct(a.dia,a.N);set('nxIGa3',p3);nxIGSet('nxIGa3v',`${a.dia} de ${a.N}`);
+  }
+  if(a.act!=null){const p2=pct(a.alDia,a.act);set('nxIGa2',p2);nxIGSet('nxIGa2v',a.act?`${a.alDia} de ${a.act}`:'–');}
+}
 // 59.34 (Inicio en vidrio): «Domingo, 18 de octubre · faltan 2 días para el corte». Fecha de RD (hoyRD) y el corte del
 // ciclo 20 → 20. Solo se ve con la capa #nxInicioPane encendida.
 function nxIGFechaTxt(){
@@ -12792,7 +12831,8 @@ function nxIGCiclo(c){
   let meta=0;try{meta=Number(JSON.parse(localStorage.getItem('nx_metas')||'{}').cobros)||0;}catch(e){}
   const bar=document.getElementById('nxIGcyb');
   if(meta>0){const p=Math.min(100,Math.round(c.cobCiclo/meta*100));if(bar)bar.style.width=p+'%';nxIGSet('nxIGcybt',escHtml(`${p}% de la meta mensual de ${fmt(meta)}`));}
-  else{if(bar)bar.style.width=Math.round((dia+1)/N*100)+'%';const f=N-dia-1;nxIGSet('nxIGcybt',escHtml(f>0?`Faltan ${nxIGPl(f,'día')} para el corte del ${nxIGFechaCorta(fin)}`:`Hoy es el último día antes del corte del ${nxIGFechaCorta(fin)}`));}
+  else{if(bar)bar.style.width=Math.round((dia+1)/N*100)+'%';const f=N-dia-1;nxIGSet('nxIGcybt',escHtml(f>0?`${f===1?'Falta':'Faltan'} ${nxIGPl(f,'día')} para el corte del ${nxIGFechaCorta(fin)}`:`Hoy es el último día antes del corte del ${nxIGFechaCorta(fin)}`));}
+  _nxIG.ani=Object.assign(_nxIG.ani||{},{cob:c.cobCiclo,dia:dia+1,N,meta});nxIGAnillos();
   nxIGSub();
   nxIGCalPintar();
 }
