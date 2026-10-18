@@ -5682,6 +5682,162 @@ html.tema-claro :is(#v-prestamos,#v-pos,#v-multiempresa,.nxPf,.nxPrForm,[id^="nx
   html.tema-claro .overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(15,23,42,.45)!important}
 }
 </style>
+<!-- ═══ INICIO EN VIDRIO, PARTE 1: ESTILO Y SALUDO (59.34, 18-oct-2026; dueño: «Empieza con Nexus» tras aprobar la demo
+     https://claude.ai/artifact/7BmwtpQqsg3K62gywmauAQ, inspirada en la plantilla Pane — solo inspiración, sin su código).
+     Capa AISLADA y reversible, va DESPUÉS de todas las capas del Inicio (#nxInicioGlass, glass oscuro, modo claro) para
+     ganarles. Solo cuelga de html.nx-ig.nx-pane #nxIG: ninguna otra pantalla cambia. Solo CSS más una línea de fecha en el
+     saludo (#nxIGFecha, oculta si la capa está apagada). Mismas medidas de alto que antes: nada salta al llegar los datos.
+       · Claro (html.tema-claro): tarjetas de vidrio blanco sobre manchas suaves lila, azul y durazno.
+       · Oscuro (cualquier otro tema): vidrio oscuro sobre manchas violeta y azul.
+       · Sin desenfoque en vivo (backdrop-filter) en las tarjetas: el fondo ya es un degradado suave; así no pesa en iPhone.
+     CÓMO APAGARLA: NX_INICIO_PANE=false aquí abajo (todos) o, en un equipo, localStorage.setItem('nx_inicio_pane_off','1')
+     y recargar (removeItem para volver). Sin html.nx-pane el Inicio queda exactamente como en 59.33. -->
+<script id="nxInicioPaneOn">var NX_INICIO_PANE=true;try{if(NX_INICIO_PANE&&localStorage.getItem('nx_inicio_pane_off')!=='1')document.documentElement.classList.add('nx-pane');}catch(e){if(NX_INICIO_PANE)document.documentElement.classList.add('nx-pane');}</script>
+<style id="nxInicioPane">
+html:not(.nx-pane) #nxIG .nxIG-fecha{display:none!important}
+/* ── tokens ── */
+html.nx-ig.nx-pane #nxIG{
+  --pn-ease:cubic-bezier(.22,.8,.24,1);--pn-spring:cubic-bezier(.34,1.45,.55,1);
+  --pn-acc:#7C3AED;--pn-acc2:#2563EB;--pn-grad:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 48%,#2563EB 100%);
+  --pn-ink:#F4F4FA;--pn-ink2:#C9CBDA;--pn-ink3:#A3A6BA;--pn-link:#C4B5FD;
+  --pn-glass:rgb(32 32 48/.56);--pn-glass2:rgb(255 255 255/.06);--pn-edge:rgb(255 255 255/.10);--pn-line:rgb(255 255 255/.10);
+  --pn-depth:inset 0 1px 0 rgb(255 255 255/.10),inset 0 0 0 1px rgb(255 255 255/.06);
+  --pn-shadow:0 22px 44px -26px rgb(0 0 0/.75);
+  --pn-shade:#0E0D18;
+  --ig-ink:var(--pn-ink);--ig-steel:var(--pn-ink2);--ig-mute:var(--pn-ink3);--ig-line:var(--pn-line);--ig-glass2:var(--pn-glass2);
+  --ig-blue:#8B5CF6;--ig-blue-l:rgb(139 92 246/.20);--ig-blue-b:rgb(167 139 250/.32);
+  color:var(--pn-ink)!important;
+  background-color:var(--pn-shade)!important;
+  background-image:
+    radial-gradient(40% 380px at 30% 300px,rgb(124 58 237/.40),transparent 72%),
+    radial-gradient(34% 360px at 74% 560px,rgb(37 99 235/.32),transparent 72%),
+    radial-gradient(42% 420px at 60% calc(100% - 340px),rgb(190 24 93/.18),transparent 72%)!important;
+  box-shadow:0 0 0 48px var(--pn-shade)!important;
+}
+/* las manchas se apagan antes de los bordes (nunca se ve el rectángulo); el glass oscuro conserva su escena de fondo */
+html.nx-ig.nx-pane.tema-glass-oscuro #nxIG{background-color:transparent!important;box-shadow:none!important}
+html.nx-ig.nx-pane.tema-claro #nxIG{
+  --pn-ink:#14121F;--pn-ink2:#4B4B63;--pn-ink3:#6B6B80;--pn-link:#6D28D9;
+  --pn-glass:rgb(255 255 255/.58);--pn-glass2:rgb(255 255 255/.55);--pn-edge:rgb(255 255 255/.95);--pn-line:rgb(20 18 50/.07);
+  --pn-depth:inset 0 1px 0 rgb(255 255 255/.95),inset 0 0 0 1px rgb(255 255 255/.55);
+  --pn-shadow:0 1px 2px rgb(20 18 50/.05),0 18px 40px -24px rgb(49 30 110/.32);
+  --ig-blue:#6D28D9;--ig-blue-l:rgb(124 58 237/.10);--ig-blue-b:rgb(124 58 237/.22);
+  background-color:transparent!important;
+  background-image:
+    radial-gradient(40% 380px at 30% 300px,rgb(196 181 253/.55),transparent 72%),
+    radial-gradient(34% 360px at 74% 560px,rgb(147 197 253/.50),transparent 72%),
+    radial-gradient(42% 420px at 60% calc(100% - 340px),rgb(254 215 170/.50),transparent 72%)!important;
+  box-shadow:none!important;
+}
+/* ── paneles grandes (izquierdo y derecho) ── */
+html.nx-ig.nx-pane #nxIG .nxIG-glass{background:var(--pn-glass2)!important;border:1px solid var(--pn-line)!important;border-radius:28px!important;
+  box-shadow:var(--pn-depth)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (min-width:769px){html.nx-ig.nx-pane #nxIG .nxIG-main.nxIG-glass{background:transparent!important;border-color:transparent!important;box-shadow:none!important;padding-top:6px}}
+/* ── saludo: fecha, nombre grande, resumen ── */
+html.nx-ig.nx-pane #nxIG .nxIG-fecha{font-size:14px;line-height:20px;height:20px;color:var(--pn-ink2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+html.nx-ig.nx-pane #nxIG .nxIG-fecha b{color:var(--pn-ink);font-weight:600}
+html.nx-ig.nx-pane #nxIG .nxIG-hi{flex:1 1 440px}
+html.nx-ig.nx-pane #nxIG .nxIG-hi .nxIG-h{white-space:normal;overflow-wrap:anywhere;font-size:clamp(30px,3.4vw,42px);line-height:1.08;font-weight:800;letter-spacing:-.035em;color:var(--pn-ink)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-hi p{color:var(--pn-ink2)!important;font-size:15px;margin-top:6px}
+html.nx-ig.nx-pane #nxIG .nxIG-hi p b{color:var(--pn-ink)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-search{background:var(--pn-glass)!important;border:1px solid var(--pn-line)!important;box-shadow:var(--pn-depth),var(--pn-shadow)!important;color:var(--pn-ink3)!important}
+/* ── tarjetas ── */
+html.nx-ig.nx-pane #nxIG .nxIG-card{color:var(--pn-ink)!important;border-radius:22px!important;
+  background:linear-gradient(172deg,var(--pn-edge) 0%,transparent 34%),var(--pn-glass)!important;
+  box-shadow:var(--pn-depth),var(--pn-shadow)!important;
+  transition:transform .3s var(--pn-spring),box-shadow .2s var(--pn-ease)}
+@media (hover:hover){html.nx-ig.nx-pane #nxIG .nxIG-card[role=button]:hover,html.nx-ig.nx-pane #nxIG .nxIG-cyc:hover{transform:translateY(-2px)}}
+html.nx-ig.nx-pane #nxIG .nxIG-card[role=button]:active,html.nx-ig.nx-pane #nxIG .nxIG-cyc:active{transform:scale(.98);transition-duration:.12s}
+html.nx-ig.nx-pane #nxIG .nxIG-kt{color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-kv{font-weight:800;letter-spacing:-.03em}
+html.nx-ig.nx-pane #nxIG .nxIG-ks,html.nx-ig.nx-pane #nxIG .nxIG-ct small,html.nx-ig.nx-pane #nxIG .nxIG-pc p,html.nx-ig.nx-pane #nxIG .nxIG-ag small{color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pill{border-color:var(--pn-line)!important;color:var(--pn-ink2)!important;background:var(--pn-glass2)}
+html.nx-ig.nx-pane #nxIG .nxIG-ax span,html.nx-ig.nx-pane #nxIG .nxCV-ax span{color:var(--pn-ink3)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-plot line{stroke:var(--pn-line)!important}
+/* barras y gráficas con el degradado violeta → azul */
+html.nx-ig.nx-pane #nxIG .nxIG-card .nxIG-bar{background:var(--ig-blue-l)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-card .nxIG-bar i{background:var(--pn-grad)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-viz i{background:var(--ig-blue-b)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-viz i.h{background:var(--pn-grad)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-viz.r i{background:rgb(239 68 68/.24)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-viz.r i.h{background:#EF4444!important}
+html.nx-ig.nx-pane #nxIG .nxCV{--cv-line:#A78BFA;--cv-fill:rgb(139 92 246/.26);--cv-fill0:rgb(139 92 246/0);--cv-grid:rgb(255 255 255/.08);--cv-txt:var(--pn-ink3);--cv-ring:#1A1828}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxCV{--cv-line:#7C3AED;--cv-fill:rgb(124 58 237/.16);--cv-fill0:rgb(124 58 237/0);--cv-grid:rgb(20 18 50/.07);--cv-ring:#fff}
+html.nx-ig.nx-pane #nxIG .nxCV-ver{color:var(--pn-link)!important}
+/* «Cobros del ciclo»: la línea que pinta nxIGCiclo() en azul toma el acento (solo color, mismo trazo) */
+html.nx-ig.nx-pane #nxIG #nxIGchG path[stroke]{stroke:#A78BFA}html.nx-ig.nx-pane #nxIG #nxIGgrad stop{stop-color:#A78BFA}
+html.nx-ig.nx-pane.tema-claro #nxIG #nxIGchG path[stroke]{stroke:#7C3AED}html.nx-ig.nx-pane.tema-claro #nxIG #nxIGgrad stop{stop-color:#7C3AED}
+html.nx-ig.nx-pane #nxIG .nxCV-tip,html.nx-ig.nx-pane #nxIG .nxIG-tip{background:var(--pn-acc)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-dot{border-color:var(--pn-acc)!important}
+/* chips (oscuro: versiones translúcidas; claro: las de siempre) */
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-chip.up{background:rgb(34 197 94/.18);color:#86EFAC}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-chip.dn{background:rgb(239 68 68/.20);color:#FECACA}
+html.nx-ig.nx-pane #nxIG .nxIG-chip.bl{background:var(--ig-blue-l);color:var(--pn-link)}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxCV-live{background:rgb(34 197 94/.16);color:#86EFAC}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxCV-live.off{background:rgb(255 255 255/.08);color:var(--pn-ink2)}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxCV-cmp b.up{color:#86EFAC}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxCV-cmp b.dn{color:#FCD34D}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxCV-mas{color:#86EFAC}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-amt small.neg{color:#FECACA}
+/* ── acento: «Ciclo actual» y el prospecto resaltado ── */
+html.nx-ig.nx-pane #nxIG .nxIG-cyc{border-radius:22px!important;background:var(--pn-grad)!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.22),0 22px 44px -22px rgb(109 40 217/.65)!important;
+  transition:transform .3s var(--pn-spring)}
+html.nx-ig.nx-pane #nxIG .nxIG-lb,html.nx-ig.nx-pane #nxIG .nxIG-split span,html.nx-ig.nx-pane #nxIG .nxIG-cyc .nxIG-bt{color:#EDE9FE!important}
+html.nx-ig.nx-pane #nxIG .nxIG-cyc .nxIG-bar{background:rgb(255 255 255/.22)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-cyc .nxIG-bar i{background:#fff!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pc.hl{background:var(--pn-grad)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.22),0 22px 44px -24px rgb(109 40 217/.6)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pc.hl p{color:#EDE9FE!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pc.hl .nxIG-tag{background:rgb(255 255 255/.22)!important;color:#fff!important}
+html.nx-ig.nx-pane #nxIG .nxIG-tag{background:var(--ig-blue-l)!important;color:var(--pn-link)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-stack .nxIG-av:not(#tgc){background:linear-gradient(135deg,#C4B5FD,#93C5FD)!important;color:#2E1065!important;border-color:var(--pn-shade)!important}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-stack .nxIG-av:not(#tgc){border-color:#fff!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pc.hl .nxIG-stack .nxIG-av:not(#tgc){border-color:#6D28D9!important}
+html.nx-ig.nx-pane #nxIG .nxIG-av:not(#tgc):not(.nxIG-sk){background:var(--pn-grad)!important;color:#fff!important;border-color:rgb(255 255 255/.35)!important}
+/* ── títulos de sección: sin la raya, enlace en el color de acento ── */
+html.nx-ig.nx-pane #nxIG .nxIG-sec{color:var(--pn-ink)!important;font-size:17px;letter-spacing:-.01em}
+html.nx-ig.nx-pane #nxIG .nxIG-sec>span:first-child{border-left:0!important;padding-left:2px}
+html.nx-ig.nx-pane #nxIG .nxIG-sec button{color:var(--pn-link)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-msg{color:var(--pn-ink2)!important}
+/* ── accesos rápidos: píldoras de vidrio ── */
+html.nx-ig.nx-pane #nxIG .nxIG-acc .qa-g .qa{background:var(--pn-glass)!important;border:1px solid var(--pn-line)!important;box-shadow:var(--pn-depth)!important;transition:transform .3s var(--pn-spring)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-acc .qa-g .qa:active{transform:scale(.97)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-acc .qa-g .qa .qa-l{color:var(--pn-ink)!important}
+/* ── columna derecha ── */
+html.nx-ig.nx-pane #nxIG .nxIG-prof b,html.nx-ig.nx-pane #nxIG .nxIG-stats b,html.nx-ig.nx-pane #nxIG .nxIG-calh,html.nx-ig.nx-pane #nxIG .nxIG-it b{color:var(--pn-ink)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-prof small,html.nx-ig.nx-pane #nxIG .nxIG-stats small,html.nx-ig.nx-pane #nxIG .nxIG-it small,html.nx-ig.nx-pane #nxIG .nxIG-it p,html.nx-ig.nx-pane #nxIG .nxIG-leg{color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-stats,html.nx-ig.nx-pane #nxIG .nxIG-cal,html.nx-ig.nx-pane #nxIG .nxIG-it{background:var(--pn-glass)!important;border:1px solid var(--pn-line)!important;box-shadow:var(--pn-depth)!important;border-radius:18px!important}
+html.nx-ig.nx-pane #nxIG .nxIG-stats>button+button{border-left:1px solid var(--pn-line)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-prima{color:var(--pn-ink2)!important}html.nx-ig.nx-pane #nxIG .nxIG-prima b{color:var(--pn-ink)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-days{color:var(--pn-ink)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-days .d{color:var(--pn-ink3)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-days .o{color:var(--pn-ink3)!important;opacity:.7}
+html.nx-ig.nx-pane #nxIG .nxIG-days .t{background:var(--pn-grad)!important;color:#fff!important}
+html.nx-ig.nx-pane #nxIG .nxIG-days .c{box-shadow:inset 0 0 0 1.5px rgb(167 139 250/.7)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-calh button{color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-it time{color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-it time.bad,html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-stats b.bad{color:#FECACA!important}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-it time.bad,html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-stats b.bad{color:#B91C1C!important}
+html.nx-ig.nx-pane #nxIG .nxIG-leg i[style*="2563EB"]{background:#7C3AED!important}
+html.nx-ig.nx-pane #nxIG .nxIG-leg i[style*="93C5FD"]{box-shadow:inset 0 0 0 1.5px rgb(167 139 250/.7)!important}
+html.nx-ig.nx-pane #nxIG :focus-visible{outline-color:#A78BFA}
+/* ── celular ── */
+@media (max-width:768px){
+  html.nx-ig.nx-pane #nxIG .nxIG-glass{border-radius:24px!important}
+  html.nx-ig.nx-pane #nxIG .nxIG-main.nxIG-glass{background:transparent!important;border-color:transparent!important;box-shadow:none!important;padding:10px 2px 18px}
+  html.nx-ig.nx-pane #nxIG .nxIG-hi .nxIG-h{font-size:31px}
+  html.nx-ig.nx-pane #nxIG .nxIG-fecha{font-size:14px}
+  html.nx-ig.nx-pane #nxIG .nxIG-hi p{font-size:15px;line-height:20px;min-height:40px}
+  html.nx-ig.nx-pane #nxIG .nxIG-card{border-radius:20px!important}
+  /* «Ciclo actual»: una cifra debajo de la otra desde el primer cuadro (en dos columnas el texto largo pasaba a 2 líneas y saltaba) */
+  html.nx-ig.nx-pane #nxIG .nxIG-split{grid-template-columns:minmax(0,1fr);gap:8px}
+}
+/* «reducir transparencia» y «reducir movimiento» del iPhone */
+@media (prefers-reduced-transparency:reduce){
+  html.nx-ig.nx-pane #nxIG{--pn-glass:#211F30;--pn-glass2:#1A1828}
+  html.nx-ig.nx-pane.tema-claro #nxIG{--pn-glass:#FFFFFF;--pn-glass2:#FFFFFF}
+}
+@media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-card,html.nx-ig.nx-pane #nxIG .nxIG-cyc{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -6149,7 +6305,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
             <div class="nxIG-grid">
               <section class="nxIG-main nxIG-glass" aria-label="Resumen del día">
                 <div class="nxIG-head">
-                  <div class="nxIG-hi"><div class="nxIG-h" id="nxIGHola" role="heading" aria-level="2">Hola</div><p id="nxIGSub"><span class="nxIG-sk">cargando el resumen del día</span></p></div>
+                  <div class="nxIG-hi"><div class="nxIG-fecha" id="nxIGFecha">&nbsp;</div><div class="nxIG-h" id="nxIGHola" role="heading" aria-level="2">Hola</div><p id="nxIGSub"><span class="nxIG-sk">cargando el resumen del día</span></p></div>
                   <button type="button" class="nxIG-search" onclick="abrirGlobalSearch()" aria-label="Buscar cliente, póliza o cédula"><svg class="nxIG-i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Buscar cliente, póliza o cédula…</span></button>
                 </div>
                 <div class="nxIG-kpis">
@@ -9663,7 +9819,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.33';
+const APP_VERSION='59.34';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12278,6 +12434,16 @@ function nxIGPintar(d){
   if(esAdmin)nxIGCargarAgentes(d.mcKey,false);
 }
 
+// 59.34 (Inicio en vidrio): «Domingo, 18 de octubre · faltan 2 días para el corte». Fecha de RD (hoyRD) y el corte del
+// ciclo 20 → 20. Solo se ve con la capa #nxInicioPane encendida.
+function nxIGFechaTxt(){
+  const [y,m,d]=hoyRD().split('-').map(Number);
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const hoy=Date.UTC(y,m-1,d),corte=d<=20?Date.UTC(y,m-1,20):Date.UTC(y,m,20),f=Math.round((corte-hoy)/864e5);
+  const c=f===0?'<b>hoy es el corte</b>':f===1?'mañana es el corte':`faltan <b>${f} días</b> para el corte`;
+  return `${dias[new Date(hoy).getUTCDay()]}, ${d} de ${meses[m-1]} · ${c}`;
+}
 // Sesión en el esqueleto (rol, saludo, perfil): se llama al mostrar la app (iniciarApp) y en cada rDash.
 function nxIGPreparar(){
   if(!nxIGOn())return false;
@@ -12285,6 +12451,7 @@ function nxIGPreparar(){
   document.getElementById('nxIG').dataset.admin=esAdmin?'1':'0';
   const nom=String(sesion?.nom||'').trim(),h=new Date().getHours();
   nxIGSet('nxIGHola',escHtml((h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+(nom?', '+nom.split(/\s+/)[0]:'')));
+  try{nxIGSet('nxIGFecha',nxIGFechaTxt());}catch(e){}
   nxIGSet('nxIGav',escHtml(nxIGIni(nom)));
   nxIGSet('nxIGnom',escHtml(nom||'Usuario'));
   const rol=String(sesion?.rol||''),org=sesion?.org?.nombre||'';
