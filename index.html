@@ -6162,6 +6162,8 @@ html:not(.tema-claro) #nxInfoTip{background:#F4F4FA;color:#14121F}
     {notas:()=>porTexto('#v-config','.nc > div','Los bancos activos aparecerán'),titulo:tituloTarjeta},
     {notas:()=>porTexto('#mBackup','.modal > div > div','Si Supabase tiene un problema'),titulo:prev},
     {notas:()=>porTexto('#mBackup','.modal > div','Recomendación').filter(e=>e.children.length<=2),titulo:n=>n.closest('.modal').querySelector('.mt span,.mt')},
+    {notas:()=>[document.getElementById('cDeudaHint')].filter(Boolean),titulo:()=>document.getElementById('cDeudaLbl')},
+    {notas:()=>porTexto('#mCli','#camposPrecioCustom > div','Deja en blanco').concat(porTexto('#mCli','#camposPrecioCustom > div','⚡ Este precio')).concat(porTexto('#mCli','#camposPrecioCustom > div','Este precio es la plantilla')),titulo:()=>{const s=document.querySelector('#seccionPrecioCustom > div > div');return s;}},
     {notas:()=>porTexto('#mCli','label span span','Si lo APAGAS'),titulo:n=>{const br=prev(n);if(br&&br.tagName==='BR')br.classList.add('nxInfoOculto');return n.parentElement.querySelector('strong');}},
     // Etiquetas con una aclaración entre paréntesis: la etiqueta queda corta y el paréntesis va a la ⓘ.
     {paren:true,notas:()=>[document.getElementById('cDeudaLbl')].concat(porTexto('#v-config','.fr > label','Cambiar número inicial'),porTexto('#v-config','.fr > label','Días personalizados'),porTexto('#mCli','.modal > div > div','PENDIENTES DEL CLIENTE')).filter(Boolean)}
@@ -6179,7 +6181,7 @@ html:not(.tema-claro) #nxInfoTip{background:#F4F4FA;color:#14121F}
       if(t.nodeType!==3)continue;const m=/^(.*?)\s*\(([^()]{8,})\)\s*:?\s*$/s.exec(t.textContent);if(!m)continue;
       t.textContent=m[1]+(/:\s*$/.test(t.textContent)?':':'');
       const s=document.createElement('span');s.className='nxInfoParen nxInfoOculto';s.textContent=m[2].charAt(0).toUpperCase()+m[2].slice(1)+'.';
-      lbl.appendChild(s);const b=boton(lbl);b._notas=[s];return;
+      lbl.appendChild(s);const b=boton(lbl);b._notas=[s].concat((b._notas||[]).filter(x=>x!==s));return;
     }
   }
   function aplicar(){
@@ -6216,6 +6218,135 @@ html:not(.tema-claro) #nxInfoTip{background:#F4F4FA;color:#14121F}
   const iniciar=()=>{aplicar();new MutationObserver(programar).observe(document.body,{childList:true,subtree:true});};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
   window.nxInfoAplicar=aplicar;
+})();
+</script>
+<!-- ═══ FICHA DEL CLIENTE EN VIDRIO (59.44, 18-oct-2026; dueño: «Rediseño de otra ventana») ═══
+     Capa AISLADA y reversible para #mCli (Nuevo / Editar cliente), con el mismo lenguaje que la ventana de cobro (59.37).
+     NO cambia ningún id, campo, <select>, chip ni función (guardarCli, editarCli, los chips nxOptChipPick y los
+     <select> ocultos siguen igual). Solo estilo + un poco de orden en #nxFichaPaneJs:
+       · cabecera y pie fijos; una sola acción «Guardar cliente» siempre visible («Cancelar» sobra: ✕, Esc o tocar fuera);
+       · campos en pares donde caben (cédula · WhatsApp, teléfono · nacimiento, fechas de la póliza…);
+       · fichas compactas de 44 px (plan, agente, NCF, ARS, estado, prioridad, responsable);
+       · títulos de sección claros (sin «//») y etiquetas sin mayúsculas forzadas (los CAMPOS siguen como estaban);
+       · notas largas (deuda bloqueada, «Deja en blanco…», «⚡ Este precio es la plantilla…») detrás de la ⓘ (59.42).
+     CÓMO APAGARLA: NX_FICHA_PANE=false aquí abajo (todos) o localStorage.setItem('nx_ficha_pane_off','1') en un equipo. -->
+<script id="nxFichaPaneOn">var NX_FICHA_PANE=true;try{if(NX_FICHA_PANE&&localStorage.getItem('nx_ficha_pane_off')!=='1')document.documentElement.classList.add('nx-fcli');}catch(e){if(NX_FICHA_PANE)document.documentElement.classList.add('nx-fcli');}</script>
+<style id="nxFichaPane">
+/* #mCli repetido 4 veces: gana a las capas con :not(#_n):not(#_m) sin pelear regla por regla */
+html.nx-fcli #mCli#mCli#mCli#mCli{
+  --cb-ink:#F4F4FA;--cb-ink2:#C3C5D6;--cb-sheet:#1A1928;--cb-fill:rgb(255 255 255/.07);--cb-line:rgb(255 255 255/.10);--cb-link:#C4B5FD;
+  --cb-grad:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 48%,#2563EB 100%);--cb-spring:cubic-bezier(.34,1.45,.55,1);
+  --nm-bg:var(--cb-fill);--nm-tx:var(--cb-ink);--nm-tx2:var(--cb-ink2);--nm-lo:transparent;--nm-hi:transparent;--nm-accent:var(--cb-link);
+  background:rgb(8 8 16/.46)!important;-webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important}
+html.nx-fcli.tema-claro #mCli#mCli#mCli#mCli{--cb-ink:#14121F;--cb-ink2:#4B4B63;--cb-sheet:#F7F7FB;--cb-fill:rgb(20 18 50/.05);--cb-line:rgb(20 18 50/.08);--cb-link:#6D28D9;background:rgb(20 18 40/.30)!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal{max-width:560px!important;width:calc(100% - 32px);max-height:min(92dvh,920px);overflow-y:auto;overflow-x:hidden!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:0 20px!important;border-radius:28px!important;background:var(--cb-sheet)!important;color:var(--cb-ink)!important;border:1px solid var(--cb-line)!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.10),0 40px 90px -30px rgb(0 0 0/.65)!important;position:relative}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal *:not(input):not(textarea):not(select){text-transform:none!important;letter-spacing:0!important}
+/* títulos que vienen escritos en MAYÚSCULAS: se muestran como oración (solo la vista) */
+html.nx-fcli #mCli#mCli#mCli#mCli #mCliT{text-transform:lowercase!important}html.nx-fcli #mCli#mCli#mCli#mCli #mCliT::first-letter{text-transform:uppercase!important}
+/* cabecera fija */
+html.nx-fcli #mCli#mCli#mCli#mCli .mt{position:sticky;top:0;z-index:3;margin:0 -20px 4px!important;padding:14px 12px 10px 20px!important;background:var(--cb-sheet)!important;border:0!important;display:flex;align-items:center;min-height:62px;width:auto!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .mt>span{font-size:17px!important;font-weight:800!important;color:var(--cb-ink)!important;text-transform:none!important;letter-spacing:-.01em!important;flex:1;text-align:left!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .mt button{flex:none!important;margin:0!important;width:44px!important;height:44px!important;min-height:44px!important;border-radius:50%!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;border:0!important;box-shadow:none!important;padding:0!important;display:grid!important;place-items:center}
+/* títulos de sección */
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcSec{display:flex!important;align-items:center;gap:8px;margin:22px 0 4px!important;padding:0!important;font-size:15px!important;font-weight:800!important;color:var(--cb-ink)!important;background:none!important;border:0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .fr .nxFcSec{margin-top:10px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .div{display:none!important}
+/* etiquetas y campos */
+html.nx-fcli #mCli#mCli#mCli#mCli .fr{margin:0!important;min-width:0}
+html.nx-fcli #mCli#mCli#mCli#mCli .fr>label,html.nx-fcli #mCli#mCli#mCli#mCli #cDeudaLbl,html.nx-fcli #mCli#mCli#mCli#mCli .frow .fr>label{display:block;font-size:13px!important;font-weight:700!important;color:var(--cb-ink2)!important;margin:0 0 6px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal :is(input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],input:not([type]),select:not([style*="display: none"]):not([style*="display:none"])):not([type=checkbox]){
+  height:48px!important;min-height:48px!important;border-radius:14px!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;-webkit-text-fill-color:var(--cb-ink);border:0!important;box-shadow:inset 0 0 0 1px var(--cb-line)!important;padding:0 14px!important;font-size:16px!important;width:100%;box-sizing:border-box}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal input:focus{box-shadow:inset 0 0 0 2px #8B5CF6!important;outline:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal input::placeholder{color:var(--cb-ink2)!important;-webkit-text-fill-color:var(--cb-ink2);opacity:.6}
+/* rejillas: dos columnas donde caben */
+html.nx-fcli #mCli#mCli#mCli#mCli .gf2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px 12px!important;margin:8px 0 0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .gf2>.fr:is(:has(#cNom),:has(.nxOptGrid),:has(.nxCumpleClienteFr),.nxCumpleClienteFr,:has(.nxFcSec),:has(#cDeudaIni),:has(#cDiaFact)){grid-column:1/-1}
+html.nx-fcli #mCli#mCli#mCli#mCli .frow{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+/* fichas compactas */
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptGrid{display:flex!important;flex-wrap:wrap!important;gap:8px!important;grid-template-columns:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip{flex:0 0 auto!important;width:auto!important;min-width:0!important;height:44px!important;min-height:44px!important;padding:0 14px 0 6px!important;margin:0!important;border-radius:999px!important;
+  display:inline-flex!important;align-items:center!important;gap:8px!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;border:0!important;box-shadow:inset 0 0 0 1px var(--cb-line)!important;font-size:14px!important;font-weight:650!important;text-transform:none!important;letter-spacing:0!important;transition:transform .3s var(--cb-spring),background .2s,box-shadow .2s!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip:active{transform:scale(.96)}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip .nxOptIco{width:32px!important;height:32px!important;min-width:32px!important;border-radius:50%!important;font-size:14px!important;margin:0!important;box-shadow:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip .nxOptIco.logo{background:#fff!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip .nxOptImg{width:24px!important;height:24px!important;object-fit:contain}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip .nxOptTxt{font-size:14px!important;white-space:nowrap;color:inherit!important;font-weight:inherit!important;text-transform:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip .nxOptOk{display:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptChip.on{background:color-mix(in srgb,var(--chip-c,#7C3AED) 22%,transparent)!important;box-shadow:inset 0 0 0 2px var(--chip-c,#7C3AED)!important}
+html.nx-fcli.tema-claro #mCli#mCli#mCli#mCli .nxOptChip.on{background:color-mix(in srgb,var(--chip-c,#7C3AED) 12%,#fff)!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxOptGrid.compacto .nxOptChip:not(:has(.nxOptIco)){padding:0 16px!important}
+/* empresa cotizante */
+html.nx-fcli #mCli#mCli#mCli#mCli #eChips{background:none!important;box-shadow:none!important;padding:0!important;min-height:0!important;display:flex;flex-wrap:wrap;gap:8px}
+html.nx-fcli #mCli#mCli#mCli#mCli #eChips .echip{height:44px!important;border-radius:999px!important;padding:0 16px!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;box-shadow:inset 0 0 0 1px var(--cb-line)!important;text-transform:none!important;display:inline-flex!important;align-items:center;gap:8px;font-weight:650!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #eChips .echip.sel{background:color-mix(in srgb,#7C3AED 18%,transparent)!important;box-shadow:inset 0 0 0 2px #7C3AED!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #eChipsSpot{display:none!important}
+/* bloques con caja propia → tarjetas suaves */
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja{background:var(--cb-fill)!important;border-radius:20px!important;padding:14px!important;margin:14px 0 0!important;box-shadow:none!important;border:0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes label{display:flex;align-items:center;gap:8px;min-height:36px;font-size:14px!important;color:var(--cb-ink)!important;font-weight:500!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes input{width:20px;height:20px;accent-color:#7C3AED}
+html.nx-fcli #mCli#mCli#mCli#mCli #cProgBar{background:var(--cb-grad)!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes{gap:0 10px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes label{margin:0!important;padding:0!important;height:auto!important;min-height:40px!important;line-height:1.2!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #camposPrecioCustom .g2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cDeudaUnlock{text-transform:none!important;height:48px!important;border-radius:14px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja .fr{margin:12px 0 0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #precioStdInfo{background:var(--cb-fill)!important;border:0!important;box-shadow:none!important;color:var(--cb-ink2)!important;border-radius:14px!important;text-transform:none!important}
+/* «Estado y proceso del cliente» plegado: título + resumen; se abre al tocarlo */
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja.nxFcPleg>:not(.nxFcSec):not(.nxFcRes):not(#_a):not(#_b){display:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja>.nxFcSec{margin:0!important;cursor:pointer;min-height:44px;justify-content:space-between}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja>.nxFcSec:after{content:"";width:9px;height:9px;border-right:2px solid var(--cb-ink2);border-bottom:2px solid var(--cb-ink2);transform:rotate(45deg) translate(-2px,-2px);transition:transform .3s var(--cb-spring);flex:none;margin-right:6px}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja:not(.nxFcPleg)>.nxFcSec:after{transform:rotate(-135deg) translate(-2px,-2px)}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcRes{display:none;font-size:13.5px;color:var(--cb-ink2);margin-top:2px}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcPleg .nxFcRes{display:block}
+/* pie fijo: una sola acción */
+html.nx-fcli #mCli#mCli#mCli#mCli .fe{position:sticky!important;bottom:0;z-index:3;margin:18px -20px 0!important;padding:10px 20px calc(16px + env(safe-area-inset-bottom,0px))!important;background:linear-gradient(to bottom,transparent,var(--cb-sheet) 14px)!important;border:0!important;display:flex!important;gap:8px!important;box-shadow:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .fe>.btn:not(#btnGCli){display:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #btnGCli#btnGCli{flex:1 1 100%!important;height:54px!important;min-height:54px!important;border-radius:999px!important;font-size:17px!important;font-weight:800!important;border:0!important;text-transform:none!important;letter-spacing:0!important;
+  background:var(--cb-grad)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.25),0 14px 30px -14px rgb(109 40 217/.9)!important;transition:transform .3s var(--cb-spring)!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #btnGCli#btnGCli:active{transform:scale(.97)}
+html.nx-fcli #mCli#mCli#mCli#mCli #btnGCli#btnGCli{display:flex!important;align-items:center;justify-content:center;text-align:center}
+html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja+.fr,html.nx-fcli #mCli#mCli#mCli#mCli .nxFcCaja+div{margin-top:16px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .modal :focus-visible{outline:2px solid #A78BFA!important;outline-offset:2px}
+@media (max-width:600px){
+  html.nx-fcli #mCli#mCli#mCli#mCli.open{align-items:flex-end!important;padding:0!important}
+  html.nx-fcli #mCli#mCli#mCli#mCli .modal{width:100%!important;max-width:100%!important;max-height:calc(100dvh - max(44px,env(safe-area-inset-top,0px) + 12px))!important;margin:0!important;border-radius:28px 28px 0 0!important;border-bottom:0!important}
+}
+@media (prefers-reduced-motion:reduce){html.nx-fcli #mCli#mCli#mCli#mCli *{transition:none!important}}
+</style>
+<script id="nxFichaPaneJs">
+(function(){
+  if(!document.documentElement.classList.contains('nx-fcli'))return;
+  // Solo pone clases y quita el «// » de los títulos (texto que se ve, no datos). Idempotente: se repite al abrir.
+  function oracion(e){for(const n of e.childNodes)if(n.nodeType===3&&/[A-ZÁÉÍÓÚÑ]{3}/.test(n.textContent)&&n.textContent===n.textContent.toUpperCase()){const t=n.textContent.toLowerCase().replace(/\bars\b/g,'ARS');const i=t.search(/[a-záéíóúñ]/);n.textContent=i<0?t:t.slice(0,i)+t.charAt(i).toUpperCase()+t.slice(i+1);}}
+  function orden(){
+    const m=document.querySelector('#mCli .modal');if(!m)return;
+    [...m.querySelectorAll(':scope > div, .fr > div, :scope > div > div')].forEach(d=>{
+      if(d.children.length>2||d.querySelector('input,select,button'))return;
+      const t=d.textContent.replace(/\s+/g,' ').trim();
+      if(/^\/\/\s/.test(t)||/^(Referencia del cliente|Estado y proceso del cliente|Empresa cotizante)$/i.test(t)){
+        d.classList.add('nxFcSec');
+        for(const n of d.childNodes)if(n.nodeType===3&&/\/\/\s*/.test(n.textContent))n.textContent=n.textContent.replace(/\/\/\s*/,'');
+        const low=d.textContent.trim();if(low===low.toUpperCase()){for(const n of d.childNodes)if(n.nodeType===3&&n.textContent.trim()){const t=n.textContent.toLowerCase().replace(/\bars\b/,'ARS');const i=t.search(/\S/);n.textContent=t.slice(0,i)+t.charAt(i).toUpperCase()+t.slice(i+1);}}
+      }
+    });
+    const est=document.getElementById('cEstadoCliChips');const caja=est&&est.closest('.modal > div');
+    if(caja){caja.classList.add('nxFcCaja');const tit=caja.querySelector(':scope > .nxFcSec');
+      if(tit&&!tit.dataset.nxFc){tit.dataset.nxFc='1';tit.setAttribute('role','button');tit.tabIndex=0;
+        const alt=()=>{caja.classList.toggle('nxFcPleg');tit.setAttribute('aria-expanded',String(!caja.classList.contains('nxFcPleg')));};
+        tit.addEventListener('click',alt);tit.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();alt();}});}
+      let res=caja.querySelector(':scope > .nxFcRes');if(!res){res=document.createElement('div');res.className='nxFcRes';tit&&tit.insertAdjacentElement('afterend',res);}
+      const v=id=>{const x=document.getElementById(id);return x&&x.value?(x.options?x.options[x.selectedIndex].textContent:x.value).trim():'';};
+      const prog=(document.getElementById('cProgTxt')||{}).textContent||'';
+      const pend=[...document.querySelectorAll('#cPendientes input:checked')].length;
+      res.textContent=[v('cEstadoCli'),v('cPrioridad')?'Prioridad '+v('cPrioridad').toLowerCase():'',prog?'Onboarding '+prog:'',pend?pend+(pend===1?' pendiente':' pendientes'):''].filter(Boolean).join(' · ')||'Toca para ver y editar';
+      if(!caja.dataset.nxFcAbierta){caja.classList.add('nxFcPleg');tit&&tit.setAttribute('aria-expanded','false');}}
+    const pc=document.getElementById('seccionPrecioCustom');if(pc){pc.classList.add('nxFcCaja');const t=pc.querySelector(':scope > div > div');if(t)oracion(t);}
+    [...m.querySelectorAll('div,span')].forEach(e=>{if(e.children.length>1)return;const t=e.textContent.trim();if(/^(PENDIENTES DEL CLIENTE|PROGRESO DE ONBOARDING)/.test(t))oracion(e);});
+  }
+  function init(){const ov=document.getElementById('mCli');if(!ov)return;let abierta=false;new MutationObserver(()=>{const ya=ov.classList.contains('open');if(ya&&!abierta){const c=document.querySelector('#mCli .nxFcCaja');if(c)c.classList.add('nxFcPleg');setTimeout(orden,0);setTimeout(orden,250);}abierta=ya;}).observe(ov,{attributes:true,attributeFilter:['class']});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 </head>
@@ -10201,7 +10332,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.43';
+const APP_VERSION='59.44';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
