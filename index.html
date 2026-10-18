@@ -6639,6 +6639,81 @@ html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList td
   html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(5) span.btn{border-radius:999px!important;width:auto;padding:0 12px!important;font-size:12.5px!important}
 }
 </style>
+<!-- 59.51 (dueño 18-oct-2026, «Si»): Pólizas, Empresas, Agentes y las ventanas Nueva empresa, Nuevo agente y Documentos. Capa aislada.
+     Se apaga para todos con NX_P4_PANE=false, o en un equipo con localStorage.nx_p4_pane_off='1'. -->
+<script id="nxP4PaneOn">var NX_P4_PANE=true;try{if(NX_P4_PANE&&localStorage.getItem('nx_p4_pane_off')!=='1')document.documentElement.classList.add('nx-p4');}catch(e){if(NX_P4_PANE)document.documentElement.classList.add('nx-p4');}</script>
+<style id="nxP4Pane">
+/* títulos y botones de las 3 pantallas */
+:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) .ch .ct,:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) .ch .ct-s{text-transform:none!important;letter-spacing:0!important}
+:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) .ch .ct{font-size:19px!important}
+:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) :is(button,.btn,select,input:not([type=hidden]):not([type=checkbox]),[role=button]){min-height:44px!important}
+html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes table thead th{height:44px!important}
+html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas .nxBusca-lupa{min-width:44px!important;min-height:44px!important}
+:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) td .btn{min-width:44px!important;display:inline-flex!important;align-items:center;justify-content:center}
+:is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes,html.nx-p4 #v-empresas#v-empresas#v-empresas#v-empresas) .sf-kpi .lb{text-transform:none!important;letter-spacing:0!important}
+/* ventanas: título, campos de 48 px con letra de 16, botones 44/54 */
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp .mt > span,html.nx-p4 #mAgente#mAgente#mAgente#mAgente .mt > span,html.nx-p4 #mDocs#mDocs#mDocs#mDocs .mt > span{text-transform:none!important;letter-spacing:-.01em!important;font-size:17px!important}
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp .mt button,html.nx-p4 #mAgente#mAgente#mAgente#mAgente .mt button,html.nx-p4 #mDocs#mDocs#mDocs#mDocs .mt button{width:44px!important;min-width:44px!important;height:44px!important;border-radius:50%!important;padding:0!important;display:inline-grid!important;place-items:center;flex:none!important}
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp label,html.nx-p4 #mAgente#mAgente#mAgente#mAgente label,html.nx-p4 #mDocs#mDocs#mDocs#mDocs label{text-transform:none!important;letter-spacing:0!important;font-size:13px!important}
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp :is(input:not([type=file]):not([type=checkbox]):not([type=hidden]),select),html.nx-p4 #mAgente#mAgente#mAgente#mAgente :is(input:not([type=file]):not([type=checkbox]):not([type=hidden]),select),html.nx-p4 #mDocs#mDocs#mDocs#mDocs :is(input:not([type=file]):not([type=checkbox]):not([type=hidden]),select){min-height:48px!important;font-size:16px!important;border-radius:14px!important}
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp .fe .btn,html.nx-p4 #mAgente#mAgente#mAgente#mAgente .fe .btn,html.nx-p4 #mDocs#mDocs#mDocs#mDocs .fe .btn{min-height:44px!important;padding:0 18px!important;font-size:15px!important;text-transform:none!important;letter-spacing:0!important}
+html.nx-p4 #mEmp#mEmp#mEmp#mEmp .fe .btn:last-child,html.nx-p4 #mAgente#mAgente#mAgente#mAgente .fe .btn:last-child,html.nx-p4 #mDocs#mDocs#mDocs#mDocs .fe .btn:last-child{min-height:54px!important;padding:0 26px!important}
+/* Documentos */
+html.nx-p4 #mDocs#mDocs#mDocs#mDocs :is(.doc-slot,[class*="slot"],[onclick]) :is(b,strong,div,span){text-transform:none!important;letter-spacing:0!important}
+html.nx-p4 #mDocs#mDocs#mDocs#mDocs input[type=file]{min-height:44px!important;font-size:14px!important}
+html.nx-p4 #mDocs#mDocs#mDocs#mDocs *{text-transform:none!important;letter-spacing:0!important}
+@media(max-width:720px){
+  /* cifras 2 × 2 sin icono */
+  :is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes) .sf-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-bottom:10px!important}
+  :is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes) .sf-kpi{padding:10px 12px!important;min-height:0!important;display:block!important}
+  :is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes) .sf-kpi .ic{display:none!important}
+  :is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes) .sf-kpi .lb{font-size:11.5px!important}
+  :is(html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes) .sf-kpi .v{font-size:18px!important;line-height:1.2!important}
+  /* Pólizas: cada póliza en 3 líneas */
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas table tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:4px;align-items:center;padding:12px 14px!important;margin-bottom:8px!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas table tbody tr > td{padding:0!important;border:0!important;min-width:0;width:auto!important;text-align:left!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas table tbody tr > td::before{display:none!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Asegurado"]{grid-column:1;grid-row:1}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Asegurado"] > div:first-child{font-size:15px!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="N° Póliza"]{grid-column:2;grid-row:1;justify-self:end;font-size:13px!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Plan"]{grid-column:1/-1;grid-row:2;display:flex!important;gap:6px;flex-wrap:wrap}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Estado"]{grid-column:1/-1;grid-row:2;justify-self:center}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="NCF"]{grid-column:1/-1;grid-row:2;justify-self:end}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td:is([data-lb="Inicio"],[data-lb="Fin"],[data-lb="Días"]){white-space:nowrap;font-size:12.5px!important;color:var(--sf-tx3,#64748b)!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Inicio"]{grid-column:1;grid-row:3;justify-self:start}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Fin"]{grid-column:1;grid-row:4;justify-self:start}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Días"]{grid-column:1;grid-row:4;justify-self:end}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Inicio"]::before{content:"Inicio ";display:inline!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Fin"]::before{content:"Fin ";display:inline!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="Días"]::before{content:"Días ";display:inline!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="PDF"]{grid-column:2;grid-row:3/5;display:flex!important;gap:8px;justify-content:flex-end}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="PDF"] .btn{border-radius:999px!important;padding:0 16px!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas td[data-lb="PDF"] .btn.bwa{width:44px;padding:0!important;border-radius:50%!important}
+  html.nx-p4 #v-polizas#v-polizas#v-polizas#v-polizas :is(td .badge,td span[class*="b"]){text-transform:none!important;letter-spacing:0!important}
+  /* Agentes: tabla → tarjetas */
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes table thead{display:none!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes table,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes table tbody{display:block!important;width:100%!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes .tw,html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes [class*="tbl-wrap"]{overflow:visible!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:12px 14px!important;border-bottom:1px solid var(--sf-line,rgb(15 23 42/.08))}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td{padding:0!important;border:0!important;min-width:0;text-align:left!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(1){grid-column:1;grid-row:1;font-size:15px!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(5){grid-column:2;grid-row:1;justify-self:end}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(2){grid-column:1;grid-row:2;font-size:13px!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(3),html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(4){grid-column:1;font-size:12.5px!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(3){grid-row:3}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(4){grid-row:4}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(3)::before{content:"Licencia: ";font-family:inherit;font-weight:600}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(4)::before{content:"Vence: ";font-family:inherit;font-weight:600}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(6){grid-column:2;grid-row:2/5;justify-self:end;display:flex!important;gap:8px}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt td:nth-child(6) .btn{width:44px;min-width:44px!important;padding:0!important;border-radius:50%!important}
+  html.nx-p4 #v-agentes#v-agentes#v-agentes#v-agentes #tbAgt .badge{text-transform:none!important;letter-spacing:0!important;white-space:nowrap}
+}
+</style>
+<script id="nxP4PaneJs">(function(){if(!document.documentElement.classList.contains('nx-p4'))return;
+var IDS=['mEmp','mAgente','mDocs'];
+function limpiar(o){var t=o.querySelector('.mt > span');if(!t)return;var x=t.textContent;var y=x.replace(/^\s*\/\/\s*/,'');var pz=y.split(' — ');if(pz[0]===pz[0].toUpperCase()&&/[A-ZÁÉÍÓÚÑ]/.test(pz[0])){pz[0]=pz[0].toLowerCase().replace(/^([^a-záéíóúñ]*)([a-záéíóúñ])/,function(m,a,b){return a+b.toUpperCase();});}y=pz.join(' — ');if(y!==x)t.textContent=y;}
+function iniciar(){IDS.forEach(function(id){var o=document.getElementById(id);if(!o)return;new MutationObserver(function(){if(o.classList.contains('open'))setTimeout(function(){limpiar(o);},0);}).observe(o,{attributes:true,attributeFilter:['class']});});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();</script>
 
 </head>
 <body>
@@ -10623,7 +10698,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.50';
+const APP_VERSION='59.51';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
