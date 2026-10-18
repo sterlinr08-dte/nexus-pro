@@ -6112,6 +6112,112 @@ html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder:empty{display:none!impor
 }
 @media (prefers-reduced-motion:reduce){html.nx-cobro #mAbono#mAbono#mAbono#mAbono *{transition:none!important}}
 </style>
+<!-- ═══ AYUDAS DETRÁS DE UNA ⓘ EN TODO EL SISTEMA (59.42, 18-oct-2026; dueño: «Hacerlo con todo el sistema así ahorramos
+     más espacio y organizamos más los iconos», tras la ⓘ de la ventana de cobro 59.41) ═══
+     Las notas que EXPLICAN (subtítulos largos, consejos 💡, aclaraciones entre paréntesis en etiquetas) salen de la vista y
+     quedan detrás de una ⓘ junto a su título; al tocarla se abre una burbuja con el texto ACTUAL de la nota.
+     NO se esconden: advertencias ⚠️, confirmaciones (inhabilitar), estados vacíos, cifras ni datos.
+     Reglas en NX_INFO_REGLAS (script #nxInfoIJs); se aplican al cargar y cada vez que una pantalla se repinta (una vez por
+     cuadro como máximo). La ventana de cobro tiene la suya (59.41). No cambia ningún texto, función ni dato.
+     CÓMO APAGARLA: NX_INFO_I=false aquí abajo (todos) o en un equipo localStorage.setItem('nx_info_off','1'). -->
+<script id="nxInfoIOn">var NX_INFO_I=true;try{if(NX_INFO_I&&localStorage.getItem('nx_info_off')!=='1')document.documentElement.classList.add('nx-info');}catch(e){if(NX_INFO_I)document.documentElement.classList.add('nx-info');}</script>
+<style id="nxInfoI">
+html.nx-info .nxInfoOculto{display:none!important}
+html.nx-info .nxInfoI{display:inline-grid!important;place-items:center;vertical-align:middle;width:44px!important;height:44px!important;min-width:0!important;min-height:0!important;margin:-12px -12px -12px -6px!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:50%!important;cursor:pointer;-webkit-tap-highlight-color:transparent;text-transform:none!important;letter-spacing:0!important;flex:none!important}
+html.nx-info .nxInfoI>span{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:italic 700 11px/1 Georgia,"Times New Roman",serif;color:#6D28D9;box-shadow:inset 0 0 0 1.5px currentColor;transition:background .2s,color .2s}
+html.nx-info:not(.tema-claro) .nxInfoI>span{color:#C4B5FD}
+html.nx-info .nxInfoI[aria-expanded="true"]>span{background:#6D28D9;color:#fff;box-shadow:none}
+html.nx-info:not(.tema-claro) .nxInfoI[aria-expanded="true"]>span{background:#C4B5FD;color:#14121F}
+#nxInfoTip{position:fixed;z-index:2147483000;max-width:min(320px,calc(100vw - 32px));padding:10px 12px;border-radius:14px;background:#14121F;color:#F4F4FA;font:500 13px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;text-transform:none;letter-spacing:0;white-space:pre-line;text-align:left;
+  box-shadow:0 14px 34px -12px rgb(0 0 0/.45);animation:nxInfoTip .18s cubic-bezier(.22,.8,.24,1)}
+html:not(.tema-claro) #nxInfoTip{background:#F4F4FA;color:#14121F}
+#nxInfoTip:before{content:"";position:absolute;top:-6px;left:calc(var(--fx,50%) - 6px);width:12px;height:12px;background:inherit;transform:rotate(45deg);border-radius:2px}
+#nxInfoTip.arriba:before{top:auto;bottom:-6px}
+@keyframes nxInfoTip{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#nxInfoTip{animation:none}html.nx-info .nxInfoI>span{transition:none}}
+</style>
+<script id="nxInfoIJs">
+(function(){
+  if(!document.documentElement.classList.contains('nx-info'))return;
+  // Encontrar notas: por selector o por el comienzo del texto (las que solo tienen estilos en línea).
+  const porTexto=(raiz,sel,inicio)=>[...document.querySelectorAll(raiz)].flatMap(r=>[...r.querySelectorAll(sel)]).filter(e=>e.textContent.replace(/\s+/g,' ').trim().replace(/^[💡ℹ️\s]+/u,'').startsWith(inicio));
+  const prev=n=>n.previousElementSibling;
+  const tituloTarjeta=n=>{const c=n.closest('.nc');if(!c)return null;return c.querySelector('.ch .ct')||c.querySelector('.ch')||c.firstElementChild;};
+  // Cada regla: notas() → elementos a esconder; titulo(nota) → dónde va la ⓘ; paren: solo el «(…)» final de una etiqueta.
+  const NX_INFO_REGLAS=[
+    {notas:()=>document.querySelectorAll('#nxCrmHead > div > p, .nxCrmHomeHead > div > p'),titulo:prev},
+    {notas:()=>document.querySelectorAll('#cliFanWrap > p.sf-fansub'),titulo:n=>{const t=prev(n);return t&&(t.querySelector('h2,h3')||t);}},
+    {notas:()=>document.querySelectorAll('#nxC20Body > .nxC20Note'),titulo:()=>document.querySelector('.nxC20Title b')},
+    {notas:()=>document.querySelectorAll('#v-dgii .g2 > div > div[style*="font-size:11px"]'),titulo:prev},
+    {notas:()=>[...document.querySelectorAll('.nc .ch .ct-s')].filter(e=>e.textContent.trim().length>=40&&!e.closest('#nxIG')),titulo:n=>n.parentElement.querySelector('.ct')},
+    {notas:()=>porTexto('#v-config','div','La próxima factura usará').filter(e=>!e.children.length),titulo:n=>n.parentElement.previousElementSibling},
+    {notas:()=>porTexto('#v-config','#nxDestBtnPanel > div, #nxProgPanel > div','Agrega empleados').concat(porTexto('#v-config','#nxProgPanel > div','Elige hora exacta')),titulo:prev},
+    {notas:()=>porTexto('#v-config','#nxNotifBrowserPanel div','Avisos tipo app').filter(e=>!e.children.length),titulo:prev},
+    {notas:()=>porTexto('#v-config','#nxNotifBrowserPanel > div','Solo funcionan con el navegador'),titulo:n=>{const t=porTexto('#v-config','#nxNotifBrowserPanel div','Avisos tipo app').filter(e=>!e.children.length)[0];return t?prev(t):null;}},
+    {notas:()=>porTexto('#v-config','.nc > div','Solo genera facturas de clientes activos'),titulo:tituloTarjeta},
+    {notas:()=>porTexto('#v-config','.nc > div','Login multi-empresa').concat(porTexto('#v-config','.nc div','El administrador entrará con').filter(e=>!e.querySelector('div'))),titulo:tituloTarjeta},
+    {notas:()=>porTexto('#v-config','.nc > div','Actualización desde GitHub'),titulo:tituloTarjeta},
+    {notas:()=>porTexto('#v-config','.nc div','Pega aquí el código HTML').filter(e=>!e.children.length||e.children.length<3),titulo:prev},
+    {notas:()=>porTexto('#v-config','#cfgApariencia .nc > div','Elige el aspecto visual').concat(porTexto('#v-config','#cfgApariencia .nc > div','Modo de prueba solo para el administrador')),titulo:n=>{const p=prev(n);return p&&(p.querySelector('.ct')||p);}},
+    {notas:()=>porTexto('#v-config','.nc > div','Los bancos activos aparecerán'),titulo:tituloTarjeta},
+    {notas:()=>porTexto('#mBackup','.modal > div > div','Si Supabase tiene un problema'),titulo:prev},
+    {notas:()=>porTexto('#mBackup','.modal > div','Recomendación').filter(e=>e.children.length<=2),titulo:n=>n.closest('.modal').querySelector('.mt span,.mt')},
+    {notas:()=>porTexto('#mCli','label span span','Si lo APAGAS'),titulo:n=>{const br=prev(n);if(br&&br.tagName==='BR')br.classList.add('nxInfoOculto');return n.parentElement.querySelector('strong');}},
+    // Etiquetas con una aclaración entre paréntesis: la etiqueta queda corta y el paréntesis va a la ⓘ.
+    {paren:true,notas:()=>[document.getElementById('cDeudaLbl')].concat(porTexto('#v-config','.fr > label','Cambiar número inicial'),porTexto('#v-config','.fr > label','Días personalizados'),porTexto('#mCli','.modal > div > div','PENDIENTES DEL CLIENTE')).filter(Boolean)}
+  ];
+  const marca=new WeakMap();   // título → [notas]
+  function boton(titulo){
+    let b=titulo.querySelector(':scope > .nxInfoI');
+    if(!b){b=document.createElement('button');b.type='button';b.className='nxInfoI';b.setAttribute('aria-label','Más información');b.setAttribute('aria-expanded','false');b.innerHTML='<span aria-hidden="true">i</span>';
+      b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();abrir(b);});titulo.appendChild(document.createTextNode(' '));titulo.appendChild(b);}
+    return b;
+  }
+  function aplicarParen(lbl){
+    if(lbl.querySelector(':scope > .nxInfoParen'))return;
+    for(const t of [...lbl.childNodes]){
+      if(t.nodeType!==3)continue;const m=/^(.*?)\s*\(([^()]{8,})\)\s*:?\s*$/s.exec(t.textContent);if(!m)continue;
+      t.textContent=m[1]+(/:\s*$/.test(t.textContent)?':':'');
+      const s=document.createElement('span');s.className='nxInfoParen nxInfoOculto';s.textContent=m[2].charAt(0).toUpperCase()+m[2].slice(1)+'.';
+      lbl.appendChild(s);const b=boton(lbl);b._notas=[s];return;
+    }
+  }
+  function aplicar(){
+    for(const r of NX_INFO_REGLAS){
+      let ns;try{ns=[...r.notas()];}catch(e){continue;}
+      for(const n of ns){
+        if(!n||n.closest('#mAbono,#v-waInbox'))continue;
+        if(r.paren){aplicarParen(n);continue;}
+        if(!n.textContent.trim())continue;
+        let t;try{t=r.titulo(n);}catch(e){t=null;}
+        if(!t||t===n||n.contains(t))continue;
+        n.classList.add('nxInfoOculto');
+        const b=boton(t);b._notas=b._notas||[];if(!b._notas.includes(n))b._notas.push(n);
+      }
+    }
+  }
+  function cerrar(){const t=document.getElementById('nxInfoTip');if(t){if(t._b)t._b.setAttribute('aria-expanded','false');t.remove();}}
+  function abrir(b){
+    const ya=document.getElementById('nxInfoTip');if(ya&&ya._b===b){cerrar();return;}cerrar();
+    const txt=(b._notas||[]).filter(n=>document.contains(n)).map(n=>n.textContent.replace(/\s+/g,' ').trim().replace(/^[💡ℹ️]\s*/u,'')).filter(Boolean).join('\n\n');
+    if(!txt)return;
+    const t=document.createElement('div');t.id='nxInfoTip';t.setAttribute('role','tooltip');t.textContent=txt;t._b=b;t._y=window.scrollY;
+    document.body.appendChild(t);b.setAttribute('aria-expanded','true');
+    const br=b.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight,vw=innerWidth,vh=innerHeight;
+    let x=Math.max(16,Math.min(vw-w-16,br.left+br.width/2-w/2)),y=br.bottom+4;
+    if(y+h>vh-12&&br.top-h-4>12){y=br.top-h-4;t.classList.add('arriba');}
+    t.style.left=x+'px';t.style.top=y+'px';t.style.setProperty('--fx',(br.left+br.width/2-x)+'px');
+  }
+  document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('#nxInfoTip,.nxInfoI'))cerrar();},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('nxInfoTip')){e.stopPropagation();cerrar();}},true);
+  // un desplazamiento real (más de 40 px desde que se abrió) cierra la burbuja; el pequeño ajuste al tocar, no
+  document.addEventListener('scroll',e=>{const t=document.getElementById('nxInfoTip');if(!t)return;const el=e.target===document?document.scrollingElement:e.target;if(!el)return;t._base=t._base||new Map();if(!t._base.has(el)){t._base.set(el,el.scrollTop);return;}if(Math.abs(el.scrollTop-t._base.get(el))>40)cerrar();},true);
+  let pend=false;const programar=()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;try{aplicar();}catch(e){}});};
+  const iniciar=()=>{aplicar();new MutationObserver(programar).observe(document.body,{childList:true,subtree:true});};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
+  window.nxInfoAplicar=aplicar;
+})();
+</script>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10095,7 +10201,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.41';
+const APP_VERSION='59.42';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

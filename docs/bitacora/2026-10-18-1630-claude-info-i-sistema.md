@@ -1,0 +1,45 @@
+# Ayudas detrás de una ⓘ en todo el sistema (59.42, sin publicar) — Claude
+
+- **Pedido del dueño:** «Hacerlo con todo el sistema, así ahorramos más espacio y organizamos más los iconos», después de la ⓘ de la ventana de cobro (59.41).
+- **Auditoría:** se recorrieron con Playwright, contra la REST simulada a 390 px, las 21 vistas, las 14 pestañas de Configuración y 10 ventanas. Se buscaron textos explicativos (40–420 caracteres, letra ≤ 15 px, frases). Quedaron 99 candidatos únicos, separados en dos grupos:
+  - **Pasan a la ⓘ (son explicaciones):**
+    - subtítulos de «Cartera de clientes» y «Panel CRM»;
+    - «Atención prioritaria»;
+    - «Fuente de verdad» del Reporte de agentes (Ciclo 20→20);
+    - descripciones IT-1 y ARS de DGII;
+    - «La próxima factura usará…»;
+    - los 💡 de Notificaciones (por empleado y programación);
+    - las 2 notas de «Notificaciones del navegador», unidas en una sola ⓘ;
+    - el 💡 de Facturación automática;
+    - «Mis bases de datos» (login multi-empresa + 💡);
+    - el 💡 de Actualizaciones y «Aplicar actualización manual»;
+    - Apariencia y «Vista experimental de tarjetas»;
+    - los subtítulos largos (`.ct-s` de 40 caracteres o más): Coberturas, Bancos, Centro de excepciones;
+    - la nota ℹ️ de Bancos;
+    - el respaldo: «Si Supabase…» y el 💡 de recomendación;
+    - en la ficha del cliente, la ayuda de «Permitir facturación automática».
+    - **Paréntesis de etiquetas** (la etiqueta queda corta y el paréntesis va a la ⓘ): «Deuda anterior pendiente RD$», «Cambiar número inicial», «Días personalizados», «Pendientes del cliente».
+  - **Se quedan a la vista (no son ayuda):**
+    - advertencias ⚠️: respaldo gratuito, actualización solo en este equipo;
+    - la confirmación de inhabilitar;
+    - estados vacíos («Selecciona mes y año…»);
+    - cifras y datos;
+    - las descripciones de cada tema en Apariencia, porque ayudan a elegir;
+    - el Inicio;
+    - el Buzón de WhatsApp.
+- **Archivo `index.html`.** Capa nueva al final de `<head>`: `<script id="nxInfoIOn">` (`html.nx-info`), `<style id="nxInfoI">` y `<script id="nxInfoIJs">`.
+  - **Reglas:** una lista `NX_INFO_REGLAS` dice qué notas se esconden y junto a qué título va la ⓘ. Algunas se encuentran por selector y otras por el comienzo del texto (las que solo tienen estilos en línea).
+  - **Cuándo se aplica:** al cargar y con un `MutationObserver` coalescido a una vez por cuadro. Si una pantalla se repinta, la ⓘ se repone sola.
+  - **Burbuja:** un solo `#nxInfoTip` (fijo) que lee el texto **actual** de las notas, sin el 💡/ℹ️. Si no cabe abajo, se abre arriba. Se cierra al tocar fuera, con Esc o al desplazarse más de 40 px.
+  - **Colores:** burbuja oscura en modo claro y clara en modo oscuro; la ⓘ es lila, de 18 px, con área de toque de 44 px y `aria-label` / `aria-expanded`.
+  - La ventana de cobro (`#mAbono`) y el Buzón (`#v-waInbox`) quedan fuera; el cobro tiene su propia ⓘ (59.41).
+  - `APP_VERSION` pasa a `'59.42'`.
+- **Sin cambios:** ningún texto se reescribe (salvo que el «(…)» pasa a la burbuja); ninguna función ni dato.
+- **Cómo apagarla:**
+  - para todos: `NX_INFO_I=false`;
+  - en un equipo: `localStorage.setItem('nx_info_off','1')`.
+- **Pruebas:**
+  - Prueba propia en las 15 pantallas y ventanas con reglas: cada ⓘ aparece junto al título correcto y su burbuja muestra el texto, sin errores de consola.
+  - `qa-inicio-glass` **129/0**, `qa-registrar-pago` **58/0**, `qa-custodia` **68/0**.
+  - `qa-crm.mjs` falla al escribir en `#nxCrmQ` porque el buscador está plegado en una lupa desde 58.94. **El fallo es anterior:** pasa igual con la versión publicada (comprobado con `git stash`). Hay que actualizar esa prueba aparte.
+- **Publicación:** NO publicado. Rama `claude/inicio-vidrio` (59.40 + 59.41 + 59.42). Esperar «publícalo».
