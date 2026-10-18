@@ -6313,6 +6313,20 @@ html.nx-fcli #mCli#mCli#mCli#mCli .modal :focus-visible{outline:2px solid #A78BF
   html.nx-fcli #mCli#mCli#mCli#mCli.open{align-items:flex-end!important;padding:0!important}
   html.nx-fcli #mCli#mCli#mCli#mCli .modal{width:100%!important;max-width:100%!important;max-height:calc(100dvh - max(44px,env(safe-area-inset-top,0px) + 12px))!important;margin:0!important;border-radius:28px 28px 0 0!important;border-bottom:0!important}
 }
+/* Tamaño de toque: nada que se toque por debajo de 44 px (regla del dueño) */
+html.nx-fcli #mCli#mCli#mCli#mCli label:has(> input[type=checkbox]){min-height:44px!important;display:flex!important;align-items:center!important;gap:10px!important;cursor:pointer}
+html.nx-fcli #mCli#mCli#mCli#mCli label:has(> input[type=checkbox]) > span,html.nx-fcli #mCli#mCli#mCli#mCli #cVip+*{font-size:14px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli label:has(> #cVip),html.nx-fcli #mCli#mCli#mCli#mCli label:has(> #cPrecioCustomOn){font-size:14px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli input[type=checkbox]{width:22px!important;height:22px!important;min-width:22px!important;margin:0!important;accent-color:#7C3AED}
+html.nx-fcli #mCli#mCli#mCli#mCli #cPendientes label{min-height:44px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .echip{font-size:13px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #cDeudaUnlock{min-height:48px!important;min-width:76px!important;font-size:14px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #dN,html.nx-fcli #mCli#mCli#mCli#mCli #dR{min-height:48px!important;font-size:16px!important;border-radius:14px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #dR{width:auto!important;min-width:124px!important;padding:0 8px 0 12px!important;font-size:15px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli button[onclick="addDep()"]{width:48px!important;min-width:48px!important;height:48px!important;padding:0!important;border-radius:14px!important;flex:0 0 48px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli #depLM{gap:8px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .dep-c{min-height:44px!important;font-size:14px!important;padding:0 0 0 14px!important;border-radius:999px!important;gap:2px!important;margin:0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli .dep-c button{width:44px!important;min-width:44px!important;height:44px!important;font-size:18px!important;border-radius:50%!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 @media (prefers-reduced-motion:reduce){html.nx-fcli #mCli#mCli#mCli#mCli *{transition:none!important}}
 </style>
 <script id="nxFichaPaneJs">

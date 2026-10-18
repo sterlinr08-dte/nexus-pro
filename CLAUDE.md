@@ -115,6 +115,16 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 - **Cuando el dueño mande un reel o una página de referencia a cualquier chat, se agrega la fila en ese archivo de los 3 proyectos** (más una bitácora en cada uno), no solo en el proyecto del chat.
 - **Antes de cualquier pedido de diseño, leer esa lista primero.** Un chat no puede leer la conversación de otro: solo comparten lo que queda escrito.
 
+## Regla del dueño: tamaño de los botones (18-oct-2026)
+> «Recuerda el tamaño de los botones.»
+
+En toda pantalla nueva o rediseñada, y en celular y PC:
+- **Todo lo que se toca mide al menos 44 × 44 px.** Esto incluye botones, chips, la ⓘ, la × de quitar y las casillas, contando la fila o etiqueta completa.
+- **Campos de escribir:** 48 px de alto y letra de 16 px, para que el iPhone no haga zoom.
+- **Botón principal** (Guardar, Cobrar): 54 px.
+- **Letra mínima de los controles:** 13 px.
+- **Antes de entregar:** medir con Playwright a 390 px y a 1280 px, y anotar el resultado en la bitácora.
+
 ## Estado estable reciente
 
 ### Rollback visual
