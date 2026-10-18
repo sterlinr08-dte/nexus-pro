@@ -5992,7 +5992,7 @@ html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend{text-align:right}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend span{display:block;font-size:12px!important;color:var(--cb-ink2)!important;font-weight:600!important}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend b{display:block;font-size:17px!important;font-weight:800!important;white-space:nowrap}
 /* monto protagonista */
-html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgSec{margin:12px 0 0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgSec{margin:10px 0 0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboLblRow{display:flex;justify-content:space-between;align-items:center;min-height:36px}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboLbl,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgSecT,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr>label,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aDirectoWrap strong,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheWrap>label{
   font-size:13px!important;font-weight:700!important;color:var(--cb-ink2)!important;letter-spacing:0!important;margin:0 0 6px!important;display:block}
@@ -7502,8 +7502,8 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       <div class="aboLblRow"><label class="aboLbl" for="aMnt">Monto <span class="req">*</span></label><button type="button" class="aboLnk" onclick="abrirHistorialCobros(abonoCliId)"><i class="ti ti-history"></i> Historial</button></div>
       <div class="fr pgMntWrap"><span class="pgCur" aria-hidden="true">RD$</span><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00" autocomplete="off" oninput="nxAboActualizarResumen()"/></div>
       <div class="aboQuickRow pgQuick">
-        <button type="button" class="aboQbtn" id="aQCuota" onclick="nxAboUnaCuota()">1 cuota<small id="aQCuotaV"></small></button>
-        <button type="button" class="aboQbtn hero" id="aQSaldar" onclick="nxAboSaldar()">Saldar<small id="aQSaldarV"></small></button>
+        <button type="button" class="aboQbtn" id="aQCuota" onclick="nxAboUnaCuota()">Una cuota<small id="aQCuotaV"></small></button>
+        <button type="button" class="aboQbtn hero" id="aQSaldar" onclick="nxAboSaldar()">Saldo total<small id="aQSaldarV"></small></button>
         <button type="button" class="aboQbtn" id="aQAdel" onclick="nxAboToggleAdelanto()" aria-expanded="false">Adelantar<small>meses</small><span class="aboTgl" id="aAdelantoTgl" hidden></span></button>
       </div>
       <div id="aAdelantoBody" class="pgAdel" style="display:none">
@@ -7512,7 +7512,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       </div>
     </section>
     <section class="pgSec">
-      <div class="pgSecT">Cómo pagó</div>
+      <div class="pgSecT">Método de pago</div>
       <div class="fr pgMet">
         <select id="aMet" style="display:none" onchange="cambiarMetodoAbono();nxAboActualizarResumen()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select>
         <div id="aMetChips"></div>
@@ -7523,9 +7523,9 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       <div id="mAboBaucheAnchor"></div>
     </section>
     <section class="pgSec">
-      <div class="pgSecT" id="aAgenteTit">¿Quién recibió el efectivo?</div>
+      <div class="pgSecT" id="aAgenteTit">Recibido por</div>
       <div class="fr"><select id="aAgente" onchange="nxAboActualizarResumen()"><option value="">Sin asignar</option></select><div id="aAgenteChips"></div></div>
-      <div class="aboNote" id="aAgenteNota"><i class="ti ti-info-circle"></i> <span>Ese dinero queda en su poder hasta que lo entregue o lo transfiera.</span></div>
+      <div class="aboNote" id="aAgenteNota"><i class="ti ti-info-circle"></i> <span>El efectivo queda bajo su custodia hasta que lo entregue o lo transfiera.</span></div>
     </section>
     <!-- REGLA DE CUSTODIA (igual que seguros_resumen_ciclo_agente_core): Efectivo → en poder de quien lo recibió.
          Transferencia/Depósito → en poder del DUEÑO DE LA CUENTA donde cayó; quien gestionó el cobro no lo tiene. -->
@@ -10069,7 +10069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.37';
+const APP_VERSION='59.38';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13154,7 +13154,7 @@ document.addEventListener('keydown',e=>{
     if(fe&&sum&&sum.parentElement!==fe)fe.insertBefore(sum,fe.firstChild);   // resumen junto al botón (mismos ids)
     const sec=document.getElementById('aMetChips')&&document.getElementById('aMetChips').closest('.pgSec');
     if(sec&&!sec.querySelector('.nxCbMas')){
-      const b=document.createElement('button');b.type='button';b.className='nxCbMas';b.textContent='+ Referencia o comprobante';
+      const b=document.createElement('button');b.type='button';b.className='nxCbMas';b.textContent='Añadir referencia o comprobante';
       b.onclick=()=>{m.classList.add('cbMas');setTimeout(()=>{try{document.getElementById('aRef').focus();}catch(e){}},30);};
       const anc=sec.querySelector('.pgRef');sec.insertBefore(b,anc||null);
     }
@@ -15371,34 +15371,34 @@ function nxAboActualizarResumen(){
   const esBanco=metodo==='Transferencia'||metodo==='Depósito';
   // Etiqueta y ayuda de la referencia según el método
   const rl=document.getElementById('aRefLbl'),ri=document.getElementById('aRef');
-  const REF={Efectivo:['Referencia (opcional)','Ej. número de recibo'],Transferencia:['Número de la transferencia *','Ref. o confirmación del banco'],'Depósito':['Número del depósito *','Número del volante'],Cheque:['Número del cheque *','Número del cheque'],Tarjeta:['Aprobación de la tarjeta *','Código de aprobación']};
+  const REF={Efectivo:['Referencia (opcional)','Número de recibo'],Transferencia:['Número de transferencia *','Número de confirmación del banco'],'Depósito':['Número de depósito *','Número del volante de depósito'],Cheque:['Número de cheque *','Número de cheque'],Tarjeta:['Código de aprobación *','Código de aprobación']};
   const rr=REF[metodo]||REF.Efectivo;if(rl)rl.textContent=rr[0];if(ri)ri.placeholder=rr[1];
   // Regla de custodia (misma que el reporte por ciclo): Efectivo → quien lo recibió; banco → dueño de la cuenta.
   const tA=document.getElementById('aAgenteTit'),nA=document.querySelector('#aAgenteNota span');
-  if(tA)tA.textContent=esBanco?'¿Quién gestionó el cobro?':'¿Quién recibió el efectivo?';
-  if(nA)nA.textContent=esBanco?'Solo indica quién atendió al cliente. El dinero queda en poder del dueño de la cuenta donde se depositó.':'Ese dinero queda en su poder hasta que lo entregue o lo transfiera.';
-  const linea1=[metodo+(esBanco&&banco?(' '+banco):''),esBanco?(cuenta?('a la cuenta de '+cuenta):'falta elegir la cuenta'):null,agente?((esBanco?'gestionó ':'recibió ')+agente):'falta elegir el agente'].filter(Boolean).join(' · ');
+  if(tA)tA.textContent=esBanco?'Gestionado por':'Recibido por';
+  if(nA)nA.textContent=esBanco?'Identifica a quien atendió al cliente. Los fondos quedan bajo custodia del titular de la cuenta de destino.':'El efectivo queda bajo su custodia hasta que lo entregue o lo transfiera.';
+  const linea1=[metodo+(esBanco&&banco?(' '+banco):''),esBanco?(cuenta?('Cuenta de '+cuenta):'Cuenta de destino sin seleccionar'):null,agente?((esBanco?'Gestionado por ':'Recibido por ')+agente):'Responsable sin seleccionar'].filter(Boolean).join(' · ');
   const enPoder=document.getElementById('aboEnPoder');
   if(enPoder){
     const quien=esBanco?cuenta:agente;
-    enPoder.innerHTML=quien?('<i class="ti ti-wallet"></i> En poder de: '+escHtml(quien)+(esBanco?(agente&&agente!==cuenta?' <small>Depositado a su cuenta — no está en poder de '+escHtml(agente)+'</small>':' <small>Depositado a su cuenta</small>'):' <small>Recibió el efectivo</small>')):'<i class="ti ti-alert-circle"></i> '+(esBanco?'Elige a qué cuenta llegó el dinero':'Elige quién recibió el efectivo');
+    enPoder.innerHTML=quien?('<i class="ti ti-wallet"></i> Bajo custodia de: '+escHtml(quien)+(esBanco?(agente&&agente!==cuenta?' <small>Fondos depositados en su cuenta; no quedan bajo custodia de '+escHtml(agente)+'</small>':' <small>Fondos depositados en su cuenta</small>'):' <small>Efectivo recibido</small>')):'<i class="ti ti-alert-circle"></i> '+(esBanco?'Seleccione la cuenta de destino':'Seleccione quién recibió el efectivo');
     enPoder.classList.toggle('falta',!quien);
   }
   let linea2='';
   if(c&&monto>0){
     const destino=document.getElementById('aDestino')?.value||'facturas';
     const deuda=destino==='deuda_anterior'?deudaAnt(c):pend(c);const cuota=getTot(c)||0;
-    if(monto<deuda-0.009)linea2='Queda pendiente '+fmt(deuda-monto);
-    else if(Math.abs(monto-deuda)<0.01)linea2=deuda>0?'Salda todo lo pendiente':'';
-    else{const extra=monto-deuda;const n=cuota>0?Math.floor((extra+0.009)/cuota):0;linea2=(deuda>0?'Salda lo pendiente y adelanta ':'Adelanta ')+fmt(extra)+(n>0?(' (≈ '+n+(n===1?' mes':' meses')+')'):'');}
+    if(monto<deuda-0.009)linea2='Saldo restante: '+fmt(deuda-monto);
+    else if(Math.abs(monto-deuda)<0.01)linea2=deuda>0?'Liquida el saldo pendiente':'';
+    else{const extra=monto-deuda;const n=cuota>0?Math.floor((extra+0.009)/cuota):0;linea2=(deuda>0?'Liquida el saldo y adelanta ':'Pago adelantado de ')+fmt(extra)+(n>0?(' (≈ '+n+(n===1?' mes':' meses')+')'):'');}
   }
-  if(tit)tit.textContent=monto>0?fmt(monto):'Escribe el monto';
+  if(tit)tit.textContent=monto>0?fmt(monto):'Indique el monto';
   txt.innerHTML=escHtml(linea1)+(linea2?('<em>'+escHtml(linea2)+'</em>'):'');
   // Botón «inteligente»: dice lo que falta; al tocarlo, regAbono lleva a ese campo (nxPagoMarcar).
   const refV=(document.getElementById('aRef')?.value||'').trim();
-  const falta=!(monto>0)?'escribir el monto':(esBanco&&!banco)?'elegir el banco':(!refV&&metodo!=='Efectivo')?'escribir el número':(esBanco&&!cuenta)?'elegir la cuenta':!agente?(esBanco?'elegir quién gestionó':'elegir quién recibió'):'';
+  const falta=!(monto>0)?'Indique el monto':(esBanco&&!banco)?'Seleccione el banco':(!refV&&metodo!=='Efectivo')?'Indique el número de referencia':(esBanco&&!cuenta)?'Seleccione la cuenta de destino':!agente?(esBanco?'Seleccione quién gestionó el cobro':'Seleccione quién recibió el efectivo'):'';
   const btn=document.getElementById('btnAbo');
-  if(btn&&!btn.disabled){btn.innerHTML=falta?('<i class="ti ti-arrow-down"></i> Falta '+falta):('<i class="ti ti-check"></i> Registrar '+fmt(monto));btn.classList.toggle('pgIncompleto',!!falta);}
+  if(btn&&!btn.disabled){btn.innerHTML=falta?('<i class="ti ti-arrow-down"></i> '+falta):('<i class="ti ti-check"></i> Registrar '+fmt(monto));btn.classList.toggle('pgIncompleto',!!falta);}
   // Pulso suave cuando cambia el monto o quién tiene el dinero
   const firma=(tit?tit.textContent:'')+'|'+(enPoder?enPoder.textContent:'');
   const sum=document.querySelector('#mAbono .aboSummary');
@@ -15815,11 +15815,11 @@ function mostrarCajaRecibo(c){
   const set=(id,v)=>{const e=document.getElementById(id);if(e){e.textContent=v||'';e.style.display=v?'':'none';}};
   const monto=(window._ultimoAbono&&window._ultimoAbono.monto)||0;
   set('pgOkMonto',monto?fmt(monto):T('aboResumenTit'));if(monto)nxPagoContar(document.getElementById('pgOkMonto'),monto,700);
-  set('pgOkDet',T('aboResumenTxt').replace(/(Queda pendiente|Salda todo|Salda lo pendiente|Adelanta).*$/,'').trim());
+  set('pgOkDet',T('aboResumenTxt').replace(/(Saldo restante|Liquida el saldo|Pago adelantado).*$/,'').trim());
   const poder=document.getElementById('aboEnPoder');const pp=document.getElementById('pgOkPoder');
   if(pp){pp.innerHTML=poder&&!poder.classList.contains('falta')?poder.innerHTML:'';pp.style.display=pp.innerHTML?'':'none';}
   try{const cc=c&&ST.clientes.find(x=>x.id===c.id)||c;const destino=document.getElementById('aDestino')?.value||'facturas';
-    const q=destino==='deuda_anterior'?deudaAnt(cc):pend(cc);set('pgOkPend',q>0.009?('Le queda pendiente '+fmt(q)):'El cliente quedó al día');}catch(e){set('pgOkPend','');}
+    const q=destino==='deuda_anterior'?deudaAnt(cc):pend(cc);set('pgOkPend',q>0.009?('Saldo restante del cliente: '+fmt(q)):'Cliente al día');}catch(e){set('pgOkPend','');}
   const wa=document.getElementById('btnReciboWA');if(wa)wa.style.display=(c&&c.wa)?'':'none';
   reciboDiv.style.display='block';
   if(modal){modal.classList.add('pgHecho');modal.scrollTop=0;}
@@ -15839,26 +15839,26 @@ function mostrarCajaRecibo(c){
 // NO queda ningún cobro a medias.
 async function regAbono(){
   const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
-  if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');nxPagoMarcar('aMnt');return;}
+  if(!monto||monto<=0){toast('err','Monto no válido','Indique un monto mayor que cero.');nxPagoMarcar('aMnt');return;}
   // VALIDACIONES nuevas: agente, referencia, banco/cuenta (si transferencia/depósito)
   // — se quedan aquí como feedback rápido; la RPC las vuelve a exigir del lado
   // del servidor, así que esto es solo UX, nunca la única barrera real.
   const agenteCobro=document.getElementById('aAgente')?.value||null;
-  if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente');nxPagoMarcar('aAgenteChips');return;}
+  if(!agenteCobro){toast('err','Responsable requerido','Seleccione quién recibió o gestionó el cobro.');nxPagoMarcar('aAgenteChips');return;}
   const metodo=document.getElementById('aMet').value;
   // 01-oct-2026: en Efectivo la referencia es opcional; la RPC la exige (seguros_registrar_cobro: «Referencia obligatoria»),
   // así que si queda vacía se envía «Efectivo» (antes se inventaban números tipo 9877777).
   let refValor=(document.getElementById('aRef')?.value||'').trim();
   if(!refValor&&metodo==='Efectivo')refValor='Efectivo';
-  if(!refValor){toast('err','Referencia requerida','Escribe el número de la transferencia, depósito, cheque o tarjeta');nxPagoMarcar('aRef');return;}
+  if(!refValor){toast('err','Referencia requerida','Indique el número de transferencia, depósito, cheque o aprobación de tarjeta.');nxPagoMarcar('aRef');return;}
   let bancoGuardar=null;
   let cuentaDestinoId=null;
   if(metodo==='Transferencia'||metodo==='Depósito'){
     const bSel=document.getElementById('aBanco')?.value||'';
-    if(!bSel){toast('err','Banco requerido','Selecciona el banco');nxPagoMarcar('aBancoChips');return;}
+    if(!bSel){toast('err','Banco requerido','Seleccione el banco.');nxPagoMarcar('aBancoChips');return;}
     if(bSel==='Otros'){
       const bOtros=(document.getElementById('aBancoOtros')?.value||'').trim();
-      if(!bOtros){toast('err','Banco requerido','Escribe el nombre del banco');nxPagoMarcar('aBancoOtros');return;}
+      if(!bOtros){toast('err','Banco requerido','Indique el nombre del banco.');nxPagoMarcar('aBancoOtros');return;}
       bancoGuardar=bOtros;
     }else{
       bancoGuardar=bSel;
@@ -15870,7 +15870,7 @@ async function regAbono(){
     // se valida aquí como UX, y quien de verdad CREA la entrega es la RPC
     // atómica del servidor — nunca el navegador.
     cuentaDestinoId=document.getElementById('aDirectoCuenta')?.value||'';
-    if(!cuentaDestinoId){toast('err','Falta la cuenta','Elige a qué cuenta llegó el dinero');nxPagoMarcar('aDirectoChips');return;}
+    if(!cuentaDestinoId){toast('err','Cuenta de destino requerida','Seleccione la cuenta en la que se recibieron los fondos.');nxPagoMarcar('aDirectoChips');return;}
   }
   const comprobanteUrl=window._nxBaucheURL||null;
   const c=ST.clientes.find(x=>x.id===abonoCliId);
@@ -15917,7 +15917,7 @@ async function regAbono(){
       [c.wa?{label:'WhatsApp',icon:'ti-brand-whatsapp',cls:'wa',onclick:()=>enviarReciboWA()}:null,
        {label:'Ver / compartir recibo',icon:'ti-receipt',onclick:()=>window.nxReciboMeses&&window.nxReciboMeses()}].filter(Boolean));
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
-  }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',msg);}
+  }catch(e){const msg=nxRpcErr(e);mostrarError(msg,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','No se pudo registrar el pago',msg);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar pago';if(typeof nxAboActualizarResumen==='function')nxAboActualizarResumen();
 }
 

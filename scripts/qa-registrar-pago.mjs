@@ -1,4 +1,4 @@
-// QA de la ventana «Registrar pago» (#mAbono) 59.01 — app real contra scripts/qa-crm-mock-server.js, tema Glass oscuro,
+// QA de la ventana «Registrar pago» (#mAbono) 59.01 (textos profesionales desde 59.38: «Recibido por», «Bajo custodia de», «Cuenta de destino») — app real contra scripts/qa-crm-mock-server.js, tema Glass oscuro,
 // 390×844 (iPhone) y 1280×800. Intercepta la RPC real seguros_registrar_cobro_con_entrega y el PATCH del comprobante.
 //  · Orden: cliente → monto → cómo pagó (banco · referencia · cuenta · comprobante) → quién cobró → resumen → botón.
 //  · Altura: Efectivo ≤ 1,000 px (incluye la línea «En poder de») y Transferencia ≤ 1,450 px a 390 (antes 1,225 / ~1,860).
@@ -101,8 +101,8 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
       m.value = 'Efectivo'; m.dispatchEvent(new Event('change'));
       return { nomAg, nomCu, ef, tr };
     });
-    ok(/recibió el efectivo/i.test(cust.ef.tit) && cust.ef.poder.includes('En poder de: ' + cust.nomAg) && /efectivo/i.test(cust.ef.poder), `${w}px Efectivo: «En poder de» quien recibió el efectivo`, cust.ef);
-    ok(/gestionó/i.test(cust.tr.tit) && cust.tr.poder.includes('En poder de: ' + cust.nomCu) && cust.tr.poder.includes('no está en poder de ' + cust.nomAg) && /llegó el dinero/i.test(cust.tr.cuentaTit), `${w}px Transferencia: «En poder de» el dueño de la cuenta, no quien gestionó`, cust);
+    ok(/Recibido por/.test(cust.ef.tit) && cust.ef.poder.includes('Bajo custodia de: ' + cust.nomAg) && /efectivo/i.test(cust.ef.poder), `${w}px Efectivo: «En poder de» quien recibió el efectivo`, cust.ef);
+    ok(/Gestionado por/.test(cust.tr.tit) && cust.tr.poder.includes('Bajo custodia de: ' + cust.nomCu) && cust.tr.poder.includes('no quedan bajo custodia de ' + cust.nomAg) && /Cuenta de destino/.test(cust.tr.cuentaTit), `${w}px Transferencia: «En poder de» el dueño de la cuenta, no quien gestionó`, cust);
     // ── inteligente: el botón dice qué falta y lleva al campo ──
     const ent = await page.evaluate(() => { const m = document.querySelector('#mAbono .modal'); return { cls: m.classList.contains('pgIn'), an: getComputedStyle(document.querySelector('#mAbono .pgSec')).animationName }; });
     const sm = await page.evaluate(async () => {
@@ -121,7 +121,7 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
       return { sinAg, sinCuenta, inc, marcado, listo };
     });
     ok(ent.cls && ent.an === 'pgSube', `${w}px entrada animada escalonada al abrir`, ent);
-    ok(/Falta elegir quién recibió/.test(sm.sinAg) && /Falta elegir la cuenta/.test(sm.sinCuenta) && sm.inc && /^Registrar RD\$/.test(sm.listo), `${w}px el botón dice qué falta y luego «Registrar RD$ X»`, sm);
+    ok(/Seleccione quién recibió el efectivo/.test(sm.sinAg) && /Seleccione la cuenta de destino/.test(sm.sinCuenta) && sm.inc && /^Registrar RD\$/.test(sm.listo), `${w}px el botón dice qué falta y luego «Registrar RD$ X»`, sm);
     ok(sm.marcado && rpc.length === 0, `${w}px tocar con datos incompletos lleva y resalta el campo que falta (sin registrar)`, sm);
     // ── atajos ──
     const at = await page.evaluate(() => { const c = ST.clientes.find(x => x.id === abonoCliId); const P = s => window.nxMoney ? nxMoney.parse(document.getElementById('aMnt').value) : parseFloat(document.getElementById('aMnt').value);
@@ -155,7 +155,7 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     const hecho = await page.evaluate(() => { const v = id => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0; };
       return { cls: document.querySelector('#mAbono .modal').classList.contains('pgHecho'), tit: document.querySelector('#mAbono .modal > .mt > span').textContent, form: v('aMnt') || v('aMetChips') || v('aAgenteChips'), registrar: v('btnAbo'), cancelar: v('btnAboCancelar'), listo: v('btnAboListo'), recibo: v('btnReciboVer'), monto: document.getElementById('pgOkMonto').textContent, poder: document.getElementById('pgOkPoder').textContent, pend: document.getElementById('pgOkPend').textContent }; });
     ok(hecho.cls && hecho.tit === 'Pago registrado' && !hecho.form && !hecho.registrar && !hecho.cancelar && hecho.listo && hecho.recibo, `${w}px tras registrar: pantalla «Pago registrado» (sin formulario ni botón de registrar; Listo + Ver recibo)`, hecho);
-    ok(/RD\$/.test(hecho.monto) && /En poder de/.test(hecho.poder) && /pendiente|al día/i.test(hecho.pend), `${w}px «Pago registrado» muestra monto, en poder de quién y lo que queda`, hecho);
+    ok(/RD\$/.test(hecho.monto) && /Bajo custodia de/.test(hecho.poder) && /Saldo restante|al día/i.test(hecho.pend), `${w}px «Pago registrado» muestra monto, en poder de quién y lo que queda`, hecho);
     await page.screenshot({ path: OUT + `${w}-registrado.png` });
     ok(await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono .pgOkIc')).animationName === 'pgOkPop'), `${w}px «Pago registrado» con ✓ animado`);
     const ctr = await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono small#aQSaldarV')).color);

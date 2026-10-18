@@ -5899,14 +5899,13 @@
     wrap.style.cssText = 'display:none;margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--nm-bg,#eff6ff);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)';
     wrap.innerHTML = `
       <div style="display:block;font-size:11px;line-height:1.4">
-        <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">¿A qué cuenta llegó el dinero? *</strong>
+        <strong style="color:var(--nm-tx,#1e3a6e);display:block;margin-bottom:5px">Cuenta de destino *</strong>
         <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:9px 11px;border:none;border-radius:10px;background:var(--nm-bg,#fff);color:var(--nm-tx,#1e3a6e);box-shadow:inset 3px 3px 7px var(--nm-lo,#bfdbfe),inset -3px -3px 7px var(--nm-hi,#fff)">
           <option value="">— Elige la cuenta —</option>
         </select>
         <div id="aDirectoChips"></div>
         <span style="font-size:10px;color:var(--nm-tx2,#475569);display:block;margin-top:5px">
-          El dinero queda en poder del dueño de esta cuenta (no de quien gestionó el cobro). Si no es tu
-          cuenta, queda pendiente de confirmar en Solicitudes hasta verificarlo.
+          Los fondos quedan bajo custodia del titular de esta cuenta. Si la cuenta no es suya, el pago queda pendiente de validación en Solicitudes.
         </span>
       </div>
     `;
@@ -10301,7 +10300,7 @@
   window.nxPegarBauche = async function () {
     try {
       if (!navigator.clipboard || !navigator.clipboard.read) {
-        notify('err', 'Pegar no disponible', 'Usa "Foto / archivo" para subir la imagen');
+        notify('err', 'Pegar no disponible', 'Use «Adjuntar archivo» para subir la imagen.');
         return;
       }
       const items = await navigator.clipboard.read();
@@ -10317,7 +10316,7 @@
       }
       notify('err', 'No hay imagen copiada', 'Copia el bauche primero y vuelve a tocar "Pegar"');
     } catch (e) {
-      notify('err', 'No se pudo pegar', 'Permite el acceso al portapapeles o usa "Foto / archivo"');
+      notify('err', 'No se pudo pegar', 'Permita el acceso al portapapeles o use «Adjuntar archivo».');
     }
   };
 
@@ -10375,10 +10374,10 @@
       <label style="display:block;font-size:11px;font-weight:700;color:var(--nm-tx2,#475569);margin-bottom:5px">Comprobante (opcional)</label>
       <div id="nxBaucheBox" style="border-radius:12px;padding:10px;background:var(--nm-bg,#f8fafc);box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)">
         <div style="display:flex;gap:8px">
-          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#eff6ff);color:var(--nm-accent,#0d9488);font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Foto / archivo</button>
+          <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#eff6ff);color:var(--nm-accent,#0d9488);font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Adjuntar archivo</button>
           <button type="button" class="btn bsm" style="flex:1;background:var(--nm-bg,#ecfdf5);color:var(--nm-accent,#0d9488);font-weight:800" onclick="window.nxPegarBauche()"><i class="ti ti-clipboard"></i> Pegar</button>
         </div>
-        <div style="font-size:9.5px;color:var(--nm-tx2,#475569);margin-top:6px;text-align:center">Copia el comprobante en WhatsApp y toca <strong>"Pegar"</strong></div>
+        <div style="font-size:9.5px;color:var(--nm-tx2,#475569);margin-top:6px;text-align:center">Puede pegar el comprobante copiado desde WhatsApp con <strong>«Pegar»</strong>.</div>
       </div>
       <div id="nxBauchePreview" style="display:none;align-items:center;gap:10px;border-radius:10px;padding:8px;background:var(--nm-bg,#fff);box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)"></div>
       <input type="file" id="nxBaucheInput" accept="image/*,.pdf" style="display:none">
