@@ -68,7 +68,7 @@ const leerClasico = (page) => page.evaluate(() => {
 });
 const leerGlass = (page) => page.evaluate(() => {
   const t = (id) => (document.getElementById(id)?.innerText || '').trim();
-  return { porCobrar: t('nxIGk2v'), conSaldo: t('nxIGk2c'), atrasadas: t('nxIGk4v'), cobradoCiclo: t('nxIGcy1'), activos: t('nxIGk3v'), inhab: t('nxIGk3s'), prima: (document.querySelector('#nxIGprima b')?.innerText || '').trim(), enProceso: t('nxIGs3'), efect: t('nxIGk2s'), cobradoHoy: t('nxIGk1v'), anterior: t('nxIGcy2'), vencidas: t('nxIGs1'), porVencer: t('nxIGs2'), p1: t('nxIGp1'), p2: t('nxIGp2'), p3: t('nxIGp3'), agenda: document.querySelectorAll('#nxIGagenda .nxIG-it').length, agentes: [...document.querySelectorAll('#nxIGagts .nxIG-ag')].map(e => e.innerText.replace(/\s+/g, ' ').trim()), sub: t('nxIGSub'), hola: t('nxIGHola') };
+  return { porCobrar: t('nxIGk2v'), conSaldo: t('nxIGk2c'), atrasadas: t('nxIGk4v'), cobradoCiclo: t('nxIGcy1'), activos: t('nxIGk3v'), inhab: t('nxIGk3s'), prima: (document.querySelector('#nxIGprima b')?.innerText || '').trim(), enProceso: t('nxIGs3'), efect: t('nxIGk2s'), cobradoHoy: t('nxIGk1v'), anterior: t('nxIGcy2'), vencidas: t('nxIGs1'), porVencer: t('nxIGs2'), p1: t('nxIGp1'), p2: t('nxIGp2'), p3: t('nxIGp3'), agenda: document.querySelectorAll('#nxIGagenda .nxIG-it, #nxIGagenda .nxIG-pt').length, agentes: [...document.querySelectorAll('#nxIGagts .nxIG-ag')].map(e => e.innerText.replace(/\s+/g, ' ').trim()), sub: t('nxIGSub'), hola: t('nxIGHola') };
 });
 
 (async () => {
@@ -165,7 +165,7 @@ const leerGlass = (page) => page.evaluate(() => {
     await page.evaluate(() => nxIGIrProspectos()); await sleep(900);
     ok(await page.evaluate(() => document.getElementById('v-crm')?.classList.contains('on') && nxCrm.qa.estado().tab === 'prospectos'), `${tag}: tarjeta de Prospectos abre CRM → Prospectos`);
     await page.evaluate(() => { nxCrm.tab('panel'); nav('dashboard', null); }); await sleep(900);
-    await page.evaluate(() => document.querySelector('#nxIGagenda .nxIG-it').click()); await sleep(1000);
+    await page.evaluate(() => document.querySelector('#nxIGagenda .nxIG-it, #nxIGagenda .nxIG-proxa').click()); await sleep(1000);
     ok(await page.evaluate(() => document.getElementById('v-cliente360')?.classList.contains('on')), `${tag}: tarea de la Agenda abre la ficha del cliente`);
     await page.evaluate(() => nav('dashboard', null)); await sleep(500);
     await page.evaluate(() => document.querySelector('.nxIG-search').click()); await sleep(400);

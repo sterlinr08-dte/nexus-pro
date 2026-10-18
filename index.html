@@ -5820,6 +5820,47 @@ html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-it time.bad,html.nx-ig.nx-pane.tema-cl
 html.nx-ig.nx-pane #nxIG .nxIG-leg i[style*="2563EB"]{background:#7C3AED!important}
 html.nx-ig.nx-pane #nxIG .nxIG-leg i[style*="93C5FD"]{box-shadow:inset 0 0 0 1.5px rgb(167 139 250/.7)!important}
 html.nx-ig.nx-pane #nxIG :focus-visible{outline-color:#A78BFA}
+/* ── 59.35 «Lo próximo» (parte 2): la tarea más urgente en grande + las 3 siguientes con círculo para marcarlas hechas.
+     Alturas fijas (148 px la tarjeta, 56 px cada fila) desde el esqueleto: nada salta al llegar las tareas. ── */
+html:not(.nx-pane) #nxIG .nxIG-pnOn,html.nx-pane #nxIG .nxIG-pnOff{display:none!important}
+html.nx-ig.nx-pane #nxIG .nxIG-agenda{gap:8px}
+html.nx-ig.nx-pane #nxIG .nxIG-agenda>.nxIG-it{min-height:56px;height:56px;padding:8px 12px}
+html.nx-ig.nx-pane #nxIG .nxIG-agenda>.nxIG-it .ic{width:32px;height:32px}
+html.nx-ig.nx-pane #nxIG .nxIG-prox{position:relative;height:148px;border-radius:20px;padding:14px 14px 14px 16px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;
+  background:linear-gradient(160deg,rgb(139 92 246/.30),rgb(37 99 235/.18))!important;border:1px solid rgb(167 139 250/.38);box-shadow:var(--pn-depth),0 18px 40px -26px rgb(109 40 217/.7);transition:opacity .3s var(--pn-ease),transform .3s var(--pn-ease)}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-prox{background:linear-gradient(160deg,rgb(237 233 254/.95),rgb(219 234 254/.85))!important;border-color:rgb(124 58 237/.22)}
+html.nx-ig.nx-pane #nxIG .nxIG-proxa{display:block;width:100%;text-align:left;min-width:0;color:var(--pn-ink)}
+html.nx-ig.nx-pane #nxIG .nxIG-prox small{display:block;font-size:12px;line-height:16px;height:16px;color:var(--pn-ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-prox small em{font-style:normal;color:var(--pn-ink)}
+html.nx-ig.nx-pane #nxIG .nxIG-prox.bad small em{color:#FCA5A5}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-prox.bad small em{color:#B91C1C}
+html.nx-ig.nx-pane #nxIG .nxIG-prox b{display:block;font-size:19px;line-height:24px;height:24px;margin-top:4px;font-weight:800;letter-spacing:-.02em;color:var(--pn-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-prox p{font-size:13px;line-height:18px;height:18px;margin-top:2px;color:var(--pn-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-proxb{display:flex;gap:8px;align-items:center;height:44px}
+html.nx-ig.nx-pane #nxIG .nxIG-proxb>span.nxIG-sk{width:84px;height:36px;border-radius:999px}
+html.nx-ig.nx-pane #nxIG .nxIG-btn{height:44px;min-height:44px;padding:0 16px!important;border-radius:999px!important;font-size:14px!important;font-weight:700!important;white-space:nowrap;color:var(--pn-ink)!important;
+  background:var(--pn-glass)!important;box-shadow:var(--pn-depth)!important;transition:transform .3s var(--pn-spring)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-btn:active{transform:scale(.95)}
+html.nx-ig.nx-pane #nxIG .nxIG-btn.pri{background:var(--pn-grad)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.25),0 8px 20px -10px rgb(109 40 217/.8)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-btn.wa{background:#16A34A!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.25),0 8px 20px -10px rgb(22 163 74/.7)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-btn.chk{width:44px;padding:0!important;margin-left:auto;display:grid;place-items:center;color:var(--pn-ink2)!important}
+html.nx-ig.nx-pane #nxIG .nxIG-btn.chk svg{width:18px;height:18px;stroke-width:2.4}
+html.nx-ig.nx-pane #nxIG .nxIG-pt{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:6px;height:56px;padding:0 12px 0 4px;border-radius:16px;
+  background:var(--pn-glass)!important;border:1px solid var(--pn-line);box-shadow:var(--pn-depth);transition:opacity .3s var(--pn-ease),transform .3s var(--pn-ease)}
+html.nx-ig.nx-pane #nxIG .nxIG-ck{width:44px;height:44px;display:grid;place-items:center;border-radius:50%!important}
+html.nx-ig.nx-pane #nxIG .nxIG-ck svg{width:22px;height:22px;padding:3px;border-radius:50%;stroke:transparent;stroke-width:2.6;box-shadow:inset 0 0 0 1.8px var(--pn-ink3);transition:background .3s var(--pn-spring),box-shadow .2s,stroke .2s}
+@media (hover:hover){html.nx-ig.nx-pane #nxIG .nxIG-ck:hover svg{stroke:var(--pn-ink3)}}
+html.nx-ig.nx-pane #nxIG .hecha .nxIG-ck svg,html.nx-ig.nx-pane #nxIG .hecha .nxIG-btn.chk{background:#16A34A!important;stroke:#fff;box-shadow:none!important;color:#fff!important}
+html.nx-ig.nx-pane #nxIG .nxIG-pt.hecha,html.nx-ig.nx-pane #nxIG .nxIG-prox.hecha{opacity:.45}
+html.nx-ig.nx-pane #nxIG .nxIG-pt.hecha b{text-decoration:line-through}
+html.nx-ig.nx-pane #nxIG .nxIG-ptb{min-width:0;text-align:left;display:flex;flex-direction:column;justify-content:center;align-self:stretch;height:54px;color:var(--pn-ink)}
+html.nx-ig.nx-pane #nxIG .nxIG-ptb b{display:block;font-size:13.5px;line-height:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-ptb small{display:block;font-size:12px;line-height:16px;color:var(--pn-ink2)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-ig.nx-pane #nxIG .nxIG-pt time{font-size:12px;line-height:16px;color:var(--pn-ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
+html.nx-ig.nx-pane:not(.tema-claro) #nxIG .nxIG-pt time.bad{color:#FECACA}
+html.nx-ig.nx-pane.tema-claro #nxIG .nxIG-pt time.bad{color:#B91C1C}
+html.nx-ig.nx-pane #nxIG .nxIG-agenda .nxIG-msg{min-height:148px}
+@media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-pt,html.nx-ig.nx-pane #nxIG .nxIG-prox,html.nx-ig.nx-pane #nxIG .nxIG-ck svg{transition:none!important}}
 /* ── celular ── */
 @media (max-width:768px){
   html.nx-ig.nx-pane #nxIG .nxIG-glass{border-radius:24px!important}
@@ -6377,8 +6418,9 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
                   <div class="nxIG-days" id="nxIGdays"></div>
                   <div class="nxIG-leg"><span><i style="background:#2563EB"></i>Hoy</span><span><i style="background:#16A34A"></i>Con cobros</span><span><i style="background:transparent;box-shadow:inset 0 0 0 1px #93C5FD"></i>Corte (20)</span></div>
                 </div>
-                <div class="nxIG-sec"><span>Agenda</span><button type="button" onclick="nxIGIrAgenda()">ver todo</button></div>
+                <div class="nxIG-sec"><span class="nxIG-pnOff">Agenda</span><span class="nxIG-pnOn">Lo próximo</span><button type="button" onclick="nxIGIrAgenda()">ver todo</button></div>
                 <div class="nxIG-agenda" id="nxIGagenda">
+                  <div class="nxIG-prox nxIG-pnOn"><small class="nxIG-sk">Cargando lo próximo</small><b class="nxIG-sk">Cliente</b><p>&nbsp;</p><div class="nxIG-proxb"><span class="nxIG-sk">Cobrar</span><span class="nxIG-sk">WhatsApp</span></div></div>
                   <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
                   <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
                   <div class="nxIG-it"><div class="ic nxIG-sk"></div><div><small class="nxIG-sk">Tarea</small><b class="nxIG-sk">Cargando</b><p>&nbsp;</p></div><time>&nbsp;</time></div>
@@ -9819,7 +9861,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.34';
+const APP_VERSION='59.35';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12803,6 +12845,7 @@ function nxIGPintarCrm(){
     else{
       const hoy=hoyRD(),ico={renovacion:['b','<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'],cobro:['g','<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/>'],documento:['a','<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>']};
       const orden=t.slice().sort((a,b)=>{if(!a.vence_en&&!b.vence_en)return 0;if(!a.vence_en)return 1;if(!b.vence_en)return -1;return String(a.vence_en).localeCompare(String(b.vence_en));});
+      if(nxIGPane()){nxIGPintarProximo(orden,hoy,ico);nxIGSub();return;}
       nxIGSet('nxIGagenda',orden.slice(0,3).map(x=>{
         const c=(ST.clientes||[]).find(k=>String(k.id)===String(x.cliente_id));
         const [cl,svg]=ico[x.tipo]||['b','<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'];
@@ -12814,6 +12857,65 @@ function nxIGPintarCrm(){
     }
   }
   nxIGSub();
+}
+// ── 59.35 Inicio en vidrio, parte 2: «Lo próximo» (dueño: «Publícalo y continúa», 18-oct-2026) ──
+// Con la capa #nxInicioPane la Agenda pasa a ser «Lo próximo»: la tarea más urgente del CRM en grande con «Cobrar»
+// (abrirAbono, el mismo cobro de siempre) y «WhatsApp» (nxAbrirWhatsAppDeCliente, el mismo Buzón), y debajo las 3
+// siguientes con un círculo para marcarlas hechas. Marcar hecha usa la MISMA RPC que el CRM (crm_completar_tarea:
+// idempotente, deja la nota en el historial) y se puede deshacer 8 s, igual que en el CRM. Mismas tareas y mismo orden
+// (vencidas primero) que la Agenda de antes: no hay consulta nueva. Sin la capa, la Agenda se ve como siempre.
+function nxIGPane(){return document.documentElement.classList.contains('nx-pane');}
+function nxIGCuando(x,hoy){
+  const iso=x.vence_en?fechaRD(x.vence_en):'';
+  if(!iso)return {t:'sin fecha',bad:false};
+  if(iso<hoy)return {t:'vencida desde el '+nxIGFechaCorta(iso),bad:true};
+  if(iso===hoy){let h='';try{if(/T/.test(x.vence_en))h=' · '+new Date(x.vence_en).toLocaleTimeString('es-DO',{timeZone:'America/Santo_Domingo',hour:'numeric',minute:'2-digit'});}catch(e){}return {t:'hoy'+h,bad:false};}
+  if(iso===nxIGSumaDias(hoy,1))return {t:'mañana',bad:false};
+  return {t:nxIGFechaCorta(iso),bad:false};
+}
+function nxIGPintarProximo(orden,hoy,ico){
+  const cli=x=>(ST.clientes||[]).find(k=>String(k.id)===String(x.cliente_id));
+  const sid=v=>String(v||'').replace(/[^\w-]/g,'');
+  const [p,...resto]=orden,c=cli(p),cid=c?sid(c.id):'',w=nxIGCuando(p,hoy),tipo=NX_IG_TIPO[p.tipo]||'Seguimiento';
+  let h=`<div class="nxIG-prox${w.bad?' bad':''}"><button type="button" class="nxIG-proxa" onclick="nxIGAbrirTarea('${cid}')" aria-label="${escHtml(tipo+': '+(p.titulo||'')+(c?' — '+c.nom:'')+', '+w.t)}"><small>${escHtml(tipo)} · <em>${escHtml(w.t)}</em></small><b>${escHtml(c?c.nom:(p.titulo||'Tarea'))}</b><p>${escHtml(c?(p.titulo||''):'Sin cliente')}</p></button>`
+    +`<div class="nxIG-proxb">${c?`<button type="button" class="nxIG-btn pri" onclick="nxIGCobrar('${cid}')">Cobrar</button><button type="button" class="nxIG-btn wa" onclick="nxIGWhatsApp('${cid}')">WhatsApp</button>`:`<button type="button" class="nxIG-btn" onclick="nxIGIrAgenda()">Ver en el CRM</button>`}<button type="button" class="nxIG-btn chk" onclick="nxIGHecha('${sid(p.id)}',this)" aria-label="Marcar hecha: ${escHtml(p.titulo||'tarea')}"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
+  h+=resto.slice(0,3).map(x=>{
+    const k=cli(x),wk=nxIGCuando(x,hoy),kid=k?sid(k.id):'';
+    return `<div class="nxIG-pt"><button type="button" class="nxIG-ck" onclick="nxIGHecha('${sid(x.id)}',this)" aria-label="Marcar hecha: ${escHtml(x.titulo||'tarea')}"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><button type="button" class="nxIG-ptb" onclick="nxIGAbrirTarea('${kid}')"><b>${escHtml(x.titulo||'Tarea')}</b><small>${escHtml(k?k.nom:'Sin cliente')}</small></button><time class="${wk.bad?'bad':''}">${escHtml(wk.bad?nxIGFechaCorta(fechaRD(x.vence_en)):wk.t)}</time></div>`;
+  }).join('');
+  nxIGSet('nxIGagenda',h);
+}
+function nxIGCobrar(cid){if(cid&&typeof window.abrirAbono==='function')window.abrirAbono(cid);else if(cid)nxIGAbrirTarea(cid);}
+function nxIGWhatsApp(cid){if(cid&&typeof window.nxAbrirWhatsAppDeCliente==='function')window.nxAbrirWhatsAppDeCliente(cid);else if(cid)nxIGAbrirTarea(cid);}
+const _nxIGHechaOcup=new Set();
+async function nxIGHecha(id,btn){
+  if(!id||_nxIGHechaOcup.has(id))return;
+  const lista=(_nxIG.crm&&_nxIG.crm.tareas)||[],t=lista.find(x=>String(x.id)===id),fila=btn&&btn.closest('.nxIG-pt,.nxIG-prox');
+  _nxIGHechaOcup.add(id);if(fila)fila.classList.add('hecha');
+  try{
+    await API.post('rpc/crm_completar_tarea',{p_tarea_id:id});
+    try{logAudit('CRM_TAREA_COMPLETADA',t?t.titulo:id,'CRM',t?t.cliente_id:null);}catch(e){}
+    if(_nxIG.crm&&_nxIG.crm.tareas)_nxIG.crm.tareas=_nxIG.crm.tareas.filter(x=>String(x.id)!==id);
+    setTimeout(()=>{try{nxIGPintarCrm();}catch(e){}},360);
+    try{if(typeof window.nxCrmActualizarAgenda==='function')window.nxCrmActualizarAgenda();}catch(e){}
+    nxIGToastDeshacer(t?t.titulo:'',async()=>{
+      try{await API.patch('crm_tareas','id=eq.'+encodeURIComponent(id),{estado:'pendiente',completada_en:null});try{logAudit('CRM_TAREA_REABIERTA',t?t.titulo:id,'CRM',t?t.cliente_id:null);}catch(e){}toast('ok','Tarea reabierta',t?t.titulo:'');}
+      catch(e){toast('err','No se pudo reabrir la tarea',String(e&&e.message||e).slice(0,120));}
+      nxIGCargarCrm(true);try{if(typeof window.nxCrmActualizarAgenda==='function')window.nxCrmActualizarAgenda();}catch(e){}
+    });
+  }catch(e){
+    if(fila)fila.classList.remove('hecha');
+    toast('err','No se pudo completar la tarea',String(e&&e.message||e).slice(0,120));
+  }finally{_nxIGHechaOcup.delete(id);}
+}
+// Mismo aviso con «Deshacer» que usa el CRM (parches-crm.js), 8 s.
+function nxIGToastDeshacer(msg,fn){
+  const host=document.getElementById('toastS');if(!host){toast('ok','Tarea completada',msg);return;}
+  const el=document.createElement('div');el.className='toast ok';
+  el.innerHTML='<div class="ti-ic"><i class="ti ti-circle-check"></i></div><div class="ti-b"><div class="ti-t">Tarea completada</div>'+(msg?'<div class="ti-m">'+escHtml(msg)+'</div>':'')+'</div><button type="button" class="nxCrmLink2" style="min-height:44px;padding:0 8px">Deshacer</button><button type="button" class="ti-x" aria-label="Cerrar aviso"><i class="ti ti-x"></i></button>';
+  el.querySelector('.nxCrmLink2').onclick=()=>{el.remove();try{fn();}catch(e){}};
+  el.querySelector('.ti-x').onclick=()=>el.remove();
+  host.appendChild(el);setTimeout(()=>el.remove(),8000);
 }
 function nxIGAbrirTarea(cid){if(cid&&typeof window.nxCrmAbrirCliente==='function')window.nxCrmAbrirCliente(cid);else nav('crm',null);}
 function nxIGIrProspectos(){nav('crm',null);try{if(window.nxCrm)window.nxCrm.tab('prospectos');}catch(e){}}
