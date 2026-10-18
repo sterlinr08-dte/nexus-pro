@@ -91,3 +91,9 @@ SOFTWARE.
 - Origen: github.com/jrusso1020/video-understand-skills @ 90b351b (James Russo). Instalada el 17-oct-2026 tras revisión (bitácora `docs/bitacora/2026-10-17-0737-claude.md`).
 - Carpeta: video-understand (SKILL.md con nota de instalación, references y scripts de Python sin cambios).
 - Licencia: MIT declarada en README.md y package.json (el repositorio no trae archivo LICENSE; copia en `video-understand/LICENSE`).
+
+## mattpocock/skills (grill-me, grilling, wait-what, handoff) y abogado-del-diablo — 18-oct-2026
+- Origen: github.com/mattpocock/skills @ 49dd158 (MIT, Copyright 2026 Matt Pocock) y github.com/Hainrixz/abogado-del-diablo @ 7ba9a5f (MIT, Copyright 2026 Hainrixz / tododeia).
+- Carpetas: grill-me, grilling, wait-what (adaptada a español), handoff (adaptada: guarda en la bitácora), abogado-del-diablo.
+- El texto completo de cada licencia MIT va en el archivo `LICENSE` dentro de cada carpeta.
+- Solo instrucciones (.md); sin programas, red ni telemetría (revisión del 18-oct-2026).
