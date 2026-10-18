@@ -6363,6 +6363,50 @@ html.nx-fcli #mCli#mCli#mCli#mCli .dep-c button{width:44px!important;min-width:4
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
+<!-- 59.45 (dueño 18-oct-2026, captura del iPhone): Facturas más compacta. Capa aislada y reversible; solo CSS.
+     Se apaga para todos con NX_FACT_PANE=false, o en un equipo con localStorage.nx_fact_pane_off='1'. -->
+<script id="nxFactPaneOn">var NX_FACT_PANE=true;try{if(NX_FACT_PANE&&localStorage.getItem('nx_fact_pane_off')!=='1')document.documentElement.classList.add('nx-fact');}catch(e){if(NX_FACT_PANE)document.documentElement.classList.add('nx-fact');}</script>
+<style id="nxFactPane">
+/* el marco de la lupa vieja queda vacío (la barra adentro está oculta) y dejaba un hueco de 52 px bajo el título */
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > div:has(> .nxbp-marco > #factQBar[style*="none"]){display:none!important}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > .ch{margin-bottom:12px!important;align-items:center!important}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > .ch .ct{text-transform:none!important;font-size:20px!important;letter-spacing:-.01em!important}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > .ch .ct-s{text-transform:none!important;font-size:13px!important;letter-spacing:0!important;margin-top:2px}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > .ch .btn{min-height:44px!important;padding:0 16px!important}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > details .btn{min-height:44px!important;padding:0 14px!important}
+html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > details > summary{min-height:44px;display:flex;align-items:center;gap:6px;font-size:13px!important}
+@media(max-width:720px){
+  /* filtros: sin la caja de vidrio alrededor, más juntos */
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact .nfcRow{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:8px!important;margin-bottom:8px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  /* resumen: las tres cifras en una sola fila */
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-bottom:12px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi{grid-column:auto!important;padding:10px 12px!important;min-height:0!important;gap:0!important;display:block!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi.sf-kpi-wide{grid-column:1/-1!important;display:flex!important;align-items:center;justify-content:space-between;min-height:44px!important;padding:8px 14px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi.sf-kpi-wide > div:last-child{display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi .ic{display:none!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi .lb{font-size:11px!important;line-height:1.25!important;white-space:normal!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact #factResumen .sf-kpi .v{font-size:17px!important;line-height:1.2!important;margin-top:2px;white-space:nowrap}
+  /* tarjeta de cada factura: rejilla fija — cliente y estado arriba, monto, datos, y las tres acciones en UNA fila */
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;row-gap:2px;align-items:center;padding:12px 14px!important;margin-bottom:10px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact tbody tr > td{padding:0!important;min-width:0;width:auto!important;border:0!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Cliente"]{grid-column:1/3;grid-row:1}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Estado"]{grid-column:3;grid-row:1;align-self:start;justify-self:end}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Balance"]{grid-column:1;grid-row:2;text-align:left!important;margin-top:4px;display:flex!important;align-items:center;min-height:44px}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Total"]{grid-column:2/4;grid-row:2;justify-self:end;font-size:13px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="ARS"]{grid-column:1;grid-row:3}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Fecha"]{grid-column:2/4;grid-row:3;justify-self:end;font-size:13px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="MesAnt"]{grid-column:1/-1;grid-row:4}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="MesAnt"]:empty{display:none!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="MesAnt"] .deuda-prev{display:inline-flex!important;align-items:center;gap:6px;min-height:44px;padding:0 14px!important;margin-top:6px;font-size:13px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Cobro"]{grid-column:1/3;grid-row:5;display:block!important;margin-top:10px}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Acciones"]{grid-column:3;grid-row:5;margin-top:10px}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Cobro"] .btn{width:100%!important;min-height:44px!important;justify-content:center!important;display:inline-flex!important;align-items:center;gap:8px;margin:0!important;font-size:15px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Acciones"] > div{flex-wrap:nowrap!important;gap:8px!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb="Acciones"] .btn{width:44px!important;height:44px!important;min-width:44px!important;padding:0!important;margin:0!important;display:inline-grid!important;place-items:center;border-radius:50%!important}
+  html.nx-fact #panelFact#panelFact#panelFact#panelFact table.sf-fact td[data-lb]::before{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){html.nx-fact #panelFact#panelFact#panelFact#panelFact *{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
