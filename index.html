@@ -6407,6 +6407,58 @@ html.nx-fact #panelFact#panelFact#panelFact#panelFact > .nc > details > summary{
 }
 @media (prefers-reduced-motion:reduce){html.nx-fact #panelFact#panelFact#panelFact#panelFact *{transition:none!important}}
 </style>
+<!-- 59.46 (dueño 18-oct-2026, captura del iPhone): Ficha del cliente (resumen, #csPanel) más ordenada. Capa aislada; solo CSS.
+     Se apaga para todos con NX_CS_PANE=false, o en un equipo con localStorage.nx_cs_pane_off='1'. -->
+<script id="nxCsPaneOn">var NX_CS_PANE=true;try{if(NX_CS_PANE&&localStorage.getItem('nx_cs_pane_off')!=='1')document.documentElement.classList.add('nx-csp');}catch(e){if(NX_CS_PANE)document.documentElement.classList.add('nx-csp');}</script>
+<style id="nxCsPane">
+/* cabecera: una sola línea con el nombre y la X de 44 px (la etiqueta «Resumen del cliente» repetía el título) */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .cs-h{padding:10px 12px 10px 18px!important;padding-top:max(10px,env(safe-area-inset-top,0px))!important;min-height:64px;align-items:center!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .cs-h > div > div:first-child{display:none!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #csNom{font-size:18px!important;font-weight:800!important;margin:0!important;text-transform:none!important;letter-spacing:-.01em!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .cs-h > button{width:44px!important;height:44px!important;border-radius:50%!important;flex:none}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .cs-body{padding:14px 16px!important;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))!important}
+/* sin MAYÚSCULAS forzadas en los rótulos (los datos se ven como están guardados) */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .cs-body :is(.sf-hero-meta,.sf-hpill,.sf-hstat .lb,.sf-hstat .sub,.sf-tbtn,.sf-tab,h3,.sf-sub,.sf-panel b,.sf-hero-btn){text-transform:none!important;letter-spacing:0!important}
+/* tarjeta principal */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero{padding:16px!important;border-radius:22px!important;margin-bottom:12px!important}
+html.nx-csp.tema-glass-oscuro #csPanel#csPanel#csPanel#csPanel .sf-hero{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 55%,#312E81 100%)!important}
+html.nx-csp.tema-glass-oscuro #csPanel#csPanel#csPanel#csPanel .sf-hero::before,html.nx-csp.tema-glass-oscuro #csPanel#csPanel#csPanel#csPanel .sf-hero::after{display:none!important}
+html.nx-csp.tema-glass-oscuro #csPanel#csPanel#csPanel#csPanel .sf-hero-btn.primary{color:#1D4ED8!important;-webkit-text-fill-color:#1D4ED8}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-top{gap:12px!important;flex-wrap:wrap}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-av{width:52px!important;height:52px!important;font-size:18px!important;flex:none}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-id{min-width:0;flex:1 1 200px}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-meta{font-size:13px!important;gap:4px 6px!important;flex-wrap:wrap}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-acts{display:flex!important;gap:8px!important;align-items:center;width:100%;flex-wrap:nowrap!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-btn{min-height:44px!important;height:44px!important;padding:0 18px!important;font-size:14px!important;border-radius:999px!important;flex:1 1 0;justify-content:center}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-star{width:44px!important;height:44px!important;min-width:44px;display:inline-grid!important;place-items:center;border-radius:50%!important;font-size:20px!important;background:rgb(255 255 255/.16);flex:none}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-pills{gap:6px!important;margin-top:12px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hpill{font-size:12px!important;padding:5px 10px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-top:12px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hstat{padding:10px 11px!important;border-radius:14px!important;min-width:0}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hstat .lb{font-size:11.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hstat .v{font-size:15px!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.2}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-id h2{color:#fff!important;font-size:19px!important;line-height:1.2!important;margin:0 0 4px!important;overflow-wrap:anywhere}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hstat .sub{font-size:11px!important}
+/* accesos: tres botones iguales en una fila */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-toolbar{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;margin-bottom:12px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tbtn{min-height:48px!important;height:auto!important;padding:6px 8px!important;font-size:13px!important;line-height:1.15;justify-content:center;text-align:center;border-radius:14px!important;white-space:normal}
+/* pestañas como control segmentado */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px!important;padding:4px;border:0!important;border-radius:999px;background:rgb(120 120 140/.12);margin-bottom:12px!important;overflow:visible!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab{min-height:44px;margin:0!important;padding:0 6px!important;justify-content:center;border:0!important;border-radius:999px!important;font-size:13.5px!important;box-shadow:none!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab{background-image:none!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab.on,html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab.active,html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab[aria-selected="true"]{background-image:none!important;background:var(--sf-card,#fff)!important;color:var(--sf-tx,#0f172a)!important;box-shadow:0 1px 3px rgb(15 23 42/.12)!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab::after,html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab::before{display:none!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-tab > nx-luz{display:none!important}
+@media(min-width:721px){html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-acts{width:auto}html.nx-csp #csPanel#csPanel#csPanel#csPanel .sf-hero-btn{flex:none!important;min-width:140px}}
+/* información: filas «rótulo — dato», legibles */
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel{padding:14px 16px!important;border-radius:18px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel h3{font-size:16px!important;margin:0 0 6px!important}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[style*="line-height"] > div{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px;padding:6px 0;border-bottom:1px solid var(--sf-line,rgb(15 23 42/.08));font-size:14px;text-align:right}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[style*="line-height"] > div:last-child{border-bottom:0}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[style*="line-height"] > div > b{font-weight:600!important;opacity:.75;text-align:left;flex:none}
+html.nx-csp #csPanel#csPanel#csPanel#csPanel #sfTab-resumen .sf-panel > div[style*="line-height"]{line-height:1.35!important;font-size:14px!important}
+@media (prefers-reduced-motion:reduce){html.nx-csp #csPanel#csPanel#csPanel#csPanel *{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10390,7 +10442,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.44';
+const APP_VERSION='59.46';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
