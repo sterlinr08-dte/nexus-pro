@@ -5872,6 +5872,74 @@ html.nx-ig.nx-pane #nxIG .nxIG-agenda .nxIG-msg{min-height:148px}
   /* «Ciclo actual»: una cifra debajo de la otra desde el primer cuadro (en dos columnas el texto largo pasaba a 2 líneas y saltaba) */
   html.nx-ig.nx-pane #nxIG .nxIG-split{grid-template-columns:minmax(0,1fr);gap:8px}
 }
+/* ── 59.36 parte 3: buscador global en vidrio y ficha rápida del cliente (viven fuera de #nxIG, colgadas de html.nx-pane) ── */
+html.nx-pane{--pf-ink:#F4F4FA;--pf-ink2:#C9CBDA;--pf-sheet:rgb(26 25 40/.96);--pf-fill:rgb(255 255 255/.07);--pf-line:rgb(255 255 255/.10);--pf-link:#C4B5FD;
+  --pf-grad:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 48%,#2563EB 100%);--pf-spring:cubic-bezier(.34,1.45,.55,1);--pf-ease:cubic-bezier(.22,.8,.24,1)}
+html.nx-pane.tema-claro{--pf-ink:#14121F;--pf-ink2:#4B4B63;--pf-sheet:rgb(250 250 255/.94);--pf-fill:rgb(20 18 50/.05);--pf-line:rgb(20 18 50/.08);--pf-link:#6D28D9}
+html.nx-pane .gs-overlay{background:rgb(10 10 20/.34)!important;-webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important;padding:max(72px,10vh) 16px 16px!important}
+html.nx-pane .gs-box{max-width:600px!important;border-radius:24px!important;background:var(--pf-sheet)!important;border:1px solid var(--pf-line)!important;color:var(--pf-ink)!important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255/.12),0 40px 80px -30px rgb(0 0 0/.6)!important;-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6)}
+html.nx-pane .gs-overlay.show .gs-box{animation:nxPfIn .38s var(--pf-spring)}
+@keyframes nxPfIn{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
+html.nx-pane .gs-box .gs-input:not(#tgo){height:58px;padding:0 20px 0 50px!important;font-size:17px!important;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B8BA3' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 18px 50%/20px!important;
+  color:var(--pf-ink)!important;-webkit-text-fill-color:var(--pf-ink);border:0!important;border-bottom:1px solid var(--pf-line)!important;text-transform:none!important}
+html.nx-pane .gs-box .gs-input::placeholder{color:var(--pf-ink2)!important;-webkit-text-fill-color:var(--pf-ink2);opacity:1}
+html.nx-pane .gs-results{padding:6px!important;max-height:min(60vh,520px);overflow-y:auto;overscroll-behavior:contain}
+html.nx-pane .gs-results>div:not(.gs-item){color:var(--pf-ink2)!important;font-size:13px!important}
+html.nx-pane .gs-item{min-height:56px;padding:8px 12px!important;border:0!important;border-radius:14px;gap:12px!important;transition:background .15s}
+html.nx-pane .gs-item:hover,html.nx-pane .gs-item:focus-visible,html.nx-pane .gs-item.selected{background:var(--pf-fill)!important;outline:none}
+html.nx-pane .gs-item:focus-visible{box-shadow:inset 0 0 0 2px #A78BFA}
+html.nx-pane .gs-item-icon{width:38px!important;height:38px!important;border-radius:12px!important;background:var(--pf-fill)!important;font-size:17px!important}
+html.nx-pane .gs-ini{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--pf-grad);color:#fff;font-family:inherit;font-size:13px;font-weight:700;line-height:1;letter-spacing:0}
+html.nx-pane .gs-item-icon:has(.gs-ini){background:none!important}
+html.nx-pane .gs-item-ttl{color:var(--pf-ink)!important;font-size:15px!important;font-weight:700!important;text-transform:none!important}
+html.nx-pane .gs-item-sub{color:var(--pf-ink2)!important;font-size:12.5px!important;text-transform:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-pane .gs-item-type{background:var(--pf-fill)!important;color:var(--pf-ink2)!important;text-transform:none!important;font-size:11px!important;letter-spacing:0!important}
+/* ficha rápida */
+.nxPnScrim{position:fixed;inset:0;z-index:640;background:rgb(10 10 20/.30);opacity:0;pointer-events:none;transition:opacity .3s var(--pf-ease)}
+.nxPnScrim.on{opacity:1;pointer-events:auto}
+.nxPnFicha{position:fixed;z-index:641;top:12px;right:12px;bottom:12px;width:min(420px,calc(100vw - 24px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));border-radius:28px;background:var(--pf-sheet);color:var(--pf-ink);border:1px solid var(--pf-line);
+  box-shadow:inset 0 1px 0 rgb(255 255 255/.14),0 40px 80px -30px rgb(0 0 0/.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);
+  transform:translateX(calc(100% + 40px));visibility:hidden;transition:transform .5s var(--pf-spring),visibility 0s .5s;font-variant-numeric:tabular-nums}
+.nxPnFicha.on{transform:none;visibility:visible;transition:transform .5s var(--pf-spring),visibility 0s}
+.nxPnFicha *{box-sizing:border-box}
+.nxPnFicha,.nxPnFicha *{text-transform:none!important;letter-spacing:normal}
+.nxPnF-grab{display:none}
+.nxPnF-x{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:50%;border:0;background:var(--pf-fill);color:var(--pf-ink);display:grid;place-items:center;cursor:pointer}
+.nxPnF-x svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;fill:none}
+.nxPnF-head{display:flex;gap:14px;align-items:center;padding-right:48px}
+.nxPnF-av{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--pf-grad);color:#fff;font-weight:800;font-size:18px;box-shadow:inset 0 1px 0 rgb(255 255 255/.3)}
+.nxPnF-head h3{margin:0;font-size:22px;line-height:1.15;font-weight:800;letter-spacing:-.02em;overflow-wrap:anywhere}
+.nxPnF-head p{margin:3px 0 6px;font-size:13px;color:var(--pf-ink2)}
+.nxPnF-est{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px}
+.nxPnF-est.ok{background:rgb(34 197 94/.18);color:#86EFAC}.nxPnF-est.warn{background:rgb(245 158 11/.18);color:#FCD34D}.nxPnF-est.bad{background:rgb(239 68 68/.2);color:#FECACA}
+html.tema-claro .nxPnF-est.ok{color:#15803D}html.tema-claro .nxPnF-est.warn{color:#B45309}html.tema-claro .nxPnF-est.bad{color:#B91C1C}
+.nxPnF-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.nxPnF-stats>div{background:var(--pf-fill);border-radius:16px;padding:10px 12px;min-width:0}
+.nxPnF-stats small{display:block;font-size:12px;color:var(--pf-ink2);font-weight:600}
+.nxPnF-stats b{display:block;font-size:16px;font-weight:800;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxPnF-stats b.txt{font-size:13px;line-height:20px}
+.nxPnF-acts,.nxPnF-links{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.nxPnF-btn{flex:1 1 0;min-width:120px;height:46px;border-radius:999px;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:700;line-height:1;color:var(--pf-ink);background:var(--pf-fill);transition:transform .3s var(--pf-spring)}
+.nxPnF-btn:active{transform:scale(.96)}
+.nxPnF-btn.pri{background:var(--pf-grad);color:#fff;box-shadow:inset 0 1px 0 rgb(255 255 255/.25),0 10px 24px -12px rgb(109 40 217/.8)}
+.nxPnF-btn.wa{background:#16A34A;color:#fff}
+.nxPnF-links .nxPnF-btn{font-size:14px;color:var(--pf-link)}
+.nxPnF-sec{margin:20px 2px 8px;font-size:13px;font-weight:700;color:var(--pf-ink2)}
+.nxPnF-box{background:var(--pf-fill);border-radius:18px;padding:2px 14px}
+.nxPnF-row{display:flex;justify-content:space-between;gap:12px;min-height:44px;align-items:center;font-size:14px}
+.nxPnF-row+.nxPnF-row{border-top:1px solid var(--pf-line)}
+.nxPnF-row span{color:var(--pf-ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxPnF-row b{font-weight:600;text-align:right;white-space:nowrap}
+.nxPnF-row b.bad{color:#FCA5A5}html.tema-claro .nxPnF-row b.bad{color:#B91C1C}
+.nxPnFicha :focus-visible{outline:2px solid #A78BFA;outline-offset:2px}
+@media (max-width:768px){
+  .nxPnFicha{top:max(60px,14vh);left:0;right:0;bottom:0;width:100%;border-radius:28px 28px 0 0;padding-top:28px;transform:translateY(105%)}
+  .nxPnF-grab{display:block;position:absolute;top:8px;left:50%;width:40px;height:5px;margin-left:-20px;border-radius:999px;background:var(--pf-line)}
+}
+@media (prefers-reduced-motion:reduce){.nxPnFicha,.nxPnFicha.on{transition:none}html.nx-pane .gs-overlay.show .gs-box{animation:none}}
+@media (prefers-reduced-transparency:reduce){html.nx-pane{--pf-sheet:#1A1828}html.nx-pane.tema-claro{--pf-sheet:#FFFFFF}}
 /* «reducir transparencia» y «reducir movimiento» del iPhone */
 @media (prefers-reduced-transparency:reduce){
   html.nx-ig.nx-pane #nxIG{--pn-glass:#211F30;--pn-glass2:#1A1828}
@@ -6019,7 +6087,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
 <!-- Global Search Modal -->
 <div class="gs-overlay" id="gsOverlay" onclick="if(event.target===this)cerrarGlobalSearch()">
   <div class="gs-box">
-    <input type="text" class="gs-input" id="gsInput" placeholder="Buscar clientes, facturas, pólizas, empresas..." onkeyup="globalSearch(this.value)"/>
+    <input type="text" class="gs-input" id="gsInput" placeholder="Buscar clientes, facturas, pólizas, empresas..." onkeyup="globalSearch(this.value)" onkeydown="nxGsFlechas(event)"/>
     <div class="gs-results" id="gsResults">
       <div style="padding:30px;text-align:center;color:#475569;font-size:11px">
         Empieza a escribir para buscar...<br>
@@ -9861,7 +9929,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.35';
+const APP_VERSION='59.36';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -10317,7 +10385,7 @@ function globalSearch(q){
   const found=[];
   // Buscar clientes
   ST.clientes.filter(c=>(c.nom||'').toLowerCase().includes(ql)||(c.cedula||'').includes(q)||(c.numero_poliza||'').includes(q.toUpperCase())||(c.referencia||'').toLowerCase().includes(ql)||(c.tel||'').includes(q)||(c.wa||'').includes(q)||(c.referencia_wa||'').includes(q)).slice(0,5).forEach(c=>{
-    found.push({tipo:'Cliente',icon:'👤',ttl:c.nom+(c.referencia?` (${c.referencia})`:''),sub:`${c.numero_poliza||'Sin póliza'} · ${c.plan} · Cédula: ${c.cedula||'—'}`,onclick:`verCliente('${c.id}');cerrarGlobalSearch();`});
+    found.push({tipo:'Cliente',icon:(typeof nxIGPane==='function'&&nxIGPane())?`<span class="gs-ini">${escHtml(inits(c.nom))}</span>`:'👤',ttl:c.nom+(c.referencia?` (${c.referencia})`:''),sub:`${c.numero_poliza||'Sin póliza'} · ${c.plan} · Cédula: ${c.cedula||'—'}`,onclick:`verCliente('${c.id}');cerrarGlobalSearch();`});
   });
   // Buscar facturas
   ST.facturas.filter(f=>(f.cliente_nom||'').toLowerCase().includes(ql)||(f.ncf||'').includes(q.toUpperCase())).slice(0,5).forEach(f=>{
@@ -12119,7 +12187,7 @@ function verificarAlertas(){
 }
 
 // ── BADGES ───────────────────────────────────────────────────────────────────
-function planB(p){const m={Básico:'bC1',Superior:'bC2','Esencial Plus':'bCg'};return`<span class="badge ${m[p]||'bCg'}">${p==='Esencial Plus'?'ESC+':p.toUpperCase()}</span>`;}
+function planB(p){const m={Básico:'bC1',Superior:'bC2','Esencial Plus':'bCg'};return`<span class="badge ${m[p]||'bCg'}">${p==='Esencial Plus'?'ESC+':String(p||'—').toUpperCase()}</span>`;} // 59.36: sin plan ya no rompe la ficha
 function estB(c){const e=getEst(c),m={'Al día':'bC1','Parcial':'bC4','Pendiente':'bC3','Inhabilitado':'bCoff'};return`<span class="badge ${m[e]||'bCg'}">${e.toUpperCase()}</span>`;}
 
 // ── Logos de ARS (mapa fijo — el dueño manda los archivos, no se buscan/inventan) ──────────────
@@ -12877,14 +12945,65 @@ function nxIGPintarProximo(orden,hoy,ico){
   const cli=x=>(ST.clientes||[]).find(k=>String(k.id)===String(x.cliente_id));
   const sid=v=>String(v||'').replace(/[^\w-]/g,'');
   const [p,...resto]=orden,c=cli(p),cid=c?sid(c.id):'',w=nxIGCuando(p,hoy),tipo=NX_IG_TIPO[p.tipo]||'Seguimiento';
-  let h=`<div class="nxIG-prox${w.bad?' bad':''}"><button type="button" class="nxIG-proxa" onclick="nxIGAbrirTarea('${cid}')" aria-label="${escHtml(tipo+': '+(p.titulo||'')+(c?' — '+c.nom:'')+', '+w.t)}"><small>${escHtml(tipo)} · <em>${escHtml(w.t)}</em></small><b>${escHtml(c?c.nom:(p.titulo||'Tarea'))}</b><p>${escHtml(c?(p.titulo||''):'Sin cliente')}</p></button>`
+  let h=`<div class="nxIG-prox${w.bad?' bad':''}"><button type="button" class="nxIG-proxa" onclick="nxIGFicha('${cid}')" aria-label="${escHtml(tipo+': '+(p.titulo||'')+(c?' — '+c.nom:'')+', '+w.t)}"><small>${escHtml(tipo)} · <em>${escHtml(w.t)}</em></small><b>${escHtml(c?c.nom:(p.titulo||'Tarea'))}</b><p>${escHtml(c?(p.titulo||''):'Sin cliente')}</p></button>`
     +`<div class="nxIG-proxb">${c?`<button type="button" class="nxIG-btn pri" onclick="nxIGCobrar('${cid}')">Cobrar</button><button type="button" class="nxIG-btn wa" onclick="nxIGWhatsApp('${cid}')">WhatsApp</button>`:`<button type="button" class="nxIG-btn" onclick="nxIGIrAgenda()">Ver en el CRM</button>`}<button type="button" class="nxIG-btn chk" onclick="nxIGHecha('${sid(p.id)}',this)" aria-label="Marcar hecha: ${escHtml(p.titulo||'tarea')}"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
   h+=resto.slice(0,3).map(x=>{
     const k=cli(x),wk=nxIGCuando(x,hoy),kid=k?sid(k.id):'';
-    return `<div class="nxIG-pt"><button type="button" class="nxIG-ck" onclick="nxIGHecha('${sid(x.id)}',this)" aria-label="Marcar hecha: ${escHtml(x.titulo||'tarea')}"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><button type="button" class="nxIG-ptb" onclick="nxIGAbrirTarea('${kid}')"><b>${escHtml(x.titulo||'Tarea')}</b><small>${escHtml(k?k.nom:'Sin cliente')}</small></button><time class="${wk.bad?'bad':''}">${escHtml(wk.bad?nxIGFechaCorta(fechaRD(x.vence_en)):wk.t)}</time></div>`;
+    return `<div class="nxIG-pt"><button type="button" class="nxIG-ck" onclick="nxIGHecha('${sid(x.id)}',this)" aria-label="Marcar hecha: ${escHtml(x.titulo||'tarea')}"><svg class="nxIG-i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><button type="button" class="nxIG-ptb" onclick="nxIGFicha('${kid}')"><b>${escHtml(x.titulo||'Tarea')}</b><small>${escHtml(k?k.nom:'Sin cliente')}</small></button><time class="${wk.bad?'bad':''}">${escHtml(wk.bad?nxIGFechaCorta(fechaRD(x.vence_en)):wk.t)}</time></div>`;
   }).join('');
   nxIGSet('nxIGagenda',h);
 }
+// ── 59.36 Inicio en vidrio, parte 3: ficha rápida del cliente (dueño: «Publícalo y continúa», 18-oct-2026) ──
+// Con la capa #nxInicioPane, tocar un nombre en «Lo próximo» abre una ficha rápida: de lado en la computadora y desde
+// abajo en el celular. Mismas cifras y mismas funciones que la ficha completa de verCliente() (getEst, pendTot, getTot,
+// getEstPol, gAgt): no calcula nada nuevo. Botones: Cobrar (abrirAbono), WhatsApp (nxAbrirWhatsAppDeCliente), Ficha
+// completa (verCliente) e Historial del CRM (nxCrmAbrirCliente). Sin la capa, el nombre abre el CRM como antes.
+function nxIGFicha(cid){
+  const c=cid&&(ST.clientes||[]).find(k=>String(k.id)===String(cid));
+  if(!c||!nxIGPane()){nxIGAbrirTarea(cid);return;}
+  let el=document.getElementById('nxIGFicha'),sc=document.getElementById('nxIGFichaScrim');
+  if(!el){
+    sc=document.createElement('div');sc.id='nxIGFichaScrim';sc.className='nxPnScrim';sc.onclick=nxIGFichaCerrar;
+    el=document.createElement('div');el.id='nxIGFicha';el.className='nxPnFicha';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','nxIGFichaNom');
+    el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();nxIGFichaCerrar();}});
+    document.body.append(sc,el);
+  }
+  const id=String(c.id).replace(/[^\w-]/g,''),est=getEst(c),pol=getEstPol(c),agt=gAgt(c.agente_id)?.nom||'Sin asignar';
+  const estCl=est==='Al día'?'ok':est==='Inhabilitado'?'bad':'warn',hoy=hoyRD();
+  const tareas=((_nxIG.crm&&_nxIG.crm.tareas)||[]).filter(t=>String(t.cliente_id)===String(c.id)).slice().sort((a,b)=>String(a.vence_en||'9').localeCompare(String(b.vence_en||'9'))).slice(0,3);
+  const fila=(lb,v)=>v?`<div class="nxPnF-row"><span>${lb}</span><b>${escHtml(v)}</b></div>`:'';
+  el.innerHTML=`<div class="nxPnF-grab" aria-hidden="true"></div>
+    <button type="button" class="nxPnF-x" onclick="nxIGFichaCerrar()" aria-label="Cerrar la ficha"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="nxPnF-head"><div class="nxPnF-av">${escHtml(inits(c.nom))}</div><div><h3 id="nxIGFichaNom">${escHtml(c.nom||'Cliente')}</h3>
+      <p>${escHtml([c.plan,c.numero_poliza].filter(Boolean).join(' · ')||'Sin póliza')}</p><span class="nxPnF-est ${estCl}">${escHtml(est)}</span></div></div>
+    <div class="nxPnF-stats"><div><small>Pendiente</small><b>${fmt(pendTot(c))}</b></div><div><small>Prima mensual</small><b>${fmt(getTot(c))}</b></div><div><small>Vigencia</small><b class="txt">${escHtml(pol.lbl||'—')}</b></div></div>
+    <div class="nxPnF-acts"><button type="button" class="nxPnF-btn pri" onclick="nxIGFichaCerrar();nxIGCobrar('${id}')">Cobrar</button>${nxWa(c.wa)?`<button type="button" class="nxPnF-btn wa" onclick="nxIGFichaCerrar();nxIGWhatsApp('${id}')">WhatsApp</button>`:''}</div>
+    <div class="nxPnF-sec">Datos</div>
+    <div class="nxPnF-box">${fila('Agente',agt)}${fila('Cédula',c.cedula)}${fila('ARS',c.ars)}${fila('Teléfono',c.tel||c.wa)}${fila('Vence la póliza',c.fecha_fin?nxIGFechaCorta(String(c.fecha_fin).slice(0,10))+' '+String(c.fecha_fin).slice(0,4):'')}</div>
+    <div class="nxPnF-sec">Pendientes del CRM</div>
+    <div class="nxPnF-box">${tareas.length?tareas.map(t=>{const w=nxIGCuando(t,hoy);return `<div class="nxPnF-row"><span>${escHtml(t.titulo||'Tarea')}</span><b class="${w.bad?'bad':''}">${escHtml(w.bad?nxIGFechaCorta(fechaRD(t.vence_en)):w.t)}</b></div>`;}).join(''):'<div class="nxPnF-row"><span>Sin tareas pendientes</span></div>'}</div>
+    <div class="nxPnF-links"><button type="button" class="nxPnF-btn" onclick="nxIGFichaCerrar();verCliente('${id}')">Ficha completa</button><button type="button" class="nxPnF-btn" onclick="nxIGFichaCerrar();nxIGAbrirTarea('${id}')">Historial del CRM</button></div>`;
+  el._volver=document.activeElement;el.scrollTop=0;
+  requestAnimationFrame(()=>{sc.classList.add('on');el.classList.add('on');setTimeout(()=>{try{el.querySelector('.nxPnF-x').focus({preventScroll:true});}catch(e){}},60);});
+}
+function nxIGFichaCerrar(){
+  const el=document.getElementById('nxIGFicha'),sc=document.getElementById('nxIGFichaScrim');
+  if(!el||!el.classList.contains('on'))return;
+  el.classList.remove('on');sc&&sc.classList.remove('on');
+  try{if(el._volver&&document.contains(el._volver))el._volver.focus({preventScroll:true});}catch(e){}
+}
+// Buscador global: ↓ / ↑ recorren los resultados y Enter abre (los resultados ya tienen tabindex y Enter).
+function nxGsFlechas(e){
+  if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+  const it=[...document.querySelectorAll('#gsResults .gs-item')];if(!it.length)return;
+  e.preventDefault();(e.key==='ArrowDown'?it[0]:it[it.length-1]).focus();
+}
+document.addEventListener('keydown',e=>{
+  const a=document.activeElement;if(!a||!a.classList||!a.classList.contains('gs-item'))return;
+  if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();
+  const it=[...document.querySelectorAll('#gsResults .gs-item')],i=it.indexOf(a);
+  if(e.key==='ArrowDown')(it[i+1]||it[0]).focus();else if(i<=0)document.getElementById('gsInput').focus();else it[i-1].focus();
+});
 function nxIGCobrar(cid){if(cid&&typeof window.abrirAbono==='function')window.abrirAbono(cid);else if(cid)nxIGAbrirTarea(cid);}
 function nxIGWhatsApp(cid){if(cid&&typeof window.nxAbrirWhatsAppDeCliente==='function')window.nxAbrirWhatsAppDeCliente(cid);else if(cid)nxIGAbrirTarea(cid);}
 const _nxIGHechaOcup=new Set();

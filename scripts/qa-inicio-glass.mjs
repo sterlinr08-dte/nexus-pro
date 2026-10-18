@@ -166,6 +166,8 @@ const leerGlass = (page) => page.evaluate(() => {
     ok(await page.evaluate(() => document.getElementById('v-crm')?.classList.contains('on') && nxCrm.qa.estado().tab === 'prospectos'), `${tag}: tarjeta de Prospectos abre CRM → Prospectos`);
     await page.evaluate(() => { nxCrm.tab('panel'); nav('dashboard', null); }); await sleep(900);
     await page.evaluate(() => document.querySelector('#nxIGagenda .nxIG-it, #nxIGagenda .nxIG-proxa').click()); await sleep(1000);
+    // 59.36: con la capa en vidrio el nombre abre la ficha rápida; su botón «Historial del CRM» lleva a la ficha del CRM
+    if (await page.evaluate(() => !!document.querySelector('#nxIGFicha.on'))) { await page.evaluate(() => [...document.querySelectorAll('#nxIGFicha .nxPnF-links .nxPnF-btn')].pop().click()); await sleep(1000); }
     ok(await page.evaluate(() => document.getElementById('v-cliente360')?.classList.contains('on')), `${tag}: tarea de la Agenda abre la ficha del cliente`);
     await page.evaluate(() => nav('dashboard', null)); await sleep(500);
     await page.evaluate(() => document.querySelector('.nxIG-search').click()); await sleep(400);
