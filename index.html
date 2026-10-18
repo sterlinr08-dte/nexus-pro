@@ -6608,6 +6608,37 @@ html.nx-cobp #v-facturas#v-facturas#v-facturas#v-facturas > .nxft-tabs > *{min-h
 function centrar(){var t=document.querySelector('#v-facturas > .nxft-tabs');if(!t||t.scrollWidth<=t.clientWidth)return;var a=t.querySelector('.is-active');if(!a)return;var x=a.offsetLeft-(t.clientWidth-a.offsetWidth)/2;t.scrollTo({left:Math.max(0,x),behavior:'auto'});}
 function iniciar(){var t=document.querySelector('#v-facturas > .nxft-tabs');if(!t){setTimeout(iniciar,500);return;}new MutationObserver(function(){requestAnimationFrame(centrar);}).observe(t,{subtree:true,attributes:true,attributeFilter:['class']});centrar();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();</script>
+<!-- 59.50 (dueño 18-oct-2026, «Si»): Custodia de fondos y ventana «Cobros del cliente». Capa aislada; solo CSS.
+     Se apaga para todos con NX_CUS_PANE=false, o en un equipo con localStorage.nx_cus_pane_off='1'. -->
+<script id="nxCusPaneOn">var NX_CUS_PANE=true;try{if(NX_CUS_PANE&&localStorage.getItem('nx_cus_pane_off')!=='1')document.documentElement.classList.add('nx-cusp');}catch(e){if(NX_CUS_PANE)document.documentElement.classList.add('nx-cusp');}</script>
+<style id="nxCusPane">
+/* Custodia: solo tamaños de toque y rótulos en tipo oración; cifras y cálculos intactos */
+html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuSel,html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuBtn{height:44px!important;min-height:44px!important;font-size:14px!important}
+html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuVer{min-height:44px!important;font-size:13px!important}
+html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuDetHead :is(button,.cuBtn){min-width:44px!important;min-height:44px!important}
+html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia :is(button,[role=button],select,a){min-height:44px}
+html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuTotal .k,html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuPoder small,html.nx-cusp #v-custodia#v-custodia#v-custodia#v-custodia .cuGrp h4{text-transform:none!important;letter-spacing:0!important;font-size:12px!important}
+/* Cobros del cliente (ventana) */
+html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros .mt > span{text-transform:none!important;letter-spacing:-.01em!important;font-size:17px!important}
+html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros .mt button{width:44px!important;min-width:44px!important;max-width:none!important;flex:none!important;height:44px!important;min-height:44px!important;border-radius:50%!important;padding:0!important;display:inline-grid!important;place-items:center}
+html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosInfo{font-size:13px!important;text-transform:none!important}
+html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosInfo *{text-transform:none!important;letter-spacing:0!important}
+html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList td .btn{min-width:44px!important;min-height:44px!important;padding:0 10px!important;display:inline-flex!important;align-items:center;justify-content:center}
+@media(max-width:720px){
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList thead{display:none!important}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList table,html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody{display:block!important;width:100%!important}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:12px 4px!important;border-bottom:1px solid var(--sf-line,rgb(15 23 42/.08))}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td{padding:0!important;border:0!important;font-size:13px!important;min-width:0}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(1){grid-column:1;grid-row:1;font-size:14px!important;font-weight:700}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(2){grid-column:2;grid-row:1;justify-self:end;font-size:16px!important}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(3){grid-column:1;grid-row:2;color:var(--sf-tx3,#64748b)}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(4){grid-column:1;grid-row:3;color:var(--sf-tx3,#64748b);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(4)::before{content:"Ref.: ";font-weight:600}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(5){grid-column:2;grid-row:2/4;justify-self:end;display:flex!important;gap:8px}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(5) .btn{border-radius:50%!important;width:44px;padding:0!important;font-size:17px!important}
+  html.nx-cusp #mHistCobros#mHistCobros#mHistCobros#mHistCobros #histCobrosList tbody td:nth-child(5) span.btn{border-radius:999px!important;width:auto;padding:0 12px!important;font-size:12.5px!important}
+}
+</style>
 
 </head>
 <body>
@@ -10592,7 +10623,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.49';
+const APP_VERSION='59.50';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
