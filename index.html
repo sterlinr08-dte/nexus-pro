@@ -9663,7 +9663,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.32';
+const APP_VERSION='59.33';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -12109,6 +12109,26 @@ function rWidgetProceso(){
   cont.innerHTML=html;
 }
 
+// Abonos del Inicio (18-oct-2026). La RPC seguros_inicio_cobros los trae ya sumados por día de RD, más los pagos sueltos
+// de hoy y de ayer (con su hora, para «Hoy, en vivo»). Aquí se vuelven la misma lista que antes: un renglón por día con
+// su suma y su cantidad (_n), y los pagos reales de hoy y ayer. Las sumas por ciclo, por día y de hoy no cambian.
+// Si la función todavía no existe en la base, se baja la lista completa como siempre.
+let _nxInicioSinRpc=false;
+async function nxInicioAbonos(hoyIso){
+  if(!_nxInicioSinRpc){
+    try{
+      const r=await API.post('rpc/seguros_inicio_cobros',{p_hoy:hoyIso});
+      if(r&&Array.isArray(r.dias)&&Array.isArray(r.filas)){
+        const ayer=nxIGSumaDias(hoyIso,-1),out=[];
+        r.dias.forEach(d=>{if(d&&d.d&&d.d!==hoyIso&&d.d!==ayer)out.push({fecha:d.d,monto:Number(d.t)||0,_n:Number(d.n)||1});});
+        r.filas.forEach(a=>{if(a&&a.fecha)out.push({fecha:a.fecha,monto:Number(a.monto)||0});});
+        return out;
+      }
+    }catch(e){if(/PGRST20[25]|404|does not exist|Could not find/i.test(String(e&&e.message)))_nxInicioSinRpc=true;else throw e;}
+  }
+  return await API.get('abonos','select=fecha,monto')||[];
+}
+
 // Gráfica de líneas: cobros de los últimos 6 meses (SVG, responsive)
 async function rChartCobros(){
   const cont=document.getElementById('chartCobros');
@@ -12122,10 +12142,9 @@ async function rChartCobros(){
     while(mes<1){mes+=12;anio--;}
     meses.push({mes,anio,lbl:MESES[mes-1].slice(0,3),total:0});
   }
-  // Cargar abonos desde Supabase
-  let abonos=[];
-  try{abonos=await API.get('abonos','select=fecha,monto')||[];}catch(e){abonos=[];}
   const hoyIso=hoyRD();
+  let abonos=[];
+  try{abonos=await nxInicioAbonos(hoyIso);}catch(e){abonos=[];}
   const diaActual=diasEntre(cicloInicio(mc.anio,mc.mes),hoyIso); // día dentro del ciclo (0 = el 20)
   let mesAnt=mc.mes-1,anioAnt=mc.anio; if(mesAnt<1){mesAnt=12;anioAnt--;}
   const iniAnt=cicloInicio(anioAnt,mesAnt);
@@ -12310,7 +12329,7 @@ function nxIGChEventos(){
 function nxIGCiclo(c){
   if(!nxIGOn())return;
   const porDia={},nDia={};
-  (c.abonos||[]).forEach(a=>{if(!a.fecha)return;const iso=fechaRD(a.fecha);if(!iso)return;porDia[iso]=(porDia[iso]||0)+(Number(a.monto)||0);nDia[iso]=(nDia[iso]||0)+1;});
+  (c.abonos||[]).forEach(a=>{if(!a.fecha)return;const iso=fechaRD(a.fecha);if(!iso)return;porDia[iso]=(porDia[iso]||0)+(Number(a.monto)||0);nDia[iso]=(nDia[iso]||0)+(a._n||1);});
   _nxIG.porDia=porDia;_nxIG.nDia=nDia;
   const hoy=hoyRD();
   _nxIG.hoyCobros=nDia[hoy]||0;
