@@ -85,3 +85,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+
+## agent-skills (Addy Osmani)
+- Origen: github.com/addyosmani/agent-skills @ aeac41d (instaladas el 18-oct-2026, bitácora `docs/bitacora/2026-10-18-1900-claude-agent-skills-y-graphify.md`). Solo SKILL.md y referencias; sin hooks ni scripts.
+- Carpetas: context-engineering, incremental-implementation, browser-testing-with-devtools, source-driven-development, doubt-driven-development, constraint-driven-development, frontend-ui-engineering, performance-optimization, debugging-and-error-recovery, test-driven-development, documentation-and-adrs, interview-me, deprecation-and-migration, security-and-hardening, idea-refine, api-and-interface-design, observability-and-instrumentation
+
+```
+MIT License
+
+Copyright (c) 2025 Addy Osmani
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Graphify (herramienta, no copiada al repo)
+- `graphify-nexus` es una skill propia que instala `graphifyy==0.9.92` (Apache-2.0, github.com/Graphify-Labs/graphify @ 86c57be) en el scratchpad de cada sesión. Su código no se copia al repo.

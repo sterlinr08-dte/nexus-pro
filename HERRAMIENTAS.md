@@ -85,6 +85,25 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 - **Revisión y depuración:** `gstack-review`, `gstack-investigate`, `gstack-plan-eng-review`, `gstack-spec`, `gstack-health`.
 - **Simplificar y arquitectura:** `ponytail*` (simplificar), `senior-architect`.
 - **Pruebas:** `webapp-testing`.
+- **Mapa del código:** `graphify-nexus` (18-oct-2026). Dice dónde vive una función y quién la llama sin releer `index.html`. Es local: nada sale del equipo.
+- **Agent Skills de Addy Osmani** (18-oct-2026), 17 elegidas:
+  - **Contexto y memoria:** `context-engineering`.
+  - **Trabajo por pasos:** `incremental-implementation`.
+  - **Revisar decisiones antes de actuar:** `doubt-driven-development`, `interview-me`, `idea-refine`.
+  - **Calidad y pruebas:** `constraint-driven-development`, `test-driven-development`, `debugging-and-error-recovery`.
+  - **Navegador:** `browser-testing-with-devtools` (con `chrome-devtools`).
+  - **Documentación oficial:** `source-driven-development`.
+  - **Pantallas:** `frontend-ui-engineering`.
+  - **Velocidad:** `performance-optimization`.
+  - **Seguridad:** `security-and-hardening`.
+  - **Interfaces:** `api-and-interface-design`.
+  - **Cambios de base:** `deprecation-and-migration`.
+  - **Registros:** `observability-and-instrumentation`.
+  - **Decisiones:** `documentation-and-adrs`.
+- **Agent Skills que NO se instalaron:**
+  - `code-review`, `code-simplification`, `spec`, `planning` y `git-workflow`: repiten `gstack` o `ponytail`, o las reglas de git propias.
+  - `ci-cd-and-automation` y `shipping-and-launch`: chocan con la regla de publicar solo con «publícalo» y sin GitHub Actions.
+  - `using-agent-skills`: es el índice del paquete completo.
 - **Seguridad al editar:** `gstack-careful`, `gstack-guard`, `gstack-freeze`.
 - **Base de datos:** **Supabase** (MCP), para consultar, migraciones y Edge Functions de los 3 proyectos, siempre con cuidado en producción. En bayolcell-taller también `supabase` y `supabase-postgres-best-practices`.
 - **Plataformas:** **Cloudflare** (MCP), **Sentry** (MCP, errores), **GitHub**.
@@ -108,6 +127,7 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 | «Quiero un efecto, una animación o algo más bonito» | Primero las **Referencias de diseño** (Kitchen, Originkit, GetLayers) + `apple-design` |
 | «Revisa la seguridad» | `security-audit` |
 | «Algo falla» | `gstack-investigate` + Sentry + Supabase logs |
+| «¿Dónde está / qué rompe esto?» | `graphify-nexus` (mapa del código) |
 | «Haz una campaña» | Meta Ads (con aprobación) + video con HyperFrames |
 | «Revisa mis anuncios» | `ads-meta` + Meta Ads (solo lectura) |
 | «Mejora este texto u oferta» | `copywriting` / `offers` |
