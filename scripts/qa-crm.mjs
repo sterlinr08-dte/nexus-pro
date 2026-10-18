@@ -148,6 +148,8 @@ async function shot(page, name) {
     const mias = await page.evaluate(() => { const s = nxCrm.qa.estado(); return { mi: s.miAgente, filas: document.querySelectorAll('#nxCrmAgendaHost .nxOpsTask').length, esperadas: s.agenda.filter(t => t.asignado_agente_id === s.miAgente).length }; });
     ok(mias.mi && mias.filas === Math.min(8, mias.esperadas) && mias.esperadas > 0 && mias.esperadas < 13, `${tag}: "Mis tareas" filtra por agente propio`, mias);
     await page.click('#v-crm .nxCrmChips button:has-text("Todas")');
+    // Desde 58.94 el buscador del CRM es una lupa plegable (parches-busqueda-premium.js): se toca la lupa antes de escribir.
+    if (!(await page.isVisible('#nxCrmQ'))) { await page.evaluate(() => { const w = document.getElementById('nxCrmQ').closest('.nxbp,.nxBusca'); const l = w && w.querySelector('.nxBusca-lupa'); if (l) l.click(); }); await sleep(500); }
     await page.fill('#nxCrmQ', 'Pedro');
     await sleep(250);
     const busq = await page.evaluate(() => ({ foco: document.activeElement?.id, filas: [...document.querySelectorAll('#nxCrmAgendaHost .nxOpsTask span')].map(s => s.textContent), riesgo: [...document.querySelectorAll('#v-crm .nxCrmRow b')].map(b => b.textContent) }));
