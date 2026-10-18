@@ -1,0 +1,48 @@
+# Ventana de cobro («Registrar pago») rediseñada en vidrio (59.37, sin publicar) — Claude
+
+- **Pedido del dueño:** «Vamos aprovechar a rediseñar y estructurar la ventana de cobro para que sea más fácil aplicando los conocimientos que ya tenemos de las skills».
+- **Skills aplicadas:**
+  - `apple-design`: una sola acción principal siempre visible, mostrar solo lo necesario según el caso, respuesta al tocar, hoja desde abajo en el iPhone.
+  - `emil-design-eng`: resorte corto al presionar (`scale(.96–.97)`), sin animar lo que se usa muchas veces.
+  - El estilo de vidrio es el del Inicio (parte 1).
+- **Fuente revisada (auditoría):**
+  - `#mAbono` (rediseño 59.01, mismos ids):
+    - los `<select>` ocultos (`aMet`, `aBanco`, `aAgente`, `aDirectoCuenta`, `aDestino`) son la fuente de verdad, y las fichas solo los cambian (`nxOptChipPick`);
+    - el cobro lo hace `regAbono()` con la RPC `seguros_registrar_cobro_con_entrega`;
+    - el resumen y la custodia los arma `nxAboActualizarResumen()`;
+    - el comprobante viene de `nxBaucheWrap`;
+    - la cuenta de la transferencia, de `aDirectoWrap` (`parches-seguros-base.js`).
+  - Unas 240 reglas de estilo ya tocaban esta ventana. Las capas `nxPagoV3` y `nxBotonesPro` usan `:not(#_n):not(#_m)`, equivalente a 3 ids.
+- **Archivo `index.html`.** Capa nueva `<style id="nxCobroPane">` con su interruptor `<script id="nxCobroPaneOn">` (`html.nx-cobro`), al final de `<head>`. Sus selectores repiten `#mAbono` 4 veces para ganarle a esas capas sin pelear regla por regla.
+  - **Monto protagonista:** grande y al centro, con los atajos 1 cuota / Saldar / Adelantar debajo.
+  - **Cliente:** una tarjeta compacta con iniciales y el pendiente a la derecha.
+  - **Fichas compactas de 44 px:** método, cuenta, agente y destino en píldoras. Los bancos van en mosaicos de 4 por fila, con el logo arriba.
+  - **Efectivo:** «Referencia» y «Comprobante» quedan detrás de **«+ Referencia o comprobante»**. Se abren solos si ya tienen algo, y al cambiar de método la referencia escrita nunca queda escondida. Con Transferencia, Depósito, Cheque o Tarjeta se ven siempre.
+  - **Pie fijo:** el resumen («RD$ X · método · quién · En poder de …») justo encima de un solo botón grande «Registrar RD$ X». El nodo `.aboSummary` se **mueve** al pie, con los mismos ids. «Cancelar» se oculta, porque ya están la ✕, Esc y tocar fuera.
+  - **Celular:** hoja desde abajo con su propio scroll. **Computadora:** ventana de 460 px.
+  - **«Pago registrado»:** el resumen del pie se oculta, como antes.
+  - **Script:** `nxCobroOrden` y un `MutationObserver` sobre `#mAbono.open`. Solo ponen `data-met` y clases y mueven nodos.
+  - `planB` ya venía protegido desde 59.36.
+  - `APP_VERSION` pasa a `'59.37'`.
+- **Sin cambios:**
+  - ningún campo, función, RPC, cálculo ni regla de custodia;
+  - Supabase, dinero y transferencias.
+- **Archivo `scripts/qa-registrar-pago.mjs`:** con la capa encendida, comprueba que con Efectivo la referencia está detrás de «+ Referencia o comprobante» y que el botón la muestra, antes de seguir con la prueba de siempre.
+- **Pruebas:**
+  - `qa-registrar-pago.mjs`: **58 PASS · 0 FAIL**. Cubre:
+    - orden;
+    - altura con Efectivo ≤ 1,000 y con Transferencia ≤ 1,450 px a 390;
+    - custodia;
+    - Efectivo sin referencia envía «Efectivo»;
+    - Transferencia sin número no llama a la RPC;
+    - llave de idempotencia y agente;
+    - comprobante enlazado al abono exacto;
+    - pantalla «Pago registrado».
+  - `qa-custodia.mjs`: **68 PASS · 0 FAIL**.
+  - Capturas en claro y glass oscuro, a 390 y 1280: sin errores de consola.
+- **Cómo apagarla:**
+  - para todos: `NX_COBRO_PANE=false`;
+  - en un equipo: `localStorage.setItem('nx_cobro_pane_off','1')`.
+
+  Así la ventana vuelve a ser la de 59.36.
+- **Publicación:** NO publicado. Rama `claude/inicio-vidrio`, encima de 59.36 (la parte 3 del Inicio, también sin publicar). Esperar «publícalo».

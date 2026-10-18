@@ -135,7 +135,14 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     await page.evaluate(() => regAbono()); await sleep(300);
     ok(rpc.length === 0, `${w}px Transferencia sin referencia → no se registra (se pide el número)`, rpc.length);
     // ── Efectivo sin referencia + comprobante ──
-    await metodo(page, 'Efectivo'); await page.fill('#aRef', '');
+    await metodo(page, 'Efectivo');
+    // 59.37 (ventana de cobro en vidrio): con Efectivo la referencia queda detrás de «+ Referencia o comprobante»
+    if (await page.evaluate(() => document.documentElement.classList.contains('nx-cobro'))) {
+      ok(await page.evaluate(() => getComputedStyle(document.querySelector('#aRef').closest('.pgRef')).display === 'none' && !!document.querySelector('#mAbono .nxCbMas')), `${w}px Efectivo: referencia escondida tras «+ Referencia o comprobante»`);
+      await page.click('#mAbono .nxCbMas'); await sleep(150);
+      ok(await page.isVisible('#aRef'), `${w}px «+ Referencia o comprobante» muestra la referencia`);
+    }
+    await page.fill('#aRef', '');
     await page.evaluate(() => { window._nxBaucheURL = 'https://tnwsgcxurfyuszxsewsn.supabase.co/storage/v1/object/public/comprobantes/qa/x.jpg'; });
     await page.evaluate(() => regAbono()); await sleep(1500);
     ok(rpc.length === 1 && rpc[0].p_referencia === 'Efectivo' && rpc[0].p_metodo === 'Efectivo', `${w}px Efectivo sin referencia → se envía «Efectivo»`, rpc[0]);

@@ -5947,6 +5947,146 @@ html.tema-claro .nxPnF-est.ok{color:#15803D}html.tema-claro .nxPnF-est.warn{colo
 }
 @media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-card,html.nx-ig.nx-pane #nxIG .nxIG-cyc{transition:none!important}}
 </style>
+<!-- ═══ VENTANA DE COBRO EN VIDRIO (59.37, 18-oct-2026; dueño: «rediseñar y estructurar la ventana de cobro para que sea
+     más fácil aplicando los conocimientos que ya tenemos de las skills») ═══
+     Capa AISLADA y reversible para #mAbono («Registrar pago»). Va al final de <head> para ganarle a las ~240 reglas que ya
+     tocan esta ventana. NO cambia ningún id, campo, <select> ni función: regAbono(), nxAboActualizarResumen(), los chips
+     (nxOptChipPick → <select> oculto, que sigue siendo la fuente de verdad), el comprobante y la regla de custodia siguen
+     igual. Solo estilo más un poco de orden (script #nxCobroPaneJs, abajo):
+       · una sola acción: el botón «Registrar RD$ …» queda fijo abajo, con el resumen encima (se MUEVE el nodo
+         .aboSummary al pie, mismos ids); «Cancelar» sobra (✕, Esc o tocar fuera).
+       · el monto es lo protagonista (grande y al centro); los atajos 1 cuota / Saldar / Adelantar debajo.
+       · fichas compactas (44–48 px) para método, banco, cuenta y agente: todo cabe sin buscar.
+       · con Efectivo, «Referencia» y «Comprobante» quedan detrás de «+ Referencia o comprobante» (se abren solos si ya
+         tienen algo); con Transferencia/Depósito/Cheque/Tarjeta se ven siempre, como antes.
+       · celular: hoja desde abajo con su propio scroll; computadora: ventana centrada de 460 px.
+     CÓMO APAGARLA: NX_COBRO_PANE=false aquí abajo (todos) o en un equipo localStorage.setItem('nx_cobro_pane_off','1'). -->
+<script id="nxCobroPaneOn">var NX_COBRO_PANE=true;try{if(NX_COBRO_PANE&&localStorage.getItem('nx_cobro_pane_off')!=='1')document.documentElement.classList.add('nx-cobro');}catch(e){if(NX_COBRO_PANE)document.documentElement.classList.add('nx-cobro');}</script>
+<style id="nxCobroPane">
+/* #mAbono repetido 4 veces: las capas nxPagoV3 y nxBotonesPro usan :not(#_n):not(#_m) (3 ids); así esta gana sin pelear regla por regla */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono{
+  --cb-ink:#F4F4FA;--cb-ink2:#C3C5D6;--cb-sheet:#1A1928;--cb-fill:rgb(255 255 255/.07);--cb-fill2:rgb(255 255 255/.12);--cb-line:rgb(255 255 255/.10);--cb-link:#C4B5FD;
+  --cb-grad:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 48%,#2563EB 100%);--cb-spring:cubic-bezier(.34,1.45,.55,1);--cb-ease:cubic-bezier(.22,.8,.24,1);
+  --nm-bg:var(--cb-fill);--nm-tx:var(--cb-ink);--nm-tx2:var(--cb-ink2);--nm-lo:transparent;--nm-hi:transparent;--nm-accent:var(--cb-link);
+  background:rgb(8 8 16/.46)!important;-webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important}
+html.nx-cobro.tema-claro #mAbono#mAbono#mAbono#mAbono{--cb-ink:#14121F;--cb-ink2:#4B4B63;--cb-sheet:#F7F7FB;--cb-fill:rgb(20 18 50/.05);--cb-fill2:rgb(20 18 50/.09);--cb-line:rgb(20 18 50/.08);--cb-link:#6D28D9;
+  background:rgb(20 18 40/.30)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal{max-width:460px!important;width:calc(100% - 32px);max-height:min(92dvh,880px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:0 20px!important;border-radius:28px!important;background:var(--cb-sheet)!important;color:var(--cb-ink)!important;border:1px solid var(--cb-line)!important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255/.10),0 40px 90px -30px rgb(0 0 0/.65)!important;font-variant-numeric:tabular-nums}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal *{text-transform:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal :focus-visible{outline:2px solid #A78BFA!important;outline-offset:2px}
+/* cabecera fija */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .mt{position:sticky;top:0;z-index:3;margin:0 -20px!important;width:auto!important;box-sizing:border-box;padding:14px 12px 10px 20px!important;background:var(--cb-sheet)!important;border:0!important;
+  display:flex;align-items:center;justify-content:space-between;min-height:62px}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .mt>span{font-size:17px!important;font-weight:800!important;letter-spacing:-.01em;color:var(--cb-ink)!important;text-align:left!important;flex:1}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .mt button{flex:none!important;margin:0!important;width:44px!important;height:44px!important;min-height:44px!important;border-radius:50%!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;border:0!important;box-shadow:none!important;display:grid!important;place-items:center;padding:0!important}
+/* cliente */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliTop{display:grid!important;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 14px!important;margin:0 0 6px!important;border-radius:20px!important;
+  background:var(--cb-fill)!important;box-shadow:none!important;border:0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboAv{width:44px!important;height:44px!important;border-radius:50%!important;background:var(--cb-grad)!important;color:#fff!important;font-weight:800!important;font-size:15px!important;display:grid!important;place-items:center;box-shadow:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliNom{font-size:16px!important;font-weight:800!important;color:var(--cb-ink)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPol{font-size:12.5px!important;color:var(--cb-ink2)!important;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:1px}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliMeta{font-size:12px!important;color:var(--cb-ink2)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend{text-align:right}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend span{display:block;font-size:12px!important;color:var(--cb-ink2)!important;font-weight:600!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboCliPend b{display:block;font-size:17px!important;font-weight:800!important;white-space:nowrap}
+/* monto protagonista */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgSec{margin:12px 0 0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboLblRow{display:flex;justify-content:space-between;align-items:center;min-height:36px}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboLbl,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgSecT,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr>label,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aDirectoWrap strong,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheWrap>label{
+  font-size:13px!important;font-weight:700!important;color:var(--cb-ink2)!important;letter-spacing:0!important;margin:0 0 6px!important;display:block}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboLnk{min-height:36px;padding:0 12px!important;border-radius:999px!important;background:var(--cb-fill)!important;color:var(--cb-link)!important;font-size:13px!important;font-weight:700!important;border:0!important;box-shadow:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgMntWrap{display:flex!important;align-items:baseline;justify-content:center;gap:6px;padding:0 0 6px!important;margin:0!important;background:none!important;box-shadow:none!important;border:0!important;border-bottom:2px solid var(--cb-line)!important;border-radius:0!important;transition:border-color .2s}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgMntWrap:focus-within{border-bottom-color:#8B5CF6!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgCur{font-size:20px!important;font-weight:700!important;color:var(--cb-ink2)!important;position:static!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aMnt{width:auto!important;min-width:3ch;max-width:100%;field-sizing:content;text-align:center!important;font-size:46px!important;line-height:1.1!important;font-weight:800!important;letter-spacing:-.03em!important;
+  color:var(--cb-ink)!important;-webkit-text-fill-color:var(--cb-ink);background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;height:auto!important;outline:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aMnt::placeholder{color:var(--cb-ink2)!important;-webkit-text-fill-color:var(--cb-ink2);opacity:.5}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgQuick{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;margin-top:10px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn{min-height:48px!important;height:auto!important;border-radius:16px!important;border:0!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;box-shadow:none!important;
+  font-size:14px!important;font-weight:700!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:6px 4px!important;transition:transform .3s var(--cb-spring),background .2s!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn small{font-size:12px!important;font-weight:600!important;color:var(--cb-ink2)!important;opacity:1!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn:active{transform:scale(.96)}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn.hero,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn[aria-expanded="true"]{background:var(--cb-grad)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.22),0 10px 24px -14px rgb(109 40 217/.8)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn.hero small,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboQbtn[aria-expanded="true"] small{color:#fff!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgAdel{margin-top:10px!important;padding:10px 12px!important;border-radius:16px!important;background:var(--cb-fill)!important;box-shadow:none!important}
+/* fichas compactas (método, banco, cuenta, agente, destino) */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptGrid{display:flex!important;flex-wrap:wrap!important;gap:8px!important;grid-template-columns:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip{flex:0 0 auto!important;width:auto!important;min-width:0!important;height:44px!important;min-height:44px!important;padding:0 14px 0 6px!important;margin:0!important;border-radius:999px!important;
+  display:inline-flex!important;align-items:center!important;gap:8px!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;border:0!important;
+  box-shadow:inset 0 0 0 1px var(--cb-line)!important;font-size:14px!important;font-weight:650!important;transition:transform .3s var(--cb-spring),background .2s,box-shadow .2s!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip:active{transform:scale(.96)}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip .nxOptIco{width:32px!important;height:32px!important;min-width:32px!important;border-radius:50%!important;font-size:15px!important;margin:0!important;box-shadow:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip .nxOptIco.logo{background:#fff!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip .nxOptImg{width:24px!important;height:24px!important;object-fit:contain}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip .nxOptTxt{font-size:14px!important;white-space:nowrap;color:inherit!important;font-weight:inherit!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip .nxOptOk{display:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptChip.on{background:color-mix(in srgb,var(--chip-c,#7C3AED) 22%,transparent)!important;box-shadow:inset 0 0 0 2px var(--chip-c,#7C3AED)!important}
+html.nx-cobro.tema-claro #mAbono#mAbono#mAbono#mAbono .nxOptChip.on{background:color-mix(in srgb,var(--chip-c,#7C3AED) 12%,#fff)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptGrid.ancho .nxOptChip{flex:1 1 100%!important;height:auto!important;min-height:48px!important;padding:6px 14px 6px 6px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxOptGrid.ancho .nxOptTxt{white-space:normal}
+/* bancos en mosaicos de 4 por fila (logo arriba, nombre abajo): 2 filas en vez de 4 */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aBancoChips{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aBancoChips .nxOptChip{height:68px!important;min-height:68px!important;padding:6px 4px!important;border-radius:16px!important;flex-direction:column!important;justify-content:center!important;gap:4px!important;width:100%!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aBancoChips .nxOptChip .nxOptIco{width:30px!important;height:30px!important;min-width:30px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aBancoChips .nxOptChip .nxOptTxt{font-size:11.5px!important;line-height:1.15;white-space:normal!important;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* bloques de transferencia/comprobante que traen estilos en línea */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aDirectoWrap{background:none!important;box-shadow:none!important;padding:0!important;margin:10px 0 0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aDirectoWrap>div>span,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheBox>div:last-child,html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboNote{font-size:12.5px!important;line-height:1.4!important;color:var(--cb-ink2)!important;margin-top:8px!important;background:none!important;padding:0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .aboNote:empty{display:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheWrap{margin:10px 0 0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheBox{background:none!important;box-shadow:none!important;padding:0!important;border:0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxBaucheBox .btn{height:44px!important;min-height:44px!important;border-radius:999px!important;background:var(--cb-fill)!important;color:var(--cb-link)!important;box-shadow:inset 0 0 0 1px var(--cb-line)!important;border:0!important;font-size:14px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr{margin:10px 0 0!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr input[type=text]:not(#aMnt){height:48px!important;border-radius:14px!important;background:var(--cb-fill)!important;color:var(--cb-ink)!important;-webkit-text-fill-color:var(--cb-ink);border:0!important;
+  box-shadow:inset 0 0 0 1px var(--cb-line)!important;padding:0 14px!important;font-size:16px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr input[type=text]:not(#aMnt):focus{box-shadow:inset 0 0 0 2px #8B5CF6!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fr input::placeholder{color:var(--cb-ink2)!important;-webkit-text-fill-color:var(--cb-ink2);opacity:.7}
+/* efectivo: referencia y comprobante detrás de «+ Referencia o comprobante» */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxCbMas{display:none;margin-top:12px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:var(--cb-fill);color:var(--cb-link);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal[data-met="Efectivo"]:not(.cbMas) .nxCbMas{display:inline-flex;align-items:center}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal[data-met="Efectivo"]:not(.cbMas) :is(.pgRef,#nxBaucheWrap){display:none!important}
+/* pie fijo: resumen + una sola acción */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe{position:sticky!important;bottom:0;z-index:3;margin:16px -20px 0!important;padding:10px 20px calc(16px + env(safe-area-inset-bottom,0px))!important;
+  background:linear-gradient(to bottom,transparent,var(--cb-sheet) 14px)!important;border:0!important;display:flex!important;flex-wrap:wrap!important;flex-direction:row!important;gap:8px!important;box-shadow:none!important;grid-template-columns:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary{flex:1 1 100%;order:-1;display:flex!important;gap:10px;align-items:center;margin:0!important;padding:10px 12px!important;border-radius:16px!important;background:var(--cb-fill)!important;box-shadow:none!important;border:0!important;animation:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummaryIc{display:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary b{font-size:15px!important;color:var(--cb-ink)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary span{display:block;font-size:12.5px!important;line-height:1.35!important;color:var(--cb-ink2)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary em{display:block;font-style:normal;color:var(--cb-ink2)!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary strong{display:block;font-size:12.5px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAboCancelar{display:none!important}
+/* «Pago registrado» (.pgHecho): el resumen que se movió al pie también se oculta, como antes */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal.pgHecho .fe .aboSummary{display:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAbo#btnAbo,html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAboListo#btnAboListo{flex:1 1 100%!important;height:54px!important;min-height:54px!important;border-radius:999px!important;font-size:17px!important;font-weight:800!important;border:0!important;
+  background:var(--cb-grad)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgb(255 255 255/.25),0 14px 30px -14px rgb(109 40 217/.9)!important;transition:transform .3s var(--cb-spring),opacity .2s!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAbo#btnAbo:active{transform:scale(.97)}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAbo#btnAbo.pgIncompleto{background:var(--cb-fill2)!important;color:var(--cb-ink2)!important;box-shadow:none!important}
+/* pago registrado */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .pgOk{border-radius:22px!important;background:var(--cb-fill)!important;box-shadow:none!important;border:0!important;margin-top:14px!important}
+/* el contenedor del cliente traía su propia caja */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #abonoI{background:none!important;box-shadow:none!important;padding:0!important;margin:4px 0 0!important;border:0!important}
+/* resumen del pie en dos líneas cortas, sin cajas dentro */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary>div{min-width:0;flex:1}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary>div{overflow:hidden}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal{overflow-x:hidden!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary b{display:inline!important;margin-right:6px}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary span{display:inline!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary em{display:block!important;font-size:12.5px!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder{display:block!important;background:none!important;padding:0!important;margin:2px 0 0!important;border:0!important;box-shadow:none!important;color:#86EFAC!important;font-weight:700!important;text-align:left!important}
+html.nx-cobro.tema-claro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder{color:#15803D!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder.falta{color:#FCD34D!important}
+html.nx-cobro.tema-claro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder.falta{color:#B45309!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder :is(small,span,i){display:inline!important;font-size:12px!important;color:var(--cb-ink2)!important;margin-left:4px}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .pgPoder:empty{display:none!important}
+@media (max-width:600px){
+  html.nx-cobro #mAbono#mAbono#mAbono#mAbono.open{align-items:flex-end!important;padding:0!important}
+  html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal{width:100%!important;max-width:100%!important;max-height:calc(100dvh - max(44px,env(safe-area-inset-top,0px) + 12px))!important;margin:0!important;border-radius:28px 28px 0 0!important;border-bottom:0!important}
+  html.nx-cobro #mAbono#mAbono#mAbono#mAbono #aMnt{font-size:42px!important}
+}
+@media (prefers-reduced-motion:reduce){html.nx-cobro #mAbono#mAbono#mAbono#mAbono *{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -9929,7 +10069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.36';
+const APP_VERSION='59.37';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13004,6 +13144,33 @@ document.addEventListener('keydown',e=>{
   const it=[...document.querySelectorAll('#gsResults .gs-item')],i=it.indexOf(a);
   if(e.key==='ArrowDown')(it[i+1]||it[0]).focus();else if(i<=0)document.getElementById('gsInput').focus();else it[i-1].focus();
 });
+// ── 59.37 Ventana de cobro en vidrio: orden (capa #nxCobroPane). Solo mueve nodos y pone clases; ids y funciones iguales.
+(function(){
+  function orden(){
+    if(!document.documentElement.classList.contains('nx-cobro'))return;
+    const m=document.querySelector('#mAbono .modal');if(!m)return;
+    const met=(document.getElementById('aMet')||{}).value||'';m.dataset.met=met;
+    const fe=m.querySelector('.fe'),sum=m.querySelector('.aboSummary');
+    if(fe&&sum&&sum.parentElement!==fe)fe.insertBefore(sum,fe.firstChild);   // resumen junto al botón (mismos ids)
+    const sec=document.getElementById('aMetChips')&&document.getElementById('aMetChips').closest('.pgSec');
+    if(sec&&!sec.querySelector('.nxCbMas')){
+      const b=document.createElement('button');b.type='button';b.className='nxCbMas';b.textContent='+ Referencia o comprobante';
+      b.onclick=()=>{m.classList.add('cbMas');setTimeout(()=>{try{document.getElementById('aRef').focus();}catch(e){}},30);};
+      const anc=sec.querySelector('.pgRef');sec.insertBefore(b,anc||null);
+    }
+    const ref=document.getElementById('aRef'),prev=document.getElementById('nxBauchePreview');
+    const tiene=(ref&&ref.value.trim())||(prev&&prev.children.length&&getComputedStyle(prev).display!=='none');
+    m.classList.toggle('cbMas',!!tiene);
+  }
+  function init(){
+    const ov=document.getElementById('mAbono');if(!ov)return;
+    new MutationObserver(()=>{if(ov.classList.contains('open'))setTimeout(orden,0);}).observe(ov,{attributes:true,attributeFilter:['class']});
+    // al cambiar de método: si la referencia ya tiene texto, se queda a la vista (nunca se envía algo escondido)
+    document.addEventListener('change',e=>{if(e.target&&e.target.id==='aMet'){const m=document.querySelector('#mAbono .modal');if(!m)return;m.dataset.met=e.target.value||'';const r=document.getElementById('aRef'),pv=document.getElementById('nxBauchePreview');m.classList.toggle('cbMas',!!((r&&r.value.trim())||(pv&&pv.children.length&&getComputedStyle(pv).display!=='none')));}},true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  window.nxCobroOrden=orden;
+})();
 function nxIGCobrar(cid){if(cid&&typeof window.abrirAbono==='function')window.abrirAbono(cid);else if(cid)nxIGAbrirTarea(cid);}
 function nxIGWhatsApp(cid){if(cid&&typeof window.nxAbrirWhatsAppDeCliente==='function')window.nxAbrirWhatsAppDeCliente(cid);else if(cid)nxIGAbrirTarea(cid);}
 const _nxIGHechaOcup=new Set();
