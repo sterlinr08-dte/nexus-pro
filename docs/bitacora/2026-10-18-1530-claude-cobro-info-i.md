@@ -1,0 +1,21 @@
+# Ventana de cobro: textos explicativos detrás de una ⓘ (59.41, sin publicar) — Claude
+
+- **Pedido del dueño** (con una captura del iPhone en producción): «Vamos quitar esos textos explicativos y ponerlo al lado con la i de información».
+- **Cambio** (capa `#nxCobroPane`; solo con `html.nx-cobro`): las 3 notas explicativas ya no se ven en la ventana. Junto a su título aparece una **ⓘ**; al tocarla se abre una burbuja con el texto.
+  - «Cuenta de destino»: la custodia del titular y la validación en Solicitudes.
+  - «Comprobante (opcional)»: cómo pegar el comprobante desde WhatsApp.
+  - «Recibido por» / «Gestionado por»: la nota que cambia según el método. La burbuja lee el texto **actual** de la nota, así que nunca muestra uno viejo.
+- **Cómo se cierra:** al tocar fuera, con Esc o al desplazarse de verdad (más de 40 px). El pequeño ajuste de scroll al tocar no la cierra.
+- **Accesibilidad:** `aria-label="Más información"` y `aria-expanded`; toque de 44 px.
+- **Código** (`index.html`):
+  - en `nxCobroOrden` se insertan los botones `.nxCobroInfo` (una vez por título);
+  - funciones `nxCbTip` y `cerrarTip`;
+  - la orden se repite a los 250 ms porque el comprobante se inyecta a los 60 ms;
+  - CSS en `#nxCobroPane`;
+  - `APP_VERSION` pasa a `'59.41'`.
+- **Sin cambios:** los textos (son los mismos de 59.38), la lógica y el dinero.
+- **Pruebas:**
+  - Prueba propia: 3 ⓘ, las burbujas muestran el texto correcto y se cierran al tocar fuera.
+  - `qa-registrar-pago.mjs`: **58 PASS · 0 FAIL**. La ventana bajó a 886 px con Efectivo y 1,310 con Transferencia (antes 923 y 1,448).
+  - `qa-custodia.mjs`: **68 PASS · 0 FAIL**.
+- **Publicación:** NO publicado. Rama `claude/inicio-vidrio`, junto con 59.40 (los anillos del Inicio), que tampoco está publicada. Esperar «publícalo».

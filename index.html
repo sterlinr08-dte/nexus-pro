@@ -6071,6 +6071,16 @@ html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary b{font-size:15px!impo
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary span{display:block;font-size:12.5px!important;line-height:1.35!important;color:var(--cb-ink2)!important}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary em{display:block;font-style:normal;color:var(--cb-ink2)!important}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .fe .aboSummary strong{display:block;font-size:12.5px!important}
+/* 59.41: notas explicativas detrás de la ⓘ junto al título (burbuja #nxCbTip) */
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono :is(#aDirectoWrap>div>span,#nxBaucheBox>div:last-child,#aAgenteNota){display:none!important}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono :is(#aDirectoWrap strong,#nxBaucheWrap>label,#aAgenteTit){display:inline-block!important;vertical-align:middle}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxCbInfo{display:inline-grid;place-items:center;vertical-align:middle;width:44px;height:44px;margin:-12px -10px -12px -6px!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;min-height:0!important;border-radius:50%!important;cursor:pointer;-webkit-tap-highlight-color:transparent}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxCbInfo span{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 Georgia,serif;font-style:italic;color:var(--cb-link);box-shadow:inset 0 0 0 1.5px currentColor;transition:background .2s,color .2s}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .nxCbInfo[aria-expanded="true"] span{background:var(--cb-link);color:var(--cb-sheet)}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal{position:relative}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxCbTip{position:absolute;z-index:5;padding:10px 12px;border-radius:14px;background:var(--cb-ink);color:var(--cb-sheet);font-size:13px;line-height:1.4;font-weight:500;box-shadow:0 14px 34px -12px rgb(0 0 0/.45);animation:nxCbTip .18s var(--cb-ease)}
+html.nx-cobro #mAbono#mAbono#mAbono#mAbono #nxCbTip:before{content:"";position:absolute;top:-6px;left:calc(var(--fx,50%) - 6px);width:12px;height:12px;background:inherit;transform:rotate(45deg);border-radius:2px}
+@keyframes nxCbTip{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono #btnAboCancelar{display:none!important}
 /* «Pago registrado» (.pgHecho): el resumen que se movió al pie también se oculta, como antes */
 html.nx-cobro #mAbono#mAbono#mAbono#mAbono .modal.pgHecho .fe .aboSummary{display:none!important}
@@ -10085,7 +10095,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.40';
+const APP_VERSION='59.41';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -13201,14 +13211,39 @@ document.addEventListener('keydown',e=>{
     const ref=document.getElementById('aRef'),prev=document.getElementById('nxBauchePreview');
     const tiene=(ref&&ref.value.trim())||(prev&&prev.children.length&&getComputedStyle(prev).display!=='none');
     m.classList.toggle('cbMas',!!tiene);
+    // 59.41 (dueño, con captura del iPhone): los textos explicativos salen de la vista y quedan detrás de una ⓘ junto
+    // a su título; al tocarla se abre una burbuja con el texto ACTUAL de la nota (la de «Recibido/Gestionado por»
+    // cambia según el método), así que nada se duplica ni se desactualiza.
+    [['#aDirectoWrap strong','#aDirectoWrap > div > span'],['#nxBaucheWrap > label','#nxBaucheBox > div:last-child'],['#aAgenteTit','#aAgenteNota']].forEach(([t,n])=>{
+      const ti=m.querySelector(t);if(!ti||(ti.nextElementSibling&&ti.nextElementSibling.classList.contains('nxCbInfo')))return;
+      const b=document.createElement('button');b.type='button';b.className='nxCbInfo';b.setAttribute('aria-label','Más información');b.setAttribute('aria-expanded','false');
+      b.innerHTML='<span aria-hidden="true">i</span>';b.onclick=e=>{e.stopPropagation();nxCbTip(b,n);};
+      ti.insertAdjacentElement('afterend',b);
+    });
   }
   function init(){
     const ov=document.getElementById('mAbono');if(!ov)return;
-    new MutationObserver(()=>{if(ov.classList.contains('open'))setTimeout(orden,0);}).observe(ov,{attributes:true,attributeFilter:['class']});
+    new MutationObserver(()=>{if(ov.classList.contains('open')){cerrarTip();setTimeout(orden,0);setTimeout(orden,250);}}).observe(ov,{attributes:true,attributeFilter:['class']});   // 250 ms: el comprobante (nxBaucheWrap) se inyecta a los 60 ms
     // al cambiar de método: si la referencia ya tiene texto, se queda a la vista (nunca se envía algo escondido)
     document.addEventListener('change',e=>{if(e.target&&e.target.id==='aMet'){const m=document.querySelector('#mAbono .modal');if(!m)return;m.dataset.met=e.target.value||'';const r=document.getElementById('aRef'),pv=document.getElementById('nxBauchePreview');m.classList.toggle('cbMas',!!((r&&r.value.trim())||(pv&&pv.children.length&&getComputedStyle(pv).display!=='none')));}},true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function cerrarTip(){const t=document.getElementById('nxCbTip');if(t&&t._btn)t._btn.setAttribute('aria-expanded','false');if(t)t.remove();}
+  function nxCbTip(btn,sel){
+    const m=btn.closest('.modal'),ya=document.getElementById('nxCbTip');
+    if(ya&&ya._btn===btn){cerrarTip();return;}cerrarTip();
+    const src=m&&m.querySelector(sel),txt=src?src.textContent.replace(/\s+/g,' ').trim():'';if(!txt)return;
+    const t=document.createElement('div');t.id='nxCbTip';t.setAttribute('role','tooltip');t.textContent=txt;t._btn=btn;t._st=m.scrollTop;
+    m.appendChild(t);btn.setAttribute('aria-expanded','true');
+    const mr=m.getBoundingClientRect(),br=btn.getBoundingClientRect(),w=Math.min(300,mr.width-32);
+    t.style.width=w+'px';
+    let x=br.left-mr.left+br.width/2-w/2;x=Math.max(16,Math.min(mr.width-w-16,x));
+    t.style.left=x+'px';t.style.top=(br.bottom-mr.top+m.scrollTop+6)+'px';
+    t.style.setProperty('--fx',(br.left-mr.left+br.width/2-x)+'px');
+  }
+  document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('#nxCbTip,.nxCbInfo'))cerrarTip();},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('nxCbTip')){e.stopPropagation();cerrarTip();}},true);
+  document.addEventListener('scroll',e=>{const t=document.getElementById('nxCbTip');if(t&&e.target&&e.target.closest&&e.target.closest('#mAbono')&&Math.abs((e.target.scrollTop||0)-t._st)>40)cerrarTip();},true);   // un desplazamiento real cierra; el pequeño ajuste al tocar, no
   window.nxCobroOrden=orden;
 })();
 function nxIGCobrar(cid){if(cid&&typeof window.abrirAbono==='function')window.abrirAbono(cid);else if(cid)nxIGAbrirTarea(cid);}
