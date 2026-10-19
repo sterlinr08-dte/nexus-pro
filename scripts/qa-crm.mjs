@@ -66,7 +66,10 @@ async function shot(page, name) {
     ok(venc === '4', `${tag}: seguimientos vencidos = 4 (consulta propia, no tope de 8)`, venc);
     const agendaRows = await page.$$eval('#nxCrmAgendaHost .nxOpsTask', x => x.length);
     ok(agendaRows === 8 && await page.$('#nxCrmAgendaHost .nxOpsMore') !== null, `${tag}: agenda muestra 8 y ofrece ver las 12`, agendaRows);
-    ok(!(await page.$$eval('#v-crm', x => x.map(e => e.innerText).join(' '))).match(/\bafiliacion\b|\bseguimiento\b(?![^<]*<)/), `${tag}: sin slugs crudos en pantalla`);
+    // 59.53: con la letra normal (capa #nxP6Pane) «Agenda de seguimiento» ya no sale en mayúsculas; por eso se busca el
+    // slug como texto completo de una etiqueta visible, no como palabra suelta dentro de una frase.
+    const slugs = await page.$$eval('#v-crm *', xs => xs.filter(e => !e.children.length && e.offsetParent && /^(afiliacion|seguimiento|en_proceso|en_riesgo)$/i.test((e.innerText || '').trim()) && !/[A-ZÁÉÍÓÚ]/.test((e.textContent || '').trim()[0] || '')).map(e => e.textContent.trim()));
+    ok(!slugs.length, `${tag}: sin slugs crudos en pantalla`, slugs);
     const sinPanelDup = await page.$$eval('#v-crm h3', hs => hs.filter(h => /Clientes en proceso/.test(h.textContent)).length);
     ok(sinPanelDup === 1, `${tag}: un solo panel "Clientes en proceso"`, sinPanelDup);
     // mesesAtraso: nueva vs. fórmula original, cliente por cliente
