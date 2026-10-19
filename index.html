@@ -6784,6 +6784,47 @@ html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell .nxnov-new{
 html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell :is(.nxnov-seg,.nxnov-filter){min-height:44px!important;font-size:14px!important}
 html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell .nxnov-segments{align-items:center}
 </style>
+<!-- 59.54 · Reportes (por agente con el ciclo 20→20, antigüedad de cartera, por empresa y por plan), filtros de Facturas en la PC,
+     «Marcar hecha» del Inicio y el botón del menú. Capa aislada y reversible: NX_P7_PANE=false o localStorage nx_p7_pane_off=1. CSS y un ajuste de texto (nxP7PaneJs). -->
+<script id="nxP7PaneOn">var NX_P7_PANE=true;try{if(NX_P7_PANE&&localStorage.getItem('nx_p7_pane_off')!=='1')document.documentElement.classList.add('nx-p7');}catch(e){if(NX_P7_PANE)document.documentElement.classList.add('nx-p7');}</script>
+<style id="nxP7Pane">
+/* letra normal en los 4 reportes (los campos de escribir siguen como estaban) */
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) :not(input):not(textarea){text-transform:none!important}
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) :is(.ct,.ct-s,th,label,.btn,button){letter-spacing:0!important}
+/* todo lo que se toca: 44 × 44; selectores: 48 px y letra de 16 */
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) :is(button,.btn,a.btn,summary):not(.nxInfoI){min-height:44px!important;min-width:44px!important;font-size:max(13px,1em)!important}
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) :is(select,input:not([type=checkbox]):not([type=radio]):not([type=hidden])){min-height:48px!important;font-size:16px!important}
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) :is(select,input):not([type=checkbox]):not(#_f):focus{border-color:#60A5FA!important;box-shadow:0 0 0 3px rgb(96 165 250/.35)!important;outline:none!important}
+/* botón de Excel arriba a la derecha: era una píldora vacía de 18 × 32 */
+:is(html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente,html.nx-p7 #v-rep-empresa#v-rep-empresa#v-rep-empresa#v-rep-empresa,html.nx-p7 #v-rep-plan#v-rep-plan#v-rep-plan#v-rep-plan) .ch > .btn.bsm.bc4{width:44px!important;height:44px!important;padding:0!important;display:inline-grid!important;place-items:center;border-radius:14px!important;flex-shrink:0}
+/* ciclo 20→20: pestañas Ciclo / Consolidado a 44 px */
+html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente .nxC20Tab{min-height:44px!important;padding:0 16px!important;font-size:14px!important}
+html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente :is(.nxC20Sel,#nxC20Export){min-height:44px!important}
+@media(min-width:721px){html.nx-p7 #v-rep-agente#v-rep-agente#v-rep-agente#v-rep-agente .nxC20Sel{min-width:260px!important}}
+/* antigüedad de cartera: la letra de 8–10 px sube a 12–14 */
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging > div:first-child > div > div:first-child{font-size:13px!important;letter-spacing:0!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging > div:first-child > div > div:last-child{font-size:12px!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging > div:nth-child(2) > span:first-child{font-size:13px!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging > div:nth-child(n+3) > div:first-child{font-size:14px!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging table{font-size:14px!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging thead tr{font-size:12px!important}
+html.nx-p7 #v-rep-aging#v-rep-aging#v-rep-aging#v-rep-aging #rAging td{padding:8px 6px!important}
+
+/* Facturas en la PC: filtros de mes, año, estado y agente, y la lupa */
+html.nx-p7 #v-facturas#v-facturas#v-facturas#v-facturas :is(.nfcBtn,.nxBusca-lupa){min-height:44px!important;min-width:44px!important}
+/* Inicio: el visto de «Marcar hecha» no se encoge (medía 23 px de ancho en la PC) */
+html.nx-p7.nx-ig #nxIG#nxIG#nxIG .nxIG-btn.chk{flex:0 0 44px!important;min-width:44px!important}
+/* botón del menú: el círculo sigue de 32–34 px, pero el área que se toca llega a 44 × 44 */
+html.nx-p7 body nav#sbEl.sb .nx-mc-tg .nx-mc-c{position:relative}
+html.nx-p7 body nav#sbEl.sb .nx-mc-tg .nx-mc-c::after{content:'';position:absolute;inset:-6px;border-radius:50%}
+</style>
+<script id="nxP7PaneJs">(function(){if(!document.documentElement.classList.contains('nx-p7'))return;
+/* Rótulos escritos en MAYÚSCULAS dentro de los reportes («COBRADO», «PENDIENTE», «EFECTIVIDAD») → tipo oración.
+   Solo textos de una sola pieza, de 5 letras o más, sin números ni «/» (B/S/E+ y siglas se quedan igual). Solo texto, no toca datos. */
+var VISTAS=['v-rep-agente','v-rep-plan','v-rep-empresa'],RX=/^[A-ZÁÉÍÓÚÜÑ ]{5,}$/;
+function limpiar(v){var w=document.createTreeWalker(v,NodeFilter.SHOW_TEXT),n;while((n=w.nextNode())){var t=n.nodeValue.trim();if(RX.test(t)){var o=t.charAt(0)+t.slice(1).toLowerCase();n.nodeValue=n.nodeValue.replace(t,o);}}}
+function iniciar(){VISTAS.forEach(function(id){var v=document.getElementById(id);if(!v)return;limpiar(v);var pend=false;new MutationObserver(function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;limpiar(v);});}).observe(v,{childList:true,subtree:true});});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();</script>
 
 </head>
 <body>
@@ -10768,7 +10809,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.53';
+const APP_VERSION='59.54';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -17734,17 +17775,17 @@ function cusDetalle(id,scroll){
     ${grp('Transferencias',x.recibio-x.envio,trs)}</div>`;
   if(scroll){const b=document.getElementById('cusDetBox');if(b&&b.scrollIntoView)b.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 }
-function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
+function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">Plan ${p}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
 function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),hex='#6d28d9';const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%"></div></div></div>`;}).join('');}
 
 function rRepAging(){
   const cont=document.getElementById('rAging');
   if(!cont)return;
   const hoyD=new Date();
-  const buckets={b1:{lbl:'0 - 30 dias',col:'#10b981',total:0,facs:[]},
-                 b2:{lbl:'31 - 60 dias',col:'#fbbf24',total:0,facs:[]},
-                 b3:{lbl:'61 - 90 dias',col:'#f97316',total:0,facs:[]},
-                 b4:{lbl:'Mas de 90 dias',col:'#f43f5e',total:0,facs:[]}};
+  const buckets={b1:{lbl:'0 a 30 días',col:'#10b981',total:0,facs:[]},
+                 b2:{lbl:'31 a 60 días',col:'#fbbf24',total:0,facs:[]},
+                 b3:{lbl:'61 a 90 días',col:'#f97316',total:0,facs:[]},
+                 b4:{lbl:'Más de 90 días',col:'#f43f5e',total:0,facs:[]}};
   (ST.facturas||[]).forEach(f=>{
     if(f.estado==='Pagado'||f.estado==='Anulada')return;
     const saldo=Number(f.total)||0;
@@ -17754,27 +17795,27 @@ function rRepAging(){
     let b;
     if(dias<=30)b=buckets.b1;else if(dias<=60)b=buckets.b2;else if(dias<=90)b=buckets.b3;else b=buckets.b4;
     b.total+=saldo;
-    b.facs.push({nom:f.cliente_nom,monto:saldo,dias,ncf:f.ncf||'-',periodo:f.periodo||''});
+    b.facs.push({nom:f.cliente_nom||((ST.clientes||[]).find(c=>String(c.id)===String(f.cliente_id))||{}).nom||'—',monto:saldo,dias,ncf:f.ncf||'-',periodo:f.periodo||''});
   });
   const granTotal=buckets.b1.total+buckets.b2.total+buckets.b3.total+buckets.b4.total;
   let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">';
   Object.values(buckets).forEach(b=>{
     const pct=granTotal>0?Math.round(b.total/granTotal*100):0;
-    html+='<div style="border:1px solid '+b.col+'33;border-left:4px solid '+b.col+';border-radius:var(--r10);padding:12px;background:var(--bg2)"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);letter-spacing:.5px">'+b.lbl+'</div><div style="font-size:18px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin:4px 0">'+fmt(b.total)+'</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">'+b.facs.length+' factura(s) - '+pct+'% del total</div></div>';
+    html+='<div style="border:1px solid '+b.col+'33;border-left:4px solid '+b.col+';border-radius:var(--r10);padding:12px;background:var(--bg2)"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);letter-spacing:.5px">'+b.lbl+'</div><div style="font-size:18px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin:4px 0">'+fmt(b.total)+'</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">'+b.facs.length+' factura(s) · '+pct+'% del total</div></div>';
   });
   html+='</div>';
-  html+='<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r8);margin-bottom:16px"><span style="font-size:9px;color:var(--tx3);font-family:var(--mono)">DEUDA TOTAL EN CARTERA: </span><span style="font-size:15px;font-weight:700;color:var(--c3);font-family:var(--mono)">'+fmt(granTotal)+'</span></div>';
+  html+='<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r8);margin-bottom:16px"><span style="font-size:9px;color:var(--tx3);font-family:var(--mono)">Deuda total en cartera: </span><span style="font-size:15px;font-weight:700;color:var(--c3);font-family:var(--mono)">'+fmt(granTotal)+'</span></div>';
   Object.values(buckets).forEach(b=>{
     if(!b.facs.length)return;
     b.facs.sort((x,y)=>y.dias-x.dias);
-    html+='<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+b.col+'"></span>'+b.lbl.toUpperCase()+' - '+fmt(b.total)+'</div>';
-    html+='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="color:var(--tx3);font-family:var(--mono);font-size:8px"><th style="text-align:left;padding:4px">CLIENTE</th><th style="text-align:left;padding:4px">PERIODO</th><th style="text-align:right;padding:4px">DIAS</th><th style="text-align:right;padding:4px">MONTO</th></tr></thead><tbody>';
+    html+='<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+b.col+'"></span>'+b.lbl+' · '+fmt(b.total)+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="color:var(--tx3);font-family:var(--mono);font-size:8px"><th style="text-align:left;padding:4px">Cliente</th><th style="text-align:left;padding:4px">Período</th><th style="text-align:right;padding:4px">Días</th><th style="text-align:right;padding:4px">Monto</th></tr></thead><tbody>';
     b.facs.forEach(f=>{
-      html+='<tr style="border-top:1px solid rgba(148,163,184,.1)"><td style="padding:5px 4px;font-weight:600">'+f.nom+'</td><td style="padding:5px 4px;color:var(--tx3);font-family:var(--mono)">'+f.periodo+'</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);color:'+b.col+'">'+f.dias+'d</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);font-weight:700">'+fmt(f.monto)+'</td></tr>';
+      html+='<tr style="border-top:1px solid rgba(148,163,184,.1)"><td style="padding:5px 4px;font-weight:600">'+escHtml(f.nom)+'</td><td style="padding:5px 4px;color:var(--tx3);font-family:var(--mono)">'+f.periodo+'</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);color:'+b.col+'">'+f.dias+'d</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);font-weight:700">'+fmt(f.monto)+'</td></tr>';
     });
     html+='</tbody></table></div>';
   });
-  if(granTotal===0)html='<div class="empty">No hay deuda pendiente en cartera. Todo al dia.</div>';
+  if(granTotal===0)html='<div class="empty">No hay deuda pendiente en cartera. Todo al día.</div>';
   cont.innerHTML=html;
   try{logAudit('REPORTE_AGING','Reporte de aging de cartera consultado','Reportes');}catch(e){}
 }
