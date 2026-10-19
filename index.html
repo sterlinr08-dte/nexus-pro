@@ -6742,6 +6742,48 @@ var IDS=['mAsiento', 'mInhab', 'mPDF', 'mUsuario'];
 function limpiar(o){var t=o.querySelector('.mt > span');if(!t)return;var x=t.textContent;var y=x.replace(/^\s*\/\/\s*/,'');var pz=y.split(' — ');if(pz[0]===pz[0].toUpperCase()&&/[A-ZÁÉÍÓÚÑ]/.test(pz[0])){pz[0]=pz[0].toLowerCase().replace(/^([^a-záéíóúñ]*)([a-záéíóúñ])/,function(m,a,b){return a+b.toUpperCase();});}y=pz.join(' — ');if(y!==x)t.textContent=y;}
 function iniciar(){IDS.forEach(function(id){var o=document.getElementById(id);if(!o)return;new MutationObserver(function(){if(o.classList.contains('open'))setTimeout(function(){limpiar(o);},0);}).observe(o,{attributes:true,attributeFilter:['class']});});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();</script>
+<!-- 59.53 · CRM, Solicitudes, Pendientes, Avisos y Novedades (módulos que arman los parches). Capa aislada y reversible:
+     NX_P6_PANE=false o localStorage nx_p6_pane_off=1 la apaga. Solo CSS: no toca datos, cobros ni la lógica de los parches. -->
+<script id="nxP6PaneOn">var NX_P6_PANE=true;try{if(NX_P6_PANE&&localStorage.getItem('nx_p6_pane_off')!=='1')document.documentElement.classList.add('nx-p6');}catch(e){if(NX_P6_PANE)document.documentElement.classList.add('nx-p6');}</script>
+<style id="nxP6Pane">
+/* letra normal (no todo en mayúsculas); los campos de escribir siguen como estaban */
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) :not(input):not(textarea){text-transform:none!important}
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos) :is(.ct,.ct-s,.kl,.nxCrmKpi .l,label,.btn,button){letter-spacing:0!important}
+/* todo lo que se toca: 44 × 44 px */
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) :is(button,.btn,a.btn,summary,.nxBusca-lupa):not(.nxInfoI){min-height:44px!important;min-width:44px!important}
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) :is(button,.btn):not(.nxInfoI){font-size:max(13px,1em)!important}
+/* campos de escribir: 48 px y letra de 16 (el iPhone no hace zoom) */
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]):not(.nxBusca-in),select,textarea){min-height:48px!important;font-size:16px!important}
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) .nxBusca-in{font-size:16px!important}
+:is(html.nx-p6 #v-crm#v-crm#v-crm#v-crm,html.nx-p6 #v-solicitudes#v-solicitudes#v-solicitudes#v-solicitudes,html.nx-p6 #panelPend#panelPend#panelPend#panelPend,html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos,html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell) :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not(#_f):focus{border-color:#60A5FA!important;box-shadow:0 0 0 3px rgb(96 165 250/.35)!important;outline:none!important}
+
+/* CRM: «Ver las N tareas» */
+html.nx-p6 #v-crm#v-crm#v-crm#v-crm .nxOpsMore{min-height:44px!important;font-size:14px!important;font-weight:700!important}
+
+/* Pendientes: Cobrar y Recordar se veían blancos sobre blanco; vuelven a su color y van en una fila debajo */
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child{display:grid!important;grid-template-columns:40px minmax(0,1fr) auto;column-gap:10px;row-gap:10px;align-items:start}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(3){display:contents!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(3) > div:first-child{grid-column:3;grid-row:1;font-size:16px!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(3) > div:last-child{grid-column:1/-1;grid-row:2;flex-direction:row!important;gap:8px!important;margin-top:0!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(2) > div:first-child{white-space:normal!important;font-size:15px!important;line-height:1.25}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(2) > div:nth-child(2){font-size:13px!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(2) > div:nth-child(3){font-size:13px!important;margin-top:2px!important;color:#6D28D9!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(2){min-height:44px}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard :is(button[onclick*="nxCobrarPend"],button[onclick*="nxRecordarPago"]){flex:1 1 0;min-height:44px!important;border:0!important;border-radius:999px!important;color:#fff!important;font-size:15px!important;font-weight:700!important;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;box-shadow:none!important;text-shadow:none!important;opacity:1!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard button[onclick*="nxCobrarPend"]{background:#047857!important;background-image:none!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard button[onclick*="nxRecordarPago"]{background:#15803D!important;background-image:none!important}
+html.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:last-child > span{font-size:12px!important;padding:4px 10px!important}
+html.tema-glass-oscuro.nx-p6 #panelPend#panelPend#panelPend#panelPend .nxPendCard > div:first-child > div:nth-child(2) > div:nth-child(3){color:#C4B5FD!important}
+
+/* Avisos: botones verdes a 44 px y verde más oscuro (letra blanca legible, como en el Inicio) */
+html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos .nxAvBtn{min-height:44px!important;font-size:15px!important;font-weight:700!important}
+html.nx-p6 #panelAvisos#panelAvisos#panelAvisos#panelAvisos .nxAvBtn.wa{background:#15803D!important;background-image:none!important;color:#fff!important}
+
+/* Novedades: «Nueva novedad» y los filtros a 44 px */
+html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell .nxnov-new{min-height:44px!important;min-width:44px!important;display:inline-flex!important;align-items:center;justify-content:center;flex-shrink:0}
+html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell :is(.nxnov-seg,.nxnov-filter){min-height:44px!important;font-size:14px!important}
+html.nx-p6 #v-clientes#v-clientes#v-clientes#v-clientes .nxnov-shell .nxnov-segments{align-items:center}
+</style>
 
 </head>
 <body>
@@ -10726,7 +10768,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.52';
+const APP_VERSION='59.53';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
