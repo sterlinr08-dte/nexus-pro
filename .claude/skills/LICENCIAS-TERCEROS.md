@@ -102,3 +102,8 @@ SOFTWARE.
 - Origen: github.com/Leonxlnx/taste-skill @ 6010f91 (MIT, Copyright 2026 Leonxlnx). Carpeta: `design-taste-frontend` (licencia en su `LICENSE`).
 - Trae scripts Node (sin dependencias, sin claves). Revisión del 20-oct-2026: red solo para buscar/descargar fotos de colecciones abiertas (Openverse, Wikimedia Commons, Art Institute of Chicago, Met, Archive.org, NASA, picsum) y Google Fonts; abre Chrome/Chromium local para revisar la página; escribe un historial en `~/.taste-skill/history.json`. Sin telemetría.
 - Uso: páginas públicas nuevas (web, catálogo, landing). Pesada (30–45 min por página): no para arreglos diarios.
+
+## Hainrixz/the-architect (the-architect) — 20-oct-2026
+- Origen: github.com/Hainrixz/the-architect @ a25b09e, v2.6.0 (MIT, Copyright Enrique Henry / tododeia). Carpeta `the-architect` (licencia en su `LICENSE`).
+- Solo instrucciones (.md): SKILL.md, knowledge/, questions/, templates/, agents/, commands/. Sin scripts. La red solo se usa para leer versiones en registros públicos de paquetes. Sin telemetría (revisión del 20-oct-2026).
+- Uso: diseñar proyectos o funciones grandes antes de programar (entrevista → blueprint).
