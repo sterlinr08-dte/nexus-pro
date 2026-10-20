@@ -97,3 +97,8 @@ SOFTWARE.
 - Carpetas: grill-me, grilling, wait-what (adaptada a español), handoff (adaptada: guarda en la bitácora), abogado-del-diablo.
 - El texto completo de cada licencia MIT va en el archivo `LICENSE` dentro de cada carpeta.
 - Solo instrucciones (.md); sin programas, red ni telemetría (revisión del 18-oct-2026).
+
+## Leonxlnx/taste-skill (design-taste-frontend) — 20-oct-2026
+- Origen: github.com/Leonxlnx/taste-skill @ 6010f91 (MIT, Copyright 2026 Leonxlnx). Carpeta: `design-taste-frontend` (licencia en su `LICENSE`).
+- Trae scripts Node (sin dependencias, sin claves). Revisión del 20-oct-2026: red solo para buscar/descargar fotos de colecciones abiertas (Openverse, Wikimedia Commons, Art Institute of Chicago, Met, Archive.org, NASA, picsum) y Google Fonts; abre Chrome/Chromium local para revisar la página; escribe un historial en `~/.taste-skill/history.json`. Sin telemetría.
+- Uso: páginas públicas nuevas (web, catálogo, landing). Pesada (30–45 min por página): no para arreglos diarios.
