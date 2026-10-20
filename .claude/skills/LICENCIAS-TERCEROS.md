@@ -117,3 +117,8 @@ SOFTWARE.
 
 ## Graphify (herramienta, no copiada al repo)
 - `graphify-nexus` es una skill propia que instala `graphifyy==0.9.92` (Apache-2.0, github.com/Graphify-Labs/graphify @ 86c57be) en el scratchpad de cada sesión. Su código no se copia al repo.
+
+## Leonxlnx/taste-skill (design-taste-frontend) — 20-oct-2026
+- Origen: github.com/Leonxlnx/taste-skill @ 6010f91 (MIT, Copyright 2026 Leonxlnx). Carpeta: `design-taste-frontend` (licencia en su `LICENSE`).
+- Trae scripts Node (sin dependencias, sin claves). Revisión del 20-oct-2026: red solo para buscar/descargar fotos de colecciones abiertas (Openverse, Wikimedia Commons, Art Institute of Chicago, Met, Archive.org, NASA, picsum) y Google Fonts; abre Chrome/Chromium local para revisar la página; escribe un historial en `~/.taste-skill/history.json`. Sin telemetría.
+- Uso: páginas públicas nuevas (web, catálogo, landing). Pesada (30–45 min por página): no para arreglos diarios.

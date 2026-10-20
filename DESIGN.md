@@ -93,3 +93,125 @@ New POS code must use the tokens directly instead of hex literals. The Stitch de
 - **Multiempresa cards:** each business/module card is a 112px minimum touch surface with icon, title, role-specific description and directional affordance. On mobile it becomes a single column.
 - **Motion:** cards and KPIs enter at 24ms intervals; hover lifts 1–2px only on pointer devices. Buttons press down 1px on activation. All movement uses transform and opacity, and respects reduced-motion settings.
 - **Never:** blend business identity colors into large backgrounds, duplicate navigation actions, animate sales amounts continuously, or use cosmetic motion that delays a sale, payment or inventory action.
+
+---
+
+## 9. Estilo común de los 3 proyectos (NEXUS PRO · Bayol Cell · STUDIO) — 20-oct-2026
+Agregado con el dueño tras ver Awesome DESIGN.md. **No reemplaza las secciones 1–7**: en NEXUS PRO mandan esas; esto suma las decisiones del dueño que valen para los 3 repos (el mismo texto está como DESIGN.md en Bayol Cell). Donde haya diferencia: en NEXUS la sección 3 (mono para montos) sigue vigente; en Bayol el dueño pidió números con la letra del sistema.
+
+Guía de diseño que toda IA debe leer **antes de crear o cambiar una pantalla** en cualquiera de los 3 proyectos.
+Idea tomada de Awesome DESIGN.md (formato Google Stitch), escrita con los valores reales de NEXUS PRO y con las
+decisiones del dueño. Va igual en los 3 repos; lo que cambia por proyecto está en «Acento por proyecto».
+Creado el 20-oct-2026. Si el dueño decide algo nuevo de diseño, se agrega aquí y en la bitácora.
+
+### 1. Ambiente
+- **Claro, ordenado y elegante**, con estilo Apple y vidrio esmerilado. Superficies blancas translúcidas sobre un fondo suave.
+- **Denso pero aireado.** Las pantallas son de trabajo: hay que ver más datos con menos desplazamiento, sin apretar.
+- **Nada de adornos que no ayuden.** Las ayudas largas van detrás de una ⓘ, nunca como avisos grandes en la pantalla.
+- **Una sola entrada por función.** Nunca dos botones que hagan lo mismo. Revisar antes de agregar uno.
+
+### 2. Color
+| Rol | Valor | Uso |
+|---|---|---|
+| Tinta | `#0f172a` | Texto principal |
+| Texto secundario | `#475569` / `#64748b` | Subtítulos, etiquetas |
+| Texto apagado | `#94a3b8` | Encabezados de tabla en mayúscula, ayudas |
+| Borde | `rgba(15,23,42,.08)` | Líneas finas, tarjetas |
+| Vidrio | `rgba(255,255,255,.86)`; fuerte `.94` + `blur(24px) saturate(180%)` | Ventanas, tarjetas flotantes |
+| Fondo de modal | `rgba(15,23,42,.35)` + `blur(6px)` | Detrás de ventanas emergentes |
+| Azul NEXUS (acción, foco) | `#2563eb` / `#1d4ed8`; suave `rgba(59,130,246,.07–.16)` | Enlaces, foco, selección, consultas |
+| Éxito / disponible | `#15803d` sobre `#f0fdf4`; punto `#22c55e` | «Disponible», «En Info Plus», pagado |
+| Aviso | `#b45309` sobre `#fef3c7`; punto `#f59e0b` | «Crear», pendientes |
+| Error / sin stock | `#b91c1c` sobre `#fef2f2` | «Sin stock», errores. **El rojo solo para problemas** |
+| Sin leer (como WhatsApp) | `#25d366`, texto blanco | Círculos de conteo |
+| Almacén / existencia | `#0e7490` sobre `#ecfeff` | Píldoras de almacén |
+
+### Acento por proyecto
+- **NEXUS PRO:** azul NEXUS. Menú con riel azul en el modo claro.
+- **Bayol Cell:** naranja `#e4572e` / `#FF6B35` para acciones principales (Guardar, +). Barra superior azul noche. Las consultas y ventanas emergentes usan el azul NEXUS.
+- **STUDIO:** su propio acento, sobre la misma base. Revisar el repo antes de cambiarlo.
+
+### 3. Tipografía
+- **Letra del sistema** en todo, números incluidos: `-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui`. Bayol puede usar «Plus Jakarta Sans».
+  - **No usar letra de máquina de escribir** (monospace) para fechas, totales ni precios. El dueño la rechazó.
+  - Para que las cifras se alineen: `font-variant-numeric: tabular-nums`.
+- **Escala NEXUS:**
+  - grande 28;
+  - título 1: 24;
+  - título 2: 20;
+  - título 3: 17;
+  - texto 15;
+  - destacado 14;
+  - subtítulo 13;
+  - nota 12;
+  - leyenda 11.
+- **Campos de escribir:** 16 px mínimo, para que el iPhone no haga zoom.
+- **Encabezados de columna:** 12 px, mayúscula, `letter-spacing .04–.06em`, color apagado.
+- **Dinero:** siempre `RD$ 1,250.00`, con dos decimales y separador de miles.
+
+### 4. Componentes
+- **Botones:**
+  - toque mínimo de 44 px;
+  - forma de píldora (`border-radius: 999px`) o 10–14 px;
+  - al presionar, `scale(.94–.97)`.
+  - El texto es corto y dice la acción («Consulta», «Servicio», «Guardar»). Nada de palabras de relleno como «Elegir —».
+- **Botón de solo ícono:** 36–44 px, redondo, con `aria-label`. Usarlo solo si el ícono se entiende solo: ✕, lupa, copiar.
+- **Campos:**
+  - alto 48 px, letra 16 px, radio 12–14 px;
+  - al enfocar: borde azul `rgba(59,130,246,.6)` y anillo `0 0 0 4px rgba(59,130,246,.16)`.
+  - Lo que no se puede editar se muestra como texto, nunca como una caja que parezca campo.
+- **Etiqueta de estado:** píldora pequeña de 26 px con un punto de color y una palabra («Crear», «En Info Plus», «Error»). Nada de frases largas.
+- **Ventana emergente (consultas, buscadores):**
+  - vidrio fuerte, radio 20 y sombra suave por capas;
+  - barra de título clara: ícono azul, título de 17 px y ✕ redonda gris de 36 px;
+  - en la PC se arrastra desde la barra; en el celular ocupa la pantalla y sube desde abajo.
+- **Listas y tablas:**
+  - fila de 52 px o más;
+  - al pasar el ratón, `rgba(59,130,246,.07)`;
+  - al tocar, se abre el detalle debajo de la fila.
+  - El mismo dato no se repite en dos lugares.
+- **Ayudas:** detrás de una ⓘ junto a la etiqueta. No van en cajas amarillas grandes.
+
+### 5. Medidas y espacio
+- Espacios de 4, 8, 12, 16, 24 px.
+- Margen lateral de 16 px en el celular.
+- **Radios:**
+  - píldoras 999;
+  - tarjetas y ventanas 16–20;
+  - campos 12–14;
+  - chips 6–8.
+- En la PC, lo que es una sola cosa va **en una línea**, aprovechando el ancho.
+- En el celular, lo esencial va arriba y lo opcional en desplegables («Equipo, falla y más datos (opcional)»).
+- **No poner barra inferior fija** si repite funciones.
+
+### 6. Profundidad
+- **Sombras suaves por capas:**
+  `0 1px 0 rgba(255,255,255,.8) inset, 0 0 0 1px rgba(15,23,42,.06), 0 30px 70px -24px rgba(15,23,42,.45), 0 12px 24px -12px rgba(15,23,42,.18)`.
+- **Niveles:** fondo → tarjeta de vidrio → ventana emergente (con fondo oscurecido y desenfocado).
+
+### 7. Movimiento (rápido y fluido)
+- **Curva base:** `cubic-bezier(.22,1,.36,1)`. Rápido 160 ms, base 220 ms, cajón 360 ms.
+- **Abrir ventana:** resorte `nxPopIn .26s cubic-bezier(.34,1.56,.64,1)`, desde `translateY(10px) scale(.96)`. Cerrar en 140 ms.
+- **Listas:** las filas entran en cascada (8 px, 18 ms entre filas, máximo 90 ms) **solo al escribir**. Con las flechas o al tocar una fila, no se repite.
+- **Solo animar `transform` y `opacity`.**
+- Respetar `prefers-reduced-motion`: con esa opción, todo instantáneo.
+- **Nunca** causar parpadeo al cargar (FOUC). Fue la causa del rollback del rediseño (#311).
+
+### 8. Reglas técnicas del dueño
+- **Cambios visuales en capas aisladas** (un archivo o bloque por módulo), reversibles y con versión `?v=`.
+  - No acumular CSS contradictorio: antes de agregar un override, ver qué regla gana hoy.
+- **Probar a 390–440 px (iPhone) y a 1280 px**, con capturas, antes de entregar.
+- **Español sencillo, trato de «usted».** Nombres que dicen lo que hacen.
+- **No publicar** sin «publícalo» del dueño.
+
+### 9. Guía rápida para pedir pantallas a una IA
+«Usa el DESIGN.md del proyecto:
+- vidrio claro y radio 16–20;
+- azul NEXUS para foco y consultas;
+- botones de 44 px, campos de 48 px con letra de 16 px;
+- letra del sistema y dinero en RD$ con dos decimales;
+- estados en píldora con punto de color;
+- ayudas detrás de una ⓘ;
+- una sola entrada por función;
+- animación de 160–260 ms con la curva `(.22,1,.36,1)`;
+- probar a 390 y 1280.»
