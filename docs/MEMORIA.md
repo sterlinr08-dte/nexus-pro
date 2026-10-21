@@ -1,0 +1,136 @@
+# MEMORIA.md — memoria corta de NEXUS PRO para la IA (borrador, 21-oct-2026)
+
+## 1. Para qué sirve este archivo
+- Se vuelve a leer solo después de cada compactación del contexto. Es un resumen; la fuente completa sigue siendo `AGENTS.md`, `CLAUDE.md` y la bitácora.
+- Se actualiza en cada entrega. Nunca se borra una regla del dueño sin su OK.
+
+## 2. Dueño y forma de trabajar
+- Dueño: Sterling (sterlinr08). No es técnico. Hablarle en español sencillo, de usted, con respuestas cortas: una idea por renglón y tablas cuando haya que decidir.
+- Quiere **ver** el resultado: capturas o video a 390–430 px (iPhone) y en PC.
+- Escribe en mensajes cortos y con errores de dictado. Interpretar lo más probable y confirmarlo en una línea.
+- **Publicar a `main`** solo con «publícalo», «súbelo», «ponlo en vivo» o algo equivalente. Vale **solo para esa entrega**. Sin eso, se trabaja en una rama `claude/*`.
+- **Bitácora:** cada cambio, auditoría o publicación deja una entrada nueva `docs/bitacora/AAAA-MM-DD-HHMM-claude.md` (hora de RD). Nunca se edita ni se borra una entrada anterior.
+- Las decisiones del dueño se escriben en `CLAUDE.md`, `REGLAMENTOS.md` o la bitácora. Lo que solo se dijo en el chat se pierde.
+- **Secretos** (`ZERNIO_API_KEY`, claves, tokens): nunca en el frontend, los logs, el repo, la bitácora ni el chat. El dueño escribe sus claves él mismo en el panel.
+- No poner IDs de modelo de IA en commits ni en PR.
+- No conectar cuentas, iniciar sesión ni gastar sin su OK.
+- WhatsApp: nada a clientes sin su OK. Las pruebas, solo a su número.
+- **Skills:** leer `HERRAMIENTAS.md` al empezar cada pedido y usar la skill que corresponda sin esperar a que la nombre. Para diseño, leer primero `DESIGN.md` y `docs/REFERENCIAS-DISENO.md`.
+- Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
+- STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
+
+## 3. Qué tenemos funcionando (producción = **59.54**, verificado en vivo el 21-oct-2026)
+| Módulo | Estado / versión |
+|---|---|
+| Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
+| «Hoy, en vivo» (gráfica de lo cobrado hoy) | 59.21; desde 59.33 lee la RPC `seguros_inicio_cobros` |
+| Ventana de cobro «Registrar pago» en vidrio, con textos profesionales | 59.31, 59.37 y 59.38; capa `#nxCobroPane`; las notas van detrás de una ⓘ (59.41) |
+| ⓘ de ayuda en todo el sistema | 59.42–59.43; capa `#nxInfoI` |
+| Ficha Nuevo/Editar cliente y ficha resumen | 59.44 (`#nxFichaPane`) y 59.46 (`#nxCsPane`) |
+| Facturas, Clientes, Cobros e Historial de pagos | 59.45 (`#nxFactPane`), 59.48 (`#nxCliPane`) y 59.49 (`#nxCobPane`) |
+| Custodia de fondos y ventana «Cobros del cliente» | 59.50 (`#nxCusPane`); la palabra «custodia» en todo el sistema desde 59.39 |
+| Pólizas, Agentes, Empresas y Documentos | 59.51 (`#nxP4Pane`) |
+| Configuración/Usuarios, Contabilidad y ventanas | 59.52 (`#nxP5Pane`) |
+| CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
+| Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
+| Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
+| Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
+| Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
+| Temas: oscuro grafito y modo claro gemelo | 59.21 y 59.22; contraste del claro en Préstamos y POS en 59.23 |
+| «Detalles pro» (beUI) y rapidez tipo Raycast | 59.24 y 59.26; Cobros en dos líneas 59.27 |
+| Solicitudes: una sola cola «PAGOS PENDIENTES POR VALIDAR» | PR #312 |
+| WhatsApp: Inbox corporativo, plantillas y automatizaciones | En producción (capas `parches-whatsapp-*`) |
+
+- Cada capa visual se apaga para todos con `NX_<CAPA>=false` o en un equipo con `localStorage.nx_<capa>_off='1'`. Ejemplos: `nx_inicio_pane_off`, `nx_cobro_pane_off`, `nx_info_off` y `nx_p7_pane_off`. El detalle de cada una está en su bitácora.
+- **Regla de botones (18-oct-2026):** todo lo que se toca mide ≥44×44 px; los campos 48 px con letra de 16 px; el botón principal 54 px. Se mide con Playwright a 390 y 1280 px y se anota en la bitácora.
+
+## 4. Integraciones y piezas técnicas
+- **Supabase** madre: `tnwsgcxurfyuszxsewsn`. Max rows de la Data API subido a 5000 por el dueño (18-oct-2026).
+- **Deploy:** la integración Git de Cloudflare Workers publica `main` (Worker `nexus-pro`). No se usa GitHub Actions para publicar.
+- Para verificar: `curl` a nexusprord.com, revisar `APP_VERSION` y comparar el sha256 con `index.html` de `main`.
+- **Cargador:** `parches-seguros.js` carga las capas con `?b=` (hoy `b=6032`). Las capas nuevas de diseño van en línea dentro de `index.html` (`style#nx…Pane`) para evitar el FOUC.
+- **Edge Functions en el repo:**
+  - Facturas y otras: `auto-facturacion`, `usuarios-acceso`, `nexus-smart` y `sentry-alerta-whatsapp`.
+  - Inbox: `whatsapp-webhook`, `whatsapp-inbox-leer`, `whatsapp-inbox-enviar`, `whatsapp-inbox-reaccionar` y `whatsapp-hilo-eliminar`.
+  - Avisos: `whatsapp-notificar`, `whatsapp-notificar-atraso-v2`, `whatsapp-recordatorio-pendiente-manual`, `whatsapp-envio-masivo`, `whatsapp-enviar-plantilla` y `whatsapp-pagos-agente-notificar`.
+  - Plantillas: `whatsapp-plantilla-crear` y `whatsapp-plantillas-gestionar`.
+  - Automatizaciones: `whatsapp-automatizaciones-run`.
+  - Agentes: `whatsapp-reporte-diario-agentes` (v10, con `x-cron-token`; «En su poder» con el desglose efectivo/banco) y `whatsapp-resumen-ciclo-agentes`.
+- **Zernio:** proveedor de la API oficial de WhatsApp. La suscripción de NEXUS quedó filtrada a su perfil (14-oct). Los 3 negocios comparten la cuenta de Zernio y la organización de Supabase.
+- **Plantillas WhatsApp:**
+  - Enviando bien: `factura_generada`, `pago_confirmado_periodo_v2`, `recordatorio_atraso` y `entrega_confirmada`.
+  - Aprobadas por Meta: `pago_pendiente_validacion_agente_v2` y `pago_validado_resumen_agente`.
+  - Envío masivo: `recordatorio_pago_pendiente` y `poliza_por_vencer`.
+  - Todo aviso a un cliente va como plantilla aprobada, nunca como texto libre (REGLAMENTOS §12).
+- **Cron y cadencia:** `whatsapp_detectar_atrasados` manda los avisos de atraso. La cadencia vive en `clientes.ultimo_aviso_atraso_en` + `whatsapp_config.dias_entre_avisos_atraso` (3 días) y la comparten el cron, el botón manual y el envío masivo.
+- **Dinero (fuente de verdad):**
+  - Abonos: `public.abonos`.
+  - Cobro: RPC `seguros_registrar_cobro_con_entrega`.
+  - Transferencias: tabla `transferencias_agentes` y RPC `transferencias_crear`, `transferencias_aceptar` y `transferencias_rechazar`.
+  - Custodia por ciclo: RPC `seguros_resumen_ciclo_admin`.
+  - La entrega directa cuenta solo con el pago validado (migración `seguros_entrega_directa_tras_validar`, aplicada).
+- **Pruebas:** `scripts/qa-*.mjs` (Playwright contra una REST simulada). Se corren **una detrás de otra**, nunca a la vez. Hay 2 fallos que ya estaban en `main`: `qa-claro-modulos` («CS» en Préstamos) y `qa-inicio-glass` («cobrado hoy» del simulador).
+
+## 5. Reglas de negocio clave
+- **Los agentes no tienen comisión.** Nada de comisión en reportes, acumulados ni plantillas.
+- **Ciclo de agentes: del día 20 al día 20.** Un pago nunca cae en dos ciclos.
+- El acumulado del agente va por la **fecha real del cobro**, no por el período de la factura.
+- **Una transferencia entre agentes no es un cobro:** solo cambia la custodia. Custodia = cobrado + recibido confirmado − enviado confirmado. Lo pendiente no cuenta hasta que el receptor lo acepta.
+- Antes de tocar dinero, cobros o cierres: auditar la fuente de verdad, no crear contabilidad paralela y evitar la doble contabilización. No tocar datos históricos sin autorización.
+- **Seguros (REGLAMENTOS §9):**
+  - `deuda_total` = suma de las primas facturadas.
+  - `deuda_anterior` es una bolsa aparte.
+  - El estado de la factura es una caché: hay que resincronizar todas las del cliente.
+  - Se cobra con agente, referencia y banco.
+  - El NCF es atómico y sin guion.
+- La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
+
+## 6. Ramas, PR y lo que NO está publicado
+- `main` = `ef9050f` (21-oct-2026): app 59.54 más las skills `design-taste-frontend` y `the-architect`, y `DESIGN.md`.
+- La rama de trabajo de las versiones 59.34–59.54 fue `claude/inicio-vidrio` (se publicaba por fast-forward).
+- **`claude/review-claude-md-jpzk7k`:** rama vieja que el dueño decidió **no publicar** tal cual. Se lleva a `main` **solo por cherry-pick** y con su OK. Contiene:
+  - **59.28** (tamaño de los textos) y **59.29** (fondo azul marino con el mar). El dueño dijo «dejarlo como está»: **no proponerlas de nuevo** por iniciativa propia.
+  - Commits viejos de usuarios con acceso, custodia y reporte diario. Su contenido equivalente ya está en `main` por cherry-pick (59.30 y la publicación del 15-oct). Sus copias en esta rama no se mezclan.
+  - Skills que no están en `main`: `ig-*`, `video-understand`, `grill-me`/`grilling`, `wait-what`, `handoff` y `abogado-del-diablo`. El catálogo de `CLAUDE.md` de esta rama es distinto del de `main`.
+- **59.25** (comprobantes sin repetir), rama `claude/bauche-unico`: sin publicar. Lleva migraciones y espera la clave nueva de Anthropic y el OK para la base.
+- **PR #326** (WhatsApp desktop compacto) y **PR #327** (falso «0 conversaciones»): siguen abiertos y en borrador.
+- Migración `20261007120000_pos_fiado_abono_servidor.sql` (POS fiado): **sin aplicar**. Antes falta correr `supabase/pruebas/20261007120000_prueba_fiado.sql` en el editor SQL.
+
+## 7. Pendientes y esperas
+- **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.
+- **Encargo visual móvil del Inbox de WhatsApp** (`CLAUDE.md`): compactar sin tocar la lógica. Antes, auditar la cascada `parches-whatsapp-*`.
+- Meta del anillo «Cobrado»: la decide el dueño (Configuración → Metas mensuales → «Meta cobros»).
+- **Supabase avisó** que la organización superó su cuota y que los proyectos quedan restringidos desde el 27-oct-2026. Falta revisar el uso con el dueño.
+- La contabilidad debería pedir `asientos` por partes, para no depender del tope de filas.
+- **Pendiente del dueño:**
+  - rotar la Global API Key de Cloudflare y actualizar el Vault (`cloudflare_api_token`);
+  - borrar las Edge Functions de diagnóstico `nx-cf-dominio` y `nx-env-nombres`.
+- **En pausa o en estudio:** app nativa de iPhone con xtool (solo estudio) y app de servicios técnicos.
+- **OpenClaw:** es el agente del dueño en WhatsApp, en su PC, para Bayol. Se reactivó el 19-oct.
+
+## 8. Errores que no se deben repetir
+- **FOUC en iPhone:** el rediseño masivo de las fases 1–4 se revirtió (PR #311). Por eso:
+  - nada de capas tardías ni rediseños masivos;
+  - los cambios visuales van aislados por módulo, son reversibles, se cargan desde el primer pintado y se prueban a 390 px.
+- **La herramienta MCP de Supabase retiene las sentencias «destructivas»** (`drop policy`, `revoke`, `drop trigger`, incluso dentro de `execute`). Espera una confirmación que no llega y la llamada muere o vuelve «cancelled» sin ejecutar nada.
+  - No intentar burlar ese control.
+  - Partir el trabajo en bloques sin esas sentencias, o dejar que el dueño lo pegue en el SQL Editor.
+  - Después, verificar en el catálogo que no quedó nada a medias.
+- En pruebas de concurrencia con `execute_sql`, un `DO` con candados dejó sesiones colgadas (hubo que usar `pg_terminate_backend`). Cada paso que deba quedar confirmado va en su propia llamada.
+- **No citar identificadores con acentos graves (backticks) dentro de plantillas CSS en JS**, porque rompen la plantilla. Antes de publicar una capa hay que **ejecutarla**, no solo parsearla.
+- **Diagnosticar desde el marcado que arma el elemento**, no por correlaciones vistas en el CSS o en la captura.
+- **Pruebas `qa-*` en paralelo:** mezclan las preferencias del simulador y dan falsos fallos.
+- No mezclar `claude/review-claude-md-jpzk7k` con `main` ni sacar ramas nuevas de ella: hay que sacarlas de `main`.
+- **Zernio:** `POST /v1/webhooks/settings` **crea** una suscripción nueva en cada llamada (el CRM del taller llegó a 25 copias). Nunca llamarlo en cada apertura.
+- En las vistas, el corte 20→20 manda: antes del día 20, el mes vigente es el anterior.
+
+- Conector de Supabase (comprobado en Bayol, 21-oct-2026): `apply_migration` y los SQL largos pueden colgarse 60 s → aplicar en sentencias pequeñas con `execute_sql`; un `UPDATE` sin `WHERE` se queda esperando confirmación.
+- Al compactar el chat se pierden detalles: esta MEMORIA se recarga sola (hook `.claude/hooks/memoria.sh`). Si algo importante solo quedó en el chat, anotarlo aquí.
+
+## 9. Dónde buscar más
+- `AGENTS.md` en `main`: orden de lectura y §4 «Estado vivo». En la rama puede estar viejo; leerlo con `git show origin/main:AGENTS.md`.
+- `CLAUDE.md`: reglas, plantillas, la iniciativa de custodia y ciclos, y el encargo del Inbox móvil.
+- `REGLAMENTOS.md`: §9 Seguros y §12 envíos de WhatsApp.
+- `HERRAMIENTAS.md`, `DESIGN.md` y `docs/REFERENCIAS-DISENO.md`.
+- `docs/TRASPASO-CLAUDE.md`: recetas (ffmpeg, yt-dlp, Playwright, Buzzy, Info Plus), trampas y estado al 13-oct.
+- `docs/bitacora/`: las entradas más recientes de `main` (`git ls-tree --name-only origin/main docs/bitacora/`) y la entrada concreta de cada versión.
