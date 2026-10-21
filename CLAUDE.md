@@ -2,6 +2,8 @@
 
 Este archivo es el **contexto de arranque obligatorio** para Claude y para cualquier sesión que trabaje en `sterlinr08-dte/nexus-pro`.
 
+**MEMORIA (dueño, 21-oct-2026):** `docs/MEMORIA.md` resume qué tenemos, las reglas del dueño, lo pendiente y los errores que no se repiten. Se recarga sola al iniciar y al compactar el chat (hook `.claude/hooks/memoria.sh` en `.claude/settings.json`). **Actualizarla en cada entrega**; si el dueño dice «anótalo en la memoria», va ahí.
+
 **Punto de entrada fijo para toda IA:** `AGENTS.md` en la raíz de `main`
 (`https://github.com/sterlinr08-dte/nexus-pro/blob/main/AGENTS.md`). Ahí está el orden de lectura, dónde escribir y el estado vivo.
 
