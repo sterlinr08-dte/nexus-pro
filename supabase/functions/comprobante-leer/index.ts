@@ -1,4 +1,4 @@
-// comprobante-leer — 59.25 (dueño, 14-oct-2026): «que no se repita el mismo bauche de pago».
+// comprobante-leer — 59.25 (59.56: devuelve ia_error) (dueño, 14-oct-2026): «que no se repita el mismo bauche de pago».
 // Recibe la referencia de un comprobante ya guardado en NEXUS (URL pública del bucket `comprobantes` de ESTE proyecto,
 // o «wa-media:<ruta>» del bucket privado del Inbox), calcula su huella exacta (SHA-256) y se lo da a Claude para que
 // lea banco, monto, fecha y número de transacción. No guarda nada: la verificación y el registro los hace la RPC
@@ -61,7 +61,7 @@ async function bajar(db: any, ref: string): Promise<{ bytes: Uint8Array; tipo: s
 const ESQUEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["es_comprobante", "banco", "monto", "moneda", "fecha", "numero_transaccion", "cuenta_destino", "titular_destino", "confianza"],
+  required: ["es_comprobante", "banco", "monto", "moneda", "fecha", "numero_transaccion", "cuenta_destino", "titular_destino", "hora", "ordenante", "confianza"],
   properties: {
     es_comprobante: { type: "boolean", description: "true si la imagen es un comprobante de transferencia o depósito bancario" },
     banco: { type: ["string", "null"], description: "Banco que emite el comprobante (Popular, BHD, Banreservas, Scotiabank, APAP, Santa Cruz, Promerica, Caribe, Vimenca, Qik…)" },
@@ -71,13 +71,15 @@ const ESQUEMA = {
     numero_transaccion: { type: ["string", "null"], description: "Número de referencia, confirmación, transacción o autorización que da EL BANCO, tal cual aparece" },
     cuenta_destino: { type: ["string", "null"], description: "Últimos 4 dígitos de la cuenta que recibe, si se ven" },
     titular_destino: { type: ["string", "null"], description: "Nombre de quien recibe, si se ve" },
+    hora: { type: ["string", "null"], description: "Hora de la operación en formato HH:MM (24 horas), si se ve" },
+    ordenante: { type: ["string", "null"], description: "Nombre de quien envía o deposita el dinero, si se ve" },
     confianza: { type: "number", description: "0 a 1: qué tan seguro estás de que el número de transacción y el monto están bien leídos" },
   },
 };
 
 const INSTRUCCION = `Eres un lector de comprobantes bancarios de República Dominicana. Lee la imagen y devuelve los datos pedidos.
 - El número de transacción es el que pone el banco (puede llamarse referencia, confirmación, número de transacción o autorización). No inventes: si no se ve claro, devuelve null.
-- La fecha va en AAAA-MM-DD. El monto, como número sin RD$, sin comas.
+- La fecha va en AAAA-MM-DD y la hora en HH:MM de 24 horas. El monto, como número sin RD$, sin comas.
 - Si la imagen no es un comprobante de pago (una foto cualquiera, un mensaje), pon es_comprobante en false y lo demás en null.`;
 
 Deno.serve(async (req) => {
@@ -94,7 +96,8 @@ Deno.serve(async (req) => {
     if (arch.bytes.byteLength > MAX_BYTES) return json({ ok: false, error: "El archivo pasa de 8 MB." }, 413);
     const sha256 = hex(await crypto.subtle.digest("SHA-256", arch.bytes));
 
-    if (!ANTHROPIC_KEY || body?.solo_huella) return json({ ok: true, sha256, ia: null });
+    if (body?.solo_huella) return json({ ok: true, sha256, ia: null });
+    if (!ANTHROPIC_KEY) return json({ ok: true, sha256, ia: null, ia_error: "sin_clave" });
 
     const b64 = btoa(Array.from(arch.bytes, (c) => String.fromCharCode(c)).join(""));
     const esPdf = arch.tipo === "application/pdf";
@@ -105,6 +108,7 @@ Deno.serve(async (req) => {
 
     const claude = new Anthropic({ apiKey: ANTHROPIC_KEY, timeout: 30000, maxRetries: 1 });
     let ia: any = null;
+    let ia_error: string | null = null;
     try {
       const r: any = await claude.messages.create({
         model: MODELO,
@@ -118,12 +122,15 @@ Deno.serve(async (req) => {
         ia = JSON.parse(txt);
         ia.modelo = MODELO;
         ia.uso = { entrada: r.usage?.input_tokens, salida: r.usage?.output_tokens };
-      }
+      } else ia_error = "rechazo";
     } catch (e) {
       console.error("comprobante-leer: Claude", e instanceof Error ? e.message : String(e));
+      // 59.56: decir por qué no hubo lectura, para que la pantalla avise (sin mostrar detalles de la clave).
+      const st = Number((e as any)?.status) || 0;
+      ia_error = st === 401 || st === 403 ? "clave" : st === 400 && /credit|billing/i.test(String((e as any)?.message)) ? "credito" : st === 429 || st === 529 ? "ocupado" : "otro";
       ia = null; // sin lectura igual se protege con la huella exacta y el mismo archivo
     }
-    return json({ ok: true, sha256, ia });
+    return json({ ok: true, sha256, ia, ia_error });
   } catch (e) {
     console.error("comprobante-leer:", e instanceof Error ? e.message : String(e));
     return json({ ok: false, error: "No se pudo leer el comprobante." }, 500);

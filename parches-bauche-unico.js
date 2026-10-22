@@ -52,9 +52,9 @@
     const a = api(); if (!a || !a.token) return null;
     try {
       const r = await fetch(`${a.url}/functions/v1/comprobante-leer`, { method: 'POST', headers: { apikey: a.key, Authorization: 'Bearer ' + a.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ ref }) });
-      if (!r.ok) return null; const d = await r.json();
-      return d && d.ok && d.ia && !d.ia.error ? d.ia : null;
-    } catch (e) { return null; }
+      if (!r.ok) return { ia: null, err: 'red' }; const d = await r.json();
+      return { ia: d && d.ok && d.ia && !d.ia.error ? d.ia : null, err: (d && d.ia_error) || null };
+    } catch (e) { return { ia: null, err: 'red' }; }
   }
   async function rpc(fn, body) {
     const a = api(); const r = await fetch(`${a.url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: a.hdr(), body: JSON.stringify(body) });
@@ -76,12 +76,21 @@
         try { v.dhash = await dHash(blob); } catch (e) { v.dhash = null; }
       } catch (e) { console.warn('[bauche único] huella', e); }
       if (V !== v) return;
-      v.ia = await leerIA(ref);
+      const li = await leerIA(ref) || {};
+      v.ia = li.ia || null; v.iaErr = v.ia ? null : (li.err || null);
       if (V !== v) return;
       try {
         v.coinc = await rpc('comprobante_buscar', { p_sha256: v.sha, p_dhash: v.dhash, p_numero: v.ia && v.ia.numero_transaccion || null, p_storage_ref: ref }) || [];
         v.estado = v.coinc.length ? 'repetido' : 'nuevo';
         evaluar(v);
+        // 59.56 «smart»: sin coincidencia exacta, ¿otro comprobante con el mismo monto, fecha y banco, y además la misma
+        // hora o la misma persona que envía? (solo monto+fecha+banco da falsos: cuotas iguales el mismo día). Solo avisa.
+        if (v.estado === 'nuevo' && v.ia && v.ia.es_comprobante !== false && Number(v.ia.monto) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(v.ia.fecha || '') && (v.ia.hora || v.ia.ordenante)) {
+          try {
+            v.parecidos = await rpc('comprobante_parecidos', { p_monto: Number(v.ia.monto), p_fecha: v.ia.fecha, p_banco: v.ia.banco || null, p_cuenta: v.ia.cuenta_destino || null, p_excluir_ref: ref, p_hora: v.ia.hora || null, p_ordenante: v.ia.ordenante || null }) || [];
+            if (v.parecidos.length) v.estado = 'parecido';
+          } catch (e) { v.parecidos = []; }
+        }
       } catch (e) { v.estado = 'error'; v.error = e.message; }
       if (V !== v) return;
       autollenar(v); pintar();
@@ -130,22 +139,24 @@
 #nxBaucheCheck.compartido{background:rgba(37,99,235,.09);border-color:rgba(37,99,235,.28);color:#1e3a8a}
 #nxBaucheCheck.aprobado{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.35);color:#92400e}
 #nxBaucheCheck.error{background:rgba(217,119,6,.10);color:#92400e}
+#nxBaucheCheck.parecido{background:rgba(217,119,6,.11);border-color:rgba(217,119,6,.38);color:#92400e}
+#nxBaucheCheck.parecido .hit .ver{background:#b45309}
 #nxBaucheCheck .cab{display:flex;align-items:center;gap:8px;font-weight:800}
 #nxBaucheCheck .cab i.ti{font-size:17px}
 #nxBaucheCheck .ia{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px;font-weight:600;opacity:.92}
 #nxBaucheCheck .aviso{margin-top:6px;font-weight:700;color:#b45309}
 #nxBaucheCheck .hit{margin-top:8px;padding:8px;border-radius:10px;background:rgba(255,255,255,.55);display:flex;gap:8px;align-items:flex-start}
 #nxBaucheCheck .hit b{display:block}
-#nxBaucheCheck .hit .ver{margin-left:auto;flex:none;border:0;border-radius:8px;padding:6px 10px;font:700 11px inherit;background:#991b1b;color:#fff;cursor:pointer}
+#nxBaucheCheck .hit .ver{margin-left:auto;flex:none;border:0;border-radius:8px;min-height:44px;min-width:56px;padding:6px 12px;font-weight:700;font-size:13px;font-family:inherit;background:#991b1b;color:#fff;cursor:pointer}
 #nxBaucheCheck.compartido .hit .ver{background:#1d4ed8}
-#nxBaucheCheck textarea{width:100%;margin-top:8px;min-height:54px;border-radius:10px;border:1px solid rgba(153,27,27,.35);padding:8px;font:500 12px inherit;box-sizing:border-box;background:#fff;color:#111}
-#nxBaucheCheck .aprobar{margin-top:6px;width:100%;min-height:40px;border:0;border-radius:10px;font:800 12px inherit;background:#b45309;color:#fff;cursor:pointer}
+#nxBaucheCheck textarea{width:100%;margin-top:8px;min-height:60px;border-radius:10px;border:1px solid rgba(153,27,27,.35);padding:10px;font-weight:500;font-size:16px;font-family:inherit;box-sizing:border-box;background:#fff;color:#111}
+#nxBaucheCheck .aprobar{margin-top:6px;width:100%;min-height:48px;border:0;border-radius:10px;font-weight:800;font-size:14px;font-family:inherit;background:#b45309;color:#fff;cursor:pointer}
 #nxBaucheCheck .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:nxBuGira .7s linear infinite}
 html.tema-glass-oscuro #nxBaucheCheck.verificando{color:#CBD5E1}
 html.tema-glass-oscuro #nxBaucheCheck.nuevo{color:#86EFAC}
 html.tema-glass-oscuro #nxBaucheCheck.repetido{color:#FCA5A5}
 html.tema-glass-oscuro #nxBaucheCheck.compartido{color:#93C5FD}
-html.tema-glass-oscuro #nxBaucheCheck.aprobado,html.tema-glass-oscuro #nxBaucheCheck.error{color:#FCD34D}
+html.tema-glass-oscuro #nxBaucheCheck.aprobado,html.tema-glass-oscuro #nxBaucheCheck.error,html.tema-glass-oscuro #nxBaucheCheck.parecido{color:#FCD34D}
 html.tema-glass-oscuro #nxBaucheCheck .hit{background:rgba(0,0,0,.25)}
 html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
 @keyframes nxBuGira{to{transform:rotate(360deg)}}
@@ -167,11 +178,20 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
     const ia = v.ia && v.ia.es_comprobante !== false ? v.ia : null;
     const datos = ia ? `<div class="ia">${ia.banco ? `<span><i class="ti ti-building-bank"></i> ${esc(ia.banco)}</span>` : ''}${ia.monto != null ? `<span><i class="ti ti-cash"></i> ${esc(fmt(ia.monto))}</span>` : ''}${ia.fecha ? `<span><i class="ti ti-calendar"></i> ${esc(fecha(ia.fecha))}</span>` : ''}${ia.numero_transaccion ? `<span><i class="ti ti-hash"></i> ${esc(ia.numero_transaccion)}</span>` : ''}</div>` : '';
     const mf = montoFormulario();
+    const IAERR = { clave: 'la clave de la IA no es válida', credito: 'la IA no tiene crédito', sin_clave: 'falta la clave de la IA', ocupado: 'la IA está ocupada', red: 'no hubo conexión con la IA', rechazo: 'la IA no pudo leerlo', otro: 'la IA no pudo leerlo' };
+    const notaIA = !ia && v.iaErr ? `<div class="ia"><i class="ti ti-robot-off"></i> Se revisó solo la foto exacta: ${esc(IAERR[v.iaErr] || IAERR.otro)}.</div>` : '';
     const avisoMonto = ia && ia.monto != null && mf > 0 && Math.abs(Number(ia.monto) - mf) >= 1
       ? `<div class="aviso"><i class="ti ti-alert-triangle"></i> El comprobante dice ${esc(fmt(ia.monto))} y estás cobrando ${esc(fmt(mf))}.</div>` : '';
     if (v.estado === 'verificando') { c.className = 'verificando'; c.innerHTML = '<div class="cab"><span class="spin"></span> Revisando que este comprobante no se haya usado…</div>'; return; }
     if (v.estado === 'error') { c.className = 'error'; c.innerHTML = `<div class="cab"><i class="ti ti-wifi-off"></i> No se pudo revisar ahora. Se revisará otra vez al guardar.</div>${datos}`; return; }
-    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-shield-check"></i> Comprobante nuevo: no se ha usado en otro pago</div>${datos}${avisoMonto}`; return; }
+    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-shield-check"></i> Comprobante nuevo: no se ha usado en otro pago</div>${datos}${notaIA}${avisoMonto}`; return; }
+    if (v.estado === 'parecido') {
+      const ph = v.parecidos.slice(0, 3).map((h, i) => `<div class="hit"><i class="ti ti-eye-search"></i><div><b>Mismo monto, fecha, banco y ${v.ia.hora ? 'hora' : 'quien envía'}</b>${esc(h.cliente || 'Cliente')} · ${esc(fmt(h.monto))} · ${esc(fecha(h.fecha))}${h.agente ? ' · ' + esc(h.agente) : ''}</div>${h.comprobante ? `<button type="button" class="ver" data-p="${i}">Ver</button>` : ''}</div>`).join('');
+      c.className = 'parecido';
+      c.innerHTML = `<div class="cab"><i class="ti ti-alert-triangle"></i> Posible repetido: revise la foto antes de guardar</div>${datos}<div class="ia">No es la misma foto ni el mismo número, pero ya hay ${v.parecidos.length === 1 ? 'un pago' : v.parecidos.length + ' pagos'} con el mismo monto, fecha, banco y ${v.ia.hora ? 'hora' : 'persona que envía'}. Si es otro depósito, puede guardar.</div>${ph}${avisoMonto}`;
+      c.querySelectorAll('.ver').forEach(b => b.onclick = () => { const h = v.parecidos[+b.dataset.p]; if (h && window.nxVerComprobante) window.nxVerComprobante(h.comprobante); });
+      return;
+    }
     const hits = v.coinc.slice(0, 3).map((h, i) => `<div class="hit"><i class="ti ti-copy"></i><div><b>${esc(TIPO[h.tipo] || 'Coincide')}</b>${esc(h.cliente || 'Cliente')} · ${esc(fmt(h.monto))} · ${esc(fecha(h.fecha))}${h.agente ? ' · ' + esc(h.agente) : ''}</div>${h.comprobante ? `<button type="button" class="ver" data-i="${i}">Ver</button>` : ''}</div>`).join('');
     if (v.estado === 'compartido') {
       const queda = Math.max(0, v.tope - v.usado - mf);
@@ -224,7 +244,7 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
         try { document.getElementById('nxBaucheCheck').scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
         return;
       }
-      const ia = v && v.ia ? { banco: v.ia.banco, monto: v.ia.monto, fecha: v.ia.fecha, numero: v.ia.numero_transaccion, cuenta_destino: v.ia.cuenta_destino, confianza: v.ia.confianza, modelo: v.ia.modelo, titular_destino: v.ia.titular_destino, es_comprobante: v.ia.es_comprobante } : null;
+      const ia = v && v.ia ? { banco: v.ia.banco, monto: v.ia.monto, fecha: v.ia.fecha, numero: v.ia.numero_transaccion, cuenta_destino: v.ia.cuenta_destino, confianza: v.ia.confianza, modelo: v.ia.modelo, titular_destino: v.ia.titular_destino, hora: v.ia.hora || null, ordenante: v.ia.ordenante || null, es_comprobante: v.ia.es_comprobante } : null;
       let idComp = null;
       try {
         idComp = await rpc('comprobante_registrar', { p_storage_ref: ref, p_sha256: v && v.sha, p_dhash: v && v.dhash, p_ia: ia, p_motivo: v && v.aprobado ? v.motivo : null, p_nombre: (ses() && ses().nom) || null, p_monto: montoFormulario() || null });

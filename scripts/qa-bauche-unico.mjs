@@ -63,7 +63,8 @@ async function preparar(page, opts) {
     if (opts.registrarError) return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: opts.registrarError, details: JSON.stringify(HIT) }) });
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(COMP_ID) }); });
   await page.route(/\/rest\/v1\/rpc\/comprobante_vincular/, async r => { log.orden.push('vincular'); log.vincular.push(JSON.parse(r.request().postData() || '{}')); await r.fulfill({ status: 200, contentType: 'application/json', body: 'true' }); });
-  await page.route(/\/functions\/v1\/comprobante-leer/, async r => { log.leer++; await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, sha256: 'x', ia: opts.ia || null }) }); });
+  await page.route(/\/functions\/v1\/comprobante-leer/, async r => { log.leer++; await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, sha256: 'x', ia: opts.ia || null, ia_error: opts.iaErr || null }) }); });
+  await page.route(/\/rest\/v1\/rpc\/comprobante_parecidos/, async r => { log.parecidos = JSON.parse(r.request().postData() || '{}'); await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.parecidos || []) }); });
   return log;
 }
 async function cobroListo(page, cliente, rol) {
@@ -181,6 +182,32 @@ async function completar(page, monto) {
       await page.evaluate(() => regAbono()); await sleep(1500);
       ok(log.orden.join(',') === 'registrar,cobro,vincular' && Number(log.registrar[0].p_monto) === P && !log.registrar[0].p_motivo, `${w}px G: un agente cobra sin aprobación y manda p_monto (${log.orden.join(',')})`, log.registrar[0]);
       ok(!errs.length, `${w}px G: sin errores`, errs);
+      await ctx.close(); }
+    // H. 59.56 «smart»: otra captura del mismo depósito (sin número leído) → aviso ámbar, NO bloquea
+    { const { ctx, page, errs } = await abrir(browser, w);
+      const P = await page.evaluate(() => Math.max(1, Math.round(pendTot(ST.clientes[1]))));
+      const log = await preparar(page, { buscar: [], parecidos: [{ ...HIT[0], tipo: 'parecido', monto: P }], ia: { es_comprobante: true, banco: 'Banco Popular', monto: P, moneda: 'DOP', fecha: '2026-10-21', numero_transaccion: null, cuenta_destino: '4321', titular_destino: null, hora: '14:32', ordenante: 'Juan Pérez', confianza: 0.6 } });
+      await cobroListo(page, await page.evaluate(() => ST.clientes[1].id), 'agente');
+      await adjuntar(page);
+      const ambar = await esperarTarjeta(page, 'parecido');
+      const st = await page.evaluate(() => ({ txt: document.getElementById('nxBaucheCheck')?.innerText || '', ver: (() => { const b = document.querySelector('#nxBaucheCheck .ver'); if (!b) return null; const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })() }));
+      ok(ambar && /Posible repetido/i.test(st.txt) && /Cliente Anterior/.test(st.txt), `${w}px H: mismo monto, fecha y banco → aviso ámbar con el pago anterior`, st);
+      ok(log.parecidos && Number(log.parecidos.p_monto) === P && log.parecidos.p_fecha === '2026-10-21' && log.parecidos.p_banco === 'Banco Popular' && log.parecidos.p_cuenta === '4321' && log.parecidos.p_hora === '14:32' && log.parecidos.p_ordenante === 'Juan Pérez', `${w}px H: pregunta por monto, fecha, banco, cuenta, hora y quien envía`, log.parecidos);
+      ok(st.ver && st.ver[0] >= 44 && st.ver[1] >= 44, `${w}px H: botón «Ver» ≥ 44×44 (${st.ver})`, st.ver);
+      await completar(page, P); await page.evaluate(() => document.getElementById('nxBaucheCheck')?.scrollIntoView({ block: 'center' })); await sleep(250); await page.screenshot({ path: OUT + `${w}-H-parecido.png` });
+      await page.evaluate(() => regAbono()); await sleep(1500);
+      ok(log.registrar[0] && log.registrar[0].p_ia && log.registrar[0].p_ia.hora === '14:32' && log.registrar[0].p_ia.ordenante === 'Juan Pérez', `${w}px H: guarda hora y quien envía (para comparar los próximos)`, log.registrar[0] && log.registrar[0].p_ia);
+      ok(log.orden.join(',') === 'registrar,cobro,vincular', `${w}px H: el aviso no bloquea: un agente cobra (${log.orden.join(',')})`, log.orden);
+      ok(!errs.length, `${w}px H: sin errores`, errs);
+      await ctx.close(); }
+    // I. 59.56: sin lectura de IA, la tarjeta dice por qué (y protege igual con la foto exacta)
+    { const { ctx, page } = await abrir(browser, w);
+      const log = await preparar(page, { buscar: [], iaErr: 'credito' });
+      await cobroListo(page, await page.evaluate(() => ST.clientes[1].id), 'admin');
+      await adjuntar(page); await esperarTarjeta(page, 'nuevo');
+      const txt = await page.evaluate(() => document.getElementById('nxBaucheCheck')?.innerText || '');
+      ok(/solo la foto exacta/i.test(txt) && /crédito/i.test(txt), `${w}px I: avisa «se revisó solo la foto exacta: la IA no tiene crédito»`, txt);
+      ok(!log.parecidos, `${w}px I: sin lectura no busca parecidos`);
       await ctx.close(); }
   }
   console.log(`\nResultado: ${pass} PASS · ${fail} FAIL`);
