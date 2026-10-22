@@ -77,28 +77,16 @@ const ESQUEMA = {
   },
 };
 
+const hexDe = async (bytes: Uint8Array) => hex(await crypto.subtle.digest("SHA-256", bytes));
+
 const INSTRUCCION = `Eres un lector de comprobantes bancarios de República Dominicana. Lee la imagen y devuelve los datos pedidos.
 - El número de transacción es el que pone el banco (puede llamarse referencia, confirmación, número de transacción o autorización). No inventes: si no se ve claro, devuelve null.
 - La fecha va en AAAA-MM-DD y la hora en HH:MM de 24 horas. El monto, como número sin RD$, sin comas.
 - Si la imagen no es un comprobante de pago (una foto cualquiera, un mensaje), pon es_comprobante en false y lo demás en null.`;
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return json({ ok: false, error: "Método no permitido." }, 405);
-  const db = createClient(SUPABASE_URL, SERVICE_KEY);
-  try {
-    const quien = await usuarioNexus(req, db);
-    if (!quien.ok) return json({ ok: false, error: "No autorizado (" + quien.motivo + ")." }, 401);
-    const body = await req.json().catch(() => ({}));
-    const ref = String(body?.ref || "").trim();
-    const arch = await bajar(db, ref);
-    if (!arch) return json({ ok: false, error: "Comprobante no encontrado en NEXUS." }, 404);
-    if (arch.bytes.byteLength > MAX_BYTES) return json({ ok: false, error: "El archivo pasa de 8 MB." }, 413);
-    const sha256 = hex(await crypto.subtle.digest("SHA-256", arch.bytes));
 
-    if (body?.solo_huella) return json({ ok: true, sha256, ia: null });
-    if (!ANTHROPIC_KEY) return json({ ok: true, sha256, ia: null, ia_error: "sin_clave" });
-
+// Lee un comprobante con Claude. Sin lectura igual se protege con la huella exacta y el mismo archivo.
+async function leerConClaude(arch: { bytes: Uint8Array; tipo: string }): Promise<{ ia: any; ia_error: string | null }> {
     const b64 = btoa(Array.from(arch.bytes, (c) => String.fromCharCode(c)).join(""));
     const esPdf = arch.tipo === "application/pdf";
     const tipoImg = ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(arch.tipo) ? arch.tipo : "image/jpeg";
@@ -130,6 +118,98 @@ Deno.serve(async (req) => {
       ia_error = st === 401 || st === 403 ? "clave" : st === 400 && /credit|billing/i.test(String((e as any)?.message)) ? "credito" : st === 429 || st === 529 ? "ocupado" : "otro";
       ia = null; // sin lectura igual se protege con la huella exacta y el mismo archivo
     }
+  return { ia, ia_error };
+}
+
+// 59.56 (dueño, 22-oct-2026: «lee los 139 viejos»): lectura por lotes de los comprobantes de pagos ya guardados.
+// Solo administrador con sesión, o una llave de un solo uso guardada (en hash) en `_comprobante_lote_llaves` y vigente.
+// Agrega o completa la fila de `pago_comprobantes` vinculada a cada pago; nunca cambia pagos, montos ni clientes.
+async function permisoLote(req: Request, db: any): Promise<boolean> {
+  const llave = (req.headers.get("x-lote-llave") || "").trim();
+  if (llave.length >= 32) {
+    const h = await hexDe(new TextEncoder().encode(llave));
+    const { data } = await db.from("_comprobante_lote_llaves").select("hash").eq("hash", h).gt("vence", new Date().toISOString()).maybeSingle();
+    if (data) return true;
+  }
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!token || token === SERVICE_KEY) return false;
+  const { data } = await db.auth.getUser(token);
+  if (!data?.user) return false;
+  const { data: perfil } = await db.from("profiles").select("rol, activo").eq("id", data.user.id).maybeSingle();
+  return perfil?.rol === "admin" && perfil.activo !== false && (await usuarioNexus(req, db)).ok;
+}
+
+async function lote(db: any, limite: number, soloHuella: boolean) {
+  const { data: pagos, error } = await db.from("abonos")
+    .select("id, comprobante_url, reversado_at, estado")
+    .not("comprobante_url", "is", null).neq("comprobante_url", "").is("reversado_at", null)
+    .order("fecha", { ascending: false }).limit(1000);
+  if (error) throw new Error(error.message);
+  const ids = (pagos || []).map((p: any) => p.id);
+  const { data: ya } = ids.length ? await db.from("pago_comprobantes").select("id, abono_id, ia_json").in("abono_id", ids) : { data: [] };
+  const porAbono = new Map((ya || []).map((r: any) => [r.abono_id, r]));
+  // Con «solo huella» (sin IA) se toman los pagos sin fila; si no, los que aún no tienen lectura.
+  const pend = (pagos || []).filter((p: any) => p.estado !== "Reversado" && (soloHuella ? !porAbono.has(p.id) : !(porAbono.get(p.id) as any)?.ia_json));
+  const hechos: any[] = [];
+  for (const p of pend.slice(0, limite)) {
+    const arch = await bajar(db, p.comprobante_url);
+    if (!arch || arch.bytes.byteLength > MAX_BYTES) {
+      // Se deja anotado para no volver a intentarlo en cada lote.
+      const motivo = arch ? "grande" : "no_esta_en_nexus";
+      const previa0: any = porAbono.get(p.id);
+      const r0 = previa0
+        ? await db.from("pago_comprobantes").update({ ia_json: { es_comprobante: false, sin_lectura: motivo } }).eq("id", previa0.id)
+        : await db.from("pago_comprobantes").insert({ abono_id: p.id, storage_ref: p.comprobante_url, ia_json: { es_comprobante: false, sin_lectura: motivo }, created_by_uid: null, created_by_name: "Lectura IA retroactiva 22-oct-2026" });
+      hechos.push({ abono: p.id, ok: false, motivo, error: r0.error?.message || null }); continue;
+    }
+    const sha256 = await hexDe(arch.bytes);
+    const { ia, ia_error } = soloHuella ? { ia: null, ia_error: null } : await leerConClaude(arch);
+    if (ia_error && ia_error !== "rechazo" && ia_error !== "otro") return { hechos, pendientes: pend.length - hechos.length, detenido: ia_error };
+    const iaGuardar = soloHuella ? null : ia || { es_comprobante: false, sin_lectura: ia_error || "vacio" };
+    const fila: any = {
+      storage_ref: p.comprobante_url, sha256, ia_json: iaGuardar,
+      ia_banco: ia?.banco || null, ia_monto: Number(ia?.monto) > 0 ? Number(ia.monto) : null,
+      ia_fecha: /^\d{4}-\d{2}-\d{2}$/.test(ia?.fecha || "") ? ia.fecha : null,
+      ia_numero: ia?.numero_transaccion || null, ia_cuenta_destino: ia?.cuenta_destino || null,
+      ia_confianza: typeof ia?.confianza === "number" ? ia.confianza : null, ia_modelo: ia ? MODELO : null,
+    };
+    const { data: norm } = await db.rpc("pago_comprobante_norm", { p: fila.ia_numero });
+    fila.ia_numero_norm = norm || null;
+    const previa: any = porAbono.get(p.id);
+    const r = previa
+      ? await db.from("pago_comprobantes").update(fila).eq("id", previa.id)
+      : await db.from("pago_comprobantes").insert({ ...fila, abono_id: p.id, created_by_uid: null, created_by_name: "Lectura IA retroactiva 22-oct-2026" });
+    hechos.push({ abono: p.id, ok: !r.error, leido: !!ia, error: r.error?.message || ia_error || null });
+  }
+  return { hechos, pendientes: Math.max(0, pend.length - hechos.length), detenido: null };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ ok: false, error: "Método no permitido." }, 405);
+  const db = createClient(SUPABASE_URL, SERVICE_KEY);
+  try {
+    const body0 = await req.clone().json().catch(() => ({}));
+    if (body0?.lote) {
+      if (!(await permisoLote(req, db))) return json({ ok: false, error: "No autorizado." }, 401);
+      const soloHuella = body0.solo_huella === true;
+      if (!soloHuella && !ANTHROPIC_KEY) return json({ ok: false, error: "Falta la clave de la IA.", ia_error: "sin_clave" }, 400);
+      const limite = Math.min(soloHuella ? 40 : 15, Math.max(1, Number(body0.limite) || 10));
+      return json({ ok: true, ...(await lote(db, limite, soloHuella)) });
+    }
+    const quien = await usuarioNexus(req, db);
+    if (!quien.ok) return json({ ok: false, error: "No autorizado (" + quien.motivo + ")." }, 401);
+    const body = await req.json().catch(() => ({}));
+    const ref = String(body?.ref || "").trim();
+    const arch = await bajar(db, ref);
+    if (!arch) return json({ ok: false, error: "Comprobante no encontrado en NEXUS." }, 404);
+    if (arch.bytes.byteLength > MAX_BYTES) return json({ ok: false, error: "El archivo pasa de 8 MB." }, 413);
+    const sha256 = hex(await crypto.subtle.digest("SHA-256", arch.bytes));
+
+    if (body?.solo_huella) return json({ ok: true, sha256, ia: null });
+    if (!ANTHROPIC_KEY) return json({ ok: true, sha256, ia: null, ia_error: "sin_clave" });
+
+    const { ia, ia_error } = await leerConClaude(arch);
     return json({ ok: true, sha256, ia, ia_error });
   } catch (e) {
     console.error("comprobante-leer:", e instanceof Error ? e.message : String(e));
