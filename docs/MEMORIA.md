@@ -36,7 +36,7 @@
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
-| Bauche repetido: misma foto/número bloquea, depósito compartido azul, «posible repetido» ámbar | 59.56 (`parches-bauche-unico.js`, Edge `comprobante-leer` v5). **Falta clave IA válida en NEXUS** |
+| Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v5 |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
@@ -63,7 +63,7 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
-- **Clave IA de NEXUS inválida (401):** el dueño pone `ANTHROPIC_API_KEY` buena en Secrets; luego leer los 138 viejos con la Edge en modo `lote` (bitácora 22-oct 10:30).
+- **Clave IA de NEXUS inválida:** el dueño pone `ANTHROPIC_API_KEY`; luego leer los 138 viejos (modo `lote`, bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.
 - **Encargo visual móvil del Inbox de WhatsApp** (`CLAUDE.md`): compactar sin tocar la lógica. Antes, auditar la cascada `parches-whatsapp-*`.
 - Meta del anillo «Cobrado»: la decide el dueño (Configuración → Metas mensuales → «Meta cobros»).
@@ -92,7 +92,7 @@
 - En las vistas, el corte 20→20 manda: antes del día 20, el mes vigente es el anterior.
 
 - Conector de Supabase (comprobado en Bayol, 21-oct-2026): `apply_migration` y los SQL largos pueden colgarse 60 s → aplicar en sentencias pequeñas con `execute_sql`; un `UPDATE` sin `WHERE` se queda esperando confirmación.
-- Al compactar el chat se pierden detalles: esta MEMORIA se recarga sola (hook `.claude/hooks/memoria.sh`). Si algo importante solo quedó en el chat, anotarlo aquí.
+- Al compactar se pierden detalles: esta MEMORIA se recarga sola. Lo importante que solo quedó en el chat, anotarlo aquí.
 
 ## 9. Dónde buscar más
 - `AGENTS.md` (estado vivo, en `origin/main`), `CLAUDE.md`, `REGLAMENTOS.md`, `HERRAMIENTAS.md`, `docs/TRASPASO-CLAUDE.md`, `docs/bitacora/` y `docs/MEMORIA-TECNICA.md`.
