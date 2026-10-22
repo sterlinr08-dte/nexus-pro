@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.55**, verificado en vivo el 22-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.56**, verificado en vivo el 22-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -36,6 +36,7 @@
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
+| Bauche repetido: misma foto/número bloquea, depósito compartido azul, «posible repetido» ámbar | 59.56 (`parches-bauche-unico.js`, Edge `comprobante-leer` v5). **Falta clave IA válida en NEXUS** |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
@@ -62,6 +63,7 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
+- **Clave IA de NEXUS inválida (401):** el dueño pone `ANTHROPIC_API_KEY` buena en Secrets; luego leer los 138 viejos con la Edge en modo `lote` (bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.
 - **Encargo visual móvil del Inbox de WhatsApp** (`CLAUDE.md`): compactar sin tocar la lógica. Antes, auditar la cascada `parches-whatsapp-*`.
 - Meta del anillo «Cobrado»: la decide el dueño (Configuración → Metas mensuales → «Meta cobros»).
