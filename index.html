@@ -10809,7 +10809,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.54';
+const APP_VERSION='59.55';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -19301,6 +19301,108 @@ setTimeout(verificarAutoFacturacion, 5000);
     cargarConReintento('parches-rifas.js');
     cargarConReintento('parches-panel-dueno.js');
   })();
+</script>
+<!-- 59.55 Cobro: meses por adelantado a la vista (dueño, 22-oct-2026: «arregla la ventana de cobro, planifica la forma de
+     visualizar los meses por adelantado» → «Si»). Capa aislada sobre #nxCobroPane: solo pinta; el monto, regAbono() y la
+     custodia no cambian. 1) Un solo atajo encendido (Una cuota / Saldo total / Adelantar) y «Saldo total» apagado si está
+     al día. 2) Debajo del monto: «4 cuotas de RD$ 4,500». 3) Cuadrícula de meses: verde = ya adelantados antes, morado =
+     este pago, punteado = la próxima a pagar, con «tiene pagado hasta…». 4) Botón y resumen con meses exactos (sin «≈»).
+     Apagar: localStorage.nx_adel_off='1'. -->
+<style id="nxAdelPane">
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn.hero:not(.nxSel),
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn[aria-expanded="true"]:not(.nxSel){background:var(--cb-fill)!important;color:var(--cb-ink)!important;box-shadow:none!important}
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn.hero:not(.nxSel) small,
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn[aria-expanded="true"]:not(.nxSel) small{color:var(--cb-ink2)!important}
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn.nxSel{background:var(--cb-grad)!important;color:#fff!important}
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn.nxSel small{color:#fff!important}
+html.nx-cobro:not(.nx-adel-off) #mAbono#mAbono#mAbono#mAbono#mAbono .aboQbtn:disabled{opacity:.45!important;cursor:default}
+#mAbono .nxAdCuotas{text-align:center;font-size:13px;color:var(--cb-ink2,#64748b);margin:4px 0 0;min-height:18px;font-variant-numeric:tabular-nums}
+#mAbono .nxAdVista{margin-top:10px;padding:12px;border-radius:16px;background:var(--cb-fill,#f1f5f9)}
+#mAbono .nxAdVista[hidden]{display:none!important}
+#mAbono .nxAdGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#mAbono .nxAdM{border-radius:14px;padding:7px 4px;text-align:center;border:1.5px solid rgba(15,23,42,.10);background:var(--cb-card,#fff);min-height:52px;display:flex;flex-direction:column;justify-content:center}
+#mAbono .nxAdM b{font-size:14px;color:var(--cb-ink,#0f172a)}#mAbono .nxAdM small{font-size:11px;color:var(--cb-ink2,#64748b);line-height:1.2}
+#mAbono .nxAdM.nuevo{border-color:#7c3aed;background:rgba(124,58,237,.10)}#mAbono .nxAdM.nuevo b{color:#6d28d9}
+#mAbono .nxAdM.ya{border-color:rgba(22,163,74,.35);background:rgba(34,197,94,.10)}#mAbono .nxAdM.ya b{color:#15803d}
+#mAbono .nxAdM.sig{border-style:dashed;background:transparent}#mAbono .nxAdM.sig b{color:var(--cb-ink2,#64748b)}
+#mAbono .nxAdLey{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--cb-ink2,#64748b);margin-top:8px}
+#mAbono .nxAdLey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#mAbono .nxAdRes{margin-top:8px;font-size:13.5px;line-height:1.45;color:var(--cb-ink,#0f172a)}#mAbono .nxAdRes b{color:#6d28d9}
+html.tema-glass-oscuro #mAbono .nxAdM.nuevo b{color:#c4b5fd}html.tema-glass-oscuro #mAbono .nxAdM.ya b{color:#86efac}html.tema-glass-oscuro #mAbono .nxAdRes b{color:#c4b5fd}
+html.tema-glass-oscuro #mAbono .nxAdM{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+</style>
+<script id="nxAdelPaneJs">
+(function(){
+  try{if(localStorage.getItem('nx_adel_off')==='1'){document.documentElement.classList.add('nx-adel-off');return;}}catch(e){}
+  const MC=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const ML=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const $=id=>document.getElementById(id);
+  const money=v=>{try{return window.nxMoney?window.nxMoney.parse(v||''):parseFloat(String(v||'').replace(/,/g,''));}catch(e){return 0;}};
+  function cli(){try{return (typeof ST!=='undefined'&&ST.clientes)?ST.clientes.find(x=>x.id===abonoCliId):null;}catch(e){return null;}}
+  // Mes de la próxima factura que se va a generar: si hoy ya pasó su día de facturación, la de este mes ya está generada.
+  function proxima(c){const d=Math.min(28,Math.max(1,parseInt(c.dia_facturacion)||1)),h=new Date();let y=h.getFullYear(),m=h.getMonth();if(h.getDate()>=d){m++;if(m>11){m=0;y++;}}return {y,m,d};}
+  function suma(p,n){let m=p.m+n,y=p.y+Math.floor(m/12);m=((m%12)+12)%12;return {y,m,d:p.d};}
+  function calc(){
+    const c=cli();if(!c)return null;
+    const destino=($('aDestino')||{}).value||'facturas';if(destino!=='facturas')return null;
+    const cuota=+(getTot(c)||0);if(!(cuota>0))return null;
+    const monto=money(($('aMnt')||{}).value)||0,deuda=pend(c);
+    const antes=Math.max(0,(c.pagado||0)-(c.deuda_total||0));
+    const extra=Math.max(0,monto-deuda);
+    const mesesAntes=Math.floor((antes+0.009)/cuota),totMeses=Math.floor((antes+extra+0.009)/cuota);
+    const nuevos=Math.max(0,totMeses-mesesAntes),sobra=Math.round(((antes+extra)-totMeses*cuota)*100)/100;
+    return {c,cuota,monto,deuda,extra,mesesAntes,nuevos,totMeses,sobra:sobra>0.009?sobra:0,p:proxima(c)};
+  }
+  function modo(k){
+    const adel=$('aQAdel'),on=adel&&adel.getAttribute('aria-expanded')==='true';
+    let sel=null;
+    if(on)sel='aQAdel';else if(k&&k.monto>0){if(Math.abs(k.monto-k.cuota)<0.01&&k.deuda>=k.cuota-0.009)sel='aQCuota';else if(k.deuda>0&&Math.abs(k.monto-k.deuda)<0.01)sel='aQSaldar';}
+    ['aQCuota','aQSaldar','aQAdel'].forEach(id=>{const b=$(id);if(b)b.classList.toggle('nxSel',id===sel);});
+    const s=$('aQSaldar');if(s&&k)s.disabled=!(k.deuda>0);
+  }
+  function pintar(){
+    const m=document.querySelector('#mAbono .modal');if(!m)return;
+    const k=calc();modo(k);
+    const wrap=m.querySelector('.pgMntWrap');
+    let lin=$('nxAdCuotas');if(!lin&&wrap){lin=document.createElement('div');lin.id='nxAdCuotas';lin.className='nxAdCuotas';wrap.insertAdjacentElement('afterend',lin);}
+    let v=$('nxAdVista');const body=$('aAdelantoBody');
+    if(!v&&body){v=document.createElement('div');v.id='nxAdVista';v.className='nxAdVista';v.hidden=true;body.insertAdjacentElement('afterend',v);}
+    if(!k||!(k.monto>0)){if(lin)lin.textContent='';if(v)v.hidden=true;return;}
+    const n=Math.floor((k.monto+0.009)/k.cuota),r=Math.round((k.monto-n*k.cuota)*100)/100;
+    if(lin)lin.textContent=n>=1?(n+(n===1?' cuota':' cuotas')+' de '+fmt(k.cuota)+(r>0.009?' + '+fmt(r):'')):'';
+    if(!v)return;
+    if(!(k.nuevos>0||(k.extra>0&&k.mesesAntes>0))){v.hidden=true;return;}
+    const MAX=11,celdas=[];let i=0;
+    const hasta=k.mesesAntes+k.nuevos;
+    for(;i<hasta&&celdas.length<MAX;i++){const q=suma(k.p,i);celdas.push('<div class="nxAdM '+(i<k.mesesAntes?'ya':'nuevo')+'"><b>'+MC[q.m][0].toUpperCase()+MC[q.m].slice(1)+'</b><small>'+q.y+(i<k.mesesAntes?' · ya pagado':'')+'</small></div>');}
+    if(i<hasta)celdas.push('<div class="nxAdM nuevo"><b>+'+(hasta-i)+'</b><small>meses más</small></div>');
+    const sig=suma(k.p,hasta);celdas.push('<div class="nxAdM sig"><b>'+MC[sig.m][0].toUpperCase()+MC[sig.m].slice(1)+'</b><small>'+sig.y+' · próxima</small></div>');
+    const ult=suma(k.p,hasta-1);
+    v.innerHTML='<div class="nxAdGrid">'+celdas.join('')+'</div>'+
+      '<div class="nxAdLey">'+(k.mesesAntes?'<span><i style="background:rgba(34,197,94,.35)"></i>Ya adelantado antes</span>':'')+'<span><i style="background:rgba(124,58,237,.45)"></i>Este pago</span><span><i style="border:1.5px dashed #94a3b8"></i>Próxima a pagar</span></div>'+
+      '<div class="nxAdRes">'+(hasta>0?'Con este pago tiene pagado <b>hasta la factura de '+ML[ult.m]+' '+ult.y+'</b>. ':'')+'La próxima que tendrá que pagar es la de <b>'+ML[sig.m]+' '+sig.y+'</b> (se genera el '+sig.d+' de '+ML[sig.m]+').'+(k.sobra>0?' Quedan '+fmt(k.sobra)+' a favor para esa factura.':'')+'</div>';
+    v.hidden=false;
+    // Resumen y botón con meses exactos (sin «≈»)
+    const em=document.querySelector('#aboResumenTxt em');
+    if(em)em.textContent=em.textContent.replace(/\s*\((≈ )?\d+ mes[^)]*\)/g,'')+(k.nuevos>0?' ('+k.nuevos+(k.nuevos===1?' mes':' meses')+(k.sobra>0?' + '+fmt(k.sobra)+' a favor':'')+')':'');
+    const btn=$('btnAbo');
+    if(btn&&!btn.disabled&&!btn.classList.contains('pgIncompleto')&&k.nuevos>0&&!/· \d+ mes/.test(btn.textContent))btn.insertAdjacentText('beforeend',' · '+k.nuevos+(k.nuevos===1?' mes':' meses'));
+  }
+  function enganchar(){
+    if(typeof window.nxAboActualizarResumen==='function'&&!window.nxAboActualizarResumen._nxAd){
+      const o=window.nxAboActualizarResumen;window.nxAboActualizarResumen=function(){const r=o.apply(this,arguments);try{pintar();}catch(e){}return r;};window.nxAboActualizarResumen._nxAd=true;
+    }
+    if(typeof window.nxAboPintarAtajos==='function'&&!window.nxAboPintarAtajos._nxAd){
+      const o=window.nxAboPintarAtajos;window.nxAboPintarAtajos=function(){const r=o.apply(this,arguments);try{pintar();}catch(e){}return r;};window.nxAboPintarAtajos._nxAd=true;
+    }
+    if(typeof window.nxAboToggleAdelanto==='function'&&!window.nxAboToggleAdelanto._nxAd){
+      const o=window.nxAboToggleAdelanto;window.nxAboToggleAdelanto=function(){const r=o.apply(this,arguments);try{pintar();}catch(e){}return r;};window.nxAboToggleAdelanto._nxAd=true;
+    }
+  }
+  function init(){enganchar();const ov=$('mAbono');if(ov)new MutationObserver(()=>{if(ov.classList.contains('open'))setTimeout(pintar,60);}).observe(ov,{attributes:true,attributeFilter:['class']});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  window.nxAdelPintar=pintar;
+})();
 </script>
 </body>
 </html>

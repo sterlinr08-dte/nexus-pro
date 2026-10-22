@@ -158,8 +158,9 @@ const ALTO = () => document.querySelector('#mAbono .modal').scrollHeight;
     ok(/RD\$/.test(hecho.monto) && /Bajo custodia de/.test(hecho.poder) && /Saldo restante|al día/i.test(hecho.pend), `${w}px «Pago registrado» muestra monto, en poder de quién y lo que queda`, hecho);
     await page.screenshot({ path: OUT + `${w}-registrado.png` });
     ok(await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono .pgOkIc')).animationName === 'pgOkPop'), `${w}px «Pago registrado» con ✓ animado`);
-    const ctr = await page.evaluate(() => getComputedStyle(document.querySelector('#mAbono small#aQSaldarV')).color);
-    ok(/255, 255, 255/.test(ctr), `${w}px monto de «Saldar» en blanco (contraste)`, ctr);
+    // 59.55: solo el atajo escogido va resaltado (antes «Saldar» lo estaba siempre). Encendido → blanco; apagado → tinta legible.
+    const ctr = await page.evaluate(() => { const b = document.getElementById('aQSaldar'); return { sel: b.classList.contains('nxSel'), col: getComputedStyle(document.querySelector('#mAbono small#aQSaldarV')).color }; });
+    ok(ctr.sel ? /255, 255, 255/.test(ctr.col) : !/^rgb\(255, 255, 255\)$/.test(ctr.col), `${w}px monto de «Saldar» legible (blanco solo si está escogido)`, ctr);
     await page.click('#btnAboListo'); await sleep(300);
     ok(await page.evaluate(() => !document.querySelector('#mAbono.open')), `${w}px «Listo» cierra la ventana`);
     await page.evaluate(id => abrirAbono(id), A); await sleep(500);
