@@ -98,3 +98,5 @@
 
 ## 9. Dónde buscar más
 - `AGENTS.md` (estado vivo, en `origin/main`), `CLAUDE.md`, `REGLAMENTOS.md`, `HERRAMIENTAS.md`, `docs/TRASPASO-CLAUDE.md`, `docs/bitacora/` y `docs/MEMORIA-TECNICA.md`.
+
+- **Puntos de control (dueño, 23-oct-2026, reel de VibeWise):** antes de código no trivial, 2–3 opciones con ventajas y desventajas (maqueta si se puede), él decide; después informe de qué cambió y qué pruebas pasaron. Skill `puntos-de-control` en los 3 proyectos.

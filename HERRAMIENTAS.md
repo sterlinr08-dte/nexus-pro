@@ -138,3 +138,5 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 | «Revisa mis anuncios» | `ads-meta` + Meta Ads (solo lectura) |
 | «Mejora este texto u oferta» | `copywriting` / `offers` |
 | «Que salgamos en Google o Maps» | `seo-local` + `seo-maps` |
+
+- **`puntos-de-control`** (23-oct-2026): forma de trabajar del dueño, inspirada en el plugin VibeWise (MIT; no instalado, solo la idea). Antes de código no trivial: 2–3 opciones con ventajas y desventajas, él decide; después, informe de qué cambió y qué pruebas pasaron. Se usa sola.

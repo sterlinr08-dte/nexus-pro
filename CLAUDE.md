@@ -383,3 +383,10 @@ Mantener la estética moderna, clara y tipo glass/píldora que ya gusta al dueñ
 4. Si implementa, hacerlo en rama/PR aislado, con bitácora nueva y sin publicar.
 5. Explicar exactamente qué alturas/paddings/radios/anchos cambia y por qué, y verificar que no afecte chat, scroll, teclado, Realtime ni envío.
 6. Dejar la versión lista para que el dueño la vea antes de autorizar publicación.
+
+## Regla del dueño: puntos de control antes de escribir código (23-oct-2026)
+> Reel de VibeWise (instagram.com/reel/De0wcU4Pxl9): «me gustaría eso».
+
+Para todo cambio que no sea trivial: **primero 2–3 opciones en palabras sencillas con ventajas y desventajas (y maqueta si se puede
+ver), el dueño decide, y después un informe de qué cambió, por qué y qué pruebas pasaron.** Si el módulo no se conoce, antes un mapa
+corto del código. Detalle en `.claude/skills/puntos-de-control/SKILL.md` (igual en los 3 proyectos).
