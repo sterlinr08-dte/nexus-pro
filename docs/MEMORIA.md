@@ -94,5 +94,7 @@
 - Conector de Supabase (comprobado en Bayol, 21-oct-2026): `apply_migration` y los SQL largos pueden colgarse 60 s → aplicar en sentencias pequeñas con `execute_sql`; un `UPDATE` sin `WHERE` se queda esperando confirmación.
 - Al compactar se pierden detalles: esta MEMORIA se recarga sola. Lo importante que solo quedó en el chat, anotarlo aquí.
 
+- **Candado de secretos** (hook `secretos.sh`) y skill `redaccion-clara` instalados el 23-oct (HERRAMIENTAS.md).
+
 ## 9. Dónde buscar más
 - `AGENTS.md` (estado vivo, en `origin/main`), `CLAUDE.md`, `REGLAMENTOS.md`, `HERRAMIENTAS.md`, `docs/TRASPASO-CLAUDE.md`, `docs/bitacora/` y `docs/MEMORIA-TECNICA.md`.

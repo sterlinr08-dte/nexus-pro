@@ -115,6 +115,10 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 - **WhatsApp Business Tools** (MCP): números y plantillas de Meta. Nada se envía sin OK.
 - **Docs y páginas:** documentos y páginas para compartir.
 
+### Herramientas propias tomadas de la comunidad (23-oct-2026)
+- **Candado de secretos** (`.claude/hooks/secretos.sh`, hook PreToolUse·Bash): antes de cada `git commit` o `git push` de Claude revisa lo que se va a confirmar o subir; si encuentra algo que parece una clave (Info Plus `clave=`, JWT service_role, Anthropic, Stripe, AWS, GitHub, Slack, llaves privadas, `token=…`) lo bloquea y dice la línea. Idea de *Agent Guard* (MIT), hecha en casa sin descargas. Falso positivo seguro: `SECRETOS_OFF=1` delante del comando.
+- **`redaccion-clara`** (`.claude/skills/redaccion-clara`): revisa o reescribe textos en español para pantallas, WhatsApp y la IA según la regla del dueño (cortos, profesionales, sin redundancia). Adaptación en español de las categorías de *avoid-ai-writing* (MIT), que solo existe en inglés. Usarla antes de dejar un texto nuevo.
+
 ## Atajos: «quiero…» → herramienta
 
 | El dueño dice | Se usa |
