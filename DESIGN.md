@@ -28,6 +28,23 @@ NEXUS PRO is a professional insurance operations dashboard with **Daily App Bala
 - **Modals:** surface fades in while its content rises 8px. Dismissal is quicker than entry.
 - **Loaders:** skeletal shimmer matching actual layout dimensions. Never use generic circular spinners for page loading.
 
+## 4b. Orden de formularios y ventanas (dueño, 24-oct-2026) — igual en los 3 proyectos
+Nació de la ventana «Solicitud de financiamiento» del CRM de Bayol: las etiquetas salían en MAYÚSCULAS y las casillas quedaban
+sueltas arriba del texto. El dueño pidió textos formales y todo alineado, y que sea regla para todo el sistema.
+- **Etiquetas** de los campos en minúscula normal (solo la primera letra en mayúscula), 13 px, gris `#475569`, encima del campo.
+  Nunca en MAYÚSCULAS ni con `letter-spacing`. Las MAYÚSCULAS quedan solo para encabezados de tabla (12 px) y KPI.
+- **Textos formales y cortos, en usted.** Ejemplo: «Confirmo que informé al cliente el equipo y el precio.» Sin paréntesis
+  explicativos, sin referencias a reglas internas («regla del dueño…») y sin frases de relleno. Ayuda de la ventana: una o dos
+  frases arriba, o detrás de una ⓘ.
+- **Casillas (checkbox) siempre en fila con su texto:** cuadrito de 22 px a la izquierda, texto a la derecha, alineados al
+  centro, dentro de una tarjeta clara de 48 px de alto con borde `#e2e8f0` y radio 12. Nunca la casilla sola arriba del texto.
+- **Selectores y campos** iguales: 48 px de alto, letra 16 px, radio 12, foco azul NEXUS. El selector dice opciones completas
+  («Enlace a la página de Bayol Cell»), no abreviaturas ni «(recomendado)» dentro de la opción.
+- **Botón principal** 54 px con la acción en dos o tres palabras («Enviar al cliente», «Guardar»).
+- **Cascada:** si la ventana hereda estilos de la pantalla (mayúsculas, `display:block`, casillas sueltas), la capa debe ganar
+  con selectores de más peso (`#idDeLaVentana …`) y **probarse a 390 px antes de entregar**, porque en el celular es donde se nota.
+- Las ventanas nuevas nacen así; las existentes se van corrigiendo al tocarlas, sin rediseños masivos (regla anti-FOUC).
+
 ## 5. Layout Principles
 - Mobile-first below 768px, with no horizontal scrolling.
 - Mobile blue rail is 76px; expanded navigation surface is 228px. Labels start at least 20px inside the white zone after the rail boundary.
