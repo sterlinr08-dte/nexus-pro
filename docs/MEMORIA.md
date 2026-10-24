@@ -44,6 +44,7 @@
 | WhatsApp: Inbox corporativo, plantillas y automatizaciones | En producción (capas `parches-whatsapp-*`) |
 
 - Cada capa visual se apaga para todos con `NX_<CAPA>=false` o en un equipo con `localStorage.nx_<capa>_off='1'`. Ejemplos: `nx_inicio_pane_off`, `nx_cobro_pane_off`, `nx_info_off` y `nx_p7_pane_off`. El detalle de cada una está en su bitácora.
+- **Regla de orden de formularios (dueño, 24-oct-2026):** etiquetas en minúscula normal (nunca MAYÚSCULAS), textos formales en usted sin paréntesis, casillas en fila con su texto dentro de una tarjeta de 48 px, campos 48/16, botón 54, probar a 390 px. `DESIGN.md §4b`, igual en los 3 proyectos; las ventanas existentes se corrigen al tocarlas.
 - **Regla de botones (18-oct-2026):** todo lo que se toca mide ≥44×44 px; los campos 48 px con letra de 16 px; el botón principal 54 px. Se mide con Playwright a 390 y 1280 px y se anota en la bitácora.
 
 ## 5. Reglas de negocio clave
