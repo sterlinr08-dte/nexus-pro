@@ -48,6 +48,8 @@
 - Cada capa visual se apaga para todos con `NX_<CAPA>=false` o en un equipo con `localStorage.nx_<capa>_off='1'`. Ejemplos: `nx_inicio_pane_off`, `nx_cobro_pane_off`, `nx_info_off` y `nx_p7_pane_off`. El detalle de cada una está en su bitácora.
 - **Regla de botones (18-oct-2026):** todo lo que se toca mide ≥44×44 px; los campos 48 px con letra de 16 px; el botón principal 54 px. Se mide con Playwright a 390 y 1280 px y se anota en la bitácora.
 
+- **Botones encendidos (25-oct-2026, 59.57, rama `claude/botones-encendidos`):** el principal de cada pantalla y la opción elegida llevan luz realista en su propio color (`style#nxLuz`, apagar con `nx_luz_off`). El dueño eligió el estilo NEXUS (no la maqueta genérica) y «el acabado realista». Solo dentro de las pantallas; nada de barra fija abajo.
+
 ## 5. Reglas de negocio clave
 - **Los agentes no tienen comisión.** Nada de comisión en reportes, acumulados ni plantillas.
 - **Ciclo de agentes: del día 20 al día 20.** Un pago nunca cae en dos ciclos.

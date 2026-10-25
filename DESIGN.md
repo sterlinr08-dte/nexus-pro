@@ -51,6 +51,7 @@ NEXUS PRO is a professional insurance operations dashboard with **Daily App Bala
 - No text over the blue rail.
 - No active pill behind icons.
 - No neon outer glows, oversaturated accent surfaces or purple/blue neon treatments.
+- **Excepción decidida por el dueño (25-oct-2026): «botones encendidos».** El botón PRINCIPAL de cada pantalla y la opción ELEGIDA llevan luz: brillo por dentro arriba, sombra abajo, canto iluminado y halo de SU PROPIO color (morado-azul NEXUS; los chips, su `--chip-c`). Los demás botones no brillan. Implementación: `style#nxLuz` en `index.html` (59.57). Fuera de esos dos casos, la regla de arriba sigue.
 - No pure black.
 - No oversized floating cards without a hierarchy purpose.
 - No duplicated actions or decorative filler copy.
