@@ -17,6 +17,8 @@ export type Deps = {
   zernioApiKey?: string;
   fetchFn?: typeof fetch;
   ahora?: () => Date;
+  // 59.58: avisa que se guardó una foto entrante de un cliente vinculado (index.ts la manda a leer en segundo plano).
+  alGuardarImagen?: (waMessageId: string) => void;
 };
 
 export type Descarga = { path: string; mime: string; tamano: number };
@@ -435,6 +437,10 @@ export function crearWebhook(deps: Deps) {
         { onConflict: "wa_message_id", ignoreDuplicates: true }
       );
     if (msgError) console.error("insertar mensaje error:", msgError.message);
+    // 59.58: la IA lee el bauche apenas llega (solo clientes vinculados). Nunca rompe el guardado del mensaje.
+    else if (esEntrante && tipoContenido === "imagen" && mediaPath && clienteId && waMessageId && deps.alGuardarImagen) {
+      try { deps.alGuardarImagen(waMessageId); } catch (e) { console.error("alGuardarImagen:", e instanceof Error ? e.message : String(e)); }
+    }
   }
 
   async function procesarEstadoMensaje(payload: any, evento: string) {

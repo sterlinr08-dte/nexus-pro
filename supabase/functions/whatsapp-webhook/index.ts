@@ -25,7 +25,18 @@ const WEBHOOK_SECRET = Deno.env.get("ZERNIO_WEBHOOK_SECRET") ?? "";
 const ZERNIO_API_KEY = Deno.env.get("ZERNIO_API_KEY") ?? "";
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-const webhook = crearWebhook({ db, zernioApiKey: ZERNIO_API_KEY });
+// 59.58: cuando un cliente vinculado manda una foto, se lee como bauche en segundo plano (bauche-auto-leer).
+// waitUntil deja terminar la lectura sin demorar la respuesta a Zernio; cualquier error queda solo en el log.
+function leerBaucheEnSegundoPlano(waMessageId: string) {
+  const p = fetch(`${SUPABASE_URL}/functions/v1/bauche-auto-leer`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ wa_message_id: waMessageId }),
+  }).then((r) => r.text()).catch((e) => console.error("bauche-auto-leer:", e instanceof Error ? e.message : String(e)));
+  try { (globalThis as any).EdgeRuntime?.waitUntil?.(p); } catch (_e) { /* sin waitUntil igual corre */ }
+}
+
+const webhook = crearWebhook({ db, zernioApiKey: ZERNIO_API_KEY, alGuardarImagen: leerBaucheEnSegundoPlano });
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok");

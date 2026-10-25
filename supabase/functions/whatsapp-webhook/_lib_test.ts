@@ -8,7 +8,7 @@ const HILO = { id: "hilo-1", cliente_id: "cli-1", no_leidos_count: 2, nombre_per
 
 type Estado = { mensajes: Record<string, any>; hilo?: any };
 
-function armar(estado: Estado, rutas: Parameters<typeof crearFakeFetch>[0] = []) {
+function armar(estado: Estado, rutas: Parameters<typeof crearFakeFetch>[0] = [], alGuardarImagen?: (w: string) => void) {
   const { db, llamadas, storage } = crearFakeDb((l: Llamada) => {
     if (l.tabla === "whatsapp_config") return { data: CONFIG };
     if (l.tabla === "whatsapp_hilo_mensajes" && l.op === "select") {
@@ -25,7 +25,7 @@ function armar(estado: Estado, rutas: Parameters<typeof crearFakeFetch>[0] = [])
     return {};
   });
   const { fetchFn, peticiones } = crearFakeFetch(rutas);
-  const wh = crearWebhook({ db, fetchFn, zernioApiKey: "k", ahora: () => new Date("2026-09-30T12:00:00Z") });
+  const wh = crearWebhook({ db, fetchFn, zernioApiKey: "k", ahora: () => new Date("2026-09-30T12:00:00Z"), alGuardarImagen });
   return { wh, llamadas, storage, peticiones };
 }
 
@@ -268,4 +268,26 @@ Deno.test("respuesta interactiva se guarda como texto", async () => {
 
 Deno.test("respuestaJson helper", async () => {
   assertEquals((await respuestaJson({ a: 1 }).json()).a, 1);
+});
+
+// 59.58: la IA lee el bauche apenas llega, solo si es una foto ENTRANTE de un cliente VINCULADO.
+Deno.test("foto entrante de cliente vinculado pide la lectura del bauche (una vez, con su wamid)", async () => {
+  const pedidos: string[] = [];
+  const { wh } = armar({ mensajes: {}, hilo: HILO }, [rutaMedia("image/jpeg", 2048)], (w) => pedidos.push(w));
+  await wh.manejarEvento(mensajeEntrante({ attachments: [{ type: "image", url: "/v1/whatsapp/media/abc" }] }), CONFIG);
+  assertEquals(pedidos, ["wamid.IN1"]);
+});
+
+Deno.test("no pide lectura: texto, sticker, chat sin cliente, foto que no se pudo bajar o error que lanza", async () => {
+  const pedidos: string[] = [];
+  const anota = (w: string) => pedidos.push(w);
+  await armar({ mensajes: {}, hilo: HILO }, [], anota).wh.manejarEvento(mensajeEntrante({ text: "hola" }), CONFIG);
+  await armar({ mensajes: {}, hilo: HILO }, [rutaMedia("image/webp", 10)], anota).wh.manejarEvento(mensajeEntrante({ attachments: [{ type: "sticker", url: "/v1/whatsapp/media/s", mimeType: "image/webp" }] }), CONFIG);
+  await armar({ mensajes: {}, hilo: { ...HILO, cliente_id: null } }, [rutaMedia("image/jpeg", 20)], anota).wh.manejarEvento(mensajeEntrante({ attachments: [{ type: "image", url: "/v1/whatsapp/media/abc" }] }), CONFIG);
+  await armar({ mensajes: {}, hilo: HILO }, [], anota).wh.manejarEvento(mensajeEntrante({ attachments: [{ type: "image", url: "/v1/whatsapp/media/falla" }] }), CONFIG);
+  assertEquals(pedidos, []);
+  // Si la llamada lanza, el mensaje igual queda guardado.
+  const { wh, llamadas } = armar({ mensajes: {}, hilo: HILO }, [rutaMedia("image/jpeg", 20)], () => { throw new Error("caída"); });
+  await wh.manejarEvento(mensajeEntrante({ attachments: [{ type: "image", url: "/v1/whatsapp/media/abc" }] }), CONFIG);
+  assertEquals(ultima(llamadas, "whatsapp_hilo_mensajes", "upsert")!.datos.tipo_contenido, "imagen");
 });
