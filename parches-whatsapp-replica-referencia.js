@@ -259,6 +259,13 @@
 #v-waInbox .nxWaRefClosedMic{background:#242a3a;color:#fff;font-size:20px}
 #v-waInbox .nxWaRefClosedPill{flex:1;min-width:0;height:50px;padding:0 8px 0 14px;border:1px solid rgba(255,255,255,.88);border-radius:25px;background:rgba(255,255,255,.7);display:flex;align-items:center;gap:8px;color:#7f889d}
 #v-waInbox .nxWaRefClosedPill span{flex:1;font-size:11px}.nxWaRefClosedPill i{font-size:18px;color:#35415b}
+#v-waInbox .nxWaRefClosedComposer.nxWaRefClosedOn{opacity:1;pointer-events:auto;user-select:auto}
+#v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill{width:100%;min-height:50px;font:inherit;text-align:left;cursor:pointer;border-style:dashed;border-color:rgba(37,99,235,.45);background:rgba(37,99,235,.07);color:#1e40af;-webkit-tap-highlight-color:transparent}
+#v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill span{font-size:14px;font-weight:600;text-transform:none;letter-spacing:0;line-height:1.25}
+#v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill i{color:#2563eb}
+#v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill:active{transform:scale(.98)}
+html.tema-glass-oscuro #v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill{background:rgba(59,130,246,.12);border-color:rgba(147,197,253,.45);color:#BFDBFE}
+html.tema-glass-oscuro #v-waInbox .nxWaRefClosedOn .nxWaRefClosedPill i{color:#93C5FD}
 
 /* Emoji picker funcional */
 .nxWaEmojiPop{
@@ -400,8 +407,11 @@ body.tema-premium #v-waInbox .nxWaBub.in{background:#1b2739!important;color:#e7e
   function enhanceClosed(){
     const root=$('#v-waInbox');if(!root)return;
     const closed=$('.nxWaCerrada',root);if(!closed||$('.nxWaComposer',root)||$('.nxWaRefClosedComposer',root))return;
-    const box=document.createElement('div');box.className='nxWaRefClosedComposer';box.setAttribute('aria-disabled','true');
-    box.innerHTML='<div class="nxWaRefClosedPill"><span>Escribe un mensaje...</span><i class="ti ti-mood-smile"></i><i class="ti ti-paperclip"></i><i class="ti ti-camera"></i></div><div class="nxWaRefClosedMic"><i class="ti ti-microphone"></i></div>';
+    // 59.60 (dueño 25-oct-2026: «no puede escribir desde el WhatsApp del NEXUS»): la caja falsa parecía activa. Fuera de las
+    // 24 h WhatsApp solo acepta plantillas, así que ahora lo dice con un candado y al tocarla abre las plantillas aprobadas.
+    const box=document.createElement('div');box.className='nxWaRefClosedComposer nxWaRefClosedOn';
+    box.innerHTML='<button type="button" class="nxWaRefClosedPill" aria-label="Ventana de 24 horas cerrada: usar una plantilla aprobada"><i class="ti ti-lock"></i><span>Ventana de 24 h cerrada · toque para usar una plantilla</span><i class="ti ti-template"></i></button>';
+    box.querySelector('button').addEventListener('click',()=>{try{if(typeof window.nxWaAbrirPlantillas==='function')window.nxWaAbrirPlantillas({estado:'APPROVED'});}catch(e){}});
     closed.parentNode.insertBefore(box,closed);
   }
 
