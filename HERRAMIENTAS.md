@@ -121,6 +121,19 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 - **`launch-check`** (`.claude/skills/launch-check`, de la colección Antigravity/AAS; MIT, solo biblioteca estándar de Python, no manda nada a terceros): revisión pasiva de un sitio en vivo: claves expuestas en el frontend, tablas abiertas de Supabase (solo con `--owner-check`), cabeceras de seguridad, diseño a 375 px, SEO y velocidad. Usar antes de publicar algo grande. Primera corrida 23-oct: bayolcell.com 54/100 y nexusprord.com 58/100, sin claves expuestas; faltan cabeceras HSTS, CSP y X-Frame-Options (van en Cloudflare).
 - **Revisadas y NO instaladas** de esa colección: `production-audit` (manda el repo a api.commit.show), `verify-document` y `extract-document-data` (suben los documentos a stipple.sh). Van contra la regla de no mandar datos a servicios externos.
 
+### Método de trabajo (instaladas el 25-oct-2026, pedido del dueño)
+| Para qué | Skill |
+|---|---|
+| Preguntar y planificar antes de un pedido grande | `brainstorming` (sin el servidor visual), `writing-plans` (planes en `docs/planes/`) |
+| Comprobar con pruebas antes de decir «listo» | `verification-before-completion` |
+| Buscar la causa real de un error | `systematic-debugging` |
+| Pedir y recibir revisión de código | `requesting-code-review`, `receiving-code-review` |
+| Buscar skills nuevas | `find-skills` (**solo busca**: instalar exige revisión, OK del dueño y bitácora) |
+| Crear skills propias | `skill-creator` (ya estaba, de Anthropic) |
+| Diseño de textos, botones y espacios | `frontend-design` (ya estaba) |
+
+Las cinco primeras vienen de `obra/superpowers` (MIT) y `find-skills` de `vercel-labs/skills` (MIT). Solo se copiaron las instrucciones, **sin** el gancho que se activa al iniciar cada sesión y sin programas. **No se instaló `claude-mem`**: guarda todo lo que hace la IA (incluidos datos de clientes y claves que salgan en pantalla), envía estadísticas a PostHog, tiene sincronización con su nube (`sync.cmem.ai`) y en estas sesiones en la nube su memoria se borra al cerrar. Para la memoria ya usamos `docs/MEMORIA.md` con su gancho.
+
 ## Atajos: «quiero…» → herramienta
 
 | El dueño dice | Se usa |
