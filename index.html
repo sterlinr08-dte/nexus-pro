@@ -6826,6 +6826,55 @@ function limpiar(v){var w=document.createTreeWalker(v,NodeFilter.SHOW_TEXT),n;wh
 function iniciar(){VISTAS.forEach(function(id){var v=document.getElementById(id);if(!v)return;limpiar(v);var pend=false;new MutationObserver(function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;limpiar(v);});}).observe(v,{childList:true,subtree:true});});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();</script>
 
+<!-- ═══ BOTONES ENCENDIDOS (59.57, 25-oct-2026) — pedido del dueño: «el efecto que se siente como si fuera un botón encendido»,
+     solo en los botones de dentro de las pantallas y con el estilo de NEXUS («me gusta, el acabado se ve realista»).
+     No cambia formas, colores ni lógica: a los botones PRINCIPALES (.btn.bxl / .btn.bc1 grandes, «Cobrar» del Inicio) y a la
+     opción ELEGIDA (pestañas activas, vista, «Saldo total», chips de método con su propio color --chip-c) les agrega luz:
+     brillo por dentro arriba, sombra abajo, canto iluminado y halo de su propio color. Al presionar, la luz baja (se siente físico).
+     Los pequeños (.bsm), los fantasma, los de color (rojo/verde…), los deshabilitados y «Falta…» (.pgIncompleto) quedan como estaban.
+     Va en el <head> (primer pintado, sin FOUC). Especificidad alta (:not(#nxl…) ×8) porque varias capas usan #mAbono×4 + !important.
+     INTERRUPTOR: NX_LUZ=false → nadie lo ve; en un equipo: localStorage.setItem('nx_luz_off','1'). -->
+<script id="nxLuzOn">var NX_LUZ=true;try{if(NX_LUZ&&localStorage.getItem('nx_luz_off')!=='1')document.documentElement.classList.add('nx-luz');}catch(e){if(NX_LUZ)document.documentElement.classList.add('nx-luz');}</script>
+<style id="nxLuz">
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .btn.bxl:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bc2):not(.bc3):not(.bc4):not(.bc5):not(.bwa):not(.bghost):not(.bsm):not(:disabled):not(.pgIncompleto),
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .btn.bc1:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bsm):not(:disabled):not(.pgIncompleto),
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .nxIG-btn.pri:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(:disabled){
+  border-color:rgba(221,214,254,.55)!important;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 12px 14px -10px rgba(255,255,255,.38),inset 0 -10px 18px rgba(30,27,75,.42),0 0 0 1px rgba(196,181,253,.42),0 0 22px rgba(139,92,246,.55),0 0 48px rgba(37,99,235,.32)!important;
+  text-shadow:0 0 12px rgba(255,255,255,.45)!important;
+  transition:box-shadow .32s cubic-bezier(.22,1,.36,1),transform .16s cubic-bezier(.22,1,.36,1),filter .2s ease!important;
+}
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .btn.bxl:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bc2):not(.bc3):not(.bc4):not(.bc5):not(.bwa):not(.bghost):not(.bsm):not(:disabled):not(.pgIncompleto):active,
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .btn.bc1:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bsm):not(:disabled):not(.pgIncompleto):active,
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .nxIG-btn.pri:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(:disabled):active{
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.4),inset 0 -4px 10px rgba(30,27,75,.55),inset 0 3px 8px rgba(30,27,75,.35),0 0 0 1px rgba(196,181,253,.35),0 0 10px rgba(139,92,246,.4)!important;
+}
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .nxft-tab.is-active:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8),
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .nxVistaOpt.on:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8),
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .aboQbtn.nxSel:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8){
+  border-color:rgba(221,214,254,.5)!important;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 10px 12px -9px rgba(255,255,255,.32),0 0 0 1px rgba(196,181,253,.35),0 0 16px rgba(139,92,246,.5),0 0 34px rgba(139,92,246,.24)!important;
+  transition:box-shadow .32s cubic-bezier(.22,1,.36,1)!important;
+}
+html.nx-luz:is(.tema-glass-oscuro,.tema-claro) body .nxOptChip.on:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8){
+  box-shadow:inset 0 0 0 2px var(--chip-c,#7C3AED),inset 0 1px 1px rgba(255,255,255,.4),inset 0 10px 12px -9px rgba(255,255,255,.22),0 0 14px color-mix(in srgb,var(--chip-c,#7C3AED) 62%,transparent),0 0 30px color-mix(in srgb,var(--chip-c,#7C3AED) 30%,transparent)!important;
+  transition:box-shadow .32s cubic-bezier(.22,1,.36,1)!important;
+}
+/* Tema claro: sobre fondo blanco el halo se ve mejor más corto y azul, sin brillo de texto */
+html.nx-luz.tema-claro body .btn.bxl:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bc2):not(.bc3):not(.bc4):not(.bc5):not(.bwa):not(.bghost):not(.bsm):not(:disabled):not(.pgIncompleto),
+html.nx-luz.tema-claro body .btn.bc1:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(.bsm):not(:disabled):not(.pgIncompleto),
+html.nx-luz.tema-claro body .nxIG-btn.pri:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8):not(:disabled){
+  border-color:rgba(191,219,254,.9)!important;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.6),inset 0 12px 14px -10px rgba(255,255,255,.4),inset 0 -8px 14px rgba(30,58,138,.3),0 0 0 1px rgba(147,197,253,.6),0 0 16px rgba(37,99,235,.35),0 10px 22px -8px rgba(37,99,235,.45)!important;
+  text-shadow:none!important;
+}
+html.nx-luz.tema-claro body .nxft-tab.is-active:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8),
+html.nx-luz.tema-claro body .nxVistaOpt.on:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8),
+html.nx-luz.tema-claro body .aboQbtn.nxSel:not(#nxl1):not(#nxl2):not(#nxl3):not(#nxl4):not(#nxl5):not(#nxl6):not(#nxl7):not(#nxl8){
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.6),inset 0 10px 12px -9px rgba(255,255,255,.35),0 0 0 1px rgba(147,197,253,.65),0 0 14px rgba(37,99,235,.34),0 6px 14px -6px rgba(37,99,235,.4)!important;
+}
+@media (prefers-reduced-motion:reduce){html.nx-luz body .btn,html.nx-luz body .nxOptChip,html.nx-luz body .nxft-tab{transition:none!important}}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10809,7 +10858,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.56';
+const APP_VERSION='59.57';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
