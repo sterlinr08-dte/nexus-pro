@@ -87,7 +87,7 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
-- **PIZZERÍA UNIVE 2** (cliente nuevo, 25-oct-2026, rama `claude/pizzeria-unive2`):
+- **PIZZERÍA Y CAFETERÍA UNIVE 2** (cliente nuevo, 25-oct-2026, rama `claude/pizzeria-unive2`). **No es solo pizzería: también es cafetería dominicana** (desayunos, sándwiches, chimis, frituras, jugos, café…). Fondo elegido: **D «Mantel con caja»**.
   - Base Supabase propia **`gzdkzcspmvyxgfcytpgy`**, VACÍA. Datos: us-east-1, Micro, la paga el dueño. Seguridad: Data API ✅, auto-expose ⬜, auto-RLS ✅.
   - **Sin RNC**: la caja arranca sin NCF ni e-CF.
   - La entrevista la responde la dueña en el formulario https://claude.ai/artifact/N4ZXnNso4FPEF5EuBZ8pkL. Subdominio: `unive2.nexusprord.com`.
