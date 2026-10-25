@@ -5,6 +5,8 @@
   // worker.js solo se ejecuta para /boleto.html (run_worker_first) y arma la
   // vista previa (Open Graph) del boleto con banner + número para WhatsApp.
   // Todo lo demás se sirve estático sin tocar al Worker.
+  // 25-oct-2026: run_worker_first pasa de true a ["/boleto.html"]. Con true el Worker
+  // corría en TODAS las peticiones y Cloudflare no aplicaba el archivo _headers (caché).
   "name": "nexus-pro",
   "compatibility_date": "2025-06-01",
   "main": "worker.js",
@@ -12,6 +14,6 @@
     "directory": "./",
     "not_found_handling": "single-page-application",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "run_worker_first": ["/boleto.html"]
   }
 }
