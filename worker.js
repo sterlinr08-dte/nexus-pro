@@ -46,17 +46,21 @@ export default {
 };
 
 async function conHuella(request, env) {
-  // El archivo ya trae su huella (hash del contenido) por dentro, pero Cloudflare quita las
-  // huellas «fuertes» del HTML al final del camino. En formato débil (W/"...") sí la deja pasar.
+  // Cloudflare quita al final del camino toda huella ETag del HTML (fuerte o débil).
+  // Se usa la fecha de la publicación (env.CF_VERSION: cambia en cada despliegue)
+  // como Last-Modified, y el navegador pregunta con If-Modified-Since → 304.
   const resp = await env.ASSETS.fetch(request);
-  const tag = resp.headers.get("etag");
-  if (!tag || (resp.status !== 200 && resp.status !== 304)) return resp;
-  const limpio = tag.replace(/^W\//, "");
+  const ts = env.CF_VERSION && env.CF_VERSION.timestamp;
+  if (resp.status !== 200 || !ts) return resp;
+  const fecha = new Date(ts);
+  if (isNaN(fecha)) return resp;
+  const lm = fecha.toUTCString();
   const headers = new Headers(resp.headers);
-  headers.set("etag", "W/" + limpio);
+  headers.set("last-modified", lm);
   headers.set("cache-control", "no-cache");
-  const inm = request.headers.get("if-none-match") || "";
-  if (resp.status === 304 || inm.split(",").some(t => t.trim().replace(/^W\//, "") === limpio)) {
+  const ims = Date.parse(request.headers.get("if-modified-since") || "");
+  // Fechas HTTP tienen precisión de segundos.
+  if (!isNaN(ims) && Math.floor(fecha.getTime() / 1000) <= Math.floor(ims / 1000)) {
     headers.delete("content-length");
     return new Response(null, { status: 304, headers });
   }

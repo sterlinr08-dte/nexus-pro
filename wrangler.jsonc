@@ -11,6 +11,8 @@
   "name": "nexus-pro",
   "compatibility_date": "2025-06-01",
   "main": "worker.js",
+  // Fecha de cada publicación para el Last-Modified de la página principal (worker.js → conHuella).
+  "version_metadata": { "binding": "CF_VERSION" },
   "assets": {
     "directory": "./",
     "not_found_handling": "single-page-application",
