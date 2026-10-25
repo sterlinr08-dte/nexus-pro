@@ -51,3 +51,19 @@
 - opción de cobro y margen;
 - si el cliente paga el certificado aparte;
 - qué hacer con la fila de Geriatra.
+
+## Propuesta de precios (25-oct-2026; el dueño piensa cobrar RD$2,000 al mes por el sistema)
+Costo con MSeller tomando un 15 % de descuento de proveedor (supuesto; en USD, así que varía con la tasa) y comparación con un precio público del mercado (facturadominicana.do).
+
+| Paquete e-CF | Ventas al día aprox. | Costo MSeller | **Precio sugerido** | Margen | Mercado |
+|---|---:|---:|---:|---:|---|
+| Micro (hasta 250; solo micro DGII) | 8 | RD$0 | **RD$500** (soporte) | 100 % | RD$1,380 (250) |
+| Hasta 500 | 15 | ~RD$720 | **RD$1,000** | ~39 % | — |
+| Hasta 1,000 | 30 | ~RD$1,190 | **RD$1,800** | ~51 % | RD$3,890 |
+| Hasta 2,500 | 80 | ~RD$2,040 | **RD$3,000** | ~47 % | — |
+| Hasta 6,000 | 200 | ~RD$4,165 | **RD$6,000** | ~44 % | — |
+
+- **Instalación de e-CF (una sola vez):** RD$3,000–5,000. Cubre acompañar los 13 pasos, crear la cuenta y hacer las pruebas. El certificado (unos USD 29.95 al año) se cobra aparte, a costo.
+- **Total de ejemplo, Unive 2 con 80 ventas al día:** RD$2,000 de sistema + RD$3,000 de e-CF = **RD$5,000 al mes**.
+- **Revisar los precios cada año**, o si MSeller cambia sus precios o sube mucho el dólar.
+- Pendiente del dueño: aprobar la tabla, y decidir si los clientes actuales (RD$1,200) pasan a RD$2,000.
