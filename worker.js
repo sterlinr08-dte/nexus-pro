@@ -46,26 +46,21 @@ export default {
 };
 
 async function conHuella(request, env) {
+  // El archivo ya trae su huella (hash del contenido) por dentro, pero Cloudflare quita las
+  // huellas «fuertes» del HTML al final del camino. En formato débil (W/"...") sí la deja pasar.
   const resp = await env.ASSETS.fetch(request);
-  if (resp.status !== 200 || resp.headers.has("etag")) {
-    const h0 = new Headers(resp.headers); h0.set("x-nx-huella", "asset:" + resp.status + ":" + (resp.headers.get("etag") || "-"));
-    return new Response(resp.body, { status: resp.status, headers: h0 });
-  }
-  if (!(resp.headers.get("content-type") || "").includes("text/html")) return resp;
-  const buf = await resp.arrayBuffer();
-  const dig = new Uint8Array(await crypto.subtle.digest("SHA-1", buf));
-  const tag = '"' + Array.from(dig, b => b.toString(16).padStart(2, "0")).join("") + '"';
+  const tag = resp.headers.get("etag");
+  if (!tag || (resp.status !== 200 && resp.status !== 304)) return resp;
+  const limpio = tag.replace(/^W\//, "");
   const headers = new Headers(resp.headers);
-  headers.set("etag", tag);
+  headers.set("etag", "W/" + limpio);
   headers.set("cache-control", "no-cache");
-  headers.set("x-nx-huella", "nueva");
-  headers.delete("content-length");
   const inm = request.headers.get("if-none-match") || "";
-  // Cloudflare debilita la huella al comprimir (W/"..."): se compara sin el W/.
-  if (inm.split(",").some(t => t.trim().replace(/^W\//, "") === tag)) {
+  if (resp.status === 304 || inm.split(",").some(t => t.trim().replace(/^W\//, "") === limpio)) {
+    headers.delete("content-length");
     return new Response(null, { status: 304, headers });
   }
-  return new Response(buf, { status: 200, headers });
+  return new Response(resp.body, { status: 200, headers });
 }
 
 async function ssrBoleto(request, env, id) {
