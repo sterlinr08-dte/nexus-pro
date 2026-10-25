@@ -127,3 +127,60 @@ SOFTWARE.
 - Origen: github.com/Hainrixz/the-architect @ a25b09e, v2.6.0 (MIT, Copyright Enrique Henry / tododeia). Carpeta `the-architect` (licencia en su `LICENSE`).
 - Solo instrucciones (.md): SKILL.md, knowledge/, questions/, templates/, agents/, commands/. Sin scripts. La red solo se usa para leer versiones en registros públicos de paquetes. Sin telemetría (revisión del 20-oct-2026).
 - Uso: diseñar proyectos o funciones grandes antes de programar (entrevista → blueprint).
+
+
+## superpowers (25-oct-2026)
+- Origen: github.com/obra/superpowers @ 2ce8aa1
+- Carpetas: brainstorming, writing-plans, verification-before-completion, systematic-debugging, requesting-code-review, receiving-code-review (solo `.md`; sin ganchos ni programas; bitácora `docs/bitacora/2026-10-25-0727-claude-skills-superpowers.md`)
+
+```
+MIT License
+
+Copyright (c) 2025 Jesse Vincent
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## find-skills (25-oct-2026)
+- Origen: github.com/vercel-labs/skills @ a80e4c9
+- Carpeta: find-skills (solo `SKILL.md`)
+
+```
+MIT License
+
+Copyright (c) 2026 Vercel, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
