@@ -134,7 +134,8 @@
     ['js','parches-transferir-arrastrar.js'],
     /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
        un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
-    ['js','parches-bauche-unico.js']
+    ['js','parches-bauche-unico.js'],
+    ['js','parches-whatsapp-parloteo.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
