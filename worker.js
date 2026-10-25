@@ -5,7 +5,8 @@
 // FIJAS del HTML; NO ejecuta el JavaScript que pinta el banner/numero. Por eso
 // boleto.html (estatico) siempre mostraba el logo generico.
 //
-// Este Worker SOLO interviene la ruta /boleto.html?id=... : trae los datos del
+// Este Worker interviene la ruta /boleto.html?id=... (y desde el 25-oct-2026 pone la
+// huella ETag a la página principal "/", ver conHuella): trae los datos del
 // boleto de la funcion Edge publica e inyecta og:image=banner y og:title con el
 // numero, para que llegue el banner + numero en la vista previa.
 //
@@ -32,10 +33,36 @@ export default {
         const ssr = await ssrBoleto(request, env, id);
         if (ssr) return ssr;
       }
+      // 25-oct-2026: la página principal (/) sale de Cloudflare sin ETag y el teléfono la
+      // bajaba entera (~395 KB) en cada visita. Se le pone una huella del contenido para
+      // que el navegador pregunte «¿cambió?» y reciba 304 (casi 0 bytes) si no cambió.
+      if (request.method === "GET" && url.pathname === "/") {
+        const r = await conHuella(request, env);
+        if (r) return r;
+      }
     } catch (e) { /* cualquier error -> servir estatico */ }
     return env.ASSETS.fetch(request);
   }
 };
+
+async function conHuella(request, env) {
+  const resp = await env.ASSETS.fetch(request);
+  if (resp.status !== 200 || resp.headers.has("etag")) return resp;
+  if (!(resp.headers.get("content-type") || "").includes("text/html")) return resp;
+  const buf = await resp.arrayBuffer();
+  const dig = new Uint8Array(await crypto.subtle.digest("SHA-1", buf));
+  const tag = '"' + Array.from(dig, b => b.toString(16).padStart(2, "0")).join("") + '"';
+  const headers = new Headers(resp.headers);
+  headers.set("etag", tag);
+  headers.set("cache-control", "no-cache");
+  headers.delete("content-length");
+  const inm = request.headers.get("if-none-match") || "";
+  // Cloudflare debilita la huella al comprimir (W/"..."): se compara sin el W/.
+  if (inm.split(",").some(t => t.trim().replace(/^W\//, "") === tag)) {
+    return new Response(null, { status: 304, headers });
+  }
+  return new Response(buf, { status: 200, headers });
+}
 
 async function ssrBoleto(request, env, id) {
   // 1) Datos del boleto (si falla, devolvemos null -> preview generico).
