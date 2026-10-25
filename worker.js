@@ -65,7 +65,14 @@ async function conHuella(request, env) {
     headers.delete("content-length");
     return new Response(null, { status: 304, headers });
   }
-  return new Response(resp.body, { status: 200, headers });
+  // Número de esta publicación para los cargadores (index.html, parches-seguros.js, parches-rifas.js):
+  // lo agregan a la URL de cada archivo, que así se puede guardar en el teléfono sin preguntar.
+  const dep = String((env.CF_VERSION && env.CF_VERSION.id) || "").replace(/[^a-z0-9]/gi, "").slice(0, 8);
+  if (!dep) return new Response(resp.body, { status: 200, headers });
+  headers.delete("content-length");
+  return new HTMLRewriter()
+    .on("meta[charset]", { element(e) { e.after('<script>window.NX_DEPLOY="' + dep + '";</script>', { html: true }); } })
+    .transform(new Response(resp.body, { status: 200, headers }));
 }
 
 async function ssrBoleto(request, env, id) {

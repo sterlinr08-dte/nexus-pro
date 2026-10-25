@@ -1561,7 +1561,7 @@
     if (_qrLibCola) { _qrLibCola.push(cb); return; }
     _qrLibCola = [cb];
     var s = document.createElement('script');
-    s.src = 'qrcode.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
+    s.src = 'qrcode.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1') + (window.NX_DEPLOY ? '&d=' + window.NX_DEPLOY : '&t=' + Date.now());
     var fin = function (ok) { var q = _qrLibCola || []; _qrLibCola = null; q.forEach(function (f) { try { f(ok); } catch (e) {} }); };
     s.onload = function () { fin(typeof window.QRCode === 'function'); };
     s.onerror = function () { fin(false); };

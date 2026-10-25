@@ -5,15 +5,24 @@
   if(window.__nxSegurosLoader20260906)return;
   window.__nxSegurosLoader20260906=true;
 
-  function qv(){
+  /* La consulta se calcula UNA vez, al cargar este archivo: document.currentScript solo existe
+     en ese momento (antes, dentro de los callbacks valía null y las capas salían solo con ?b=).
+     NX_DEPLOY lo pone Cloudflare en la página principal y cambia en cada publicación (25-oct-2026):
+     así el teléfono puede guardar las capas sin preguntar y nunca usa una vieja. Sin NX_DEPLOY
+     (respaldo de GitHub, servidor local) se pide fresco con la hora, como si no hubiera caché. */
+  var QV=(function(){
+    var base='';
     try{
       var s=document.currentScript&&document.currentScript.src||'',q=s.indexOf('?');
-      var base=q>=0?s.slice(q):'';
-      /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
-         WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
-      return base?(base+'&b=6033'):'?b=6033';
-    }catch(e){return '?b=6033';}
-  }
+      base=q>=0?s.slice(q):'';
+    }catch(e){}
+    var d=window.NX_DEPLOY?('d='+window.NX_DEPLOY):('t='+Date.now());
+    /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
+       WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
+    if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
+    return base?(base+'&b=6033'):('?b=6033&'+d);
+  })();
+  function qv(){return QV;}
 
   function load(src,done){
     var s=document.createElement('script');
