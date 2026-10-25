@@ -1,9 +1,11 @@
 # Caché del navegador para nexusprord.com (Cloudflare Workers, assets estáticos).
 # Solo se aplica porque run_worker_first ahora es ["/boleto.html"] (con true, Cloudflare lo ignora).
 #
-# HTML, JS y CSS: el teléfono los guarda pero pregunta cada vez si cambiaron (ETag → 304, casi 0 bytes).
-#   No se usa "immutable" porque las capas se versionan a mano (?v=APP_VERSION, &b=build) y un olvido
-#   dejaría a los usuarios con código viejo. Así nunca se sirve algo viejo.
+# HTML: el teléfono pregunta cada vez si cambió (Last-Modified → 304, ver worker.js).
+# JS y CSS (25-oct-2026): se guardan 1 año SIN preguntar. Es seguro porque todos se piden con el número
+#   de la publicación (&d=NX_DEPLOY, lo pone worker.js en la página principal y cambia en cada despliegue):
+#   cada publicación usa URLs nuevas. Sin NX_DEPLOY, los cargadores piden con &t=<hora> (nunca se reutiliza).
+#   sw.js es la excepción: el navegador debe poder ver siempre su versión nueva.
 # Imágenes, íconos y fuentes: se guardan 1 día y se renuevan en segundo plano hasta 7 días.
 
 /*
@@ -11,9 +13,13 @@
   Referrer-Policy: strict-origin-when-cross-origin
 
 /*.js
-  Cache-Control: no-cache
+  Cache-Control: public, max-age=31536000, immutable
 
 /*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/sw.js
+  ! Cache-Control
   Cache-Control: no-cache
 
 /manifest.json

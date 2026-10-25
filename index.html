@@ -10936,6 +10936,9 @@ function compararVersiones(a,b){
 function nxPrecargarParche(versionNueva){
   try{
     if(!versionNueva||!location.origin||!location.origin.startsWith('http'))return;
+    // 25-oct-2026: con el número de publicación (NX_DEPLOY) las URLs nuevas no se conocen de antemano;
+    // precargar con ?v= solo bajaría copias que nadie usa.
+    if(window.NX_DEPLOY)return;
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
@@ -19275,6 +19278,10 @@ setTimeout(verificarAutoFacturacion, 5000);
     // Cachea por versión (no por Date.now): evita re-descargarlo en cada
     // carga — clave en redes lentas (3G) para que los estilos apliquen rápido.
     var V = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
+    // 25-oct-2026: + número de la publicación (NX_DEPLOY lo pone Cloudflare en esta página y cambia en
+    // cada despliegue) → los archivos se guardan en el teléfono sin preguntar y nunca queda uno viejo.
+    // Sin NX_DEPLOY (copia de GitHub, servidor local) se piden frescos con la hora.
+    V += window.NX_DEPLOY ? ('&d=' + window.NX_DEPLOY) : ('&t=' + Date.now());
     function cargarConReintento(src){
       var intentos = 0;
       function cargar(){
