@@ -47,7 +47,10 @@ export default {
 
 async function conHuella(request, env) {
   const resp = await env.ASSETS.fetch(request);
-  if (resp.status !== 200 || resp.headers.has("etag")) return resp;
+  if (resp.status !== 200 || resp.headers.has("etag")) {
+    const h0 = new Headers(resp.headers); h0.set("x-nx-huella", "asset:" + resp.status + ":" + (resp.headers.get("etag") || "-"));
+    return new Response(resp.body, { status: resp.status, headers: h0 });
+  }
   if (!(resp.headers.get("content-type") || "").includes("text/html")) return resp;
   const buf = await resp.arrayBuffer();
   const dig = new Uint8Array(await crypto.subtle.digest("SHA-1", buf));
@@ -55,6 +58,7 @@ async function conHuella(request, env) {
   const headers = new Headers(resp.headers);
   headers.set("etag", tag);
   headers.set("cache-control", "no-cache");
+  headers.set("x-nx-huella", "nueva");
   headers.delete("content-length");
   const inm = request.headers.get("if-none-match") || "";
   // Cloudflare debilita la huella al comprimir (W/"..."): se compara sin el W/.
