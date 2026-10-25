@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.56**, verificado en vivo el 22-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.58**, verificado en vivo el 25-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -37,7 +37,8 @@
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
 | Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
-| Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, rama `claude/cobro-bauche-ia`; Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`. **El webhook que la llama se despliega solo con «publícalo»**; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
+| Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, **publicado** (PR #406, webhook v14); Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
+| Chat de WhatsApp «Parloteo» (degradado continuo, «✓✓ Leído h:mm», reacciones rápidas con chat borroso, enviar/micrófono azul, «escribiendo…» entre agentes) | 59.59, rama `claude/chat-parloteo` **sin publicar**; `style#nxParloteo` + `parches-whatsapp-parloteo.js`; apagar `nx_parloteo_off` |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
@@ -53,6 +54,8 @@
 
 - **Bauches con IA (dueño, 25-oct-2026):** la IA lee las fotos «apenas llegan» y en el cobro «pone el del bauche y avisa». Nunca registra un pago sola: el cobro siempre lo confirma una persona.
 - Pendiente visual aparte (ya estaba en 59.57): en el simulador, la cita de un mensaje que responde a una foto muestra «Cliente» en letras verticales. Revisar si pasa en el iPhone real.
+
+- **WhatsApp no avisa cuando el CLIENTE escribe** (Meta no lo manda a ningún sistema). El «escribiendo…» de NEXUS es entre agentes del mismo chat (canal Realtime `nx-wa-escribiendo`, solo hilo + primer nombre).
 
 ## 5. Reglas de negocio clave
 - **Los agentes no tienen comisión.** Nada de comisión en reportes, acumulados ni plantillas.

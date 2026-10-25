@@ -6875,6 +6875,69 @@ html.nx-luz.tema-claro body .aboQbtn.nxSel:not(#nxl1):not(#nxl2):not(#nxl3):not(
 }
 @media (prefers-reduced-motion:reduce){html.nx-luz body .btn,html.nx-luz body .nxOptChip,html.nx-luz body .nxft-tab{transition:none!important}}
 </style>
+<!-- ═══ PARLOTEO (59.59, 25-oct-2026) — la ventana del chat de WhatsApp con el estilo del reel «Chatea con tus clientes»
+     (moxen.studio) que mandó el dueño: «mira esa ventana del chat, me gusta». Eligió «la ventana del chat y sus funciones».
+     Burbujas enviadas con UN degradado continuo (azul arriba → índigo abajo; --pl-y/--pl-h los pone
+     parches-whatsapp-parloteo.js), estado «✓✓ Leído 10:52» debajo del último enviado, «escribiendo…» de otro agente
+     (tres puntos + cabecera), botón de enviar/micrófono azul que entra girando, fila de reacciones rápidas y el resto del
+     chat borroso con el menú del mensaje abierto. Solo #v-waInbox y el menú .nxWaMsgPro; no toca carga, envío ni Realtime
+     del Buzón. Apagar: NX_PARLOTEO=false (todos) o localStorage nx_parloteo_off='1' (un equipo). ═══ -->
+<script id="nxParloteoOn">var NX_PARLOTEO=true;try{if(NX_PARLOTEO&&localStorage.getItem('nx_parloteo_off')!=='1')document.documentElement.classList.add('nx-parl');}catch(e){if(NX_PARLOTEO)document.documentElement.classList.add('nx-parl');}</script>
+<style id="nxParloteo">
+html.nx-parl{--pl-grad:linear-gradient(180deg,#5B9BFF 0%,#3B82F6 28%,#2563EB 52%,#4F46E5 80%,#6D28D9 100%);--pl-ease:cubic-bezier(.23,1,.32,1)}
+/* 1) burbujas enviadas: degradado continuo (3 ID + :not() para ganarle a las capas parches-whatsapp-* y al tema) */
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBub.out:not(.nxWaStickerBub):not(#nxpl){background-color:#2563EB!important;background-image:var(--pl-grad)!important;background-size:100% var(--pl-h,640px)!important;background-position:0 calc(var(--pl-y,0px) * -1)!important;background-repeat:no-repeat!important;color:#fff!important;border:0!important}
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBub.out:not(.nxWaStickerBub):not(#nxpl)::before{background-color:#4F46E5!important;background-image:var(--pl-grad)!important;background-size:100% var(--pl-h,640px)!important;background-position:0 calc(var(--pl-ty,0px) * -1)!important;background-repeat:no-repeat!important}
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBub .nxWaMsgText{font-weight:500!important;letter-spacing:-.005em}
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBub.out:not(.nxWaStickerBub) :is(.nxWaMsgMeta,.nxWaMsgTime,.nxWaMsgState,.nxWaMsgState *:not(.nxWaMsgCheck):not(.nxWaRetry):not(.nxWaRetry *),.nxWaFwd,.nxWaFwd *):not(#nxpl){color:rgba(255,255,255,.86)!important;text-shadow:none!important}
+/* 2) estado debajo del último enviado */
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-estado]{position:relative;margin-bottom:26px!important}
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-estado]::after{content:attr(data-pl-estado);position:absolute;right:12px;bottom:-21px;font-size:12px;font-weight:600;line-height:16px;letter-spacing:.01em;color:#94A3B8;white-space:nowrap;text-transform:none!important;pointer-events:none;animation:plFade .3s var(--pl-ease) both}
+html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-st="leido"]::after{color:#93C5FD}
+html.nx-parl.tema-claro body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-estado]::after{color:#64748B}
+html.nx-parl.tema-claro body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-st="leido"]::after{color:#2563EB}
+/* 3) «escribiendo…» de otro agente: burbuja con tres puntos al final del chat + cabecera */
+html.nx-parl #v-waInbox #nxWaMsgsBox > .nxPlTyping{display:flex;align-items:center;gap:10px;margin:6px 0 10px 8px;animation:plIn .26s var(--pl-ease) both}
+html.nx-parl #v-waInbox .nxPlTyping .b{display:inline-flex;align-items:center;gap:5px;height:40px;padding:0 16px;border-radius:20px 20px 20px 6px;background:var(--wa-in,#262A31)}
+html.nx-parl #v-waInbox .nxPlTyping .b i{width:7px;height:7px;border-radius:50%;background:#AAB4C3;animation:plDot 1.2s ease-in-out infinite}
+html.nx-parl #v-waInbox .nxPlTyping .b i:nth-child(2){animation-delay:.15s}
+html.nx-parl #v-waInbox .nxPlTyping .b i:nth-child(3){animation-delay:.3s}
+html.nx-parl #v-waInbox .nxPlTyping .n{font-size:12.5px;font-weight:500;color:#B4BCC8;text-transform:none!important;letter-spacing:0!important}
+html.nx-parl.tema-claro #v-waInbox .nxPlTyping .b{background:#E9EDF3}
+html.nx-parl.tema-claro #v-waInbox .nxPlTyping .b i{background:#8A94A6}
+html.nx-parl.tema-claro #v-waInbox .nxPlTyping .n{color:#64748B}
+html.nx-parl body #cnt #v-waInbox .nxWaHead.nxPlEscribe .nxWaHeadSub > :not(.nxPlHeadTyping){display:none!important}
+html.nx-parl body #cnt #v-waInbox .nxWaHead .nxPlHeadTyping{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none!important;color:#93C5FD!important;font-weight:600;animation:plFade .2s ease both}
+html.nx-parl.tema-claro body #cnt #v-waInbox .nxWaHead .nxPlHeadTyping{color:#2563EB!important}
+/* 4) enviar / micrófono: círculo azul de 44 px que entra girando al cambiar (como el reel) */
+html.nx-parl body #cnt #v-waInbox .nxWaComposer :is(.nxWaTextSendBtn,.nxWaVoiceBtn):not(#nxpl){width:44px!important;height:44px!important;min-width:44px!important;flex:0 0 44px!important;border-radius:50%!important;border:0!important;background:#2563EB!important;background-image:linear-gradient(160deg,#5B9BFF,#2563EB 55%,#4F46E5)!important;color:#fff!important;box-shadow:0 6px 16px -8px rgba(37,99,235,.9)!important}
+html.nx-parl body #cnt #v-waInbox .nxWaComposer :is(.nxWaTextSendBtn,.nxWaVoiceBtn):not(#nxpl) i{color:#fff!important}
+html.nx-parl body #cnt #v-waInbox .nxWaComposer.nxWaHasText .nxWaTextSendBtn,html.nx-parl body #cnt #v-waInbox .nxWaComposer:not(.nxWaHasText):not(.nxWaRecording):not(.nxWaVoiceReady) .nxWaVoiceBtn{animation:plPop .24s var(--pl-ease) both}
+html.nx-parl body #cnt #v-waInbox .nxWaComposer :is(.nxWaTextSendBtn,.nxWaVoiceBtn):active{transform:scale(.94)}
+/* 5) menú del mensaje: reacciones rápidas arriba + el resto del chat borroso */
+html.nx-parl body > .nxWaMsgPro:has(.nxWaReactQuick):not(#nxpl){width:min(292px,calc(100vw - 20px))!important;max-width:calc(100vw - 20px)!important}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick{display:flex;justify-content:space-between;gap:2px;padding:6px 4px 8px;margin:-2px -2px 4px;border-bottom:1px solid rgba(148,163,184,.18)}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button{flex:0 0 44px!important;width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border:0!important;border-radius:50%!important;background:transparent!important;font-size:24px!important;line-height:1!important;justify-content:center!important;transition:transform .16s var(--pl-ease),background-color .16s ease}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:active{transform:scale(.88)}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button.on{background:rgba(59,130,246,.28)!important}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(n){animation:plPop .22s var(--pl-ease) both}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(2){animation-delay:.02s}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(3){animation-delay:.04s}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(4){animation-delay:.06s}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(5){animation-delay:.08s}
+html.nx-parl .nxWaMsgPro .nxWaReactQuick button:nth-child(6){animation-delay:.1s}
+html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > :not(.nxPlSel){filter:blur(3px) saturate(.85);opacity:.45;transition:filter .18s ease,opacity .18s ease}
+html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > .nxPlSel{position:relative;z-index:2}
+@keyframes plDot{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+@keyframes plIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes plPop{from{opacity:0;transform:scale(.6) rotate(-30deg)}to{opacity:1;transform:none}}
+@keyframes plFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  html.nx-parl #v-waInbox .nxPlTyping .b i{animation:none;opacity:.8}
+  html.nx-parl #v-waInbox :is(.nxPlTyping,.nxWaComposer button,.nxPlHeadTyping),html.nx-parl .nxWaMsgPro .nxWaReactQuick button,html.nx-parl body #cnt #v-waInbox #nxWaMsgsBox .nxWaBubWrap[data-pl-estado]::after{animation:none!important}
+  html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > :not(.nxPlSel){filter:none;transition:none}
+}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10858,7 +10921,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.58';
+const APP_VERSION='59.59';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
