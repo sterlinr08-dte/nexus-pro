@@ -77,6 +77,7 @@
 - **OpenClaw:** es el agente del dueño en WhatsApp, en su PC, para Bayol. Se reactivó el 19-oct.
 
 ## 8. Errores que no se deben repetir
+- **Caché de JS/CSS por 1 año (paso 2, rama `claude/version-auto`):** todo `.js`/`.css` propio debe cargarse con el número de publicación (`qv()` en parches-seguros.js, el cargador final de index.html o `window.NX_DEPLOY`). Un cargador nuevo sin él dejaría ese archivo viejo en los teléfonos hasta un año.
 - **FOUC en iPhone:** el rediseño masivo de las fases 1–4 se revirtió (PR #311). Por eso:
   - nada de capas tardías ni rediseños masivos;
   - los cambios visuales van aislados por módulo, son reversibles, se cargan desde el primer pintado y se prueban a 390 px.
