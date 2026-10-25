@@ -72,6 +72,16 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
+- **PIZZERÍA UNIVE 2** (cliente nuevo, 25-oct-2026, rama `claude/pizzeria-unive2`):
+  - Base Supabase propia **`gzdkzcspmvyxgfcytpgy`**, VACÍA. Datos: us-east-1, Micro, la paga el dueño. Seguridad: Data API ✅, auto-expose ⬜, auto-RLS ✅.
+  - **Sin RNC**: la caja arranca sin NCF ni e-CF.
+  - La entrevista la responde la dueña en el formulario https://claude.ai/artifact/N4ZXnNso4FPEF5EuBZ8pkL. Falta el subdominio.
+  - El plano va **antes** de aplicar el esquema POS (`supabase/studio/`).
+- **Supabase (25-oct):**
+  - una sola organización `sterlinr08` (Pro) para todos los clientes;
+  - Geriatra borrada (su respaldo se le dio al dueño);
+  - **«sterlinr08-dte's Project» = DELUXE HAIR CENTER, en uso: NO tocar**;
+  - el exceso de cuota fue de llamadas a Edge Functions en septiembre; el ciclo actual va al 8 %.
 - **Caché en Cloudflare** (rama `claude/nexus-cache`, sin publicar, 24-oct-2026): `_headers` + Worker solo en `/` y `/boleto.html`; `/` con Last-Modified = fecha de la publicación (Cloudflare borra el ETag del HTML). 2ª visita 461→77 KB. Bitácoras `2026-10-24-2148` y `2200`.
 - **Clave IA de NEXUS inválida:** el dueño pone `ANTHROPIC_API_KEY`; luego leer los 138 viejos (modo `lote`, bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.
