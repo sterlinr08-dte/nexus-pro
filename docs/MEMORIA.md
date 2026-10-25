@@ -75,7 +75,7 @@
 - **PIZZERÍA UNIVE 2** (cliente nuevo, 25-oct-2026, rama `claude/pizzeria-unive2`):
   - Base Supabase propia **`gzdkzcspmvyxgfcytpgy`**, VACÍA. Datos: us-east-1, Micro, la paga el dueño. Seguridad: Data API ✅, auto-expose ⬜, auto-RLS ✅.
   - **Sin RNC**: la caja arranca sin NCF ni e-CF.
-  - La entrevista la responde la dueña en el formulario https://claude.ai/artifact/N4ZXnNso4FPEF5EuBZ8pkL. Falta el subdominio.
+  - La entrevista la responde la dueña en el formulario https://claude.ai/artifact/N4ZXnNso4FPEF5EuBZ8pkL. Subdominio: `unive2.nexusprord.com`.
   - El plano va **antes** de aplicar el esquema POS (`supabase/studio/`).
 - **Supabase (25-oct):**
   - una sola organización `sterlinr08` (Pro) para todos los clientes;
