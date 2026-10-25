@@ -59,8 +59,9 @@ async function conHuella(request, env) {
   headers.set("last-modified", lm);
   headers.set("cache-control", "no-cache");
   const ims = Date.parse(request.headers.get("if-modified-since") || "");
-  // Fechas HTTP tienen precisión de segundos.
-  if (!isNaN(ims) && Math.floor(fecha.getTime() / 1000) <= Math.floor(ims / 1000)) {
+  // Solo si es EXACTAMENTE la misma publicación (igualdad, no «más nueva»): así, si se vuelve
+  // a una versión anterior, el teléfono también la baja. Fechas HTTP: precisión de segundos.
+  if (!isNaN(ims) && Math.floor(fecha.getTime() / 1000) === Math.floor(ims / 1000)) {
     headers.delete("content-length");
     return new Response(null, { status: 304, headers });
   }
