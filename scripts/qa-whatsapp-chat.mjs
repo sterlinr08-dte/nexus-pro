@@ -58,6 +58,8 @@ rec.push(msg({ d: 'out', c: 'Hola Mercedes, tienes un balance pendiente de RD$ 4
 rec.push(msg({ d: 'in', c: 'Buenas tardes, no hay atraso verdad?', at: ayer(5) }));
 rec.push(msg({ d: 'in', c: '👍', at: ayer(4.9), ra: '👍', rc: '❤️' }));
 const IMG = msg({ d: 'in', t: 'imagen', c: 'Comprobante de la transferencia', mp: 'img/comprobante.jpg', at: ayer(3), meta: { media: { mime: 'image/jpeg', nombre: 'comprobante.jpg', tamano: 88000 } } }); rec.push(IMG);
+// 59.58: la IA ya leyó este bauche al llegar (bauche-auto-leer) → bajo la foto aparece «Bauche RD$ 4,500 · Cobrar».
+IMG.bauche_ia = { es_comprobante: true, banco: 'Banreservas', monto: 4500, fecha: '2026-10-24', numero_transaccion: '123456', cuenta_destino: '1654', confianza: 0.95 }; IMG.revision_pago_estado = 'pendiente';
 rec.push(msg({ d: 'out', c: 'Perfecto, gracias por el comprobante.', at: ayer(2.9), e: 'leido', resp: IMG.id, ent: ayer(2.8), lei: ayer(2.7) }));
 rec.push(msg({ d: 'in', t: 'audio', c: '[audio]', mp: 'aud/nota.wav', at: ayer(2.5), meta: { media: { mime: 'audio/wav' } } }));
 rec.push(msg({ d: 'in', t: 'ubicacion', c: '18.4719, -69.8923', at: ayer(2.2), meta: { ubicacion: { lat: 18.4719, lng: -69.8923, nombre: 'Oficina Central', direccion: 'Av. Winston Churchill 1099, Santo Domingo' } } }));
@@ -276,6 +278,9 @@ async function menuMensaje(page, ctx, sel) {
       ok(r.con && r.con.nombre === 'Ana Martinez' && r.con.tel === '+1 849-555-0103' && /Mensaje/.test(r.con.btn) && r.con.ini === 'AM', `${tag} contacto: avatar-iniciales, nombre, teléfono y «Mensaje»`, r.con);
       ok(r.audio && r.audio.mic && r.audio.play && r.audio.rate === '1x' && r.audio.hidden === 'none', `${tag} audio: reproductor propio con mic, play y velocidad; <audio> nativo oculto`, r.audio);
       ok(r.video && r.img, `${tag} imagen abre el visor; video con botón de pantalla completa`);
+      { const ch = await page.evaluate(() => { const b = document.querySelector('#nxWaMsgsBox .nxWaBaucheChip'); if (!b) return null; const r = b.getBoundingClientRect(); return { txt: b.innerText.replace(/\s+/g, ' ').trim(), h: Math.round(r.height), tag: b.tagName }; });
+        ok(ch && ch.tag === 'BUTTON' && /Bauche RD\$ 4,500/.test(ch.txt) && /Banreservas/.test(ch.txt) && /Cobrar/.test(ch.txt) && ch.h >= 44, `${tag} bajo la foto: «Bauche RD$ 4,500 · Banreservas · Cobrar» (${ch && ch.h} px)`, ch);
+        await page.evaluate(() => document.querySelector('#nxWaMsgsBox .nxWaBaucheChip')?.scrollIntoView({ block: 'center' })); await sleep(300); await page.screenshot({ path: OUT + `bauche-chip-${tag}.png` }); }
       ok(r.headName && r.headName.tt === 'none' && r.headName.txt === 'Maria Perez' && /^\+1 809-863-0085\s*ventana abierta$/.test(r.headSub) && r.headTT === 'none' && r.headWinVisible, `${tag} cabecera: nombre tal como está guardado, teléfono formateado y estado de ventana (${r.headSub})`, { n: r.headName, s: r.headSub });
       ok(r.claras.malos.length === 0, `${tag} sin superficies claras en #v-waInbox (${r.claras.n} medidas)`, r.claras.malos.slice(0, 5));
       await page.screenshot({ path: OUT + `chat-${tag}.png` });

@@ -206,6 +206,20 @@
 #v-waInbox .nxWaEmpty{padding:24px;text-align:center;color:#64748b;font-size:10.5px;line-height:1.35}
 #v-waInbox .nxWaPend{border:1px solid #e5eaf2;border-radius:13px;padding:9px;display:flex;gap:9px;align-items:center;margin-bottom:7px;background:rgba(255,255,255,.74)}
 #v-waInbox .nxWaPend img{width:44px;height:44px;object-fit:cover;border-radius:10px;flex:none;background:#f1f5f9}
+/* 59.58 cobro rápido con el bauche: lo que leyó la IA al llegar la foto */
+#v-waInbox .nxWaBaucheIa{font-size:11px;font-weight:700;color:#047857;margin-top:2px}
+#v-waInbox .nxWaBaucheIa.no{color:#94a3b8;font-weight:600}
+#v-waInbox .nxWaBaucheChip{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin-top:6px;padding:8px 12px;border-radius:14px;border:1px solid rgba(16,185,129,.35);background:rgba(16,185,129,.12);color:#065f46;font:600 12.5px/1.25 inherit;font-family:inherit;text-align:left;cursor:pointer;box-sizing:border-box}
+#v-waInbox .nxWaBaucheChip i{font-size:17px;flex:none}
+#v-waInbox .nxWaBaucheChip span{flex:1;min-width:0}
+#v-waInbox .nxWaBaucheChip b{flex:none;padding:6px 12px;border-radius:999px;background:#059669;color:#fff;font-size:12px}
+#v-waInbox .nxWaBaucheChip:active{transform:translateY(1px)}
+#v-waInbox .nxWaBaucheChip.usado{border-color:rgba(148,163,184,.4);background:rgba(148,163,184,.12);color:#64748b;cursor:default}
+#v-waInbox .nxWaBaucheChip.repetido{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.1);color:#991b1b}
+#v-waInbox .nxWaBaucheChip.repetido b{background:#dc2626}
+html.tema-glass-oscuro #v-waInbox .nxWaBaucheChip{color:#a7f3d0;background:rgba(16,185,129,.16)}
+html.tema-glass-oscuro #v-waInbox .nxWaBaucheChip.repetido{color:#fecaca;background:rgba(220,38,38,.18)}
+html.tema-glass-oscuro #v-waInbox .nxWaBaucheIa{color:#6ee7b7}
 #v-waInbox .nxWaPend .acts{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 #v-waInbox .nxWaPend button{border:1px solid #dbe3ee;border-radius:999px;background:#fff;font-size:9.5px;font-weight:900;padding:7px 10px;cursor:pointer}
 #v-waInbox .nxWaPend button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
@@ -1275,9 +1289,11 @@
       const nombre = h?.nombre_perfil || h?.telefono_e164 || 'Cliente';
       const cliente = h?.cliente_id ? clientes().find(c => String(c.id) === String(h.cliente_id)) : null;
       const url = m.media_path ? await urlFirmada(m.media_path) : null;
-      return `<div class="nxWaPend"><img src="${url || ''}" alt="bauche"><div><b>${esc(cliente?.nom || nombre)}</b><div style="font-size:9.5px;color:#64748b">${esc(h?.telefono_e164 || '')}</div></div>
+      const ia = baucheLeido(m);
+      const leido = ia ? `<div class="nxWaBaucheIa">${esc(fmtMontoBauche(ia.monto))}${ia.fecha ? ' · ' + esc(fechaCorta(ia.fecha)) : ''}${ia.banco ? ' · ' + esc(ia.banco) : ''}</div>` : (m.bauche_ia && m.bauche_ia.es_comprobante === false ? '<div class="nxWaBaucheIa no">No parece un bauche</div>' : '');
+      return `<div class="nxWaPend"><img src="${url || ''}" alt="bauche"><div><b>${esc(cliente?.nom || nombre)}</b><div style="font-size:9.5px;color:#64748b">${esc(h?.telefono_e164 || '')}</div>${leido}</div>
         <div class="acts">
-          ${h?.cliente_id ? `<button class="primary" onclick="nxWaAplicarBauche('${m.id}','${h.cliente_id}')">Aplicar como pago</button>` : `<span style="font-size:9px;color:#dc2626">Sin cliente vinculado</span>`}
+          ${h?.cliente_id ? `<button class="primary" onclick="nxWaAplicarBauche('${m.id}','${h.cliente_id}')">${ia ? 'Cobrar ' + esc(fmtMontoBauche(ia.monto)) : 'Aplicar como pago'}</button>` : `<span style="font-size:9px;color:#dc2626">Sin cliente vinculado</span>`}
           <button onclick="nxWaDescartarBauche('${m.id}')">Descartar</button>
         </div></div>`;
     }));
@@ -1295,10 +1311,54 @@
     window.__nxWaRevisionPendiente = mensajeId;
     window.__nxWaRevisionPendienteCliente = clienteId != null ? String(clienteId) : null;
     try { abrirAbono(clienteId); } catch (e) { toast('err', 'No se pudo abrir el registro de pago'); return; }
+    if (m.bauche_ia) window.__nxBaucheIaPre = { ref: 'wa-media:' + m.media_path, ia: m.bauche_ia };
     urlFirmada(m.media_path).then(url => {
       setTimeout(() => { if (window.nxBaucheAsignarExterno) window.nxBaucheAsignarExterno('wa-media:' + m.media_path, url); }, 180);
     });
   };
+  /* 59.58 «Cobro rápido con el bauche»: lo que leyó la IA cuando llegó la foto (whatsapp_hilo_mensajes.bauche_ia,
+     lo llena la Edge bauche-auto-leer). Solo cuenta si es un comprobante con monto. */
+  function baucheLeido(m) {
+    const ia = m && m.bauche_ia;
+    return ia && ia.es_comprobante !== false && Number(ia.monto) > 0 ? ia : null;
+  }
+  function fmtMontoBauche(n) { try { return typeof fmt === 'function' ? fmt(Number(n)) : 'RD$ ' + Number(n).toLocaleString('es-DO'); } catch (e) { return 'RD$ ' + n; } }
+  function fechaCorta(f) { const x = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(f || '')); return x ? x[3] + '/' + x[2] : String(f || ''); }
+  // Chip bajo la foto en el chat: «Bauche RD$… · Cobrar». Si ya se aplicó a un pago, solo lo dice.
+  function chipBauche(m) {
+    if (!m || m.direccion !== 'in') return '';
+    const ia = baucheLeido(m); if (!ia) return '';
+    const id = esc(m.id);
+    if (String(m.revision_pago_estado || '') === 'aplicado') return `<div class="nxWaBaucheChip usado" data-bauche="${id}"><i class="ti ti-receipt-off"></i><span>Bauche ${esc(fmtMontoBauche(ia.monto))} · ya aplicado</span></div>`;
+    return `<button type="button" class="nxWaBaucheChip" data-bauche="${id}" onclick="nxWaCobrarBauche('${id}')"><i class="ti ti-receipt"></i><span>Bauche ${esc(fmtMontoBauche(ia.monto))}${ia.banco ? ' · ' + esc(ia.banco) : ''}</span><b>Cobrar</b></button>`;
+  }
+  window.nxWaCobrarBauche = function (mensajeId) {
+    const m = (mensajes || []).find(x => String(x.id) === String(mensajeId)); if (!m) return;
+    const h = hilos.find(x => x.id === m.hilo_id);
+    if (!h || !h.cliente_id) { toast('info', 'Este chat no está vinculado a un cliente'); return; }
+    if (String(m.revision_pago_estado || '') === 'pendiente') {
+      if (!mensajesPendientesCache.some(x => x.id === m.id)) mensajesPendientesCache.push(m);
+      return window.nxWaAplicarBauche(m.id, h.cliente_id);
+    }
+    try { abrirAbono(h.cliente_id); } catch (e) { toast('err', 'No se pudo abrir el registro de pago'); return; }
+    window.__nxBaucheIaPre = { ref: 'wa-media:' + m.media_path, ia: m.bauche_ia };
+    urlFirmada(m.media_path).then(url => { setTimeout(() => { if (window.nxBaucheAsignarExterno) window.nxBaucheAsignarExterno('wa-media:' + m.media_path, url); }, 180); });
+  };
+  // Marca «ya usado» si ese bauche (misma foto o mismo número) ya pagó algo — antes de que el agente toque «Cobrar».
+  const baucheRevisado = new Map();
+  async function revisarChipsBauche() {
+    const A = api(); if (!A?.post) return;
+    for (const el of document.querySelectorAll('button.nxWaBaucheChip[data-bauche]')) {
+      const id = el.dataset.bauche; const m = (mensajes || []).find(x => String(x.id) === String(id)); if (!m) continue;
+      if (!baucheRevisado.has(id)) baucheRevisado.set(id, A.post('rpc/comprobante_buscar', { p_sha256: m.bauche_sha256 || null, p_dhash: null, p_numero: (m.bauche_ia && m.bauche_ia.numero_transaccion) || null, p_storage_ref: 'wa-media:' + m.media_path }).then(r => Array.isArray(r) ? r : []).catch(() => []));
+      const hits = await baucheRevisado.get(id);
+      if (hits.length && el.isConnected && !el.classList.contains('repetido')) {
+        el.classList.add('repetido');
+        const sp = el.querySelector('span'); if (sp) sp.textContent = sp.textContent + ' · ya usado en otro pago';
+        const b = el.querySelector('b'); if (b) b.textContent = 'Revisar';
+      }
+    }
+  }
   window.nxWaDescartarBauche = async function (mensajeId) {
     const A = api(); if (!A?.post) return;
     try { await A.post('rpc/whatsapp_resolver_revision_pago', { p_mensaje_id: mensajeId, p_estado: 'descartado' }); toast('ok', 'Descartado'); cargarPendientes(); } catch (e) { toast('err', 'No se pudo descartar'); }
@@ -1447,7 +1507,7 @@
     if (!m._url) return '<div class="nxWaCard"><span class="nxWaCardIco"><i class="ti ti-paperclip"></i></span><span class="nxWaCardTx"><b>Adjunto no disponible</b></span></div>';
     const url = esc(m._url), id = esc(m.id);
     if (t === 'sticker') return `<img class="nxWaSticker" src="${url}" alt="Sticker" onload="nxWaMediaLoaded()">`;
-    if (t === 'imagen') return `<img class="nxWaImg" src="${url}" alt="Imagen" onload="nxWaMediaLoaded()" onclick="nxWaVerMedia('${id}')">`;
+    if (t === 'imagen') return `<img class="nxWaImg" src="${url}" alt="Imagen" onload="nxWaMediaLoaded()" onclick="nxWaVerMedia('${id}')">${chipBauche(m)}`;
     if (t === 'video') return `<span class="nxWaVideoWrap"><video controls playsinline preload="metadata" src="${url}" onloadedmetadata="nxWaMediaLoaded()"></video><button type="button" class="nxWaVideoExpand" aria-label="Ver a pantalla completa" onclick="nxWaVerMedia('${id}')"><i class="ti ti-arrows-maximize"></i></button></span>`;
     if (t === 'audio') {
       const md = metaDe(m).media || {};
@@ -1762,6 +1822,7 @@
     if (nuevoBox) vigilarScrollManual(nuevoBox, hiloAbiertoId);
     if (nuevoBox) vigilarAlturaMensajes(nuevoBox, hiloAbiertoId);
     if (nuevoBox) { prepararAudios(nuevoBox); actualizarContadorNuevos(); }
+    if (nuevoBox) revisarChipsBauche().catch(() => {});   // 59.58: marca «ya usado» antes de cobrar
     if (scrollInicial || pegadoAlFondo) asegurarScrollFondoInicial(hiloAbiertoId);
 
     const nuevoInput = $('#nxWaTexto');

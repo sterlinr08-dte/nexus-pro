@@ -156,9 +156,14 @@ async function completar(page, monto) {
     { const { ctx, page } = await abrir(browser, w);
       const log = await preparar(page, { buscar: [], ia: { es_comprobante: true, banco: null, monto: 3500, moneda: 'DOP', fecha: '2026-10-13', numero_transaccion: '11223344', cuenta_destino: null, titular_destino: null, confianza: 0.9 } });
       await cobroListo(page, await page.evaluate(() => ST.clientes[1].id), 'admin');
-      await adjuntar(page); await esperarTarjeta(page, 'nuevo'); await completar(page); await sleep(200);
-      const av = await page.evaluate(() => document.querySelector('#nxBaucheCheck .aviso')?.innerText || '');
-      ok(/3,500/.test(av) && /estás cobrando/.test(av), `${w}px E: avisa que el comprobante dice otro monto`, av);
+      await adjuntar(page); await esperarTarjeta(page, 'nuevo'); await sleep(400);
+      // 59.58: el monto se llena con el del bauche (decisión del dueño), el método pasa a Transferencia y avisa abono parcial.
+      const e1 = await page.evaluate(() => ({ mnt: document.getElementById('aMnt').value, met: document.getElementById('aMet').value, ref: document.getElementById('aRef').value, av: [...document.querySelectorAll('#nxBaucheCheck .aviso')].map(x => x.innerText).join(' | '), nota: document.getElementById('nxBaucheCheck').innerText }));
+      ok(/3,500/.test(e1.mnt) && e1.met === 'Transferencia' && e1.ref === '11223344' && /Abono parcial/.test(e1.av) && /Llenado con el bauche/.test(e1.nota), `${w}px E: monto, método y referencia del bauche + aviso de abono parcial`, e1);
+      // Si el agente lo cambia a mano, se respeta y avisa que el comprobante dice otro monto.
+      await completar(page); await sleep(200);
+      const av = await page.evaluate(() => [...document.querySelectorAll('#nxBaucheCheck .aviso')].map(x => x.innerText).join(' | '));
+      ok(/3,500/.test(av) && /estás cobrando/.test(av), `${w}px E: si el agente cambia el monto, avisa que el comprobante dice otro`, av);
       await page.evaluate(() => document.getElementById('nxBaucheCheck')?.scrollIntoView({ block: 'center' })); await sleep(250); await page.screenshot({ path: OUT + `${w}-E-monto.png` });
       await page.evaluate(() => { window.nxQuitarBauche(); }); await sleep(300);
       ok(await page.evaluate(() => !document.getElementById('nxBaucheCheck')), `${w}px F: al quitar el comprobante se quita la tarjeta`);
@@ -208,6 +213,43 @@ async function completar(page, monto) {
       const txt = await page.evaluate(() => document.getElementById('nxBaucheCheck')?.innerText || '');
       ok(/solo la foto exacta/i.test(txt) && /crédito/i.test(txt), `${w}px I: avisa «se revisó solo la foto exacta: la IA no tiene crédito»`, txt);
       ok(!log.parecidos, `${w}px I: sin lectura no busca parecidos`);
+      await ctx.close(); }
+    // J. 59.58 cobro rápido: abre en Efectivo (como desde WhatsApp), la lectura YA viene hecha (no llama a la IA otra vez),
+    //    pasa a Transferencia, pone el monto del bauche (mayor a lo que debe → aviso de adelanto) y la cuenta sugerida.
+    { const { ctx, page, errs } = await abrir(browser, w);
+      const log = await preparar(page, { buscar: [] });
+      const ag = await page.evaluate(() => (ST.agentes || []).filter(a => a && a.activo !== false)[1] || ST.agentes[0]);
+      let sugerida = null;
+      await page.route(/\/rest\/v1\/rpc\/comprobante_cuenta_sugerida/, async r => { sugerida = JSON.parse(r.request().postData() || '{}'); await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ agente_id: ag.id, nombre: ag.nom, veces: 12 }) }); });
+      const cid = await page.evaluate(() => ST.clientes[1].id);
+      const deuda = await page.evaluate(id => pend(ST.clientes.find(x => x.id === id)), cid);
+      const montoBauche = Math.round(deuda) + 1500;
+      await page.evaluate(([id]) => { try { sesion.rol = 'admin'; } catch (e) {} API.token = 'qa-token'; abrirAbono(id); }, [cid]); await sleep(700);
+      const antes = await page.evaluate(() => document.getElementById('aMet').value);
+      await page.evaluate(([u, m]) => { window.__nxBaucheIaPre = { ref: u, ia: { es_comprobante: true, banco: 'Banreservas', monto: m, moneda: 'DOP', fecha: '2026-10-24', numero_transaccion: '99887766', cuenta_destino: '1654', titular_destino: 'ESTERLIN', confianza: 0.95 } }; window.nxBaucheAsignarExterno(u, u); }, [BASE + '/logo-nexus-pro.png', montoBauche]);
+      await esperarTarjeta(page, 'nuevo'); await sleep(900);
+      const j = await page.evaluate(() => ({ met: document.getElementById('aMet').value, mnt: document.getElementById('aMnt').value, ref: document.getElementById('aRef').value, cta: document.getElementById('aDirectoCuenta').value, txt: document.getElementById('nxBaucheCheck').innerText }));
+      ok(antes === 'Efectivo' && j.met === 'Transferencia', `${w}px J: abre en Efectivo y pasa sola a Transferencia`, { antes, met: j.met });
+      ok(log.leer === 0, `${w}px J: usa la lectura que ya hizo el servidor (no llama a la IA otra vez)`, log.leer);
+      ok(Number(String(j.mnt).replace(/[^\d.]/g, '')) === montoBauche && j.ref === '99887766', `${w}px J: monto y referencia del bauche`, j);
+      ok(sugerida && sugerida.p_cuenta === '1654' && String(j.cta) === String(ag.id), `${w}px J: cuenta de destino sugerida por el historial (${ag.nom})`, { sugerida, cta: j.cta });
+      ok(/adelanto/i.test(j.txt) && /Llenado con el bauche/.test(j.txt) && /cuenta/.test(j.txt), `${w}px J: avisa adelanto y dice qué se llenó solo`, j.txt);
+      await page.evaluate(() => document.getElementById('nxBaucheCheck')?.scrollIntoView({ block: 'center' })); await sleep(250); await page.screenshot({ path: OUT + `${w}-J-cobro-rapido.png` });
+      // Registrar: completa el agente que recibió y guarda; el monto que va al servidor es el del bauche.
+      const bancos = await page.evaluate(() => ({ v: document.getElementById('aBanco').value, ops: [...document.getElementById('aBanco').options].map(o => o.text).slice(0, 12) }));
+      ok(true, `${w}px J: banco del simulador «${bancos.v || '(vacío)'}» de ${JSON.stringify(bancos.ops)}`);
+      await page.evaluate(() => { const a = document.getElementById('aAgente'); a.value = [...a.options].find(o => o.value).value; a.dispatchEvent(new Event('change'));
+        const b = document.getElementById('aBanco'); if (!b.value) { b.value = b.options[1].value; b.dispatchEvent(new Event('change')); } nxAboActualizarResumen(); });
+      // El sistema pregunta «¿Es un pago por adelantado?» cuando el monto pasa lo que debe: aquí se acepta.
+      await page.evaluate(() => { window.__qaConfirm = []; window.confirm = t => { window.__qaConfirm.push(t); return true; }; });
+      await page.evaluate(() => { window.__qaToasts = []; const t0 = window.toast; window.toast = function () { window.__qaToasts.push([...arguments].join(' · ')); return t0 && t0.apply(this, arguments); }; });
+      await page.evaluate(() => regAbono()); await sleep(1500);
+      const toasts = await page.evaluate(() => window.__qaToasts);
+      if (!log.cobro.length) console.log('    avisos:', JSON.stringify(toasts), JSON.stringify(log.orden));
+      const conf = await page.evaluate(() => window.__qaConfirm);
+      ok(conf.length === 1 && /adelantado/.test(conf[0]), `${w}px J: antes de registrar pregunta si es un pago por adelantado`, conf);
+      ok(log.cobro.length === 1 && Number(log.cobro[0].p_monto) === montoBauche && String(log.cobro[0].p_cuenta_destino_id) === String(ag.id) && log.cobro[0].p_permitir_adelanto === true, `${w}px J: registra con el monto del bauche, la cuenta sugerida y el adelanto aceptado`, log.cobro[0]);
+      ok(!errs.length, `${w}px J: sin errores`, errs);
       await ctx.close(); }
   }
   console.log(`\nResultado: ${pass} PASS · ${fail} FAIL`);

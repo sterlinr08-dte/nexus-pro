@@ -246,7 +246,9 @@ html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nx
     /* 59.25: un comprobante ya aplicado a un pago no se vuelve a cobrar desde el chat. */
     if(cb.foto&&String(m.revision_pago_estado||'')==='aplicado')return `<button type="button" class="nxWaCobrar" data-act="cobrar" disabled><i class="ti ti-receipt-off"></i><span class="t">Comprobante ya usado</span><em class="monto sin">Usado</em></button><div class="sep"></div>`;
     const txt=cb.foto?'Cobrar con este comprobante':'Cobrar';
-    const der=cb.c?(cb.monto>0?`<em class="monto">${esc(fmtMonto(cb.monto))}</em>`:''):'<em class="monto sin">Sin cliente</em>';
+    /* 59.58: si la IA ya leyó el bauche al llegar, se muestra el monto del bauche (es lo que se va a cobrar). */
+    const ia=cb.foto&&m.bauche_ia&&m.bauche_ia.es_comprobante!==false&&Number(m.bauche_ia.monto)>0?m.bauche_ia:null;
+    const der=cb.c?(ia?`<em class="monto">${esc(fmtMonto(Number(ia.monto)))}</em>`:(cb.monto>0?`<em class="monto">${esc(fmtMonto(cb.monto))}</em>`:'')):'<em class="monto sin">Sin cliente</em>';
     return `<button type="button" class="nxWaCobrar" data-act="cobrar" ${cb.c?'':'disabled'}><i class="ti ${cb.foto?'ti-receipt':'ti-cash'}"></i><span class="t">${txt}</span>${der}</button><div class="sep"></div>`;
   }
   async function cobrarDesdeMensaje(m){
@@ -257,6 +259,7 @@ html.tema-glass-oscuro .nxWaConfirmBody{color:#CBD5E1}html.tema-glass-oscuro .nx
       window.__nxWaRevisionPendiente=m.id;window.__nxWaRevisionPendienteCliente=String(cb.c.id);
     }
     try{window.abrirAbono(cb.c.id);}catch(e){return toastSafe('err','No se pudo abrir el cobro',String(e&&e.message||e));}
+    if(cb.foto&&m.bauche_ia)window.__nxBaucheIaPre={ref:'wa-media:'+m.media_path,ia:m.bauche_ia};
     if(cb.foto){try{const url=await signedMediaUrl(m.media_path);setTimeout(()=>{try{if(window.nxBaucheAsignarExterno)window.nxBaucheAsignarExterno('wa-media:'+m.media_path,url);}catch(_e){}},180);}catch(e){toastSafe('info','No se pudo adjuntar la foto','Adjúntala con «Foto / archivo».');}}
   }
   async function openMsgMenu(event,id){

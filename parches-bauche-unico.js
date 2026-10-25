@@ -49,6 +49,8 @@
     return h;
   }
   async function leerIA(ref) {
+    // 59.58: si la foto vino por WhatsApp y el servidor ya la leyó al llegar (bauche-auto-leer), se usa esa lectura.
+    try { const pre = window.__nxBaucheIaPre; if (pre && pre.ref === ref && pre.ia) { window.__nxBaucheIaPre = null; return { ia: pre.ia, err: null }; } } catch (e) {}
     const a = api(); if (!a || !a.token) return null;
     try {
       const r = await fetch(`${a.url}/functions/v1/comprobante-leer`, { method: 'POST', headers: { apikey: a.key, Authorization: 'Bearer ' + a.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ ref }) });
@@ -110,6 +112,44 @@
       const op = w && [...sel.options].find(o => o.value && o.text.toLowerCase().includes(w));
       if (op) { sel.value = op.value; sel.dispatchEvent(new Event('change', { bubbles: true })); v.bancoAuto = op.text; }
     }
+    cobroRapido(v);
+  }
+
+  /* 59.58 «Cobro rápido con el bauche» (dueño, 25-oct-2026). Con lo que leyó la IA se llena el resto del cobro:
+     método Transferencia (si seguía en Efectivo), el MONTO DEL BAUCHE (decisión del dueño: «pone el del bauche y avisa»;
+     si pasa lo que debe, NEXUS ya lo trata como adelanto) y la cuenta de destino según el historial
+     (RPC comprobante_cuenta_sugerida: a qué cuenta se asignaron antes los bauches con esa misma cuenta). Nunca registra:
+     el agente revisa y toca «Registrar». Se hace una sola vez por bauche; lo que el agente cambie después se respeta. */
+  async function cobroRapido(v) {
+    const ia = v.ia; if (!ia || ia.es_comprobante === false || v.rapido) return;
+    v.rapido = true;
+    const met = document.getElementById('aMet');
+    if (met && (!met.value || met.value === 'Efectivo')) {
+      met.value = 'Transferencia'; met.dispatchEvent(new Event('change', { bubbles: true }));
+      try { if (typeof window.nxChipsSync === 'function') window.nxChipsSync('mAbono'); } catch (e) {}
+      v.metAuto = true;
+    }
+    const monto = Number(ia.monto);
+    const mnt = document.getElementById('aMnt');
+    if (mnt && monto > 0) {
+      mnt.value = window.nxMoney && window.nxMoney.format ? window.nxMoney.format(String(monto)) : String(monto);
+      mnt.dispatchEvent(new Event('input', { bubbles: true }));
+      v.montoAuto = monto;
+      try { const c = (window.ST || ST).clientes.find(x => x.id === abonoCliId); v.deuda = c && typeof pend === 'function' ? Number(pend(c)) || 0 : null; } catch (e) { v.deuda = null; }
+    }
+    if (ia.cuenta_destino) {
+      try {
+        const sug = await rpc('comprobante_cuenta_sugerida', { p_cuenta: String(ia.cuenta_destino) });
+        const sel = document.getElementById('aDirectoCuenta');
+        if (V === v && sug && sug.agente_id && sel && !sel.value && [...sel.options].some(o => String(o.value) === String(sug.agente_id))) {
+          sel.value = sug.agente_id; sel.dispatchEvent(new Event('change', { bubbles: true }));
+          try { if (typeof window.nxOptChips === 'function') window.nxOptChips('aDirectoCuenta', 'aDirectoChips', { iniciales: true }); } catch (e) {}
+          v.cuentaAuto = sug.nombre || 'sugerida';
+        }
+      } catch (e) { /* sin sugerencia: el agente elige la cuenta */ }
+    }
+    try { if (typeof window.nxAboActualizarResumen === 'function') window.nxAboActualizarResumen(); } catch (e) {}
+    if (V === v) pintar();
   }
   // ¿Mismo depósito para varios pagos? Igual que el servidor: permitido si lo ya usado + este pago no pasa del monto
   // del comprobante (+1 peso de redondeo). El monto sale de lo que leyó la IA o, si no, del registro anterior.
@@ -180,11 +220,17 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
     const mf = montoFormulario();
     const IAERR = { clave: 'la clave de la IA no es válida', credito: 'la IA no tiene crédito', sin_clave: 'falta la clave de la IA', ocupado: 'la IA está ocupada', red: 'no hubo conexión con la IA', rechazo: 'la IA no pudo leerlo', otro: 'la IA no pudo leerlo' };
     const notaIA = !ia && v.iaErr ? `<div class="ia"><i class="ti ti-robot-off"></i> Se revisó solo la foto exacta: ${esc(IAERR[v.iaErr] || IAERR.otro)}.</div>` : '';
+    const llenos = [v.montoAuto ? 'monto' : '', v.metAuto ? 'método' : '', v.bancoAuto ? 'banco' : '', v.refAuto ? 'referencia' : '', v.cuentaAuto ? 'cuenta (' + v.cuentaAuto + ')' : ''].filter(Boolean);
+    const notaRapido = llenos.length ? `<div class="ia"><i class="ti ti-sparkles"></i> Llenado con el bauche: ${esc(llenos.join(', '))}. Revise antes de registrar.</div>` : '';
+    const dif = v.montoAuto && v.deuda != null ? Math.round((v.montoAuto - v.deuda) * 100) / 100 : 0;
+    const notaDeuda = !v.montoAuto || v.deuda == null || Math.abs(dif) < 1 ? '' : dif < 0
+      ? `<div class="aviso"><i class="ti ti-info-circle"></i> Abono parcial: el bauche cubre ${esc(fmt(v.montoAuto))} y debe ${esc(fmt(v.deuda))}. Quedaría pendiente ${esc(fmt(-dif))}.</div>`
+      : `<div class="aviso"><i class="ti ti-info-circle"></i> El bauche pasa lo que debe por ${esc(fmt(dif))}: se aplica como adelanto.</div>`;
     const avisoMonto = ia && ia.monto != null && mf > 0 && Math.abs(Number(ia.monto) - mf) >= 1
       ? `<div class="aviso"><i class="ti ti-alert-triangle"></i> El comprobante dice ${esc(fmt(ia.monto))} y estás cobrando ${esc(fmt(mf))}.</div>` : '';
     if (v.estado === 'verificando') { c.className = 'verificando'; c.innerHTML = '<div class="cab"><span class="spin"></span> Revisando que este comprobante no se haya usado…</div>'; return; }
     if (v.estado === 'error') { c.className = 'error'; c.innerHTML = `<div class="cab"><i class="ti ti-wifi-off"></i> No se pudo revisar ahora. Se revisará otra vez al guardar.</div>${datos}`; return; }
-    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-shield-check"></i> Comprobante nuevo: no se ha usado en otro pago</div>${datos}${notaIA}${avisoMonto}`; return; }
+    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-shield-check"></i> Comprobante nuevo: no se ha usado en otro pago</div>${datos}${notaIA}${notaRapido}${notaDeuda}${avisoMonto}`; return; }
     if (v.estado === 'parecido') {
       const ph = v.parecidos.slice(0, 3).map((h, i) => `<div class="hit"><i class="ti ti-eye-search"></i><div><b>Mismo monto, fecha, banco y ${v.ia.hora ? 'hora' : 'quien envía'}</b>${esc(h.cliente || 'Cliente')} · ${esc(fmt(h.monto))} · ${esc(fecha(h.fecha))}${h.agente ? ' · ' + esc(h.agente) : ''}</div>${h.comprobante ? `<button type="button" class="ver" data-p="${i}">Ver</button>` : ''}</div>`).join('');
       c.className = 'parecido';

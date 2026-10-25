@@ -36,7 +36,8 @@
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
-| Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v5 |
+| Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
+| Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, rama `claude/cobro-bauche-ia`; Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`. **El webhook que la llama se despliega solo con «publícalo»**; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
@@ -48,7 +49,10 @@
 - Cada capa visual se apaga para todos con `NX_<CAPA>=false` o en un equipo con `localStorage.nx_<capa>_off='1'`. Ejemplos: `nx_inicio_pane_off`, `nx_cobro_pane_off`, `nx_info_off` y `nx_p7_pane_off`. El detalle de cada una está en su bitácora.
 - **Regla de botones (18-oct-2026):** todo lo que se toca mide ≥44×44 px; los campos 48 px con letra de 16 px; el botón principal 54 px. Se mide con Playwright a 390 y 1280 px y se anota en la bitácora.
 
-- **Botones encendidos (25-oct-2026, 59.57, rama `claude/botones-encendidos`):** el principal de cada pantalla y la opción elegida llevan luz realista en su propio color (`style#nxLuz`, apagar con `nx_luz_off`). El dueño eligió el estilo NEXUS (no la maqueta genérica) y «el acabado realista». Solo dentro de las pantallas; nada de barra fija abajo.
+- **Botones encendidos (25-oct-2026, 59.57, publicado en PR #405):** el principal de cada pantalla y la opción elegida llevan luz realista en su propio color (`style#nxLuz`, apagar con `nx_luz_off`). El dueño eligió el estilo NEXUS (no la maqueta genérica) y «el acabado realista». Solo dentro de las pantallas; nada de barra fija abajo.
+
+- **Bauches con IA (dueño, 25-oct-2026):** la IA lee las fotos «apenas llegan» y en el cobro «pone el del bauche y avisa». Nunca registra un pago sola: el cobro siempre lo confirma una persona.
+- Pendiente visual aparte (ya estaba en 59.57): en el simulador, la cita de un mensaje que responde a una foto muestra «Cliente» en letras verticales. Revisar si pasa en el iPhone real.
 
 ## 5. Reglas de negocio clave
 - **Los agentes no tienen comisión.** Nada de comisión en reportes, acumulados ni plantillas.
