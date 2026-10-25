@@ -17,6 +17,21 @@
 - No poner IDs de modelo de IA en commits ni en PR.
 - No conectar cuentas, iniciar sesión ni gastar sin su OK.
 - WhatsApp: nada a clientes sin su OK. Las pruebas, solo a su número.
+- **«Recuerda todo lo que me gusta» (dueño, 25-oct-2026).** Todo diseño nuevo lleva estos gustos sin que él los repita. Vale también para sistemas de clientes como Pizzería Unive 2.
+  1. **Nada de barra fija abajo.** Las acciones van dentro de la pantalla o en una píldora arriba.
+  2. **Botones encendidos.** El botón principal y la opción elegida llevan luz realista en su propio color (59.57). Los demás botones, no.
+  3. **Vidrio.** Paneles translúcidos (capas `#nx*Pane`); la isla de avisos estilo Dynamic Island.
+  4. **ⓘ de ayuda** para las notas, en vez de texto suelto.
+  5. **Rapidez tipo Raycast:**
+     - abrir con lo guardado y refrescar por detrás;
+     - línea fina de carga en vez de ruedas;
+     - respuesta al tocar.
+  6. **Números que ruedan** (beUI) y **gráfica en vivo** (Liveline).
+  7. **The Kitchen:** impresora de recibos animada y «mantén presionado para confirmar» en lo destructivo.
+  8. **Botones de 44 px como mínimo,** 48 px en campos y 54 px en el principal. Se miden a 390 y 1280 px.
+  9. **Ver antes de aprobar:** opciones con maqueta primero, y capturas en iPhone y en PC.
+  10. Respetar «reducir movimiento». Sin efectos pesados en pantallas de trabajo.
+  - Lista completa de referencias: `docs/REFERENCIAS-DISENO.md`.
 - **Skills:** leer `HERRAMIENTAS.md` al empezar cada pedido y usar la skill que corresponda sin esperar a que la nombre. Para diseño, leer primero `DESIGN.md` y `docs/REFERENCIAS-DISENO.md`.
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
