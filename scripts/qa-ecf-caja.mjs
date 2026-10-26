@@ -45,6 +45,10 @@ async function abrir(b, conE, ancho, edge) {
       return send({ ok: true, venta: v, items: body.p_items.map((it, i) => Object.assign({ id: 'it' + i }, it)) });
     }
     if (t.startsWith('rpc/')) return send(null);
+    if (req.method() === 'POST' && /^pos_devolucion(es|_items)$/.test(t)) {
+      const filas = (Array.isArray(body) ? body : [body]).map((x, i) => Object.assign({ id: (t === 'pos_devoluciones' ? '00000000-0000-4000-8000-0000000000d' : '00000000-0000-4000-8000-0000000000e') + ((D[t] || []).length + i) }, x));
+      D[t] = (D[t] || []).concat(filas); return send(filas, 201);
+    }
     if (req.method() !== 'GET') return send([]);
     let filas = D[t] || [];
     for (const [k, v] of u.searchParams) { if (/^(select|order|limit|offset|on_conflict)$/.test(k)) continue; const m = /^eq\.(.*)$/.exec(v); if (m) filas = filas.filter(x => x[k] === undefined || String(x[k]) === m[1]); }
@@ -152,6 +156,58 @@ try {
     const pt = s.pedidos.find(p => p.m === 'PATCH' && p.t === 'pos_config');
     ok(pt && pt.body.ecf_rnc === '131880657', 'guarda el RNC solo con dígitos', pt && pt.body);
     ok(!s.errs.length, 'sin errores de JS (E31/Ajustes)', s.errs);
+    await s.ctx.close();
+  }
+
+  // 5) Fase 4 y 5: historial con estados de la DGII, anulación y devolución con nota de crédito E34
+  {
+    const edgeNota = body => body.accion === 'nota_credito'
+      ? [{ ok: true, status: 200, ncf: 'E340000000001', ecf_estado: 'En Cola', ecf_security_code: 'NcQ1x2', ecf_qr_url: 'https://fc.dgii.gov.do/testecf/consultatimbre?encf=E340000000001', ecf_firmado: '26-10-2026 12:00:00' }, 200]
+      : [{ ok: true, status: 200, ecf_estado: 'Aceptado' }, 200];
+    const s = await abrir(b, true, 1280, edgeNota);
+    const VA = '00000000-0000-4000-8000-0000000000b1', VR = '00000000-0000-4000-8000-0000000000b2', VN = '00000000-0000-4000-8000-0000000000b3';
+    const base = { estado: 'completada', total: 1300, subtotal: 1101.69, itbis: 198.31, fecha: '2026-10-25T15:00:00Z', created_at: '2026-10-25T15:00:00Z', tipo_comprobante: 'ecf32', pagos: [{ metodo: 'Efectivo', monto: 1300 }], pagado_efectivo: 1300, organizacion_id: ORG };
+    s.D.pos_ventas.push(Object.assign({ id: VA, numero: 11, numero_factura: 'CO00000011', ncf: 'E320000000011', ecf_estado: 'Aceptado', ecf_security_code: 'AbC111', ecf_track_id: 't1' }, base));
+    s.D.pos_ventas.push(Object.assign({ id: VR, numero: 12, numero_factura: 'CO00000012', ncf: 'E320000000012', ecf_estado: 'Rechazado', ecf_security_code: 'AbC112', ecf_track_id: 't2', ecf_respuesta: { status: 'Rechazado', dgiiResponse: ['{"mensajes":[{"valor":"RNC del comprador no existe","codigo":12}]}'] } }, base));
+    s.D.pos_ventas.push(Object.assign({ id: VN, numero: 13, numero_factura: 'CO00000013', ncf: 'E320000000013', ecf_estado: 'Error' }, base));
+    s.D.pos_venta_items = [VA, VR, VN].map(v => ({ id: 'vi' + v.slice(-2), venta_id: v, producto_id: 'p1', nombre: 'Pizza grande', precio: 650, cantidad: 2, itbis: true, importe: 1300 }));
+    s.page.on('dialog', d => d.accept());
+    await s.page.evaluate(() => window.nxAbrirPOS && window.nxAbrirPOS()); await s.page.waitForTimeout(2500);
+    await s.page.evaluate(() => window.nxPosTab('ventas')); await s.page.waitForTimeout(2000);
+    const hist = await s.page.evaluate(() => (document.getElementById('histBody') || {}).innerHTML || '');
+    ok(/Aceptada DGII/.test(hist) && /Rechazada DGII/.test(hist) && /e-CF con error/.test(hist), 'historial: cada factura electrónica muestra su estado en la DGII');
+    ok(/RNC del comprador no existe/.test(hist), 'historial: la rechazada explica el motivo de la DGII');
+    const kp = await s.page.evaluate(() => (document.getElementById('histKpis') || {}).innerText || '');
+    ok(/e-CF por revisar/i.test(kp) && /\b2\b/.test(kp), 'historial: indicador «e-CF por revisar» con 2', kp);
+    if (OUT) await s.page.screenshot({ path: OUT + '/ecf-historial-1280.png', timeout: 12000 }).catch(() => console.log('(captura omitida)'));
+
+    // Anular una factura aceptada → nota de crédito E34 por el servidor, sin B04
+    s.pedidos.length = 0;
+    await s.page.evaluate(id => window.nxPosAnularVenta(id), VA); await s.page.waitForTimeout(2500);
+    const dev = s.pedidos.find(p => p.m === 'POST' && p.t === 'pos_devoluciones');
+    ok(dev && dev.body.ncf === null && Number(dev.body.total) === 1300, 'anular: crea la nota (sin NCF del navegador) por el total', dev && dev.body);
+    ok(!s.pedidos.some(p => p.t === 'rpc/pos_siguiente_ncf'), 'anular factura electrónica: no gasta un B04');
+    const iItems = s.pedidos.findIndex(p => p.m === 'POST' && p.t === 'pos_devolucion_items');
+    const iNota = s.pedidos.findIndex(p => p.m === 'EDGE' && p.body.accion === 'nota_credito');
+    ok(iItems >= 0 && iNota > iItems, 'anular: primero guarda los artículos de la nota, después pide la E34', [iItems, iNota]);
+    ok(s.pedidos[iNota] && /^0{8}-/.test(s.pedidos[iNota].body.nota_id), 'anular: la E34 se pide con el id de la nota', s.pedidos[iNota] && s.pedidos[iNota].body);
+
+    // Anular una factura que nunca llegó a la DGII → sin nota
+    s.pedidos.length = 0;
+    await s.page.evaluate(id => window.nxPosAnularVenta(id), VN); await s.page.waitForTimeout(2000);
+    ok(!s.pedidos.some(p => p.t === 'pos_devoluciones' && p.m === 'POST') && !s.pedidos.some(p => p.m === 'EDGE' && p.body.accion === 'nota_credito'), 'anular una e-CF que no llegó a la DGII: no crea nota ni pide E34');
+
+    // Devolución de una factura electrónica aceptada
+    s.D.pos_ventas.push(Object.assign({ id: '00000000-0000-4000-8000-0000000000b4', numero: 14, numero_factura: 'CO00000014', ncf: 'E320000000014', ecf_estado: 'Aceptado', ecf_security_code: 'AbC114', ecf_track_id: 't4' }, base));
+    s.D.pos_venta_items.push({ id: 'vi14', venta_id: '00000000-0000-4000-8000-0000000000b4', producto_id: 'p1', nombre: 'Pizza grande', precio: 650, cantidad: 2, itbis: true, importe: 1300 });
+    s.pedidos.length = 0;
+    await s.page.evaluate(() => window.nxDevNueva('00000000-0000-4000-8000-0000000000b4')); await s.page.waitForTimeout(1500);
+    await s.page.evaluate(() => window.nxDevGuardar(false)); await s.page.waitForTimeout(2500);
+    const dv = s.pedidos.find(p => p.m === 'POST' && p.t === 'pos_devoluciones');
+    ok(dv && dv.body.ncf === null, 'devolución de factura electrónica: la nota se guarda sin B04', dv && dv.body);
+    ok(s.pedidos.some(p => p.m === 'EDGE' && p.body.accion === 'nota_credito'), 'devolución: pide la nota de crédito electrónica E34');
+    ok(!s.pedidos.some(p => p.t === 'rpc/pos_siguiente_ncf'), 'devolución electrónica: no gasta B04');
+    ok(!s.errs.length, 'sin errores de JS (fase 4 y 5)', s.errs);
     await s.ctx.close();
   }
 } finally { await b.close(); }

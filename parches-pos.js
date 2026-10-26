@@ -1382,24 +1382,62 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     } catch (e) { return ''; }
   }
   // Pide a la Edge que emita (o recupere) el e-CF de una venta ya guardada. Nunca lanza: la venta ya existe.
-  async function ecfEmitir(ventaId, tipo, accion) {
+  function ecfEmitir(ventaId, tipo, accion) { return ecfEmitirDoc({ accion: accion || 'emitir', venta_id: ventaId, tipo: tipo }); }
+  async function ecfEmitirDoc(cuerpo) {
     const A = getAPI();
     try {
       const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const tm = ctl ? setTimeout(() => ctl.abort(), 15000) : 0;
       const r = await fetch(A.url + '/functions/v1/ecf-mseller', { method: 'POST', signal: ctl ? ctl.signal : undefined,
         headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
-        body: JSON.stringify({ accion: accion || 'emitir', venta_id: ventaId, tipo: tipo }) });
+        body: JSON.stringify(cuerpo) });
       clearTimeout(tm);
       const d = await r.json().catch(() => ({}));
       return Object.assign({ ok: r.ok && d.ok !== false }, d);
     } catch (e) { return { ok: false, pendiente: true, error: 'Sin respuesta de MSeller. La factura quedó pendiente.' }; }
   }
+  // Fase 4: estado de la DGII en palabras del dueño. «Por revisar» = rechazada, con error o sin enviar.
+  const ECF_REVISAR = ['Rechazado', 'Error', 'pendiente'];
+  function ecfEstadoChip(v) {
+    if (!/^E3[124]/.test(String(v.ncf || '')) && !ECF_TIPO[v.tipo_comprobante]) return '';
+    const st = v.ecf_estado || (v.ncf ? 'pendiente' : '');
+    if (!st || (v.estado === 'anulada' && st === 'pendiente')) return '';
+    const m = { 'Aceptado': ['Aceptada DGII', '#dcfce7', '#166534'], 'Aceptado Condicional': ['Aceptada con observación', '#fef9c3', '#854d0e'], 'Rechazado': ['Rechazada DGII', '#fee2e2', '#991b1b'], 'Error': ['e-CF con error', '#fee2e2', '#991b1b'], 'pendiente': ['e-CF pendiente', '#fef3c7', '#92400e'] }[st] || ['En la DGII', '#e0f2fe', '#075985'];
+    return ` <span title="${esc(ecfMotivo(v) || st)}" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${m[1]};color:${m[2]}">${m[0]}</span>`;
+  }
+  // Por qué la rechazó la DGII (o qué dijo MSeller), para mostrarlo sin tecnicismos
+  function ecfMotivo(v) {
+    try {
+      const d = v.ecf_respuesta; if (!d) return '';
+      if (d.message && !d.securityCode) return String(d.message).slice(0, 200);
+      const msgs = [];
+      (d.dgiiResponse || []).forEach(x => { try { const j = typeof x === 'string' ? JSON.parse(x) : x; (j.mensajes || []).forEach(m => { if (m && m.valor) msgs.push(m.valor); }); } catch (e) {} });
+      return msgs.join(' · ').slice(0, 200);
+    } catch (e) { return ''; }
+  }
+  // Después de enviar, la DGII contesta en segundos: se pregunta a los ~5 s y a los ~30 s (luego lo hace la tarea de 15 min)
+  function ecfConsultaRapida(id, accion) {
+    [5000, 30000].forEach(ms => setTimeout(async () => {
+      const r = await ecfEmitir(id, null, accion || 'actualizar');
+      const v = (_ventas || []).find(x => String(x.id) === String(id));
+      if (v && r && r.ecf_estado) { v.ecf_estado = r.ecf_estado; try { pintarHistorial(); } catch (e) {} }
+      if (r && r.ecf_estado === 'Rechazado') toast('err', 'La DGII rechazó un comprobante electrónico', (r.ncf || '') + ' — revíselo en el historial de ventas.');
+    }, ms));
+  }
+  // Nota de crédito electrónica (E34) de una devolución o anulación ya guardada. Nunca lanza.
+  async function ecfNota(dev) {
+    const r = await ecfEmitirDoc({ accion: 'nota_credito', nota_id: dev.id });
+    if (r && (r.ncf || r.ecf_security_code)) { ['ncf', 'ecf_estado', 'ecf_security_code', 'ecf_qr_url', 'ecf_firmado'].forEach(k => { if (r[k]) dev[k] = r[k]; }); }
+    if (r && r.ok) ecfConsultaRapida(dev.id, 'actualizar_nota');
+    else if (r && !r.sinOriginal) toast('warn', 'La nota de crédito electrónica quedó pendiente', (r.error || 'Sin respuesta de MSeller.') + ' La tarea automática la reintenta.');
+    return r;
+  }
   // Bloque del recibo (representación impresa: e-NCF, QR de la DGII, código de seguridad y fecha de firma)
   function ecfBloqueTicket(v) {
-    const t = /^E(3[12])/.exec(String(v.ncf || ''));
+    const t = /^E(3[124])/.exec(String(v.ncf || ''));
     if (!t && !ECF_TIPO[v.tipo_comprobante]) return '';
-    const nom = (t ? t[1] : ECF_TIPO[v.tipo_comprobante]) == 31 ? 'Factura de crédito fiscal electrónica' : 'Factura de consumo electrónica';
+    const tt = t ? t[1] : ECF_TIPO[v.tipo_comprobante];
+    const nom = tt == 34 ? 'Nota de crédito electrónica' : tt == 31 ? 'Factura de crédito fiscal electrónica' : 'Factura de consumo electrónica';
     const img = ecfQR(v.ecf_qr_url);
     return `<div class="line"></div><div class="c"><b>${nom}</b></div>${v.ncf ? `<div class="c muted">e-NCF: <b>${esc(v.ncf)}</b></div>` : ''}
       ${img ? `<div class="c" style="margin:8px 0"><img src="${img}" alt="Código QR de la DGII" width="150" height="150"></div>` : ''}
@@ -3971,6 +4009,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         _ecfRes = await ecfEmitir(venta.id, _ecfTipo);
         await ecfCargarQR();
         ncfAsignado = _ecfRes.ncf || null;
+        if (_ecfRes.ok && !_ecfRes.ya) ecfConsultaRapida(venta.id);
         if (!_ecfRes.ok) toast('warn', 'La venta quedó registrada; la factura electrónica no', (_ecfRes.error || 'Sin respuesta de MSeller.') + ' Puede reintentar desde el historial de ventas.');
         const _sc = _ncfSecs.find(x => x.tipo === 'E' + _ecfTipo && x.activo !== false); if (_sc && ncfAsignado && !_ecfRes.ya) _sc.actual = Number(_sc.actual || _sc.desde || 1) + 1;
       } else {
@@ -5877,7 +5916,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const lista = ventasFiltradas();
     const total = lista.filter(v => (v.estado || '') !== 'anulada').reduce((s, v) => s + Number(v.total || 0), 0);
     const hoyN = (_ventas || []).filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy() && (v.estado || '') !== 'anulada').length;
-    return kpiPf('Facturas', lista.length, '#2563eb') + kpiPf('Total filtrado', fmt(total), '#059669') + kpiPf('Hoy', hoyN, '');
+    const ecfMal = (_ventas || []).filter(v => /^E3[12]/.test(String(v.ncf || '')) && (v.estado || '') !== 'anulada' && ECF_REVISAR.includes(v.ecf_estado)).length;
+    return kpiPf('Facturas', lista.length, '#2563eb') + kpiPf('Total filtrado', fmt(total), '#059669') + kpiPf('Hoy', hoyN, '') + (ecfMal ? kpiPf('e-CF por revisar', ecfMal, '#dc2626') : '');
   }
   function filasHistorial() {
     const lista = sortRows(ventasFiltradas(), v => histSortVal(v, _histSort.k), _histSort.d);
@@ -5889,7 +5929,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="font-weight:700;color:var(--pf-txt);white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
-        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
+        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}${ecfEstadoChip(v)}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
       </tr>`;
@@ -5961,8 +6001,30 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // crédito B04 (no basta con revertir el asiento). El asiento inverso de arriba YA cuadra
       // la contabilidad, así que aquí SOLO se emite el documento fiscal (no se vuelve a asentar,
       // para no duplicar la reversión contable).
+      // e-CF: la factura electrónica se respalda con una nota de crédito electrónica E34 (la emite el servidor),
+      // pero solo si llegó a la DGII; si nunca se envió, no hay nada que modificar.
+      let _ecfAnul = false;
       try {
-        if (v.ncf) {
+        if (/^E3[12]/.test(String(v.ncf || ''))) {
+          _ecfAnul = true;
+          if (v.ecf_security_code || v.ecf_track_id) {
+            let prevN = []; try { prevN = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
+            const numeroDev = (await nextSeq('nota_credito')) || devProxNumero(prevN);
+            const rDev = await getAPI().post('pos_devoluciones', { venta_id: v.id, numero: numeroDev, ncf: null, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: 'Anulación de factura completa (' + (v.numero_factura || v.numero || '') + ')', subtotal: Number(v.subtotal || 0), itbis: Number(v.itbis || 0), total: Number(v.total || 0), metodo: 'Anulación', estado: 'emitida', created_by_name: nomAdmin() });
+            const dev = rDev && rDev[0];
+            if (dev) {
+              _notasCred.unshift(dev);
+              if (_itemsAnul.length) { try { await getAPI().post('pos_devolucion_items', _itemsAnul.map(it => ({ devolucion_id: dev.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, precio: Math.round(it.precio || 0), itbis: it.itbis !== false, importe: Math.round(Number(it.precio || 0) * Number(it.cantidad || 0)) }))); } catch (e) {} }
+              const rN = await ecfNota(dev);
+              try { window.logAudit && window.logAudit('POS_ANULACION_ECF', 'Factura ' + (v.numero_factura || v.numero || '') + ' (' + v.ncf + ') anulada — nota de crédito electrónica ' + (rN.ncf || 'pendiente'), 'POS'); } catch (e2) {}
+            }
+          } else {
+            try { window.logAudit && window.logAudit('POS_ANULACION_ECF_SIN_ENVIO', 'Factura ' + (v.numero_factura || v.numero || '') + ' (' + v.ncf + ') anulada antes de llegar a la DGII — sin nota de crédito', 'POS'); } catch (e2) {}
+          }
+        }
+      } catch (e) {}
+      try {
+        if (v.ncf && !_ecfAnul) {
           const ncfDev = await asignarNCF('B04');
           if (ncfDev) {
             let prevN = []; try { prevN = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
@@ -6082,7 +6144,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try {
       let prev = []; try { prev = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
       const numero = (await nextSeq('nota_credito')) || devProxNumero(prev);
-      try { ncfDev = await asignarNCF('B04'); } catch (e) {}
+      const _esEcf = /^E3[12]/.test(String(v.ncf || '')) && !!(v.ecf_security_code || v.ecf_track_id);
+      if (!/^E3[12]/.test(String(v.ncf || ''))) { try { ncfDev = await asignarNCF('B04'); } catch (e) {} }
       const body = { venta_id: v.id, numero: numero, ncf: ncfDev, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: (val('devMot') || '').trim() || null, subtotal: t.subtotal, itbis: t.itbis, total: t.total, metodo: metodo, estado: 'emitida', created_by_name: nomAdmin() };
       const r = await getAPI().post('pos_devoluciones', body);
       const dev = (r && r[0]) || null; if (!dev) throw new Error('No se pudo registrar');
@@ -6098,6 +6161,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       } catch (e) { }
       const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
       await getAPI().post('pos_devolucion_items', items);
+      // e-CF: nota de crédito electrónica E34 (con los artículos ya guardados)
+      if (_esEcf) { const rN = await ecfNota(dev); ncfDev = rN && rN.ncf || null; await ecfCargarQR(); }
       // devolver stock
       for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); moverStock(p, 'devolucion', Number(l.cant || 0), { referencia: (dev.numero || ''), motivo: 'Devolución', almacenId: aid }).catch(() => {}); } } catch (e) {}
       }
@@ -6132,11 +6197,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="line"></div>
         <div class="c"><b>NOTA DE CRÉDITO ${esc(dev.numero || '')}</b></div>
-        ${dev.ncf ? `<div class="c muted">NCF: <b>${esc(dev.ncf)}</b></div>` : ''}
+        ${dev.ncf && !/^E/.test(dev.ncf) ? `<div class="c muted">NCF: <b>${esc(dev.ncf)}</b></div>` : ''}
         <div class="muted">Fecha: ${fechaDMY(dev.fecha)} · Cliente: <b>${esc(dev.cliente_nombre || 'Consumidor final')}</b>${(function () { try { const _c = dev.cliente_id ? _clientes.find(x => String(x.id) === String(dev.cliente_id)) : null; if (_c && _c.cedula) return ' · ' + (_c.tipo_persona === 'juridica' ? 'RNC' : 'Cédula') + ': ' + esc(_c.cedula); } catch (e) {} return ''; })()}<br>Factura afectada: ${esc((dev._venta && (dev._venta.numero_factura || '#' + dev._venta.numero)) || '')}${dev.motivo ? '<br>Motivo: ' + esc(dev.motivo) : ''}</div>
         <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
         <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(dev.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(dev.itbis)}</td></tr><tr class="gran"><td>TOTAL DEVUELTO</td><td class="r">${fmt(dev.total)}</td></tr></table>
         <div class="muted" style="margin-top:8px">Forma de devolución: ${esc(dev.metodo || '')}</div>
+        ${/^E34/.test(String(dev.ncf || '')) ? ecfBloqueTicket(dev) + ((dev._venta && dev._venta.ncf) ? `<div class="c muted">Modifica la factura electrónica <b>${esc(dev._venta.ncf)}</b></div>` : '') : ''}
       </body></html>`;
     try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }

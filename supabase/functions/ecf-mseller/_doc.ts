@@ -11,6 +11,9 @@ export type VentaEcf = {
 };
 export type ItemEcf = { nombre: string; precio: number; cantidad: number; itbis: boolean; importe: number; servicio?: boolean };
 export type EmisorEcf = { rnc: string; razonSocial: string; direccion: string };
+// Nota de crédito (E34): a qué comprobante modifica. codigo 1 = anulación total, 3 = corrección de montos (devolución parcial).
+// indicador: 0 si la nota sale dentro de los 30 días de la factura original, 1 si sale después (regla de la DGII).
+export type ReferenciaEcf = { ncf: string; fecha: string; codigo: 1 | 3; razon?: string | null };
 
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const r4 = (n: number) => Math.round((n + Number.EPSILON) * 10000) / 10000;
@@ -27,8 +30,15 @@ const fechaDMY = (iso: string) => { const [a, m, d] = iso.slice(0, 10).split("-"
 
 export const rncValido = (v: unknown) => /^([0-9]{9}|[0-9]{11})$/.test(String(v || ""));
 
-export function armarEcf(o: { tipo: 31 | 32; encf: string; venta: VentaEcf; items: ItemEcf[]; emisor: EmisorEcf; vencimientoSecuencia?: string | null; ahora?: () => number }) {
+// Días entre la fecha de la factura original y la de la nota, en hora de RD
+export function diasEntre(desdeIso: string, hastaIso: string | null | undefined, ahora: () => number = Date.now) {
+  const a = Date.parse(desdeIso), b = hastaIso ? Date.parse(hastaIso) : ahora();
+  return Math.floor(((isNaN(b) ? ahora() : b) - (isNaN(a) ? ahora() : a)) / 86_400_000);
+}
+
+export function armarEcf(o: { tipo: 31 | 32 | 34; encf: string; venta: VentaEcf; items: ItemEcf[]; emisor: EmisorEcf; vencimientoSecuencia?: string | null; referencia?: ReferenciaEcf | null; ahora?: () => number }) {
   const { tipo, encf, venta, emisor } = o;
+  if (tipo === 34 && !(o.referencia && /^E3[12]\d{10}$/.test(o.referencia.ncf))) throw new Error("La nota de crédito (E34) necesita la factura electrónica que modifica.");
   if (!new RegExp(`^E${tipo}\\d{10}$`).test(encf)) throw new Error(`e-NCF ${encf} no corresponde al tipo E${tipo}.`);
   if (!rncValido(emisor.rnc) || !emisor.razonSocial.trim() || !emisor.direccion.trim()) throw new Error("Faltan los datos del emisor (RNC, razón social y dirección).");
   const items = o.items.filter((i) => Number(i.cantidad) > 0 && Number(i.importe) > 0);
@@ -71,9 +81,10 @@ export function armarEcf(o: { tipo: 31 | 32; encf: string; venta: VentaEcf; item
 
   const credito = !!venta.a_credito;
   const IdDoc: Record<string, unknown> = { TipoeCF: tipo, eNCF: encf };
-  if (o.vencimientoSecuencia) IdDoc.FechaVencimientoSecuencia = fechaDMY(o.vencimientoSecuencia);
+  if (tipo === 34) IdDoc.IndicadorNotaCredito = diasEntre(o.referencia!.fecha, venta.fecha, o.ahora) > 30 ? 1 : 0;
+  else if (o.vencimientoSecuencia) IdDoc.FechaVencimientoSecuencia = fechaDMY(o.vencimientoSecuencia);
   Object.assign(IdDoc, { IndicadorEnvioDiferido: 0, IndicadorMontoGravado: 0, TipoIngresos: "01", TipoPago: credito ? 2 : 1 });
-  if (credito && venta.credito_vencimiento) IdDoc.FechaLimitePago = fechaDMY(venta.credito_vencimiento);
+  if (credito && venta.credito_vencimiento && tipo !== 34) IdDoc.FechaLimitePago = fechaDMY(venta.credito_vencimiento);
 
   const Totales: Record<string, number> = {};
   if (gravado > 0) Object.assign(Totales, { MontoGravadoTotal: gravado, MontoGravadoI1: gravado });
@@ -90,5 +101,10 @@ export function armarEcf(o: { tipo: 31 | 32; encf: string; venta: VentaEcf; item
     Encabezado.Comprador = { RNCComprador: rnc, RazonSocialComprador: String(venta.comprador_razon_social || venta.cliente_nombre || "Cliente").trim().slice(0, 150) };
   }
   Encabezado.Totales = Totales;
-  return { ECF: { Encabezado, DetallesItems: { Item }, FechaHoraFirma: "" } };
+  if (tipo !== 34) return { ECF: { Encabezado, DetallesItems: { Item }, FechaHoraFirma: "" } };
+  const ref = o.referencia!;
+  const InformacionReferencia: Record<string, unknown> = { NCFModificado: ref.ncf, FechaNCFModificado: fechaRD(ref.fecha, o.ahora), CodigoModificacion: ref.codigo };
+  const razon = String(ref.razon || "").replace(/\s+/g, " ").trim().slice(0, 90);
+  if (razon) InformacionReferencia.RazonModificacion = razon;
+  return { ECF: { Encabezado, DetallesItems: { Item }, InformacionReferencia, FechaHoraFirma: "" } };
 }
