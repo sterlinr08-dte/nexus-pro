@@ -76,6 +76,7 @@
 
 ## 7. Pendientes y esperas
 - **Factura electrónica (e-CF, MSeller) — rama `claude/ecf-mseller`, 59.61 sin publicar:** fases 1–5 hechas (conexión, números e-NCF, emisión desde la caja con QR, seguimiento automático cada 15 min, nota de crédito E34, nota de débito E33; 59.63). La Edge `ecf-mseller` v9 y las migraciones ya están en el servidor. **Bloqueo:** MSeller exige subir el certificado .p12 incluso para probar. Plan: `docs/planes/2026-10-26-ecf-mseller.md`.
+  - **En pendiente por orden del dueño (26-oct):** botón «Reemitir» para e-CF rechazadas (número nuevo: el rechazado cuenta como usado), «Corregir factura» (E34 total + factura nueva en un paso), corrección de texto (código 2), ANECF de números no usados, nota de débito a crédito. La DGII no permite borrar un e-CF: solo corregir con notas.
 - **Caché en Cloudflare** (rama `claude/nexus-cache`, sin publicar, 24-oct-2026): `_headers` + Worker solo en `/` y `/boleto.html`; `/` con Last-Modified = fecha de la publicación (Cloudflare borra el ETag del HTML). 2ª visita 461→77 KB. Bitácoras `2026-10-24-2148` y `2200`.
 - **Clave IA de NEXUS inválida:** el dueño pone `ANTHROPIC_API_KEY`; luego leer los 138 viejos (modo `lote`, bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.
