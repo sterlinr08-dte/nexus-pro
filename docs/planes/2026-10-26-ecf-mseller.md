@@ -21,7 +21,7 @@ Pedido del dueño (26-oct-2026): «Lee la documentación de MSeller ECF… y ay�
 | Fase | Qué | Estado |
 |---|---|---|
 | **1. Conexión** | Edge `ecf-mseller`: sesión con token reutilizado y renovado; acciones `estado`, `probar`, `consultar` y `validar`. Solo admin, clave de servicio o llave de un solo uso. | **Hecha** (v1 desplegada, 26-oct). Faltan `MSELLER_EMAIL` y `MSELLER_PASSWORD` para la prueba real. |
-| **2. Datos** | Migración: secuencias e-NCF (E31/E32/E34…) por organización con apartado atómico, como `pos_siguiente_ncf`, y columnas en `pos_ventas`: `encf`, `ecf_tipo`, `ecf_estado`, `ecf_security_code`, `ecf_qr_url`, `ecf_track_id`, `ecf_firmado_at`, `ecf_respuesta`. Captura del **RNC del comprador** (lo exige el E31). | Pendiente |
+| **2. Datos** | Migración: secuencias e-NCF (E31/E32/E34…) por organización con apartado atómico, como `pos_siguiente_ncf`, y columnas en `pos_ventas`: `encf`, `ecf_tipo`, `ecf_estado`, `ecf_security_code`, `ecf_qr_url`, `ecf_track_id`, `ecf_firmado_at`, `ecf_respuesta`. Captura del **RNC del comprador** (lo exige el E31). | **Hecha en la base** (26-oct): 12 columnas nuevas, candados y RPC `pos_siguiente_encf`. Falta la pantalla para crear las secuencias E31/E32/E34 y pedir el RNC (fase 3). |
 | **3. Emisión desde la caja** | Al cobrar: armar el JSON (E32 consumo / E31 crédito fiscal), enviarlo por la Edge, guardar el QR y el código, e imprimir. **Nunca bloquear la venta** esperando a la DGII. | Pendiente |
 | **4. Seguimiento** | Tarea programada que consulta los pendientes (3 s, 30 s, 2 min y luego en lote) y aviso de los Rechazado. | Pendiente |
 | **5. Notas de crédito y anulación** | E34 al anular una venta (reemplaza el B04) y ANECF para secuencias no usadas. | Pendiente |
