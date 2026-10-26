@@ -100,7 +100,7 @@ async function completar(page, monto) {
       await adjuntar(page);
       const verde = await esperarTarjeta(page, 'nuevo');
       const st = await page.evaluate(() => ({ txt: document.getElementById('nxBaucheCheck')?.innerText || '', ref: document.getElementById('aRef').value, banco: document.getElementById('aBanco').value }));
-      ok(verde && /nuevo/i.test(st.txt), `${w}px A: comprobante nuevo → tarjeta verde`, st);
+      ok(verde && /Comprobante listo/.test(st.txt) && !/no se ha usado/.test(st.txt), `${w}px A: comprobante nuevo → tarjeta verde`, st);
       ok(st.ref === '987654321', `${w}px A: la IA llena la referencia con el número del banco`, st);
       ok(!!st.banco && st.banco === bancoTxt, `${w}px A: la IA elige el banco (${bancoTxt})`, st);
       ok(log.buscar.length === 1 && /^[0-9a-f]{64}$/.test(log.buscar[0].p_sha256 || '') && /^[0-9a-f]{16}$/.test(log.buscar[0].p_dhash || '') && log.buscar[0].p_numero === '987654321', `${w}px A: busca con huella exacta, número (y guarda la visual como dato)`, log.buscar[0]);
@@ -159,7 +159,7 @@ async function completar(page, monto) {
       await adjuntar(page); await esperarTarjeta(page, 'nuevo'); await sleep(400);
       // 59.58: el monto se llena con el del bauche (decisión del dueño), el método pasa a Transferencia y avisa abono parcial.
       const e1 = await page.evaluate(() => ({ mnt: document.getElementById('aMnt').value, met: document.getElementById('aMet').value, ref: document.getElementById('aRef').value, av: [...document.querySelectorAll('#nxBaucheCheck .aviso')].map(x => x.innerText).join(' | '), nota: document.getElementById('nxBaucheCheck').innerText }));
-      ok(/3,500/.test(e1.mnt) && e1.met === 'Transferencia' && e1.ref === '11223344' && /Abono parcial/.test(e1.av) && /Llenado con el bauche/.test(e1.nota), `${w}px E: monto, método y referencia del bauche + aviso de abono parcial`, e1);
+      ok(/3,500/.test(e1.mnt) && e1.met === 'Transferencia' && e1.ref === '11223344' && /Abono parcial/.test(e1.av) && /(Paga la cuota|Abono a la cuota|Pago adelantado|Datos tomados del bauche)/.test(e1.nota) && !/no se ha usado/.test(e1.nota), `${w}px E: monto, método y referencia del bauche + aviso de abono parcial`, e1);
       // Si el agente lo cambia a mano, se respeta y avisa que el comprobante dice otro monto.
       await completar(page); await sleep(200);
       const av = await page.evaluate(() => [...document.querySelectorAll('#nxBaucheCheck .aviso')].map(x => x.innerText).join(' | '));
@@ -233,7 +233,7 @@ async function completar(page, monto) {
       ok(log.leer === 0, `${w}px J: usa la lectura que ya hizo el servidor (no llama a la IA otra vez)`, log.leer);
       ok(Number(String(j.mnt).replace(/[^\d.]/g, '')) === montoBauche && j.ref === '99887766', `${w}px J: monto y referencia del bauche`, j);
       ok(sugerida && sugerida.p_cuenta === '1654' && String(j.cta) === String(ag.id), `${w}px J: cuenta de destino sugerida por el historial (${ag.nom})`, { sugerida, cta: j.cta });
-      ok(/adelanto/i.test(j.txt) && /Llenado con el bauche/.test(j.txt) && /cuenta/.test(j.txt), `${w}px J: avisa adelanto y dice qué se llenó solo`, j.txt);
+      ok(/adelanto/i.test(j.txt) && /(Paga la cuota|Paga las cuotas|adelanta|Pago adelantado|Datos tomados del bauche)/.test(j.txt) && /Comprobante listo/.test(j.txt), `${w}px J: avisa adelanto y dice qué mes paga`, j.txt);
       await page.evaluate(() => document.getElementById('nxBaucheCheck')?.scrollIntoView({ block: 'center' })); await sleep(250); await page.screenshot({ path: OUT + `${w}-J-cobro-rapido.png` });
       // Registrar: completa el agente que recibió y guarda; el monto que va al servidor es el del bauche.
       const bancos = await page.evaluate(() => ({ v: document.getElementById('aBanco').value, ops: [...document.getElementById('aBanco').options].map(o => o.text).slice(0, 12) }));

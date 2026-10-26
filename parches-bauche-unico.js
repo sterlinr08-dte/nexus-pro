@@ -167,6 +167,35 @@
     try { return window.nxMoney ? window.nxMoney.parse(el.value) : parseFloat(String(el.value).replace(/[^\d.]/g, '')); } catch (e) { return 0; }
   }
 
+  /* Qué mes(es) paga este monto. Las facturas pendientes del cliente (ST.facturas, periodo AAAA-MM) se saldan de la más
+     vieja a la más nueva; lo ya abonado (pend(c) es menor que la suma) se descuenta primero de la más vieja. */
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const nomMes = (k) => { const [a, m] = String(k || '').split('-'); return MESES[+m - 1] ? MESES[+m - 1] + ' ' + a : ''; };
+  function quePaga(monto) {
+    try {
+      const st = window.ST || ST; const c = st.clientes.find(x => x.id === abonoCliId); if (!c) return '';
+      if ((document.getElementById('aDestino')?.value || 'facturas') === 'deuda_anterior') return 'Abono a la deuda anterior';
+      const fs = (st.facturas || []).filter(f => String(f.cliente_id) === String(c.id) && /^\d{4}-\d{2}$/.test(String(f.periodo || '')) && !/pagad|anulad/i.test(String(f.estado || '')))
+        .sort((a, b) => String(a.periodo).localeCompare(String(b.periodo)));
+      const deuda = typeof pend === 'function' ? Number(pend(c)) || 0 : 0;
+      let yaAbonado = Math.max(0, fs.reduce((n, f) => n + (Number(f.total) || 0), 0) - deuda);
+      let resto = monto; const completos = [], parcial = [];
+      for (const f of fs) {
+        let falta = Number(f.total) || 0;
+        const ab = Math.min(yaAbonado, falta); yaAbonado -= ab; falta -= ab;
+        if (falta < 0.01 || resto < 0.01) continue;
+        if (resto + 0.01 >= falta) { completos.push(f.periodo); resto -= falta; } else { parcial.push(f.periodo); resto = 0; }
+      }
+      const lista = (ks) => { const n = ks.map(nomMes); return n.length > 1 ? n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1] : n[0]; };
+      const partes = [];
+      if (completos.length) partes.push((completos.length > 1 ? 'Paga las cuotas de ' : 'Paga la cuota de ') + lista(completos));
+      if (parcial.length) partes.push((partes.length ? 'abona a ' : 'Abono a la cuota de ') + lista(parcial));
+      if (resto >= 1 && fs.length) partes.push('adelanta ' + fmt(resto));
+      if (!partes.length && resto >= 1) partes.push('Pago adelantado de ' + fmt(resto));
+      return partes.join(' y ');
+    } catch (e) { return ''; }
+  }
+
   /* ── Tarjeta bajo el comprobante ── */
   const TIPO = { misma_foto: 'La misma foto', mismo_numero: 'El mismo número de transacción' };
   function css() {
@@ -221,16 +250,19 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
     const IAERR = { clave: 'la clave de la IA no es válida', credito: 'la IA no tiene crédito', sin_clave: 'falta la clave de la IA', ocupado: 'la IA está ocupada', red: 'no hubo conexión con la IA', rechazo: 'la IA no pudo leerlo', otro: 'la IA no pudo leerlo' };
     const notaIA = !ia && v.iaErr ? `<div class="ia"><i class="ti ti-robot-off"></i> Se revisó solo la foto exacta: ${esc(IAERR[v.iaErr] || IAERR.otro)}.</div>` : '';
     const llenos = [v.montoAuto ? 'monto' : '', v.metAuto ? 'método' : '', v.bancoAuto ? 'banco' : '', v.refAuto ? 'referencia' : '', v.cuentaAuto ? 'cuenta (' + v.cuentaAuto + ')' : ''].filter(Boolean);
-    const notaRapido = llenos.length ? `<div class="ia"><i class="ti ti-sparkles"></i> Llenado con el bauche: ${esc(llenos.join(', '))}. Revise antes de registrar.</div>` : '';
+    // Dueño, 26-oct: en vez de listar los campos llenados, decir qué paga (mes o meses de la cuota). Revise antes de registrar.
+    const paga = mf > 0 ? quePaga(mf) : '';
+    const notaRapido = paga ? `<div class="ia"><i class="ti ti-calendar-check"></i> ${esc(paga)}. Revise antes de registrar.</div>`
+      : llenos.length ? `<div class="ia"><i class="ti ti-sparkles"></i> Datos tomados del bauche. Revise antes de registrar.</div>` : '';
     const dif = v.montoAuto && v.deuda != null ? Math.round((v.montoAuto - v.deuda) * 100) / 100 : 0;
     const notaDeuda = !v.montoAuto || v.deuda == null || Math.abs(dif) < 1 ? '' : dif < 0
       ? `<div class="aviso"><i class="ti ti-info-circle"></i> Abono parcial: el bauche cubre ${esc(fmt(v.montoAuto))} y debe ${esc(fmt(v.deuda))}. Quedaría pendiente ${esc(fmt(-dif))}.</div>`
       : `<div class="aviso"><i class="ti ti-info-circle"></i> El bauche pasa lo que debe por ${esc(fmt(dif))}: se aplica como adelanto.</div>`;
     const avisoMonto = ia && ia.monto != null && mf > 0 && Math.abs(Number(ia.monto) - mf) >= 1
       ? `<div class="aviso"><i class="ti ti-alert-triangle"></i> El comprobante dice ${esc(fmt(ia.monto))} y estás cobrando ${esc(fmt(mf))}.</div>` : '';
-    if (v.estado === 'verificando') { c.className = 'verificando'; c.innerHTML = '<div class="cab"><span class="spin"></span> Revisando que este comprobante no se haya usado…</div>'; return; }
+    if (v.estado === 'verificando') { c.className = 'verificando'; c.innerHTML = '<div class="cab"><span class="spin"></span> Leyendo el comprobante…</div>'; return; }
     if (v.estado === 'error') { c.className = 'error'; c.innerHTML = `<div class="cab"><i class="ti ti-wifi-off"></i> No se pudo revisar ahora. Se revisará otra vez al guardar.</div>${datos}`; return; }
-    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-shield-check"></i> Comprobante nuevo: no se ha usado en otro pago</div>${datos}${notaIA}${notaRapido}${notaDeuda}${avisoMonto}`; return; }
+    if (v.estado === 'nuevo') { c.className = 'nuevo'; c.innerHTML = `<div class="cab"><i class="ti ti-circle-check"></i> Comprobante listo</div>${datos}${notaIA}${notaRapido}${notaDeuda}${avisoMonto}`; return; }
     if (v.estado === 'parecido') {
       const ph = v.parecidos.slice(0, 3).map((h, i) => `<div class="hit"><i class="ti ti-eye-search"></i><div><b>Mismo monto, fecha, banco y ${v.ia.hora ? 'hora' : 'quien envía'}</b>${esc(h.cliente || 'Cliente')} · ${esc(fmt(h.monto))} · ${esc(fecha(h.fecha))}${h.agente ? ' · ' + esc(h.agente) : ''}</div>${h.comprobante ? `<button type="button" class="ver" data-p="${i}">Ver</button>` : ''}</div>`).join('');
       c.className = 'parecido';
