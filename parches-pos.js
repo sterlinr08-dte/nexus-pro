@@ -335,6 +335,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   }
 
   let _cats = [], _prods = [], _ventas = [], _clientes = [];
+  let _notasDeb = []; // notas de débito electrónicas (E33), pos_notas_debito
   let _fiadoByCli = {}, _abonosByCli = {};
   let _cart = [];
   // Idempotencia del núcleo de venta: se conserva mientras el resultado sea ambiguo
@@ -596,6 +597,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   async function cargarVentas() {
     // Fase 2 (07-oct-2026): sin el tope de 400; si alguna página falla se queda lo que ya había.
     const todas = await getTodasPOS('pos_ventas', 'select=*&order=created_at.desc,id.asc'); if (todas) _ventas = todas;
+    try { _notasDeb = await getAPI().get('pos_notas_debito', 'select=*&order=created_at.desc&limit=500') || []; } catch (e) { _notasDeb = []; }
   }
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
@@ -1399,7 +1401,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // Fase 4: estado de la DGII en palabras del dueño. «Por revisar» = rechazada, con error o sin enviar.
   const ECF_REVISAR = ['Rechazado', 'Error', 'pendiente'];
   function ecfEstadoChip(v) {
-    if (!/^E3[124]/.test(String(v.ncf || '')) && !ECF_TIPO[v.tipo_comprobante]) return '';
+    if (!/^E3[1-4]/.test(String(v.ncf || '')) && !ECF_TIPO[v.tipo_comprobante]) return '';
     const st = v.ecf_estado || (v.ncf ? 'pendiente' : '');
     if (!st || (v.estado === 'anulada' && st === 'pendiente')) return '';
     const m = { 'Aceptado': ['Aceptada DGII', '#dcfce7', '#166534'], 'Aceptado Condicional': ['Aceptada con observación', '#fef9c3', '#854d0e'], 'Rechazado': ['Rechazada DGII', '#fee2e2', '#991b1b'], 'Error': ['e-CF con error', '#fee2e2', '#991b1b'], 'pendiente': ['e-CF pendiente', '#fef3c7', '#92400e'] }[st] || ['En la DGII', '#e0f2fe', '#075985'];
@@ -1434,10 +1436,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   }
   // Bloque del recibo (representación impresa: e-NCF, QR de la DGII, código de seguridad y fecha de firma)
   function ecfBloqueTicket(v) {
-    const t = /^E(3[124])/.exec(String(v.ncf || ''));
+    const t = /^E(3[1-4])/.exec(String(v.ncf || ''));
     if (!t && !ECF_TIPO[v.tipo_comprobante]) return '';
     const tt = t ? t[1] : ECF_TIPO[v.tipo_comprobante];
-    const nom = tt == 34 ? 'Nota de crédito electrónica' : tt == 31 ? 'Factura de crédito fiscal electrónica' : 'Factura de consumo electrónica';
+    const nom = tt == 34 ? 'Nota de crédito electrónica' : tt == 33 ? 'Nota de débito electrónica' : tt == 31 ? 'Factura de crédito fiscal electrónica' : 'Factura de consumo electrónica';
     const img = ecfQR(v.ecf_qr_url);
     return `<div class="line"></div><div class="c"><b>${nom}</b></div>${v.ncf ? `<div class="c muted">e-NCF: <b>${esc(v.ncf)}</b></div>` : ''}
       ${img ? `<div class="c" style="margin:8px 0"><img src="${img}" alt="Código QR de la DGII" width="150" height="150"></div>` : ''}
@@ -2660,7 +2662,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (!confirm('¿Eliminar este vendedor?')) return;
     try { await getAPI().del('pos_vendedores', 'id=eq.' + id); cerrarModal('nxVendForm'); toast('ok', 'Vendedor eliminado'); _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; const vv = document.getElementById('v-pos'); if (vv) renderPOS(vv); } catch (e) { toast('err', 'No se pudo eliminar'); }
   };
-  const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito', E31: 'Crédito fiscal electrónica', E32: 'Consumo electrónica', E34: 'Nota de crédito electrónica' };
+  const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito', E31: 'Crédito fiscal electrónica', E32: 'Consumo electrónica', E33: 'Nota de débito electrónica', E34: 'Nota de crédito electrónica' };
   const esTipoE = t => /^E\d\d$/.test(String(t || ''));
   // e-NCF: prefijo de 3 + 10 dígitos (E320000000001); NCF de serie B: prefijo de 3 + 8 dígitos
   const ncfMuestra = s => (s.prefijo || s.tipo) + String(s.actual).padStart(esTipoE(s.tipo) ? 10 : 8, '0');
@@ -2751,7 +2753,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     let actual = parseInt(val('ncA'), 10); if (!actual) actual = desde;
     if (hasta < desde) { toast('err', 'El "hasta" debe ser mayor que el "desde"'); return; }
     if (esTipoE(tipo) && hasta > 9999999999) { toast('err', 'Número muy largo', 'Un e-NCF tiene como máximo 10 dígitos.'); return; }
-    if (tipo === 'E31' && !val('ncV')) { toast('err', 'Falta la fecha de vencimiento', 'La DGII la pide en cada factura de crédito fiscal electrónica (E31).'); return; }
+    if ((tipo === 'E31' || tipo === 'E33') && !val('ncV')) { toast('err', 'Falta la fecha de vencimiento', 'La DGII la pide en cada ' + (tipo === 'E31' ? 'factura de crédito fiscal' : 'nota de débito') + ' electrónica (' + tipo + ').'); return; }
     const body = { tipo: tipo, descripcion: NCF_DESC[tipo] || null, prefijo: prefijo, desde: desde, hasta: hasta, actual: actual, vencimiento: val('ncV') || null, activo: val('ncAct') === '1' };
     try {
       if (id) await getAPI().patch('pos_ncf_secuencias', 'id=eq.' + id, body); else await getAPI().post('pos_ncf_secuencias', body);
@@ -5929,9 +5931,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="font-weight:700;color:var(--pf-txt);white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
-        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}${ecfEstadoChip(v)}</td>
+        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}${ecfEstadoChip(v)}${ndChips(v)}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada && ndPuede(v) ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxNdNueva('${v.id}')" title="Nota de débito (cargo adicional)" aria-label="Nota de débito (cargo adicional)"><i class="ti ti-receipt-tax" style="color:#7c3aed"></i></button>` : ''}${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
       </tr>`;
     }).join('');
   }
@@ -5939,6 +5941,102 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPosVentasBuscar = function (v) { _histQ = v; pintarHistorial(); };
   window.nxPosHistFecha = function () { _histDesde = val('histDesde') || ''; _histHasta = val('histHasta') || ''; pintarHistorial(); };
   window.nxPosHistLimpiar = function () { _histQ = ''; _histDesde = ''; _histHasta = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  // ── NOTA DE DÉBITO ELECTRÓNICA (E33) ─────────────────────────────────────
+  // Cargo adicional sobre una factura electrónica ya aceptada (delivery, recargo, diferencia de precio). Se cobra al
+  // momento: efectivo (entra al arqueo como entrada de caja), transferencia o tarjeta. A crédito no (el abono de fiado
+  // valida el saldo solo contra las ventas). Contabilidad: Debe Caja / Haber Ventas + ITBIS, una sola vez.
+  function ndPuede(v) { return /^E3[12]/.test(String(v.ncf || '')) && !!(v.ecf_security_code || v.ecf_track_id) && ecfSecDisponible(33); }
+  function ndChips(v) {
+    return (_notasDeb || []).filter(n => String(n.venta_id) === String(v.id) && n.estado !== 'anulada').map(n =>
+      ` <button type="button" onclick="event.stopPropagation();window.nxNdImprimir('${n.id}')" title="${esc('Nota de débito ' + (n.ncf || n.numero || '') + ' · ' + (n.concepto || ''))}" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;border:0;cursor:pointer;background:#ede9fe;color:#5b21b6;text-transform:none">+ ${fmt(n.total)} débito</button>`).join('');
+  }
+  window.nxNdNueva = function (ventaId) {
+    const v = (_ventas || []).find(x => String(x.id) === String(ventaId)); if (!v) return;
+    cerrarModal('nxNdForm');
+    const ov = document.createElement('div'); ov.id = 'nxNdForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const campo = 'style="height:48px;font-size:16px;text-transform:none;width:100%"';
+    ov.innerHTML = `<style>#nxNdForm input::placeholder,#nxNdForm label,#nxNdForm .mt span{text-transform:none!important}</style><div class="modal" style="max-width:440px">
+        <div class="mt"><span><i class="ti ti-receipt-tax"></i> Nota de débito</span><button class="nxBack" type="button" onclick="document.getElementById('nxNdForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="muted" style="font-size:12.5px;margin-bottom:10px;text-transform:none">Cargo adicional a la factura ${esc(v.numero_factura || v.numero || '')} (${esc(v.ncf || '')}) de ${esc(v.cliente_nombre || 'Consumidor final')}.</div>
+        <div class="fr"><label for="ndCon" style="text-transform:none">Concepto</label><input id="ndCon" class="no-upper" ${campo} maxlength="80" placeholder="Por ejemplo: delivery, recargo, diferencia de precio"></div>
+        <div class="fr"><label for="ndMon" style="text-transform:none">Monto total (RD$)</label><input id="ndMon" class="no-upper" ${campo} inputmode="decimal" placeholder="0.00"></div>
+        <div class="fr-row">
+          <div class="fr"><label for="ndItb" style="text-transform:none">¿Lleva ITBIS?</label><select id="ndItb" ${campo}><option value="1">Sí, el monto incluye ITBIS (18 %)</option><option value="0">No, es exento</option></select></div>
+          <div class="fr"><label for="ndMet" style="text-transform:none">Cómo paga</label><select id="ndMet" ${campo}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          <button class="btn bghost" type="button" style="min-height:44px;text-transform:none" onclick="document.getElementById('nxNdForm').remove()">Cancelar</button>
+          <button class="btn bc1" id="ndBtn" type="button" style="min-height:44px;text-transform:none" onclick="window.nxNdGuardar('${v.id}')"><i class="ti ti-check"></i> Emitir nota de débito</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    try { document.getElementById('ndCon').focus(); } catch (e) {}
+  };
+  window.nxNdGuardar = async function (ventaId) {
+    const v = (_ventas || []).find(x => String(x.id) === String(ventaId)); if (!v) return;
+    const concepto = (val('ndCon') || '').trim(), total = Math.round(parseMoney(val('ndMon')) * 100) / 100;
+    const conItbis = val('ndItb') !== '0', metodo = val('ndMet') || 'Efectivo';
+    if (!concepto) { toast('err', 'Falta el concepto', 'Escriba por qué se cobra este cargo.'); return; }
+    if (!(total > 0)) { toast('err', 'Monto inválido', 'Escriba el monto del cargo.'); return; }
+    if (metodo === 'Efectivo' && !(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrala en Caja antes de recibir ' + fmt(total) + ' en efectivo.'); return; }
+    if (!ndPuede(v)) { toast('err', 'No se puede emitir', 'La factura debe haber llegado a la DGII y tiene que haber números E33 en Ajustes.'); return; }
+    const btn = document.getElementById('ndBtn'); if (btn) { if (btn.disabled) return; btn.disabled = true; }
+    const itbis = conItbis ? Math.round(total * 18 / 118 * 100) / 100 : 0, subtotal = Math.round((total - itbis) * 100) / 100;
+    try {
+      const numero = (await nextSeq('nota_debito')) || ('ND' + String((_notasDeb || []).length + 1).padStart(6, '0'));
+      const r = await getAPI().post('pos_notas_debito', { venta_id: v.id, numero: numero, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, concepto: concepto, lleva_itbis: conItbis, subtotal: subtotal, itbis: itbis, total: total, metodo: metodo, caja_id: (metodo === 'Efectivo' && _caja) ? _caja.id : null, estado: 'emitida', created_by_name: nomAdmin() });
+      const nd = r && r[0]; if (!nd) throw new Error('No se pudo registrar');
+      _notasDeb.unshift(nd);
+      // El efectivo entra al arqueo como entrada de caja (mismo camino que los abonos de apartado y reparación)
+      if (metodo === 'Efectivo') { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: total, concepto: 'Nota de débito ' + numero + ' · fact. ' + (v.numero_factura || v.numero || '') + ' · ' + concepto, fecha: new Date().toISOString(), created_by_name: nomAdmin() }); } catch (e) {} }
+      try {
+        const byc = await ctasMap();
+        if (Object.keys(byc).length) {
+          const ln = [lnCta(byc, '1101', 'Caja', total, 0), lnCta(byc, '4101', 'Ventas', 0, subtotal), lnCta(byc, '2102', 'ITBIS por pagar', 0, itbis)].filter(Boolean);
+          if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Nota de débito ' + numero + ' (fact. ' + (v.numero_factura || v.numero || '') + ')', 'nota_debito', nd.id, ln, numero);
+        }
+      } catch (e) {}
+      try { window.logAudit && window.logAudit('POS_NOTA_DEBITO', numero + ' · ' + fmt(total) + ' · ' + metodo + ' · fact. ' + (v.numero_factura || v.numero || '') + ' · ' + concepto, 'POS'); } catch (e) {}
+      if (!_facVentana) _facVentana = facAbrirVentana('Preparando la nota de débito…');
+      const [rE] = await Promise.all([ecfEmitirDoc({ accion: 'nota_debito', debito_id: nd.id }), ecfCargarQR()]);
+      if (rE && (rE.ncf || rE.ecf_security_code)) ['ncf', 'ecf_estado', 'ecf_security_code', 'ecf_qr_url', 'ecf_firmado'].forEach(k => { if (rE[k]) nd[k] = rE[k]; });
+      if (rE && rE.ok) ecfConsultaRapida(nd.id, 'actualizar_debito');
+      else toast('warn', 'La nota de débito quedó registrada; la electrónica no', ((rE && rE.error) || 'Sin respuesta de MSeller.') + ' La tarea automática la reintenta.');
+      cerrarModal('nxNdForm');
+      toast('ok', 'Nota de débito emitida', (nd.ncf ? nd.ncf + ' · ' : '') + fmt(total));
+      try { pintarHistorial(); } catch (e) {}
+      ndImprimirObj(nd, v);
+    } catch (e) { toast('err', 'No se pudo emitir', String(e && e.message || e)); if (btn) btn.disabled = false; }
+  };
+  window.nxNdImprimir = async function (id) {
+    const nd = (_notasDeb || []).find(x => String(x.id) === String(id)); if (!nd) return;
+    const v = (_ventas || []).find(x => String(x.id) === String(nd.venta_id)) || {};
+    if (!_facVentana) _facVentana = facAbrirVentana('Preparando la nota de débito…');
+    const acc = nd.ecf_security_code ? 'actualizar_debito' : 'nota_debito';
+    const [r] = await Promise.all([ecfEmitirDoc({ accion: acc, debito_id: nd.id }), ecfCargarQR()]);
+    if (r && (r.ncf || r.ecf_security_code)) ['ncf', 'ecf_estado', 'ecf_security_code', 'ecf_qr_url', 'ecf_firmado'].forEach(k => { if (r[k]) nd[k] = r[k]; });
+    ndImprimirObj(nd, v);
+  };
+  function ndImprimirObj(nd, v) {
+    const e = empInfo();
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nota de débito ${esc(nd.numero || '')}</title>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:420px;margin:0 auto;padding:20px;font-size:13px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:4px 0}.r{text-align:right}.line{border-top:1px dashed #999;margin:8px 0}.tot{font-weight:800;font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;min-height:44px">Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;min-height:44px">Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>Nota de débito ${esc(nd.numero || '')}</b></div>
+        <div class="muted">Fecha: ${fechaDMY(nd.fecha || nd.created_at)} · Cliente: <b>${esc(nd.cliente_nombre || 'Consumidor final')}</b><br>Factura que modifica: ${esc(v.numero_factura || v.numero || '')} (${esc(v.ncf || '')})</div>
+        <table><tr><td>${esc(nd.concepto || '')}</td><td class="r">${fmt(nd.total)}</td></tr></table>
+        <div class="line"></div>
+        <table><tr><td>Subtotal</td><td class="r">${fmt(nd.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(nd.itbis)}</td></tr><tr class="tot"><td>Total</td><td class="r">${fmt(nd.total)}</td></tr><tr><td class="muted">Pagado con</td><td class="r muted">${esc(nd.metodo || '')}</td></tr></table>
+        ${ecfBloqueTicket(nd)}
+      </body></html>`;
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permita las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  }
+
   window.nxPosAnularVenta = async function (id) {
     const v = (_ventas || []).find(x => String(x.id) === String(id)); if (!v) return;
     // A-CRIT: si la venta financió cuotas ya cobradas, calcular cuánto ANTES de tocar nada — hace

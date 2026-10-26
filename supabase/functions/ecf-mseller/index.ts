@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.112.2";
 import { crearCliente, entornoValido, MSellerError } from "./_lib.ts";
-import { actualizar, actualizarDoc, type Deps, emitir, emitirNota, type Pendiente, seguimiento } from "./_emitir.ts";
+import { actualizar, actualizarDoc, type Deps, emitir, emitirDebito, emitirNota, type Pendiente, seguimiento } from "./_emitir.ts";
 import { rncValido } from "./_doc.ts";
 
 // ecf-mseller — fase 1 de la factura electrónica (e-CF) con MSeller (dueño, 26-oct-2026: «ayúdame a integrarla en mi
@@ -12,6 +12,7 @@ import { rncValido } from "./_doc.ts";
 // MSELLER_ENTORNO (TesteCF por defecto; CerteCF o eCF solo cuando la DGII lo apruebe).
 // Acceso: un ADMIN activo con su sesión de NEXUS, la clave de servicio o una llave de prueba de un solo uso.
 // Fase 5: {accion:"nota_credito", nota_id} emite la E34 de una devolución o anulación; {accion:"actualizar_nota", nota_id}.
+// Nota de débito E33: {accion:"nota_debito", debito_id} y {accion:"actualizar_debito", debito_id} (pos_notas_debito).
 // Fase 4: {accion:"seguimiento"} solo con x-cron-token (pg_cron cada 15 min, ver migración 20261026040000).
 // Fase 3 (caja): {accion:"emitir", venta_id, tipo:31|32} y {accion:"actualizar", venta_id} los puede usar cualquier usuario
 // de la caja con su sesión: la venta se lee CON su sesión (RLS: solo ve las de su organización) y el e-NCF sale de
@@ -101,6 +102,7 @@ function depsCaja(token: string | null, cliente: Deps["cliente"]): Deps {
     cliente,
     ventas,
     notas: tabla("pos_devoluciones", "id,organizacion_id,venta_id,total,motivo,fecha,created_at,estado," + ECF),
+    debitos: tabla("pos_notas_debito", "id,organizacion_id,venta_id,total,concepto,lleva_itbis,created_at,estado," + ECF),
     leerItems: (id) => items("pos_venta_items", "venta_id", id),
     leerItemsNota: (id) => items("pos_devolucion_items", "devolucion_id", id),
     async leerEmisor(org) {
@@ -124,10 +126,10 @@ async function listarPendientes(): Promise<Pendiente[]> {
   const ESPERA = ["En Cola", "Enviado a la DGII", "En Proceso"];
   const hace2min = new Date(Date.now() - 120_000).toISOString();
   const out: Pendiente[] = [];
-  for (const [nombre, t] of [["pos_ventas", "ventas"], ["pos_devoluciones", "notas"]] as const) {
+  for (const [nombre, t] of [["pos_ventas", "ventas"], ["pos_devoluciones", "notas"], ["pos_notas_debito", "debitos"]] as const) {
     const { data: a } = await db.from(nombre).select("id,ecf_estado").in("ecf_estado", ESPERA).or(`ecf_actualizado_at.is.null,ecf_actualizado_at.lt.${hace2min}`).order("ecf_actualizado_at", { ascending: true, nullsFirst: true }).limit(40);
     let qb = db.from(nombre).select("id,ecf_estado").eq("ecf_estado", "pendiente").like("ncf", "E%");
-    if (nombre === "pos_ventas") qb = qb.neq("estado", "anulada"); // una venta anulada no se envía
+    if (nombre !== "pos_devoluciones") qb = qb.neq("estado", "anulada"); // una venta o nota de débito anulada no se envía
     const { data: b } = await qb.or(`ecf_enviado_at.is.null,ecf_enviado_at.lt.${hace2min}`).limit(20);
     for (const r of [...(a || []), ...(b || [])]) out.push({ tabla: t, id: r.id, ecf_estado: r.ecf_estado });
   }
@@ -151,11 +153,11 @@ Deno.serve(async (req) => {
     if (r.revisados) console.log("ecf-mseller seguimiento", JSON.stringify(r));
     return json({ ok: true, ...r });
   }
-  if (["emitir", "actualizar", "nota_credito", "actualizar_nota"].includes(accion)) {
+  if (["emitir", "actualizar", "nota_credito", "actualizar_nota", "nota_debito", "actualizar_debito"].includes(accion)) {
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
     const { data: u } = token && token !== SERVICE_ROLE_KEY ? await db.auth.getUser(token) : { data: null };
     if (!u?.user) return json({ ok: false, error: "Inicie sesión en NEXUS." }, 401);
-    const ventaId = String(b?.venta_id || b?.nota_id || "");
+    const ventaId = String(b?.venta_id || b?.nota_id || b?.debito_id || "");
     if (!/^[0-9a-f-]{36}$/i.test(ventaId)) return json({ ok: false, error: "Falta el documento." }, 400);
     const { faltan, cliente } = config();
     if (!cliente) return json({ ok: false, error: "La factura electrónica no está configurada (faltan datos de MSeller).", faltan }, 400);
@@ -164,6 +166,8 @@ Deno.serve(async (req) => {
       const r = accion === "emitir" ? await emitir({ ventaId, tipo: Number(b?.tipo) || undefined }, deps)
         : accion === "nota_credito" ? await emitirNota({ notaId: ventaId }, deps)
         : accion === "actualizar_nota" ? await actualizarDoc(ventaId, deps.notas, cliente)
+        : accion === "nota_debito" ? await emitirDebito({ debitoId: ventaId }, deps)
+        : accion === "actualizar_debito" ? await actualizarDoc(ventaId, deps.debitos, cliente)
         : await actualizar(ventaId, deps);
       return json({ entorno: cliente.entorno, ...r }, r.status);
     } catch (e) {

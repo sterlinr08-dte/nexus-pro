@@ -2,7 +2,7 @@
 // Uso: deno test supabase/functions/ecf-mseller/_emitir_test.ts
 import { assert, assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { armarEcf, fechaRD } from "./_doc.ts";
-import { actualizar, type Deps, emitir, emitirNota, type NotaFila, seguimiento, type VentaFila } from "./_emitir.ts";
+import { actualizar, type DebitoFila, type Deps, emitir, emitirDebito, emitirNota, type NotaFila, seguimiento, type VentaFila } from "./_emitir.ts";
 
 const emisor = { rnc: "131880657", razonSocial: "Pizzería Unive 2 SRL", direccion: "Calle Principal 1, Santiago" };
 const T0 = Date.parse("2026-10-26T15:00:00Z");
@@ -74,9 +74,10 @@ Deno.test("fechaRD usa la hora de Santo Domingo (UTC−4)", () => {
 });
 
 // ── _emitir.ts ──
-function base(v: Partial<VentaFila> = {}, ms: { enviar?: number[]; consultar?: { status: number; datos: any } } = {}, n: Partial<NotaFila> = {}) {
+function base(v: Partial<VentaFila> = {}, ms: { enviar?: number[]; consultar?: { status: number; datos: any } } = {}, n: Partial<NotaFila> = {}, dd: Partial<DebitoFila> = {}) {
   const venta: VentaFila = { id: "00000000-0000-4000-8000-000000000001", organizacion_id: "org", estado: "completada", total: 500, fecha: "2026-10-20T15:00:00Z", ncf: null, ecf_tipo: null, ecf_estado: null, ecf_track_id: null, ...v };
   const nota: NotaFila = { id: "00000000-0000-4000-8000-0000000000n1", organizacion_id: "org", venta_id: venta.id, total: 500, motivo: "Anulación de factura completa", created_at: "2026-10-26T15:00:00Z", ncf: null, ecf_estado: null, ecf_track_id: null, ...n };
+  const debito: DebitoFila = { id: "00000000-0000-4000-8000-0000000000d1", organizacion_id: "org", venta_id: venta.id, total: 150, concepto: "Delivery", lleva_itbis: true, created_at: "2026-10-26T15:00:00Z", estado: "emitida", ncf: null, ecf_estado: null, ecf_track_id: null, ...dd };
   const log: string[] = [], enviados: any[] = [];
   let numero = 0, nEnv = 0;
   const reclamadas = new Set<string>();
@@ -98,13 +99,14 @@ function base(v: Partial<VentaFila> = {}, ms: { enviar?: number[]; consultar?: {
     },
     ventas: tabla(venta, "venta"),
     notas: tabla(nota, "nota"),
+    debitos: tabla(debito, "debito"),
     async leerItems() { return [{ nombre: "Pizza", precio: 500, cantidad: 1, itbis: true, importe: 500 }]; },
     async leerItemsNota() { return [{ nombre: "Pizza", precio: 500, cantidad: nota.total / 500, itbis: true, importe: nota.total }]; },
     async leerEmisor() { return emisor; },
     async vencimiento() { return "2027-12-31"; },
     async siguienteEncf(t) { log.push("numero " + t); numero++; return `${t}${String(numero).padStart(10, "0")}`; },
   };
-  return { venta, nota, log, enviados, deps, numeroUsados: () => numero };
+  return { venta, nota, debito, log, enviados, deps, numeroUsados: () => numero };
 }
 
 Deno.test("emitir E32: guarda el e-NCF ANTES de enviar y luego QR, código y seguimiento", async () => {
@@ -264,4 +266,47 @@ Deno.test("seguimiento: un error no detiene a los demás", async () => {
   s.deps.notas.leer = async () => { throw new Error("base caída"); };
   const r = await seguimiento([{ tabla: "notas", id: "x", ecf_estado: "En Cola" }, { tabla: "ventas", id: s.venta.id, ecf_estado: "En Cola" }], s.deps, () => T0);
   assertEquals(r.errores, 1); assertEquals(r.aceptados, 1);
+});
+
+// ── Nota de débito E33 ──
+Deno.test("E33: cargo adicional con referencia a la factura, código 3 y vencimiento de su secuencia", async () => {
+  const s = base(enviada);
+  const r = await emitirDebito({ debitoId: s.debito.id }, s.deps, () => T0);
+  assertEquals(r.ok, true);
+  assertEquals(s.debito.ncf, "E330000000001");
+  const d = s.enviados[0].ECF;
+  assertEquals(d.Encabezado.IdDoc.TipoeCF, 33);
+  assertEquals(d.Encabezado.IdDoc.FechaVencimientoSecuencia, "31-12-2027");
+  assertEquals(d.Encabezado.IdDoc.IndicadorNotaCredito, undefined);
+  assertEquals(d.InformacionReferencia.NCFModificado, "E320000000007");
+  assertEquals(d.InformacionReferencia.CodigoModificacion, 3);
+  assertEquals(d.InformacionReferencia.RazonModificacion, "Delivery");
+  assertEquals(d.DetallesItems.Item.length, 1);
+  assertEquals(d.DetallesItems.Item[0].IndicadorBienoServicio, 2);
+  assertEquals(d.Encabezado.Totales.MontoTotal, 150);
+  assertEquals(d.Encabezado.Totales.MontoGravadoI1, 127.12);
+  assertEquals(d.Encabezado.Totales.TotalITBIS1, 22.88);
+});
+
+Deno.test("E33 sin ITBIS: todo exento", async () => {
+  const s = base(enviada, {}, {}, { lleva_itbis: false, total: 200 });
+  await emitirDebito({ debitoId: s.debito.id }, s.deps, () => T0);
+  const t = s.enviados[0].ECF.Encabezado.Totales;
+  assertEquals(t.MontoExento, 200); assertEquals(t.MontoGravadoI1, undefined);
+});
+
+Deno.test("E33: factura sin enviar, nota anulada o sin vencimiento → no se emite ni se gasta número", async () => {
+  const a = base({ ncf: "E320000000007", ecf_estado: "Error" });
+  assertEquals((await emitirDebito({ debitoId: a.debito.id }, a.deps, () => T0)).status, 409);
+  const b = base(enviada, {}, {}, { estado: "anulada" });
+  assertEquals((await emitirDebito({ debitoId: b.debito.id }, b.deps, () => T0)).status, 409);
+  const c = base(enviada); c.deps.vencimiento = async () => null;
+  assertEquals((await emitirDebito({ debitoId: c.debito.id }, c.deps, () => T0)).status, 400);
+  assertEquals(a.numeroUsados() + b.numeroUsados() + c.numeroUsados(), 0);
+});
+
+Deno.test("seguimiento también revisa notas de débito", async () => {
+  const s = base(enviada, { consultar: { status: 200, datos: { status: "Aceptado", securityCode: "x" } } }, {}, { ncf: "E330000000002", ecf_estado: "En Cola", ecf_track_id: "t" });
+  const r = await seguimiento([{ tabla: "debitos", id: s.debito.id, ecf_estado: "En Cola" }], s.deps, () => T0);
+  assertEquals(r.aceptados, 1); assertEquals(s.debito.ecf_estado, "Aceptado");
 });

@@ -45,7 +45,7 @@ async function abrir(b, conE, ancho, edge) {
       return send({ ok: true, venta: v, items: body.p_items.map((it, i) => Object.assign({ id: 'it' + i }, it)) });
     }
     if (t.startsWith('rpc/')) return send(null);
-    if (req.method() === 'POST' && /^pos_devolucion(es|_items)$/.test(t)) {
+    if (req.method() === 'POST' && /^pos_(devolucion(es|_items)|notas_debito)$/.test(t)) {
       const filas = (Array.isArray(body) ? body : [body]).map((x, i) => Object.assign({ id: (t === 'pos_devoluciones' ? '00000000-0000-4000-8000-0000000000d' : '00000000-0000-4000-8000-0000000000e') + ((D[t] || []).length + i) }, x));
       D[t] = (D[t] || []).concat(filas); return send(filas, 201);
     }
@@ -208,6 +208,64 @@ try {
     ok(s.pedidos.some(p => p.m === 'EDGE' && p.body.accion === 'nota_credito'), 'devolución: pide la nota de crédito electrónica E34');
     ok(!s.pedidos.some(p => p.t === 'rpc/pos_siguiente_ncf'), 'devolución electrónica: no gasta B04');
     ok(!s.errs.length, 'sin errores de JS (fase 4 y 5)', s.errs);
+    await s.ctx.close();
+  }
+
+  // 6) Nota de débito E33
+  {
+    const edgeND = body => body.accion === 'nota_debito'
+      ? [{ ok: true, status: 200, ncf: 'E330000000001', ecf_estado: 'En Cola', ecf_security_code: 'NdQ9z8', ecf_qr_url: 'https://fc.dgii.gov.do/testecf/consultatimbre?encf=E330000000001', ecf_firmado: '26-10-2026 13:00:00' }, 200]
+      : [{ ok: true, status: 200, ecf_estado: 'Aceptado' }, 200];
+    const s = await abrir(b, true, 390, edgeND);
+    const VA = '00000000-0000-4000-8000-0000000000c1', VS = '00000000-0000-4000-8000-0000000000c2';
+    const base = { estado: 'completada', total: 650, subtotal: 550.85, itbis: 99.15, fecha: '2026-10-25T15:00:00Z', created_at: '2026-10-25T15:00:00Z', tipo_comprobante: 'ecf32', cliente_nombre: 'Juan Pérez', organizacion_id: ORG };
+    s.D.pos_ventas.push(Object.assign({ id: VA, numero: 21, numero_factura: 'CO00000021', ncf: 'E320000000021', ecf_estado: 'Aceptado', ecf_security_code: 'AbC121', ecf_track_id: 't21' }, base));
+    s.D.pos_ventas.push(Object.assign({ id: VS, numero: 22, numero_factura: 'CO00000022', ncf: 'E320000000022', ecf_estado: 'Error' }, base));
+    s.page.on('dialog', d => d.accept());
+    await s.page.evaluate(() => window.nxAbrirPOS && window.nxAbrirPOS()); await s.page.waitForTimeout(2500);
+    await s.page.evaluate(() => window.nxPosTab('ventas')); await s.page.waitForTimeout(2000);
+    let hist = await s.page.evaluate(() => (document.getElementById('histBody') || {}).innerHTML || '');
+    ok(!/nxNdNueva/.test(hist), 'sin secuencia E33: no aparece el botón de nota de débito');
+    s.D.pos_ncf_secuencias.push({ id: 's33', tipo: 'E33', prefijo: 'E33', desde: 1, hasta: 100, actual: 1, activo: true, vencimiento: '2027-12-31' });
+    await s.page.evaluate(() => window.nxAbrirPOS && window.nxAbrirPOS()); await s.page.waitForTimeout(2500);
+    await s.page.evaluate(() => window.nxPosTab('ventas')); await s.page.waitForTimeout(2000);
+    hist = await s.page.evaluate(() => (document.getElementById('histBody') || {}).innerHTML || '');
+    ok((hist.match(/nxNdNueva/g) || []).length === 1 && hist.includes("nxNdNueva('" + VA + "')"), 'con E33: botón «Nota de débito» solo en la factura aceptada (no en la que tuvo error)');
+    await s.page.evaluate(id => window.nxNdNueva(id), VA); await s.page.waitForTimeout(600);
+    const med = await s.page.evaluate(() => ['ndCon', 'ndMon', 'ndItb', 'ndMet'].map(id => { const el = document.getElementById(id); const r = el.getBoundingClientRect(); return [Math.round(r.height), parseFloat(getComputedStyle(el).fontSize)]; }));
+    ok(med.every(([h, f]) => h >= 44 && f >= 16), 'ventana: campos de 48 px y letra de 16', med);
+    const bts = await s.page.evaluate(() => [...document.querySelectorAll('#nxNdForm .fe button')].map(b => Math.round(b.getBoundingClientRect().height)));
+    ok(bts.length === 2 && bts.every(h => h >= 44), 'ventana: botones ≥ 44 px', bts);
+    if (OUT) await s.page.screenshot({ path: OUT + '/ecf-nota-debito-390.png', timeout: 12000 }).catch(() => console.log('(captura omitida)'));
+    // sin concepto: no guarda
+    s.pedidos.length = 0;
+    await s.page.fill('#ndMon', '150'); await s.page.evaluate(id => window.nxNdGuardar(id), VA); await s.page.waitForTimeout(500);
+    ok(!s.pedidos.some(p => p.t === 'pos_notas_debito'), 'sin concepto: no se registra');
+    await s.page.fill('#ndCon', 'Delivery'); 
+    const [pop] = await Promise.all([s.ctx.waitForEvent('page', { timeout: 8000 }).catch(() => null), s.page.evaluate(id => window.nxNdGuardar(id), VA)]);
+    await s.page.waitForTimeout(2500);
+    const nd = s.pedidos.find(p => p.m === 'POST' && p.t === 'pos_notas_debito');
+    ok(nd && nd.body.total === 150 && nd.body.itbis === 22.88 && nd.body.subtotal === 127.12 && nd.body.metodo === 'Efectivo' && nd.body.concepto === 'Delivery', 'guarda la nota: total 150 = 127.12 + ITBIS 22.88, efectivo', nd && nd.body);
+    const mv = s.pedidos.find(p => p.m === 'POST' && p.t === 'pos_caja_movimientos');
+    ok(mv && mv.body.tipo === 'entrada' && mv.body.monto === 150 && mv.body.caja_id === 'cj1', 'efectivo: entra al arqueo como entrada de caja de 150', mv && mv.body);
+    const iN = s.pedidos.findIndex(p => p.m === 'POST' && p.t === 'pos_notas_debito'), iE = s.pedidos.findIndex(p => p.m === 'EDGE' && p.body.accion === 'nota_debito');
+    ok(iN >= 0 && iE > iN && /^0{8}-/.test(s.pedidos[iE].body.debito_id), 'primero guarda la nota y después pide la E33 al servidor', [iN, iE]);
+    ok(!s.pedidos.some(p => /rpc\/pos_siguiente_(e)?ncf/.test(p.t)), 'el navegador no toma números');
+    const html = pop ? await pop.content() : '';
+    ok(/Nota de débito electrónica/.test(html) && /E330000000001/.test(html) && /Código de seguridad: <b>NdQ9z8<\/b>/.test(html) && /data:image\/png;base64/.test(html), 'impresión: «Nota de débito electrónica», e-NCF, código y QR');
+    ok(/E320000000021/.test(html), 'impresión: dice qué factura modifica');
+    if (pop && OUT) { await pop.setViewportSize({ width: 390, height: 900 }); await pop.screenshot({ path: OUT + '/ecf-nota-debito-impresa.png', fullPage: true, timeout: 12000 }).catch(() => console.log('(captura omitida)')); }
+    hist = await s.page.evaluate(() => (document.getElementById('histBody') || {}).innerText || '');
+    ok(/150\.00 débito/i.test(hist), 'historial: la factura muestra «+ RD$ 150.00 débito»', hist.slice(0, 300));
+    // transferencia: no toca la caja
+    s.pedidos.length = 0;
+    await s.page.evaluate(id => window.nxNdNueva(id), VA); await s.page.waitForTimeout(500);
+    await s.page.fill('#ndCon', 'Recargo'); await s.page.fill('#ndMon', '100'); await s.page.selectOption('#ndMet', 'Transferencia'); await s.page.selectOption('#ndItb', '0');
+    await Promise.all([s.ctx.waitForEvent('page', { timeout: 8000 }).catch(() => null), s.page.evaluate(id => window.nxNdGuardar(id), VA)]); await s.page.waitForTimeout(2000);
+    const nd2 = s.pedidos.find(p => p.m === 'POST' && p.t === 'pos_notas_debito');
+    ok(nd2 && nd2.body.itbis === 0 && nd2.body.subtotal === 100 && nd2.body.caja_id === null, 'exenta por transferencia: sin ITBIS y sin caja', nd2 && nd2.body);
+    ok(!s.pedidos.some(p => p.t === 'pos_caja_movimientos'), 'transferencia: no crea entrada de caja');
+    ok(!s.errs.length, 'sin errores de JS (nota de débito)', s.errs);
     await s.ctx.close();
   }
 } finally { await b.close(); }
