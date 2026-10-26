@@ -14,9 +14,17 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const env = (k: string) => (Deno.env.get(k) || "").trim();
-const cred = { email: env("MSELLER_EMAIL"), password: env("MSELLER_PASSWORD"), apiKey: env("MSELLER_API_KEY"), entorno: entornoValido(env("MSELLER_ENTORNO")) };
-const faltan = (["MSELLER_EMAIL", "MSELLER_PASSWORD", "MSELLER_API_KEY"] as const).filter((k) => !env(k));
-const cliente = faltan.length ? null : crearCliente(cred);
+// Los secretos se leen en cada solicitud (un secreto nuevo o cambiado vale sin reiniciar); el cliente (y su token) se
+// reutiliza mientras las credenciales no cambien.
+let cache: { clave: string; cliente: ReturnType<typeof crearCliente> } | null = null;
+function config() {
+  const cred = { email: env("MSELLER_EMAIL"), password: env("MSELLER_PASSWORD"), apiKey: env("MSELLER_API_KEY"), entorno: entornoValido(env("MSELLER_ENTORNO")) };
+  const faltan = (["MSELLER_EMAIL", "MSELLER_PASSWORD", "MSELLER_API_KEY"] as const).filter((k) => !env(k));
+  if (faltan.length) return { cred, faltan, cliente: null };
+  const clave = [cred.email, cred.password, cred.apiKey, cred.entorno].join("\u0000");
+  if (cache?.clave !== clave) cache = { clave, cliente: crearCliente(cred) };
+  return { cred, faltan, cliente: cache.cliente };
+}
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lote-llave", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -44,6 +52,7 @@ Deno.serve(async (req) => {
   if (!(await autorizado(req))) return json({ ok: false, error: "Solo un administrador." }, 401);
   const b = await req.json().catch(() => ({}));
   const accion = String(b?.accion || "estado");
+  const { cred, faltan, cliente } = config();
   if (accion === "estado") return json({ ok: !faltan.length, entorno: cred.entorno, faltan });
   if (!cliente) return json({ ok: false, error: "Faltan secretos de MSeller.", faltan }, 400);
   try {
