@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.63**, publicada el 26-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.64**, publicada el 26-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -73,6 +73,8 @@
   - Se cobra con agente, referencia y banco.
   - El NCF es atómico y sin guion.
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
+
+- **Bauche (59.64, 26-oct):** la tarjeta dice «Comprobante listo» (sin frases de desconfianza) y qué cuota paga («Paga la cuota de octubre 2026»), de la más vieja a la más nueva, igual que `seguros_meses_cubiertos_por_abono`.
 
 ## 7. Pendientes y esperas
 - **Factura electrónica (e-CF, MSeller) — PUBLICADA en 59.63 (26-oct, dueño: «Publícalo en NEXUS PRO»):** emisión E31/E32 desde la caja con QR, seguimiento cada 15 min en lote, nota de crédito E34 y nota de débito E33. Edge `ecf-mseller` v10. No se ve en la caja hasta agregar una secuencia E en Ajustes. Fecha límite DGII para pequeños: 15-nov-2026. **Bloqueo:** MSeller exige subir el certificado .p12 incluso para probar. Plan: `docs/planes/2026-10-26-ecf-mseller.md`.
