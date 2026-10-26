@@ -75,6 +75,7 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
+- **Factura electrónica (e-CF, MSeller) — rama `claude/ecf-mseller`, 59.61 sin publicar:** fases 1–3 hechas (conexión, números e-NCF, emisión desde la caja con QR). La Edge `ecf-mseller` v7 y las migraciones ya están en el servidor. **Bloqueo:** MSeller exige subir el certificado .p12 incluso para probar. Plan: `docs/planes/2026-10-26-ecf-mseller.md`.
 - **Caché en Cloudflare** (rama `claude/nexus-cache`, sin publicar, 24-oct-2026): `_headers` + Worker solo en `/` y `/boleto.html`; `/` con Last-Modified = fecha de la publicación (Cloudflare borra el ETag del HTML). 2ª visita 461→77 KB. Bitácoras `2026-10-24-2148` y `2200`.
 - **Clave IA de NEXUS inválida:** el dueño pone `ANTHROPIC_API_KEY`; luego leer los 138 viejos (modo `lote`, bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.

@@ -480,7 +480,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '' }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -1351,7 +1351,61 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     (_ventas || []).forEach(v => { const nf = String(v.numero_factura || ''); if (nf.indexOf(pref) === 0) { const m = nf.match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } } });
     return pref + String(mx + 1).padStart(8, '0');
   }
-  const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)']];
+  const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)'], ['ecf32', 'Consumo electrónica (E32)'], ['ecf31', 'Crédito fiscal electrónica (E31)']];
+  // e-CF (fase 3, 26-oct-2026): la factura electrónica la emite la Edge ecf-mseller DESPUÉS de guardar la venta; el
+  // e-NCF lo toma el servidor (pos_siguiente_encf). Las opciones E32/E31 solo aparecen si hay una secuencia E activa.
+  const ECF_TIPO = { ecf32: 32, ecf31: 31 };
+  function ecfSecDisponible(t) { const h = isoHoy(); return (_ncfSecs || []).some(s => s.tipo === 'E' + t && s.activo !== false && Number(s.actual || 0) <= Number(s.hasta || 0) && (!s.vencimiento || String(s.vencimiento).slice(0, 10) >= h)); }
+  const ncfTiposVisibles = () => NCF_TIPOS.filter(t => !ECF_TIPO[t[0]] || ecfSecDisponible(ECF_TIPO[t[0]]) || _facNCF === t[0]);
+  const rncDigitos = v => String(v || '').replace(/\D/g, '');
+  const rncOk = v => /^([0-9]{9}|[0-9]{11})$/.test(rncDigitos(v));
+  // QR del e-CF: qrcode.js (la misma librería de Rifas) se carga solo cuando hay factura electrónica
+  let _qrProm = null;
+  function ecfCargarQR() {
+    if (window.QRCode) return Promise.resolve(true);
+    if (_qrProm) return _qrProm;
+    _qrProm = new Promise(res => {
+      const s = document.createElement('script'); s.async = true;
+      s.src = 'qrcode.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1') + (window.NX_DEPLOY ? '&d=' + window.NX_DEPLOY : '');
+      s.onload = () => res(true); s.onerror = () => { _qrProm = null; res(false); };
+      document.head.appendChild(s);
+      setTimeout(() => res(!!window.QRCode), 4000);
+    });
+    return _qrProm;
+  }
+  function ecfQR(url) {
+    try {
+      if (!url || !window.QRCode) return '';
+      const d = document.createElement('div');
+      new window.QRCode(d, { text: url, width: 176, height: 176, correctLevel: window.QRCode.CorrectLevel.M });
+      const c = d.querySelector('canvas'); return c ? c.toDataURL('image/png') : ((d.querySelector('img') || {}).src || '');
+    } catch (e) { return ''; }
+  }
+  // Pide a la Edge que emita (o recupere) el e-CF de una venta ya guardada. Nunca lanza: la venta ya existe.
+  async function ecfEmitir(ventaId, tipo, accion) {
+    const A = getAPI();
+    try {
+      const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const tm = ctl ? setTimeout(() => ctl.abort(), 15000) : 0;
+      const r = await fetch(A.url + '/functions/v1/ecf-mseller', { method: 'POST', signal: ctl ? ctl.signal : undefined,
+        headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) },
+        body: JSON.stringify({ accion: accion || 'emitir', venta_id: ventaId, tipo: tipo }) });
+      clearTimeout(tm);
+      const d = await r.json().catch(() => ({}));
+      return Object.assign({ ok: r.ok && d.ok !== false }, d);
+    } catch (e) { return { ok: false, pendiente: true, error: 'Sin respuesta de MSeller. La factura quedó pendiente.' }; }
+  }
+  // Bloque del recibo (representación impresa: e-NCF, QR de la DGII, código de seguridad y fecha de firma)
+  function ecfBloqueTicket(v) {
+    const t = /^E(3[12])/.exec(String(v.ncf || ''));
+    if (!t && !ECF_TIPO[v.tipo_comprobante]) return '';
+    const nom = (t ? t[1] : ECF_TIPO[v.tipo_comprobante]) == 31 ? 'Factura de crédito fiscal electrónica' : 'Factura de consumo electrónica';
+    const img = ecfQR(v.ecf_qr_url);
+    return `<div class="line"></div><div class="c"><b>${nom}</b></div>${v.ncf ? `<div class="c muted">e-NCF: <b>${esc(v.ncf)}</b></div>` : ''}
+      ${img ? `<div class="c" style="margin:8px 0"><img src="${img}" alt="Código QR de la DGII" width="150" height="150"></div>` : ''}
+      ${v.ecf_security_code ? `<div class="c muted">Código de seguridad: <b>${esc(v.ecf_security_code)}</b>${v.ecf_firmado ? '<br>Fecha de firma: ' + esc(v.ecf_firmado) : ''}</div>`
+        : '<div class="c muted">Factura electrónica en proceso. Vuelva a imprimir desde el historial para ver el código QR.</div>'}`;
+  }
   // Indicador de pasos REAL (no decorativo): "Cliente" y "Productos" se marcan ✓ solo si de
   // verdad hay un cliente elegido / artículos en el carrito; "Pago" se resalta cuando ya se
   // puede cobrar. Se repinta en pintarFactura() para que quede en vivo, no solo al abrir la pestaña.
@@ -1537,7 +1591,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }
     const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
     programarCargaUltimaCompra(cliActual && cliActual.id);
-    const ncfOptions = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${esc(t[1])}</option>`).join('');
+    const ncfOptions = ncfTiposVisibles().map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${esc(t[1])}</option>`).join('');
     const pre = esPreTab();
     const emp = facEmpresa();
     const numBloque = pre
@@ -2568,7 +2622,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (!confirm('¿Eliminar este vendedor?')) return;
     try { await getAPI().del('pos_vendedores', 'id=eq.' + id); cerrarModal('nxVendForm'); toast('ok', 'Vendedor eliminado'); _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; const vv = document.getElementById('v-pos'); if (vv) renderPOS(vv); } catch (e) { toast('err', 'No se pudo eliminar'); }
   };
-  const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito' };
+  const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito', E31: 'Crédito fiscal electrónica', E32: 'Consumo electrónica', E34: 'Nota de crédito electrónica' };
+  const esTipoE = t => /^E\d\d$/.test(String(t || ''));
+  // e-NCF: prefijo de 3 + 10 dígitos (E320000000001); NCF de serie B: prefijo de 3 + 8 dígitos
+  const ncfMuestra = s => (s.prefijo || s.tipo) + String(s.actual).padStart(esTipoE(s.tipo) ? 10 : 8, '0');
   // Mapa: valor del selector de comprobante de la Factura -> código NCF de la secuencia
   const NCF_MAP = { consumo: 'B02', credito_fiscal: 'B01', gubernamental: 'B15', regimen_especial: 'B14', B01: 'B01', B02: 'B02', B14: 'B14', B15: 'B15', B16: 'B16', B04: 'B04' };
   function ajustesNCF() {
@@ -2577,15 +2634,50 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       const bajo = restante <= 10;
       return `<tr${s.activo === false ? ' style="opacity:.5"' : ''}>
         <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:var(--pf-txt3)">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
-        <td style="text-align:center;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
+        <td style="text-align:center;font-family:var(--nx-code,ui-monospace,monospace);font-size:11px">${esc(ncfMuestra(s))}</td>
         <td style="text-align:right;color:${bajo ? 'var(--pf-red)' : 'var(--pf-txt2)'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' <i class="ti ti-alert-triangle"></i>' : ''}</td>
         <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar secuencia NCF" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="emptyrow">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
     return ajCard('ti-file-certificate', 'purple', 'Comprobantes Fiscales (NCF)', 'Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.') +
       `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>`;
+      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>` + ajustesECF();
   }
+  // Tarjeta «Factura electrónica»: datos del emisor que van en cada e-CF (pos_config.ecf_*) y la conexión con MSeller.
+  // Solo se muestra cuando hay una secuencia E o ya se llenaron los datos: para el resto de negocios no cambia nada.
+  function ajustesECF() {
+    const c = _posCfg || {};
+    const hayE = (_ncfSecs || []).some(x => esTipoE(x.tipo));
+    if (!hayE && !c.ecf_rnc) return '';
+    return ajCard('ti-qrcode', 'blue', 'Factura electrónica (e-CF)', 'Datos de su empresa tal como están registrados en la DGII. Van en cada factura electrónica. La conexión con MSeller la configura el administrador del sistema.') +
+      `<div class="fld"><label for="ecfRnc">RNC de la empresa</label><div class="inw"><i class="ti ti-id"></i><input id="ecfRnc" class="no-upper" style="height:48px;font-size:16px;text-transform:none" inputmode="numeric" value="${esc(c.ecf_rnc || '')}" placeholder="9 u 11 dígitos, sin guiones" maxlength="13"></div></div>
+      <div class="fld"><label for="ecfRaz">Razón social</label><div class="inw"><i class="ti ti-building-store"></i><input id="ecfRaz" class="no-upper" style="height:48px;font-size:16px;text-transform:none" value="${esc(c.ecf_razon_social || '')}" placeholder="Como aparece en la DGII" maxlength="150"></div></div>
+      <div class="fld"><label for="ecfDir">Dirección</label><div class="inw"><i class="ti ti-map-pin"></i><input id="ecfDir" class="no-upper" style="height:48px;font-size:16px;text-transform:none" value="${esc(c.ecf_direccion || '')}" placeholder="Calle, número y sector" maxlength="100"></div></div>
+      <div id="ecfEstado" class="muted" style="font-size:12px;margin:6px 0 10px;color:var(--pf-txt3)" aria-live="polite"></div>
+      <div class="fe" style="gap:8px;flex-wrap:wrap"><button class="btn bghost" type="button" style="min-height:44px;text-transform:none" onclick="window.nxEcfProbar()"><i class="ti ti-plug-connected"></i> Probar conexión</button><button class="btn bc1" type="button" style="min-height:44px;text-transform:none" onclick="window.nxEcfGuardar()"><i class="ti ti-device-floppy"></i> Guardar datos</button></div></div>`;
+  }
+  window.nxEcfGuardar = async function () {
+    const rnc = rncDigitos(val('ecfRnc')), raz = (val('ecfRaz') || '').trim(), dir = (val('ecfDir') || '').trim();
+    if (rnc && !rncOk(rnc)) { toast('err', 'RNC inválido', 'Debe tener 9 u 11 dígitos.'); return; }
+    const body = { ecf_rnc: rnc || null, ecf_razon_social: raz || null, ecf_direccion: dir || null };
+    try {
+      const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+      if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, body);
+      else await getAPI().post('pos_config', body);
+      Object.assign(_posCfg, body);
+      toast('ok', 'Datos de factura electrónica guardados');
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxEcfProbar = async function () {
+    const out = document.getElementById('ecfEstado'); if (out) out.textContent = 'Probando la conexión con MSeller…';
+    const A = getAPI(); let d = {};
+    try {
+      const r = await fetch(A.url + '/functions/v1/ecf-mseller', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) }, body: JSON.stringify({ accion: 'probar' }) });
+      d = await r.json().catch(() => ({}));
+    } catch (e) { d = { ok: false, error: 'Sin conexión.' }; }
+    const modo = d.entorno === 'eCF' ? 'real' : d.entorno === 'CerteCF' ? 'certificación' : 'prueba';
+    if (out) out.textContent = d.ok ? ('Conectado a MSeller en modo ' + modo + '.') : ('No conectó: ' + (d.error || (d.faltan && d.faltan.length ? 'faltan datos de MSeller' : 'revise los datos de MSeller')) + '.');
+  };
   window.nxNcfNuevo = function () { abrirNcf(null); };
   window.nxNcfEdit = function (id) { const s = _ncfSecs.find(x => String(x.id) === String(id)); if (s) abrirNcf(s); };
   function abrirNcf(s) {
@@ -2616,10 +2708,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     document.body.appendChild(ov);
   }
   window.nxNcfGuardar = async function (id) {
-    const tipo = val('ncT'); const prefijo = ((val('ncP') || '').trim().toUpperCase() || tipo);
+    const tipo = val('ncT'); const prefijo = esTipoE(tipo) ? tipo : ((val('ncP') || '').trim().toUpperCase() || tipo);
     const desde = parseInt(val('ncD'), 10) || 1, hasta = parseInt(val('ncH'), 10) || 0;
     let actual = parseInt(val('ncA'), 10); if (!actual) actual = desde;
     if (hasta < desde) { toast('err', 'El "hasta" debe ser mayor que el "desde"'); return; }
+    if (esTipoE(tipo) && hasta > 9999999999) { toast('err', 'Número muy largo', 'Un e-NCF tiene como máximo 10 dígitos.'); return; }
+    if (tipo === 'E31' && !val('ncV')) { toast('err', 'Falta la fecha de vencimiento', 'La DGII la pide en cada factura de crédito fiscal electrónica (E31).'); return; }
     const body = { tipo: tipo, descripcion: NCF_DESC[tipo] || null, prefijo: prefijo, desde: desde, hasta: hasta, actual: actual, vencimiento: val('ncV') || null, activo: val('ncAct') === '1' };
     try {
       if (id) await getAPI().patch('pos_ncf_secuencias', 'id=eq.' + id, body); else await getAPI().post('pos_ncf_secuencias', body);
@@ -3488,7 +3582,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (window.nxReciboAnimado) {
       window.nxReciboAnimado({
         empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
-        filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }],
+        filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }]
+          .concat(ECF_TIPO[v.tipo_comprobante] ? [{ label: 'e-NCF', valor: v.ecf_security_code ? (v.ncf || '') : 'Pendiente' }] : []),
         folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
       }, [
         { label: 'Imprimir ticket', icon: 'ti-printer', onclick: () => window.nxPosVentaTicketVer() },
@@ -3503,6 +3598,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <div><span>Cliente</span><b>${esc(v.cliente_nombre || 'Consumidor final')}</b></div>
           <div><span>Artículos</span><b>${nItems}</b></div>
           <div><span>Total</span><b>${fmt(v.total)}</b></div>
+          ${ECF_TIPO[v.tipo_comprobante] ? `<div><span>Factura electrónica</span><b>${v.ecf_security_code ? esc(v.ncf || '') : 'Pendiente'}</b></div>` : ''}
         </div>
         <div class="nxPgOkAcc">
           <button type="button" class="nxPgOkBtn" onclick="window.nxPosVentaTicketVer()"><i class="ti ti-printer"></i> Imprimir ticket</button>
@@ -3729,6 +3825,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (c.nc > 0) pagosArr.push({ metodo: 'Nota de crédito', monto: c.nc });
     if (c.credito > 0) pagosArr.push({ metodo: 'Crédito', monto: c.credito });
     const metodoLabel = pagosArr.length === 0 ? 'Efectivo' : pagosArr.length === 1 ? pagosArr[0].metodo : 'Mixto';
+    // e-CF: se valida ANTES de gastar el número de factura. E31 exige un cliente con RNC o cédula (9 u 11 dígitos).
+    const _ecfTipo = ECF_TIPO[_facNCF] || 0;
+    const _ecfCli = cliId ? (_clientes.find(x => String(x.id) === String(cliId)) || null) : null;
+    if (_ecfTipo) {
+      if (!ecfSecDisponible(_ecfTipo)) { toast('err', 'No hay números E' + _ecfTipo + ' disponibles', 'Agregue la secuencia autorizada por la DGII en Ajustes → Comprobantes fiscales.'); return; }
+      if (_ecfTipo === 31 && !(_ecfCli && rncOk(_ecfCli.cedula))) { toast('err', 'Falta el RNC del cliente', 'La factura de crédito fiscal electrónica (E31) necesita un cliente con RNC o cédula.'); return; }
+      ecfCargarQR();
+    }
     // Número de factura: consecutivo TRANSACCIONAL en pos_secuencias (estilo Infoplus:
     // nunca retrocede ni se repite, aunque la app se recargue o vendan 2 a la vez).
     const esCred = c.credito > 0;
@@ -3861,8 +3965,17 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // Los IMEI ya quedaron marcados 'vendido' por el candado atómico de arriba
       // (reservarImeisCart/confirmarImeisReservados) — no coexiste con el PATCH best-effort viejo.
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
-      let ncfAsignado = null;
-      try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
+      let ncfAsignado = null, _ecfRes = null;
+      if (_ecfTipo) {
+        // Factura electrónica: el servidor toma el e-NCF y la envía a MSeller. Si falla, la venta ya quedó guardada.
+        _ecfRes = await ecfEmitir(venta.id, _ecfTipo);
+        await ecfCargarQR();
+        ncfAsignado = _ecfRes.ncf || null;
+        if (!_ecfRes.ok) toast('warn', 'La venta quedó registrada; la factura electrónica no', (_ecfRes.error || 'Sin respuesta de MSeller.') + ' Puede reintentar desde el historial de ventas.');
+        const _sc = _ncfSecs.find(x => x.tipo === 'E' + _ecfTipo && x.activo !== false); if (_sc && ncfAsignado && !_ecfRes.ya) _sc.actual = Number(_sc.actual || _sc.desde || 1) + 1;
+      } else {
+        try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
+      }
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
@@ -3874,7 +3987,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // dispositivo/sucursal/IP (todo eso ya lo garantiza logAudit desde la Fase 8, sin tocar nada aquí).
       try { window.logAudit && window.logAudit('POS_VENTA_CREADA', (numFac || ('No. ' + (venta.numero || ''))) + ' · ' + fmt(c.total) + (cliNom ? ' · ' + cliNom : '') + ' · ' + metodoLabel, 'POS'); } catch (e2) {}
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
-      const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items });
+      const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items },
+        _ecfRes ? { ecf_estado: _ecfRes.ecf_estado || null, ecf_security_code: _ecfRes.ecf_security_code || null, ecf_qr_url: _ecfRes.ecf_qr_url || null, ecf_firmado: _ecfRes.ecf_firmado || null } : {});
       _cart = [];
       _factCli = '';
       _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos';
@@ -3906,7 +4020,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         <div class="c muted">${esc(e.dir || '')}</div>
         <div class="line"></div>
         <div class="c"><b>${v.numero_factura ? ('FACTURA ' + v.numero_factura) : ('TICKET DE VENTA No. ' + (v.numero || ''))}</b></div>
-        ${v.ncf ? `<div class="c muted">NCF: <b>${esc(v.ncf)}</b></div>` : ''}
+        ${v.ncf && !/^E/.test(v.ncf) ? `<div class="c muted">NCF: <b>${esc(v.ncf)}</b></div>` : ''}
         <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}${_cliRnc ? '<br>' + _cliRnc : ''}</div>
         <div class="line"></div>
         <table>${filas}</table>
@@ -3919,6 +4033,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         </table>
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
+        ${ecfBloqueTicket(v)}
         <div class="line"></div>
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
@@ -3930,6 +4045,15 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (!v) return;
     let items = [];
     try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
+    // e-CF: si quedó sin respuesta de MSeller se reintenta (la Edge no repite ni gasta otro e-NCF); si ya se envió,
+    // se pide el estado de la DGII. Para la ventana del ticket se toma antes de esperar (los navegadores bloquean popups tardíos).
+    const _ecfT = ECF_TIPO[v.tipo_comprobante] || (/^E(3[12])/.exec(String(v.ncf || '')) || [])[1];
+    if (_ecfT && !v.anulada && v.estado !== 'anulada') {
+      if (!_facVentana) _facVentana = facAbrirVentana('Preparando la factura electrónica…');
+      const [r] = await Promise.all([ecfEmitir(v.id, Number(_ecfT), v.ecf_security_code ? 'actualizar' : 'emitir'), ecfCargarQR()]);
+      if (r && (r.ncf || r.ecf_security_code)) { ['ncf', 'ecf_estado', 'ecf_security_code', 'ecf_qr_url', 'ecf_firmado'].forEach(k => { if (r[k]) v[k] = r[k]; }); }
+      else if (r && !r.ok) toast('warn', 'Factura electrónica pendiente', r.error || 'Sin respuesta de MSeller.');
+    }
     ticketHTML(Object.assign({}, v, { _items: items }));
   };
 

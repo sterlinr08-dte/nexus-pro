@@ -83,5 +83,7 @@ export function crearCliente(cred: Credenciales, fetchFn: typeof fetch = fetch, 
     consultar: (ecf: string) => llamar("GET", `/documentos-ecf?ecf=${encodeURIComponent(ecf)}`),
     // validate=true: MSeller revisa el JSON sin enviarlo a la DGII ni gastar secuencia (docs «Envío de e-CF»).
     validar: (doc: unknown) => llamar("POST", "/documentos-ecf?validate=true", doc),
+    // Envío real: responde al instante {rnc, ecf, internalTrackId, securityCode, qr_url, signedDate}; la DGII contesta después.
+    enviar: (doc: unknown) => llamar("POST", "/documentos-ecf", doc),
   };
 }
