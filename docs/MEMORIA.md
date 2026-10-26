@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.60**, verificado en vivo el 25-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.63**, publicada el 26-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -75,6 +75,8 @@
 - La cajera cobra **a nombre de quien recibió el depósito del cliente** (caso LORIBEL, 15-oct).
 
 ## 7. Pendientes y esperas
+- **Factura electrónica (e-CF, MSeller) — PUBLICADA en 59.63 (26-oct, dueño: «Publícalo en NEXUS PRO»):** emisión E31/E32 desde la caja con QR, seguimiento cada 15 min en lote, nota de crédito E34 y nota de débito E33. Edge `ecf-mseller` v10. No se ve en la caja hasta agregar una secuencia E en Ajustes. Fecha límite DGII para pequeños: 15-nov-2026. **Bloqueo:** MSeller exige subir el certificado .p12 incluso para probar. Plan: `docs/planes/2026-10-26-ecf-mseller.md`.
+  - **En pendiente por orden del dueño (26-oct):** botón «Reemitir» para e-CF rechazadas (número nuevo: el rechazado cuenta como usado), «Corregir factura» (E34 total + factura nueva en un paso), corrección de texto (código 2), ANECF de números no usados, nota de débito a crédito. La DGII no permite borrar un e-CF: solo corregir con notas.
 - **Caché en Cloudflare** (rama `claude/nexus-cache`, sin publicar, 24-oct-2026): `_headers` + Worker solo en `/` y `/boleto.html`; `/` con Last-Modified = fecha de la publicación (Cloudflare borra el ETag del HTML). 2ª visita 461→77 KB. Bitácoras `2026-10-24-2148` y `2200`.
 - **Clave IA de NEXUS inválida:** el dueño pone `ANTHROPIC_API_KEY`; luego leer los 138 viejos (modo `lote`, bitácora 22-oct 10:30).
 - **Iniciativa de acumulados y transferencias por ciclo:** empieza por la Fase 0 de auditoría (ver `CLAUDE.md`). Ya existen la custodia, las transferencias y el reporte del ciclo 20→20. Falta completar cierre, consolidado y notificaciones según la auditoría.

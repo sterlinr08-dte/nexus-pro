@@ -37,6 +37,7 @@
 | **Higgsfield** (MCP) | Otra opción de video e imagen con IA, avatares, anuncios y publicar en TikTok. | Conectado. Pedir OK antes de gastar créditos o publicar. |
 | **Remotion** (skills `remotion-*`) | Videos hechos con código, como el de la web de BAYOL (`videos-remotion/`). | Instalado. |
 | **ffmpeg / yt-dlp** | Cortar, unir, poner audio y revisar cuadros. Bajar videos públicos. | En la sesión (scratchpad). |
+| **Pixabay** (pixabay.com) | Fotos, videos, música y efectos de sonido **gratis y de uso comercial, sin dar crédito**: fondos y música para reels y anuncios, fotos de comida (pizzería), carros (seguros) o celulares (Bayol). Reglas: no vender el archivo tal cual; personas o marcas reconocibles no se usan como si respaldaran el negocio; revisar la música antes de un anuncio pagado de Meta (puede haber reclamos). | Aprobado por el dueño para reels y anuncios (25-oct-2026). Sin conectar: su API pide una clave gratis; si se conecta, la clave va como secreto, nunca en el chat. |
 
 ### Redes sociales e Instagram
 | Herramienta | Para qué | Estado |
