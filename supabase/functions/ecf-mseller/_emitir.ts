@@ -7,8 +7,8 @@
 //  3) se arma el JSON con un número de prueba para validar los datos ANTES de gastar un e-NCF;
 //  4) se toma el e-NCF (pos_siguiente_encf, atómico) y se guarda ANTES de enviarlo;
 //  5) se envía. Bien → se guardan QR, código de seguridad y seguimiento. Error 4xx → MSeller no lo registró: queda
-//     «Error» con el mismo e-NCF para reintentar sin gastar otro. Error 5xx o sin red → queda «pendiente» y el
-//     reintento primero CONSULTA ese e-NCF por si MSeller sí lo recibió.
+//     «Error» con el mismo e-NCF para reintentar sin gastar otro. Error 5xx, 429 (cuota del mes agotada) o sin red →
+//     queda «pendiente» y el reintento primero CONSULTA ese e-NCF por si MSeller sí lo recibió.
 import { armarEcf, type EmisorEcf, type ItemEcf, type VentaEcf } from "./_doc.ts";
 
 type Ecf = {
@@ -23,7 +23,8 @@ export type Tabla<T> = {
   reclamar: (id: string, libreAntesDe: string) => Promise<boolean>;
   guardar: (id: string, campos: Record<string, unknown>) => Promise<void>;
 };
-export type Cliente = { entorno: string; enviar: (doc: unknown) => Promise<{ status: number; datos: any }>; consultar: (ecf: string) => Promise<{ status: number; datos: any }> };
+type Resp = { status: number; datos: any };
+export type Cliente = { entorno: string; enviar: (doc: unknown) => Promise<Resp>; consultar: (ecf: string) => Promise<Resp>; consultarLote?: (ecfs: string[]) => Promise<Resp> };
 export type Deps = {
   ventas: Tabla<VentaFila>;
   notas: Tabla<NotaFila>;
@@ -46,7 +47,9 @@ function camposRespuesta(d: any, entorno: string, ahoraIso: string) {
     ecf_track_id: d.internalTrackId || null, ecf_firmado: d.signedDate || null, ecf_actualizado_at: ahoraIso, ecf_respuesta: d,
   };
 }
-export const ESTADOS = ["En Cola", "Enviado a la DGII", "En Proceso", "Aceptado", "Aceptado Condicional", "Rechazado"];
+// Estados de MSeller (docs «Webhooks»). «No encontrado» y «Error» no son finales, pero se guardan para que la tarea de
+// 15 min deje de consultarlos (cada consulta gasta cuota); se revisan a mano con «Actualizar».
+export const ESTADOS = ["En Cola", "Enviado a la DGII", "En Proceso", "Aceptado", "Aceptado Condicional", "Rechazado", "No encontrado", "Error"];
 const reEncf = (tipo: number) => new RegExp(`^E${tipo}\\d{10}$`);
 
 // Pasos 2 a 5, comunes a facturas y notas
@@ -83,9 +86,12 @@ async function procesar(fila: Ecf, tipo: number, tabla: Tabla<any>, armar: (encf
     await tabla.guardar(fila.id, campos);
     return { ok: true, status: 200, ...salida({ ncf: encf, ...campos }) };
   }
-  const definitivo = r.status >= 400 && r.status < 500;
+  // 429 = cuota del mes agotada (docs «Planes»): no es culpa del documento, se reintenta cuando haya cuota
+  const cuota = r.status === 429;
+  const definitivo = r.status >= 400 && r.status < 500 && !cuota && r.status !== 408;
   await tabla.guardar(fila.id, { ecf_estado: definitivo ? "Error" : "pendiente", ecf_respuesta: r.datos, ecf_enviado_at: null, ecf_actualizado_at: iso() });
-  return { ok: false, status: definitivo ? 422 : 502, pendiente: !definitivo, ncf: encf, codigo: r.datos?.code || null, error: mensaje(r.datos, r.status) };
+  const error = cuota ? "Se agotó la cuota del mes en MSeller. El comprobante quedó pendiente y se enviará cuando haya cuota." : mensaje(r.datos, r.status);
+  return { ok: false, status: definitivo ? 422 : cuota ? 429 : 502, pendiente: !definitivo, cuota, ncf: encf, codigo: r.datos?.code || null, error };
 }
 
 export async function emitir(p: { ventaId: string; tipo?: number }, deps: Deps, ahora: () => number = Date.now): Promise<Resultado> {
@@ -138,38 +144,85 @@ export async function emitirDebito(p: { debitoId: string }, deps: Deps, ahora: (
   return procesar(n, 33, deps.debitos, armar, deps, ahora);
 }
 
+// Guarda lo que MSeller dice de un comprobante ya enviado (consulta individual o en lote)
+async function aplicarConsulta<T extends Ecf>(v: T, d: any, tabla: Tabla<T>, ahora: () => number) {
+  const campos: Record<string, unknown> = { ecf_actualizado_at: new Date(ahora()).toISOString(), ecf_respuesta: d };
+  if (ESTADOS.includes(d.status)) campos.ecf_estado = d.status;
+  if (d.securityCode) Object.assign(campos, { ecf_security_code: d.securityCode, ecf_qr_url: d.qr_url || v.ecf_qr_url || null, ecf_track_id: d.internalTrackId || v.ecf_track_id || null });
+  await tabla.guardar(v.id, campos);
+  return campos;
+}
+
 // Pide a MSeller el estado actual de un comprobante ya enviado. Se guarda el estado de la DGII (Aceptado, Rechazado…).
 export async function actualizarDoc<T extends Ecf>(id: string, tabla: Tabla<T>, cliente: Cliente, ahora: () => number = Date.now): Promise<Resultado> {
   const v = await tabla.leer(id);
   if (!v || !/^E3[1-4]\d{10}$/.test(String(v.ncf || ""))) return { ok: false, status: 404, error: "Este documento no tiene comprobante electrónico." };
   const c = await cliente.consultar(String(v.ncf));
   if (c.status === 404) return { ok: true, status: 200, ...salida(v as Record<string, unknown>) };
-  if (c.status >= 300 || !c.datos) return { ok: false, status: 502, error: mensaje(c.datos, c.status) };
-  const campos: Record<string, unknown> = { ecf_actualizado_at: new Date(ahora()).toISOString(), ecf_respuesta: c.datos };
-  if (ESTADOS.includes(c.datos.status)) campos.ecf_estado = c.datos.status;
-  if (c.datos.securityCode) Object.assign(campos, { ecf_security_code: c.datos.securityCode, ecf_qr_url: c.datos.qr_url || v.ecf_qr_url || null, ecf_track_id: c.datos.internalTrackId || v.ecf_track_id || null });
-  await tabla.guardar(v.id, campos);
+  if (c.status >= 300 || !c.datos) return { ok: false, status: c.status === 429 ? 429 : 502, cuota: c.status === 429, error: mensaje(c.datos, c.status) };
+  const campos = await aplicarConsulta(v, c.datos, tabla, ahora);
   return { ok: true, status: 200, ...salida({ ...v, ...campos }) };
 }
 export const actualizar = (ventaId: string, deps: Pick<Deps, "ventas" | "cliente">, ahora: () => number = Date.now) => actualizarDoc(ventaId, deps.ventas, deps.cliente, ahora);
 
 // Fase 4: la tarea programada (cada 15 min) revisa los comprobantes que esperan a la DGII y reintenta los pendientes que
-// ya tienen e-NCF (sin gastar otro número). Un error en uno no detiene a los demás.
-export type Pendiente = { tabla: "ventas" | "notas" | "debitos"; id: string; ecf_estado: string };
+// ya tienen e-NCF (sin gastar otro número). Los que esperan se consultan en lote (docs: «consulta en batch cada 15 a 30
+// minutos», hasta 100 por llamada; se usan grupos de 50): una llamada de cuota en vez de una por documento. Un error en
+// uno no detiene a los demás; si MSeller dice que se acabó la cuota (429), se para hasta la próxima vuelta.
+export type Pendiente = { tabla: "ventas" | "notas" | "debitos"; id: string; ecf_estado: string; ncf?: string | null };
+const LOTE = 50;
 export async function seguimiento(pendientes: Pendiente[], deps: Deps, ahora: () => number = Date.now) {
-  const cuenta: Record<string, number> = { revisados: 0, aceptados: 0, rechazados: 0, reenviados: 0, errores: 0 };
+  const cuenta: Record<string, number> = { revisados: 0, aceptados: 0, rechazados: 0, reenviados: 0, errores: 0, consultas: 0 };
+  const tablaDe = (t: Pendiente["tabla"]) => (t === "ventas" ? deps.ventas : t === "notas" ? deps.notas : deps.debitos) as Tabla<Ecf>;
+  const contar = (st: unknown) => {
+    if (st === "Aceptado" || st === "Aceptado Condicional") cuenta.aceptados++;
+    if (st === "Rechazado") cuenta.rechazados++;
+  };
+  let sinCuota = false;
+
+  // 1) Los que esperan respuesta: en lote si el cliente lo permite
+  const esperan = pendientes.filter((p) => p.ecf_estado !== "pendiente");
+  const loteables = deps.cliente.consultarLote ? esperan.filter((p) => /^E3[1-4]\d{10}$/.test(String(p.ncf || ""))) : [];
+  for (let i = 0; i < loteables.length && !sinCuota; i += LOTE) {
+    const grupo = loteables.slice(i, i + LOTE);
+    cuenta.revisados += grupo.length;
+    try {
+      cuenta.consultas++;
+      const r = await deps.cliente.consultarLote!(grupo.map((p) => String(p.ncf)));
+      if (r.status === 429) { sinCuota = true; cuenta.errores += grupo.length; break; }
+      if (r.status >= 300 || !Array.isArray(r.datos?.results)) { cuenta.errores += grupo.length; continue; }
+      const porEcf = new Map<string, any>(r.datos.results.map((x: any) => [String(x.ecf), x]));
+      for (const p of grupo) {
+        const x = porEcf.get(String(p.ncf));
+        if (!x?.found) continue; // MSeller aún no lo tiene: se vuelve a mirar en la próxima vuelta
+        try {
+          const tabla = tablaDe(p.tabla);
+          const v = await tabla.leer(p.id);
+          if (!v) { cuenta.errores++; continue; }
+          const campos = await aplicarConsulta(v, { ...(x.data || {}), status: x.status || x.data?.status }, tabla, ahora);
+          contar(campos.ecf_estado);
+        } catch (_e) { cuenta.errores++; }
+      }
+    } catch (_e) { cuenta.errores += grupo.length; }
+  }
+
+  // 2) Los demás, uno por uno: reenvío de pendientes y consulta individual si no hay lote
+  const enLote = new Set(loteables.map((p) => p.id));
   for (const p of pendientes) {
+    if (enLote.has(p.id)) continue;
+    if (sinCuota) break;
     cuenta.revisados++;
     try {
-      const tabla = p.tabla === "ventas" ? deps.ventas : p.tabla === "notas" ? deps.notas : deps.debitos;
       const r = p.ecf_estado === "pendiente"
         ? (p.tabla === "ventas" ? await emitir({ ventaId: p.id }, deps, ahora) : p.tabla === "notas" ? await emitirNota({ notaId: p.id }, deps, ahora) : await emitirDebito({ debitoId: p.id }, deps, ahora))
-        : await actualizarDoc(p.id, tabla as Tabla<Ecf>, deps.cliente, ahora);
+        : await actualizarDoc(p.id, tablaDe(p.tabla), deps.cliente, ahora);
+      cuenta.consultas++;
+      if (r.cuota) sinCuota = true;
       if (p.ecf_estado === "pendiente" && r.ok) cuenta.reenviados++;
-      if (r.ecf_estado === "Aceptado" || r.ecf_estado === "Aceptado Condicional") cuenta.aceptados++;
-      if (r.ecf_estado === "Rechazado") cuenta.rechazados++;
+      contar(r.ecf_estado);
       if (!r.ok) cuenta.errores++;
     } catch (_e) { cuenta.errores++; }
   }
+  if (sinCuota) cuenta.sin_cuota = 1;
   return cuenta;
 }

@@ -1399,12 +1399,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     } catch (e) { return { ok: false, pendiente: true, error: 'Sin respuesta de MSeller. La factura quedó pendiente.' }; }
   }
   // Fase 4: estado de la DGII en palabras del dueño. «Por revisar» = rechazada, con error o sin enviar.
-  const ECF_REVISAR = ['Rechazado', 'Error', 'pendiente'];
+  const ECF_REVISAR = ['Rechazado', 'Error', 'No encontrado', 'pendiente'];
   function ecfEstadoChip(v) {
     if (!/^E3[1-4]/.test(String(v.ncf || '')) && !ECF_TIPO[v.tipo_comprobante]) return '';
     const st = v.ecf_estado || (v.ncf ? 'pendiente' : '');
     if (!st || (v.estado === 'anulada' && st === 'pendiente')) return '';
-    const m = { 'Aceptado': ['Aceptada DGII', '#dcfce7', '#166534'], 'Aceptado Condicional': ['Aceptada con observación', '#fef9c3', '#854d0e'], 'Rechazado': ['Rechazada DGII', '#fee2e2', '#991b1b'], 'Error': ['e-CF con error', '#fee2e2', '#991b1b'], 'pendiente': ['e-CF pendiente', '#fef3c7', '#92400e'] }[st] || ['En la DGII', '#e0f2fe', '#075985'];
+    const m = { 'Aceptado': ['Aceptada DGII', '#dcfce7', '#166534'], 'Aceptado Condicional': ['Aceptada con observación', '#fef9c3', '#854d0e'], 'Rechazado': ['Rechazada DGII', '#fee2e2', '#991b1b'], 'Error': ['e-CF con error', '#fee2e2', '#991b1b'], 'No encontrado': ['DGII no lo encuentra', '#fee2e2', '#991b1b'], 'pendiente': ['e-CF pendiente', '#fef3c7', '#92400e'] }[st] || ['En la DGII', '#e0f2fe', '#075985'];
     return ` <span title="${esc(ecfMotivo(v) || st)}" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${m[1]};color:${m[2]}">${m[0]}</span>`;
   }
   // Por qué la rechazó la DGII (o qué dijo MSeller), para mostrarlo sin tecnicismos

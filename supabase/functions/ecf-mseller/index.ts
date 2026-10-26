@@ -127,11 +127,11 @@ async function listarPendientes(): Promise<Pendiente[]> {
   const hace2min = new Date(Date.now() - 120_000).toISOString();
   const out: Pendiente[] = [];
   for (const [nombre, t] of [["pos_ventas", "ventas"], ["pos_devoluciones", "notas"], ["pos_notas_debito", "debitos"]] as const) {
-    const { data: a } = await db.from(nombre).select("id,ecf_estado").in("ecf_estado", ESPERA).or(`ecf_actualizado_at.is.null,ecf_actualizado_at.lt.${hace2min}`).order("ecf_actualizado_at", { ascending: true, nullsFirst: true }).limit(40);
-    let qb = db.from(nombre).select("id,ecf_estado").eq("ecf_estado", "pendiente").like("ncf", "E%");
+    const { data: a } = await db.from(nombre).select("id,ecf_estado,ncf").in("ecf_estado", ESPERA).or(`ecf_actualizado_at.is.null,ecf_actualizado_at.lt.${hace2min}`).order("ecf_actualizado_at", { ascending: true, nullsFirst: true }).limit(40);
+    let qb = db.from(nombre).select("id,ecf_estado,ncf").eq("ecf_estado", "pendiente").like("ncf", "E%");
     if (nombre !== "pos_devoluciones") qb = qb.neq("estado", "anulada"); // una venta o nota de débito anulada no se envía
     const { data: b } = await qb.or(`ecf_enviado_at.is.null,ecf_enviado_at.lt.${hace2min}`).limit(20);
-    for (const r of [...(a || []), ...(b || [])]) out.push({ tabla: t, id: r.id, ecf_estado: r.ecf_estado });
+    for (const r of [...(a || []), ...(b || [])]) out.push({ tabla: t, id: r.id, ecf_estado: r.ecf_estado, ncf: r.ncf });
   }
   return out;
 }

@@ -310,3 +310,55 @@ Deno.test("seguimiento también revisa notas de débito", async () => {
   const r = await seguimiento([{ tabla: "debitos", id: s.debito.id, ecf_estado: "En Cola" }], s.deps, () => T0);
   assertEquals(r.aceptados, 1); assertEquals(s.debito.ecf_estado, "Aceptado");
 });
+
+// ── Ajustes según la documentación de MSeller (26-oct) ──
+Deno.test("429 (cuota agotada): queda pendiente con el mismo e-NCF, no «Error»", async () => {
+  const s = base({}, { enviar: [429] });
+  const r = await emitir({ ventaId: s.venta.id, tipo: 32 }, s.deps, () => T0);
+  assertEquals(r.ok, false); assertEquals(r.status, 429); assertEquals(r.cuota, true);
+  assertEquals(s.venta.ecf_estado, "pendiente");
+  assertEquals(s.venta.ncf, "E320000000001");
+  const s2 = base({}, { enviar: [400] });
+  await emitir({ ventaId: s2.venta.id, tipo: 32 }, s2.deps, () => T0);
+  assertEquals(s2.venta.ecf_estado, "Error"); // un 4xx de datos sigue siendo error
+});
+
+Deno.test("«No encontrado» y «Error» de MSeller se guardan (la tarea deja de consultarlos)", async () => {
+  for (const st of ["No encontrado", "Error"]) {
+    const s = base({ ncf: "E320000000003", ecf_tipo: 32, ecf_estado: "En Cola", ecf_track_id: "trk-1" }, { consultar: { status: 200, datos: { status: st, securityCode: "x" } } });
+    await seguimiento([{ tabla: "ventas", id: s.venta.id, ecf_estado: "En Cola", ncf: "E320000000003" }], s.deps, () => T0);
+    assertEquals(s.venta.ecf_estado, st);
+  }
+});
+
+Deno.test("seguimiento en lote: una sola consulta para varios; los no encontrados se dejan para la próxima", async () => {
+  const s = base({ ncf: "E320000000003", ecf_tipo: 32, ecf_estado: "En Cola", ecf_track_id: "trk-1" }, {},
+    { ncf: "E340000000002", ecf_tipo: 34, ecf_estado: "En Proceso", ecf_track_id: "t2" }, { ncf: "E330000000004", ecf_estado: "En Cola", ecf_track_id: "t3" });
+  const lotes: string[][] = [];
+  s.deps.cliente.consultarLote = async (ecfs) => {
+    lotes.push(ecfs);
+    return { status: 200, datos: { total: 3, results: [
+      { ecf: "E320000000003", status: "Aceptado", found: true, data: { securityCode: "A7HXQC", qr_url: "https://q", internalTrackId: "trk-1" } },
+      { ecf: "E340000000002", status: "Rechazado", found: true, data: { securityCode: "b", dgiiResponse: ["{}"] } },
+      { ecf: "E330000000004", status: "No encontrado", found: false },
+    ] } };
+  };
+  const r = await seguimiento([
+    { tabla: "ventas", id: s.venta.id, ecf_estado: "En Cola", ncf: "E320000000003" },
+    { tabla: "notas", id: s.nota.id, ecf_estado: "En Proceso", ncf: "E340000000002" },
+    { tabla: "debitos", id: s.debito.id, ecf_estado: "En Cola", ncf: "E330000000004" },
+  ], s.deps, () => T0);
+  assertEquals(lotes.length, 1); assertEquals(r.consultas, 1); assertEquals(r.revisados, 3);
+  assertEquals(s.venta.ecf_estado, "Aceptado"); assertEquals(s.venta.ecf_qr_url, "https://q");
+  assertEquals(s.nota.ecf_estado, "Rechazado");
+  assertEquals(s.debito.ecf_estado, "En Cola"); // found=false: no se toca
+  assertEquals(s.log.includes("consultar"), false); // nada uno por uno
+  assertEquals(r.aceptados, 1); assertEquals(r.rechazados, 1);
+});
+
+Deno.test("seguimiento: si el lote responde 429 se para y no reenvía pendientes", async () => {
+  const s = base({ ncf: "E320000000003", ecf_tipo: 32, ecf_estado: "En Cola", ecf_track_id: "trk-1" }, {}, { ncf: "E340000000002", ecf_tipo: 34, ecf_estado: "pendiente" });
+  s.deps.cliente.consultarLote = async () => ({ status: 429, datos: { message: "quota" } });
+  const r = await seguimiento([{ tabla: "ventas", id: s.venta.id, ecf_estado: "En Cola", ncf: "E320000000003" }, { tabla: "notas", id: s.nota.id, ecf_estado: "pendiente", ncf: "E340000000002" }], s.deps, () => T0);
+  assertEquals(r.sin_cuota, 1); assertEquals(s.enviados.length, 0);
+});

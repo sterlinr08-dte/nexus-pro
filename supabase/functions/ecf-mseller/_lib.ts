@@ -81,6 +81,8 @@ export function crearCliente(cred: Credenciales, fetchFn: typeof fetch = fetch, 
       return { ok: apiKeyOk, sesion: true, apiKey: apiKeyOk, status: r.status, respuesta: r.datos };
     },
     consultar: (ecf: string) => llamar("GET", `/documentos-ecf?ecf=${encodeURIComponent(ecf)}`),
+    // Varios a la vez (hasta 100; docs «Consulta en batch»): una sola llamada para la cuota → {total, results:[{ecf,status,found,data}]}
+    consultarLote: (ecfs: string[]) => llamar("POST", "/documentos-ecf/status/batch", { ecfs }),
     // validate=true: MSeller revisa el JSON sin enviarlo a la DGII ni gastar secuencia (docs «Envío de e-CF»).
     validar: (doc: unknown) => llamar("POST", "/documentos-ecf?validate=true", doc),
     // Envío real: responde al instante {rnc, ecf, internalTrackId, securityCode, qr_url, signedDate}; la DGII contesta después.
