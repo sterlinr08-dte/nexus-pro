@@ -246,6 +246,13 @@
     var ta = ov.querySelector('textarea'), a = ov.querySelector('[data-wa]');
     function sync() { if (num) a.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(ta.value); }
     ta.addEventListener('input', sync); sync();
+    // 27-oct-2026 (decisión A, igual que «Clientes con RNC»): abrir el WhatsApp del teléfono y no el Buzón. Se abre una
+    // pestaña en blanco y luego se le pone la dirección, para que la capa de enrutamiento al Buzón no la desvíe.
+    a.addEventListener('click', function (e) {
+      if (!num) return; e.preventDefault(); e.stopImmediatePropagation();
+      var w = null; try { w = window.open('', '_blank'); } catch (x) {}
+      if (w) { try { w.opener = null; } catch (x) {} w.location.href = a.href; } else { try { window.nxPosFidCopiar(); } catch (x) {} }
+    }, true);
     // Para «una sola compra»: nombrar el artículo y la garantía si sigue vigente (lectura).
     if (f.grupo === 'una' && f.ultimaVenta) {
       api().get('pos_venta_items', 'select=nombre,garantia_hasta&venta_id=eq.' + encodeURIComponent(f.ultimaVenta) + '&limit=5').then(function (its) {
