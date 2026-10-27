@@ -75,6 +75,14 @@ Copiadas solo como instrucciones, sin programas. Licencias en `.claude/skills/LI
 - **chrome-devtools** (Google, Apache 2.0, v1.10.1 fija): abre páginas en Chrome y revisa consola, red, rendimiento (Lighthouse), estilos y accesibilidad. Con `--no-usage-statistics` y `--no-performance-crux` (sin datos a Google). En la nube no abre sitios HTTPS externos (el navegador no confía en el certificado del proxy, igual que Playwright): sirve para las páginas servidas en local (`python3 -m http.server`).
 - **shadcn** (MIT, v4.21.4 fija): busca componentes y ejemplos del registro de shadcn/ui. Solo instala componentes en proyectos React con shadcn; nuestros sistemas son HTML/JS, así que sirve como referencia de diseño.
 
+### Obsidian (notas) — instaladas el 27-oct-2026
+Paquete oficial **kepano/obsidian-skills** (Steph Ango, director de Obsidian; MIT; commit `3ccff53`). Revisado antes de instalar: solo instrucciones, sin programas.
+- `obsidian-markdown`: notas con enlaces `[[...]]`, avisos (callouts), propiedades y etiquetas.
+- `obsidian-bases`: vistas tipo tabla o tarjetas (`.base`) con filtros y fórmulas.
+- `json-canvas`: lienzos `.canvas` (mapas mentales, diagramas de flujo).
+- `obsidian-cli`: maneja una bóveda con Obsidian **abierto en la PC del dueño**; no funciona en la nube.
+- `defuddle` y `knap`: sacar texto limpio de una página web y armar notas con plantillas. Piden instalar un programa con npm: **solo con el OK del dueño**.
+
 ### Referencias de diseño que mandó el dueño
 La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DISENO.md`**, el mismo archivo en los 3 proyectos. Leerla antes de cualquier pedido de diseño, y agregar ahí (en los 3) cada referencia nueva que mande el dueño.
 
