@@ -1554,6 +1554,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     // 2) El cliente: lo que debe, su límite, lo que tiene abierto
     if (c) {
       const quien = esc(String(c.nombre || '').split(' ')[0]), saldo = saldoCli(c), lim = Number(c.limite_credito || 0);
+      try { const fx = typeof window.nxPosFidSug === 'function' && window.nxPosFidSug(c, t); if (fx) out.push(fx); } catch (e) {} // capa parches-pos-fidelidad.js (solo sugiere)
       if (_facCredito && lim > 0 && saldo + t > lim) out.push({ tone: 'bad', ic: 'ti-credit-card-off', t: 'Pasa su límite de crédito por ' + fmt(saldo + t - lim), s: 'Límite ' + fmt(lim) + ' · ya debe ' + fmt(saldo) });
       else if (saldo > 0) out.push({ tone: 'warn', ic: 'ti-cash', t: quien + ' debe ' + fmt(saldo), s: 'Aprovecha la visita para cobrarle', a: 'Ver cuenta', fn: `window.nxCliente360('${c.id}')` });
       const pf = (_prefs || []).find(x => String(x.cliente_id) === String(c.id));
@@ -2353,6 +2354,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
           <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
         </div>
+        ${typeof window.nxPosFidAjustesHTML === 'function' ? window.nxPosFidAjustesHTML() : ''}
         ${ajustesSecuencias()}
         ${ajustesRoles()}
         ${ajustesNCF()}
@@ -6658,7 +6660,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button>${typeof window.nxPosFidBotonHTML === 'function' ? window.nxPosFidBotonHTML() : ''}</div>
       <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody id="nxCliTb" data-pag10="clientes">${filas}${lista.length ? '<tr class="nxSinRes" style="display:none"><td colspan="3" class="emptyrow">Ningún cliente coincide con la búsqueda.</td></tr>' : ''}</tbody></table></div>
     </div>`;
   }
