@@ -370,6 +370,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
   // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
   function puedeVerCosto360() { return puedeVerMin(); }
+  // 27-oct-2026 Margen por producto (capa parches-pos-margen.js): lectura de artículos/categorías y del permiso de costos.
+  window.__nxPosMargenCtx = { prods: () => _prods, cats: () => _cats, puedeVer: () => puedeVerMin(), api: () => getAPI() };
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (r === 'admin') return true;
