@@ -655,7 +655,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
 
   // ── Importe de línea con descuento (% o $) ──
   function lineBase(it) { return Number(it.precio || 0) * Number(it.cantidad || 0); }
-  function lineDescMonto(it) { const base = lineBase(it); const d = Number(it.desc || 0); if (!d) return 0; return it.descT === 'mon' ? Math.min(d, base) : Math.min(base * d / 100, base); }
+  // 27-oct-2026 (dueño): «el negocio asume 6 de los 18 puntos del ITBIS». La ley no deja cobrar 12 %: es un DESCUENTO en el
+  // precio para que el cliente pague lo mismo que con 12 %. Factor sobre el importe con ITBIS: 1 − 1.12/1.18 ≈ 5.08 %.
+  // Va por línea (it.cubre6), encima del descuento que ya tenga, solo en artículos con ITBIS.
+  const CUBRE6 = 1 - 1.12 / 1.18;
+  function lineDescMonto(it) {
+    const base = lineBase(it); const d = Number(it.desc || 0);
+    let m = !d ? 0 : it.descT === 'mon' ? Math.min(d, base) : Math.min(base * d / 100, base);
+    if (it.cubre6 && it.itbis) m += (base - m) * CUBRE6;
+    return Math.min(m, base);
+  }
   function lineImporte(it) { return lineBase(it) - lineDescMonto(it); }
   // Precio según el nivel del cliente seleccionado (final vs por mayor)
   function clienteSel() { return _clientes.find(x => String(x.id) === String(_factCli)); }
@@ -2300,6 +2309,20 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (p && p.no_descuento && n > 0) { it.desc = 0; toast('err', 'Este artículo no permite descuento', p.nombre); pintarFactura(); return; }
     it.desc = n; pintarFactura();
   };
+  // Botón «Cubrir 6 % del ITBIS»: se aplica a todas las líneas con ITBIS que permiten descuento; tocar otra vez lo quita.
+  function cubre6Elegibles() {
+    return _cart.filter(it => { if (!it.itbis) return false; const p = _prods.find(x => String(x.id) === String(it.producto_id)); return !(p && p.no_descuento); });
+  }
+  function cubre6Activo() { const el = cubre6Elegibles(); return el.length > 0 && el.every(it => it.cubre6); }
+  window.nxFacCubre6 = function () {
+    const el = cubre6Elegibles();
+    if (!el.length) { toast('err', 'No hay artículos con ITBIS que permitan descuento'); return; }
+    const poner = !cubre6Activo();
+    el.forEach(it => { it.cubre6 = poner; });
+    const saltados = _cart.filter(it => it.itbis).length - el.length;
+    toast('ok', poner ? 'El cliente paga como si el ITBIS fuera 12 %' : 'Se quitó el descuento del 6 %', poner && saltados > 0 ? saltados + ' artículo(s) no permiten descuento y quedaron igual' : '');
+    pintarFactura();
+  };
   window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && (_posTab === 'factura' || _posTab === 'prefactura')) pintarFactura(); };
   window.nxFacFacturar = function () { if (!_cart.length) return; window.nxPosCobrar(); };
@@ -2879,6 +2902,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal - (t.redondeo || 0))}</b></div>
       ${t.descuento > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
       <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      ${_cart.some(it => it.itbis) ? `<button type="button" class="facCubre6${cubre6Activo() ? ' on' : ''}" aria-pressed="${cubre6Activo()}" onclick="window.nxFacCubre6()" title="Descuento para que el cliente pague como si el ITBIS fuera 12 %. La factura sigue con ITBIS 18 % sobre el precio rebajado."><i class="ti ${cubre6Activo() ? 'ti-circle-check' : 'ti-discount-2'}"></i> ${cubre6Activo() ? 'Cubre 6 % del ITBIS · el cliente paga como 12 %' : 'Cubrir 6 % del ITBIS'}</button>` : ''}
       ${t.redondeo ? `<div class="tr"><span>Redondeo</span><b>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</b></div>` : ''}
       <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
       <div class="acc">
@@ -12432,6 +12456,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     //    Factura, `.compResFoot` en Compras) ahora se ocultan por `body:has(.nxFacBar)`/
     //    `body:has(.nxCompBar)` en vez de por ancho — para no duplicar los mismos 3 botones (uno
     //    adentro del documento, otro flotando abajo) en NINGÚN tamaño de pantalla, ni PC ni móvil. ──
+    st.textContent += '.facTot .facCubre6{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin:4px 0 6px;padding:8px 12px;border-radius:12px;border:1.5px dashed #94a3b8;background:transparent;color:#334155;font:700 14px/1.2 inherit;cursor:pointer;text-transform:none}.facTot .facCubre6 i{font-size:17px}.facTot .facCubre6.on{border-style:solid;border-color:#16a34a;background:#dcfce7;color:#14532d!important}.facTot .facCubre6{color:#334155!important}';
     st.textContent += '.nxFacBar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:8px;align-items:stretch;background:#fff;border-top:1px solid #e5e7eb;box-shadow:0 -6px 20px rgba(15,23,42,.09);padding:9px 12px calc(9px + env(safe-area-inset-bottom))}.nxFacBar button{font-family:inherit;cursor:pointer;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;line-height:1}.nxFacBar .fbC,.nxFacBar .fbG{flex:0 0 auto;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-weight:800;font-size:14px;padding:13px}.nxFacBar .fbC{color:#94a3b8}.nxFacBar .fbP{flex:1 1 auto;border:0;background:#0f172a;color:#fff;font-weight:900;font-size:15px;padding:14px}.nxFacBar .fbP:active{background:#1e293b}.nxFacBar button:active{filter:brightness(.95)}.nxFacBar button:disabled{opacity:.45;cursor:default}.nxFacBar .fbP i{font-size:19px}.nxFacBar .fbG i,.nxFacBar .fbC i{font-size:18px}body:has(#v-pos.on) .nxFacBar{display:flex}body:has(.nxFacBar) .nxDoc .facTot .acc,body:has(.nxFacBar) .nxDoc .facTot .cancel{display:none}body:has(#nxCompBar) .compResFoot{display:none!important}body:has(.nxFacBar) .nxTMain{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}.nx-fab.nxFabLift{transform:translateY(-78px)!important}.nx-fab.nxFabLift:active{transform:translateY(-78px) scale(.92)!important}.nx-fab.nxFabLift.open{transform:translateY(-78px) rotate(90deg)!important}body:has(.overlay.open) .nxFacBar,body:has(.overlay.on) .nxFacBar{display:none!important}';
     // EXTENDIDA A PC (v54.8) pero SIN capar el ancho -> en un monitor de escritorio el botón
     // primario (.fbP, flex:1 1 auto) crecía para llenar TODO lo que sobraba del viewport,
