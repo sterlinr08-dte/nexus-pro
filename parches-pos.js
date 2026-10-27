@@ -710,6 +710,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const r = filaNivel(p);
     return Math.max(1, Number((r && r.cantidad_minima) || 1));
   }
+  // Ganchos de la capa parches-pos-volumen.js (precios por cantidad, 27-oct-2026). Sin la capa no hacen nada.
+  window.__nxPosVolApi = { prods: () => _prods, precioCli: p => precioCli(p), minimoDe: p => minimoDe(p), puedeVerMin: () => puedeVerMin(), api: () => getAPI(), toast: (a, b, c) => toast(a, b, c), fmt: n => fmt(n), esc: x => esc(x) };
+  function volAjustar() { try { if (window.nxPosVolAjustar) window.nxPosVolAjustar(_cart); } catch (e) {} }
+  function volLinea(it, i, modo) { try { return window.nxPosVolLinea ? window.nxPosVolLinea(it, i, modo) || '' : ''; } catch (e) { return ''; } }
 
   function totales() {
     let total = 0, itbis = 0, descuento = 0;
@@ -1327,10 +1331,11 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   function pintarCarrito() {
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
     nxPfEnsureCSS();
+    volAjustar();
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => `<div class="cartitem">
         <div class="citthumb"><i class="ti ti-shopping-bag"></i></div>
-        <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div></div>
+        <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div>${volLinea(it, i, 'vender')}</div>
         <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
@@ -2299,7 +2304,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const p = _prods.find(x => String(x.id) === String(it.producto_id));
     const min = p ? minimoDe(p) : 0;
     if (min > 0 && nuevo < min && !puedeVerMin()) { nuevo = min; toast('warn', 'Precio ajustado al mínimo permitido', 'Ese artículo tiene un piso de negociación'); }
-    it.precio = nuevo; pintarFactura();
+    it.precio = nuevo; it.precioManual = true; pintarFactura();
   };
   window.nxFacDesc = function (i, v) {
     const it = _cart[i]; if (!it) return;
@@ -2867,6 +2872,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   };
   function pintarFactura() {
     const cont = document.getElementById('facTabla'); if (!cont) return;
+    volAjustar();
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => {
       const prod = _prods.find(x => String(x.id) === String(it.producto_id));
@@ -2883,7 +2889,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         <td data-l="Descripción">
           <div class="dnm">${esc(it.nombre)}</div>
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
-          ${serLista}
+          ${serLista}${volLinea(it, i, 'factura')}
         </td>
         <td data-l="Precio" class="r"><input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
@@ -5311,6 +5317,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     nxPfSyncPrecioPrincipal(prodId);
     if (!_niveles.length) nxNivelesInit().then(() => { if (document.getElementById('nxPosProd')) abrirProd(p, true); });
     if (p) window.nxPfUltimoCosto(p.id);
+    try { if (window.nxPosVolFicha) window.nxPosVolFicha(e, ov); } catch (er) {}
   }
   // Posiciona un popup fijo (position:fixed) pegado a su botón disparador, sin desbordar la
   // pantalla — evita el bug de menús que se salen del viewport en móvil angosto (ya documentado
@@ -5528,6 +5535,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       garantia_dias: parseInt(val('ppGar'), 10) || 0,
       ...(document.getElementById('ppMinP') ? { precio_minimo: moneyVal('ppMinP') } : {}),
       combo_items: _comboTmp,
+      ...(window.nxPosVolBody ? window.nxPosVolBody() : {}),
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1',
       proveedor_id: val('ppProv') || null,
@@ -5547,6 +5555,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (precio < 0) return 'El precio no puede ser negativo';
     const nombresNuevos = (_pfDraft.nivelesNuevos || []).map(n => n.nombre.trim().toLowerCase());
     if (new Set(nombresNuevos).size !== nombresNuevos.length) return 'Hay dos niveles nuevos con el mismo nombre';
+    try { const ev = window.nxPosVolValidar ? window.nxPosVolValidar() : null; if (ev) return ev; } catch (e) {}
     return null;
   }
   // Guardado común de Nuevo/Editar producto (Kardex Inteligente): el campo Stock del formulario
