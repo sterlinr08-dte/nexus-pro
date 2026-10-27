@@ -10921,7 +10921,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.67';
+const APP_VERSION='59.68';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -19422,6 +19422,7 @@ setTimeout(verificarAutoFacturacion, 5000);
     cargarConReintento('parches-pos-margen.js'); // 27-oct-2026: Margen por producto (Reportes del POS, solo lectura, admin/gerente). Apagar: localStorage.nx_pos_margen_off='1'
     cargarConReintento('parches-pos-empresas.js'); // 27-oct-2026: POS → Clientes → «Clientes con RNC» (oferta de crédito fiscal, borrador de WhatsApp sin envío, CSV). Solo lectura. Apagar: localStorage.nx_pos_empresas_off='1'
     cargarConReintento('parches-pos-fidelidad.js'); // 27-oct-2026: «Clientes que vuelven» (frecuentes, por perder, una sola compra; borradores de WhatsApp sin envío). Solo lectura. Apagar: localStorage.nx_pos_fidelidad_off='1'
+    cargarConReintento('parches-nx-materializar.js'); // 27-oct-2026: al cambiar de pantalla, las piezas se «materializan» una tras otra (borroso → nítido, reel Glassy Dashboard). Apagar: localStorage.nx_materializar_off='1'
     cargarConReintento('parches-rifas.js');
     cargarConReintento('parches-panel-dueno.js');
   })();
