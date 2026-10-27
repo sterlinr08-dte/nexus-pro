@@ -370,6 +370,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
   // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
   function puedeVerCosto360() { return puedeVerMin(); }
+  // 27-oct-2026 Margen por producto (capa parches-pos-margen.js): lectura de artículos/categorías y del permiso de costos.
+  window.__nxPosMargenCtx = { prods: () => _prods, cats: () => _cats, puedeVer: () => puedeVerMin(), api: () => getAPI() };
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (r === 'admin') return true;
@@ -655,7 +657,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
 
   // ── Importe de línea con descuento (% o $) ──
   function lineBase(it) { return Number(it.precio || 0) * Number(it.cantidad || 0); }
-  function lineDescMonto(it) { const base = lineBase(it); const d = Number(it.desc || 0); if (!d) return 0; return it.descT === 'mon' ? Math.min(d, base) : Math.min(base * d / 100, base); }
+  // 27-oct-2026 (dueño): «el negocio asume 6 de los 18 puntos del ITBIS». La ley no deja cobrar 12 %: es un DESCUENTO en el
+  // precio para que el cliente pague lo mismo que con 12 %. Factor sobre el importe con ITBIS: 1 − 1.12/1.18 ≈ 5.08 %.
+  // Va por línea (it.cubre6), encima del descuento que ya tenga, solo en artículos con ITBIS.
+  const CUBRE6 = 1 - 1.12 / 1.18;
+  function lineDescMonto(it) {
+    const base = lineBase(it); const d = Number(it.desc || 0);
+    let m = !d ? 0 : it.descT === 'mon' ? Math.min(d, base) : Math.min(base * d / 100, base);
+    if (it.cubre6 && it.itbis) m += (base - m) * CUBRE6;
+    return Math.min(m, base);
+  }
   function lineImporte(it) { return lineBase(it) - lineDescMonto(it); }
   // Precio según el nivel del cliente seleccionado (final vs por mayor)
   function clienteSel() { return _clientes.find(x => String(x.id) === String(_factCli)); }
@@ -699,6 +710,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const r = filaNivel(p);
     return Math.max(1, Number((r && r.cantidad_minima) || 1));
   }
+  // Ganchos de la capa parches-pos-volumen.js (precios por cantidad, 27-oct-2026). Sin la capa no hacen nada.
+  window.__nxPosVolApi = { prods: () => _prods, precioCli: p => precioCli(p), minimoDe: p => minimoDe(p), puedeVerMin: () => puedeVerMin(), api: () => getAPI(), toast: (a, b, c) => toast(a, b, c), fmt: n => fmt(n), esc: x => esc(x) };
+  function volAjustar() { try { if (window.nxPosVolAjustar) window.nxPosVolAjustar(_cart); } catch (e) {} }
+  function volLinea(it, i, modo) { try { return window.nxPosVolLinea ? window.nxPosVolLinea(it, i, modo) || '' : ''; } catch (e) { return ''; } }
 
   function totales() {
     let total = 0, itbis = 0, descuento = 0;
@@ -1202,10 +1217,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (!lista.length) return `<div style="color:#475569;font-size:12px;padding:20px;text-align:center">${vacioMsg}</div>`;
     return lista.map(p => {
       const serv = p.tipo === 'servicio';
-      const stk = Number(p.stock || 0), min = Number(p.stock_min || 0);
+      // Lo apartado en prefacturas no se ofrece: se muestra lo DISPONIBLE (27-oct-2026).
+      const apV = serv ? 0 : apartadoDe(p.id);
+      const stk = Math.max(0, Number(p.stock || 0) - apV), min = Number(p.stock_min || 0);
       const out = !serv && stk <= 0, low = !serv && !out && min > 0 && stk <= min;
       const stkCls = serv ? 'srv' : out ? 'out' : low ? 'low' : 'ok';
-      const stkTxt = serv ? 'Servicio' : out ? 'Agotado' : (low ? 'Bajo: ' : '') + stk + (serv ? '' : ' und');
+      const stkTxt = serv ? 'Servicio' : (out ? (apV ? 'Apartado' : 'Agotado') : (low ? 'Bajo: ' : '') + stk + ' und') + (apV && !out ? ' · ' + apV + ' apart.' : '');
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
       const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       const cat = catNombre(p.categoria_id);
@@ -1223,13 +1240,24 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }).join('');
   }
   // POLÍTICA ESTRICTA: no se vende sin stock (los servicios no llevan stock)
-  function stockDisponible(p) { return p && p.tipo !== 'servicio' ? Number(p.stock || 0) : Infinity; }
+  // 27-oct-2026 (dueño: «la prefactura que aparta»): lo que está en una prefactura ABIERTA y vigente queda apartado:
+  // nadie más lo puede vender, pero el inventario real (p.stock) no baja hasta que se factura. Si la prefactura vence
+  // (días en Ajustes, 7 por defecto; 0 = no vence) o se anula, lo apartado vuelve a estar disponible solo.
+  function prefDias() { try { const v = localStorage.getItem('nx_pos_pref_dias'); return v === null || v === '' ? 7 : Math.max(0, Number(v) || 0); } catch (e) { return 7; } }
+  function prefVence(pf) { const d = prefDias(); if (!d || !pf || !pf.created_at) return null; return new Date(new Date(pf.created_at).getTime() + d * 86400000); }
+  function prefVigente(pf) { if (!pf || (pf.estado && pf.estado !== 'abierta')) return false; const v = prefVence(pf); return !v || v.getTime() > Date.now(); }
+  function apartadoDe(pid) {
+    let n = 0;
+    (_prefs || []).forEach(pf => { if (!prefVigente(pf)) return; (Array.isArray(pf.items) ? pf.items : []).forEach(it => { if (String(it.producto_id) === String(pid)) n += Number(it.cantidad || 0); }); });
+    return n;
+  }
+  function stockDisponible(p) { return p && p.tipo !== 'servicio' ? Math.max(0, Number(p.stock || 0) - apartadoDe(p.id)) : Infinity; }
   function puedeAgregar(pid, extra) {
     if (esPreTab()) return true; // PREVENTA: no valida stock
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return false;
     if (p.tipo === 'servicio') return true;
     const en = _cart.filter(x => String(x.producto_id) === String(pid)).reduce((t, x) => t + Number(x.cantidad || 0), 0);
-    if (en + (extra || 1) > stockDisponible(p)) { toast('err', 'Sin stock disponible', p.nombre + ' — quedan ' + Number(p.stock || 0)); return false; }
+    if (en + (extra || 1) > stockDisponible(p)) { const ap = apartadoDe(p.id); toast('err', 'Sin stock disponible', p.nombre + ' — disponibles ' + stockDisponible(p) + (ap ? ' (' + ap + ' apartado' + (ap === 1 ? '' : 's') + ' en prefacturas)' : '')); return false; }
     return true;
   }
   // COMBO: al vender el principal, sus acompañantes entran a la factura en RD$ 0 y descuentan stock
@@ -1316,10 +1344,11 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   function pintarCarrito() {
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
     nxPfEnsureCSS();
+    volAjustar();
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => `<div class="cartitem">
         <div class="citthumb"><i class="ti ti-shopping-bag"></i></div>
-        <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div></div>
+        <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div>${volLinea(it, i, 'vender')}</div>
         <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
@@ -1545,6 +1574,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     // 2) El cliente: lo que debe, su límite, lo que tiene abierto
     if (c) {
       const quien = esc(String(c.nombre || '').split(' ')[0]), saldo = saldoCli(c), lim = Number(c.limite_credito || 0);
+      try { const fx = typeof window.nxPosFidSug === 'function' && window.nxPosFidSug(c, t); if (fx) out.push(fx); } catch (e) {} // capa parches-pos-fidelidad.js (solo sugiere)
       if (_facCredito && lim > 0 && saldo + t > lim) out.push({ tone: 'bad', ic: 'ti-credit-card-off', t: 'Pasa su límite de crédito por ' + fmt(saldo + t - lim), s: 'Límite ' + fmt(lim) + ' · ya debe ' + fmt(saldo) });
       else if (saldo > 0) out.push({ tone: 'warn', ic: 'ti-cash', t: quien + ' debe ' + fmt(saldo), s: 'Aprovecha la visita para cobrarle', a: 'Ver cuenta', fn: `window.nxCliente360('${c.id}')` });
       const pf = (_prefs || []).find(x => String(x.cliente_id) === String(c.id));
@@ -2288,7 +2318,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const p = _prods.find(x => String(x.id) === String(it.producto_id));
     const min = p ? minimoDe(p) : 0;
     if (min > 0 && nuevo < min && !puedeVerMin()) { nuevo = min; toast('warn', 'Precio ajustado al mínimo permitido', 'Ese artículo tiene un piso de negociación'); }
-    it.precio = nuevo; pintarFactura();
+    it.precio = nuevo; it.precioManual = true; pintarFactura();
   };
   window.nxFacDesc = function (i, v) {
     const it = _cart[i]; if (!it) return;
@@ -2299,6 +2329,20 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const n = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0);
     if (p && p.no_descuento && n > 0) { it.desc = 0; toast('err', 'Este artículo no permite descuento', p.nombre); pintarFactura(); return; }
     it.desc = n; pintarFactura();
+  };
+  // Botón «Cubrir 6 % del ITBIS»: se aplica a todas las líneas con ITBIS que permiten descuento; tocar otra vez lo quita.
+  function cubre6Elegibles() {
+    return _cart.filter(it => { if (!it.itbis) return false; const p = _prods.find(x => String(x.id) === String(it.producto_id)); return !(p && p.no_descuento); });
+  }
+  function cubre6Activo() { const el = cubre6Elegibles(); return el.length > 0 && el.every(it => it.cubre6); }
+  window.nxFacCubre6 = function () {
+    const el = cubre6Elegibles();
+    if (!el.length) { toast('err', 'No hay artículos con ITBIS que permitan descuento'); return; }
+    const poner = !cubre6Activo();
+    el.forEach(it => { it.cubre6 = poner; });
+    const saltados = _cart.filter(it => it.itbis).length - el.length;
+    toast('ok', poner ? 'El cliente paga como si el ITBIS fuera 12 %' : 'Se quitó el descuento del 6 %', poner && saltados > 0 ? saltados + ' artículo(s) no permiten descuento y quedaron igual' : '');
+    pintarFactura();
   };
   window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && (_posTab === 'factura' || _posTab === 'prefactura')) pintarFactura(); };
@@ -2326,10 +2370,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           </div>
           <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
         </div>
+        ${ajCard('ti-lock', 'purple', 'Prefacturas que apartan', 'Lo que está en una prefactura abierta queda apartado: nadie más lo puede vender. El inventario real baja solo al facturar. Pasados estos días la prefactura ya no aparta y la mercancía vuelve a estar disponible. Use 0 para que no venza.')}
+          <div class="fld"><label for="nxPrefDias">Días que aparta (0 = no vence)</label><div class="inw"><i class="ti ti-calendar-time"></i><input id="nxPrefDias" inputmode="numeric" value="${prefDias()}" onchange="window.nxPrefDiasSet(this.value)"></div></div>
+        </div>
         ${ajCard('ti-shield-check', 'green', 'Garantía de reparación', `Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:var(--pf-green)">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:var(--pf-txt3)">Garantía desactivada</b> — no se le promete garantía a nadie.'}`)}
           <div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
           <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
         </div>
+        ${typeof window.nxPosFidAjustesHTML === 'function' ? window.nxPosFidAjustesHTML() : ''}
         ${ajustesSecuencias()}
         ${ajustesRoles()}
         ${ajustesNCF()}
@@ -2842,6 +2890,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   };
   function pintarFactura() {
     const cont = document.getElementById('facTabla'); if (!cont) return;
+    volAjustar();
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => {
       const prod = _prods.find(x => String(x.id) === String(it.producto_id));
@@ -2858,7 +2907,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         <td data-l="Descripción">
           <div class="dnm">${esc(it.nombre)}</div>
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
-          ${serLista}
+          ${serLista}${volLinea(it, i, 'factura')}
         </td>
         <td data-l="Precio" class="r"><input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
@@ -2879,6 +2928,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal - (t.redondeo || 0))}</b></div>
       ${t.descuento > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
       <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      ${_cart.some(it => it.itbis) ? `<button type="button" class="facCubre6${cubre6Activo() ? ' on' : ''}" aria-pressed="${cubre6Activo()}" onclick="window.nxFacCubre6()" title="Descuento para que el cliente pague como si el ITBIS fuera 12 %. La factura sigue con ITBIS 18 % sobre el precio rebajado."><i class="ti ${cubre6Activo() ? 'ti-circle-check' : 'ti-discount-2'}"></i> ${cubre6Activo() ? 'Cubre 6 % del ITBIS · el cliente paga como 12 %' : 'Cubrir 6 % del ITBIS'}</button>` : ''}
       ${t.redondeo ? `<div class="tr"><span>Redondeo</span><b>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</b></div>` : ''}
       <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
       <div class="acc">
@@ -4044,6 +4094,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }
   };
 
+  // «Compra segura» (27-oct-2026): bloque opcional que pinta la capa parches-pos-compra-segura.js con los datos reales
+  // de la venta (garantía, IMEI, comprobante). Si la capa no está o falla, el recibo sale igual que siempre.
+  function csBloque(tipo, d) { try { return typeof window.nxCompraSeguraBloque === 'function' ? (window.nxCompraSeguraBloque(tipo, d) || '') : ''; } catch (e) { return ''; } }
   // ── Ticket imprimible ──
   function ticketHTML(v) {
     const e = empInfo();
@@ -4075,6 +4128,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         ${ecfBloqueTicket(v)}
+        ${csBloque('ticket', v)}
         <div class="line"></div>
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
@@ -4227,6 +4281,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             ${Number(d.credito || 0) > 0 ? `<div class="tr deb"><span>Pendiente por pagar</span><b>${fmt(d.credito)}</b></div>` : ''}
           </div>
         </div>
+        ${csBloque('carta', d)}
         <div class="legal">${d.legal ? esc(d.legal) : 'Gracias por su compra.'}</div>
       </div>
       <script>
@@ -4275,7 +4330,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const anulada = !!(v.anulada || v.estado === 'anulada');
     const cli = v.cliente_id ? (_clientes || []).find(x => String(x.id) === String(v.cliente_id)) : null;
     const pagos = Array.isArray(v.pagos) && v.pagos.length ? v.pagos : (v.metodo_pago ? [{ metodo: v.metodo_pago, monto: Number(v.total || 0) - Number(v.credito_monto || 0) }] : []);
+    if (v.ecf_qr_url) { try { await ecfCargarQR(); } catch (e) {} }
     docFacturaHTML({
+      _venta: v, _items: items, _qr: v.ecf_qr_url ? ecfQR(v.ecf_qr_url) : '',
       tipo: 'FACTURA',
       estado: anulada ? 'ANULADA' : 'PAGADA',
       estadoCls: anulada ? 'anul' : 'ok',
@@ -4347,12 +4404,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       : sin ? '<span class="nxInvStk out">● Agotado</span>'
       : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
       : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
+    const _ap = serv ? 0 : apartadoDe(p.id);
+    const stkCellAp = _ap ? stkCell + `<div style="font-size:11px;color:#6d28d9;margin-top:2px" title="En prefacturas abiertas: no se pueden vender hasta que se facturen o venzan">${_ap} apartado${_ap === 1 ? '' : 's'} · ${Math.max(0, Number(p.stock || 0) - _ap)} disponible${Math.max(0, Number(p.stock || 0) - _ap) === 1 ? '' : 's'}</div>` : stkCell;
     const sel = _prodSel.has(String(p.id));
     return `<tr class="${sel ? 'nxProdRowSel' : ''}">
       <td class="nxProdChk"><input type="checkbox" aria-label="Seleccionar ${esc(p.nombre || '')}" ${sel ? 'checked' : ''} onchange="window.nxProdSelToggle('${p.id}',this)"></td>
       <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
       <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel."><i class="ti ti-alert-triangle"></i> Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
-      <td style="text-align:right;white-space:nowrap">${stkCell}</td>
+      <td style="text-align:right;white-space:nowrap">${stkCellAp}</td>
       <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
       <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
     </tr>`;
@@ -5285,6 +5344,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     nxPfSyncPrecioPrincipal(prodId);
     if (!_niveles.length) nxNivelesInit().then(() => { if (document.getElementById('nxPosProd')) abrirProd(p, true); });
     if (p) window.nxPfUltimoCosto(p.id);
+    try { if (window.nxPosVolFicha) window.nxPosVolFicha(e, ov); } catch (er) {}
   }
   // Posiciona un popup fijo (position:fixed) pegado a su botón disparador, sin desbordar la
   // pantalla — evita el bug de menús que se salen del viewport en móvil angosto (ya documentado
@@ -5502,6 +5562,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       garantia_dias: parseInt(val('ppGar'), 10) || 0,
       ...(document.getElementById('ppMinP') ? { precio_minimo: moneyVal('ppMinP') } : {}),
       combo_items: _comboTmp,
+      ...(window.nxPosVolBody ? window.nxPosVolBody() : {}),
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1',
       proveedor_id: val('ppProv') || null,
@@ -5521,6 +5582,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (precio < 0) return 'El precio no puede ser negativo';
     const nombresNuevos = (_pfDraft.nivelesNuevos || []).map(n => n.nombre.trim().toLowerCase());
     if (new Set(nombresNuevos).size !== nombresNuevos.length) return 'Hay dos niveles nuevos con el mismo nombre';
+    try { const ev = window.nxPosVolValidar ? window.nxPosVolValidar() : null; if (ev) return ev; } catch (e) {}
     return null;
   }
   // Guardado común de Nuevo/Editar producto (Kardex Inteligente): el campo Stock del formulario
@@ -6634,7 +6696,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button>${typeof window.nxPosFidBotonHTML === 'function' ? window.nxPosFidBotonHTML() : ''}</div>
       <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody id="nxCliTb" data-pag10="clientes">${filas}${lista.length ? '<tr class="nxSinRes" style="display:none"><td colspan="3" class="emptyrow">Ningún cliente coincide con la búsqueda.</td></tr>' : ''}</tbody></table></div>
     </div>`;
   }
@@ -11530,6 +11592,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function esPreTab() { return _posTab === 'prefactura'; }
   function peekPref() { const sq = (_secuencias || []).find(x => x.tipo === 'prefactura' && x.activo !== false); if (sq) return (sq.prefijo || 'PF-') + String(Number(sq.proximo || 1)).padStart(Number(sq.longitud || 5), '0'); return 'PF-' + String(_prefs.length + 1).padStart(5, '0'); }
   // ══════════════ PREFACTURAS (pedido que la caja factura después) ══════════════
+  // Artículos de la prefactura recién guardada que no alcanzan: lo apartado por todas las prefacturas pasa del inventario.
+  function nxPrefFaltantes(pf) {
+    if (!pf) return [];
+    const out = [];
+    (Array.isArray(pf.items) ? pf.items : []).forEach(it => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p || p.tipo === 'servicio') return;
+      const exceso = apartadoDe(p.id) - Number(p.stock || 0);
+      if (exceso > 0 && !out.some(x => x.startsWith(p.nombre))) out.push(p.nombre + ': faltan ' + exceso);
+    });
+    return out;
+  }
+  window.nxPrefDiasSet = function (v) {
+    const n = Math.max(0, Math.min(90, Math.round(Number(v) || 0)));
+    try { localStorage.setItem('nx_pos_pref_dias', String(n)); } catch (e) {}
+    toast('ok', n ? 'Las prefacturas apartan ' + n + ' día' + (n === 1 ? '' : 's') : 'Las prefacturas apartan sin vencer');
+  };
   window.nxPrefGuardar = async function (imprimir) {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const t = totales();
@@ -11548,7 +11626,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const nItemsPref = _cart.length;
       if (r && r[0]) { const _pid = r[0].id; docGuardado('pref', { id: _pid, numero: numero, total: t.total, cliente_id: cli ? cli.id : null, nombre: cli ? cli.nombre : '', imprimir: () => { if (!(_prefHist || []).find(x => String(x.id) === String(_pid))) _prefHist.unshift(r[0]); window.nxPHImprimir(_pid); },
         waTxt: 'Hola' + (cli ? ' ' + String(cli.nombre).split(' ')[0] : '') + ', te comparto la prefactura ' + numero + ' de ' + bizNom() + ':\n\n' + docItemsTxt(_cart) + '\n\nTOTAL: ' + fmt(t.total) + '\n\nCuando quieras la facturamos.' }); }
-      _cart = []; _facNota = ''; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
+      const _faltan = nxPrefFaltantes(r && r[0]);
+      _cart = []; _facNota = '';
+      if (_faltan.length) toast('warn', 'Prefactura guardada, sin mercancía suficiente para apartar', _faltan.join(' · '));
+      else toast('ok', 'Prefactura guardada', numero + (prefDias() ? ' — mercancía apartada ' + prefDias() + ' día' + (prefDias() === 1 ? '' : 's') : ' — mercancía apartada'));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
@@ -11623,7 +11704,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const lista = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
     el.innerHTML = lista.length ? lista.map(p => `<div class="oppcard" style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:var(--pf-blue-d)">${esc(p.numero || '')}</div>
-        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
+        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
+        <div style="font-size:11px;font-weight:700;color:${prefVigente(p) ? '#6d28d9' : '#b45309'}">${prefVigente(p) ? (prefVence(p) ? 'Aparta la mercancía hasta el ' + fechaDMY(prefVence(p)) : 'Aparta la mercancía') : 'Vencida: la mercancía ya no está apartada'}</div></div>
         <b style="font-size:12.5px">${fmt(p.total)}</b>
         <button class="ab g1" style="height:32px;width:auto;padding:0 10px" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
         <button class="ab g3" style="height:32px;width:32px;padding:0" type="button" onclick="window.nxPrefAnular('${p.id}')" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>
@@ -12432,6 +12514,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     //    Factura, `.compResFoot` en Compras) ahora se ocultan por `body:has(.nxFacBar)`/
     //    `body:has(.nxCompBar)` en vez de por ancho — para no duplicar los mismos 3 botones (uno
     //    adentro del documento, otro flotando abajo) en NINGÚN tamaño de pantalla, ni PC ni móvil. ──
+    st.textContent += '.facTot .facCubre6{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin:4px 0 6px;padding:8px 12px;border-radius:12px;border:1.5px dashed #94a3b8;background:transparent;color:#334155;font:700 14px/1.2 inherit;cursor:pointer;text-transform:none}.facTot .facCubre6 i{font-size:17px}.facTot .facCubre6.on{border-style:solid;border-color:#16a34a;background:#dcfce7;color:#14532d!important}.facTot .facCubre6{color:#334155!important}';
     st.textContent += '.nxFacBar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:8px;align-items:stretch;background:#fff;border-top:1px solid #e5e7eb;box-shadow:0 -6px 20px rgba(15,23,42,.09);padding:9px 12px calc(9px + env(safe-area-inset-bottom))}.nxFacBar button{font-family:inherit;cursor:pointer;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;line-height:1}.nxFacBar .fbC,.nxFacBar .fbG{flex:0 0 auto;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-weight:800;font-size:14px;padding:13px}.nxFacBar .fbC{color:#94a3b8}.nxFacBar .fbP{flex:1 1 auto;border:0;background:#0f172a;color:#fff;font-weight:900;font-size:15px;padding:14px}.nxFacBar .fbP:active{background:#1e293b}.nxFacBar button:active{filter:brightness(.95)}.nxFacBar button:disabled{opacity:.45;cursor:default}.nxFacBar .fbP i{font-size:19px}.nxFacBar .fbG i,.nxFacBar .fbC i{font-size:18px}body:has(#v-pos.on) .nxFacBar{display:flex}body:has(.nxFacBar) .nxDoc .facTot .acc,body:has(.nxFacBar) .nxDoc .facTot .cancel{display:none}body:has(#nxCompBar) .compResFoot{display:none!important}body:has(.nxFacBar) .nxTMain{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}.nx-fab.nxFabLift{transform:translateY(-78px)!important}.nx-fab.nxFabLift:active{transform:translateY(-78px) scale(.92)!important}.nx-fab.nxFabLift.open{transform:translateY(-78px) rotate(90deg)!important}body:has(.overlay.open) .nxFacBar,body:has(.overlay.on) .nxFacBar{display:none!important}';
     // EXTENDIDA A PC (v54.8) pero SIN capar el ancho -> en un monitor de escritorio el botón
     // primario (.fbP, flex:1 1 auto) crecía para llenar TODO lo que sobraba del viewport,

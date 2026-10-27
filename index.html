@@ -10921,7 +10921,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.64';
+const APP_VERSION='59.67';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -19416,7 +19416,12 @@ setTimeout(verificarAutoFacturacion, 5000);
     cargarConReintento('parches-vehiculos.js');
     cargarConReintento('parches-pos-buscador.js'); // POS Fase 1 (07-oct-2026): buscador con lupa en las listas de 10+ opciones, solo con el Punto de Venta abierto
     cargarConReintento('parches-pos.js');
+    cargarConReintento('parches-pos-volumen.js'); // 27-oct-2026: precios por cantidad (escalas «desde N unidades») en ficha y caja; apagar con localStorage.nx_pos_volumen_off='1'
+    cargarConReintento('parches-pos-compra-segura.js'); // 27-oct-2026: «Compra segura» en el ticket y la factura (garantía, IMEI, comprobante). Apagar: localStorage.nx_pos_compra_segura_off='1'
     cargarConReintento('parches-pos-stitch-visual.js');
+    cargarConReintento('parches-pos-margen.js'); // 27-oct-2026: Margen por producto (Reportes del POS, solo lectura, admin/gerente). Apagar: localStorage.nx_pos_margen_off='1'
+    cargarConReintento('parches-pos-empresas.js'); // 27-oct-2026: POS → Clientes → «Clientes con RNC» (oferta de crédito fiscal, borrador de WhatsApp sin envío, CSV). Solo lectura. Apagar: localStorage.nx_pos_empresas_off='1'
+    cargarConReintento('parches-pos-fidelidad.js'); // 27-oct-2026: «Clientes que vuelven» (frecuentes, por perder, una sola compra; borradores de WhatsApp sin envío). Solo lectura. Apagar: localStorage.nx_pos_fidelidad_off='1'
     cargarConReintento('parches-rifas.js');
     cargarConReintento('parches-panel-dueno.js');
   })();
