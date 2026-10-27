@@ -4068,6 +4068,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }
   };
 
+  // «Compra segura» (27-oct-2026): bloque opcional que pinta la capa parches-pos-compra-segura.js con los datos reales
+  // de la venta (garantía, IMEI, comprobante). Si la capa no está o falla, el recibo sale igual que siempre.
+  function csBloque(tipo, d) { try { return typeof window.nxCompraSeguraBloque === 'function' ? (window.nxCompraSeguraBloque(tipo, d) || '') : ''; } catch (e) { return ''; } }
   // ── Ticket imprimible ──
   function ticketHTML(v) {
     const e = empInfo();
@@ -4099,6 +4102,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         ${ecfBloqueTicket(v)}
+        ${csBloque('ticket', v)}
         <div class="line"></div>
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
@@ -4251,6 +4255,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             ${Number(d.credito || 0) > 0 ? `<div class="tr deb"><span>Pendiente por pagar</span><b>${fmt(d.credito)}</b></div>` : ''}
           </div>
         </div>
+        ${csBloque('carta', d)}
         <div class="legal">${d.legal ? esc(d.legal) : 'Gracias por su compra.'}</div>
       </div>
       <script>
@@ -4299,7 +4304,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const anulada = !!(v.anulada || v.estado === 'anulada');
     const cli = v.cliente_id ? (_clientes || []).find(x => String(x.id) === String(v.cliente_id)) : null;
     const pagos = Array.isArray(v.pagos) && v.pagos.length ? v.pagos : (v.metodo_pago ? [{ metodo: v.metodo_pago, monto: Number(v.total || 0) - Number(v.credito_monto || 0) }] : []);
+    if (v.ecf_qr_url) { try { await ecfCargarQR(); } catch (e) {} }
     docFacturaHTML({
+      _venta: v, _items: items, _qr: v.ecf_qr_url ? ecfQR(v.ecf_qr_url) : '',
       tipo: 'FACTURA',
       estado: anulada ? 'ANULADA' : 'PAGADA',
       estadoCls: anulada ? 'anul' : 'ok',
