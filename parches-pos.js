@@ -1217,10 +1217,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (!lista.length) return `<div style="color:#475569;font-size:12px;padding:20px;text-align:center">${vacioMsg}</div>`;
     return lista.map(p => {
       const serv = p.tipo === 'servicio';
-      const stk = Number(p.stock || 0), min = Number(p.stock_min || 0);
+      // Lo apartado en prefacturas no se ofrece: se muestra lo DISPONIBLE (27-oct-2026).
+      const apV = serv ? 0 : apartadoDe(p.id);
+      const stk = Math.max(0, Number(p.stock || 0) - apV), min = Number(p.stock_min || 0);
       const out = !serv && stk <= 0, low = !serv && !out && min > 0 && stk <= min;
       const stkCls = serv ? 'srv' : out ? 'out' : low ? 'low' : 'ok';
-      const stkTxt = serv ? 'Servicio' : out ? 'Agotado' : (low ? 'Bajo: ' : '') + stk + (serv ? '' : ' und');
+      const stkTxt = serv ? 'Servicio' : (out ? (apV ? 'Apartado' : 'Agotado') : (low ? 'Bajo: ' : '') + stk + ' und') + (apV && !out ? ' · ' + apV + ' apart.' : '');
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
       const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       const cat = catNombre(p.categoria_id);
@@ -1238,13 +1240,24 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }).join('');
   }
   // POLÍTICA ESTRICTA: no se vende sin stock (los servicios no llevan stock)
-  function stockDisponible(p) { return p && p.tipo !== 'servicio' ? Number(p.stock || 0) : Infinity; }
+  // 27-oct-2026 (dueño: «la prefactura que aparta»): lo que está en una prefactura ABIERTA y vigente queda apartado:
+  // nadie más lo puede vender, pero el inventario real (p.stock) no baja hasta que se factura. Si la prefactura vence
+  // (días en Ajustes, 7 por defecto; 0 = no vence) o se anula, lo apartado vuelve a estar disponible solo.
+  function prefDias() { try { const v = localStorage.getItem('nx_pos_pref_dias'); return v === null || v === '' ? 7 : Math.max(0, Number(v) || 0); } catch (e) { return 7; } }
+  function prefVence(pf) { const d = prefDias(); if (!d || !pf || !pf.created_at) return null; return new Date(new Date(pf.created_at).getTime() + d * 86400000); }
+  function prefVigente(pf) { if (!pf || (pf.estado && pf.estado !== 'abierta')) return false; const v = prefVence(pf); return !v || v.getTime() > Date.now(); }
+  function apartadoDe(pid) {
+    let n = 0;
+    (_prefs || []).forEach(pf => { if (!prefVigente(pf)) return; (Array.isArray(pf.items) ? pf.items : []).forEach(it => { if (String(it.producto_id) === String(pid)) n += Number(it.cantidad || 0); }); });
+    return n;
+  }
+  function stockDisponible(p) { return p && p.tipo !== 'servicio' ? Math.max(0, Number(p.stock || 0) - apartadoDe(p.id)) : Infinity; }
   function puedeAgregar(pid, extra) {
     if (esPreTab()) return true; // PREVENTA: no valida stock
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return false;
     if (p.tipo === 'servicio') return true;
     const en = _cart.filter(x => String(x.producto_id) === String(pid)).reduce((t, x) => t + Number(x.cantidad || 0), 0);
-    if (en + (extra || 1) > stockDisponible(p)) { toast('err', 'Sin stock disponible', p.nombre + ' — quedan ' + Number(p.stock || 0)); return false; }
+    if (en + (extra || 1) > stockDisponible(p)) { const ap = apartadoDe(p.id); toast('err', 'Sin stock disponible', p.nombre + ' — disponibles ' + stockDisponible(p) + (ap ? ' (' + ap + ' apartado' + (ap === 1 ? '' : 's') + ' en prefacturas)' : '')); return false; }
     return true;
   }
   // COMBO: al vender el principal, sus acompañantes entran a la factura en RD$ 0 y descuentan stock
@@ -2356,6 +2369,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             <div class="fld"><label>Días de gracia</label><div class="inw"><i class="ti ti-calendar-clock"></i><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div></div>
           </div>
           <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
+        </div>
+        ${ajCard('ti-lock', 'purple', 'Prefacturas que apartan', 'Lo que está en una prefactura abierta queda apartado: nadie más lo puede vender. El inventario real baja solo al facturar. Pasados estos días la prefactura ya no aparta y la mercancía vuelve a estar disponible. Use 0 para que no venza.')}
+          <div class="fld"><label for="nxPrefDias">Días que aparta (0 = no vence)</label><div class="inw"><i class="ti ti-calendar-time"></i><input id="nxPrefDias" inputmode="numeric" value="${prefDias()}" onchange="window.nxPrefDiasSet(this.value)"></div></div>
         </div>
         ${ajCard('ti-shield-check', 'green', 'Garantía de reparación', `Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:var(--pf-green)">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:var(--pf-txt3)">Garantía desactivada</b> — no se le promete garantía a nadie.'}`)}
           <div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
@@ -4388,12 +4404,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       : sin ? '<span class="nxInvStk out">● Agotado</span>'
       : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
       : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
+    const _ap = serv ? 0 : apartadoDe(p.id);
+    const stkCellAp = _ap ? stkCell + `<div style="font-size:11px;color:#6d28d9;margin-top:2px" title="En prefacturas abiertas: no se pueden vender hasta que se facturen o venzan">${_ap} apartado${_ap === 1 ? '' : 's'} · ${Math.max(0, Number(p.stock || 0) - _ap)} disponible${Math.max(0, Number(p.stock || 0) - _ap) === 1 ? '' : 's'}</div>` : stkCell;
     const sel = _prodSel.has(String(p.id));
     return `<tr class="${sel ? 'nxProdRowSel' : ''}">
       <td class="nxProdChk"><input type="checkbox" aria-label="Seleccionar ${esc(p.nombre || '')}" ${sel ? 'checked' : ''} onchange="window.nxProdSelToggle('${p.id}',this)"></td>
       <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
       <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel."><i class="ti ti-alert-triangle"></i> Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
-      <td style="text-align:right;white-space:nowrap">${stkCell}</td>
+      <td style="text-align:right;white-space:nowrap">${stkCellAp}</td>
       <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
       <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
     </tr>`;
@@ -11574,6 +11592,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function esPreTab() { return _posTab === 'prefactura'; }
   function peekPref() { const sq = (_secuencias || []).find(x => x.tipo === 'prefactura' && x.activo !== false); if (sq) return (sq.prefijo || 'PF-') + String(Number(sq.proximo || 1)).padStart(Number(sq.longitud || 5), '0'); return 'PF-' + String(_prefs.length + 1).padStart(5, '0'); }
   // ══════════════ PREFACTURAS (pedido que la caja factura después) ══════════════
+  // Artículos de la prefactura recién guardada que no alcanzan: lo apartado por todas las prefacturas pasa del inventario.
+  function nxPrefFaltantes(pf) {
+    if (!pf) return [];
+    const out = [];
+    (Array.isArray(pf.items) ? pf.items : []).forEach(it => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p || p.tipo === 'servicio') return;
+      const exceso = apartadoDe(p.id) - Number(p.stock || 0);
+      if (exceso > 0 && !out.some(x => x.startsWith(p.nombre))) out.push(p.nombre + ': faltan ' + exceso);
+    });
+    return out;
+  }
+  window.nxPrefDiasSet = function (v) {
+    const n = Math.max(0, Math.min(90, Math.round(Number(v) || 0)));
+    try { localStorage.setItem('nx_pos_pref_dias', String(n)); } catch (e) {}
+    toast('ok', n ? 'Las prefacturas apartan ' + n + ' día' + (n === 1 ? '' : 's') : 'Las prefacturas apartan sin vencer');
+  };
   window.nxPrefGuardar = async function (imprimir) {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const t = totales();
@@ -11592,7 +11626,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const nItemsPref = _cart.length;
       if (r && r[0]) { const _pid = r[0].id; docGuardado('pref', { id: _pid, numero: numero, total: t.total, cliente_id: cli ? cli.id : null, nombre: cli ? cli.nombre : '', imprimir: () => { if (!(_prefHist || []).find(x => String(x.id) === String(_pid))) _prefHist.unshift(r[0]); window.nxPHImprimir(_pid); },
         waTxt: 'Hola' + (cli ? ' ' + String(cli.nombre).split(' ')[0] : '') + ', te comparto la prefactura ' + numero + ' de ' + bizNom() + ':\n\n' + docItemsTxt(_cart) + '\n\nTOTAL: ' + fmt(t.total) + '\n\nCuando quieras la facturamos.' }); }
-      _cart = []; _facNota = ''; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
+      const _faltan = nxPrefFaltantes(r && r[0]);
+      _cart = []; _facNota = '';
+      if (_faltan.length) toast('warn', 'Prefactura guardada, sin mercancía suficiente para apartar', _faltan.join(' · '));
+      else toast('ok', 'Prefactura guardada', numero + (prefDias() ? ' — mercancía apartada ' + prefDias() + ' día' + (prefDias() === 1 ? '' : 's') : ' — mercancía apartada'));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
@@ -11667,7 +11704,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const lista = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
     el.innerHTML = lista.length ? lista.map(p => `<div class="oppcard" style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:var(--pf-blue-d)">${esc(p.numero || '')}</div>
-        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
+        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
+        <div style="font-size:11px;font-weight:700;color:${prefVigente(p) ? '#6d28d9' : '#b45309'}">${prefVigente(p) ? (prefVence(p) ? 'Aparta la mercancía hasta el ' + fechaDMY(prefVence(p)) : 'Aparta la mercancía') : 'Vencida: la mercancía ya no está apartada'}</div></div>
         <b style="font-size:12.5px">${fmt(p.total)}</b>
         <button class="ab g1" style="height:32px;width:auto;padding:0 10px" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
         <button class="ab g3" style="height:32px;width:32px;padding:0" type="button" onclick="window.nxPrefAnular('${p.id}')" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>
