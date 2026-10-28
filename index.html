@@ -6938,6 +6938,121 @@ html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > .nxPlSel{position:relative
   html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > :not(.nxPlSel){filter:none;transition:none}
 }
 </style>
+<!-- 27-oct-2026 · PREMIUM BLUE (dueño: «En nexus pro vamos a usar esos colores en premium dark y cambiarle el nombre de
+     premium blue»; paleta de @uiuxaadi: #021024 · #052659 · #5483B3 · #7DA0CA · #C1E8FF). Capa aislada sobre body.tema-premium,
+     en el <head> para que el primer cuadro ya salga azul (sin parpadeo). Solo colores: no cambia tamaños ni lógica.
+     Apagar: localStorage.nx_premium_blue_off='1' (lo lee el script de abajo antes de pintar). -->
+<script>try{if(localStorage.getItem('nx_premium_blue_off')==='1')document.documentElement.classList.add('nx-pb-off');}catch(e){}</script>
+<style id="nxPremiumBlue">
+html:not(.nx-pb-off) body.tema-premium{
+  --pb-noche:#021024;--pb-marino:#052659;--pb-acero:#5483B3;--pb-cielo:#7DA0CA;--pb-hielo:#C1E8FF;
+  --pb-sup:#0A2F66;--pb-sup2:#0E3A78;--pb-linea:rgba(125,160,202,.20);--pb-linea2:rgba(193,232,255,.12);
+  --bg0:#021024;--bg1:#052659;--bg2:#0A2F66;--bg3:#052659;--bg4:#0A2F66;
+  --tx1:#EAF6FF;--tx2:#A9C6E6;--tx3:#7DA0CA;
+  --border:rgba(125,160,202,.20);--border-light:rgba(125,160,202,.14);
+  --c1:#5483B3;--c2:#7DA0CA;
+  --nm-accent:#7DA0CA;
+  background:linear-gradient(180deg,#021024 0%,#03183A 55%,#052659 140%) fixed !important;
+  color:#EAF6FF !important;
+}
+html:not(.nx-pb-off) body.tema-premium .nc,
+html:not(.nx-pb-off) body.tema-premium .cfg-panel .nc,
+html:not(.nx-pb-off) body.tema-premium .kg>div,
+html:not(.nx-pb-off) body.tema-premium .tw{
+  background:#052659 !important;border-color:rgba(125,160,202,.20) !important;
+  box-shadow:0 1px 0 rgba(193,232,255,.08) inset,0 14px 34px -18px rgba(2,16,36,.85) !important;color:#EAF6FF !important;
+}
+html:not(.nx-pb-off) body.tema-premium .nc:hover,
+html:not(.nx-pb-off) body.tema-premium .kpi:hover{border-color:rgba(125,160,202,.45) !important}
+html:not(.nx-pb-off) body.tema-premium .kpi{background:#0A2F66 !important;border-color:rgba(125,160,202,.22) !important;box-shadow:0 14px 34px -18px rgba(2,16,36,.85) !important}
+html:not(.nx-pb-off) body.tema-premium .kpi .kv{color:#EAF6FF !important}
+html:not(.nx-pb-off) body.tema-premium .kpi .kl{color:#A9C6E6 !important}
+html:not(.nx-pb-off) body.tema-premium .kpi .ks{color:#7DA0CA !important}
+html:not(.nx-pb-off) body.tema-premium .kpi.k1 .ki,
+html:not(.nx-pb-off) body.tema-premium .kpi.k5 .ki{background:linear-gradient(135deg,#5483B3,#7DA0CA) !important;box-shadow:0 6px 16px -6px rgba(84,131,179,.7) !important}
+html:not(.nx-pb-off) body.tema-premium .modal{background:rgba(5,38,89,.86) !important;border-color:rgba(193,232,255,.16) !important}
+html:not(.nx-pb-off) body.tema-premium .overlay{background:rgba(2,16,36,.6) !important}
+html:not(.nx-pb-off) body.tema-premium .sb,
+html:not(.nx-pb-off) body.tema-premium nav.sb,
+html:not(.nx-pb-off) body.tema-premium #sbEl{background:#021024 !important;border-right-color:rgba(125,160,202,.18) !important}
+html:not(.nx-pb-off) body.tema-premium .tnav{--tnb-bg:#052659;--tnb-hi:#0E3A78;--tnb-lo:#021024;--tnb-tx2:#A9C6E6;--tnb-accent:#5483B3;--tnb-accent2:#7DA0CA}
+html:not(.nx-pb-off) body.tema-premium #v-cliente360{--nm-bg:#052659;--nm-hi:#0E3A78;--nm-lo:#021024;--nm-tx2:#A9C6E6;--nm-accent:#7DA0CA}
+html:not(.nx-pb-off) body.tema-premium #nxBgPhoto{background-color:#021024 !important}
+html:not(.nx-pb-off) body.tema-premium :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]){
+  background-color:#021024 !important;border-color:rgba(125,160,202,.28) !important;color:#EAF6FF !important}
+html:not(.nx-pb-off) body.tema-premium :is(input,textarea)::placeholder{color:#7DA0CA !important}
+html:not(.nx-pb-off) body.tema-premium :is(input,select,textarea):focus{border-color:#7DA0CA !important;box-shadow:0 0 0 4px rgba(125,160,202,.22) !important}
+html:not(.nx-pb-off) body.tema-premium .btn.bp,
+html:not(.nx-pb-off) body.tema-premium .btn-primary{background:#5483B3 !important;border-color:#5483B3 !important;color:#fff !important}
+html:not(.nx-pb-off) body.tema-premium table th{color:#A9C6E6 !important}
+html:not(.nx-pb-off) body.tema-premium table td{border-color:rgba(125,160,202,.12) !important}
+html:not(.nx-pb-off) body.tema-premium ::selection{background:rgba(125,160,202,.4)}
+/* Acentos que antes eran morados → azul acero / cielo / hielo */
+html:not(.nx-pb-off) body.tema-premium{--gradient-primary:linear-gradient(135deg,#5483B3,#7DA0CA);--nxbp-acento:#7DA0CA;--nxbp-halo:rgba(125,160,202,.28)}
+html:not(.nx-pb-off) body.tema-premium .sb-mk{background:linear-gradient(135deg,#5483B3,#C1E8FF)!important;box-shadow:0 4px 10px rgba(2,16,36,.5)!important}
+html:not(.nx-pb-off) body.tema-premium .cs-h{background:linear-gradient(135deg,#052659,#5483B3)!important}
+html:not(.nx-pb-off) body.tema-premium nav.sb .ni:is(:has(.ti-layout-dashboard),:has(.ti-building),:has(.ti-mail),:has(.ti-chart-line)) .ni-i{background:linear-gradient(145deg,#052659,#5483B3)!important}
+html:not(.nx-pb-off) body.tema-premium nav.sb .ni:is(:has(.ti-users),:has(.ti-percentage),:has(.ti-report-money),:has(.ti-certificate),:has(.ti-robot),:has(.ti-palette),:has(.ti-settings)) .ni-i{background:linear-gradient(145deg,#5483B3,#C1E8FF)!important}
+/* Pantallas en vidrio (Inicio, buscador, ventanas, cobro, ficha del cliente, chat): mismas fichas de color en azul */
+html.nx-pane:not(.nx-pb-off) body.tema-premium{--pf-ink:#EAF6FF;--pf-ink2:#B9D2EC;--pf-sheet:rgb(5 38 89/.96);--pf-fill:rgb(193 232 255/.07);--pf-line:rgb(193 232 255/.12);--pf-link:#C1E8FF;--pf-grad:linear-gradient(135deg,#7DA0CA 0%,#5483B3 48%,#052659 100%)}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG{
+  --pn-acc:#5483B3;--pn-acc2:#7DA0CA;--pn-grad:linear-gradient(135deg,#7DA0CA 0%,#5483B3 48%,#052659 100%);
+  --pn-ink:#EAF6FF;--pn-ink2:#B9D2EC;--pn-ink3:#8FB0D6;--pn-link:#C1E8FF;
+  --pn-glass:rgb(5 38 89/.62);--pn-glass2:rgb(193 232 255/.06);--pn-edge:rgb(193 232 255/.14);--pn-line:rgb(193 232 255/.12);--pn-shade:#021024;
+  --ig-blue:#7DA0CA;--ig-blue-l:rgb(125 160 202/.22);--ig-blue-b:rgb(193 232 255/.30);
+  background-color:#021024!important;
+  background-image:radial-gradient(40% 380px at 30% 300px,rgb(84 131 179/.38),transparent 72%),radial-gradient(34% 360px at 74% 560px,rgb(125 160 202/.26),transparent 72%),radial-gradient(42% 420px at 60% calc(100% - 340px),rgb(193 232 255/.10),transparent 72%)!important;
+  box-shadow:0 0 0 48px #021024!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxCV{--cv-line:#C1E8FF;--cv-fill:rgb(125 160 202/.28);--cv-fill0:rgb(125 160 202/0);--cv-ring:#052659}
+html.nx-cobro:not(.nx-pb-off) body.tema-premium #mAbono#mAbono#mAbono#mAbono,
+html.nx-fcli:not(.nx-pb-off) body.tema-premium #mCli#mCli#mCli#mCli{--cb-ink:#EAF6FF;--cb-ink2:#B9D2EC;--cb-sheet:#052659;--cb-fill:rgb(193 232 255/.07);--cb-fill2:rgb(193 232 255/.12);--cb-line:rgb(193 232 255/.12);--cb-link:#C1E8FF;--cb-grad:linear-gradient(135deg,#7DA0CA 0%,#5483B3 48%,#052659 100%)}
+html.nx-parl:not(.nx-pb-off) body.tema-premium{--pl-grad:linear-gradient(180deg,#6A97C4 0%,#5483B3 40%,#3F6E9F 75%,#2A5287 100%)}
+html:not(.nx-pb-off) body.tema-premium .tn-b{background-color:#052659!important;border-color:rgba(125,160,202,.22)!important}
+html:not(.nx-pb-off) body.tema-premium .tn-r > #btnRefrescar{background:linear-gradient(135deg,#5483B3,#7DA0CA)!important}
+html:not(.nx-pb-off) body.tema-premium .badge.bC1,html:not(.nx-pb-off) body.tema-premium .badge.bCg{background:rgba(125,160,202,.18)!important;color:#C1E8FF!important}
+/* Reglas del kit Premium que traían morado o negro */
+html:not(.nx-pb-off) body.tema-premium .nxSf{--sf-bg:#021024;--sf-card:#052659;--sf-line:rgba(125,160,202,.22);--sf-primary:#7DA0CA;--sf-primary-l:rgba(125,160,202,.16);--sf-primary-d:#C1E8FF;--sf-tx:#EAF6FF}
+html:not(.nx-pb-off) body.tema-premium .ni:hover{background:rgba(125,160,202,.14)!important}
+html:not(.nx-pb-off) body.tema-premium .ni.on{background:linear-gradient(135deg,#5483B3,#052659)!important;box-shadow:0 4px 14px rgba(2,16,36,.5)!important}
+html:not(.nx-pb-off) body.tema-premium table thead th{background:#021024!important;color:#A9C6E6!important;border-color:rgba(125,160,202,.16)!important}
+html:not(.nx-pb-off) body.tema-premium tbody tr:hover,html:not(.nx-pb-off) body.tema-premium tr:hover td{background:rgba(125,160,202,.10)!important}
+html:not(.nx-pb-off) body.tema-premium :is(.cfg-tab.active-tab,.cli-subtab.active-subtab){background:linear-gradient(135deg,#5483B3,#052659)!important;color:#fff!important}
+html:not(.nx-pb-off) body.tema-premium :is(.gs-input,.search-box){background:#021024!important;color:#EAF6FF!important}
+html:not(.nx-pb-off) body.tema-premium svg path[fill]{filter:drop-shadow(0 0 10px rgba(84,131,179,.4))}
+html:not(.nx-pb-off) body.tema-premium svg path[stroke]{filter:drop-shadow(0 0 6px rgba(125,160,202,.5))}
+html:not(.nx-pb-off) body.tema-premium ::-webkit-scrollbar-track{background:#021024}
+html:not(.nx-pb-off) body.tema-premium ::-webkit-scrollbar-thumb:hover{background:#5483B3}
+html:not(.nx-pb-off) body.tema-premium :is(.nxft-tab,.nxBusca-lupa,.fc-ico,.fc-ficha,.sm){border-color:rgba(125,160,202,.35)!important}
+/* Últimos restos morados: orbes del menú, ícono del activo, vista de clientes, avatares, «Lo próximo» vencido */
+html:not(.nx-pb-off) body.tema-premium nav.sb .ni:is(:has(.ti-chart-bar),:has(.ti-user-check),:has(.ti-database),:has(.ti-scale)) .ni-i{background:linear-gradient(145deg,#5483B3,#7DA0CA)!important}
+html:not(.nx-pb-off) body.tema-premium .ni.on .ti{color:#C1E8FF!important;border-color:rgba(193,232,255,.35)!important}
+html:not(.nx-pb-off) body.tema-premium #v-clientes{--pill-accent:#7DA0CA}
+html:not(.nx-pb-off) body.tema-premium :is(#cliVistaBtnLista,#cliVistaBtnGrid,.nxVistaOpt){border-color:rgba(125,160,202,.30)!important}
+html:not(.nx-pb-off) body.tema-premium .av{background:linear-gradient(135deg,#5483B3,#052659)!important;color:#EAF6FF!important}
+html:not(.nx-pb-off) body.tema-premium :is(.cfg-tab,.cli-subtab,.nxC20Tab){border-color:rgba(125,160,202,.28)!important}
+html:not(.nx-pb-off) body.tema-premium .btn.bxl{background:linear-gradient(135deg,#5483B3,#052659)!important}
+html:not(.nx-pb-off) body.tema-premium :is(#tbPol,#tbAgt) tr,html:not(.nx-pb-off) body.tema-premium :is(#tbPol,#tbAgt){background:transparent!important}
+html:not(.nx-pb-off) body.tema-premium :is(.btn.bc1,.btn.bsm.bc1){background:linear-gradient(135deg,#5483B3,#052659)!important;color:#fff!important}
+html:not(.nx-pb-off) body.tema-premium thead{background:#021024!important}
+html:not(.nx-pb-off) body.tema-premium .cfg-panel{background:#052659!important}
+html:not(.nx-pb-off) body.tema-premium nav.sb .ni:is(:has(.ti-file-invoice),:has(.ti-briefcase),:has(.ti-layers),:has(.ti-inbox),:has(.ti-building-bank)) .ni-i{background:linear-gradient(145deg,#052659,#7DA0CA)!important}
+html:not(.nx-pb-off) body.tema-premium nav.sb .ni:is(:has(.ti-building-store),:has(.ti-history),:has(.ti-list-check)) .ni-i{background:linear-gradient(145deg,#7DA0CA,#C1E8FF)!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxIG-leg i[style*="2563EB"]{background:#7DA0CA!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxIG-leg i[style*="93C5FD"]{box-shadow:inset 0 0 0 1.5px rgba(193,232,255,.7)!important}
+html:not(.nx-pb-off) body.tema-premium :is(#icnContab,#icnConfig,.sb-av){background:linear-gradient(135deg,#5483B3,#7DA0CA)!important}
+html:not(.nx-pb-off) body.tema-premium :is(.tn-b.tn-b-primary,.nxIG-btn.pri){box-shadow:0 6px 18px -6px rgba(84,131,179,.6),inset 0 1px 0 rgba(255,255,255,.18)!important}
+html:not(.nx-pb-off) body.tema-premium .nxIG-cyc,html:not(.nx-pb-off) body.tema-premium .sm{box-shadow:0 18px 40px -26px rgba(2,16,36,.8),inset 0 1px 0 rgba(193,232,255,.10)!important}
+html:not(.nx-pb-off) body.tema-premium .nfcRow{background:linear-gradient(110deg,rgba(84,131,179,.22),rgba(125,160,202,.14) 45%,rgba(193,232,255,.12))!important}
+html.nx-info:not(.nx-pb-off) body.tema-premium .nxInfoI>span{color:#C1E8FF!important;border-color:rgba(193,232,255,.55)!important;box-shadow:none!important}
+html.nx-info:not(.nx-pb-off) body.tema-premium .nxInfoI[aria-expanded="true"]>span{background:#C1E8FF!important;color:#021024!important}
+html:not(.nx-pb-off) body.tema-premium :is(.nxOpsCheck,.nxCrmAtt,#v-crm button.on){border-color:rgba(125,160,202,.40)!important}
+html:not(.nx-pb-off) body.tema-premium :is(.kpi,.qa,.sm,.nc) i:is(.ti-user,.ti-users,.ti-user-circle,.ti-user-plus,.ti-users-group,.ti-id-badge,.ti-address-book,.ti-clock){background:linear-gradient(145deg,#5483B3,#7DA0CA)!important;color:#fff!important;box-shadow:0 4px 12px -4px rgba(2,16,36,.6)!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG :is(.nxIG-btn.pri){box-shadow:0 6px 18px -6px rgba(84,131,179,.6),inset 0 1px 0 rgba(255,255,255,.18)!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxIG-cyc{box-shadow:0 18px 40px -26px rgba(2,16,36,.8),inset 0 1px 0 rgba(193,232,255,.10)!important}
+html:not(.nx-pb-off) body.tema-premium #v-crm :is(button.primary,.nxCrmLink.primary){background:linear-gradient(135deg,#5483B3,#052659)!important;border-color:rgba(125,160,202,.45)!important}
+html:not(.nx-pb-off) body.tema-premium #v-crm :is(button,.nxCrmLink,#nxCrmRefrescar){border-color:rgba(125,160,202,.32)!important}
+html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxIG-prox{background:linear-gradient(160deg,rgba(84,131,179,.30),rgba(5,38,89,.40))!important;border-color:rgba(125,160,202,.38)!important;box-shadow:var(--pn-depth),0 18px 40px -26px rgba(2,16,36,.8)!important}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -10552,7 +10667,7 @@ function rApariencia(){
     // 59.22: con el modo claro encendido, «Clásico» es el gemelo claro del Glass oscuro (mismo id, la preferencia guardada no cambia)
     (window.NX_TEMA_CLARO?{id:'clasico',nom:'CLARO',desc:'El mismo diseño del Glass oscuro, en blanco: cristal claro y acento azul NEXUS',ico:'☀️',preview:'linear-gradient(135deg,#EEF1F5,#FFFFFF 60%,#2563EB)'}
       :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
-    {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
+    {id:'premium',nom:'PREMIUM BLUE',desc:'Azul noche y azul acero, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#021024,#052659 55%,#5483B3)'},
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
     {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
   ];
@@ -10921,7 +11036,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.68';
+const APP_VERSION='59.69';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
