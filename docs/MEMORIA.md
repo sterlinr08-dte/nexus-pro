@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.67**, publicada el 27-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.69**, publicada el 27-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
