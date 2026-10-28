@@ -6944,6 +6944,8 @@ html.nx-parl-foco body #cnt #v-waInbox #nxWaMsgsBox > .nxPlSel{position:relative
      Apagar: localStorage.nx_premium_blue_off='1' (lo lee el script de abajo antes de pintar). -->
 <script>try{if(localStorage.getItem('nx_premium_blue_off')==='1')document.documentElement.classList.add('nx-pb-off');}catch(e){}</script>
 <style id="nxPremiumBlue">
+/* 59.70: el fondo va en <html> (como la imagen del dueño: cielo arriba → azul rey → marino abajo) para que cubra toda la pantalla */
+html:not(.nx-pb-off):has(> body.tema-premium){background:#021024 linear-gradient(180deg,#7DA0CA 0%,#4F86D6 16%,#2D63BE 34%,#123F8F 55%,#052659 75%,#021024 100%) fixed no-repeat !important;min-height:100%}
 html:not(.nx-pb-off) body.tema-premium{
   --pb-noche:#021024;--pb-marino:#052659;--pb-acero:#5483B3;--pb-cielo:#7DA0CA;--pb-hielo:#C1E8FF;
   --pb-sup:#0A2F66;--pb-sup2:#0E3A78;--pb-linea:rgba(125,160,202,.20);--pb-linea2:rgba(193,232,255,.12);
@@ -6952,7 +6954,7 @@ html:not(.nx-pb-off) body.tema-premium{
   --border:rgba(125,160,202,.20);--border-light:rgba(125,160,202,.14);
   --c1:#5483B3;--c2:#7DA0CA;
   --nm-accent:#7DA0CA;
-  background:linear-gradient(180deg,#021024 0%,#03183A 55%,#052659 140%) fixed !important;
+  background:transparent !important;
   color:#EAF6FF !important;
 }
 html:not(.nx-pb-off) body.tema-premium .nc,
@@ -6977,7 +6979,7 @@ html:not(.nx-pb-off) body.tema-premium nav.sb,
 html:not(.nx-pb-off) body.tema-premium #sbEl{background:#021024 !important;border-right-color:rgba(125,160,202,.18) !important}
 html:not(.nx-pb-off) body.tema-premium .tnav{--tnb-bg:#052659;--tnb-hi:#0E3A78;--tnb-lo:#021024;--tnb-tx2:#A9C6E6;--tnb-accent:#5483B3;--tnb-accent2:#7DA0CA}
 html:not(.nx-pb-off) body.tema-premium #v-cliente360{--nm-bg:#052659;--nm-hi:#0E3A78;--nm-lo:#021024;--nm-tx2:#A9C6E6;--nm-accent:#7DA0CA}
-html:not(.nx-pb-off) body.tema-premium #nxBgPhoto{background-color:#021024 !important}
+html:not(.nx-pb-off) body.tema-premium #nxBgPhoto{background:#021024 linear-gradient(180deg,#7DA0CA 0%,#4F86D6 16%,#2D63BE 34%,#123F8F 55%,#052659 75%,#021024 100%) !important}
 html:not(.nx-pb-off) body.tema-premium :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]){
   background-color:#021024 !important;border-color:rgba(125,160,202,.28) !important;color:#EAF6FF !important}
 html:not(.nx-pb-off) body.tema-premium :is(input,textarea)::placeholder{color:#7DA0CA !important}
@@ -7000,9 +7002,9 @@ html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG{
   --pn-ink:#EAF6FF;--pn-ink2:#B9D2EC;--pn-ink3:#8FB0D6;--pn-link:#C1E8FF;
   --pn-glass:rgb(5 38 89/.62);--pn-glass2:rgb(193 232 255/.06);--pn-edge:rgb(193 232 255/.14);--pn-line:rgb(193 232 255/.12);--pn-shade:#021024;
   --ig-blue:#7DA0CA;--ig-blue-l:rgb(125 160 202/.22);--ig-blue-b:rgb(193 232 255/.30);
-  background-color:#021024!important;
-  background-image:radial-gradient(40% 380px at 30% 300px,rgb(84 131 179/.38),transparent 72%),radial-gradient(34% 360px at 74% 560px,rgb(125 160 202/.26),transparent 72%),radial-gradient(42% 420px at 60% calc(100% - 340px),rgb(193 232 255/.10),transparent 72%)!important;
-  box-shadow:0 0 0 48px #021024!important}
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important}
 html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxCV{--cv-line:#C1E8FF;--cv-fill:rgb(125 160 202/.28);--cv-fill0:rgb(125 160 202/0);--cv-ring:#052659}
 html.nx-cobro:not(.nx-pb-off) body.tema-premium #mAbono#mAbono#mAbono#mAbono,
 html.nx-fcli:not(.nx-pb-off) body.tema-premium #mCli#mCli#mCli#mCli{--cb-ink:#EAF6FF;--cb-ink2:#B9D2EC;--cb-sheet:#052659;--cb-fill:rgb(193 232 255/.07);--cb-fill2:rgb(193 232 255/.12);--cb-line:rgb(193 232 255/.12);--cb-link:#C1E8FF;--cb-grad:linear-gradient(135deg,#7DA0CA 0%,#5483B3 48%,#052659 100%)}
@@ -11036,7 +11038,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.69';
+const APP_VERSION='59.70';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
