@@ -216,3 +216,22 @@ Creado el 20-oct-2026. Si el dueño decide algo nuevo de diseño, se agrega aqu�
 - una sola entrada por función;
 - animación de 160–260 ms con la curva `(.22,1,.36,1)`;
 - probar a 390 y 1280.»
+
+## Espaciado de formularios (dueño, 29-oct-2026) — igual en los 3 proyectos
+Viene del reel «Stop guessing your UI form spacing» (`DfFFnkBOllG`). El dueño pidió volverlo regla.
+Idea: **lo que va junto queda pegado; lo que es de otro grupo se separa más.** No se adivinan espacios.
+
+| Entre… | Espacio |
+|---|---|
+| Título de la ventana o tarjeta y su texto de ayuda | 8 px |
+| Nombre del campo (etiqueta) y la cajita | 8 px |
+| La cajita y su texto de ayuda o error debajo | 4 px |
+| Un campo y el siguiente | 20 px |
+| Un grupo y otro (encabezado → campos → botón principal → otras opciones) | 24 px |
+| Botones o filas de una misma lista (por ejemplo «Continuar con…») | 8 px |
+| Borde de la tarjeta a su contenido, en la PC | 48 px arriba y abajo · 40 px a los lados |
+| Borde de la tarjeta a su contenido, en el celular (390 px) | 24 px arriba y abajo · 16 px a los lados |
+
+- Se suma a las otras medidas: campos de 48 px de alto con letra de 16 px, botón principal de 54 px y todo lo que se toca de 44 px o más.
+- Los formularios nuevos nacen así. Los que ya existen se corrigen cuando se tocan, sin rediseños masivos (regla anti-FOUC).
+- Al entregar, se miden los espacios con Playwright a 390 y 1280 px y se anotan en la bitácora.
