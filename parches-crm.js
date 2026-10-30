@@ -700,7 +700,8 @@ function prosCrearCliente(id){
   const set=(k,v)=>{const e=document.getElementById(k);if(e&&v)e.value=v};
   set('cNom',p.nombre);set('cCed',p.cedula);set('cWA',waNum(p.telefono)||p.telefono);set('cTel',p.telefono);
   try{const a=document.getElementById('cARS');if(a&&p.aseguradora&&[...a.options].some(o=>o.value===p.aseguradora))a.value=p.aseguradora}catch(e){}
-  try{const ag=document.getElementById('cAgente');if(ag&&p.asignado_agente_id&&[...ag.options].some(o=>o.value===String(p.asignado_agente_id)))ag.value=String(p.asignado_agente_id)}catch(e){}
+  try{const ag=document.getElementById('cAgt');if(ag&&p.asignado_agente_id&&[...ag.options].some(o=>o.value===String(p.asignado_agente_id)))ag.value=String(p.asignado_agente_id)}catch(e){}
+  try{if(typeof nxChipsSync==='function')nxChipsSync('mCli')}catch(e){} // 59.73: era #cAgente (no existe); las fichas muestran lo precargado
   S.vincularPendiente={prospectoId:p.id,antes:new Set(clientes().map(c=>String(c.id)))};
   toastFn('info','Completa y guarda el cliente','Al guardarlo, el prospecto pasa a Emitida automáticamente');
 }
