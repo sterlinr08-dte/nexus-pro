@@ -112,7 +112,15 @@ div.loading::after{opacity:.6}
   const TELEFONOS = ['cTel', 'cWA', 'prTel', 'prcTel', 'prcTelAlt', 'prcR1T', 'prcR2T', 'prcFT'];
   const CEDULAS = ['prCed', 'prcCed', 'prcFC'];
   function fmtTel(v) {
-    let d = String(v || '').replace(/\D/g, '');
+    const s = String(v || '');
+    // 59.75 · otro país (dueño, 30-oct-2026): si empieza por «+» o «00» NO se aplica la máscara de RD. Se deja
+    // «+código número» hasta 15 dígitos (E.164); el «00» se convierte en «+» al escribir. nxTelCC vive en index.html.
+    if (/^\s*(\+|00)/.test(s)) {
+      let d = s.replace(/\D/g, ''); if (/^\s*00/.test(s)) d = d.slice(2); d = d.slice(0, 15);
+      const cc = typeof nxTelCC === 'function' && d.length > 3 ? nxTelCC(d) : 0;
+      return '+' + (cc ? d.slice(0, cc) + ' ' + d.slice(cc) : d);
+    }
+    let d = s.replace(/\D/g, '');
     let pre = '';
     if (d.length === 11 && d[0] === '1') { pre = '1 '; d = d.slice(1); }
     d = d.slice(0, 10);
