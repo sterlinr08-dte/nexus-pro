@@ -20,6 +20,7 @@
 - **Skills:** leer `HERRAMIENTAS.md` al empezar cada pedido y usar la skill que corresponda sin esperar a que la nombre. Para diseño, leer primero `DESIGN.md` y `docs/REFERENCIAS-DISENO.md`.
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
+- **Todo «smart» (dueño, 30-oct-2026):** cada pantalla que se toque debe (1) pensar por el usuario (valores puestos, autocompletar, formatos solos, avisos antes de fallar), (2) verse elegante y moderna y (3) funcionar igual en iPhone y PC. Detalle en `DESIGN.md`.
 
 ## 3. Qué tenemos funcionando (producción = **59.74**, publicada en `main` con el PR #427, 30-oct-2026)
 | Módulo | Estado / versión |
