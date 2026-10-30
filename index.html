@@ -7055,6 +7055,85 @@ html:not(.nx-pb-off) body.tema-premium #v-crm :is(button.primary,.nxCrmLink.prim
 html:not(.nx-pb-off) body.tema-premium #v-crm :is(button,.nxCrmLink,#nxCrmRefrescar){border-color:rgba(125,160,202,.32)!important}
 html.nx-ig.nx-pane:not(.nx-pb-off) body.tema-premium #nxIG .nxIG-prox{background:linear-gradient(160deg,rgba(84,131,179,.30),rgba(5,38,89,.40))!important;border-color:rgba(125,160,202,.38)!important;box-shadow:var(--pn-depth),0 18px 40px -26px rgba(2,16,36,.8)!important}
 </style>
+<!-- ═══ 59.71 ESPACIADO DE FORMULARIOS — PILOTO EN 5 VENTANAS (dueño, 29/30-oct-2026: «prueba con 5 primero») ═══
+     Regla de DESIGN.md «Espaciado de formularios»: título → ayuda 8 · etiqueta → cajita 8 · cajita → ayuda 4 ·
+     campo → campo 20 · grupo → grupo 24 · botones de una lista 8 · borde interior 24/16 en celular y 48/40 en PC.
+     Solo cambia ESPACIOS (márgenes, rellenos, separaciones) y el alto del enlace «Historial» (44 px). No toca colores,
+     vidrio, ids, funciones ni otros formularios. Ventanas: #mAbono (Registrar pago), #mCli (Nuevo/Editar cliente),
+     #mUsuario, #mAgente, #mEmp. Ids repetidos 6 veces: gana a #nxCobroPane/#nxFichaPane/#nxP4Pane/#nxP5Pane (4) y a
+     #nxAdelPane (5), que vive más abajo en el <body>.
+     CÓMO APAGARLA: NX_FESP=false aquí abajo (todos) o en un equipo localStorage.setItem('nx_fesp_off','1'). -->
+<script id="nxFormEspaciadoOn">var NX_FESP=true;try{if(!NX_FESP||localStorage.getItem('nx_fesp_off')==='1')document.documentElement.classList.add('nx-fesp-off');}catch(e){if(!NX_FESP)document.documentElement.classList.add('nx-fesp-off');}</script>
+<style id="nxFormEspaciado">
+/* ── 1) Ventanas sencillas: Usuario, Agente, Empresa ── */
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .modal{padding:48px 40px!important}
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .mt{margin:0 0 24px!important}
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .gf2{row-gap:20px!important;margin:0!important}
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .fr{margin:0!important}
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .fr>label{margin:0 0 8px!important}
+html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .fe{margin:24px 0 0!important;gap:8px!important}
+@media (max-width:600px){
+  html:not(.nx-fesp-off) :is(#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario#mUsuario,#mAgente#mAgente#mAgente#mAgente#mAgente#mAgente,#mEmp#mEmp#mEmp#mEmp#mEmp#mEmp) .modal{padding:24px 16px!important}
+}
+/* ── 2) Registrar pago (#mAbono): cabecera y pie fijos, así que el borde va en ellos ── */
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{padding:0 40px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .mt{margin:0 -40px 8px!important;padding:48px 40px 0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .mt::after{content:"";position:absolute;left:0;right:0;top:100%;height:16px;background:linear-gradient(var(--cb-sheet),transparent);pointer-events:none}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono #abonoI{margin:0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .aboCliTop{margin:0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .pgSec{margin:24px 0 0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .aboLblRow{align-items:flex-end!important;margin:0 0 8px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .aboLblRow .aboLbl{margin:0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .aboLnk{min-height:44px!important;margin-bottom:-8px!important} /* 44 de toque sin empujar la fila: queda centrado con «Monto» */
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .pgMntWrap{margin:0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono :is(.pgSecT,.pgSec>.fr>label,.pgAdel>label){margin-bottom:8px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .pgSec>.fr{margin:0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .pgSec>.fr~.fr{margin-top:20px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .pgSec .nxOptGrid{margin-top:0!important;padding-top:0!important;gap:8px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .aboNote{margin-top:4px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono :is(#aDirectoWrap,#nxBaucheWrap){margin:20px 0 0!important} /* cuenta de destino y comprobante: campo → campo 20 */
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono :is(#aDirectoWrap,#nxBaucheWrap)>label,html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono #aDirectoWrap strong{margin-bottom:8px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .fe{margin:12px -40px 0!important;padding:12px 40px calc(48px + env(safe-area-inset-bottom,0px))!important;gap:8px!important}
+@media (max-width:600px){
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{padding:0 16px!important}
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .mt{margin:0 -16px 8px!important;padding:24px 16px 0!important}
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .fe{margin:12px -16px 0!important;padding:12px 16px calc(24px + env(safe-area-inset-bottom,0px))!important}
+}
+/* ── 3) Nuevo / Editar cliente (#mCli): cabecera y pie fijos ── */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal{padding:0 40px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .mt{margin:0 -40px 24px!important;padding:48px 40px 0!important;min-height:0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .mt::after{content:"";position:absolute;left:0;right:0;top:100%;height:16px;background:linear-gradient(var(--cb-sheet),transparent);pointer-events:none}
+/* títulos de sección: 24 arriba (otro grupo) y 8 hasta lo suyo */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal>.nxFcSec{margin:24px 0 8px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .mt+.nxFcSec{margin-top:0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .gf2>.fr:has(>.nxFcSec){margin:4px 0 -12px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .gf2>.fr>.nxFcSec{margin:0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #eChips{margin:0!important}
+/* campos: etiqueta → cajita 8; campo → campo 20 */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli :is(.fr>label,#cDeudaLbl){margin:0 0 8px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .fr>.nxOptGrid{margin-top:0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .gf2{row-gap:20px!important;margin:0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #eChips~.gf2{margin-top:20px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal>.nxFcSec+.gf2:not(#_fe){margin-top:0!important} /* título de sección → sus campos: 8 */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .frow{gap:20px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal>.fr+.fr{margin-top:20px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #cDeudaHint{margin-top:4px!important}
+/* cajas (estado y proceso, precio especial): otro grupo → 24 */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal>.nxFcCaja{margin:24px 0 0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli :is(.nxFcCaja+.fr,.nxFcCaja+div){margin-top:24px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .nxFcCaja:not(.nxFcPleg) .fr{margin:20px 0 0!important}
+/* dependientes: fila de alta + lista de fichas (8) */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal>div:has(>#dN){margin:0!important;gap:8px!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #depLM{margin:8px 0 0!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #depLM:empty{display:none!important}
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli #dR{font-size:16px!important} /* letra de campo 16 (estaba en 15) */
+html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .fe{margin:12px -40px 0!important;padding:12px 40px calc(48px + env(safe-area-inset-bottom,0px))!important}
+@media (max-width:600px){
+  html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .modal{padding:0 16px!important}
+  html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .mt{margin:0 -16px 24px!important;padding:24px 16px 0!important}
+  html:not(.nx-fesp-off) #mCli#mCli#mCli#mCli#mCli#mCli .fe{margin:12px -16px 0!important;padding:12px 16px calc(24px + env(safe-area-inset-bottom,0px))!important}
+}
+</style>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -11038,7 +11117,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.70';
+const APP_VERSION='59.71';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
