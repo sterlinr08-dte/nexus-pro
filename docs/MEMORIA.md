@@ -21,7 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 
-## 3. Qué tenemos funcionando (producción = **59.69**, publicada el 27-oct-2026)
+## 3. Qué tenemos funcionando (producción = **59.70**, publicada en `main` con el PR #420, 27-oct-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -80,8 +80,8 @@
 - **Regla firme:** no se construye nada para ocultar ventas, vender sin factura ni usar la proforma o la «venta interna» para descontar inventario sin facturar (evasión fiscal). Se ofrecen alternativas legales.
 
 ## 7. Pendientes y esperas
-- **Espaciado de formularios — piloto 59.71** (rama `claude/espaciado-piloto`, SIN publicar, 29-oct): capa `style#nxFormEspaciado` en Registrar pago, Ficha del cliente, Usuario, Agente y Empresa; las 5 «cumple» a 390 y 1280. Apagar con `nx_fesp_off='1'`. Falta que el dueño lo vea (las ventanas crecen) y diga «publícalo». Bitácora `2026-10-29-2120`.
-- **Tema «Premium Blue»:** 59.69 publicado (PR #418); 59.70 «como la imagen» (fondo degradado cielo → azul rey → marino; dueño eligió esa opción el 27-oct), PR sin publicar. Paleta #021024 · #052659 · #5483B3 · #7DA0CA · #C1E8FF. Capa `style#nxPremiumBlue`; apagar con `nx_premium_blue_off`.
+- **Espaciado de formularios — 59.72** (rama `claude/espaciado-piloto`, SIN publicar ni PR, 29-oct): el dueño aprobó el piloto 59.71 («Me gusta así, corrige lo de recibido por»). 59.72 corrige «Recibido por» en Registrar pago y extiende la capa `style#nxFormEspaciado` a 52 formularios que cumplen a 390 y 1280. Pendientes: 5 con motivo (casilla del login, botón partido del artículo POS, líneas del asiento POS, examen físico del consultorio y Configuración en PC), 15 que no abren con datos de prueba y 13 «por código», que no se tocaron (cobrar venta, caja, rifas y WhatsApp). Apagar con `nx_fesp_off='1'`. Falta que el dueño lo vea y diga «publícalo». Bitácoras `2026-10-29-2120` y `2026-10-29-2245`.
+- **Tema «Premium Blue»:** 59.69 publicado (PR #418); 59.70 «como la imagen» (fondo degradado cielo → azul rey → marino; dueño eligió esa opción el 27-oct) **publicado en `main` (PR #420)**. Paleta #021024 · #052659 · #5483B3 · #7DA0CA · #C1E8FF. Capa `style#nxPremiumBlue`; apagar con `nx_premium_blue_off`.
 - **Animación «materializar» (59.68, publicada, PR #416):** `parches-nx-materializar.js`; apagar con `nx_materializar_off`. Después, vidrio sobre foto pantalla por pantalla (referencia «Glassy Dashboard V5»; demo https://claude.ai/artifact/2TQ1V4jnJy4JRjHWRVwnbj).
 - **Factura electrónica (e-CF, MSeller) — PUBLICADA en 59.63 (26-oct, dueño: «Publícalo en NEXUS PRO»):** emisión E31/E32 desde la caja con QR, seguimiento cada 15 min en lote, nota de crédito E34 y nota de débito E33. Edge `ecf-mseller` v10. No se ve en la caja hasta agregar una secuencia E en Ajustes. Fecha límite DGII para pequeños: 15-nov-2026. **Bloqueo:** MSeller exige subir el certificado .p12 incluso para probar. Plan: `docs/planes/2026-10-26-ecf-mseller.md`.
   - **En pendiente por orden del dueño (26-oct):** botón «Reemitir» para e-CF rechazadas (número nuevo: el rechazado cuenta como usado), «Corregir factura» (E34 total + factura nueva en un paso), corrección de texto (código 2), ANECF de números no usados, nota de débito a crédito. La DGII no permite borrar un e-CF: solo corregir con notas.

@@ -1,0 +1,796 @@
+{
+ "version": "59.72",
+ "fecha": "2026-10-30T02:45:20.620Z",
+ "regla": "DESIGN.md «Espaciado de formularios» ±2 px, medido a 390 y 1280",
+ "conteo_antes": {
+  "no cumple": 56,
+  "sin campos": 1,
+  "no medible": 15,
+  "casi": 2,
+  "no cumple (por código)": 13
+ },
+ "conteo_despues": {
+  "no cumple": 5,
+  "cumple": 52,
+  "sin campos": 1,
+  "no medible": 15,
+  "casi": 1,
+  "por código (sin tocar)": 13
+ },
+ "formularios": [
+  {
+   "formulario": "Login (Iniciar sesión)",
+   "donde": "index.html #loginScreen .lbox",
+   "antes": "no cumple",
+   "despues": "no cumple",
+   "despues_390": "no cumple",
+   "despues_1280": "no cumple",
+   "fallas_restantes": [
+    "390 Todo lo tocable ≥ 44 × 44 px: 1 de 4 más pequeños (p. ej. «INPUT» 20×20)",
+    "1280 Todo lo tocable ≥ 44 × 44 px: 1 de 4 más pequeños (p. ej. «INPUT» 20×20)"
+   ],
+   "motivo": "pendiente: la casilla «Recordarme» mide 20×20 (toda la fila de 44 px la activa por label for). Agrandar la casilla cambia su dibujo; se deja al dueño.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nuevo cliente / Ficha del cliente",
+   "donde": "index.html #mCli (capa style#nxFichaPane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Registrar pago (Cobro)",
+   "donde": "index.html #mAbono (capas style#nxCobroPane, #nxAdelPane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nueva empresa",
+   "donde": "index.html #mEmp (capa style#nxP4Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nuevo agente",
+   "donde": "index.html #mAgente (capa style#nxP4Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nuevo asiento (Seguros)",
+   "donde": "index.html #mAsiento (capa style#nxP5Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Usuario (nuevo/editar)",
+   "donde": "index.html #mUsuario (capa style#nxP5Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Inhabilitar cliente",
+   "donde": "index.html #mInhab (capa style#nxP5Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Documentos del cliente",
+   "donde": "index.html #mDocs (capa style#nxP4Pane)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Respaldo (Backup)",
+   "donde": "index.html #mBackup",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Historial de cobros",
+   "donde": "index.html #mHistCobros (capa style#nxCusPane)",
+   "antes": "sin campos",
+   "despues": "sin campos",
+   "motivo": "no es formulario (lista sin campos).",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Cambiar contraseña",
+   "donde": "index.html (abrirCambiarPwd)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Cambiar usuario de acceso",
+   "donde": "index.html (abrirCambiarLogin)",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Transferir a otro agente",
+   "donde": "parches-seguros-base.js #nxModalTransferAgenteV2",
+   "antes": "no cumple",
+   "despues": "casi",
+   "despues_390": "cumple",
+   "despues_1280": "casi",
+   "fallas_restantes": [
+    "1280 Letra dentro de los campos: 16 px (va de 16 a 20)"
+   ],
+   "motivo": "casi: el monto (campo protagonista) lleva letra de 20 px en PC; la regla pide 16 y es más grande, no más chica.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Recibir entrega del agente",
+   "donde": "parches-seguros-base.js #nxModalEntregaAdmin",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Rechazar transferencia",
+   "donde": "parches-seguros-base.js #nxTransRech",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Configurar consulta de cobertura",
+   "donde": "parches-seguros-base.js #nxModalConfigCobertura",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Configurar notificaciones",
+   "donde": "parches-seguros-base.js #nxModalNotif",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nueva cuenta bancaria (Mis cuentas)",
+   "donde": "parches-seguros-base.js #nxFormCuenta",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nuevo destinatario",
+   "donde": "parches-seguros-base.js #nxFormDestModal",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nuevo egreso (Contabilidad)",
+   "donde": "parches-seguros-base.js #nxFormEgreso",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Cierre de caja (Seguros)",
+   "donde": "parches-seguros-base.js #nx-cierre-overlay",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nueva tarea (CRM)",
+   "donde": "parches-crm.js #nxOpsModal",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Registrar actividad (CRM)",
+   "donde": "parches-crm.js",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Nueva novedad del cliente",
+   "donde": "parches-clientes-novedades.js #nxNovOverlay",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "WhatsApp: nueva plantilla",
+   "donde": "parches-whatsapp-inbox.js #nxWaNuevaPlantillaOverlay",
+   "antes": "casi",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "WhatsApp: plantillas fácil",
+   "donde": "parches-whatsapp-plantillas-facil.js #nxWaTplOverlay",
+   "antes": "casi",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "WhatsApp: automatizaciones",
+   "donde": "parches-whatsapp-automatizaciones.js #nxWaAutoOverlay",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no medible y pendiente: letra 8,5–10 px en su CSS propio; no se tocó (excepción WhatsApp).",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "WhatsApp: reglas inteligentes",
+   "donde": "parches-whatsapp-reglas-inteligentes.js #nxWaRulesOverlay",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no medible y pendiente: letra 8,5–10 px en su CSS propio; no se tocó (excepción WhatsApp).",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "WhatsApp: validar pagos",
+   "donde": "parches-whatsapp-pagos-validacion.js #nxWaPayValOverlay",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no medible y pendiente: letra pequeña y pantalla de dinero; no se tocó.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Préstamos: nuevo cliente",
+   "donde": "parches-financiamiento.js #nxPrCliForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Préstamos: nuevo préstamo",
+   "donde": "parches-financiamiento.js #nxPrModal",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Préstamos: configuración",
+   "donde": "parches-financiamiento.js #nxPrCfg",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Vehículos: nuevo vehículo",
+   "donde": "parches-vehiculos.js #nxVhModal",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Vehículos: configuración",
+   "donde": "parches-vehiculos.js #nxVhCfg",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo producto",
+   "donde": "parches-pos.js #nxPosProd",
+   "antes": "no cumple",
+   "despues": "no cumple",
+   "despues_390": "casi",
+   "despues_1280": "no cumple",
+   "fallas_restantes": [
+    "390 Botones de una misma fila/lista: 0 px",
+    "1280 Últimos campos → botón principal (grupo a grupo): 34 px",
+    "1280 Botones de una misma fila/lista: 0 px"
+   ],
+   "motivo": "excepción: «Guardar artículo» es un botón partido (Guardar + flecha pegados, 0 px a propósito); en PC el hueco final mide 34 por la columna de resumen a la derecha.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo cliente",
+   "donde": "parches-pos.js #nxEntForm/#nxPosCli",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo proveedor",
+   "donde": "parches-pos.js #nxPosProvForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: abrir caja",
+   "donde": "parches-pos.js",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: cerrar caja / arqueo",
+   "donde": "parches-pos.js #nxPosCierre",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: movimiento de caja",
+   "donde": "parches-pos.js #nxPosMov",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: cobrar venta",
+   "donde": "parches-pos.js #nxPosPago",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "excluido por orden: pantalla de dinero, primero medir en vivo. No se tocó.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva cuenta contable",
+   "donde": "parches-pos.js #nxCtaForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo asiento",
+   "donde": "parches-pos.js #nxAsForm",
+   "antes": "no cumple",
+   "despues": "no cumple",
+   "despues_390": "no cumple",
+   "despues_1280": "no cumple",
+   "fallas_restantes": [
+    "390 Campo → campo siguiente: 8 px (va de 8 a 20)",
+    "1280 Campo → campo siguiente: 8 px (va de 8 a 20)"
+   ],
+   "motivo": "excepción de lista: las líneas Debe/Haber son filas de una misma lista y van a 8 px (regla de listas); el medidor las cuenta como campo → campo.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: registrar gasto",
+   "donde": "parches-pos.js #nxGastoForm",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva cotización",
+   "donde": "parches-pos.js #nxCotForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo almacén",
+   "donde": "parches-pos.js #nxAlmForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva oportunidad CRM",
+   "donde": "parches-pos.js #nxCrmForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo empleado",
+   "donde": "parches-pos.js #nxEmpForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva reparación",
+   "donde": "parches-pos.js #nxRepM",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo financiamiento",
+   "donde": "parches-pos.js #nxFinM",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: configuración financiamiento",
+   "donde": "parches-pos.js #nxFinM",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo apartado",
+   "donde": "parches-pos.js #nxApaM",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: crear usuario de staff",
+   "donde": "parches-pos.js #nxStaffM",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva secuencia NCF",
+   "donde": "parches-pos.js #nxSecNew",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo rol",
+   "donde": "parches-pos.js #nxAccForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo vendedor",
+   "donde": "parches-pos.js #nxVendForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nuevo NCF",
+   "donde": "parches-pos.js #nxNcfForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nota de débito",
+   "donde": "parches-pos.js #nxNdForm",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: devolución / nota de crédito",
+   "donde": "parches-pos.js #nxDevForm",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva entidad",
+   "donde": "parches-pos.js #nxEntForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: categorías",
+   "donde": "parches-pos.js #nxPosCats",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nivel de precio",
+   "donde": "parches-pos.js #nxPfNivelM",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: nueva compra",
+   "donde": "parches-pos.js",
+   "antes": "no medible",
+   "despues": "no medible",
+   "motivo": "no abre con datos de prueba (necesita caja abierta, venta o registro real); no se le aplica la regla a ciegas",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Rifas: nueva rifa",
+   "donde": "parches-rifas.js #nxRifaForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Rifas: cuenta de cobro",
+   "donde": "parches-rifas.js #nxCtaForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Rifas: combo / paquete",
+   "donde": "parches-rifas.js #nxPaqForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Rifas: vendedor",
+   "donde": "parches-rifas.js #nxVendForm",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Consultorio: nueva cita",
+   "donde": "parches-panel-dueno.js",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Consultorio: nuevo paciente",
+   "donde": "parches-panel-dueno.js",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Consultorio: nueva consulta",
+   "donde": "parches-panel-dueno.js",
+   "antes": "no cumple",
+   "despues": "no cumple",
+   "despues_390": "no cumple",
+   "despues_1280": "no cumple",
+   "fallas_restantes": [
+    "390 Cajita → ayuda/error debajo: 20 px",
+    "390 Etiquetas en minúscula normal (no MAYÚSCULAS): 12 de 25 en MAYÚSCULAS (p. ej. «ESTADO GENERAL»)",
+    "1280 Cajita → ayuda/error debajo: 20 px",
+    "1280 Campo → campo siguiente: 44 px (va de 8 a 44)",
+    "1280 Etiquetas en minúscula normal (no MAYÚSCULAS): 12 de 25 en MAYÚSCULAS (p. ej. «ESTADO GENERAL»)"
+   ],
+   "motivo": "excepción de lista: el examen físico son 13 filas de una lista (8 px) con etiquetas escritas en MAYÚSCULAS en el código; el resto del formulario cumple.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Panel dueño: nueva empresa SaaS",
+   "donde": "parches-panel-dueno.js",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "Configuración (pantalla)",
+   "donde": "index.html #v-config (cfgPanel1..14, capa style#nxP5Pane)",
+   "antes": "no cumple",
+   "despues": "no cumple",
+   "despues_390": "cumple",
+   "despues_1280": "no cumple",
+   "fallas_restantes": [
+    "1280 Borde interior de la ventana (1280 px): arriba 0 · izq. 0 · der. 0 px",
+    "1280 Campo → campo siguiente: 44 px (va de 20 a 44)"
+   ],
+   "motivo": "no aplica en PC: es una pantalla con dos tarjetas lado a lado (cada tarjeta ya tiene 48/40 por dentro) y subsecciones con título (24 + título + 8); a 390 cumple.",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: ajuste de inventario",
+   "donde": "parches-pos.js #nxInvAjuste (por código en la auditoría)",
+   "antes": "no cumple",
+   "despues": "cumple",
+   "despues_390": "cumple",
+   "despues_1280": "cumple",
+   "apagado_igual_a_main": true
+  },
+  {
+   "formulario": "POS: entrada/salida de efectivo (movimiento de caja)",
+   "donde": "parches-pos.js #nxPosMov (nxPosMovimiento)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "POS: abonar a factura de proveedor",
+   "donde": "parches-pos.js #nxCxpAb (nxPosCxpAbonar)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "POS: transferencia / despacho entre almacenes",
+   "donde": "parches-pos.js #nxAlmTransf (abrirTransfer)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "POS: generar nómina",
+   "donde": "parches-pos.js #nxNomForm (abrirNomina)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "POS: entregar y cobrar reparación",
+   "donde": "parches-pos.js #nxRepEnt (nxRepEntregar)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "POS: plan de financiamiento",
+   "donde": "parches-pos.js #nxFinM (nxFinPlan / nxFinNuevo)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "Rifas: vender boleto",
+   "donde": "parches-rifas.js #nxRvForm (nxRifaVender)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "Rifas: editar boleto",
+   "donde": "parches-rifas.js #nxBolEdit (nxRifaEditarBoleto)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "Rifas: cambiar número",
+   "donde": "parches-rifas.js #nxCambNum (nxRifaCambiarNum)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "Rifas: rechazar pago",
+   "donde": "parches-rifas.js #nxRifaRech (nxRifaRechazar)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "Préstamos: pedir corrección de solicitud",
+   "donde": "parches-financiamiento.js #nxPrCorr (nxPrSolicitudPedirCorreccion)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "misma pieza .overlay>.modal (.mt/.fr/.fe) que las demás, pero no se pudo abrir sin datos reales (caja abierta, venta, boleto…); no se le aplica la regla a ciegas: queda para medirla en vivo"
+  },
+  {
+   "formulario": "WhatsApp: reglas inteligentes (nueva regla)",
+   "donde": "parches-whatsapp-reglas-inteligentes.js #nxWaRulesOverlay (CSS en style#nxWaRulesCss)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "no medible y pendiente: letra 8,5–10 px en su CSS propio; no se tocó (excepción WhatsApp)."
+  },
+  {
+   "formulario": "POS: cobrar venta (pago en caja)",
+   "donde": "parches-pos.js #nxPosPago (nxPosCobrar)",
+   "antes": "no cumple (por código)",
+   "despues": "por código (sin tocar)",
+   "motivo": "excluido por orden: pantalla de dinero, primero medir en vivo. No se tocó."
+  }
+ ]
+}
