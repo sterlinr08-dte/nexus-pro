@@ -6419,7 +6419,7 @@ html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-i
     previo=document.activeElement;
     setTimeout(()=>{
       // Teléfonos y cédula guardados se muestran con su formato (809-555-1234 · 000-0000000-0); no cambia el dato
-      try{['cWA','cTel','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e&&e.value&&nxTelRD(e.value))e.value=nxTelFmt(e.value);});
+      try{['cWA','cTel','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e&&e.value&&/^(rd|intl)$/.test(nxTelNorm(e.value).tipo))e.value=nxTelFmt(e.value);});
         const c=document.getElementById('cCed');if(c&&nxCedDig(c.value).length===11)c.value=nxCedFmt(c.value);}catch(e){}
       foto=estado();
       const md=ov().querySelector('.modal');
@@ -6453,7 +6453,11 @@ html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-i
   document.addEventListener('focusout',e=>{
     const t=e.target;if(!t||!t.id||!abierta())return;
     if(t.id==='cCed'&&typeof nxCedFmt==='function'){const d=nxCedDig(t.value);if(d.length===11)t.value=nxCedFmt(d);}
-    if(/^(cWA|cTel|cRefWa)$/.test(t.id)&&typeof nxTelRD==='function'&&nxTelRD(t.value))t.value=nxTelFmt(t.value);
+    if(/^(cWA|cTel|cRefWa)$/.test(t.id)&&typeof nxTelNorm==='function'&&t.value){
+      const n=nxTelNorm(t.value);
+      if(n.tipo==='rd'||n.tipo==='intl')t.value=nxTelFmt(t.value);
+      else if(n.tipo==='fueraRD'&&t.dataset.nxAvisado!==n.d){t.dataset.nxAvisado=n.d;t.setAttribute('aria-invalid','true');try{toast('warn',NX_TEL_FUERA[0],NX_TEL_FUERA[1]);}catch(e){}return;} // 59.75: avisa antes de Guardar
+    }
     if(t.getAttribute('aria-invalid'))t.removeAttribute('aria-invalid');
   });
   function init(){
@@ -8966,12 +8970,12 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
     <div class="gf2">
       <div class="fr"><label for="cNom">Nombre completo *</label><input type="text" id="cNom" placeholder="Nombres y apellidos" autocomplete="name" autocapitalize="words" enterkeyhint="next" required aria-required="true"/></div>
       <div class="fr"><label for="cCed">Cédula o RNC</label><input type="text" id="cCed" placeholder="000-0000000-0" inputmode="numeric" autocomplete="off" maxlength="13" enterkeyhint="next"/></div>
-      <div class="fr"><label for="cWA">WhatsApp *</label><input type="tel" id="cWA" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="16" enterkeyhint="next" required aria-required="true"/></div>
-      <div class="fr"><label for="cTel">Teléfono</label><input type="tel" id="cTel" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="16" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cWA">WhatsApp *</label><input type="tel" id="cWA" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="20" enterkeyhint="next" required aria-required="true"/></div>
+      <div class="fr"><label for="cTel">Teléfono</label><input type="tel" id="cTel" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="20" enterkeyhint="next"/></div>
       <div class="fr"><label for="cEmail">Correo</label><input type="email" id="cEmail" placeholder="nombre@correo.com" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"/></div>
       <div class="fr" style="grid-column:1/-1"><div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:6px;letter-spacing:.3px">REFERENCIA DEL CLIENTE</div></div>
       <div class="fr"><label for="cRef">Referencia o apodo</label><input type="text" id="cRef" placeholder="Ej.: Doña Ana" autocomplete="off" enterkeyhint="next"/></div>
-      <div class="fr"><label for="cRefWa">WhatsApp de la referencia</label><input type="tel" id="cRefWa" placeholder="829-555-1234" inputmode="tel" autocomplete="off" maxlength="16" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cRefWa">WhatsApp de la referencia</label><input type="tel" id="cRefWa" placeholder="829-555-1234" inputmode="tel" autocomplete="off" maxlength="20" enterkeyhint="next"/></div>
       <div class="fr"><label for="cPlan" id="cPlanLbl">Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select><div id="cPlanChips"></div></div>
       <div class="fr"><label for="cAgt" id="cAgtLbl">Agente</label><select id="cAgt"></select><div id="cAgtChips"></div></div>
       <div class="fr"><label for="cNCF" id="cNCFLbl">Tipo de comprobante (NCF)</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select><div id="cNCFChips"></div></div>
@@ -11683,7 +11687,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.74';
+const APP_VERSION='59.75';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -17849,7 +17853,8 @@ function actualizarProgreso(){
 // quita todo lo que no sea dígito; si trae 10 dígitos (sin código de país) le
 // antepone el "1" de RD; devuelve '' si quedó demasiado corto para ser válido.
 // Así TODOS los enlaces wa.me funcionan igual, sea el número viejo (10) o nuevo (11).
-function nxWa(num){let d=String(num||'').replace(/\D/g,'');if(d.length===10)d='1'+d;return d.length>=11?d:'';}
+// 59.75: si viene con «+» (otro país) ya trae su código; no se le antepone el 1 de RD y se acepta desde 8 dígitos (E.164).
+function nxWa(num){const s=String(num||'').trim();let d=s.replace(/\D/g,'');if(s[0]==='+')return d.length>=8&&d.length<=15?d:'';if(d.length===10)d='1'+d;return d.length>=11?d:'';}
 // ── El precio de "Editar cliente" es SOLO la plantilla para las PRÓXIMAS facturas ──
 // Un solo lugar hace cada cosa, para no confundirse: este campo (precio_titular/precio_dep del
 // cliente) define con qué precio se van a GENERAR las facturas futuras (manual y por el cron del
@@ -17878,7 +17883,26 @@ function nxCedFmt(v){const d=nxCedDig(v);return d.length===11?d.slice(0,3)+'-'+d
 // Teléfono / WhatsApp de RD: 10 dígitos que empiezan por 809, 829 u 849 (acepta +1 / 1 delante).
 // Devuelve los 10 dígitos o '' si no es un número de RD.
 function nxTelRD(v){let d=String(v||'').replace(/\D/g,'');if(d.length===11&&d[0]==='1')d=d.slice(1);return /^(809|829|849)\d{7}$/.test(d)?d:'';}
-function nxTelFmt(v){const d=nxTelRD(v);return d?d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6):String(v||'').trim();}
+// 59.75 · Teléfonos «smart» (dueño, 30-oct-2026: clientes con WhatsApp de otro país). Un solo lugar decide qué es cada número:
+//   rd      → 10 dígitos 809/829/849 (acepta +1 / 1 delante). Se guarda como siempre.
+//   intl    → otro país: escrito con «+» o «00», o con más de 10 dígitos sin ser de RD. De 8 a 15 dígitos (E.164); se guarda «+código+número».
+//   fueraRD → 10 dígitos que no empiezan por 809/829/849 y sin «+»: no se bloquea a ciegas, se pide escribirlo con +código.
+//   mal     → lo demás (muy corto, muy largo o un 809/829/849 con dígitos de más o de menos).
+function nxTelNorm(v){
+  const s=String(v||'').replace(/[\s().-]+/g,'');let d=s.replace(/\D/g,'');
+  const explicito=s[0]==='+'||/^00\d/.test(s);if(/^00\d/.test(s))d=d.slice(2);
+  const rd=nxTelRD(d);if(rd)return {tipo:'rd',d10:rd,d:'1'+rd};
+  if(explicito)return d.length>=8&&d.length<=15?{tipo:'intl',d,e164:'+'+d}:{tipo:'mal',d};
+  if(d.length===10)return {tipo:'fueraRD',d};
+  if(d.length>10&&d.length<=15&&!/^1?(809|829|849)/.test(d))return {tipo:'intl',d,e164:'+'+d};
+  return {tipo:'mal',d};
+}
+// Largo del código de país (E.164): 1 y 7 son de un dígito; estos de dos; el resto de tres.
+function nxTelCC(d){if(/^[17]/.test(d))return 1;return /^(20|27|3[0-46-9]|4[013-9]|5[1-8]|6[0-6]|8[1246]|9[0-58])/.test(d)?2:3;}
+// Como se ve: RD «809-555-1234»; otro país «+34 612345678» (espacio tras el código); lo demás, tal cual.
+function nxTelFmt(v){const n=nxTelNorm(v);if(n.tipo==='rd')return n.d10.slice(0,3)+'-'+n.d10.slice(3,6)+'-'+n.d10.slice(6);if(n.tipo==='intl')return '+'+n.d.slice(0,nxTelCC(n.d))+' '+n.d.slice(nxTelCC(n.d));return String(v||'').trim();}
+const NX_TEL_MSG='Escriba 10 dígitos de RD (809, 829 u 849) o, si es de otro país, el número con +código (ej. +1 305…).';
+const NX_TEL_FUERA=['Número fuera de RD','En RD empieza por 809, 829 u 849. Si es de otro país, escríbalo con +código (ej. +1 305…).'];
 function nxCorreoOk(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||'').trim());}
 // Si el servidor rechaza una columna que no existe, devuelve su nombre (PostgREST PGRST204 o Postgres 42703).
 function nxColumnaFaltante(e){
@@ -17901,24 +17925,40 @@ async function guardarCli(){
   if(_nxCliGuardando){toast('info','Guardando…','Espere a que termine el guardado anterior.');return;}
   const $v=id=>{const e=document.getElementById(id);return e?String(e.value||'').trim():'';};
   const cliAntes=editCliId?ST.clientes.find(x=>x.id===editCliId):null;
-  const err=(t,m,id)=>{toast('err',t,m);if(id){try{const e=document.getElementById(id);e.setAttribute('aria-invalid','true');e.focus();}catch(_){}}};
+  const err=(t,m,id)=>{if(t)toast('err',t,m);if(id){try{const e=document.getElementById(id);e.setAttribute('aria-invalid','true');e.focus();}catch(_){}}};
   document.querySelectorAll('#mCli [aria-invalid]').forEach(e=>e.removeAttribute('aria-invalid'));
   // Nombre (obligatorio)
   const nom=$v('cNom');
   if(!nom){err('Falta el nombre','Escriba el nombre completo del cliente.','cNom');return;}
-  // WhatsApp (obligatorio): número de RD 809/829/849. Al EDITAR, un número viejo que no se cambió se respeta.
+  // WhatsApp (obligatorio). 59.75: RD (809/829/849) se guarda como siempre, «1»+10 dígitos; otro país, con «+código».
+  // Al EDITAR, un número viejo que no se cambió se respeta tal cual (no bloquea ni se reescribe).
+  // 10 dígitos que no son de RD y sin «+»: aviso suave, se pide el +código (no se adivina el país).
+  const sinCambio=(v,ant)=>!!(cliAntes&&nxCedDig(v)&&nxCedDig(v)===nxCedDig(ant));
   const waInput=$v('cWA');
   if(!waInput){err('Falta el WhatsApp','Escriba el número de WhatsApp del cliente.','cWA');return;}
   let waNormalizado='';
-  const waRD=nxTelRD(waInput);
-  if(waRD)waNormalizado='1'+waRD;
-  else if(cliAntes&&nxWa(waInput)&&nxWa(waInput)===nxWa(cliAntes.wa))waNormalizado=nxWa(waInput);
-  if(!waNormalizado){err('WhatsApp no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cWA');return;}
-  // Teléfono, WhatsApp de referencia y correo: opcionales, pero si se escriben deben ser válidos
+  const waN=nxTelNorm(waInput);
+  if(waN.tipo==='rd')waNormalizado=waN.d;
+  else if(sinCambio(waInput,cliAntes&&cliAntes.wa))waNormalizado=String(cliAntes.wa).trim(); // se respeta tal cual (con o sin «+»)
+  else if(waN.tipo==='intl')waNormalizado=waN.e164;
+  else if(waN.tipo==='fueraRD'){toast('warn',NX_TEL_FUERA[0],NX_TEL_FUERA[1]);err('','','cWA');return;}
+  if(!waNormalizado){err('WhatsApp no válido',NX_TEL_MSG,'cWA');return;}
+  const waDig=nxCedDig(waNormalizado);
+  // Teléfono y WhatsApp de referencia: opcionales; misma regla. Devuelve lo que se guarda, o null si se avisó.
+  const telOpc=(v,ant,fmtRD,titulo,id)=>{
+    if(!v)return '';
+    const n=nxTelNorm(v);
+    if(n.tipo==='rd')return fmtRD(n);
+    if(sinCambio(v,ant))return String(ant);
+    if(n.tipo==='intl')return n.e164;
+    if(n.tipo==='fueraRD'){toast('warn',NX_TEL_FUERA[0],NX_TEL_FUERA[1]);err('','',id);return null;}
+    err(titulo+' no válido',NX_TEL_MSG,id);return null;
+  };
   const telIn=$v('cTel');
-  if(telIn&&!nxTelRD(telIn)&&!(cliAntes&&nxCedDig(telIn)===nxCedDig(cliAntes.tel))){err('Teléfono no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cTel');return;}
+  const telGuardar=telOpc(telIn,cliAntes&&cliAntes.tel,n=>nxTelFmt(n.d10),'Teléfono','cTel');if(telGuardar===null)return;
   const refWaIn=$v('cRefWa');
-  if(refWaIn&&!nxTelRD(refWaIn)&&!(cliAntes&&nxCedDig(refWaIn)===nxCedDig(cliAntes.referencia_wa))){err('WhatsApp de la referencia no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cRefWa');return;}
+  const refWaGuardar=telOpc(refWaIn,cliAntes&&cliAntes.referencia_wa,n=>n.d,'WhatsApp de la referencia','cRefWa');if(refWaGuardar===null)return;
+  // Correo: opcional, pero si se escribe debe ser válido
   const correo=$v('cEmail');
   if(correo&&!nxCorreoOk(correo)){err('Correo no válido','Revise el correo (ejemplo: nombre@correo.com).','cEmail');return;}
   // Fechas de la póliza
@@ -17952,9 +17992,11 @@ async function guardarCli(){
   let guardado=false;
   try{
     // WhatsApp repetido en otro cliente: se avisa (no se bloquea). Se consulta la base (solo lectura).
-    if(!(cliAntes&&nxWa(cliAntes.wa)===waNormalizado)){
-      let otro=ST.clientes.find(c=>c.id!==editCliId&&nxWa(c.wa)===waNormalizado);
-      if(!otro){try{const d10=waNormalizado.slice(1);const r=await API.get('clientes',`select=id,nom,activo&or=(wa.eq.${waNormalizado},wa.eq.${d10})${editCliId?'&id=neq.'+editCliId:''}&limit=1`);if(r&&r[0])otro=r[0];}catch(_){}}
+    // 59.75: se compara por dígitos, así sirve con «18095551234», «8095551234» y «+34612345678»
+    const igualWa=v=>{const x=nxCedDig(v);return !!x&&(x===waDig||nxWa(v)===waDig);};
+    if(!(cliAntes&&igualWa(cliAntes.wa))){
+      let otro=ST.clientes.find(c=>c.id!==editCliId&&igualWa(c.wa));
+      if(!otro){try{const cand=[...new Set([waNormalizado,waDig,'+'+waDig,waDig.length===11&&waDig[0]==='1'?waDig.slice(1):''].filter(Boolean))];const r=await API.get('clientes',`select=id,nom,activo&or=(${cand.map(x=>'wa.eq.'+encodeURIComponent(x)).join(',')})${editCliId?'&id=neq.'+editCliId:''}&limit=1`);if(r&&r[0])otro=r[0];}catch(_){}}
       if(otro){
         const seguir=await swalConfirm('📱','WhatsApp ya registrado',`Este número ya está en «${escHtml(otro.nom||'otro cliente')}». ¿Desea guardar de todos modos?`,{ok:'Guardar igual'});
         if(!seguir)return;
@@ -17973,7 +18015,7 @@ async function guardarCli(){
       precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
     }
     const nPend=document.querySelectorAll('.pend-chk:checked').length;
-    const datos={nom,cedula,wa:waNormalizado,tel:telIn?nxTelFmt(telIn):'',email:correo,plan:$v('cPlan'),ars:$v('cARS')||null,dia_facturacion:dia,empresa_id:document.getElementById('eChips')._sel||null,agente_id:$v('cAgt')||null,dir:$v('cDir'),deps:JSON.stringify(tempDeps),tipo_ncf:$v('cNCF'),fecha_inicio:_fi||null,fecha_fin:_ff||null,referencia:$v('cRef')||null,referencia_wa:refWaIn?(nxTelRD(refWaIn)?'1'+nxTelRD(refWaIn):refWaIn.replace(/\D/g,'')):null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:$v('cEstadoCli')||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:$v('cOtroPend')||null,nota_proceso:$v('cNotaProc')||null,fecha_seguimiento:$v('cFechaSeg')||null,responsable_seguimiento:$v('cRespSeg')||null,prioridad_proceso:$v('cPrioridad')||'MEDIA',porcentaje_progreso:Math.round(((12-nPend)/12)*100)};
+    const datos={nom,cedula,wa:waNormalizado,tel:telGuardar,email:correo,plan:$v('cPlan'),ars:$v('cARS')||null,dia_facturacion:dia,empresa_id:document.getElementById('eChips')._sel||null,agente_id:$v('cAgt')||null,dir:$v('cDir'),deps:JSON.stringify(tempDeps),tipo_ncf:$v('cNCF'),fecha_inicio:_fi||null,fecha_fin:_ff||null,referencia:$v('cRef')||null,referencia_wa:refWaGuardar||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:$v('cEstadoCli')||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:$v('cOtroPend')||null,nota_proceso:$v('cNotaProc')||null,fecha_seguimiento:$v('cFechaSeg')||null,responsable_seguimiento:$v('cRespSeg')||null,prioridad_proceso:$v('cPrioridad')||'MEDIA',porcentaje_progreso:Math.round(((12-nPend)/12)*100)};
     // Fecha de nacimiento (campo de parches-cumpleanos-clientes.js), en el mismo guardado
     const fNac=document.getElementById('cFecNac');if(fNac)datos.fecha_nacimiento=fNac.value||null;
     if(puedeModPrecio||!editCliId){datos.precio_titular=precioT;datos.precio_dep=precioD;} // en un cliente NUEVO siempre se manda (null = precio estándar)
