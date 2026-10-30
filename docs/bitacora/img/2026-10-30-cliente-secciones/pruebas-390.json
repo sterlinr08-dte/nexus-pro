@@ -1,0 +1,900 @@
+[
+ {
+  "prueba": "capa activa según el interruptor",
+  "ok": true
+ },
+ {
+  "prueba": "B · alta normal guarda 1 vez",
+  "ok": true,
+  "det": {
+   "n": 1,
+   "toasts": [
+    "ok | Cliente registrado · Póliza: POL-1 | Juan Pérez"
+   ]
+  }
+ },
+ {
+  "prueba": "B · cédula 001-1882756-7, wa 18095551234, tel 829-555-0001",
+  "ok": true,
+  "det": {
+   "ced": "001-1882756-7",
+   "wa": "18095551234",
+   "tel": "829-555-0001"
+  }
+ },
+ {
+  "prueba": "B · fecha_nacimiento en el mismo INSERT",
+  "ok": true
+ },
+ {
+  "prueba": "B · activo true y estado ACTIVO",
+  "ok": true
+ },
+ {
+  "prueba": "B · deps vacío sigue siendo \"[]\"",
+  "ok": true,
+  "det": "[]"
+ },
+ {
+  "prueba": "B · cortesía: permitir_facturacion=false",
+  "ok": true
+ },
+ {
+  "prueba": "B · crear CANCELADO → activo=false",
+  "ok": true,
+  "det": {
+   "activo": false
+  }
+ },
+ {
+  "prueba": "B · crear SUSPENDIDO → activo=false",
+  "ok": true,
+  "det": {
+   "activo": false
+  }
+ },
+ {
+  "prueba": "B · valida: sin nombre",
+  "ok": true,
+  "det": "err | Falta el nombre | Escriba el nombre completo del cliente."
+ },
+ {
+  "prueba": "B · valida: WhatsApp 1234567890",
+  "ok": true,
+  "det": "err | WhatsApp no válido | Debe tener 10 dígitos y empezar por 809, 829 u 849."
+ },
+ {
+  "prueba": "B · valida: WhatsApp 15 dígitos",
+  "ok": true,
+  "det": "err | WhatsApp no válido | Debe tener 10 dígitos y empezar por 809, 829 u 849."
+ },
+ {
+  "prueba": "B · valida: cédula 12",
+  "ok": true,
+  "det": "err | Cédula no válida | Escriba 11 dígitos (cédula) o 9 (RNC)."
+ },
+ {
+  "prueba": "B · valida: cédula dígito malo",
+  "ok": true,
+  "det": "err | Cédula no válida | El último dígito no corresponde. Revise la cédula."
+ },
+ {
+  "prueba": "B · valida: cédula duplicada",
+  "ok": true,
+  "det": "err | Cédula ya registrada | Esta cédula pertenece a «OTRO CLIENTE» (cliente activo). No se puede duplicar."
+ },
+ {
+  "prueba": "B · valida: día 31",
+  "ok": true,
+  "det": "err | Día de facturación no válido | Debe ser un día del 1 al 28."
+ },
+ {
+  "prueba": "B · valida: día -5",
+  "ok": true,
+  "det": "err | Día de facturación no válido | Debe ser un día del 1 al 28."
+ },
+ {
+  "prueba": "B · valida: correo maria@",
+  "ok": true,
+  "det": "err | Correo no válido | Revise el correo (ejemplo: nombre@correo.com)."
+ },
+ {
+  "prueba": "B · valida: teléfono abc",
+  "ok": true,
+  "det": "err | Teléfono no válido | Debe tener 10 dígitos y empezar por 809, 829 u 849."
+ },
+ {
+  "prueba": "B · valida: ref WA mala",
+  "ok": true,
+  "det": "err | WhatsApp de la referencia no válido | Debe tener 10 dígitos y empezar por 809, 829 u 849."
+ },
+ {
+  "prueba": "B · valida: B01 sin RNC",
+  "ok": true,
+  "det": "err | Falta el RNC | Para el comprobante B01 (crédito fiscal) escriba un RNC o una cédula válidos."
+ },
+ {
+  "prueba": "B · valida: nacimiento 1850",
+  "ok": true,
+  "det": "err | Fecha no válida | Revise el año de nacimiento."
+ },
+ {
+  "prueba": "B · valida: nacimiento futuro",
+  "ok": true,
+  "det": "err | Fecha no válida | La fecha de nacimiento no puede estar en el futuro."
+ },
+ {
+  "prueba": "B · valida: fechas invertidas",
+  "ok": true,
+  "det": "err | Fechas invertidas | La fecha de fin de la póliza no puede ser anterior a la de inicio."
+ },
+ {
+  "prueba": "B · B01 con RNC de 9 dígitos guarda",
+  "ok": true
+ },
+ {
+  "prueba": "B · WhatsApp +1 849 aceptado",
+  "ok": true
+ },
+ {
+  "prueba": "B · día 28 aceptado",
+  "ok": true
+ },
+ {
+  "prueba": "B · editar viejo sin cambiar cédula/WA: guarda y avisa",
+  "ok": true,
+  "det": [
+   "warn | Revise la cédula | La cédula guardada no tiene el formato correcto. Se deja como estaba.",
+   "ok | Cliente actualizado | VIEJO CEDULA MALA"
+  ]
+ },
+ {
+  "prueba": "B · editar y cambiar a cédula mala: bloquea",
+  "ok": true
+ },
+ {
+  "prueba": "B · WhatsApp repetido (memoria): pregunta",
+  "ok": true,
+  "det": "WhatsApp ya registrado"
+ },
+ {
+  "prueba": "B · …Cancelar: no guarda y botón libre",
+  "ok": true,
+  "det": {
+   "n": 0,
+   "btn": false
+  }
+ },
+ {
+  "prueba": "B · …Guardar igual: guarda",
+  "ok": true
+ },
+ {
+  "prueba": "B · WhatsApp repetido en la BASE (select solo lectura): pregunta",
+  "ok": true,
+  "det": "Este número ya está en «CLIENTE EN LA BASE». ¿Desea guardar de todos modos? · get=select=id,nom,activo&or=(wa.eq.18095557777,wa.eq.8095557777)&limit=1"
+ },
+ {
+  "prueba": "B · red caída: 1 solo POST, sin reintento sin columnas",
+  "ok": true,
+  "det": {
+   "n": 1
+  }
+ },
+ {
+  "prueba": "B · red caída: aviso y ventana abierta, botón libre",
+  "ok": true,
+  "det": [
+   "err | No se pudo guardar | Sin conexión. Revise su internet y toque Guardar otra vez."
+  ]
+ },
+ {
+  "prueba": "B · reintento: mismo número de póliza (1 sola reserva)",
+  "ok": true,
+  "det": {
+   "rpc": 1,
+   "pol": [
+    "POL-9",
+    "POL-9"
+   ]
+  }
+ },
+ {
+  "prueba": "B · columna faltante: reintenta quitando solo «vip» y avisa",
+  "ok": true,
+  "det": {
+   "quitadas": [
+    "vip"
+   ],
+   "toasts": [
+    "warn | Guardado sin algunos datos | La base aún no tiene: vip. Avise al administrador.",
+    "ok | Cliente registrado · Póliza: POL-10 | Juan Pérez"
+   ]
+  }
+ },
+ {
+  "prueba": "B · lento 14 s + 3 clics: 1 solo POST, botón bloqueado a los 12 s",
+  "ok": true,
+  "det": {
+   "posts": 1,
+   "deshabilitadoA12s": true,
+   "avisos": [
+    "info | Sigue guardando… | La conexión está lenta. Espere, por favor; no cierre la ventana.",
+    "ok | Cliente registrado · Póliza: POL-11 | Juan Pérez"
+   ]
+  }
+ },
+ {
+  "prueba": "B · G4: estado y ficha coinciden (En proceso)",
+  "ok": true,
+  "det": {
+   "sel": "EN_PROCESO",
+   "chip": "🟡 En proceso",
+   "resumen": "En proceso · prioridad media"
+  }
+ },
+ {
+  "prueba": "B · CRM precarga el agente del prospecto",
+  "ok": true,
+  "det": {
+   "agt": "a2",
+   "chip": "EESTERLIN",
+   "busca": "ESTERLIN"
+  }
+ },
+ {
+  "prueba": "B · ✕ sin cambios: cierra sin preguntar",
+  "ok": true
+ },
+ {
+  "prueba": "B · con cambios (x): pregunta y «Cancelar» conserva lo escrito",
+  "ok": true,
+  "det": {
+   "pregunta": "¿Descartar los cambios?",
+   "sigue": true
+  }
+ },
+ {
+  "prueba": "B · con cambios (esc): pregunta y «Cancelar» conserva lo escrito",
+  "ok": true,
+  "det": {
+   "pregunta": "¿Descartar los cambios?",
+   "sigue": true
+  }
+ },
+ {
+  "prueba": "B · con cambios (fuera): pregunta y «Cancelar» conserva lo escrito",
+  "ok": true,
+  "det": {
+   "pregunta": "¿Descartar los cambios?",
+   "sigue": true
+  }
+ },
+ {
+  "prueba": "B · «Descartar» cierra",
+  "ok": true
+ },
+ {
+  "prueba": "B · teclados: WA/Tel/RefWa tel, cédula y día numéricos, correo sin mayúscula",
+  "ok": true,
+  "det": {
+   "cNom": {
+    "type": "text",
+    "im": null,
+    "ac": "name",
+    "cap": "words",
+    "ek": "next",
+    "lab": 1
+   },
+   "cCed": {
+    "type": "text",
+    "im": "numeric",
+    "ac": "off",
+    "cap": null,
+    "ek": "next",
+    "lab": 1
+   },
+   "cWA": {
+    "type": "tel",
+    "im": "tel",
+    "ac": "off",
+    "cap": null,
+    "ek": "next",
+    "lab": 1
+   },
+   "cTel": {
+    "type": "tel",
+    "im": "tel",
+    "ac": "off",
+    "cap": null,
+    "ek": "next",
+    "lab": 1
+   },
+   "cEmail": {
+    "type": "email",
+    "im": "email",
+    "ac": "email",
+    "cap": "off",
+    "ek": "next",
+    "lab": 1
+   },
+   "cRefWa": {
+    "type": "tel",
+    "im": "tel",
+    "ac": "off",
+    "cap": null,
+    "ek": "next",
+    "lab": 1
+   },
+   "cDiaFact": {
+    "type": "number",
+    "im": "numeric",
+    "ac": null,
+    "cap": null,
+    "ek": "next",
+    "lab": 1
+   },
+   "cDir": {
+    "type": "text",
+    "im": null,
+    "ac": "street-address",
+    "cap": null,
+    "ek": "done",
+    "lab": 1
+   },
+   "cFecNac": {
+    "type": "date",
+    "im": null,
+    "ac": "bday",
+    "cap": null,
+    "ek": null,
+    "lab": 1
+   },
+   "role": "dialog",
+   "modal": "true",
+   "lb": "mCliT",
+   "foco": "modal",
+   "grupos": [
+    "group:cPlanLbl",
+    "group:cAgtLbl",
+    "group:cARSLbl"
+   ],
+   "sinEtiqueta": []
+  }
+ },
+ {
+  "prueba": "B · accesibilidad: diálogo, etiquetas y grupos",
+  "ok": true,
+  "det": {
+   "sinEtiqueta": [],
+   "grupos": [
+    "group:cPlanLbl",
+    "group:cAgtLbl",
+    "group:cARSLbl"
+   ],
+   "foco": "modal"
+  }
+ },
+ {
+  "prueba": "B · foco dentro de la ventana al abrir",
+  "ok": true,
+  "det": "modal"
+ },
+ {
+  "prueba": "B · Enter en Nombre pasa a Cédula",
+  "ok": true,
+  "det": "cCed"
+ },
+ {
+  "prueba": "B · Tab no se sale de la ventana (90 pulsaciones)",
+  "ok": true,
+  "det": {
+   "fuera": 0
+  }
+ },
+ {
+  "prueba": "B · formato al salir: cédula y WhatsApp",
+  "ok": true
+ },
+ {
+  "prueba": "B · Ajustar deuda: diálogo propio (no confirm)",
+  "ok": true
+ },
+ {
+  "prueba": "B · …y desbloquea el campo",
+  "ok": true
+ },
+ {
+  "prueba": "C · dependiente sin cédula ni nacimiento: {nom,rel,id} sin claves extra",
+  "ok": true,
+  "det": {
+   "deps": [
+    {
+     "nom": "Pedro Pérez",
+     "rel": "Hijo/a",
+     "id": 1793360239616
+    }
+   ],
+   "lista": "Pedro Pérez\nHijo/a\n×"
+  }
+ },
+ {
+  "prueba": "C · dependiente con cédula válida y nacimiento: se guardan formateados y la tarjeta los muestra",
+  "ok": true,
+  "det": {
+   "deps": [
+    {
+     "nom": "Pedro Pérez",
+     "rel": "Hijo/a",
+     "id": 1793360239616
+    },
+    {
+     "nom": "Ana Pérez",
+     "rel": "Cónyuge",
+     "id": 1793360239668,
+     "cedula": "001-1882756-7",
+     "fecha_nacimiento": "1984-11-02"
+    }
+   ],
+   "lista": "Pedro Pérez\nHijo/a\n×\nAna Pérez\nCónyuge · 001-1882756-7 · nació el 02/11/1984\n×",
+   "limpios": true
+  }
+ },
+ {
+  "prueba": "C · cédula del dependiente con dígito malo: no agrega y avisa",
+  "ok": true,
+  "det": {
+   "n": 2,
+   "toasts": [
+    "err | Cédula del dependiente no válida | El último dígito no corresponde. Revise la cédula."
+   ],
+   "inv": "true",
+   "nomSigue": "Malo"
+  }
+ },
+ {
+  "prueba": "C · cédula «12» y nacimiento futuro del dependiente: no agregan y avisan",
+  "ok": true,
+  "det": {
+   "n": 2,
+   "t": [
+    "err | Cédula del dependiente no válida | Escriba los 11 dígitos de la cédula, o déjela en blanco."
+   ],
+   "n2": 2,
+   "t2": [
+    "err | Fecha no válida | La fecha de nacimiento del dependiente no puede estar en el futuro."
+   ]
+  }
+ },
+ {
+  "prueba": "C · al guardar, deps lleva cedula y fecha_nacimiento solo en el que las tiene",
+  "ok": true,
+  "det": [
+   {
+    "nom": "Pedro Pérez",
+    "rel": "Hijo/a",
+    "id": 1793360239616
+   },
+   {
+    "nom": "Ana Pérez",
+    "rel": "Cónyuge",
+    "id": 1793360239668,
+    "cedula": "001-1882756-7",
+    "fecha_nacimiento": "1984-11-02"
+   }
+  ]
+ },
+ {
+  "prueba": "C · editar carga los dependientes viejos (sin cédula) y los pinta",
+  "ok": true
+ },
+ {
+  "prueba": "C · 6 secciones en orden y cada campo en la suya",
+  "ok": true,
+  "det": {
+   "hijos": [
+    "DIV.mt",
+    "SECTION#nxSec1.nxSec",
+    "SECTION#nxSec2.nxSec",
+    "SECTION#nxSec3.nxSec",
+    "SECTION#nxSec4.nxSec",
+    "SECTION#nxSec5.nxSec",
+    "SECTION#nxSec6.nxSec",
+    "DIV.fe"
+   ],
+   "titulos": [
+    "1Datos personales",
+    "2Contacto",
+    "3Seguro",
+    "4Deuda",
+    "5Estado y proceso",
+    "6Dependientes"
+   ],
+   "ok": true,
+   "resto": 7,
+   "vacio": true
+  }
+ },
+ {
+  "prueba": "C · lo viejo (rejillas, separadores, títulos «//») queda escondido, no borrado",
+  "ok": true,
+  "det": {
+   "resto": 7
+  }
+ },
+ {
+  "prueba": "C · mismos ids: guardarCli encuentra todos sus campos",
+  "ok": true
+ },
+ {
+  "prueba": "C · buscadores: muestran el valor actual (Robinson / Sin ARS), select oculto manda, con etiqueta y role",
+  "ok": true,
+  "det": {
+   "agt": "ROBINSON",
+   "agtSel": "a1",
+   "ars": "Sin ARS",
+   "arsSel": "",
+   "chipsOcultos": true,
+   "selOculto": true,
+   "lab": 1,
+   "role": "combobox"
+  }
+ },
+ {
+  "prueba": "C · agente: al tocar se abre la lista completa, 44 px por opción, la actual marcada",
+  "ok": true,
+  "det": {
+   "abierta": true,
+   "n": 3,
+   "altos": [
+    44,
+    44,
+    44
+   ],
+   "sel": "RROBINSON",
+   "exp": "true"
+  }
+ },
+ {
+  "prueba": "C · agente: escribir «est» filtra a ESTERLIN",
+  "ok": true,
+  "det": [
+   "EESTERLIN"
+  ]
+ },
+ {
+  "prueba": "C · agente: Enter elige → #cAgt = a2 (mismo id que las fichas), texto ESTERLIN, lista cerrada",
+  "ok": true,
+  "det": {
+   "sel": "a2",
+   "txt": "ESTERLIN",
+   "cerrada": true,
+   "chip": "RROBINSON",
+   "sigueAbierta": true
+  }
+ },
+ {
+  "prueba": "C · agente: flechas ↓↓ llegan a ROBINSON (circular desde ESTERLIN) y ↑ vuelve a LORIBEL",
+  "ok": true,
+  "det": {
+   "nav": {
+    "activa": "RROBINSON",
+    "ad": "cAgtOp0"
+   },
+   "nav2": "LLORIBEL"
+  }
+ },
+ {
+  "prueba": "C · agente: Esc cierra la lista sin cambiar nada y sin cerrar la ventana",
+  "ok": true,
+  "det": {
+   "cerrada": true,
+   "txt": "ESTERLIN",
+   "sel": "a2",
+   "ventana": true,
+   "swal": false
+  }
+ },
+ {
+  "prueba": "C · ARS: lista completa (12 + «Sin ARS»), «hum» filtra, tocar elige → #cARS = «ARS Humano»",
+  "ok": true,
+  "det": {
+   "arsN": 11,
+   "arsF": [
+    "ARS Humano"
+   ],
+   "arsE": {
+    "sel": "ARS Humano",
+    "txt": "ARS Humano"
+   }
+  }
+ },
+ {
+  "prueba": "C · ARS: sin coincidencias dice «Sin resultados» y Tab cierra dejando el valor",
+  "ok": true,
+  "det": "Sin resultados"
+ },
+ {
+  "prueba": "C · ARS: «Sin ARS» deja el select vacío (como la ficha de antes)",
+  "ok": true
+ },
+ {
+  "prueba": "C · guardar manda agente_id=a2 y ars=null tal como lo dejaron los buscadores",
+  "ok": true,
+  "det": {
+   "agente_id": "a2",
+   "ars": null
+  }
+ },
+ {
+  "prueba": "C · CRM: el buscador muestra el agente del prospecto (LORIBEL)",
+  "ok": true,
+  "det": {
+   "agt": "a3",
+   "busca": "LORIBEL"
+  }
+ },
+ {
+  "prueba": "C · plan: segmento «Básico · Superior · Esencial Plus» con los mismos values; tocar cambia #cPlan",
+  "ok": true,
+  "det": {
+   "txt": [
+    "Básico",
+    "Superior",
+    "Esencial Plus"
+   ],
+   "vals": [
+    "Básico",
+    "Superior",
+    "Esencial Plus"
+   ],
+   "on": "Básico",
+   "altos": [
+    44,
+    44,
+    44
+   ]
+  }
+ },
+ {
+  "prueba": "C · «Estado y proceso» abre plegado con resumen (Activo · prioridad media · sin pendientes), 44+ px",
+  "ok": true,
+  "det": {
+   "cerrado": true,
+   "estadoOculto": true,
+   "sum": "Activo · prioridad media / Sin pendientes · toque para ver",
+   "altoSum": 56,
+   "tituloViejoOculto": true
+  }
+ },
+ {
+  "prueba": "C · al tocar se despliega: estado, pendientes y VIP visibles; el resumen ya no dice «toque para ver»",
+  "ok": true,
+  "det": {
+   "abierto": true,
+   "estadoVisible": true,
+   "pend": true,
+   "vip": true,
+   "sum": "Sin pendientes"
+  }
+ },
+ {
+  "prueba": "C · el resumen sigue lo que se cambia dentro (Suspendido, 1 pendiente, sin facturación)",
+  "ok": true,
+  "det": "Suspendido · prioridad media / 1 pendiente · sin facturación automática"
+ },
+ {
+  "prueba": "C · vuelve a plegarse al tocar",
+  "ok": true
+ },
+ {
+  "prueba": "C · al reabrir la ventana vuelve plegado",
+  "ok": true
+ },
+ {
+  "prueba": "C · en «Nuevo» no se ve número de póliza",
+  "ok": true,
+  "det": {
+   "cab": true,
+   "fr": true,
+   "visible": 0
+  }
+ },
+ {
+  "prueba": "C · en «Editar» se ve «Póliza POL-000245 · desde 15/01/2026» y el campo de solo lectura; buscadores con ESTERLIN y ARS Humano",
+  "ok": true,
+  "det": {
+   "cab": "Póliza POL-000245 · desde 15/01/2026",
+   "num": "POL-000245",
+   "ro": true,
+   "visible": true,
+   "titulo": "EDITAR CLIENTE",
+   "agt": "ESTERLIN",
+   "ars": "ARS Humano"
+  }
+ },
+ {
+  "prueba": "C · Enter desde Nacimiento salta el campo de solo lectura (va a WhatsApp)",
+  "ok": true,
+  "det": "cWA"
+ },
+ {
+  "prueba": "C · editar y guardar no manda ningún campo nuevo (sin numero_poliza ni claves de la capa)",
+  "ok": true,
+  "det": []
+ },
+ {
+  "prueba": "C · sin reflujo: el orden y las medidas del primer cuadro son las mismas 300 ms después",
+  "ok": true,
+  "det": {
+   "n": 123,
+   "dif": [],
+   "nDif": 0,
+   "mismoOrden": true,
+   "orden0": "DIV,SECTION#nxSec1,SECTION#nxSec2,SECTION#nxSec3,SECTION#nxSec4,SECTION#nxSec5,SECTION#nxSec6,DIV#nxCliResto,DIV"
+  }
+ },
+ {
+  "prueba": "C · espacios de la regla (8/20/24, bordes 48/40 ó 24/16, ayuda 4, lista 8)",
+  "ok": true,
+  "det": {
+   "fallas": [],
+   "F": [
+    [
+     "borde izquierdo→campo",
+     16,
+     16
+    ],
+    [
+     "borde arriba→título",
+     24,
+     24
+    ],
+    [
+     "título de la ventana→1.ª sección",
+     24,
+     24
+    ],
+    [
+     "título de sección→etiqueta",
+     8,
+     8
+    ],
+    [
+     "etiqueta→cajita",
+     8,
+     8
+    ],
+    [
+     "campo→siguiente campo (Nombre→Cédula)",
+     20,
+     20
+    ],
+    [
+     "sección 1→sección 2",
+     24,
+     24
+    ],
+    [
+     "sección 2→3",
+     24,
+     24
+    ],
+    [
+     "sección 3→4",
+     24,
+     24
+    ],
+    [
+     "sección 4→5",
+     24,
+     24
+    ],
+    [
+     "sección 5→6",
+     24,
+     24
+    ],
+    [
+     "tarjeta plegable→su contenido (resumen 56)",
+     56,
+     56
+    ],
+    [
+     "filas de dependientes",
+     8,
+     8
+    ]
+   ]
+  }
+ },
+ {
+  "prueba": "C · campos 48 px con letra 16; botón principal 54",
+  "ok": true,
+  "det": {
+   "malos": [],
+   "btn": 54
+  }
+ },
+ {
+  "prueba": "C · todo lo que se toca ≥ 44 px; letras de controles ≥ 13; sin desborde",
+  "ok": true,
+  "det": {
+   "toques": [],
+   "letras": [],
+   "desborde": false,
+   "alto": 3800
+  }
+ },
+ {
+  "prueba": "iPhone-1 · fechas: ancho = su celda, dentro de la ventana, sin apariencia nativa, guía «dd/mm/aaaa» y marca de vacío",
+  "ok": true,
+  "det": [
+   {
+    "id": "cFecNac",
+    "w": 172,
+    "frw": 172,
+    "dentro": true,
+    "app": "none",
+    "guia": "dd/mm/aaaa",
+    "vacio": "1",
+    "minw": "0px"
+   },
+   {
+    "id": "cFecIni",
+    "w": 172,
+    "frw": 172,
+    "dentro": true,
+    "app": "none",
+    "guia": "dd/mm/aaaa",
+    "vacio": null,
+    "minw": "0px"
+   },
+   {
+    "id": "cFecFin",
+    "w": 172,
+    "frw": 172,
+    "dentro": true,
+    "app": "none",
+    "guia": "dd/mm/aaaa",
+    "vacio": "1",
+    "minw": "0px"
+   }
+  ]
+ },
+ {
+  "prueba": "iPhone-2 · con la ventana abierta, el menú lateral y su asa quedan ocultos en el celular",
+  "ok": true,
+  "det": {
+   "asa": "hidden",
+   "tg": true
+  }
+ },
+ {
+  "prueba": "iPhone-3 · parentesco en minúscula normal («Cónyuge»)",
+  "ok": true,
+  "det": {
+   "tt": "none",
+   "txt": "Cónyuge"
+  }
+ },
+ {
+  "prueba": "iPhone-4 · Dirección con guía",
+  "ok": true,
+  "det": "Calle, número, sector, ciudad"
+ },
+ {
+  "prueba": "iPhone-5 · título a 16 px del borde y ✕ de 44 px a 16 px del borde",
+  "ok": true,
+  "det": {
+   "tituloX": 16,
+   "x": "44x44",
+   "der": 16
+  }
+ },
+ {
+  "prueba": "sin errores de JavaScript en la página",
+  "ok": true,
+  "det": []
+ }
+]

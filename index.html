@@ -6413,8 +6413,8 @@ html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-i
     e.stopImmediatePropagation();e.preventDefault();window.nxCliCerrar();
   },true);
   // Foco: entra a la ventana al abrir (en PC al nombre; en el celular a la ventana, sin abrir el teclado) y vuelve al cerrar
-  const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';};
-  const enfocables=()=>[...ov().querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(e=>!e.disabled&&visible(e));
+  const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'&&(typeof e.checkVisibility!=='function'||e.checkVisibility());}; // checkVisibility: lo que está dentro de un <details> cerrado no cuenta
+  const enfocables=()=>[...ov().querySelectorAll('button,[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])')].filter(e=>!e.disabled&&e.tabIndex>=0&&visible(e));
   function alAbrir(){
     previo=document.activeElement;
     setTimeout(()=>{
@@ -6444,7 +6444,7 @@ html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-i
     if(e.key==='Enter'&&!e.isComposing){ // Enter → siguiente campo (dependiente: su propio Enter agrega)
       const t=e.target;if(!o.contains(t)||t.id==='dN'||!t.matches('input:not([type=checkbox]):not([type=radio])'))return;
       e.preventDefault();
-      const campos=[...o.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select')].filter(x=>!x.disabled&&visible(x));
+      const campos=[...o.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([readonly]),select')].filter(x=>!x.disabled&&visible(x));
       const sig=campos[campos.indexOf(t)+1];
       if(sig)sig.focus();else t.blur();
     }
@@ -6459,6 +6459,273 @@ html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-i
   function init(){
     const o=ov();if(!o)return;let era=false;
     new MutationObserver(()=>{const ya=o.classList.contains('open');if(ya&&!era)alAbrir();if(!ya&&era)alCerrar();era=ya;}).observe(o,{attributes:true,attributeFilter:['class']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+<!-- ═══ 59.74 FICHA DEL CLIENTE · paquete C, parte 2: SECCIONES (dueño, 30-oct-2026: «Sí, publícalo» a la maqueta) ═══
+     La ventana #mCli queda en 6 secciones numeradas: Datos personales · Contacto · Seguro · Deuda · Estado y proceso ·
+     Dependientes. NO se reescribe el HTML de #mCli: script#nxCliSecJs MUEVE los mismos nodos (mismos ids que leen
+     guardarCli, el CRM y el parche de cumpleaños) dentro de <section> nuevas, una vez al cargar y otra vez al abrir
+     (idempotente; corre en el mismo instante en que la ventana recibe .open, antes del primer pintado → sin saltos).
+     · ARS y Agente: buscador de una línea; el <select> oculto sigue siendo la fuente de verdad (mismo value).
+     · Plan: las fichas de siempre, como segmento de 3 (solo cambia el texto que se ve: «Básico», no el value).
+     · Al EDITAR se ve el número de póliza (cabecera y campo de solo lectura en «Seguro»).
+     · Estado y proceso: <details> plegado con resumen; dentro va la caja de siempre, sin tocar sus campos.
+     · Dependientes: cédula y fecha de nacimiento opcionales (ver addDep/rDepLM más abajo; deps admite cedula? y fecha_nacimiento?).
+     Requiere la capa en vidrio (nx-fcli). CÓMO APAGARLA (se ve como 59.73): NX_CLI_SEC=false aquí abajo (todos) o
+     localStorage.setItem('nx_cli_sec_off','1') en un equipo. -->
+<!-- 59.74 · capturas reales del iPhone del dueño (30-oct-2026, 59.73 en vivo): los campos de fecha se salían por la derecha en
+     Safari iOS, el asa del menú tapaba la 1.ª letra de los rótulos, «CÓNYUGE» en mayúsculas y Dirección sin guía. Va con la
+     llave nx-fcli (ficha en vidrio) para que valga también con las secciones apagadas. -->
+<style id="nxCliIphone">
+/* 1) input type=date en Safari iOS: no respeta el ancho de la rejilla → ancho fijo al 100 % y sin apariencia nativa */
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal input[type=date]{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;-webkit-appearance:none!important;appearance:none!important;display:block!important;text-align:left;position:relative}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em;line-height:1.2em;margin:0}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal input[type=date]::-webkit-calendar-picker-indicator{opacity:.7}
+/* fecha vacía en iPhone: Safari no pinta nada; se muestra una guía gris (solo WebKit táctil) */
+@supports (-webkit-touch-callout:none){
+  html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal input[type=date][data-nx-vacio]:not(:focus)::before{content:attr(data-nx-guia);color:var(--cb-ink2);position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:16px}
+}
+/* 2) asa flotante del menú: nada por encima de la ventana del cliente en el celular */
+@media (max-width:768px){
+  html.nx-fcli:has(#mCli.open) nav#sbEl.sb:not(.mob-open),html.nx-fcli:has(#mCli.open) nav#sbEl.sb:not(.mob-open) *{visibility:hidden!important;pointer-events:none!important}
+  html.nx-fcli:has(#mCli.open) .nx-mc-tg{display:none!important}
+}
+/* 3) parentesco del dependiente en minúscula normal */
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #dR,html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #dR option{text-transform:none!important}
+</style>
+<script id="nxCliIphoneJs">
+(function(){
+  if(!document.documentElement.classList.contains('nx-fcli'))return;
+  // Fechas de la ficha: marca data-nx-vacio cuando no hay valor, para que Safari iOS muestre la guía «dd/mm/aaaa» (CSS de arriba)
+  const marcar=()=>document.querySelectorAll('#mCli input[type=date]').forEach(e=>{if(!e.dataset.nxGuia)e.dataset.nxGuia='dd/mm/aaaa';if(e.value)delete e.dataset.nxVacio;else e.dataset.nxVacio='1';});
+  function init(){const ov=document.getElementById('mCli');if(!ov)return;marcar();
+    ov.addEventListener('input',e=>{if(e.target&&e.target.type==='date')marcar();});ov.addEventListener('change',e=>{if(e.target&&e.target.type==='date')marcar();});
+    new MutationObserver(()=>{if(ov.classList.contains('open')){marcar();setTimeout(marcar,0);}}).observe(ov,{attributes:true,attributeFilter:['class']});
+    const t=document.getElementById('mCliT');if(t)new MutationObserver(marcar).observe(t,{childList:true,characterData:true,subtree:true});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+<script id="nxCliSecOn">var NX_CLI_SEC=true;try{if(NX_CLI_SEC&&localStorage.getItem('nx_cli_sec_off')!=='1'&&document.documentElement.classList.contains('nx-fcli'))document.documentElement.classList.add('nx-clisec');}catch(e){if(NX_CLI_SEC&&document.documentElement.classList.contains('nx-fcli'))document.documentElement.classList.add('nx-clisec');}</script>
+<style id="nxCliSec">
+/* #mCli repetido 8 veces: gana a #nxFichaPane (4), #nxFormEspaciado (6) y #nxCliFicha (7) sin pelear regla por regla */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal>.gf2,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal>.div,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #nxCliResto,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecOldTit,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxFcRes,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #eChipsSpot,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cARSChips,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cAgtChips,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli [hidden]{display:none!important}
+/* cabecera: título y, al editar, la póliza debajo */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .mt{align-items:center!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecCab{flex:1 1 auto;min-width:0;text-align:left}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecCab>#mCliT{display:block;font-size:17px!important;font-weight:800!important;color:var(--cb-ink)!important;letter-spacing:-.01em!important;line-height:1.25}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecPol{display:block;font-size:13px;font-weight:600;color:var(--cb-ink2);margin-top:2px;text-transform:none!important;letter-spacing:0!important}
+/* secciones: grupo → grupo 24; título → campos 8; campo → campo 20 */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSec{display:block;margin:0 0 24px!important;padding:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSec:last-of-type{margin-bottom:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecH{display:flex;align-items:center;gap:10px;margin:0 0 8px!important;padding:0!important;font-size:15px!important;font-weight:800!important;line-height:1.3;color:var(--cb-ink)!important;text-transform:none!important;letter-spacing:0!important;font-family:inherit!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecN{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:color-mix(in srgb,#8B5CF6 22%,transparent);color:var(--cb-link);flex:none}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecRej{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px;align-items:start}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecRej>.nxSecAncho{grid-column:1/-1}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecRej>.fr,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecRej>div{margin:0!important;min-width:0}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecRej .fr>label,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #eChipsLbl,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cDeudaLbl{display:block;font-size:13px!important;font-weight:700!important;color:var(--cb-ink2)!important;margin:0 0 8px!important;font-family:inherit!important;letter-spacing:0!important;text-transform:none!important;display:flex!important;flex-wrap:wrap;align-items:center;gap:0 6px;line-height:20px!important;min-height:20px} /* etiqueta en flex de 20 px: la ⓘ de #nxInfoI (44 px con márgenes de −12) que entra después de abrir ya no la agranda */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #nxCliPolNum{border-style:dashed!important;background:transparent!important;color:var(--cb-ink2)!important;-webkit-text-fill-color:var(--cb-ink2)}
+/* plan: segmento de 3 */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPlanChips.nxOptGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;padding:4px!important;border-radius:999px;background:var(--cb-fill)}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPlanChips .nxOptChip{width:100%!important;justify-content:center!important;padding:0 6px!important;background:transparent!important;box-shadow:none!important;font-size:13px!important;min-height:44px!important;height:auto!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPlanChips .nxOptChip .nxOptIco{display:none!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPlanChips .nxOptChip .nxOptTxt{white-space:normal!important;text-align:center;line-height:1.15;font-size:13px!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPlanChips .nxOptChip.on{background:var(--cb-sheet)!important;box-shadow:0 1px 3px rgb(0 0 0/.25),inset 0 0 0 1px var(--cb-line)!important}
+/* buscador de ARS y de Agente */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecCombo{position:relative}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecCombo>input{padding-left:44px!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecLupa{position:absolute;left:14px;top:14px;width:20px;height:20px;opacity:.7;pointer-events:none;color:var(--cb-ink)}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecLista{position:absolute;left:0;right:0;top:52px;z-index:6;max-height:240px;overflow:auto;background:var(--cb-sheet);border:1px solid var(--cb-line);border-radius:16px;box-shadow:0 20px 40px -16px rgb(0 0 0/.5);padding:4px;display:block}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecOp{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;cursor:pointer;font-size:15px;color:var(--cb-ink);text-transform:none}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecOp:hover,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecOp.activa{background:var(--cb-fill)}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecOp[aria-selected="true"] .nxSecOpT{font-weight:700}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecVacio{color:var(--cb-ink2);cursor:default}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecAv{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;flex:none;overflow:hidden}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecAv img{width:24px;height:24px;object-fit:contain}
+/* deuda */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cDeudaHint{font-size:13px!important;color:var(--cb-ink2)!important;margin-top:4px!important;line-height:1.4}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #nx-cedula-aviso{font-size:13px!important;margin-top:4px!important;line-height:1.3} /* aviso de la cédula (parches-seguros-base): letra ≥13 y cajita→ayuda 4 */
+/* estado y proceso: tarjeta plegable con resumen */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet{display:block;background:var(--cb-fill);border-radius:20px;padding:0 16px}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSum{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:8px 0;cursor:pointer;color:var(--cb-ink);outline-offset:4px}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSum::-webkit-details-marker{display:none}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSumTx{display:flex;flex-direction:column;gap:2px;min-width:0}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSumT{font-size:15px;font-weight:800}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSumS{font-size:13px;font-weight:500;color:var(--cb-ink2)}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecSum::after{content:"";width:9px;height:9px;border-right:2px solid var(--cb-ink2);border-bottom:2px solid var(--cb-ink2);transform:rotate(45deg) translate(-2px,-2px);transition:transform .3s var(--cb-spring);flex:none;margin-right:6px}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet[open]>.nxSecSum::after{transform:rotate(-135deg) translate(-2px,-2px)}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div{background:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;padding:0 0 16px!important;margin:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div>*{margin:20px 0 0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div>:first-child:not(.nxSecOldTit),html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div>.nxSecOldTit+*{margin-top:4px!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet .frow{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:20px 12px!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet .frow>.fr{margin:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div>label{background:none!important;box-shadow:none!important;padding:0!important;font-size:14px!important;color:var(--cb-ink)!important;border-radius:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDet>div>label span span{font-size:13px!important;color:var(--cb-ink2)!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPendientesLbl{font-size:13px!important;font-weight:700!important;color:var(--cb-ink2)!important;font-family:inherit!important;margin:20px 0 8px!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPendientes{margin:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #cOtroPend{margin-top:8px!important}
+/* dependientes: lista en tarjetas y tarjeta para agregar */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #depLM{display:grid!important;grid-template-columns:1fr;gap:8px!important;margin:0!important;min-height:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #depLM:empty{display:none!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .dep-c{display:grid!important;grid-template-columns:minmax(0,1fr) 44px!important;align-items:center;gap:2px 8px!important;background:var(--cb-fill)!important;border:0!important;border-radius:16px!important;padding:10px 8px 10px 16px!important;min-height:56px!important;font-size:15px!important;color:var(--cb-ink)!important;margin:0!important;text-transform:none!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .dep-c .nxDepNom{font-weight:700;grid-column:1;min-width:0;overflow-wrap:anywhere}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .dep-c .nxDepSub{grid-column:1;font-size:13px;color:var(--cb-ink2);opacity:1!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .dep-c button{grid-row:1/3;grid-column:2;width:44px!important;height:44px!important;border-radius:50%!important;font-size:20px!important;color:var(--cb-ink2)!important;display:grid!important;place-items:center}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo{border:1px dashed var(--cb-edge);border-radius:20px;padding:16px}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo #dN,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo #dR,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo #dC,html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo #dNac{width:100%!important;min-width:0!important;flex:none!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo #dR{padding:0 14px!important;font-size:16px!important;text-transform:none!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxSecDepNuevo button[onclick="addDep()"]{width:100%!important;min-width:0!important;height:44px!important;min-height:44px!important;margin:20px 0 0!important;padding:0 16px!important;border-radius:999px!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px;background:color-mix(in srgb,#8B5CF6 18%,transparent)!important;color:var(--cb-link)!important;font-size:15px!important;font-weight:700!important;border:0!important;box-shadow:none!important;text-transform:none!important;letter-spacing:0!important}
+/* el precio personalizado vive dentro de «Seguro» */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #seccionPrecioCustom{margin:0!important;padding:14px!important;border-radius:20px!important;background:var(--cb-fill)!important;box-shadow:none!important;border:0!important} /* igual que .nxFcCaja desde el primer cuadro: #nxFichaPaneJs le pone esa clase después de abrir */
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #seccionPrecioCustom .fr{margin:0!important}
+html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli #camposPrecioCustom .g2{gap:20px 12px!important}
+@media (prefers-reduced-motion:reduce){html.nx-clisec #mCli#mCli#mCli#mCli#mCli#mCli#mCli#mCli *{transition:none!important}}
+</style>
+<script id="nxCliSecJs">
+(function(){
+  if(!document.documentElement.classList.contains('nx-clisec'))return;
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ini=n=>String(n||'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
+  const color=t=>{try{return nxChipColor(t);}catch(e){return '#7c3aed';}};
+  const SECS=['Datos personales','Contacto','Seguro','Deuda','Estado y proceso','Dependientes'];
+  let cajaEstado=null,filaDep=null;
+  const fr=id=>{const e=$(id);return e?(e.closest('.fr')||e):null;};
+  const hijoDe=(el,padre)=>{while(el&&el.parentElement!==padre)el=el.parentElement;return el;};
+  function seccion(n){let s=$('nxSec'+n);if(!s){s=document.createElement('section');s.id='nxSec'+n;s.className='nxSec';s.dataset.n=n;s.setAttribute('aria-labelledby','nxSecH'+n);s.innerHTML='<h2 class="nxSecH" id="nxSecH'+n+'"><span class="nxSecN" aria-hidden="true">'+n+'</span>'+SECS[n-1]+'</h2><div class="nxSecRej"></div>';}return s;}
+  function poner(rej,el,ancho){if(!el)return;rej.appendChild(el);el.classList.toggle('nxSecAncho',!!ancho);}
+  // Buscador de una línea sobre un <select> (que sigue oculto y manda): lista filtrable, flechas, Enter, Esc, 44 px por opción
+  function buscador(selId,ph,vacio){
+    const sel=$(selId),f=fr(selId);if(!sel||!f)return f;
+    if($(selId+'Busca'))return f;
+    const w=document.createElement('div');w.className='nxSecCombo';
+    w.innerHTML='<svg class="nxSecLupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
+      +'<input type="text" id="'+selId+'Busca" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="'+selId+'Lista" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+ph+'" enterkeyhint="done" class="no-upper"/>'
+      +'<div class="nxSecLista" id="'+selId+'Lista" role="listbox" hidden></div>';
+    sel.insertAdjacentElement('afterend',w);
+    const lbl=f.querySelector('label');if(lbl){lbl.htmlFor=selId+'Busca';if(lbl.id)sel.setAttribute('aria-labelledby',lbl.id);}
+    const inp=w.querySelector('input'),L=w.querySelector('.nxSecLista');
+    const etq=o=>o.value===''?(vacio||''):o.textContent.trim();
+    const actual=()=>{const o=sel.options[sel.selectedIndex];return o?etq(o):'';};
+    let idx=-1,todo=true;
+    const ops=()=>[...L.querySelectorAll('.nxSecOp[data-v]')];
+    const marcar=()=>{const o=ops();o.forEach((x,i)=>x.classList.toggle('activa',i===idx));const a=o[idx];if(a){inp.setAttribute('aria-activedescendant',a.id);try{a.scrollIntoView({block:'nearest'});}catch(e){}}else inp.removeAttribute('aria-activedescendant');};
+    const pintar=()=>{
+      const q=todo?'':inp.value.trim().toLowerCase();
+      const its=[...sel.options].filter(o=>o.value!==''||vacio).filter(o=>!q||etq(o).toLowerCase().includes(q));
+      L.innerHTML=its.length?its.map((o,i)=>{const t=etq(o);let u=null;try{u=(selId==='cARS'&&o.value&&typeof arsLogoUrl==='function')?arsLogoUrl(o.value):null;}catch(e){}
+        return '<div class="nxSecOp" role="option" id="'+selId+'Op'+i+'" data-v="'+esc(o.value)+'" aria-selected="'+(String(o.value)===String(sel.value))+'">'
+          +'<span class="nxSecAv'+(u?' logo':'')+'" style="background:'+(u?'#fff':color(t))+'" aria-hidden="true">'+(u?'<img src="'+esc(u)+'" alt="">':esc(ini(t)))+'</span><span class="nxSecOpT">'+esc(t)+'</span></div>';}).join('')
+        :'<div class="nxSecOp nxSecVacio" aria-disabled="true">Sin resultados</div>';
+      idx=its.findIndex(o=>String(o.value)===String(sel.value));if(idx<0&&its.length&&q)idx=0;marcar();};
+    const abrir=()=>{L.hidden=false;w.classList.add('abierto');inp.setAttribute('aria-expanded','true');pintar();};
+    const cerrar=()=>{L.hidden=true;w.classList.remove('abierto');inp.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');inp.value=actual();};
+    const elegir=v=>{sel.value=v;sel.dispatchEvent(new Event('change'));cerrar();};
+    inp.addEventListener('focus',()=>{todo=true;abrir();try{inp.select();}catch(e){}});
+    inp.addEventListener('input',()=>{todo=false;abrir();});
+    inp.addEventListener('keydown',e=>{
+      const o=ops();
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(L.hidden){todo=true;abrir();return;}if(!o.length)return;idx=e.key==='ArrowDown'?(idx+1)%o.length:(idx-1+o.length)%o.length;marcar();return;}
+      if(e.key==='Enter'){if(L.hidden)return;e.preventDefault();e.stopPropagation();const x=o[idx]||o[0];if(x)elegir(x.dataset.v);else cerrar();return;}
+      if(e.key==='Escape'){if(L.hidden)return;e.preventDefault();e.stopPropagation();cerrar();return;}
+      if(e.key==='Tab')cerrar();
+    });
+    inp.addEventListener('blur',()=>{if(!L.hidden)cerrar();});
+    L.addEventListener('mousedown',e=>e.preventDefault());
+    L.addEventListener('click',e=>{const x=e.target.closest('.nxSecOp[data-v]');if(x)elegir(x.dataset.v);});
+    sel.addEventListener('change',()=>{if(L.hidden)inp.value=actual();});
+    w._nxRefrescar=()=>{if(L.hidden)inp.value=actual();};
+    return f;
+  }
+  function refrescarBuscadores(){document.querySelectorAll('#mCli .nxSecCombo').forEach(w=>{try{w._nxRefrescar&&w._nxRefrescar();}catch(e){}});}
+  // Fichas del plan como segmento: «Plan Básico» → «Básico» (solo el texto que se ve; el value no cambia)
+  function planTxt(){document.querySelectorAll('#cPlanChips .nxOptTxt').forEach(t=>{if(/^Plan\s/i.test(t.textContent))t.textContent=t.textContent.replace(/^Plan\s+/i,'');});}
+  // Resumen de «Estado y proceso» (plegado al abrir; se abre al tocarlo)
+  function resumen(){
+    const det=$('nxCliEstDet');if(!det)return;
+    const v=id=>{const x=$(id);if(!x||!x.value)return '';return (x.options?x.options[x.selectedIndex].textContent:x.value).replace(/^[^A-Za-zÁ-ú]+/,'').trim();};
+    const pend=document.querySelectorAll('#cPendientes input:checked').length;
+    const pf=$('cPermFact');const fact=!pf||pf.checked;
+    det.querySelector('.nxSecSumT').textContent=[v('cEstadoCli')||'Estado',v('cPrioridad')?'prioridad '+v('cPrioridad').toLowerCase():''].filter(Boolean).join(' · ');
+    det.querySelector('.nxSecSumS').textContent=[pend?pend+(pend===1?' pendiente':' pendientes'):'Sin pendientes',fact?'':'sin facturación automática',det.open?'':'toque para ver'].filter(Boolean).join(' · ');
+  }
+  // Cabecera: al EDITAR se ve el número de póliza (y un campo de solo lectura en «Seguro»)
+  function cabecera(){
+    const p=$('nxCliPolCab'),f=$('nxCliPolFr'),i=$('nxCliPolNum');if(!p||!f||!i)return;
+    let c=null;try{c=(typeof editCliId!=='undefined'&&editCliId)?(ST.clientes||[]).find(x=>x.id===editCliId):null;}catch(e){}
+    if(!c){p.hidden=true;p.textContent='';f.hidden=true;i.value='';return;}
+    const num=c.numero_poliza||'Sin número';const d=c.fecha_inicio?String(c.fecha_inicio).slice(0,10).split('-').reverse().join('/'):'';
+    p.textContent='Póliza '+num+(d?' · desde '+d:'');p.hidden=false;f.hidden=false;i.value=num;
+  }
+  function armar(){
+    const m=document.querySelector('#mCli .modal');if(!m)return;
+    const mt=m.querySelector(':scope > .mt'),fe=m.querySelector(':scope > .fe');if(!mt||!fe)return;
+    // cabecera: título + subtítulo de la póliza
+    if(!$('nxCliPolCab')&&$('mCliT')){const cab=document.createElement('div');cab.className='nxSecCab';const t=$('mCliT');mt.insertBefore(cab,t);cab.appendChild(t);const p=document.createElement('span');p.className='nxSecPol';p.id='nxCliPolCab';p.hidden=true;cab.appendChild(p);}
+    // las 6 secciones, en orden, entre la cabecera y el pie
+    const S=SECS.map((_,i)=>seccion(i+1));S.forEach(s=>m.insertBefore(s,fe));
+    const R=S.map(s=>s.querySelector('.nxSecRej'));
+    // 1 · Datos personales
+    poner(R[0],fr('cNom'),true);poner(R[0],fr('cCed'));poner(R[0],fr('cFecNac'));
+    // 2 · Contacto
+    poner(R[1],fr('cWA'));poner(R[1],fr('cTel'));poner(R[1],fr('cEmail'),true);poner(R[1],fr('cDir'),true);poner(R[1],fr('cRef'));poner(R[1],fr('cRefWa'));
+    // 3 · Seguro
+    let pol=$('nxCliPolFr');if(!pol){pol=document.createElement('div');pol.className='fr';pol.id='nxCliPolFr';pol.hidden=true;pol.innerHTML='<label for="nxCliPolNum">Número de póliza</label><input type="text" id="nxCliPolNum" readonly aria-readonly="true" tabindex="-1" class="no-upper"/>';}
+    poner(R[2],pol,true);
+    poner(R[2],fr('cPlan'),true);
+    poner(R[2],buscador('cARS','Buscar ARS…','Sin ARS'),true);
+    poner(R[2],buscador('cAgt','Buscar agente…',''),true);
+    let emp=$('nxCliEmpFr');if(!emp&&$('eChips')){emp=document.createElement('div');emp.className='fr';emp.id='nxCliEmpFr';const l=$('eChipsLbl');if(l){l.textContent='Empresa que paga';emp.appendChild(l);}emp.appendChild($('eChips'));}
+    poner(R[2],emp,true);
+    poner(R[2],fr('cNCF'),true);poner(R[2],fr('cDiaFact'),true);poner(R[2],fr('cFecIni'));poner(R[2],fr('cFecFin'));
+    poner(R[2],$('seccionPrecioCustom'),true);
+    // 4 · Deuda
+    poner(R[3],fr('cDeudaIni'),true);
+    // 5 · Estado y proceso: la caja de siempre, dentro de un <details> plegable
+    if(!cajaEstado){const e=$('cEstadoCli');cajaEstado=e&&hijoDe(e,m);}
+    let det=$('nxCliEstDet');
+    if(!det&&cajaEstado){det=document.createElement('details');det.id='nxCliEstDet';det.className='nxSecDet';det.innerHTML='<summary class="nxSecSum" tabindex="0"><span class="nxSecSumTx"><span class="nxSecSumT"></span><span class="nxSecSumS"></span></span></summary>';det.appendChild(cajaEstado);
+      const tit=cajaEstado.firstElementChild;if(tit&&!tit.querySelector('input,select,button'))tit.classList.add('nxSecOldTit');
+      det.addEventListener('toggle',resumen);cajaEstado.addEventListener('change',resumen);}
+    poner(R[4],det,true);
+    // 6 · Dependientes: lista + tarjeta para agregar (nombre, parentesco, cédula y nacimiento opcionales)
+    poner(R[5],$('depLM'),true);
+    let nd=$('nxCliDepNuevo');
+    if(!nd&&$('dN')){
+      if(!filaDep)filaDep=hijoDe($('dN'),m);
+      nd=document.createElement('div');nd.id='nxCliDepNuevo';nd.className='nxSecDepNuevo';
+      nd.innerHTML='<div class="nxSecRej"><div class="fr nxSecAncho" id="nxDepNomFr"><label for="dN">Nombre del dependiente</label></div><div class="fr" id="nxDepRelFr"><label for="dR">Parentesco</label></div>'
+        +'<div class="fr"><label for="dC">Cédula</label><input type="text" id="dC" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="Si tiene" enterkeyhint="next" class="no-upper"/></div>'
+        +'<div class="fr nxSecAncho"><label for="dNac">Fecha de nacimiento</label><input type="date" id="dNac" min="1900-01-01" autocomplete="off"/></div></div>';
+      nd.querySelector('#nxDepNomFr').appendChild($('dN'));nd.querySelector('#nxDepRelFr').appendChild($('dR'));
+      const b=filaDep&&filaDep.querySelector('button[onclick="addDep()"]');if(b){b.appendChild(document.createTextNode(' Agregar dependiente'));nd.appendChild(b);}
+      try{nd.querySelector('#dNac').max=new Date().toISOString().slice(0,10);}catch(e){}
+    }
+    poner(R[5],nd,true);
+    // lo que queda vacío o repetido (rejillas viejas, separadores y títulos «//») se guarda escondido, no se borra
+    let resto=$('nxCliResto');if(!resto){resto=document.createElement('div');resto.id='nxCliResto';resto.hidden=true;resto.setAttribute('aria-hidden','true');}
+    m.insertBefore(resto,fe);
+    [...m.children].forEach(d=>{if(d===mt||d===fe||d===resto||d.classList.contains('nxSec'))return;
+      const txt=d.textContent.replace(/\s+/g,' ').trim();
+      if(d.classList.contains('gf2')||d.classList.contains('div')||d===filaDep||(!d.querySelector('input,select,button')&&(txt===''||/^(\/\/\s*)?(PÓLIZA Y ARS|DEPENDIENTES)$/i.test(txt))))resto.appendChild(d);});
+    planTxt();
+  }
+  function alAbrir(){
+    armar();
+    // #nxFichaPaneJs pliega la primera .nxFcCaja que encuentra; aquí la única es «Precio personalizado» y debe verse entera
+    const pc=$('seccionPrecioCustom');if(pc)pc.classList.remove('nxFcPleg');
+    const det=$('nxCliEstDet');if(det)det.open=false;
+    cabecera();refrescarBuscadores();resumen();planTxt();
+    setTimeout(()=>{const p2=$('seccionPrecioCustom');if(p2)p2.classList.remove('nxFcPleg');refrescarBuscadores();resumen();planTxt();},0);
+  }
+  function init(){
+    const ov=$('mCli');if(!ov)return;
+    armar();
+    const pc=$('cPlanChips');if(pc)new MutationObserver(planTxt).observe(pc,{childList:true});
+    let era=false;new MutationObserver(()=>{const ya=ov.classList.contains('open');if(ya&&!era)alAbrir();era=ya;}).observe(ov,{attributes:true,attributeFilter:['class']});
+    // abrirNuevoCli/editarCli escriben el título en cada apertura: sirve de aviso aunque se cierre y reabra en el mismo instante
+    const t=$('mCliT');if(t)new MutationObserver(()=>{if(ov.classList.contains('open'))alAbrir();}).observe(t,{childList:true,characterData:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
@@ -8784,7 +9051,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
         <option>ARS Grupo Médico</option><option>ARS BHD</option><option>Otra ARS</option>
       </select><div id="cARSChips"></div>
     </div>
-    <div class="fr"><label for="cDir">Dirección</label><input type="text" id="cDir" autocomplete="street-address" enterkeyhint="done"/></div>
+    <div class="fr"><label for="cDir">Dirección</label><input type="text" id="cDir" placeholder="Calle, número, sector, ciudad" autocomplete="street-address" enterkeyhint="done"/></div>
     <div class="div"></div>
     <!-- PRECIO PERSONALIZADO (solo con permiso) -->
     <div id="seccionPrecioCustom" style="display:none;background:var(--nm-bg,#fffbeb);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:5px 5px 10px var(--nm-lo,transparent),-5px -5px 10px var(--nm-hi,transparent)">
@@ -11416,7 +11683,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.73';
+const APP_VERSION='59.74';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -17884,8 +18151,33 @@ function rAgtSelCli(val){
   const target=val||agenteDeSesion()||ST.agentes[0].id;
   sel.innerHTML=ST.agentes.map(a=>`<option value="${a.id}"${String(a.id)===String(target)?' selected':''}>${a.nom}</option>`).join('');
 }
-function addDep(){const n=document.getElementById('dN').value.trim();if(!n)return;tempDeps.push({nom:n,rel:document.getElementById('dR').value,id:Date.now()});const dn=document.getElementById('dN');dn.value='';rDepLM();try{dn.focus();}catch(e){}}
-function rDepLM(){document.getElementById('depLM').innerHTML=tempDeps.map(d=>`<div class="dep-c">${d.nom} <span style="opacity:.5">(${d.rel})</span><button aria-label="Quitar este dependiente" onclick="rmDep(${d.id})">×</button></div>`).join('');}
+// 59.74: el dependiente admite cédula y fecha de nacimiento OPCIONALES (campos #dC y #dNac de la capa #nxCliSecJs).
+// deps sigue siendo [{nom,rel,id}] y solo suma cedula / fecha_nacimiento cuando se escriben. La cédula se valida con el
+// mismo verificador del titular (nxCedulaOk) y se guarda como 000-0000000-0.
+function addDep(){
+  const n=document.getElementById('dN').value.trim();if(!n)return;
+  const d={nom:n,rel:document.getElementById('dR').value,id:Date.now()};
+  const dc=document.getElementById('dC'),dnac=document.getElementById('dNac');
+  if(dc&&dc.value.trim()){
+    const dig=nxCedDig(dc.value);
+    if(!nxCedulaOk(dig)){toast('err','Cédula del dependiente no válida',dig.length===11?'El último dígito no corresponde. Revise la cédula.':'Escriba los 11 dígitos de la cédula, o déjela en blanco.');try{dc.setAttribute('aria-invalid','true');dc.focus();}catch(e){}return;}
+    d.cedula=nxCedFmt(dig);
+  }
+  if(dnac&&dnac.value){
+    if(dnac.value>hoy()){toast('err','Fecha no válida','La fecha de nacimiento del dependiente no puede estar en el futuro.');try{dnac.setAttribute('aria-invalid','true');dnac.focus();}catch(e){}return;}
+    if(dnac.value<'1900-01-01'){toast('err','Fecha no válida','Revise el año de nacimiento del dependiente.');try{dnac.setAttribute('aria-invalid','true');dnac.focus();}catch(e){}return;}
+    d.fecha_nacimiento=dnac.value;
+  }
+  tempDeps.push(d);
+  const dn=document.getElementById('dN');dn.value='';if(dc)dc.value='';if(dnac)dnac.value='';rDepLM();try{dn.focus();}catch(e){}
+}
+function rDepLM(){
+  const sec=document.documentElement.classList.contains('nx-clisec');
+  const fecha=f=>String(f||'').slice(0,10).split('-').reverse().join('/');
+  document.getElementById('depLM').innerHTML=tempDeps.map(d=>{
+    const sub=[d.rel,d.cedula?nxCedFmt(d.cedula):'',d.fecha_nacimiento?'nació el '+fecha(d.fecha_nacimiento):''].filter(Boolean).join(' · ');
+    return `<div class="dep-c"><b class="nxDepNom">${escHtml(d.nom)}</b> <span class="nxDepSub" style="opacity:.5">${sec?escHtml(sub):'('+escHtml(sub)+')'}</span><button aria-label="Quitar a ${escHtml(d.nom)}" onclick="rmDep(${d.id})">×</button></div>`;}).join('');
+}
 function rmDep(id){tempDeps=tempDeps.filter(d=>d.id!==id);rDepLM();}
 
 // ── COMISIONES ───────────────────────────────────────────────────────────────
