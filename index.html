@@ -7319,6 +7319,20 @@ html:not(.nx-fesp-off) #nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOver
 html:not(.nx-fesp-off) #nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay .nxWaTplActions{margin-top:24px!important;gap:8px!important}
 html:not(.nx-fesp-off) #nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay .nxWaTplAction{min-height:44px!important;font-size:13px!important}
 html:not(.nx-fesp-off) #nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay#nxWaTplOverlay .nxWaTplAction.primary{min-height:54px!important}
+/* ── 13) 59.72 · Registrar pago: «Recibido por» a la vista al abrir (dueño: «corrige lo de recibido por»).
+   Solo queda fijo abajo el botón principal; el resumen se desplaza con el contenido, justo después de «Recibido por».
+   El pie .fe pasa a display:contents (sus hijos se acomodan en la ventana, sin tocar el HTML), el botón es sticky
+   y una franja ::after del color de la hoja le hace de fondo y de margen inferior (24 celular / 48 PC). ── */
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal>.fe{display:contents!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal>.fe>.aboSummary{margin:24px 0 0!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal>.fe>:is(#btnAbo,#btnAboListo){position:sticky!important;bottom:calc(48px + env(safe-area-inset-bottom,0px));z-index:4;width:100%;margin:24px 0 0!important;min-height:54px!important}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal::after{content:"";display:block;position:sticky;bottom:0;z-index:3;height:calc(114px + env(safe-area-inset-bottom,0px));margin-top:-66px;background:linear-gradient(to bottom,transparent,var(--cb-sheet) 12px);pointer-events:none}
+html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-padding:124px 0 140px!important}
+@media (max-width:600px){
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal>.fe>:is(#btnAbo,#btnAboListo){bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal::after{height:calc(90px + env(safe-area-inset-bottom,0px))}
+  html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-padding:100px 0 116px!important}
+}
 /* ⟦/59.72⟧ */
 </style>
 </head>
