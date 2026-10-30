@@ -235,3 +235,13 @@ Idea: **lo que va junto queda pegado; lo que es de otro grupo se separa más.** 
 - Se suma a las otras medidas: campos de 48 px de alto con letra de 16 px, botón principal de 54 px y todo lo que se toca de 44 px o más.
 - Los formularios nuevos nacen así. Los que ya existen se corrigen cuando se tocan, sin rediseños masivos (regla anti-FOUC).
 - Al entregar, se miden los espacios con Playwright a 390 y 1280 px y se anotan en la bitácora.
+
+## Regla del dueño: todo «smart» (30-oct-2026)
+> «Recuerda siempre poner todo smart.»
+
+Toda pantalla, ventana o función nueva, y toda la que se toque, se entrega **smart**. El dueño lo definió así:
+1. **Que piense por el usuario.** Valores ya puestos, autocompletar, formatos que se arman solos (cédula, teléfono, dinero), avisos antes de que algo falle y lo más usado a un toque.
+2. **Que se vea elegante y moderno.** Acabado fino: vidrio, la regla de espaciado, movimientos suaves; nada que se vea viejo ni amontonado.
+3. **Que funcione igual de bien en iPhone y en PC.** Diseñado primero para el celular, sin nada cortado ni que se salga, y aprovechando el ancho de la PC.
+
+Antes de entregar, revisar los 3 puntos y anotarlo en la bitácora. Si algo no puede ser smart, decirlo y por qué.
