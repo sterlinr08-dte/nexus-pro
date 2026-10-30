@@ -6165,10 +6165,10 @@ html:not(.tema-claro) #nxInfoTip{background:#F4F4FA;color:#14121F}
     {notas:()=>porTexto('#mBackup','.modal > div > div','Si Supabase tiene un problema'),titulo:prev},
     {notas:()=>porTexto('#mBackup','.modal > div','Recomendación').filter(e=>e.children.length<=2),titulo:n=>n.closest('.modal').querySelector('.mt span,.mt')},
     {notas:()=>[document.getElementById('cDeudaHint')].filter(Boolean),titulo:()=>document.getElementById('cDeudaLbl')},
-    {notas:()=>porTexto('#mCli','#camposPrecioCustom > div','Deja en blanco').concat(porTexto('#mCli','#camposPrecioCustom > div','⚡ Este precio')).concat(porTexto('#mCli','#camposPrecioCustom > div','Este precio es la plantilla')),titulo:()=>{const s=document.querySelector('#seccionPrecioCustom > div > div');return s;}},
-    {notas:()=>porTexto('#mCli','label span span','Si lo APAGAS'),titulo:n=>{const br=prev(n);if(br&&br.tagName==='BR')br.classList.add('nxInfoOculto');return n.parentElement.querySelector('strong');}},
+    {notas:()=>porTexto('#mCli','#camposPrecioCustom > div','Deja en blanco').concat(porTexto('#mCli','#camposPrecioCustom > div','Déjelo en blanco')).concat(porTexto('#mCli','#camposPrecioCustom > div','⚡ Este precio')).concat(porTexto('#mCli','#camposPrecioCustom > div','Este precio es la plantilla')),titulo:()=>{const s=document.querySelector('#seccionPrecioCustom > div > div');return s;}},
+    {notas:()=>porTexto('#mCli','label span span','Si lo APAGAS').concat(porTexto('#mCli','label span span','Si la apaga')),titulo:n=>{const br=prev(n);if(br&&br.tagName==='BR')br.classList.add('nxInfoOculto');return n.parentElement.querySelector('strong');}},
     // Etiquetas con una aclaración entre paréntesis: la etiqueta queda corta y el paréntesis va a la ⓘ.
-    {paren:true,notas:()=>[document.getElementById('cDeudaLbl')].concat(porTexto('#v-config','.fr > label','Cambiar número inicial'),porTexto('#v-config','.fr > label','Días personalizados'),porTexto('#mCli','.modal > div > div','PENDIENTES DEL CLIENTE')).filter(Boolean)}
+    {paren:true,notas:()=>[].concat(porTexto('#v-config','.fr > label','Cambiar número inicial'),porTexto('#v-config','.fr > label','Días personalizados'),porTexto('#mCli','.modal > div > div','PENDIENTES DEL CLIENTE'),porTexto('#mCli','.modal > div > div','Pendientes del cliente')).filter(Boolean)}
   ];
   const marca=new WeakMap();   // título → [notas]
   function boton(titulo){
@@ -6362,6 +6362,104 @@ html.nx-fcli #mCli#mCli#mCli#mCli .dep-c button{width:44px!important;min-width:4
     [...m.querySelectorAll('div,span')].forEach(e=>{if(e.children.length>1)return;const t=e.textContent.trim();if(/^(PENDIENTES DEL CLIENTE|PROGRESO DE ONBOARDING)/.test(t))oracion(e);});
   }
   function init(){const ov=document.getElementById('mCli');if(!ov)return;let abierta=false;new MutationObserver(()=>{const ya=ov.classList.contains('open');if(ya&&!abierta){const c=document.querySelector('#mCli .nxFcCaja');if(c)c.classList.add('nxFcPleg');setTimeout(orden,0);setTimeout(orden,250);}abierta=ya;}).observe(ov,{attributes:true,attributeFilter:['class']});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+<!-- ═══ 59.73 FICHA DEL CLIENTE · paquete B de la auditoría (dueño, 30-oct-2026: «paquete C», parte 1) ═══
+     style#nxCliFicha: solo vista (título alineado, huecos de la regla, letra ≥13, fichas de empresa de 44 sin caja con
+     desplazamiento, ejemplos sin MAYÚSCULAS, campo con error en rojo). Va con la misma llave que #nxFichaPane (nx-fcli).
+     script#nxCliFichaJs: preguntar antes de descartar (✕, Esc, deslizar o tocar fuera), foco dentro de la ventana,
+     Tab que no se escapa, Enter → siguiente campo, cédula y teléfonos con su formato al salir del campo, grupos de fichas
+     con nombre para el lector de pantalla. No cambia ningún dato; el guardado y sus validaciones están en guardarCli(). -->
+<style id="nxCliFicha">
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .mt::before{display:none!important;content:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal:focus{outline:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .nxFcCaja .frow>.fr+.fr{margin-top:0!important} /* fecha de seguimiento → agente responsable: 20 (era 40) */
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli :is(#cPendientesLbl,#cProgTxt,#cProgTxt+span,#cProgTxt~span){font-size:13px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli #cProgTxt{font-variant-numeric:tabular-nums}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli div:has(>#cProgTxt){font-size:13px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli #seccionPrecioCustom>div:first-child>div{font-size:13px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli #cPendientes{row-gap:8px!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli #eChips{max-height:none!important;overflow:visible!important;border:0!important;background:none!important;box-shadow:none!important;padding:0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli #eChips .echip{box-sizing:border-box!important;height:44px!important;min-height:44px!important;margin:0!important;transform:none!important;border:0!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal input::placeholder{text-transform:none!important}
+html.nx-fcli #mCli#mCli#mCli#mCli#mCli#mCli#mCli .modal :is(input,select)[aria-invalid="true"]{border-color:#EF4444!important;box-shadow:0 0 0 3px rgb(239 68 68/.30)!important}
+</style>
+<script id="nxCliFichaJs">
+(function(){
+  const ov=()=>document.getElementById('mCli');
+  const abierta=()=>{const o=ov();return !!(o&&o.classList.contains('open'));};
+  let foto=null, previo=null;
+  // «Foto» de lo que hay en la ficha para saber si hay cambios sin guardar
+  function estado(){
+    const o=ov();if(!o)return '';
+    const v=[...o.querySelectorAll('input,select,textarea')].map(e=>(e.id||e.value)+'='+(e.type==='checkbox'?e.checked:e.value));
+    let deps='';try{deps=JSON.stringify(typeof tempDeps!=='undefined'?tempDeps:[]);}catch(e){}
+    return v.join('|')+'|deps='+deps+'|emp='+((document.getElementById('eChips')||{})._sel||'');
+  }
+  window.nxCliMarcarLimpio=()=>{foto=estado();};
+  const conCambios=()=>foto!=null&&estado()!==foto;
+  // Una sola salida: ✕, «Cancelar», Esc y deslizar (tocan la ✕) y tocar fuera
+  window.nxCliCerrar=async function(){
+    if(document.querySelector('.swal-overlay'))return;
+    if(conCambios()){
+      const ok=await swalConfirm('✋','¿Descartar los cambios?','Lo que escribió en esta ficha no se ha guardado y se perderá.',{ok:'Descartar',color:'#ef4444'});
+      if(!ok)return;
+    }
+    foto=null;closeM('mCli');
+  };
+  window.addEventListener('click',e=>{
+    const o=ov();if(!o||e.target!==o||!abierta())return;
+    e.stopImmediatePropagation();e.preventDefault();window.nxCliCerrar();
+  },true);
+  // Foco: entra a la ventana al abrir (en PC al nombre; en el celular a la ventana, sin abrir el teclado) y vuelve al cerrar
+  const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';};
+  const enfocables=()=>[...ov().querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(e=>!e.disabled&&visible(e));
+  function alAbrir(){
+    previo=document.activeElement;
+    setTimeout(()=>{
+      // Teléfonos y cédula guardados se muestran con su formato (809-555-1234 · 000-0000000-0); no cambia el dato
+      try{['cWA','cTel','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e&&e.value&&nxTelRD(e.value))e.value=nxTelFmt(e.value);});
+        const c=document.getElementById('cCed');if(c&&nxCedDig(c.value).length===11)c.value=nxCedFmt(c.value);}catch(e){}
+      foto=estado();
+      const md=ov().querySelector('.modal');
+      [['cPlan'],['cAgt'],['cNCF'],['cEstadoCli'],['cPrioridad'],['cRespSeg'],['cARS']].forEach(([id])=>{const c=document.getElementById(id+'Chips');if(c){c.setAttribute('role','group');c.setAttribute('aria-labelledby',id+'Lbl');}});
+      try{
+        if(window.matchMedia('(pointer:fine)').matches)document.getElementById('cNom').focus({preventScroll:true});
+        else md.focus({preventScroll:true});
+      }catch(e){}
+    },60);
+  }
+  function alCerrar(){foto=null;try{if(previo&&document.contains(previo))previo.focus({preventScroll:true});}catch(e){}previo=null;}
+  document.addEventListener('keydown',e=>{
+    if(!abierta()||document.querySelector('.swal-overlay'))return;
+    const o=ov();
+    if(e.key==='Tab'){ // el foco no se sale de la ventana
+      const f=enfocables();if(!f.length)return;
+      const i=f.indexOf(document.activeElement);
+      if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus();}
+      else if(!e.shiftKey&&(i===-1||i===f.length-1)){e.preventDefault();f[0].focus();}
+      return;
+    }
+    if(e.key==='Enter'&&!e.isComposing){ // Enter → siguiente campo (dependiente: su propio Enter agrega)
+      const t=e.target;if(!o.contains(t)||t.id==='dN'||!t.matches('input:not([type=checkbox]):not([type=radio])'))return;
+      e.preventDefault();
+      const campos=[...o.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select')].filter(x=>!x.disabled&&visible(x));
+      const sig=campos[campos.indexOf(t)+1];
+      if(sig)sig.focus();else t.blur();
+    }
+  });
+  // Formato al salir del campo (solo lo que se ve; guardarCli valida y guarda)
+  document.addEventListener('focusout',e=>{
+    const t=e.target;if(!t||!t.id||!abierta())return;
+    if(t.id==='cCed'&&typeof nxCedFmt==='function'){const d=nxCedDig(t.value);if(d.length===11)t.value=nxCedFmt(d);}
+    if(/^(cWA|cTel|cRefWa)$/.test(t.id)&&typeof nxTelRD==='function'&&nxTelRD(t.value))t.value=nxTelFmt(t.value);
+    if(t.getAttribute('aria-invalid'))t.removeAttribute('aria-invalid');
+  });
+  function init(){
+    const o=ov();if(!o)return;let era=false;
+    new MutationObserver(()=>{const ya=o.classList.contains('open');if(ya&&!era)alAbrir();if(!ya&&era)alCerrar();era=ya;}).observe(o,{attributes:true,attributeFilter:['class']});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
@@ -8593,41 +8691,41 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
 
 <!-- Modal Cliente -->
 <div class="overlay" id="mCli">
-  <div class="modal" style="max-width:560px">
-    <div class="mt"><span id="mCliT">// NUEVO CLIENTE</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="closeM('mCli')"><i class="ti ti-x"></i></button></div>
-    <div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:5px;letter-spacing:.5px">EMPRESA COTIZANTE</div>
-    <div class="esel" id="eChips"></div>
+  <div class="modal" style="max-width:560px" role="dialog" aria-modal="true" aria-labelledby="mCliT" tabindex="-1">
+    <div class="mt"><span id="mCliT">// NUEVO CLIENTE</span><button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="nxCliCerrar()"><i class="ti ti-x"></i></button></div>
+    <div id="eChipsLbl" style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:5px;letter-spacing:.5px">EMPRESA COTIZANTE</div>
+    <div class="esel" id="eChips" role="group" aria-labelledby="eChipsLbl"></div>
     <div class="div"></div>
     <div class="gf2">
-      <div class="fr"><label>Nombre completo *</label><input type="text" id="cNom" placeholder="Nombres primero, luego Apellidos"/></div>
-      <div class="fr"><label>Cédula / RNC</label><input type="text" id="cCed" placeholder="000-0000000-0"/></div>
-      <div class="fr"><label>WhatsApp *</label><input type="text" id="cWA" placeholder="18091234567"/></div>
-      <div class="fr"><label>Teléfono</label><input type="text" id="cTel"/></div>
-      <div class="fr"><label>Email</label><input type="email" id="cEmail"/></div>
+      <div class="fr"><label for="cNom">Nombre completo *</label><input type="text" id="cNom" placeholder="Nombres y apellidos" autocomplete="name" autocapitalize="words" enterkeyhint="next" required aria-required="true"/></div>
+      <div class="fr"><label for="cCed">Cédula o RNC</label><input type="text" id="cCed" placeholder="000-0000000-0" inputmode="numeric" autocomplete="off" maxlength="13" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cWA">WhatsApp *</label><input type="tel" id="cWA" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="16" enterkeyhint="next" required aria-required="true"/></div>
+      <div class="fr"><label for="cTel">Teléfono</label><input type="tel" id="cTel" placeholder="809-555-1234" inputmode="tel" autocomplete="tel-national" maxlength="16" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cEmail">Correo</label><input type="email" id="cEmail" placeholder="nombre@correo.com" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"/></div>
       <div class="fr" style="grid-column:1/-1"><div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:6px;letter-spacing:.3px">REFERENCIA DEL CLIENTE</div></div>
-      <div class="fr"><label>Referencia / Apodo <span style="color:#475569;font-weight:400">(opcional)</span></label><input type="text" id="cRef" placeholder="Ej: Taller Santiago, Doña Ana..."/></div>
-      <div class="fr"><label>WhatsApp de referencia <span style="color:#475569;font-weight:400">(opcional)</span></label><input type="text" id="cRefWa" placeholder="Ej: 8290000000"/></div>
-      <div class="fr"><label>Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select><div id="cPlanChips"></div></div>
-      <div class="fr"><label>Agente</label><select id="cAgt"></select><div id="cAgtChips"></div></div>
-      <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select><div id="cNCFChips"></div></div>
+      <div class="fr"><label for="cRef">Referencia o apodo</label><input type="text" id="cRef" placeholder="Ej.: Doña Ana" autocomplete="off" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cRefWa">WhatsApp de la referencia</label><input type="tel" id="cRefWa" placeholder="829-555-1234" inputmode="tel" autocomplete="off" maxlength="16" enterkeyhint="next"/></div>
+      <div class="fr"><label for="cPlan" id="cPlanLbl">Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select><div id="cPlanChips"></div></div>
+      <div class="fr"><label for="cAgt" id="cAgtLbl">Agente</label><select id="cAgt"></select><div id="cAgtChips"></div></div>
+      <div class="fr"><label for="cNCF" id="cNCFLbl">Tipo de comprobante (NCF)</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select><div id="cNCFChips"></div></div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">// PÓLIZA Y ARS</div>
     <div class="gf2">
-      <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
-      <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
-      <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
-      <div class="fr"><label id="cDeudaLbl">Deuda anterior pendiente RD$ (la que el cliente ya tenía ANTES del sistema)</label>
+      <div class="fr"><label for="cFecIni">Inicio de la póliza</label><input type="date" id="cFecIni"/></div>
+      <div class="fr"><label for="cFecFin">Fin de la póliza</label><input type="date" id="cFecFin"/></div>
+      <div class="fr"><label for="cDiaFact">Día de facturación (1 al 28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" step="1" inputmode="numeric" placeholder="Día del mes" enterkeyhint="next"/></div>
+      <div class="fr"><label id="cDeudaLbl" for="cDeudaIni">Deuda antes del sistema (RD$)</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper" style="flex:1;min-width:0"/>
           <button type="button" id="cDeudaUnlock" onclick="nxDeudaUnlock()" style="display:none;flex:0 0 auto;background:var(--nm-bg,#f1f5f9);color:var(--nm-tx2,#475569);border:none;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:4px 4px 9px var(--nm-lo,transparent),-4px -4px 9px var(--nm-hi,transparent)"><i class="ti ti-lock-open"></i> Ajustar</button>
         </div>
-        <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 Es la deuda que el cliente trajo de ANTES del sistema — va aparte, NO se mezcla con las facturas del mes. Está bloqueada para que al editar no se dañe. Toca <b>Ajustar</b> para bajarla cuando el cliente te pague esa deuda vieja.</div>
+        <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 Es la deuda que el cliente traía antes del sistema. Va aparte y no se mezcla con las facturas del mes. Está bloqueada para que no se dañe al editar. Toque <b>Ajustar</b> para bajarla cuando el cliente pague esa deuda.</div>
       </div>
     </div>
     <div style="background:var(--nm-bg,#f8fafc);border-radius:12px;padding:12px;margin:8px 0;box-shadow:inset 3px 3px 7px var(--nm-lo,#e2e8f0),inset -3px -3px 7px var(--nm-hi,#fff)">
       <div style="font-size:10px;font-weight:700;color:var(--nm-tx2,#475569);margin-bottom:10px;font-family:var(--mono)"><i class="ti ti-clipboard-list"></i> ESTADO Y PROCESO DEL CLIENTE</div>
       <div class="frow">
-        <div class="fr"><label>Estado del cliente</label>
+        <div class="fr"><label for="cEstadoCli" id="cEstadoCliLbl">Estado del cliente</label>
           <select id="cEstadoCli" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
             <option value="ACTIVO">🟢 Activo</option>
             <option value="EN_PROCESO">🟡 En proceso</option>
@@ -8635,7 +8733,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
             <option value="CANCELADO">🔴 Cancelado</option>
           </select><div id="cEstadoCliChips"></div>
         </div>
-        <div class="fr"><label>Prioridad</label>
+        <div class="fr"><label for="cPrioridad" id="cPrioridadLbl">Prioridad</label>
           <select id="cPrioridad" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
             <option value="BAJA">Baja</option>
             <option value="MEDIA" selected>Media</option>
@@ -8646,10 +8744,10 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:var(--nm-bg,#eff6ff);padding:9px;border-radius:11px;box-shadow:4px 4px 9px var(--nm-lo,transparent),-4px -4px 9px var(--nm-hi,transparent)">
         <input type="checkbox" id="cPermFact" checked style="width:18px;height:18px"/>
-        <span><strong style="color:var(--nm-tx,inherit)">Permitir facturación automática</strong><br><span style="font-size:9px;color:var(--nm-tx2,#475569)">Si lo <b>APAGAS</b>, este cliente <b>NO genera factura</b> (cortesía / familiar). Si está activo, entra en la facturación automática según su día.</span></span>
+        <span><strong style="color:var(--nm-tx,inherit)">Permitir facturación automática</strong><br><span style="font-size:9px;color:var(--nm-tx2,#475569)">Si la apaga, este cliente <b>no genera factura</b> (cortesía o familiar). Si está encendida, entra en la facturación automática según su día.</span></span>
       </label>
-      <div style="font-size:9px;color:#475569;margin:8px 0 4px;font-family:var(--mono)">PENDIENTES DEL CLIENTE (marca los que tiene pendientes):</div>
-      <div id="cPendientes" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px">
+      <div id="cPendientesLbl" style="font-size:9px;color:#475569;margin:8px 0 4px;font-family:var(--mono)">Pendientes del cliente (marque los que faltan):</div>
+      <div id="cPendientes" role="group" aria-labelledby="cPendientesLbl" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px">
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="DOCUMENTACION_PENDIENTE" onchange="actualizarProgreso()"/> Documentación</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CEDULA_PENDIENTE" onchange="actualizarProgreso()"/> Cédula</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CARNET_PENDIENTE" onchange="actualizarProgreso()"/> Carnet</label>
@@ -8663,21 +8761,21 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CONTRATO_PENDIENTE" onchange="actualizarProgreso()"/> Contrato</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="OTRO" onchange="actualizarProgreso()"/> Otro</label>
       </div>
-      <input type="text" id="cOtroPend" placeholder="Detalle del otro pendiente..." class="no-upper" style="width:100%;margin-top:6px;display:none;font-size:11px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px"/>
+      <input type="text" id="cOtroPend" aria-label="Detalle del otro pendiente" placeholder="¿Cuál es el otro pendiente?" class="no-upper" style="width:100%;margin-top:6px;display:none;font-size:11px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px"/>
       <div style="margin-top:10px">
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#475569;margin-bottom:3px"><span>PROGRESO DE ONBOARDING</span><span id="cProgTxt">100%</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#475569;margin-bottom:3px"><span>Avance del trámite</span><span id="cProgTxt">100%</span></div>
         <div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden"><div id="cProgBar" style="height:100%;width:100%;background:#10b981;transition:width .3s"></div></div>
       </div>
-      <div class="fr" style="margin-top:8px"><label>Nota del proceso</label><input type="text" id="cNotaProc" placeholder="Ej: Cliente enviará cédula mañana" class="no-upper"/></div>
+      <div class="fr" style="margin-top:8px"><label for="cNotaProc">Nota del proceso</label><input type="text" id="cNotaProc" placeholder="Ej.: Enviará la cédula" class="no-upper" enterkeyhint="next"/></div>
       <div class="frow">
-        <div class="fr"><label>Fecha de seguimiento</label><input type="date" id="cFechaSeg"/></div>
-        <div class="fr"><label>Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select><div id="cRespSegChips"></div></div>
+        <div class="fr"><label for="cFechaSeg">Fecha de seguimiento</label><input type="date" id="cFechaSeg"/></div>
+        <div class="fr"><label for="cRespSeg" id="cRespSegLbl">Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select><div id="cRespSegChips"></div></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:8px">
         <input type="checkbox" id="cVip" style="width:16px;height:16px"/> ⭐ Cliente VIP
       </label>
     </div>
-    <div class="fr"><label>ARS (Administradora de Riesgos de Salud)</label>
+    <div class="fr"><label for="cARS" id="cARSLbl">ARS (aseguradora de salud)</label>
       <select id="cARS" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:var(--tx1)">
         <option value="">Seleccionar ARS...</option>
         <option>ARS Humano</option><option>ARS Reservas</option><option>ARS Semma</option>
@@ -8686,7 +8784,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
         <option>ARS Grupo Médico</option><option>ARS BHD</option><option>Otra ARS</option>
       </select><div id="cARSChips"></div>
     </div>
-    <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
+    <div class="fr"><label for="cDir">Dirección</label><input type="text" id="cDir" autocomplete="street-address" enterkeyhint="done"/></div>
     <div class="div"></div>
     <!-- PRECIO PERSONALIZADO (solo con permiso) -->
     <div id="seccionPrecioCustom" style="display:none;background:var(--nm-bg,#fffbeb);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:5px 5px 10px var(--nm-lo,transparent),-5px -5px 10px var(--nm-hi,transparent)">
@@ -8698,25 +8796,25 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
         </label>
       </div>
       <div id="camposPrecioCustom" style="display:none">
-        <div style="font-size:9px;color:#92400e;margin-bottom:8px">Deja en blanco para usar el precio estándar del plan</div>
+        <div style="font-size:9px;color:#92400e;margin-bottom:8px">Déjelo en blanco para usar el precio del plan.</div>
         <div class="g2">
-          <div class="fr"><label>Prima titular (RD$)</label><input type="text" id="cPrecioTitular" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
-          <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
+          <div class="fr"><label for="cPrecioTitular">Prima del titular (RD$)</label><input type="text" id="cPrecioTitular" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
+          <div class="fr"><label for="cPrecioDep">Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
         <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:var(--nm-bg,#fef3c7);border-radius:8px;padding:6px 8px;box-shadow:inset 2px 2px 5px var(--nm-lo,transparent),inset -2px -2px 5px var(--nm-hi,transparent)"></div>
-        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Este precio es la plantilla para las PRÓXIMAS facturas (las que el sistema genere de aquí en adelante). NO cambia ninguna factura ya generada. Para corregir una factura que ya existe y está pendiente (del mes actual o atrasada), ve a Facturas y usa el botón "Precio" de esa factura — ahí mismo te pregunta si ese precio también debe quedar como la plantilla futura.</div>
+        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Este precio es la plantilla para las PRÓXIMAS facturas (las que el sistema genere de aquí en adelante). NO cambia ninguna factura ya generada. Para corregir una factura que ya existe y está pendiente (del mes actual o atrasada), vaya a Facturas y use el botón «Precio» de esa factura; ahí mismo se le pregunta si ese precio también queda como plantilla.</div>
       </div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
     <div style="display:flex;gap:6px;margin-bottom:7px">
-      <input type="text" id="dN" placeholder="Nombre dependiente" onkeydown="if(event.key==='Enter'){event.preventDefault();addDep();}" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
-      <select id="dR" style="width:105px;font-size:10px;padding:6px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select>
+      <input type="text" id="dN" aria-label="Nombre del dependiente" autocomplete="off" enterkeyhint="done" placeholder="Nombre" onkeydown="if(event.key==='Enter'){event.preventDefault();addDep();}" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
+      <select id="dR" aria-label="Parentesco" style="width:105px;font-size:10px;padding:6px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select>
       <button aria-label="Agregar un dependiente" class="btn bsm bc1" onclick="addDep()"><i class="ti ti-plus"></i></button>
     </div>
     <div id="depLM" style="display:flex;flex-wrap:wrap;gap:4px;min-height:16px;margin-bottom:8px"></div>
     <div class="fe">
-      <button class="btn" onclick="closeM('mCli')">Cancelar</button>
-      <button class="btn bxl" onclick="guardarCli()" id="btnGCli"><i class="ti ti-check"></i> Guardar cliente</button>
+      <button class="btn" onclick="nxCliCerrar()">Cancelar</button>
+      <button class="btn bxl" type="button" onclick="guardarCli()" id="btnGCli"><i class="ti ti-check"></i> Guardar cliente</button>
     </div>
   </div>
 </div>
@@ -11318,7 +11416,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.72';
+const APP_VERSION='59.73';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -17347,7 +17445,7 @@ async function eliminarAgt(id,btn){if(ST.clientes.find(c=>c.agente_id===id)){toa
 
 // ── CLIENTES (guardar/editar) ─────────────────────────────────────────────────
 function abrirNuevoCli(){
-  editCliId=null;tempDeps=[];
+  editCliId=null;tempDeps=[];_nxCliNumPol=null;
   document.getElementById('mCliT').textContent='NUEVO CLIENTE';
   ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin','cRef','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('cPlan').value='Básico';document.getElementById('cNCF').value='B02';
@@ -17357,7 +17455,7 @@ function abrirNuevoCli(){
   const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
   // CREAR: el campo sirve para registrar la deuda PREVIA del cliente (editable, sin candado)
   const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;cDeudaNew._deudaOriginal=0;}
-  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda anterior pendiente RD$ (la que el cliente ya tenía ANTES del sistema)';
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda antes del sistema (RD$)';
    const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='none';
    const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='none';}
   ['cVip'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=false;});
@@ -17409,7 +17507,7 @@ function editarCli(id){
   // Para corregir un error puntual está el botón "Ajustar" (nxDeudaUnlock), deliberado y auditado.
   const cDeudaEd=document.getElementById('cDeudaIni');
   if(cDeudaEd){cDeudaEd.value=c.deuda_anterior||0;cDeudaEd.disabled=true;cDeudaEd._deudaOriginal=c.deuda_anterior||0;}
-  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda anterior pendiente RD$ (bloqueada · ajústala cuando el cliente pague lo viejo)';
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda antes del sistema (RD$) · bloqueada';
    const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='';
    const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='';}
   const cVipEl=document.getElementById('cVip');if(cVipEl)cVipEl.checked=!!c.vip;
@@ -17447,13 +17545,14 @@ function editarCli(id){
 const TOTAL_PENDIENTES_POSIBLES=12;
 // Desbloquea el campo de deuda al EDITAR un cliente, de forma deliberada (no se daña por accidente).
 // La deuda normal se maneja sola con facturas y cobros; esto es solo para corregir un error puntual.
-function nxDeudaUnlock(){
+async function nxDeudaUnlock(){
   const inp=document.getElementById('cDeudaIni');if(!inp)return;
-  if(!confirm('La deuda se maneja sola con las facturas y los cobros.\n\n¿Seguro que quieres AJUSTARLA a mano? Úsalo solo para corregir un error puntual.'))return;
+  const ok=await swalConfirm('🔓','¿Ajustar la deuda a mano?','La deuda se maneja sola con las facturas y los cobros. Úselo solo para corregir un error puntual.',{ok:'Ajustar'});
+  if(!ok)return;
   inp.disabled=false;
   const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='none';
   try{inp.focus();inp.select();}catch(e){}
-  toast('info','Deuda desbloqueada','Cámbiala con cuidado · se guarda al guardar el cliente');
+  toast('info','Deuda desbloqueada','Cámbiela con cuidado. Se guarda al guardar el cliente.');
 }
 
 function actualizarProgreso(){
@@ -17474,6 +17573,9 @@ function actualizarProgreso(){
   const sel=document.getElementById('cEstadoCli');
   if(sel&&n>0&&sel.value==='ACTIVO'){
     sel.value='EN_PROCESO';
+    // 59.73: la ficha encendida debe mostrar lo que se va a guardar
+    try{if(typeof nxChipsSync==='function')nxChipsSync('mCli');}catch(e){}
+    try{if(document.getElementById('mCli').classList.contains('open'))toast('info','Estado: En proceso','Se cambió porque el cliente tiene pendientes.');}catch(e){}
   }
 }
 // Normaliza un número de WhatsApp a formato internacional RD listo para wa.me:
@@ -17496,152 +17598,197 @@ function nxAvisoPrecioCliente(cli,primaAntes){
     logAudit('CLIENTE_PRECIO_FUTURO',`${cli.nom} · Precio para las próximas facturas: ${fmt(primaAntes)} → ${fmt(primaAhora)} (no afecta facturas ya generadas)`,'Clientes');
   }catch(e){console.warn('nxAvisoPrecioCliente',e);}
 }
+// ── 59.73 · Validaciones de la ficha del cliente (auditoría 30-oct-2026, paquete B) ──
+// Cédula dominicana: 11 dígitos con dígito verificador (módulo 10 de la JCE, pesos 1-2-1-2…).
+// RNC: 9 dígitos. Se guardan las cédulas válidas como 000-0000000-0 (el formato del ejemplo).
+function nxCedDig(v){return String(v||'').replace(/\D/g,'');}
+function nxCedulaOk(d){
+  d=nxCedDig(d);if(d.length!==11)return false;
+  let s=0;for(let i=0;i<10;i++){let p=(+d[i])*(i%2?2:1);if(p>9)p-=9;s+=p;}
+  return (10-(s%10))%10===+d[10];
+}
+function nxCedFmt(v){const d=nxCedDig(v);return d.length===11?d.slice(0,3)+'-'+d.slice(3,10)+'-'+d.slice(10):String(v||'').trim();}
+// Teléfono / WhatsApp de RD: 10 dígitos que empiezan por 809, 829 u 849 (acepta +1 / 1 delante).
+// Devuelve los 10 dígitos o '' si no es un número de RD.
+function nxTelRD(v){let d=String(v||'').replace(/\D/g,'');if(d.length===11&&d[0]==='1')d=d.slice(1);return /^(809|829|849)\d{7}$/.test(d)?d:'';}
+function nxTelFmt(v){const d=nxTelRD(v);return d?d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6):String(v||'').trim();}
+function nxCorreoOk(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v||'').trim());}
+// Si el servidor rechaza una columna que no existe, devuelve su nombre (PostgREST PGRST204 o Postgres 42703).
+function nxColumnaFaltante(e){
+  const m=String((e&&e.message)||e||'');
+  const a=m.match(/Could not find the '([a-z0-9_]+)' column/i)||m.match(/column \\?"?([a-z0-9_]+)\\?"? of relation/i)||m.match(/column [a-z0-9_]+\.([a-z0-9_]+) does not exist/i);
+  return a?a[1]:null;
+}
+// Guarda en la base y, SOLO si falta una columna, la quita y reintenta (avisando cuál). Cualquier otro error sube.
+async function nxCliEnviar(fn,datos){
+  const quitadas=[];let d={...datos};
+  for(let i=0;i<8;i++){
+    try{const r=await fn(d);if(quitadas.length)toast('warn','Guardado sin algunos datos','La base aún no tiene: '+quitadas.join(', ')+'. Avise al administrador.');return {r,quitadas};}
+    catch(e){const col=nxColumnaFaltante(e);if(!col||!(col in d))throw e;quitadas.push(col);delete d[col];}
+  }
+  throw new Error('No se pudo guardar el cliente.');
+}
+let _nxCliGuardando=false;   // un solo guardado a la vez (no se reactiva por tiempo)
+let _nxCliNumPol=null;       // número de póliza apartado para este alta (se reusa si se reintenta)
 async function guardarCli(){
-  // Nombre del cliente (obligatorio)
-  const nom=document.getElementById('cNom').value.trim();
-  if(!nom){toast('err','Campo requerido','Ingrese el nombre del cliente');return;}
-  // ── WhatsApp obligatorio y validado (decisión del dueño, auditoría 2026-09-08) ──
-  // Antes se guardaba lo que fuera (o nada) sin avisar -- un cliente sin WhatsApp válido queda
-  // afuera de TODO el módulo de Contactos/Buzón (waContactos() exige c.wa) sin que quien lo creó
-  // se entere nunca. nxWa() exige 10 dígitos (o 11 con código de país) para considerarlo válido.
-  const waInput=document.getElementById('cWA').value.trim();
-  if(!waInput){toast('err','Campo requerido','Ingrese el número de WhatsApp del cliente');return;}
-  const waNormalizado=nxWa(waInput);
-  if(!waNormalizado){toast('err','WhatsApp inválido','El número debe tener 10 dígitos (ej. 8091234567)');return;}
-  // ── Validar coherencia de fechas de póliza ──
-  const _fi=document.getElementById('cFecIni')?.value||'',_ff=document.getElementById('cFecFin')?.value||'';
-  if(_fi&&_ff&&_ff<_fi){toast('err','Fechas invertidas','La fecha de fin de póliza no puede ser anterior a la de inicio');return;}
-  // ── Validar cédula duplicada (activos e inhabilitados) ──
-  const cedula=document.getElementById('cCed').value.trim();
-  if(cedula){
-    const dup=ST.clientes.find(c=>
-      (c.cedula||'').replace(/[\s-]/g,'')===cedula.replace(/[\s-]/g,'') &&
-      c.id!==editCliId
-    );
-    if(dup){
-      const estado=dup.activo===false?'inhabilitado':'activo';
-      toast('err','Cédula ya registrada',`Esta cédula pertenece a "${dup.nom}" (cliente ${estado}). No se puede duplicar.`);
-      return;
-    }
+  if(_nxCliGuardando){toast('info','Guardando…','Espere a que termine el guardado anterior.');return;}
+  const $v=id=>{const e=document.getElementById(id);return e?String(e.value||'').trim():'';};
+  const cliAntes=editCliId?ST.clientes.find(x=>x.id===editCliId):null;
+  const err=(t,m,id)=>{toast('err',t,m);if(id){try{const e=document.getElementById(id);e.setAttribute('aria-invalid','true');e.focus();}catch(_){}}};
+  document.querySelectorAll('#mCli [aria-invalid]').forEach(e=>e.removeAttribute('aria-invalid'));
+  // Nombre (obligatorio)
+  const nom=$v('cNom');
+  if(!nom){err('Falta el nombre','Escriba el nombre completo del cliente.','cNom');return;}
+  // WhatsApp (obligatorio): número de RD 809/829/849. Al EDITAR, un número viejo que no se cambió se respeta.
+  const waInput=$v('cWA');
+  if(!waInput){err('Falta el WhatsApp','Escriba el número de WhatsApp del cliente.','cWA');return;}
+  let waNormalizado='';
+  const waRD=nxTelRD(waInput);
+  if(waRD)waNormalizado='1'+waRD;
+  else if(cliAntes&&nxWa(waInput)&&nxWa(waInput)===nxWa(cliAntes.wa))waNormalizado=nxWa(waInput);
+  if(!waNormalizado){err('WhatsApp no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cWA');return;}
+  // Teléfono, WhatsApp de referencia y correo: opcionales, pero si se escriben deben ser válidos
+  const telIn=$v('cTel');
+  if(telIn&&!nxTelRD(telIn)&&!(cliAntes&&nxCedDig(telIn)===nxCedDig(cliAntes.tel))){err('Teléfono no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cTel');return;}
+  const refWaIn=$v('cRefWa');
+  if(refWaIn&&!nxTelRD(refWaIn)&&!(cliAntes&&nxCedDig(refWaIn)===nxCedDig(cliAntes.referencia_wa))){err('WhatsApp de la referencia no válido','Debe tener 10 dígitos y empezar por 809, 829 u 849.','cRefWa');return;}
+  const correo=$v('cEmail');
+  if(correo&&!nxCorreoOk(correo)){err('Correo no válido','Revise el correo (ejemplo: nombre@correo.com).','cEmail');return;}
+  // Fechas de la póliza
+  const _fi=$v('cFecIni'),_ff=$v('cFecFin');
+  if(_fi&&_ff&&_ff<_fi){err('Fechas invertidas','La fecha de fin de la póliza no puede ser anterior a la de inicio.','cFecFin');return;}
+  // Día de facturación: del 1 al 28
+  const diaTxt=$v('cDiaFact');const dia=diaTxt===''?(autoCfg.dia||1):Number(diaTxt);
+  if(!Number.isInteger(dia)||dia<1||dia>28){err('Día de facturación no válido','Debe ser un día del 1 al 28.','cDiaFact');return;}
+  // Cédula / RNC: opcional. 11 dígitos = cédula con dígito verificador; 9 = RNC.
+  // Al EDITAR, una cédula vieja que no se cambió no bloquea (solo se avisa).
+  const cedIn=$v('cCed');const cedD=nxCedDig(cedIn);
+  const cedSinCambio=!!(cliAntes&&cedD===nxCedDig(cliAntes.cedula));
+  const cedValida=cedD.length===9||nxCedulaOk(cedD);
+  if(cedIn&&!cedValida){
+    if(cedSinCambio)toast('warn','Revise la cédula','La cédula guardada no tiene el formato correcto. Se deja como estaba.');
+    else{err('Cédula no válida',cedD.length===11?'El último dígito no corresponde. Revise la cédula.':'Escriba 11 dígitos (cédula) o 9 (RNC).','cCed');return;}
   }
-  const btn=document.getElementById('btnGCli');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
-  // Red de seguridad: si algo se traba, reactivar el botón a los 12 seg
-  const _btnTimeout=setTimeout(()=>{
-    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
-    toast('err','La operación tardó demasiado','Revisa tu conexión e intenta de nuevo');
-  },12000);
-  // Solo quien tiene el permiso puede TOCAR el precio. Si no lo tiene, precio_titular/precio_dep
-  // NI SIQUIERA entran en el guardado — así editar cualquier otro campo del cliente (teléfono, etc.)
-  // nunca borra un precio especial que ya tenía puesto (bug de raíz: antes SIEMPRE se mandaba null).
-  const puedeModPrecio=tienePermiso('modificar_precio');
-  let precioT=null, precioD=null;
-  const customOn=document.getElementById('cPrecioCustomOn')?.checked;
-  if(customOn && puedeModPrecio){
-    const vt=document.getElementById('cPrecioTitular')?.value;
-    const vd=document.getElementById('cPrecioDep')?.value;
-    precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
-    precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
+  // Comprobante B01 (crédito fiscal): exige RNC o cédula válidos
+  if($v('cNCF')==='B01'&&!cedValida){err('Falta el RNC','Para el comprobante B01 (crédito fiscal) escriba un RNC o una cédula válidos.','cCed');return;}
+  const cedula=cedValida?nxCedFmt(cedIn):cedIn;
+  // Cédula duplicada (activos e inhabilitados): bloquea, como antes
+  if(cedD){
+    const dup=ST.clientes.find(c=>nxCedDig(c.cedula)===cedD&&c.id!==editCliId);
+    if(dup){err('Cédula ya registrada',`Esta cédula pertenece a «${dup.nom}» (cliente ${dup.activo===false?'inhabilitado':'activo'}). No se puede duplicar.`,'cCed');return;}
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:waNormalizado,tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
-  if(puedeModPrecio||!editCliId){datos.precio_titular=precioT;datos.precio_dep=precioD;} // en un cliente NUEVO siempre se manda (null = precio estándar)
-  // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
-  datos.nom=mayus(datos.nom);
-  datos.dir=mayus(datos.dir);
-  // Estado del cliente -> define si está activo: Suspendido/Cancelado pasan a Inhabilitados
-  if(datos.estado_cliente==='SUSPENDIDO'||datos.estado_cliente==='CANCELADO'){
-    datos.activo=false;
-  }else{
-    datos.activo=true;
-  }
-  if(datos.referencia)datos.referencia=mayus(datos.referencia);
-  // ── TRAZABILIDAD: registrar quién crea / modifica ──
-  const usuarioActual=sesion?.nom||'Sistema';
-  const usuarioId=sesion?.id||null;
-  if(editCliId){
-    datos.updated_by_name=usuarioActual;
-    datos.updated_by_user_id=usuarioId;
-    datos.updated_at=new Date().toISOString();
-  }else{
-    datos.created_by_name=usuarioActual;
-    datos.created_by_user_id=usuarioId;
-    datos.updated_by_name=usuarioActual;
-    datos.updated_by_user_id=usuarioId;
-  }
+  // ── Desde aquí: un solo guardado a la vez ──
+  _nxCliGuardando=true;
+  const btn=document.getElementById('btnGCli');btn.disabled=true;btn.setAttribute('aria-busy','true');btn.innerHTML='<div class="spin"></div>';
+  // Si tarda, solo se avisa: el botón NO se reactiva mientras el guardado siga en curso (evita clientes repetidos)
+  const _aviso=setTimeout(()=>toast('info','Sigue guardando…','La conexión está lenta. Espere, por favor; no cierre la ventana.'),12000);
+  let guardado=false;
   try{
+    // WhatsApp repetido en otro cliente: se avisa (no se bloquea). Se consulta la base (solo lectura).
+    if(!(cliAntes&&nxWa(cliAntes.wa)===waNormalizado)){
+      let otro=ST.clientes.find(c=>c.id!==editCliId&&nxWa(c.wa)===waNormalizado);
+      if(!otro){try{const d10=waNormalizado.slice(1);const r=await API.get('clientes',`select=id,nom,activo&or=(wa.eq.${waNormalizado},wa.eq.${d10})${editCliId?'&id=neq.'+editCliId:''}&limit=1`);if(r&&r[0])otro=r[0];}catch(_){}}
+      if(otro){
+        const seguir=await swalConfirm('📱','WhatsApp ya registrado',`Este número ya está en «${escHtml(otro.nom||'otro cliente')}». ¿Desea guardar de todos modos?`,{ok:'Guardar igual'});
+        if(!seguir)return;
+      }
+    }
+    // Solo quien tiene el permiso puede TOCAR el precio. Si no lo tiene, precio_titular/precio_dep
+    // NI SIQUIERA entran en el guardado — así editar cualquier otro campo del cliente (teléfono, etc.)
+    // nunca borra un precio especial que ya tenía puesto (bug de raíz: antes SIEMPRE se mandaba null).
+    const puedeModPrecio=tienePermiso('modificar_precio');
+    let precioT=null, precioD=null;
+    const customOn=document.getElementById('cPrecioCustomOn')?.checked;
+    if(customOn && puedeModPrecio){
+      const vt=document.getElementById('cPrecioTitular')?.value;
+      const vd=document.getElementById('cPrecioDep')?.value;
+      precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
+      precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
+    }
+    const nPend=document.querySelectorAll('.pend-chk:checked').length;
+    const datos={nom,cedula,wa:waNormalizado,tel:telIn?nxTelFmt(telIn):'',email:correo,plan:$v('cPlan'),ars:$v('cARS')||null,dia_facturacion:dia,empresa_id:document.getElementById('eChips')._sel||null,agente_id:$v('cAgt')||null,dir:$v('cDir'),deps:JSON.stringify(tempDeps),tipo_ncf:$v('cNCF'),fecha_inicio:_fi||null,fecha_fin:_ff||null,referencia:$v('cRef')||null,referencia_wa:refWaIn?(nxTelRD(refWaIn)?'1'+nxTelRD(refWaIn):refWaIn.replace(/\D/g,'')):null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:$v('cEstadoCli')||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:$v('cOtroPend')||null,nota_proceso:$v('cNotaProc')||null,fecha_seguimiento:$v('cFechaSeg')||null,responsable_seguimiento:$v('cRespSeg')||null,prioridad_proceso:$v('cPrioridad')||'MEDIA',porcentaje_progreso:Math.round(((12-nPend)/12)*100)};
+    // Fecha de nacimiento (campo de parches-cumpleanos-clientes.js), en el mismo guardado
+    const fNac=document.getElementById('cFecNac');if(fNac)datos.fecha_nacimiento=fNac.value||null;
+    if(puedeModPrecio||!editCliId){datos.precio_titular=precioT;datos.precio_dep=precioD;} // en un cliente NUEVO siempre se manda (null = precio estándar)
+    // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
+    datos.nom=mayus(datos.nom);
+    datos.dir=mayus(datos.dir);
+    // Estado del cliente -> define si está activo: Suspendido/Cancelado pasan a Inhabilitados (también al CREAR)
+    datos.activo=!(datos.estado_cliente==='SUSPENDIDO'||datos.estado_cliente==='CANCELADO');
+    if(datos.referencia)datos.referencia=mayus(datos.referencia);
+    // ── TRAZABILIDAD: registrar quién crea / modifica ──
+    const usuarioActual=sesion?.nom||'Sistema';
+    const usuarioId=sesion?.id||null;
+    if(editCliId){
+      datos.updated_by_name=usuarioActual;
+      datos.updated_by_user_id=usuarioId;
+      datos.updated_at=new Date().toISOString();
+    }else{
+      datos.created_by_name=usuarioActual;
+      datos.created_by_user_id=usuarioId;
+      datos.updated_by_name=usuarioActual;
+      datos.updated_by_user_id=usuarioId;
+    }
     if(editCliId){
       // Prima mensual ANTES de editar (para detectar cambio de precio y ofrecer re-preciar la factura del mes)
-      const _cliAntes=ST.clientes.find(x=>x.id===editCliId);
-      const _primaAntes=_cliAntes?getPTReal(_cliAntes)+((_cliAntes.deps||[]).length*getPDReal(_cliAntes)):null;
-      // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
+      const _primaAntes=cliAntes?getPTReal(cliAntes)+((cliAntes.deps||[]).length*getPDReal(cliAntes)):null;
+      // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_anterior
       const cDeudaEl=document.getElementById('cDeudaIni');
+      let ajusteDeuda=null;
       if(cDeudaEl&&!cDeudaEl.disabled){
         // IMPORTANTE: el campo es data-nx-money (se muestra "9.000"); leer con nxMoney.parse.
-        // Con parseFloat crudo "9.000" daba 9 y SOBREESCRIBÍA la deuda con un número diminuto
-        // (causa de los "Pendiente RD$ 5/8"). Comparar redondeado para evitar falsos cambios.
         const deudaNueva=(window.nxMoney?window.nxMoney.parse(cDeudaEl.value):parseFloat(cDeudaEl.value))||0;
         const deudaOrig=Number(cDeudaEl._deudaOriginal)||0;
-        if(Math.round(deudaNueva*100)!==Math.round(deudaOrig*100)){
-          datos.deuda_anterior=deudaNueva;
-          logAudit('AJUSTE_DEUDA_ANTERIOR',`${nom} · Deuda anterior ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes',editCliId);
-        }
+        if(Math.round(deudaNueva*100)!==Math.round(deudaOrig*100)){datos.deuda_anterior=deudaNueva;ajusteDeuda=[deudaOrig,deudaNueva];}
       }
-      try{
-        await API.patch('clientes',`id=eq.${editCliId}`,datos);
-      }catch(eCol){
-        // Si falla por columnas de trazabilidad inexistentes, reintentar sin ellas
-        const d2={...datos};
-        delete d2.created_by_name;delete d2.created_by_user_id;
-        delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
-        delete d2.estado_cliente;delete d2.permitir_facturacion;delete d2.pendientes_proceso;delete d2.otro_pendiente_detalle;delete d2.nota_proceso;delete d2.fecha_seguimiento;delete d2.responsable_seguimiento;delete d2.prioridad_proceso;delete d2.porcentaje_progreso;delete d2.vip;
-        await API.patch('clientes',`id=eq.${editCliId}`,d2);
-      }
+      const {quitadas}=await nxCliEnviar(d=>API.patch('clientes',`id=eq.${editCliId}`,d),datos);
+      quitadas.forEach(k=>delete datos[k]);
+      guardado=true;
+      if(ajusteDeuda)logAudit('AJUSTE_DEUDA_ANTERIOR',`${nom} · Deuda anterior ajustada de ${fmt(ajusteDeuda[0])} a ${fmt(ajusteDeuda[1])}`,'Clientes',editCliId);
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
       logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes',editCliId);
-    toast('ok','Cliente actualizado',nom);
+      toast('ok','Cliente actualizado',nom);
       // Este precio es la plantilla para las PRÓXIMAS facturas — no toca las que ya están pendientes.
-      // Para corregir una factura ya generada se usa el botón "Precio" de esa factura (Facturas).
       if(_primaAntes!=null&&puedeModPrecio)nxAvisoPrecioCliente(ST.clientes[idx],_primaAntes);
       try{rFact();rCob();}catch(_e){} // reflejar el precio nuevo también en Facturas y Cobros
     }else{
-      // Generar número de póliza automático
-      const numPol=await generarNumPoliza();
+      // Número de póliza: se aparta una vez por alta y se reusa si hay que reintentar
+      const numPol=_nxCliNumPol||(_nxCliNumPol=await generarNumPoliza());
       // Deuda inicial: si el cliente ya venía debiendo meses atrasados
       const deudaIni=(window.nxMoney?window.nxMoney.parse(document.getElementById('cDeudaIni')?.value):parseFloat(document.getElementById('cDeudaIni')?.value))||0;
-      let res;
-      try{
-        res=await API.post('clientes',{...datos,deuda_anterior:deudaIni,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
-      }catch(eCol){
-        const d2={...datos};
-        delete d2.created_by_name;delete d2.created_by_user_id;
-        delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
-        delete d2.estado_cliente;delete d2.permitir_facturacion;delete d2.pendientes_proceso;delete d2.otro_pendiente_detalle;delete d2.nota_proceso;delete d2.fecha_seguimiento;delete d2.responsable_seguimiento;delete d2.prioridad_proceso;delete d2.porcentaje_progreso;delete d2.vip;
-        res=await API.post('clientes',{...d2,deuda_anterior:deudaIni,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
-      }
+      const {r:res}=await nxCliEnviar(d=>API.post('clientes',d),{...datos,deuda_anterior:deudaIni,deuda_total:0,pagado:0,numero_poliza:numPol});
+      guardado=true;_nxCliNumPol=null;
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
-      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes',res&&res[0]?res[0].id:null);
-    toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
+      datos.__id=res&&res[0]?res[0].id:null;
+      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes',datos.__id);
+      toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
     }
+    try{window.nxCliMarcarLimpio&&window.nxCliMarcarLimpio();}catch(_){}
     closeM('mCli');rCli();rDash();actualizarTicker();verificarAlertas();
-    // Auto-sugerencia: cliente EN_PROCESO sin pendientes -> sugerir ACTIVO
+    // Sugerencia: cliente EN_PROCESO sin pendientes -> ofrecer pasarlo a ACTIVO
     try{
-      let pa=[];try{pa=JSON.parse(datos.pendientes_proceso||'[]');}catch(e){}
-      if(datos.estado_cliente==='EN_PROCESO'&&pa.length===0){
-        setTimeout(()=>{
-          if(confirm('Este cliente ya no tiene pendientes marcados.\n\n¿Deseas cambiarlo a estado ACTIVO?')){
-            const cid=editCliId||(ST.clientes[ST.clientes.length-1]||{}).id;
-            if(cid){
-              API.patch('clientes',`id=eq.${cid}`,{estado_cliente:'ACTIVO'}).then(()=>{
-                const cc=ST.clientes.find(x=>x.id===cid);if(cc)cc.estado_cliente='ACTIVO';
-                toast('ok','Cliente cambiado a ACTIVO');rCli();
-              }).catch(()=>{});
-            }
-          }
+      if(datos.estado_cliente==='EN_PROCESO'&&nPend===0){
+        const cid=editCliId||datos.__id;
+        setTimeout(async()=>{
+          if(!cid)return;
+          const ok=await swalConfirm('✅','¿Pasar a Activo?','Este cliente ya no tiene pendientes marcados. ¿Desea cambiarlo a estado Activo?',{ok:'Pasar a Activo'});
+          if(!ok)return;
+          API.patch('clientes',`id=eq.${cid}`,{estado_cliente:'ACTIVO',activo:true}).then(()=>{
+            const cc=ST.clientes.find(x=>x.id===cid);if(cc){cc.estado_cliente='ACTIVO';cc.activo=true;}
+            toast('ok','Cliente cambiado a Activo');rCli();
+          }).catch(e=>toast('err','No se pudo cambiar el estado',nxRpcErr(e)));
         },400);
       }
     }catch(e){}
-  }catch(e){mostrarError(e.message,'Al guardar cliente: '+JSON.stringify({nom,editCliId}));toast('err','Error guardando',e.message);}
-  clearTimeout(_btnTimeout);
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
+  }catch(e){
+    // Sin reintentos silenciosos: se muestra el error y el usuario decide reintentar (mismo número de póliza)
+    const sinRed=/Failed to fetch|NetworkError|network|Load failed/i.test(String(e&&e.message));
+    if(sinRed)toast('err','No se pudo guardar','Sin conexión. Revise su internet y toque Guardar otra vez.');
+    else{mostrarError(e.message,'Al guardar cliente: '+JSON.stringify({nom,editCliId}));toast('err','No se pudo guardar',nxRpcErr(e));}
+  }finally{
+    clearTimeout(_aviso);_nxCliGuardando=false;
+    btn.disabled=false;btn.removeAttribute('aria-busy');btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
+  }
 }
 
 function abrirInhab(id){inhabCliId=id;const c=ST.clientes.find(x=>x.id===id);document.getElementById('inhabNom').textContent=`${c.nom} · ${c.numero_poliza||'Sin póliza'}`;document.getElementById('inhabNota').value='';openM('mInhab');nxChipsSync('mInhab');}

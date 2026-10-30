@@ -28,7 +28,7 @@
 
     const fr=document.createElement('div');
     fr.className='fr nxCumpleClienteFr';
-    fr.innerHTML='<label>Fecha de nacimiento</label><input type="date" id="cFecNac" autocomplete="bday" min="1900-01-01" aria-label="Fecha de nacimiento para felicitación de cumpleaños"/>';
+    fr.innerHTML='<label for="cFecNac">Fecha de nacimiento</label><input type="date" id="cFecNac" autocomplete="bday" min="1900-01-01"/>';
     emailFr.insertAdjacentElement('afterend',fr);
 
     const input=$('#cFecNac');
@@ -45,7 +45,12 @@
     const v=valorNacimiento();
     if(!v)return true;
     if(v>hoyLocal()){
-      toastSafe('err','Fecha inválida','La fecha de nacimiento no puede estar en el futuro.');
+      toastSafe('err','Fecha no válida','La fecha de nacimiento no puede estar en el futuro.');
+      try{$('#cFecNac')?.focus();}catch(e){}
+      return false;
+    }
+    if(v<'1900-01-01'){
+      toastSafe('err','Fecha no válida','Revise el año de nacimiento.');
       try{$('#cFecNac')?.focus();}catch(e){}
       return false;
     }
@@ -78,38 +83,14 @@
       fn.__nxCumpleWrap=true;window.editarCli=fn;
     }
 
+    // 59.73: guardarCli ya incluye fecha_nacimiento en el mismo INSERT/PATCH (lee #cFecNac).
+    // Este envoltorio solo valida la fecha antes de guardar; ya NO cambia API.post/patch de todo el sistema.
     const guardarOriginal=window.guardarCli;
     if(typeof guardarOriginal==='function'&&!guardarOriginal.__nxCumpleWrap){
       const fn=async function(){
         asegurarCampo();
         if(!validarNacimiento())return;
-        const nacimiento=valorNacimiento();
-        const editIdAntes=EDITID();
-        const A=APIX();
-        if(!A||typeof A.post!=='function'||typeof A.patch!=='function')return await guardarOriginal.apply(this,arguments);
-
-        const postOriginal=A.post;
-        const patchOriginal=A.patch;
-        A.post=async function(tabla,datos){
-          if(tabla==='clientes'&&datos&&typeof datos==='object')datos={...datos,fecha_nacimiento:nacimiento};
-          return await postOriginal.call(this,tabla,datos);
-        };
-        A.patch=async function(tabla,filtro,datos){
-          if(tabla==='clientes'&&datos&&typeof datos==='object')datos={...datos,fecha_nacimiento:nacimiento};
-          return await patchOriginal.call(this,tabla,filtro,datos);
-        };
-
-        try{
-          const r=await guardarOriginal.apply(this,arguments);
-          if(editIdAntes){
-            const c=(STX().clientes||[]).find(x=>String(x.id)===String(editIdAntes));
-            if(c)c.fecha_nacimiento=nacimiento;
-          }
-          return r;
-        }finally{
-          A.post=postOriginal;
-          A.patch=patchOriginal;
-        }
+        return await guardarOriginal.apply(this,arguments);
       };
       fn.__nxCumpleWrap=true;window.guardarCli=fn;
     }
