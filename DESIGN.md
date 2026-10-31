@@ -249,3 +249,17 @@ Creado el 20-oct-2026. Si el dueño decide algo nuevo de diseño, se agrega aqu�
 9. **Contexto sin palabras de más:** el dato o el ícono dan el contexto (precio en el botón, nombre del nivel debajo, ícono de camioncito), no una frase.
 
 Al entregar una pantalla se muestra al dueño la tabla **antes → después** de los textos que cambiaron.
+
+## Reglamento smart en cada pedido (dueño, 31-oct-2026) — igual en los 3 proyectos
+> «Un reglamento: siempre que pida algo, hazlo siempre con acción smart.»
+
+Todo pedido, por pequeño que sea, se entrega **con acciones smart sin que el dueño tenga que pedirlas** (amplía la regla «todo smart» del 30-oct). Al construir, revisar esta lista y aplicar lo que encaje:
+1. **Lee el contexto:** usa lo que ya se sabe (tipo de cliente, almacén, lo que hay en la lista, lo escrito) para poner valores, precios y colores solos.
+2. **Muestra el estado:** el botón o la fila dice qué va a pasar o qué ya pasó (precio que pondrá, «✓ Agregado», color por nivel, «Sin stock»).
+3. **Sugiere el siguiente paso:** marca lo que probablemente falta (punto naranja, botón destacado), sin preguntas «¿Desea…?».
+4. **Un toque hace y deshace:** el mismo control pone y quita; nada se duplica por doble toque.
+5. **Evita el error antes de que ocurra:** apaga lo que no se puede (sin stock, sin permiso) y avisa corto por qué.
+6. **Lleva el cursor a donde sigue:** al agregar algo que necesita un dato (monto, IMEI), el cursor queda ahí.
+7. **Respeta permisos y dinero:** lo smart nunca salta un candado de precio, permiso o inventario; lo que toca dinero se queda explícito.
+
+**Al entregar:** el informe al dueño lleva una tabla corta **«Qué hace solo»** con cada acción smart, y la bitácora la repite.

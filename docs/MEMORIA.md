@@ -21,6 +21,7 @@
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 - **Reglamento de microcopy (dueño, 30-oct-2026):** todo texto corto (botones, avisos, etiquetas, ventanas) con las menos palabras que se entiendan: verbo + qué + dato («+ Delivery RD$ 50»); un botón antes que «¿Desea…? Sí/No»; ayudas en la ⓘ; avisos de 2–5 palabras; mismo nombre para lo mismo. Detalle en `DESIGN.md` «Reglamento de microcopy». Vale para los 3 proyectos.
+- **Reglamento smart en cada pedido (dueño, 31-oct-2026):** todo pedido se entrega con acciones smart sin pedirlas: lee el contexto, muestra el estado, sugiere el siguiente paso, un toque hace y deshace, evita el error antes, lleva el cursor a donde sigue, nunca salta candados de precio/permiso/inventario. El informe lleva la tabla «Qué hace solo». Detalle en `DESIGN.md`. Vale para los 3 proyectos.
 
 ## 3. Qué tenemos funcionando (producción = **59.54**, verificado en vivo el 21-oct-2026)
 | Módulo | Estado / versión |
