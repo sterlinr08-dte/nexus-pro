@@ -83,6 +83,7 @@ La lista completa (con la regla y cómo se usan) está en **`docs/REFERENCIAS-DI
 ### Seguridad
 - `security-audit`, de Cloudflare. La auditoría completa se hace solo si se pide.
 - `penetration-testing-with-strix`, `fix-security-vulnerabilities-with-strix`, `ci-security-scanning-with-strix`, `managed-pentesting-with-strix`, `gstack-cso`.
+- **Visto, pendiente de decisión (31-oct-2026):** Shannon (`github.com/KeygraphHQ/shannon`), pentester autónomo de IA, código abierto. Requiere Docker + WSL2, clave de IA propia y la verificación «cyber» del proveedor; solo contra copias de prueba, nunca producción. Plan y costo estimado en `docs/bitacora/2026-10-31-1130-claude-shannon-plan.md`. No instalado.
 
 ### Código, revisión y base de datos
 - **Revisión y depuración:** `gstack-review`, `gstack-investigate`, `gstack-plan-eng-review`, `gstack-spec`, `gstack-health`.
