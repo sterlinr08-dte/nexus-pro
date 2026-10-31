@@ -20,7 +20,7 @@
 - **Skills:** leer `HERRAMIENTAS.md` al empezar cada pedido y usar la skill que corresponda sin esperar a que la nombre. Para diseño, leer primero `DESIGN.md` y `docs/REFERENCIAS-DISENO.md`.
 - Una referencia de diseño nueva se agrega en los 3 proyectos (`nexus-pro`, `bayolcell-taller` y `studio-rd`), con su bitácora en cada uno.
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
-- **Textos cortos (dueño, 30-oct-2026):** botones y avisos con las menos palabras que se entiendan (verbo + qué + dato: «+ Delivery RD$ 50»). Sin «¿Desea…? Sí/No» si un solo botón basta; sin frases de ayuda bajo los controles (van en la ⓘ). Vale para los 3 proyectos.
+- **Reglamento de microcopy (dueño, 30-oct-2026):** todo texto corto (botones, avisos, etiquetas, ventanas) con las menos palabras que se entiendan: verbo + qué + dato («+ Delivery RD$ 50»); un botón antes que «¿Desea…? Sí/No»; ayudas en la ⓘ; avisos de 2–5 palabras; mismo nombre para lo mismo. Detalle en `DESIGN.md` «Reglamento de microcopy». Vale para los 3 proyectos.
 
 ## 3. Qué tenemos funcionando (producción = **59.54**, verificado en vivo el 21-oct-2026)
 | Módulo | Estado / versión |

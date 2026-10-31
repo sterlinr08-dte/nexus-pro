@@ -232,3 +232,20 @@ Creado el 20-oct-2026. Si el dueño decide algo nuevo de diseño, se agrega aqu�
 - una sola entrada por función;
 - animación de 160–260 ms con la curva `(.22,1,.36,1)`;
 - probar a 390 y 1280.»
+
+## Reglamento de microcopy (dueño, 30-oct-2026) — igual en los 3 proyectos
+> «Simplificar… no ser tan descriptivo, pero que tenga su contexto. Vamos a usar ese reglamento para todo microcopy.»
+
+**Microcopy** = todo texto corto de la pantalla: botones, avisos (toasts), etiquetas, títulos de ventanas, chips, estados vacíos, confirmaciones y mensajes de error. Vale para pantallas nuevas y para las que se toquen.
+
+1. **Lo mínimo que se entienda solo:** verbo + qué + dato clave. «+ Delivery RD$ 50», «Cobrar RD$ 1,500», «Ya tiene delivery».
+2. **Un botón antes que una pregunta.** Nada de «¿Desea…? Sí / No» si un solo botón hace lo mismo. La confirmación se deja solo para lo que no se deshace (borrar, vaciar, anular).
+3. **Sin frases de ayuda debajo de los controles.** La explicación va detrás de la ⓘ.
+4. **Avisos de 2 a 5 palabras** con el dato que importa: «Guardado», «Sin stock en Santiago», «Falta el IMEI». Errores: qué pasó y qué hacer, en una línea («Sin internet. Intente de nuevo.»).
+5. **Etiquetas de 1 o 2 palabras:** «Cliente», «Precio», «Almacén»; sin dos puntos ni paréntesis.
+6. **Sin relleno ni repetición:** nada de «por favor», «exitosamente», «usted puede…», «haga clic aquí»; no repetir en el texto lo que ya dice el título o el ícono.
+7. **Mismo nombre para lo mismo** en todo el sistema (Prefactura, Delivery, Servicio, Custodia…).
+8. **Formal y en usted,** en minúscula normal (sin MAYÚSCULAS), RD$ con 2 decimales.
+9. **Contexto sin palabras de más:** el dato o el ícono dan el contexto (precio en el botón, nombre del nivel debajo, ícono de camioncito), no una frase.
+
+Al entregar una pantalla se muestra al dueño la tabla **antes → después** de los textos que cambiaron.
