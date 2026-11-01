@@ -1,6 +1,7 @@
 /* NEXUS PRO · 59.24 — detalles «pro» con ideas de beUI (dueño 14-oct-2026: «las 4 sugerencias»).
    Capa visual aislada: no toca datos, RPC ni lógica de dinero; solo mira lo que ya pintó la app y le agrega movimiento.
    1) Números que ruedan en los resúmenes (Cobros, Historial de pagos, Solicitudes, Inbox, Inicio).
+      Desde 59.76 giran cifra por cifra, como un cuentakilómetros (idea de React Vibe).
    2) Barra de pasos en los formularios largos por secciones (Préstamo y Prestatario): marca dónde vas y salta a cada parte.
    3) Ficha del cliente (Cliente 360) en el celular: 3 acciones a la vista y «Más» que despliega el resto.
    (La fila deslizable del Inbox va en parches-whatsapp-lista-original.js, que es quien maneja ese gesto.)
@@ -41,6 +42,14 @@ html.tema-glass-oscuro .nxBePasos button.hecho .n,.nxBePasos.oscuro button.hecho
 #v-cliente360 .sf-actions.nxBeMas .nxBeMasBtn i.ti-chevron-down{transition:transform .26s cubic-bezier(.22,1,.36,1)}
 #v-cliente360 .sf-actions.nxBeMas.abierto .nxBeMasBtn i.ti-chevron-down{transform:rotate(180deg)}
 @keyframes nxBeEntra{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}
+.nxOdo{display:inline-flex;vertical-align:top;white-space:pre;font-variant-numeric:tabular-nums}
+.nxOdoC{display:inline-block;overflow:hidden;vertical-align:top;-webkit-mask-image:linear-gradient(transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(transparent,#000 20%,#000 80%,transparent)}
+.nxOdoS{-webkit-mask-image:none;mask-image:none}
+.nxOdoK{display:block;white-space:pre;will-change:transform}
+.nxOdoK::before{content:"0\\A 1\\A 2\\A 3\\A 4\\A 5\\A 6\\A 7\\A 8\\A 9"}
+.nxOdoS::before{content:attr(data-c)}
+.nxOdoTxt{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+#cobResumen .sf-kpi .v,#pgTotalMonto,#pgTotalCant,#pgClientesPagaron,#pgPromedio,.nxSL-stat-val,.nxSL-section-count,.nxWaProKpi .v,.nxIG-kv{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){.nxBePasos button,.nxBePasos button .t,.nxBePasos .barra i{transition:none!important}#v-cliente360 .sf-actions.nxBeMas.abierto .sf-btn.nxBeExtra{animation:none!important}}
 `;
     document.head.appendChild(s);
@@ -67,7 +76,48 @@ html.tema-glass-oscuro .nxBePasos button.hecho .n,.nxBePasos.oscuro button.hecho
     const lb=card&&(card.querySelector('.lb,.nxSL-stat-lbl,.nxSL-section-title,.l'));
     return (el.className||'')+'|'+(lb?lb.textContent.trim():'');
   }
+  /* 59.76 (dueño 31-oct-2026, «la 2 en NEXUS», idea de React Vibe): cuentakilómetros. Cada cifra es una
+     columna 0–9 que gira hasta su número; solo se mueven las que cambian, de derecha a izquierda. El texto real
+     queda en un span oculto (los dígitos de las columnas son CSS ::before), así textContent siempre es el valor
+     exacto mientras gira. Al terminar se deja el texto plano de la app. Si el elemento es en línea, de varias
+     líneas o mide raro, se usa el contador de siempre. */
+  function odometro(el,desde,txtFinal,p){
+    const cs=getComputedStyle(el);
+    if(cs.display.indexOf('inline')===0||cs.display==='none')return false;
+    const fs=parseFloat(cs.fontSize)||16;
+    let lh=parseFloat(cs.lineHeight);
+    const alto=el.clientHeight-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0);
+    if(!isFinite(lh))lh=alto;
+    if(!(lh>fs*.8&&lh<fs*2)||alto>lh*1.6)return false;           // varias líneas o alto fijo: contador de siempre
+    const viejo=formatear(p.dec?desde:Math.round(desde),p),nuevo=txtFinal,off=nuevo.length-viejo.length;
+    const wrap=document.createElement('span');wrap.className='nxOdo';wrap.setAttribute('aria-hidden','true');
+    wrap.style.height=lh+'px';
+    const cols=[];
+    for(let i=0;i<nuevo.length;i++){
+      const ch=nuevo[i],c=document.createElement('span');
+      if(/\d/.test(ch)){
+        const j=i-off,d0=(j>=0&&/\d/.test(viejo[j]))?+viejo[j]:0,col=document.createElement('span');
+        c.className='nxOdoC';col.className='nxOdoK';col.style.lineHeight=lh+'px';
+        col.style.transform='translateY('+(-d0*lh)+'px)';c.appendChild(col);
+        if(d0!==+ch)cols.push([col,+ch,nuevo.length-i]);
+      }else{c.className='nxOdoC nxOdoS';c.setAttribute('data-c',ch);c.style.lineHeight=lh+'px';}
+      c.style.height=lh+'px';wrap.appendChild(c);
+    }
+    const real=document.createElement('span');real.className='nxOdoTxt';real.textContent=nuevo;
+    el.__nxRueda=true;el.textContent='';el.appendChild(real);el.appendChild(wrap);
+    void wrap.offsetWidth;
+    let maxDelay=0;
+    cols.forEach(([col,d,k])=>{const dl=Math.min(k*35,280);maxDelay=Math.max(maxDelay,dl);
+      col.style.transition='transform .7s cubic-bezier(.22,1,.36,1) '+dl+'ms';col.style.transform='translateY('+(-d*lh)+'px)';});
+    setTimeout(()=>{
+      if(wrap.isConnected&&el.textContent===nuevo)el.textContent=nuevo; // vuelve al texto plano de la app
+      el.__nxRueda=false;
+      if(!wrap.isConnected)programar();                                     // la app escribió otra cosa a mitad
+    },760+maxDelay);
+    return true;
+  }
   function girar(el,desde,txtFinal,p){
+    try{if(odometro(el,desde,txtFinal,p))return;}catch(e){el.__nxRueda=false;}
     const t0=performance.now(),dur=Math.min(900,420+Math.log10(Math.abs(p.v-desde)+10)*110);
     el.__nxRueda=true;let escrito=null;
     const paso=now=>{
