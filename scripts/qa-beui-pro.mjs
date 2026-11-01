@@ -32,21 +32,39 @@ async function abrir(b, w, tema) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function cobros(page, tag) {
-  // muestrear el texto de la 2.ª cifra («Deuda total») mientras rueda
-  const muestras = await page.evaluate(async () => {
+  // 59.76: cuentakilómetros. Mientras gira, textContent sigue siendo el valor exacto; las columnas se mueven.
+  const r = await page.evaluate(async () => {
     nav('facturas', null); await new Promise(r => setTimeout(r, 300));
-    const out = []; const t0 = performance.now();
+    const textos = [], altos = [], trans = new Set(); let vioOdo = false; const t0 = performance.now();
     switchTab('cob');
-    while (performance.now() - t0 < 1600) { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; if (v) out.push(v.textContent); await new Promise(r => requestAnimationFrame(r)); }
-    return out;
+    while (performance.now() - t0 < 1800) {
+      const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1];
+      if (v) { textos.push(v.textContent); altos.push(Math.round(v.getBoundingClientRect().height));
+        const k = v.querySelector('.nxOdoK'); if (k) { vioOdo = true; trans.add(getComputedStyle(k).transform); }
+        [...v.querySelectorAll('.nxOdoK')].forEach(x => trans.add(getComputedStyle(x).transform)); }
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1];
+    return { textos: [...new Set(textos)], altos: [...new Set(altos)], trans: trans.size, vioOdo, fin: v.textContent, hijos: v.children.length };
   });
-  const fin = muestras[muestras.length - 1], distintos = [...new Set(muestras)];
-  ok(distintos.length >= 4, `${tag} Cobros: «Deuda total» rueda (${distintos.length} valores distintos)`, distintos.slice(0, 6));
-  const esperado = await page.evaluate(() => { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; return v ? v.textContent : null; });
-  ok(fin === esperado && /\d/.test(fin), `${tag} Cobros: termina exacto (${fin})`);
-  // repintar con el mismo valor: no vuelve a rodar
-  const rep = await page.evaluate(async () => { rCob(); const out = []; for (let i = 0; i < 30; i++) { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; out.push(v && v.textContent); await new Promise(r => requestAnimationFrame(r)); } return [...new Set(out)]; });
-  ok(rep.length === 1 && rep[0] === fin, `${tag} Cobros: repintar el mismo valor no lo hace rodar otra vez`, rep);
+  ok(r.vioOdo && r.trans >= 4, `${tag} Cobros: «Deuda total» gira cifra por cifra (${r.trans} posiciones)`, r);
+  ok(r.textos.length === 1 && /\d/.test(r.fin), `${tag} Cobros: el texto real nunca cambia mientras gira (${r.fin})`, r.textos.slice(0, 4));
+  ok(r.altos.length === 1, `${tag} Cobros: la cifra no salta de alto mientras gira`, r.altos);
+  ok(r.hijos === 0, `${tag} Cobros: al terminar queda el texto plano de la app`, r.hijos);
+  const rep = await page.evaluate(async () => { rCob(); let odo = false; for (let i = 0; i < 30; i++) { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; if (v && v.querySelector('.nxOdo')) odo = true; await new Promise(r => requestAnimationFrame(r)); } return odo; });
+  ok(!rep, `${tag} Cobros: repintar el mismo valor no lo hace girar otra vez`);
+  // cambia el valor: gira desde el anterior (solo las cifras que cambian)
+  const cam = await page.evaluate(async () => {
+    const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1], antes = v.textContent;
+    const n = Number(antes.replace(/[^\d.]/g, '')) + 4500; v.textContent = antes.replace(/[\d,.]+/, n.toLocaleString('en-US', { minimumFractionDigits: (antes.split('.')[1] || '').replace(/\D/g, '').length }));
+    const nuevo = v.textContent; await new Promise(r => setTimeout(r, 400));
+    const mov = v.querySelectorAll('.nxOdoK').length ? [...v.querySelectorAll('.nxOdoK')].filter(k => k.style.transition).length : -1;
+    const tot = v.querySelectorAll('.nxOdoK').length;
+    await new Promise(r => setTimeout(r, 1300));
+    return { antes, nuevo, mov, tot, fin: v.textContent, hijos: v.children.length };
+  });
+  ok(cam.mov > 0 && cam.mov < cam.tot, `${tag} Cobros: un pago nuevo gira solo las cifras que cambian (${cam.mov} de ${cam.tot})`, cam);
+  ok(cam.fin === cam.nuevo && cam.hijos === 0, `${tag} Cobros: termina en el valor nuevo exacto (${cam.fin})`, cam);
   await page.screenshot({ path: OUT + `/beui-${tag}-cobros.png` });
 }
 async function prestamo(page, tag, movil) {
@@ -101,8 +119,8 @@ async function c360(page, tag, movil) {
   }
   // reducir movimiento: las cifras no ruedan
   { const { ctx, page } = await abrir(b, 390, 'glass-oscuro'); await page.emulateMedia({ reducedMotion: 'reduce' }); await sleep(800);
-    const d = await page.evaluate(async () => { nav('facturas', null); await new Promise(r => setTimeout(r, 300)); const out = []; const t0 = performance.now(); switchTab('cob'); while (performance.now() - t0 < 900) { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; if (v) out.push(v.textContent); await new Promise(r => requestAnimationFrame(r)); } return [...new Set(out)]; });
-    ok(d.length === 1, '390 reducir movimiento: la cifra aparece directa, sin rodar', d); await ctx.close(); }
+    const d = await page.evaluate(async () => { nav('facturas', null); await new Promise(r => setTimeout(r, 300)); const out = []; let odo = false; const t0 = performance.now(); switchTab('cob'); while (performance.now() - t0 < 900) { const v = document.querySelectorAll('#cobResumen .sf-kpi .v')[1]; if (v) { out.push(v.textContent); if (v.querySelector('.nxOdo')) odo = true; } await new Promise(r => requestAnimationFrame(r)); } return odo ? ['odo'] : [...new Set(out)]; });
+    ok(d.length === 1 && d[0] !== 'odo', '390 reducir movimiento: la cifra aparece directa, sin rodar', d); await ctx.close(); }
   console.log(`\n${pass} PASS · ${fail} FAIL`);
   await b.close(); process.exit(fail ? 1 : 0);
 })();
