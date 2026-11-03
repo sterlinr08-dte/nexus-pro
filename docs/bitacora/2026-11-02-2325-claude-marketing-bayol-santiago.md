@@ -1,4 +1,4 @@
-# 2026-11-03 — Claude — Marketing Bayol: cambio de anuncios en «SANTIAGO 15 OCTUBRE 2026»
+# 2026-11-02 23:25 (RD) — Claude — Marketing Bayol: cambio de anuncios en «SANTIAGO 15 OCTUBRE 2026»
 
 Complementa las entradas de marketing del 31-oct (`2026-10-31-1610` y `2026-10-31-1625`).
 
