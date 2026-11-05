@@ -92,6 +92,15 @@ const caja = (page, sel) => page.evaluate(s => { const e = document.querySelecto
     ok(await a.page.$('#nxSolPayMerged [data-pay-id]') && !(await a.page.$('#nxSolPayMerged [data-pay-reject]')), `${w}px un agente ve el pago pero NO ve RECHAZAR`);
     await a.ctx.close();
   }
+  // 59.80: si el pago tiene una entrega directa pendiente (sale arriba con Confirmar), no se repite abajo.
+  for (const w of [390, 1280]) {
+    console.log(`\n== ${w}px · pago con entrega pendiente`);
+    const d = await abrir(browser, w, 'admin');
+    await d.page.route(/\/rest\/v1\/entregas_admin\?select=abono_id/, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ abono_id: ABONO }]) }));
+    await irSolicitudes(d.page);
+    ok(!(await d.page.$(`#nxSolPayMerged [data-pay-id="${ABONO}"]`)), `${w}px el pago con entrega pendiente no sale dos veces`);
+    await d.ctx.close();
+  }
   // «Reversar cobro» desde la ficha también resincroniza
   console.log('\n== reversarAbono (ficha del cliente)');
   const { ctx, page, st } = await abrir(browser, 1280, 'admin');

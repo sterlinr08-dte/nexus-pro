@@ -60,7 +60,20 @@ async function cargar(force=false){
   busy=true;
   try{
     const r=await rpc('seguros_pagos_pendientes_validacion',{});
-    items=Array.isArray(r)?r:(r?[r]:[]);lastLoad=Date.now();
+    let lista=Array.isArray(r)?r:(r?[r]:[]);
+    /* 59.80 (dueño, 05-nov-2026: «¿por qué me sale dos veces?»): un depósito directo a la cuenta de otro sale arriba
+       como entrega por confirmar Y abajo como validación bancaria. «Confirmar» arriba ya valida el pago
+       (seguros_confirmar_entrega_admin), así que aquí se esconde mientras su entrega siga pendiente. Si la entrega se
+       anula, el pago vuelve a salir aquí con Validar / Rechazar. Si la consulta falla, se muestran todos. */
+    try{
+      const A=APIx();
+      if(A&&A.get&&lista.length){
+        const pend=await A.get('entregas_admin','select=abono_id&confirmado=eq.false&anulado=eq.false&abono_id=not.is.null');
+        const ids=new Set((pend||[]).map(e=>String(e.abono_id)));
+        if(ids.size)lista=lista.filter(p=>!ids.has(String(p.abono_id)));
+      }
+    }catch(e){}
+    items=lista;lastLoad=Date.now();
     return items;
   }finally{busy=false}
 }
