@@ -208,6 +208,24 @@ html.tema-glass-oscuro .nxFcRes div{border-color:#243044}
     };
     f.__nxFc = true; window.guardarCli = f; return true;
   }
+  // 59.79: la ficha normal del cliente (verCliente, la que abre la lista de Clientes) no tenía el botón: «Nueva factura»
+  // solo existe en «Cliente 360», que no está en el menú de Seguros. Se agrega «Generar factura» a su barra
+  // (Documentos · Abonos · Certificado PDF). El id sale del botón «Documentos» de la misma barra.
+  function ponerBotonFicha(bar) {
+    if (!bar || bar.querySelector('.nxFcTb') || !puede()) return;
+    const ref = bar.querySelector('[onclick*="abrirDocs("]') || bar.querySelector('[onclick*="verHistorialAbonos("]');
+    const m = ref && /\(\s*'([^']+)'/.exec(ref.getAttribute('onclick') || '');
+    if (!m) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sf-tbtn nxFcTb';
+    b.innerHTML = '<i class="ti ti-file-invoice"></i> Generar factura';
+    b.onclick = () => { const id = m[1]; try { const cs = G('cerrarClientSummary'); if (typeof cs === 'function') cs(); } catch (e) {} abrir(id); };
+    bar.insertBefore(b, bar.firstChild);
+  }
+  const revisarBarras = () => document.querySelectorAll('.sf-toolbar').forEach(ponerBotonFicha);
+  let _pend = false;
+  try { new MutationObserver(() => { if (_pend) return; _pend = true; requestAnimationFrame(() => { _pend = false; revisarBarras(); }); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+  revisarBarras();
+
   let n = 0; const iv = setInterval(() => { const a = engancharFicha(), b = engancharAlta(); if ((a && b) || ++n > 60) clearInterval(iv); }, 500);
   engancharFicha(); engancharAlta();
 })();
