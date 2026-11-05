@@ -135,7 +135,10 @@
     /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
        un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
     ['js','parches-bauche-unico.js'],
-    ['js','parches-whatsapp-parloteo.js']
+    ['js','parches-whatsapp-parloteo.js'],
+    /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
+       registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
+    ['js','parches-factura-cliente.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
