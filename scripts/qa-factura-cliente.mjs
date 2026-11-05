@@ -66,6 +66,14 @@ const caja = (page, sel) => page.evaluate(s => { const e = document.querySelecto
     // Cliente 1: precio especial 3,500 titular / 900 dependiente, 1 dependiente; ya tiene la factura de hace 1 mes.
     const cid = await page.evaluate(([ant1]) => { const c = ST.clientes[1]; c.activo = true; c.permitir_facturacion = true; c.precio_titular = 3500; c.precio_dep = 900; c.deps = [{ nom: 'Dep Uno' }];
       ST.facturas.push({ id: 'f-ya', cliente_id: c.id, periodo: ant1, estado: 'Pendiente', prima_base: 3500, prima_deps: 900, total: 4400 }); return c.id; }, [ANT1]);
+    // 59.79: la ficha normal (verCliente, la de la lista de Clientes) trae «Generar factura» en su barra.
+    await page.evaluate(id => verCliente(id), cid); await sleep(700);
+    const tb = await caja(page, '.sf-toolbar .nxFcTb');
+    ok(tb && tb.h >= 44 && /Generar factura/.test(tb.t), `${w}px la ficha normal del cliente tiene «Generar factura» (≥44 de alto)`, tb);
+    await page.screenshot({ path: OUT + `${w}-ficha-normal.png` });
+    await page.click('.sf-toolbar .nxFcTb'); await sleep(500);
+    ok(!!(await page.$('.nxFcOv')) && new RegExp(await page.evaluate(id => ST.clientes.find(c => c.id === id).nom, cid)).test(await page.textContent('.nxFcHead')), `${w}px el botón de la ficha abre la ventana de ese cliente`);
+    await page.click('.nxFcNo'); await sleep(200);
     await page.evaluate(id => c360AccionNuevaFactura(id), cid); await sleep(500);
     ok(!!(await page.$('.nxFcOv')), `${w}px «Nueva factura» de la ficha abre la ventana`);
     const hoyB = await caja(page, `.nxFcMes[data-p="${HOY}"]`), yaB = await caja(page, `.nxFcMes[data-p="${ANT1}"]`);
