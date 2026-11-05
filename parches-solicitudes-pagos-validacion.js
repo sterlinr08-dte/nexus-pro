@@ -1,6 +1,9 @@
 /* NEXUS PRO · Solicitudes · pagos pendientes por validar · 2026-09-10
    Fusiona la validación bancaria dentro de la cola operativa ya existente de Solicitudes.
-   Reusa las RPC reales seguros_pagos_pendientes_validacion / seguros_validar_pago. */
+   Reusa las RPC reales seguros_pagos_pendientes_validacion / seguros_validar_pago.
+   59.77 (dueño, 05-nov-2026): «Rechazar pago» (solo admin, motivo obligatorio). Usa la MISMA reversa del sistema
+   (seguros_reversar_cobro: pagado del cliente, asiento de reversa, pago tachado con motivo, auditoría) y después
+   resincroniza el estado de las facturas del cliente: la cuota vuelve a Pendiente. No se borra nada y no avisa al cliente. */
 (function(){
 'use strict';
 if(window.__nxSolicitudesPagosValidacion20260910)return;
@@ -30,9 +33,17 @@ function css(){
 #v-solicitudes .nxSL-pay-merged-label{font-size:8.5px;font-weight:900;letter-spacing:.45px;color:#64748b;text-transform:uppercase;margin:0 0 8px}
 #v-solicitudes .nxSL-pay-amt{font-weight:900;color:#0f5fc7;white-space:nowrap}
 #v-solicitudes .nxSL-pay-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-#v-solicitudes .nxSL-pay-btn{height:30px;border:0;border-radius:999px;padding:0 10px;font:800 9px/1 'Plus Jakarta Sans','Segoe UI',system-ui;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+#v-solicitudes .nxSL-pay-btn{height:44px;min-width:44px;border:0;border-radius:999px;padding:0 10px;font:800 9px/1 'Plus Jakarta Sans','Segoe UI',system-ui;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 #v-solicitudes .nxSL-pay-btn.validar{background:#eaf1ff;color:#2563eb;box-shadow:0 2px 8px rgba(37,99,235,.12)}
 #v-solicitudes .nxSL-pay-btn.voucher{background:#ecfdf5;color:#087a4c}
+#v-solicitudes .nxSL-pay-btn.rechazar{background:#fff1f2;color:#be123c}
+html.tema-glass-oscuro #cnt .nxSL-pay-btn.rechazar{background:rgba(244,63,94,.16)!important;color:#FDA4AF!important}
+.nxSolPayCard.rechazo .nxSolPayIco{background:#fff1f2;color:#be123c}
+.nxSolPayCard.rechazo .nxSolPayConfirm{background:#be123c}
+.nxSolPayCard.rechazo .nxSolPayWarn{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+.nxSolPayCard .nxSolPayBody input#nxSolPayMotivo{width:100%;min-height:48px;font-size:16px;border-radius:12px;border:1px solid #dce4ef;padding:0 12px;box-sizing:border-box;font-family:inherit;color:#17233d;background:#fff}
+.nxSolPayCard.rechazo .nxSolPayFoot button{min-height:48px;font-size:13px}
+.nxSolPayCard.rechazo .nxSolPayX{width:44px;height:44px}
 .nxSolPayOv{position:fixed;inset:0;z-index:2147482800;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.42);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:'Plus Jakarta Sans','Segoe UI',system-ui}
 .nxSolPayCard{width:min(430px,100%);background:#fff;border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 30px 85px -36px rgba(15,23,42,.72);overflow:hidden}
 .nxSolPayHead{display:flex;align-items:center;gap:10px;padding:14px 15px;border-bottom:1px solid #edf1f6}.nxSolPayIco{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:#eaf1ff;color:#2563eb;font-size:18px}.nxSolPayHead b{font-size:12px;color:#17233d;flex:1}.nxSolPayX{width:34px;height:34px;border:0;border-radius:50%;background:#f4f6f9;color:#65738b;cursor:pointer}
@@ -64,10 +75,11 @@ function fila(p){
     <td data-label="MONTO" class="nxSL-pay-amt">RD$ ${money(p.monto)}</td>
     <td data-label="MÉTODO / BANCO"><strong>${esc(p.metodo||'Pago')}</strong><br><span style="font-size:8px;color:#64748b">${esc(p.banco||'—')}</span></td>
     <td data-label="REFERENCIA">${esc(p.referencia||'—')}</td>
-    <td data-label="ACCIONES"><div class="nxSL-pay-actions">${has?`<button type="button" class="nxSL-pay-btn voucher" data-pay-voucher="${esc(u)}"><i class="ti ti-photo"></i> VER</button>`:''}${p.puede_validar!==false?`<button type="button" class="nxSL-pay-btn validar" data-pay-validate><i class="ti ti-shield-check"></i> VALIDAR</button>`:`<span class="nxSL-pay-wait" title="El dinero entró a esa cuenta: solo su dueño o el administrador pueden validarlo">Lo valida ${esc(p.agente||'la cuenta')}</span>`}</div></td>
+    <td data-label="ACCIONES"><div class="nxSL-pay-actions">${has?`<button type="button" class="nxSL-pay-btn voucher" data-pay-voucher="${esc(u)}"><i class="ti ti-photo"></i> VER</button>`:''}${p.puede_validar!==false?`<button type="button" class="nxSL-pay-btn validar" data-pay-validate><i class="ti ti-shield-check"></i> VALIDAR</button>`:`<span class="nxSL-pay-wait" title="El dinero entró a esa cuenta: solo su dueño o el administrador pueden validarlo">Lo valida ${esc(p.agente||'la cuenta')}</span>`}${esAdmin()?`<button type="button" class="nxSL-pay-btn rechazar" data-pay-reject aria-label="Rechazar pago de ${esc(p.cliente||'cliente')}"><i class="ti ti-arrow-back-up"></i> RECHAZAR</button>`:''}</div></td>
   </tr>`;
 }
 
+function esAdmin(){try{return (typeof sesion!=='undefined'&&sesion&&sesion.rol==='admin')}catch(e){return false}}
 function numeroTexto(v){const n=parseInt(String(v||'').replace(/[^0-9]/g,''),10);return Number.isFinite(n)?n:0}
 
 function fusionarSection(){
@@ -118,6 +130,7 @@ function fusionarSection(){
   sec.appendChild(merged);
   $$('[data-pay-voucher]',merged).forEach(b=>b.onclick=()=>window.open(b.dataset.payVoucher,'_blank','noopener'));
   $$('[data-pay-validate]',merged).forEach(b=>b.onclick=()=>abrirConfirmacion(b.closest('tr')?.dataset.payId));
+  $$('[data-pay-reject]',merged).forEach(b=>b.onclick=()=>abrirRechazo(b.closest('tr')?.dataset.payId));
 }
 
 function abrirConfirmacion(id){
@@ -141,6 +154,55 @@ async function validar(id,ov){
     if(card){card.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:28px 20px"><i class="ti ti-circle-check" style="font-size:26px;color:#22a06b"></i><span style="font:900 13px 'Plus Jakarta Sans',system-ui;color:#22a06b">Pago validado</span>${cid?`<button type="button" class="nxSolPayWaBtn" style="width:40px;height:40px;padding:0;border-radius:50%;background:#25d366;color:#fff;display:inline-grid;place-items:center;border:0;cursor:pointer;box-shadow:0 4px 14px -4px rgba(37,211,102,.5)"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>`:''}</div>`;const wb=$('.nxSolPayWaBtn',card);if(wb)wb.onclick=()=>{if(typeof window.nxAbrirWhatsAppDeCliente==='function')window.nxAbrirWhatsAppDeCliente(cid);ov.remove()}}
     setTimeout(async()=>{ov.remove();lastLoad=0;await cargar(true);if(typeof window.nxRefrescarSolicitudes==='function')await window.nxRefrescarSolicitudes();else fusionarSection()},3500);
   }catch(e){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Validar pago';toast('err','No se pudo validar',String(e?.message||e))}
+}
+
+/* ── Rechazar pago (59.77) ── */
+const _rechIdem={};
+function nuevaIdem(){try{if(typeof nxNuevaIdemKey==='function')return nxNuevaIdemKey()}catch(e){}return 'rech-'+Date.now()+'-'+Math.random().toString(36).slice(2)}
+function abrirRechazo(id){
+  if(!esAdmin()){toast('err','Solo un administrador','Solo un administrador puede rechazar un pago.');return}
+  const p=items.find(x=>String(x.abono_id)===String(id));if(!p)return;
+  $('.nxSolPayOv')?.remove();
+  const ov=document.createElement('div');ov.className='nxSolPayOv';
+  ov.innerHTML=`<div class="nxSolPayCard rechazo" role="dialog" aria-modal="true" aria-label="Rechazar pago"><div class="nxSolPayHead"><span class="nxSolPayIco"><i class="ti ti-arrow-back-up"></i></span><b>Rechazar pago</b><button type="button" class="nxSolPayX" aria-label="Cerrar"><i class="ti ti-x"></i></button></div><div class="nxSolPayBody"><div class="nxSolPayResume"><strong>${esc(p.cliente||'Cliente')} · RD$ ${money(p.monto)}</strong><span>${esc(p.metodo||'Pago')} · ${esc(p.banco||'—')} · Cuenta de ${esc(p.agente||'—')}</span></div><div class="nxSolPayWarn"><i class="ti ti-info-circle"></i> El pago se quita y la cuota vuelve a pendiente. Queda tachado en el historial, con el motivo.</div><label for="nxSolPayMotivo">Motivo</label><input id="nxSolPayMotivo" maxlength="240" autocomplete="off" placeholder="Ej.: el dinero no entró a la cuenta"></div><div class="nxSolPayFoot"><button type="button" class="nxSolPayCancel">Volver</button><button type="button" class="nxSolPayConfirm" disabled><i class="ti ti-arrow-back-up"></i> Rechazar pago</button></div></div>`;
+  document.body.appendChild(ov);
+  const inp=$('#nxSolPayMotivo',ov),btn=$('.nxSolPayConfirm',ov);
+  const close=()=>ov.remove();$('.nxSolPayX',ov).onclick=close;$('.nxSolPayCancel',ov).onclick=close;ov.onclick=e=>{if(e.target===ov)close()};
+  inp.oninput=()=>{btn.disabled=inp.value.trim().length<5};
+  inp.onkeydown=e=>{if(e.key==='Enter'&&!btn.disabled)btn.click()};
+  btn.onclick=()=>rechazar(id,ov);
+  setTimeout(()=>{try{inp.focus()}catch(e){}},60);
+}
+
+async function rechazar(id,ov){
+  const btn=$('.nxSolPayConfirm',ov),motivo=($('#nxSolPayMotivo',ov)?.value||'').trim();
+  if(motivo.length<5){toast('warn','Falta el motivo','Escriba por qué se rechaza el pago.');return}
+  if(btn.dataset.busy==='1')return;btn.dataset.busy='1';
+  const p=items.find(x=>String(x.abono_id)===String(id));
+  const cid=p?.cliente_id||'';
+  const key=_rechIdem[id]||(_rechIdem[id]=nuevaIdem());
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Rechazando…';
+  try{
+    const r=await rpc('seguros_reversar_cobro',{p_abono_id:id,p_motivo:'Pago rechazado en Solicitudes: '+motivo,p_idempotency_key:key});
+    if(!r||!r.ok)throw new Error('El sistema no confirmó el rechazo');
+    delete _rechIdem[id];
+    let c=null;
+    try{c=(typeof ST!=='undefined'&&ST.clientes)?ST.clientes.find(x=>String(x.id)===String(cid)):null}catch(e){}
+    if(c){if(r.nuevo_pagado!=null)c.pagado=r.nuevo_pagado;if(r.nueva_deuda_anterior!=null)c.deuda_anterior=r.nueva_deuda_anterior}
+    try{if(cid&&typeof resyncEstadoFacturas==='function')await resyncEstadoFacturas(cid)}catch(e){}
+    try{if(typeof logAudit==='function')logAudit('PAGO_RECHAZADO',`Cliente: ${p?.cliente||''} · RD$${p?.monto} · ${p?.metodo||''} · Motivo: ${motivo}`,'Solicitudes',cid)}catch(e){}
+    try{if(r.asiento_reversa_id&&typeof API!=='undefined'&&typeof ST!=='undefined'){const asi=await API.get('asientos',`id=eq.${r.asiento_reversa_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);if(typeof recalcularSaldosContables==='function')recalcularSaldosContables()}}catch(e){}
+    toast('ok','Pago rechazado','La cuota volvió a pendiente.');
+    ov.remove();
+    try{if(typeof rCob==='function')rCob();if(typeof rDash==='function')rDash();if(typeof rCli==='function')rCli();if(typeof rFact==='function')rFact()}catch(e){}
+    items=items.filter(x=>String(x.abono_id)!==String(id));
+    lastLoad=0;try{await cargar(true)}catch(e){}
+    if(typeof window.nxRefrescarSolicitudes==='function')await window.nxRefrescarSolicitudes();else fusionarSection();
+  }catch(e){
+    btn.dataset.busy='';btn.disabled=false;btn.innerHTML='<i class="ti ti-arrow-back-up"></i> Rechazar pago';
+    let m=String(e?.message||e);try{if(typeof nxRpcErr==='function')m=nxRpcErr(e)}catch(_){}
+    toast('err','No se pudo rechazar',m);
+  }
 }
 
 async function integrar(force=false){
