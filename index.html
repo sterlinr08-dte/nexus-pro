@@ -17414,6 +17414,8 @@ async function reversarAbono(abonoId,clienteId,btnEl){
     if(!r||!r.ok)throw new Error('La RPC no confirmó la reversa');
     delete _reversaIdemKeys[abonoId];
     c.pagado=r.nuevo_pagado;c.deuda_anterior=r.nueva_deuda_anterior;
+    // 59.77: el estado de la factura es una caché; sin esto la cuota quedaba «Pagado» después de reversar (caso Juan Minaya, 02-nov).
+    try{await resyncEstadoFacturas(clienteId);}catch(_e){}
     try{const asi=await API.get('asientos',`id=eq.${r.asiento_reversa_id}`);if(asi&&asi[0])ST.asientos.unshift(asi[0]);recalcularSaldosContables();}catch(_e){}
     logAudit('PAGO_REVERSADO',`Cliente: ${c.nom} · Abono reversado · Valor: RD$${abono.monto} · Fecha original: ${abono.fecha} · Motivo: ${motivo}`,'Cobros',c.id);
     toast('ok','Cobro reversado',c.nom);
