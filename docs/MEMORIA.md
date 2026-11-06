@@ -22,7 +22,7 @@
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 - **Todo «smart» (dueño, 30-oct-2026):** cada pantalla que se toque debe (1) pensar por el usuario (valores puestos, autocompletar, formatos solos, avisos antes de fallar), (2) verse elegante y moderna y (3) funcionar igual en iPhone y PC. Detalle en `DESIGN.md`.
 
-## 3. Qué tenemos funcionando (producción = **59.81**, publicada en `main` con el PR #447, 06-nov-2026)
+## 3. Qué tenemos funcionando (producción = **59.82**, publicada en `main` con el PR #449, 06-nov-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -40,7 +40,7 @@
 | Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
 | Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, **publicado** (PR #406, webhook v14); Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
 | Chat de WhatsApp «Parloteo» (degradado continuo, «✓✓ Leído h:mm», reacciones rápidas con chat borroso, enviar/micrófono azul, «escribiendo…» entre agentes) | 59.59, **publicado** (PR #407); `style#nxParloteo` + `parches-whatsapp-parloteo.js`; apagar `nx_parloteo_off` |
-| Buzón de WhatsApp compacto en el celular (cabecera de 1 línea, 5 datos + Contactos en 2 columnas, filas de 2 líneas con letra más grande, campana y lupa de 44 px; 6 → 8 chats a la vista) | **RAMA** `claude/mejoras-whatsapp-movil`, sin publicar; `parches-whatsapp-movil.js`; apagar `nx_whatsapp_movil_off` |
+| Buzón de WhatsApp compacto en el celular (cabecera de 1 línea, 5 datos + Contactos en 2 columnas, filas de 2 líneas con letra más grande, campana y lupa de 44 px; 6 → 8 chats a la vista) | 59.82, **publicado** (PR #449); `parches-whatsapp-movil.js`; apagar `nx_whatsapp_movil_off` |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
@@ -82,6 +82,14 @@
 - **Regla firme:** no se construye nada para ocultar ventas, vender sin factura ni usar la proforma o la «venta interna» para descontar inventario sin facturar (evasión fiscal). Se ofrecen alternativas legales.
 
 ## 7. Pendientes y esperas
+- **5 mejoras + Comisiones oculta — 59.82 (PUBLICADO, PR #449, 06-nov):**
+  - Inicio y menú: `parches-inicio-menu.js`, ⌘K «Ir a…».
+  - Clientes y ficha: `parches-clientes-ficha.js`, búsqueda sin tildes y avisos al escribir.
+  - Facturas, Cobros e Historial: `parches-facturas-cobros-ui.js`, listas vacías que dicen el motivo.
+  - WhatsApp móvil: `parches-whatsapp-movil.js`.
+  - Pulido: `parches-pulido-global.js`.
+  - «Comisiones» oculta del menú: los agentes no tienen comisión. Queda la sección «Agentes/comisiones» del reporte por correo/WA (`parches-seguros-base.js`), por decidir.
+  - Cada capa se apaga con `nx_<nombre>_off`.
 - **WhatsApp masivo de Clientes y Facturas — 59.81 (PUBLICADO, PR #447, 06-nov):** los botones daban error (`abrirWAMasivo` no existía). Ahora abren una ventana: qué mensaje → a quiénes → «Confirmar y enviar», con el mismo envío del Buzón (plantillas, bajas, cadencia). Capa `parches-whatsapp-masivo-elegidos.js`, apagar `nx_wa_masivo_elegidos_off`. Falta la primera prueba real, solo al cliente de prueba del dueño.
 - **Solicitudes sin pago doble — 59.80 (PUBLICADO, PR #444, 05-nov):** si un pago tiene una entrega directa pendiente, ya no se repite abajo en «Validaciones bancarias». **Confirmar** resuelve las dos cosas. Si la entrega se anula, el pago vuelve a salir abajo con Validar / Rechazar.
 - **Páginas legales (05-nov, PUBLICADAS):** NEXUS tiene `/privacidad` y `/terminos`, enlazadas en la pantalla de entrada. El texto dice que el sistema es interno y que los clientes no entran. No tiene página de cookies: el dueño la quitó porque solo la usa el personal. Bayol tiene privacidad, términos y cookies, enlazadas al pie y en la solicitud, y están en el `sitemap`. Pendiente: Search Console de bayolcell.com; el dueño debe mandar la etiqueta `google-site-verification` desde su cuenta de Google.
