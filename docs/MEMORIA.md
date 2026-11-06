@@ -22,7 +22,7 @@
 - STUDIO no vive aquí (`studio-rd`). Solo se puede portar al POS código genérico, nunca sus datos ni su marca.
 - **Todo «smart» (dueño, 30-oct-2026):** cada pantalla que se toque debe (1) pensar por el usuario (valores puestos, autocompletar, formatos solos, avisos antes de fallar), (2) verse elegante y moderna y (3) funcionar igual en iPhone y PC. Detalle en `DESIGN.md`.
 
-## 3. Qué tenemos funcionando (producción = **59.80**, publicada en `main` con el PR #444, 05-nov-2026)
+## 3. Qué tenemos funcionando (producción = **59.81**, publicada en `main` con el PR #447, 06-nov-2026)
 | Módulo | Estado / versión |
 |---|---|
 | Inicio en vidrio (saludo, «Lo próximo», buscador ⌘K y ficha rápida, anillos del ciclo 20→20) | 59.34–59.36 y 59.40; capa `#nxInicioPane` |
@@ -81,6 +81,7 @@
 - **Regla firme:** no se construye nada para ocultar ventas, vender sin factura ni usar la proforma o la «venta interna» para descontar inventario sin facturar (evasión fiscal). Se ofrecen alternativas legales.
 
 ## 7. Pendientes y esperas
+- **WhatsApp masivo de Clientes y Facturas — 59.81 (PUBLICADO, PR #447, 06-nov):** los botones daban error (`abrirWAMasivo` no existía). Ahora abren una ventana: qué mensaje → a quiénes → «Confirmar y enviar», con el mismo envío del Buzón (plantillas, bajas, cadencia). Capa `parches-whatsapp-masivo-elegidos.js`, apagar `nx_wa_masivo_elegidos_off`. Falta la primera prueba real, solo al cliente de prueba del dueño.
 - **Solicitudes sin pago doble — 59.80 (PUBLICADO, PR #444, 05-nov):** si un pago tiene una entrega directa pendiente, ya no se repite abajo en «Validaciones bancarias». **Confirmar** resuelve las dos cosas. Si la entrega se anula, el pago vuelve a salir abajo con Validar / Rechazar.
 - **Páginas legales (05-nov, PUBLICADAS):** NEXUS tiene `/privacidad` y `/terminos`, enlazadas en la pantalla de entrada. El texto dice que el sistema es interno y que los clientes no entran. No tiene página de cookies: el dueño la quitó porque solo la usa el personal. Bayol tiene privacidad, términos y cookies, enlazadas al pie y en la solicitud, y están en el `sitemap`. Pendiente: Search Console de bayolcell.com; el dueño debe mandar la etiqueta `google-site-verification` desde su cuenta de Google.
 - **«Generar factura» en la ficha normal del cliente — 59.79** (**PUBLICADO** en `main`, PR #440, 05-nov): en 59.78 el botón quedó solo en «Cliente 360», que no está en el menú. Ahora va primero en la barra de la ficha (Generar factura · Documentos · Abonos · Certificado PDF). Bitácora `2026-11-05-0904-claude-boton-factura-ficha.md`.
