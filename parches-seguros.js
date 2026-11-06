@@ -154,6 +154,10 @@
        con «Elegir los de esta página», toques de 44 px en la cuadrícula y avisos al momento en la ficha (cédula,
        correo, WhatsApp repetido). No cambia el guardado. Apagar: localStorage.nx_clientes_ficha_off='1'. */
     ['js','parches-clientes-ficha.js']
+    /* 59.82 (06-nov-2026): Facturas, Cobros e Historial de pagos más claros (listas vacías que dicen por qué y
+       ofrecen el arreglo, fecha «jue 6 nov» en el historial, sin «Banco: —» en el celular). Solo visual.
+       Apagar: localStorage.nx_facturas_cobros_ui_off='1'. */
+    ['js','parches-facturas-cobros-ui.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
