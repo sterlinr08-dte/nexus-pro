@@ -133,6 +133,9 @@
        recibe (solo elige el destino; el envío sigue igual). Para quitarla, borrar esta línea; o en un equipo,
        localStorage.nxArrastrar='0'. */
     ['js','parches-transferir-arrastrar.js'],
+    /* Pulido global (06-nov-2026): pulido de interfaz (ciclo 20→20 y Comisiones en el celular, campos de 48 px, pestañas de
+       Configuración con aviso de que hay más). Solo aspecto. Apagar: localStorage.nx_pulido_global_off='1'. */
+    ['js','parches-pulido-global.js'],
     /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
        un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
     ['js','parches-bauche-unico.js'],
