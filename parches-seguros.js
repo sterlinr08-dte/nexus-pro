@@ -149,11 +149,11 @@
     ['js','parches-factura-cliente.js'],
     /* Inicio y menú (dueño 06-nov-2026, «mejoras y ajustes»): buscador ⌘K con «Ir a…» (secciones del menú), ⌘K en Mac y «Ctrl K»
        en Windows. El CSS va en index.html (#nxInicioMenu). Apagar: localStorage.nx_inicio_menu_off='1'. */
-    ['js','parches-inicio-menu.js']
+    ['js','parches-inicio-menu.js'],
     /* 06-nov-2026: Clientes y ficha del cliente — búsqueda que perdona tildes y guiones, barra de selección legible
        con «Elegir los de esta página», toques de 44 px en la cuadrícula y avisos al momento en la ficha (cédula,
        correo, WhatsApp repetido). No cambia el guardado. Apagar: localStorage.nx_clientes_ficha_off='1'. */
-    ['js','parches-clientes-ficha.js']
+    ['js','parches-clientes-ficha.js'],
     /* 59.82 (06-nov-2026): Facturas, Cobros e Historial de pagos más claros (listas vacías que dicen por qué y
        ofrecen el arreglo, fecha «jue 6 nov» en el historial, sin «Banco: —» en el celular). Solo visual.
        Apagar: localStorage.nx_facturas_cobros_ui_off='1'. */
