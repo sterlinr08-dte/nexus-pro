@@ -15198,7 +15198,8 @@ function rCli(){
     if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
     if(_cliTab==='vip'&&!(favs.includes(c.id)||c.vip))return false;
     if(_cliTab==='proceso'&&c.estado_cliente!=='EN_PROCESO')return false;
-    if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
+    // 06-nov-2026 (parches-clientes-ficha.js): nxCliCoincide además perdona tildes, guiones y el orden de las palabras
+    if(q&&!(window.nxCliCoincide&&window.nxCliCoincide(c,q))&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fa&&String(c.agente_id)!==fa)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}

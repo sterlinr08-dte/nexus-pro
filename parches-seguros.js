@@ -139,7 +139,11 @@
     ['js','parches-whatsapp-parloteo.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
-    ['js','parches-factura-cliente.js']
+    ['js','parches-factura-cliente.js'],
+    /* 06-nov-2026: Clientes y ficha del cliente — búsqueda que perdona tildes y guiones, barra de selección legible
+       con «Elegir los de esta página», toques de 44 px en la cuadrícula y avisos al momento en la ficha (cédula,
+       correo, WhatsApp repetido). No cambia el guardado. Apagar: localStorage.nx_clientes_ficha_off='1'. */
+    ['js','parches-clientes-ficha.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
