@@ -150,6 +150,10 @@
     /* Inicio y menú (dueño 06-nov-2026, «mejoras y ajustes»): buscador ⌘K con «Ir a…» (secciones del menú), ⌘K en Mac y «Ctrl K»
        en Windows. El CSS va en index.html (#nxInicioMenu). Apagar: localStorage.nx_inicio_menu_off='1'. */
     ['js','parches-inicio-menu.js']
+    /* 06-nov-2026: Clientes y ficha del cliente — búsqueda que perdona tildes y guiones, barra de selección legible
+       con «Elegir los de esta página», toques de 44 px en la cuadrícula y avisos al momento en la ficha (cédula,
+       correo, WhatsApp repetido). No cambia el guardado. Apagar: localStorage.nx_clientes_ficha_off='1'. */
+    ['js','parches-clientes-ficha.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
