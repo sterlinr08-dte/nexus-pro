@@ -139,7 +139,10 @@
     ['js','parches-whatsapp-parloteo.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
-    ['js','parches-factura-cliente.js']
+    ['js','parches-factura-cliente.js'],
+    /* Inicio y menú (dueño 06-nov-2026, «mejoras y ajustes»): buscador ⌘K con «Ir a…» (secciones del menú), ⌘K en Mac y «Ctrl K»
+       en Windows. El CSS va en index.html (#nxInicioMenu). Apagar: localStorage.nx_inicio_menu_off='1'. */
+    ['js','parches-inicio-menu.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución

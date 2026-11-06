@@ -218,7 +218,7 @@ async function compuesto(browser, archivos, salida, alto) {
     await P.click('#sbEl .nx-mc-tg'); await sleep(500);
     await P.mouse.move(700, 400, { steps: 4 }); await sleep(900);
     ok(await abiertoM(), 'abierto a mano (botón): sacar el mouse NO lo cierra');
-    const neutro = await P.evaluate(() => { const h = [...document.querySelectorAll('.main h1, .main h2, .main .tb-t, .main .pg-t, .main .pgtit')].find(e => { const r = e.getBoundingClientRect(); return r.width > 40 && r.x > 120; }); const r = h ? h.getBoundingClientRect() : { x: 600, y: 30, width: 10, height: 10 }; return { x: r.x + Math.min(30, r.width / 2), y: r.y + r.height / 2 }; });
+    const neutro = await P.evaluate(() => { const h = [...document.querySelectorAll('.main h1, .main h2, .main .tb-t, .main .pg-t, .main .pgtit')].find(e => { const r = e.getBoundingClientRect(); return r.width > 40 && r.x > 120; }); const pb = document.querySelector('.tnav .tn-b-primary'), pr = pb && pb.getBoundingClientRect(); const r = h ? h.getBoundingClientRect() : pr ? { x: pr.left - 40, y: pr.top, width: 10, height: pr.height } : { x: 600, y: 30, width: 10, height: 10 }; /* 06-nov-2026 (inicio-menu): sin encabezado, el hueco vacío de la barra a la izquierda de la búsqueda (la píldora creció a 44 px y ya tapaba 600,30) */ return { x: r.x + Math.min(30, r.width / 2), y: r.y + r.height / 2 }; });
     await P.mouse.click(neutro.x, neutro.y); await sleep(500);
     ok(!(await abiertoM()), 'abierto a mano: tocar fuera del menú lo cierra');
   }
@@ -269,7 +269,7 @@ async function compuesto(browser, archivos, salida, alto) {
   ok(m.sw[0] <= m.sw[1], 'cajón: sin desplazamiento horizontal', m.sw);
   ok(m.user && m.user.nom && m.user.h >= 44, 'cajón: tarjeta de usuario (avatar, nombre, rol) ≥ 44 px', m.user);
   ok(m.search && m.search.h >= 44 && m.search.pillOp === 1, 'cajón: píldora de búsqueda', m.search);
-  ok(m.tg && m.tg.vis && m.tg.x > 250 && m.tg.x < 390, 'cajón: chevron ‹ en el canto derecho de la cabecera', m.tg);
+  ok(m.tg && m.tg.vis && m.tg.x > 240 && m.tg.x < 390, 'cajón: chevron ‹ en el canto derecho de la cabecera', m.tg); // 06-nov-2026 (inicio-menu): la zona de toque mide 44 px (el círculo sigue en x=253)
   // sin superficies claras: color del panel, filas y textos
   const claras = await M.page.evaluate(() => {
     const out = []; const sb = document.getElementById('sbEl');
