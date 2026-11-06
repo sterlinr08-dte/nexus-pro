@@ -137,6 +137,10 @@
        un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
     ['js','parches-bauche-unico.js'],
     ['js','parches-whatsapp-parloteo.js'],
+    /* 06-nov-2026 (encargo «WhatsApp móvil» de CLAUDE.md): Buzón compacto en el celular (cabecera de una línea, datos y
+       Contactos en 2 columnas, filas de 2 líneas, campana y lupa de 44 px). Solo CSS ≤760 px.
+       Apagar: localStorage.nx_whatsapp_movil_off='1'. */
+    ['js','parches-whatsapp-movil.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
     ['js','parches-factura-cliente.js']

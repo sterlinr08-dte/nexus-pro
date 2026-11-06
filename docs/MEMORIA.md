@@ -40,6 +40,7 @@
 | Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
 | Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, **publicado** (PR #406, webhook v14); Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
 | Chat de WhatsApp «Parloteo» (degradado continuo, «✓✓ Leído h:mm», reacciones rápidas con chat borroso, enviar/micrófono azul, «escribiendo…» entre agentes) | 59.59, **publicado** (PR #407); `style#nxParloteo` + `parches-whatsapp-parloteo.js`; apagar `nx_parloteo_off` |
+| Buzón de WhatsApp compacto en el celular (cabecera de 1 línea, 5 datos + Contactos en 2 columnas, filas de 2 líneas con letra más grande, campana y lupa de 44 px; 6 → 8 chats a la vista) | **RAMA** `claude/mejoras-whatsapp-movil`, sin publicar; `parches-whatsapp-movil.js`; apagar `nx_whatsapp_movil_off` |
 | Usuarios con acceso real (empleado y clave en un paso, sincronizado con Auth) | 59.30; Edge Function `usuarios-acceso` |
 | Transferir dinero arrastrando el billete al agente | 59.32; `parches-transferir-arrastrar.js` |
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
