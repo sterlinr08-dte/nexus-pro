@@ -1129,6 +1129,12 @@ html.tema-glass-oscuro #v-waInbox .nxWaBaucheIa{color:#6ee7b7}
   let _waConfirmacionPendiente = null;
   const TIPO_ENVIO_MASIVO_LEGIBLE = { factura: 'la factura generada', pago: 'un recordatorio de pago pendiente', vence: 'un aviso de póliza por vencer' };
 
+  // 59.81: desde Clientes o Facturas el Buzón está oculto; la ventana va sobre la página (estilos en parches-whatsapp-masivo-elegidos.js).
+  function _waHostOverlay() {
+    const v = $('#v-waInbox');
+    return (v && v.offsetParent !== null) ? v : document.body;
+  }
+
   function _waPintarConfirmacionEnvioMasivo(tipo, clienteIds) {
     _waConfirmacionPendiente = { tipo, clienteIds };
     const overlay = document.createElement('div');
@@ -1142,7 +1148,7 @@ html.tema-glass-oscuro #v-waInbox .nxWaBaucheIa{color:#6ee7b7}
         <button class="btn bwa" onclick="nxWaConfirmarEnvioMasivo()">Confirmar y enviar</button>
       </div>
     </div>`;
-    ensureView().appendChild(overlay);
+    _waHostOverlay().appendChild(overlay);
   }
 
   window.nxWaConfirmarEnvioMasivo = function () {
@@ -1238,7 +1244,7 @@ html.tema-glass-oscuro #v-waInbox .nxWaBaucheIa{color:#6ee7b7}
       overlay = document.createElement('div');
       overlay.id = 'nxWaEnvioMasivoOverlay';
       overlay.className = 'nxWaEnvioMasivoOverlay';
-      ensureView().appendChild(overlay);
+      _waHostOverlay().appendChild(overlay);
     }
     if (s.estado === 'creando') {
       overlay.innerHTML = `<div class="nxWaEnvioMasivoBox nxWaPro"><h3>Preparando envío…</h3><p>Creando la tanda…</p></div>`;
