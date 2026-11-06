@@ -139,7 +139,11 @@
     ['js','parches-whatsapp-parloteo.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
-    ['js','parches-factura-cliente.js']
+    ['js','parches-factura-cliente.js'],
+    /* 59.82 (06-nov-2026): Facturas, Cobros e Historial de pagos más claros (listas vacías que dicen por qué y
+       ofrecen el arreglo, fecha «jue 6 nov» en el historial, sin «Banco: —» en el celular). Solo visual.
+       Apagar: localStorage.nx_facturas_cobros_ui_off='1'. */
+    ['js','parches-facturas-cobros-ui.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
