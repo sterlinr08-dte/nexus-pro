@@ -15807,6 +15807,7 @@ function rFact(){
   const q=(document.getElementById('factQ')?.value||'').toLowerCase().trim();
   if(q)lista=lista.filter(f=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));return (f.cliente_nom||'').toLowerCase().includes(q)||(cli?.cedula||'').includes(q)||(cli?.numero_poliza||'').toLowerCase().includes(q);});
   if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
+  try{window._nxFactListaVisible=lista;}catch(e){} // 59.81: «WA masivo» usa las facturas que se ven con este filtro
   const _factFirma=key+'|'+filtroEst+'|'+fa+'|'+q;
   if(_factFirma!==_factFiltroFirma){_factFiltroFirma=_factFirma;_factPagina=1;}
   const tb=document.getElementById('tbFact');

@@ -70,6 +70,7 @@
     ['js','parches-clientes-novedades-compat.js'],
     ['js','parches-clientes-novedades.js'],
     ['js','parches-whatsapp-inbox.js'],
+    ['js','parches-whatsapp-masivo-elegidos.js'],
     ['js','parches-whatsapp-visual.js'],
     ['css','parches-whatsapp-visual-v2.css'],
     ['js','parches-whatsapp-visual-v3.js'],
