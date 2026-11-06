@@ -133,13 +133,31 @@
        recibe (solo elige el destino; el envío sigue igual). Para quitarla, borrar esta línea; o en un equipo,
        localStorage.nxArrastrar='0'. */
     ['js','parches-transferir-arrastrar.js'],
+    /* Pulido global (06-nov-2026): pulido de interfaz (ciclo 20→20 y Comisiones en el celular, campos de 48 px, pestañas de
+       Configuración con aviso de que hay más). Solo aspecto. Apagar: localStorage.nx_pulido_global_off='1'. */
+    ['js','parches-pulido-global.js'],
     /* 59.25 (dueño 14-oct-2026): un comprobante de pago no se puede usar dos veces (huella exacta y lectura con IA;
        un depósito compartido se permite dentro de su monto; si no, bloquea y solo el admin aprueba con motivo). Para quitarla, borrar esta línea; o localStorage.nxBaucheUnico='0'. */
     ['js','parches-bauche-unico.js'],
     ['js','parches-whatsapp-parloteo.js'],
+    /* 06-nov-2026 (encargo «WhatsApp móvil» de CLAUDE.md): Buzón compacto en el celular (cabecera de una línea, datos y
+       Contactos en 2 columnas, filas de 2 líneas, campana y lupa de 44 px). Solo CSS ≤760 px.
+       Apagar: localStorage.nx_whatsapp_movil_off='1'. */
+    ['js','parches-whatsapp-movil.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
-    ['js','parches-factura-cliente.js']
+    ['js','parches-factura-cliente.js'],
+    /* Inicio y menú (dueño 06-nov-2026, «mejoras y ajustes»): buscador ⌘K con «Ir a…» (secciones del menú), ⌘K en Mac y «Ctrl K»
+       en Windows. El CSS va en index.html (#nxInicioMenu). Apagar: localStorage.nx_inicio_menu_off='1'. */
+    ['js','parches-inicio-menu.js'],
+    /* 06-nov-2026: Clientes y ficha del cliente — búsqueda que perdona tildes y guiones, barra de selección legible
+       con «Elegir los de esta página», toques de 44 px en la cuadrícula y avisos al momento en la ficha (cédula,
+       correo, WhatsApp repetido). No cambia el guardado. Apagar: localStorage.nx_clientes_ficha_off='1'. */
+    ['js','parches-clientes-ficha.js'],
+    /* 59.82 (06-nov-2026): Facturas, Cobros e Historial de pagos más claros (listas vacías que dicen por qué y
+       ofrecen el arreglo, fecha «jue 6 nov» en el historial, sin «Banco: —» en el celular). Solo visual.
+       Apagar: localStorage.nx_facturas_cobros_ui_off='1'. */
+    ['js','parches-facturas-cobros-ui.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución

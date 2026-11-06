@@ -5962,6 +5962,51 @@ html.tema-claro .nxPnF-est.ok{color:#15803D}html.tema-claro .nxPnF-est.warn{colo
 }
 @media (prefers-reduced-motion:reduce){html.nx-ig.nx-pane #nxIG .nxIG-card,html.nx-ig.nx-pane #nxIG .nxIG-cyc{transition:none!important}}
 </style>
+<!-- ═══ INICIO Y MENÚ: AJUSTES DE CLARIDAD Y TOQUES (06-nov-2026; dueño: «mejoras y ajustes») ═══
+     Capa AISLADA y reversible. Solo CSS de primer pintado (nada salta al cargar):
+       · Inicio: la segunda línea de las tarjetas ya no se corta (puede ocupar 2 líneas) y «Por vencer» no se parte.
+       · Barra de arriba en PC: los botones redondos miden 44 × 44 px (antes 42 y «Actualizar» 34 de ancho).
+       · Menú: el botón azul que abre/cierra el menú se puede tocar en 44 px de alto (el círculo se ve igual).
+       · Buscador ⌘K: el texto de ayuda y el aviso ya no salen en MAYÚSCULAS ni cortados.
+     La parte de JS (atajos «Ir a…» del buscador, ⌘K en Mac, «Ctrl K» en Windows) vive en parches-inicio-menu.js.
+     CÓMO APAGARLA: en un equipo, localStorage.setItem('nx_inicio_menu_off','1') y recargar (removeItem para volver).
+     Sin html.nx-im todo queda como antes (salvo los textos «Inicio», «Por vencer» y «Escriba…»). -->
+<script id="nxInicioMenuOn">try{if(localStorage.getItem('nx_inicio_menu_off')!=='1')document.documentElement.classList.add('nx-im');}catch(e){document.documentElement.classList.add('nx-im');}</script>
+<style id="nxInicioMenu">
+/* Inicio: la línea de abajo de cada tarjeta (efectividad, facturas atrasadas…) puede usar 2 líneas en vez de cortarse */
+html.nx-im.nx-ig #nxIG .nxIG-ks{height:auto!important;min-height:16px;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:clip}
+/* «Por vencer» del perfil: una sola línea */
+html.nx-im.nx-ig #nxIG .nxIG-stats small{white-space:nowrap}
+/* Buscador global: ayuda y avisos en letra normal (una regla general los ponía en MAYÚSCULAS) */
+html.nx-im #gsInput::placeholder{text-transform:none!important;letter-spacing:0!important}
+html.nx-im #gsResults>div:not(.gs-item),html.nx-im #gsResults .nxIM-sec{text-transform:none!important;letter-spacing:0!important}
+/* Píldora «Buscar…» del menú: en letra normal, como el resto del menú */
+html.nx-im body nav#sbEl.sb .nx-mc-search,html.nx-im body nav#sbEl.sb .nx-mc-search .nx-mc-st{text-transform:none!important;letter-spacing:0!important}
+@media (min-width:769px){
+  /* Barra de arriba en PC: todos los botones redondos a 44 × 44 px; la píldora de búsqueda, 44 px de alto */
+  html.nx-im:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-r>.tn-b:not(.tn-b-primary),html.nx-im:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-r>#btnRefrescar{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 44px!important}
+  html.nx-im:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-r>.tn-b.tn-b-primary{height:44px!important;min-height:44px!important;width:clamp(220px,26vw,340px)!important}
+  html.nx-im:is(.tema-glass-oscuro,.tema-claro) body .tnav .tn-r>.tn-b.tn-b-primary kbd{text-transform:none!important;letter-spacing:0!important;white-space:nowrap}
+  /* Botón que abre el menú: zona de toque de 44 px de alto, el círculo queda en el mismo sitio */
+  html.nx-im:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg{height:44px!important;top:16px!important}
+}
+@media (max-width:768px){
+  html.nx-im:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-tg{height:44px!important;min-width:44px!important;justify-content:center!important;top:calc(15px + env(safe-area-inset-top,0px))!important;right:8px!important}
+}
+/* Atajos «Ir a…» del buscador (los pinta parches-inicio-menu.js) */
+html.nx-im .nxIM-sec{padding:10px 12px 4px;font-size:13px;font-weight:600;color:var(--pf-ink2,#64748B)}
+html.nx-im .nxIM-go{display:flex;flex-wrap:wrap;gap:8px;padding:4px 10px 12px}
+html.nx-im .nxIM-go button{min-height:44px;text-transform:none!important;letter-spacing:0!important;padding:0 16px;border-radius:999px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  background:var(--pf-fill,rgba(15,23,42,.05));color:var(--pf-ink,#0F172A);border:1px solid var(--pf-line,rgba(15,23,42,.10));transition:background .16s ease,transform .16s cubic-bezier(.22,1,.36,1)}
+html.nx-im .nxIM-go button i{font-size:17px;opacity:.85}
+html.nx-im .nxIM-go button:active{transform:translateY(1px)}
+html.nx-im .nxIM-go button:focus-visible{outline:2px solid #A78BFA;outline-offset:2px}
+@media (hover:hover){html.nx-im .nxIM-go button:hover{background:rgba(139,92,246,.16)}}
+html.nx-im.tema-glass-oscuro:not(.nx-pane) .nxIM-go button{background:rgba(255,255,255,.07);color:#F1F5F9;border-color:rgba(255,255,255,.14)}
+html.nx-im .nxIM-tip{padding:0 12px 12px;font-size:13px;color:var(--pf-ink2,#64748B)}
+html.nx-im .nxIM-tip kbd{font:inherit;font-size:12px;padding:1px 6px;border-radius:6px;border:1px solid var(--pf-line,rgba(15,23,42,.12))}
+@media (prefers-reduced-motion:reduce){html.nx-im .nxIM-go button{transition:none}}
+</style>
 <!-- ═══ VENTANA DE COBRO EN VIDRIO (59.37, 18-oct-2026; dueño: «rediseñar y estructurar la ventana de cobro para que sea
      más fácil aplicando los conocimientos que ya tenemos de las skills») ═══
      Capa AISLADA y reversible para #mAbono («Registrar pago»). Va al final de <head> para ganarle a las ~240 reglas que ya
@@ -7848,7 +7893,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
     <input type="text" class="gs-input" id="gsInput" placeholder="Buscar clientes, facturas, pólizas, empresas..." onkeyup="globalSearch(this.value)" onkeydown="nxGsFlechas(event)"/>
     <div class="gs-results" id="gsResults">
       <div style="padding:30px;text-align:center;color:#475569;font-size:11px">
-        Empieza a escribir para buscar...<br>
+        Escriba para buscar…<br>
         <kbd style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:9px;margin-top:6px;display:inline-block">ESC</kbd> para cerrar
       </div>
     </div>
@@ -7923,7 +7968,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       <div class="sb-nav" id="sbNav">
         <div class="spring-ind" id="springInd" aria-hidden="true"><div class="spring-glow" data-glow></div></div>
         <div class="ss">Principal</div>
-        <div class="ni on" onclick="nav('dashboard',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
+        <div class="ni on" onclick="nav('dashboard',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Inicio</span></div>
         <div class="ni" onclick="nav('facturas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
         <div class="ni" onclick="nav('clientes',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
@@ -7938,7 +7983,8 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
           <i class="ti ti-chevron-down" id="icnContab" style="font-size:10px;margin-left:auto;transition:transform .2s;color:rgba(255,255,255,.4)"></i>
         </div>
         <div id="sbContab" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
-          <div class="ni" onclick="nav('comisiones',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-percentage ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Comisiones</span></div>
+          <!-- 06-nov-2026 (dueño: «oculta Comisiones»): los agentes no tienen comisión. Se oculta del menú; la pantalla y sus datos no se borran. Para volver a mostrarla, quitar hidden y display:none. -->
+          <div class="ni" hidden onclick="nav('comisiones',this)" style="padding:4px 9px;display:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-percentage ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Comisiones</span></div>
           <div class="ni" onclick="nav('mayor',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-report-money ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Mayor general</span></div>
           <div class="ni" onclick="nav('asientos',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-book ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Diario asientos</span></div>
           <div class="ni" onclick="nav('balance',this)" style="padding:4px 9px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
@@ -8136,7 +8182,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
     <div class="main">
       <header class="tnav">
         <button aria-label="Abrir el menú" class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
-        <span class="pttl" id="pttl">// DASHBOARD</span>
+        <span class="pttl" id="pttl">// INICIO</span>
         <div class="tn-r">
           <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos" aria-label="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" aria-label="Alertas de polizas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
@@ -8183,7 +8229,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
                   <div class="nxIG-card" id="nxIGk3" role="button" tabindex="0" onclick="nav('clientes',null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Clientes activos — ir a Clientes">
                     <div class="nxIG-kt"><span>Clientes activos</span><span class="nxIG-chip bl" id="nxIGk3c"></span></div><div class="nxIG-kv" id="nxIGk3v"><span class="nxIG-sk">000</span></div><div class="nxIG-viz p"><div class="nxIG-bar"><i id="nxIGk3b"></i></div></div><div class="nxIG-ks" id="nxIGk3s">&nbsp;</div></div>
                   <div class="nxIG-card" id="nxIGk4" role="button" tabindex="0" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Facturas atrasadas — ver la lista">
-                    <div class="nxIG-kt"><span>Atrasadas</span><span class="nxIG-chip dn" id="nxIGk4c"></span></div><div class="nxIG-kv" id="nxIGk4v"><span class="nxIG-sk">00</span></div><div class="nxIG-viz r" id="nxIGk4z"></div><div class="nxIG-ks" id="nxIGk4s">facturas de meses anteriores</div></div>
+                    <div class="nxIG-kt"><span>Atrasadas</span><span class="nxIG-chip dn" id="nxIGk4c"></span></div><div class="nxIG-kv" id="nxIGk4v"><span class="nxIG-sk">00</span></div><div class="nxIG-viz r" id="nxIGk4z"></div><div class="nxIG-ks" id="nxIGk4s">de meses anteriores</div></div>
                 </div>
                 <!-- 59.21 (dueño 11-oct-2026: «Haz la gráfica en vivo de lo cobrado»): «Hoy, en vivo». Lo cobrado hoy, hora
                      por hora, con los MISMOS abonos de «Cobrado hoy» (los de rChartCobros, agrupados con fechaRD). La pinta
@@ -9769,7 +9815,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:0},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'DASHBOARD',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES',custodia:'CUSTODIA DE FONDOS','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
+const TITLES={dashboard:'INICIO',waInbox:'WHATSAPP',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES',custodia:'CUSTODIA DE FONDOS','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -12142,7 +12188,7 @@ function cerrarGlobalSearch(){document.getElementById('gsOverlay').classList.rem
 
 function globalSearch(q){
   const res=document.getElementById('gsResults');
-  if(!q||q.length<2){res.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';return;}
+  if(!q||q.length<2){res.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escriba al menos 2 letras o números…</div>';return;}
   const ql=q.toLowerCase();
   const found=[];
   // Buscar clientes
@@ -13903,7 +13949,7 @@ function nav(view,el){
   // Limpiar campos de búsqueda al cambiar de ventana
   ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.querySelectorAll('.gs-input').forEach(i=>{i.value='';});
-  const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';
+  const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escriba al menos 2 letras o números…</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
   // Guardar la pantalla actual (para F5 y para la actualización de la app). Va a la BASE,
@@ -14279,7 +14325,7 @@ function nxIGPintar(d){
   const vPd=fmt(d.pd);nxIGSet('nxIGk2v',vPd);nxIGLargo('nxIGk2v',vPd);
   nxIGSet('nxIGk2c',d.conSaldo?escHtml(nxIGPl(d.conSaldo,'cliente')):'');
   const b2=document.getElementById('nxIGk2b');if(b2)b2.style.width=Math.max(0,Math.min(100,d.ef))+'%';
-  nxIGSet('nxIGk2s',`${d.ef}% de efectividad de cobro`);
+  nxIGSet('nxIGk2s',`${d.ef}% de efectividad`);
   // KPI Clientes activos (= «Activos») con los que están al día (activos sin saldo)
   const alDia=Math.max(0,d.act-d.conSaldo),pAl=d.act?Math.round(alDia/d.act*100):0;
   nxIGSet('nxIGk3v',String(d.act));
@@ -14298,7 +14344,7 @@ function nxIGPintar(d){
   const al=window.__nxAlertasCnt||{vencidas:0};
   const s1=nxIGSet('nxIGs1',String(al.vencidas||0));if(s1)s1.classList.toggle('bad',(al.vencidas||0)>0);
   nxIGSet('nxIGs2',String(d.porVencer));
-  nxIGSet('nxIGs2l',escHtml(`Vencen ≤${CFG.alertaDias} d`));
+  nxIGSet('nxIGs2l','Por vencer');try{const s2=document.getElementById('nxIGs2l').parentNode;s2.title=`Vencen en los próximos ${CFG.alertaDias} días`;}catch(e){}
   nxIGSet('nxIGs3',String(d.enProceso));
   _nxIG.ani=Object.assign(_nxIG.ani||{},{prima:d.prima,alDia,act:d.act});nxIGAnillos();
   nxIGSet('nxIGprima',`Prima mensual <b>${fmt(d.prima)}</b> · cartera activa`+(d.util?` · Utilidad bruta <b>${fmt(d.util.utilidad)}</b> (margen ${d.util.margen}%)`:''));
@@ -14337,6 +14383,8 @@ function nxIGFechaTxt(){
   const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const hoy=Date.UTC(y,m-1,d),corte=d<=20?Date.UTC(y,m-1,20):Date.UTC(y,m,20),f=Math.round((corte-hoy)/864e5);
   const c=f===0?'<b>hoy es el corte</b>':f===1?'mañana es el corte':`faltan <b>${f} días</b> para el corte`;
+  // Inicio y menú (06-nov-2026): en el celular, mes corto («Viernes 6 nov») para que «faltan N días para el corte» quepa sin cortarse.
+  if(window.innerWidth<=480&&document.documentElement.classList.contains('nx-im'))return `${dias[new Date(hoy).getUTCDay()]} ${d} ${meses[m-1].slice(0,3)} · ${c}`;
   return `${dias[new Date(hoy).getUTCDay()]}, ${d} de ${meses[m-1]} · ${c}`;
 }
 // Sesión en el esqueleto (rol, saludo, perfil): se llama al mostrar la app (iniciarApp) y en cada rDash.
@@ -15198,7 +15246,8 @@ function rCli(){
     if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
     if(_cliTab==='vip'&&!(favs.includes(c.id)||c.vip))return false;
     if(_cliTab==='proceso'&&c.estado_cliente!=='EN_PROCESO')return false;
-    if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
+    // 06-nov-2026 (parches-clientes-ficha.js): nxCliCoincide además perdona tildes, guiones y el orden de las palabras
+    if(q&&!(window.nxCliCoincide&&window.nxCliCoincide(c,q))&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fa&&String(c.agente_id)!==fa)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
