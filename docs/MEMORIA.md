@@ -8,6 +8,7 @@
 
 ## 2. Dueño y forma de trabajar
 - Dueño: Sterling (sterlinr08). No es técnico. Hablarle en español sencillo, de usted, con respuestas cortas: una idea por renglón y tablas cuando haya que decidir.
+- **Siempre en español (dueño, 07-nov-2026):** todo lo que se le escribe va en español, incluidos los avisos cortos (PR publicado, notificaciones de GitHub, errores). Nunca responderle en inglés.
 - Quiere **ver** el resultado: capturas o video a 390–430 px (iPhone) y en PC.
 - Escribe en mensajes cortos y con errores de dictado. Interpretar lo más probable y confirmarlo en una línea.
 - **Publicar a `main`** solo con «publícalo», «súbelo», «ponlo en vivo» o algo equivalente. Vale **solo para esa entrega**. Sin eso, se trabaja en una rama `claude/*`.
