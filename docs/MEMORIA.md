@@ -10,6 +10,7 @@
 - Dueño: Sterling (sterlinr08). No es técnico. Hablarle en español sencillo, de usted, con respuestas cortas: una idea por renglón y tablas cuando haya que decidir.
 - Quiere **ver** el resultado: capturas o video a 390–430 px (iPhone) y en PC.
 - Escribe en mensajes cortos y con errores de dictado. Interpretar lo más probable y confirmarlo en una línea.
+- **Qué modelo conviene (dueño, 09-nov-2026):** al empezar cada pedido, decir en una línea si conviene el modelo normal (familia Opus, cuesta la mitad) o el más capaz (familia Fable). Regla corta: si un error cuesta dinero o es difícil de deshacer (auditar dinero, contabilidad, base de datos con riesgo, diseñar un módulo completo, errores difíciles, revisar a otra IA en algo delicado), el más capaz; si se ve en pantalla y se corrige en un minuto (textos, botones, compactar, reportes de anuncios, publicar, bitácoras, referencias), el normal. El cambio lo hace el dueño con `/model`.
 - **Publicar a `main`** solo con «publícalo», «súbelo», «ponlo en vivo» o algo equivalente. Vale **solo para esa entrega**. Sin eso, se trabaja en una rama `claude/*`.
 - **Bitácora:** cada cambio, auditoría o publicación deja una entrada nueva `docs/bitacora/AAAA-MM-DD-HHMM-claude.md` (hora de RD). Nunca se edita ni se borra una entrada anterior.
 - Las decisiones del dueño se escriben en `CLAUDE.md`, `REGLAMENTOS.md` o la bitácora. Lo que solo se dijo en el chat se pierde.
