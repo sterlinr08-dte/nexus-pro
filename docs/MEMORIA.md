@@ -11,6 +11,7 @@
 - **Siempre en español (dueño, 07-nov-2026):** todo lo que se le escribe va en español, incluidos los avisos cortos (PR publicado, notificaciones de GitHub, errores). Nunca responderle en inglés.
 - **Botón «Publícalo» (dueño, 08-nov-2026):** cuando una entrega está lista, preguntar con botones (herramienta de preguntas del chat): «Publícalo» / «Todavía no». Tocar «Publícalo» autoriza solo esa entrega. Escribirlo sigue valiendo.
 - **Seguir solo en una serie (dueño, 08-nov-2026):** «Continúa siempre que falte un paso luego de publicar el anterior». Publicar sigue pidiendo su OK en cada entrega.
+- **Qué modelo conviene (dueño, 09-nov-2026):** al empezar cada pedido, decir en una línea si conviene el modelo normal (familia Opus, cuesta la mitad) o el más capaz (familia Fable). Regla corta: si un error cuesta dinero o es difícil de deshacer (auditar dinero, contabilidad, base de datos con riesgo, diseñar un módulo completo, errores difíciles, revisar a otra IA en algo delicado), el más capaz; si se ve en pantalla y se corrige en un minuto (textos, botones, compactar, reportes de anuncios, publicar, bitácoras, referencias), el normal. El cambio lo hace el dueño con `/model`.
 - Quiere **ver** el resultado: capturas o video a 390–430 px (iPhone) y en PC.
 - Escribe en mensajes cortos y con errores de dictado. Interpretar lo más probable y confirmarlo en una línea.
 - **Publicar a `main`** solo con «publícalo», «súbelo», «ponlo en vivo» o algo equivalente. Vale **solo para esa entrega**. Sin eso, se trabaja en una rama `claude/*`.
