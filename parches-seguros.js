@@ -157,7 +157,11 @@
     /* 59.82 (06-nov-2026): Facturas, Cobros e Historial de pagos más claros (listas vacías que dicen por qué y
        ofrecen el arreglo, fecha «jue 6 nov» en el historial, sin «Banco: —» en el celular). Solo visual.
        Apagar: localStorage.nx_facturas_cobros_ui_off='1'. */
-    ['js','parches-facturas-cobros-ui.js']
+    ['js','parches-facturas-cobros-ui.js'],
+    /* 59.83 (dueño 09-nov-2026): «Salidas» de la custodia del administrador — botón «Salida» y lista en Custodia de
+       fondos (pago a la aseguradora, gasto, retiro, depósito al banco, ajuste inicial) y columna «Salidas» en el
+       reporte del ciclo. Solo administrador. Apagar: localStorage.nx_salidas_custodia_off='1'. */
+    ['js','parches-salidas-custodia.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
