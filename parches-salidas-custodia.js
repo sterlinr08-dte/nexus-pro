@@ -68,6 +68,9 @@
 #v-custodia .nxSalTag{font-size:12px;font-weight:700;color:var(--cu-t3,#64748b);white-space:nowrap;padding:0 6px}
 @media(max-width:640px){
   #v-custodia .nxSalBtn.nxSalBtn{flex:0 0 auto}
+  /* 59.84: en el celular el selector del ciclo va en su propia fila (se recortaba «20 oct → 20 no…»); debajo, Actualizar y Salida a partes iguales. */
+  #v-custodia .cuHead.nxSalCuHead .cuSel{flex:1 1 100%!important}
+  #v-custodia .cuHead.nxSalCuHead .cuBtn{flex:1 1 0!important;justify-content:center!important}
   #v-custodia .nxSalFila{grid-template-columns:minmax(0,1fr) auto;row-gap:2px;padding:10px 0}
   #v-custodia .nxSalF{grid-column:1;grid-row:2}
   #v-custodia .nxSalQ span{white-space:normal;overflow-wrap:anywhere}
@@ -406,6 +409,7 @@ html.tema-glass-oscuro .nxSalNota{color:#fcd34d}html.tema-glass-oscuro .nxSalNot
       b.innerHTML = '<i class="ti ti-arrow-up-right"></i><span>Salida</span>';
       b.addEventListener('click', abrir);
       head.appendChild(b);
+      head.classList.add('nxSalCuHead');
     }
     if (!$('#nxSalBox', wrap)) {
       const sec = document.createElement('section'); sec.id = 'nxSalBox'; sec.className = 'nxSal'; sec.setAttribute('aria-label', 'Salidas');
