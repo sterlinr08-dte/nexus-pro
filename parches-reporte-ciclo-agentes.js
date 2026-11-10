@@ -8,7 +8,17 @@
   window.__NEXUS_REPORTE_CICLO_AGENTES_V1__=true;
 
   var cache={};
-  var estado={periodo:null,modo:'ciclo',data:null,fuente:null,loading:false,error:null,req:0};
+  var estado={periodo:null,modo:'ciclo',data:null,fuente:null,loading:false,error:null,req:0,salidas:null};
+  /* 59.83: columna «Salidas» (salidas de la custodia del administrador) leída de rpc/seguros_salidas_ciclo.
+     Solo se muestra; el saldo final ya viene del servidor con las salidas restadas. Si la consulta falla, la columna
+     sale con «—» y el reporte sigue igual. Se apaga junto con la capa: localStorage.nx_salidas_custodia_off='1'. */
+  var SAL_ON=true;try{SAL_ON=localStorage.getItem('nx_salidas_custodia_off')!=='1';}catch(_){}
+  function salidasDe(id){
+    if(!estado.salidas)return null;
+    var t=0;estado.salidas.forEach(function(x){if(String(x.agente_id)===String(id)&&x.motivo!=='deposito_banco')t+=num(x.total);});
+    return t;
+  }
+  window.nxC20Invalidar=function(){cache={};var v=q('v-rep-agente');if(v&&v.classList.contains('on')&&q('nxC20Body'))cargar(true);};
 
   function q(id){return document.getElementById(id);}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -117,7 +127,7 @@
     var body=q('nxC20Body');if(!body)return;
     var modo=estado.modo,periodo=estado.periodo,ck=modo+'|'+periodo,req=++estado.req;
     if(!force&&cache[ck]){
-      estado.data=cache[ck].data;estado.fuente=cache[ck].fuente;estado.error=null;estado.loading=false;pintar();return;
+      estado.data=cache[ck].data;estado.fuente=cache[ck].fuente;estado.salidas=cache[ck].salidas||null;estado.error=null;estado.loading=false;pintar();return;
     }
     estado.loading=true;estado.error=null;
     body.innerHTML='<div class="nxC20Load"><div class="spin" style="margin:0 auto 8px"></div>Cargando cifras del servidor…</div>';
@@ -131,9 +141,11 @@
         if(snap.length){data=snap;fuente='snapshot';}
         else{data=await API.post('rpc/seguros_resumen_ciclo_admin',{p_periodo:periodo})||[];fuente='vivo';}
       }
-      cache[ck]={data:Array.isArray(data)?data:[],fuente:fuente};
+      var sal=null;
+      if(modo!=='mes'&&SAL_ON){try{var sr=await API.post('rpc/seguros_salidas_ciclo',{p_periodo:periodo});sal=Array.isArray(sr)?sr:[];}catch(_){sal=null;}}
+      cache[ck]={data:Array.isArray(data)?data:[],fuente:fuente,salidas:sal};
       if(req!==estado.req||modo!==estado.modo||periodo!==estado.periodo)return;
-      estado.data=cache[ck].data;estado.fuente=fuente;
+      estado.data=cache[ck].data;estado.fuente=fuente;estado.salidas=sal;
     }catch(e){
       if(req!==estado.req||modo!==estado.modo||periodo!==estado.periodo)return;
       estado.error=rpcMsg(e);
@@ -178,10 +190,10 @@
         (estado.fuente==='snapshot'?'<div class="nxC20Kpi"><div class="l">Custodia al cierre</div><div class="v">'+money(r0.total_saldo_final)+'</div><div class="s">Suma de saldos positivos · servidor</div></div><div class="nxC20Kpi"><div class="l">Deuda de agentes</div><div class="v">'+money(r0.total_deuda_agentes)+'</div><div class="s">Separada de la custodia</div></div>':'')+
       '</div>';
     var status='<div class="nxC20Status"><span class="nxC20Badge '+badge+'"><i class="ti '+(estado.fuente==='snapshot'?'ti-lock-check':'ti-clock')+'"></i> '+esc(fuente)+'</span><span>'+esc(labelPeriodo(estado.periodo))+'</span>'+(estado.fuente==='snapshot'&&r0.cerrado_at?'<span>· cerrado '+fecha(r0.cerrado_at)+'</span>':'')+(aprox?'<span class="nxC20Badge warn"><i class="ti ti-info-triangle"></i> Histórico aproximado</span>':'')+(desc?'<span class="nxC20Badge err"><i class="ti ti-alert-triangle"></i> Hay diferencia de reconciliación</span>':'')+'</div>';
-    var table='<div style="overflow-x:auto"><table class="nxC20Table"><thead><tr><th>Agente</th><th>Cobrado validado</th><th>Transferido</th><th>Recibido</th><th>Entregado admin/directo</th><th>Saldo / custodia</th><th>Diferencia</th></tr></thead><tbody>'+
+    var table='<div style="overflow-x:auto"><table class="nxC20Table"><thead><tr><th>Agente</th><th>Cobrado validado</th><th>Transferido</th><th>Recibido</th><th>Entregado admin/directo</th>'+(SAL_ON?'<th>Salidas</th>':'')+'<th>Saldo / custodia</th><th>Diferencia</th></tr></thead><tbody>'+
       vis.map(function(r){
-        var saldo=num(r.saldo_final),dif=num(r.diferencia_reconciliacion);
-        return '<tr><td><div class="nxC20Agt">'+esc(r.agente||'Agente')+'</div><div class="nxC20Cargo">'+esc(r.cargo||'')+'</div></td><td class="m">'+money(r.cobrado_validado)+'</td><td class="m">'+money(r.transferido_confirmado)+'</td><td class="m">'+money(r.recibido_confirmado)+'</td><td class="m">'+money(r.entregado_admin_directo)+'</td><td class="m '+(saldo<0?'nxC20Neg':(saldo>0?'nxC20Pos':''))+'">'+money(saldo)+'</td><td class="m '+(Math.abs(dif)>0.005?'nxC20Neg':'')+'">'+money(dif)+'</td></tr>';
+        var saldo=num(r.saldo_final),dif=num(r.diferencia_reconciliacion),sal=salidasDe(r.agente_id);
+        return '<tr><td><div class="nxC20Agt">'+esc(r.agente||'Agente')+'</div><div class="nxC20Cargo">'+esc(r.cargo||'')+'</div></td><td class="m">'+money(r.cobrado_validado)+'</td><td class="m">'+money(r.transferido_confirmado)+'</td><td class="m">'+money(r.recibido_confirmado)+'</td><td class="m">'+money(r.entregado_admin_directo)+'</td>'+(SAL_ON?'<td class="m nxC20Sal">'+(sal==null?'—':money(sal))+'</td>':'')+'<td class="m '+(saldo<0?'nxC20Neg':(saldo>0?'nxC20Pos':''))+'">'+money(saldo)+'</td><td class="m '+(Math.abs(dif)>0.005?'nxC20Neg':'')+'">'+money(dif)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
     body.innerHTML=status+kpis+table+'<div class="nxC20Note"><b>Fuente de verdad:</b> estas cifras vienen de las RPC financieras de NEXUS PRO. Esta pantalla no suma pagos ni reconstruye custodia en el navegador. Las transferencias entre agentes solo mueven custodia; no aumentan el cobro real del negocio.</div>';
   }
@@ -201,8 +213,8 @@
       out.push(['NEXUS PRO — CONSOLIDADO MENSUAL DE AGENTES'],['Período de apertura',estado.periodo],[],['Agente','Cobrado validado','Transferido confirmado','Recibido confirmado','Entregado admin/directo','Último saldo']);
       vis.forEach(function(r){out.push([r.agente,r.cobrado_validado,r.transferido_confirmado,r.recibido_confirmado,r.entregado_admin_directo,r.saldo_final_ultimo]);});
     }else{
-      out.push(['NEXUS PRO — CICLO 20→20 POR AGENTE'],['Período',estado.periodo],['Rango',labelPeriodo(estado.periodo)],['Fuente',estado.fuente==='snapshot'?'Snapshot inmutable':'Lectura viva'],[],['Agente','Cargo','Cobrado validado','Transferido confirmado','Recibido confirmado','Entregado admin/directo','Saldo final','Diferencia reconciliación','Histórico aproximado']);
-      vis.forEach(function(r){out.push([r.agente,r.cargo||'',r.cobrado_validado,r.transferido_confirmado,r.recibido_confirmado,r.entregado_admin_directo,r.saldo_final,r.diferencia_reconciliacion,r.historico_aproximado?'Sí':'No']);});
+      out.push(['NEXUS PRO — CICLO 20→20 POR AGENTE'],['Período',estado.periodo],['Rango',labelPeriodo(estado.periodo)],['Fuente',estado.fuente==='snapshot'?'Snapshot inmutable':'Lectura viva'],[],['Agente','Cargo','Cobrado validado','Transferido confirmado','Recibido confirmado','Entregado admin/directo'].concat(SAL_ON?['Salidas']:[],['Saldo final','Diferencia reconciliación','Histórico aproximado']));
+      vis.forEach(function(r){out.push([r.agente,r.cargo||'',r.cobrado_validado,r.transferido_confirmado,r.recibido_confirmado,r.entregado_admin_directo].concat(SAL_ON?[(function(v){return v==null?'':v;})(salidasDe(r.agente_id))]:[],[r.saldo_final,r.diferencia_reconciliacion,r.historico_aproximado?'Sí':'No']));});
     }
     if(typeof descCSV==='function')descCSV(out,'NEXUS_'+(estado.modo==='mes'?'Consolidado':'Ciclo20')+'_'+estado.periodo+'.csv');
   }

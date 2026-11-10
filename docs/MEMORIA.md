@@ -86,6 +86,14 @@
 - **Regla firme:** no se construye nada para ocultar ventas, vender sin factura ni usar la proforma o la «venta interna» para descontar inventario sin facturar (evasión fiscal). Se ofrecen alternativas legales.
 
 ## 7. Pendientes y esperas
+- **Salidas de la custodia del administrador — 59.83 (PUBLICADO, 09-nov; base aplicada el mismo día):**
+  - Problema: la custodia del administrador solo subía (RD$ 2.07 millones), porque no existía un movimiento de salida.
+  - Tabla `seguros_salidas_custodia` y RPC `seguros_registrar_salida_custodia`, `seguros_anular_salida_custodia` y `seguros_salidas_ciclo`. Solo administrador.
+  - Motivos: pago a la aseguradora, gasto, retiro del dueño, ajuste inicial y depósito al banco (este último no baja el total: pasa de efectivo a banco).
+  - Regla: una salida no es un cobro; cuenta por su fecha de registro y anularla devuelve el dinero en el ciclo en que se anula.
+  - Pantalla: botón «Salida» y lista en Custodia de fondos, y columna «Salidas» en el reporte del ciclo. Capa `parches-salidas-custodia.js`; apagar con `nx_salidas_custodia_off`.
+  - Falta: que el dueño dé su cifra real (efectivo y banco) para la salida inicial de ajuste, probar con su usuario, y mostrar las salidas en el resumen de WhatsApp del ciclo.
+- **Auditoría Fase 0 de acumulados (09-nov):** las fases A, B y C ya están en producción (custodia, transferencias, cierre automático del día 20, avisos de WhatsApp) y la reconciliación da cero. Pendiente de decidir con el dueño: el cierre guardado de 2026-08 difiere RD$ 8,000 del cálculo vivo, y el «Consolidado» es por ciclo, no por mes calendario. Bitácora en la rama `claude/review-claude-md-jpzk7k`.
 - **5 mejoras + Comisiones oculta — 59.82 (PUBLICADO, PR #449, 06-nov):**
   - Inicio y menú: `parches-inicio-menu.js`, ⌘K «Ir a…».
   - Clientes y ficha: `parches-clientes-ficha.js`, búsqueda sin tildes y avisos al escribir.
