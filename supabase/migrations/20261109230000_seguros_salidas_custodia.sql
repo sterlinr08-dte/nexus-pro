@@ -476,3 +476,7 @@ revoke all on function public.seguros_salidas_ciclo(text) from public, anon;
 grant execute on function public.seguros_registrar_salida_custodia(numeric,text,text,text,text,text,date,text,text) to authenticated;
 grant execute on function public.seguros_anular_salida_custodia(uuid,text) to authenticated;
 grant execute on function public.seguros_salidas_ciclo(text) to authenticated;
+
+-- La tabla solo se lee (y solo el administrador, por RLS). Se escribe únicamente con las funciones de arriba.
+revoke all on table public.seguros_salidas_custodia from anon;
+revoke insert, update, delete, truncate, references, trigger on table public.seguros_salidas_custodia from authenticated;
