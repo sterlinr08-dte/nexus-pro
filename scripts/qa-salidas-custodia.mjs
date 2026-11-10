@@ -82,6 +82,7 @@ const pequenos = page => page.evaluate(() => [...document.querySelectorAll('.nxS
     const { ctx, page, errs, st } = await abrir(browser, w);
     // ── Pantalla
     const b = await caja(page, '#v-custodia .cuHead .nxSalBtn');
+    if (w < 700)     ok(await page.evaluate(() => { const e = document.querySelector('#v-custodia .cuHead .cuSel'); if (!e) return false; const c = document.createElement('canvas').getContext('2d'); const cs = getComputedStyle(e); c.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily; const t = e.options[e.selectedIndex].text; return c.measureText(t).width + 44 <= e.getBoundingClientRect().width; }), `${w}px el selector del ciclo se lee completo`);
     ok(b && b.vis && b.h >= 44 && b.w >= 44 && b.t === 'Salida', `${w}px botón «Salida» en la cabecera de Custodia (≥44×44)`, b);
     ok(await page.evaluate(() => document.querySelectorAll('.nxSalBtn').length) === 1, `${w}px hay un solo botón «Salida»`);
     const l0 = await page.textContent('#nxSalBox');
