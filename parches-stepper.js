@@ -1,6 +1,7 @@
-/* NEXUS PRO · Controles «− número +» que responden al toque (dueño, 12-nov-2026: reel `Dfor45ND65b`, «1 y 2»).
- * Variante 1 «Toque suave»: el botón tocado se hunde y vuelve.  Variante 2 «Deslizar»: el número nuevo entra desde el
- * lado que se tocó (desde la derecha al sumar, desde la izquierda al restar) y crece un poco al llegar.
+/* NEXUS PRO · Controles «− número +» que responden al toque (dueño, 12-nov-2026: reel `Dfor45ND65b`).
+ * Variante 3 «Onda» (el dueño vio el video de las variantes 1 y 2 y dijo «me gusta stepper número 3 del video»): una onda
+ * sale del botón tocado, cruza el control y va destapando el número nuevo a su paso.
+ * Para volver a las variantes 1 y 2 (botón que se hunde + número que entra de lado): localStorage.nx_stepper_modo='lado'.
  * SOLO ASPECTO. No cambia cantidades, precios ni existencias: mira el toque, deja que la función de siempre haga su
  * trabajo (nxPosQty, nxFacQtyStep, nxAboPasoMeses…) y anima el número SOLO si de verdad cambió. Si la cantidad no cambió
  * (sin existencia, mínimo alcanzado), no se mueve nada.
@@ -21,11 +22,29 @@ function partes(w){
 }
 function valor(n){return String(n&&('value' in n)&&n.tagName!=='B'?n.value:(n?n.textContent:'')).trim();}
 function claseDe(w){var c=CAJAS.split(',');for(var i=0;i<c.length;i++){var k=c[i].trim();if(w.matches(k))return k;}return '';}
+function modo(){try{return localStorage.getItem('nx_stepper_modo')==='lado'?'lado':'onda';}catch(_){return 'onda';}}
 function animar(w,lado){
   var p=partes(w);if(!p||!p.num.animate)return;
   try{
-    p.num.animate([{transform:'translateX('+(lado*9)+'px) scale(.86)',opacity:.15},{transform:'none',opacity:1}],{duration:190,easing:CURVA});
-    (lado>0?p.mas:p.menos).animate([{transform:'scale(.88)'},{transform:'none'}],{duration:170,easing:CURVA});
+    if(modo()==='lado'){ // variantes 1 y 2
+      p.num.animate([{transform:'translateX('+(lado*9)+'px) scale(.86)',opacity:.15},{transform:'none',opacity:1}],{duration:190,easing:CURVA});
+      (lado>0?p.mas:p.menos).animate([{transform:'scale(.88)'},{transform:'none'}],{duration:170,easing:CURVA});
+      return;
+    }
+    // variante 3: onda desde el botón tocado + número que se destapa desde ese lado
+    var btn=lado>0?p.mas:p.menos,rw=w.getBoundingClientRect(),rb=btn.getBoundingClientRect();
+    var cx=rb.left+rb.width/2-rw.left,cy=rb.top+rb.height/2-rw.top,r=Math.max(rw.width,rw.height)*1.15,cs=getComputedStyle(w);
+    var antes={position:w.style.position,overflow:w.style.overflow};
+    if(cs.position==='static')w.style.position='relative';
+    w.style.overflow='hidden';
+    var o=document.createElement('span');o.className='nxStpOnda';o.setAttribute('aria-hidden','true');
+    o.style.cssText='position:absolute;left:'+(cx-r)+'px;top:'+(cy-r)+'px;width:'+(2*r)+'px;height:'+(2*r)+'px;border-radius:50%;pointer-events:none;z-index:0;background:'+(getComputedStyle(btn).backgroundColor||'currentColor')+';';
+    w.appendChild(o);
+    var a=o.animate([{transform:'scale(.12)',opacity:.42},{transform:'scale(1)',opacity:0}],{duration:420,easing:CURVA});
+    var fin=function(){try{o.remove();}catch(_){}w.style.position=antes.position;w.style.overflow=antes.overflow;};
+    a.onfinish=fin;a.oncancel=fin;
+    var x=lado>0?'100%':'0%';
+    p.num.animate([{clipPath:'circle(0% at '+x+' 50%)',opacity:.3},{clipPath:'circle(160% at '+x+' 50%)',opacity:1}],{duration:340,easing:CURVA});
   }catch(_){}
 }
 document.addEventListener('click',function(ev){
@@ -43,5 +62,5 @@ document.addEventListener('click',function(ev){
   requestAnimationFrame(function(){ver();requestAnimationFrame(ver);});
   setTimeout(ver,260); // por si la función de siempre tarda un momento en repintar
 },true);
-window.__nxStepper={version:'20261112a'};
+window.__nxStepper={version:'20261112b',modo:modo};
 })();

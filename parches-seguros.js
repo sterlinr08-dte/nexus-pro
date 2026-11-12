@@ -167,7 +167,7 @@
        siguiente). Solo lee; los botones abren lo de siempre. Apagar: localStorage.nx_costado_off='1'. */
     ['js','parches-costado.js'],
     /* 12-nov-2026 (dueño: reel «Stepper», «1 y 2»): los controles «− número +» (carrito y factura del POS, meses
-       adelantados del cobro) responden al toque: el botón se hunde y el número nuevo entra desde el lado tocado.
+       adelantados del cobro) responden al toque: una onda sale del botón y destapa el número nuevo (variante 3).
        Solo aspecto; no cambia cantidades. Apagar: localStorage.nx_stepper_off='1'. */
     ['js','parches-stepper.js']
   ];
