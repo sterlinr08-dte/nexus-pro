@@ -50,7 +50,7 @@
 | Isla de avisos (pagos y WhatsApp) | 59.20; `parches-isla-avisos.js` |
 | Temas: oscuro grafito y modo claro gemelo | 59.21 y 59.22; contraste del claro en Préstamos y POS en 59.23 |
 | «Detalles pro» (beUI) y rapidez tipo Raycast | 59.24 y 59.26; Cobros en dos líneas 59.27 |
-| «Costado» en Clientes y Facturas (resumen al lado sin tapar la lista, solo lectura) | 12-nov-2026; `parches-costado.js`; apagar `nx_costado_off`. **En rama, sin publicar** |
+| «Costado» en Clientes y Facturas (resumen al lado sin tapar la lista, solo lectura) | 12-nov-2026; `parches-costado.js`; apagar `nx_costado_off`. Publicado (PR #462) |
 | Solicitudes: una sola cola «PAGOS PENDIENTES POR VALIDAR» | PR #312 |
 | WhatsApp: Inbox corporativo, plantillas y automatizaciones | En producción (capas `parches-whatsapp-*`) |
 
