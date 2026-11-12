@@ -41,4 +41,4 @@ Reel de Moxen `DfnsWJABIDo` («Costado»). Dijo «para nexus también podemos sa
 - Faltan Cobros y Solicitudes (el dueño eligió Clientes y Facturas primero).
 
 ## Estado
-Rama `claude/review-claude-md-jpzk7k`. **Sin publicar**: espera el «Publícalo» del dueño.
+Rama `claude/costado-clientes-facturas`. **Sin publicar**: espera el «Publícalo» del dueño.
