@@ -20,7 +20,7 @@
     /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
        WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
     if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
-    return base?(base+'&b=6033'):('?b=6033&'+d);
+    return base?(base+'&b=6034'):('?b=6034&'+d);
   })();
   function qv(){return QV;}
 
@@ -161,7 +161,11 @@
     /* 59.83 (dueño 09-nov-2026): «Salidas» de la custodia del administrador — botón «Salida» y lista en Custodia de
        fondos (pago a la aseguradora, gasto, retiro, depósito al banco, ajuste inicial) y columna «Salidas» en el
        reporte del ciclo. Solo administrador. Apagar: localStorage.nx_salidas_custodia_off='1'. */
-    ['js','parches-salidas-custodia.js']
+    ['js','parches-salidas-custodia.js'],
+    /* 12-nov-2026 (dueño: «Clientes y facturas», idea «Costado» de Moxen): tocar el nombre en la lista de Clientes o de
+       Facturas abre su resumen al costado sin tapar la lista (de lado en la PC, desde abajo en el celular; ▲▼ pasan al
+       siguiente). Solo lee; los botones abren lo de siempre. Apagar: localStorage.nx_costado_off='1'. */
+    ['js','parches-costado.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución
