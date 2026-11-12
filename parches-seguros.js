@@ -20,7 +20,7 @@
     /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
        WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
     if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
-    return base?(base+'&b=6034'):('?b=6034&'+d);
+    return base?(base+'&b=6035'):('?b=6035&'+d);
   })();
   function qv(){return QV;}
 
@@ -165,7 +165,11 @@
     /* 12-nov-2026 (dueño: «Clientes y facturas», idea «Costado» de Moxen): tocar el nombre en la lista de Clientes o de
        Facturas abre su resumen al costado sin tapar la lista (de lado en la PC, desde abajo en el celular; ▲▼ pasan al
        siguiente). Solo lee; los botones abren lo de siempre. Apagar: localStorage.nx_costado_off='1'. */
-    ['js','parches-costado.js']
+    ['js','parches-costado.js'],
+    /* 12-nov-2026 (dueño: reel «Stepper», «1 y 2»): los controles «− número +» (carrito y factura del POS, meses
+       adelantados del cobro) responden al toque: una onda sale del botón y destapa el número nuevo (variante 3).
+       Solo aspecto; no cambia cantidades. Apagar: localStorage.nx_stepper_off='1'. */
+    ['js','parches-stepper.js']
   ];
 
   /* Descarga por adelantado una ventana pequeña. Mantiene la ejecución

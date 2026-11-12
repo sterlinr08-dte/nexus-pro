@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Banco de prueba · stepper</title>
+<style>body{font:16px system-ui;background:#12121c;color:#f4f4fa;margin:0;padding:20px}h2{font-size:14px;color:#c9cbda;margin:22px 0 8px}
+.fila{display:flex;align-items:center;gap:14px;background:#1e1d2c;border-radius:16px;padding:12px 14px;margin-bottom:8px}.fila span{flex:1}
+.citqty,.stp,.pgStep{display:flex;align-items:center;gap:6px;padding:4px;border-radius:999px;background:#2a2940}
+button{width:44px;height:44px;border-radius:50%;border:0;color:#fff;font-size:20px;font-weight:800;background:#3b82f6}button:first-child{background:#ef4444}
+input{width:44px;text-align:center;font:800 18px system-ui;color:#fff;background:transparent;border:0}</style>
+<h2>Carrito del POS (se repinta entero en cada toque)</h2><div id="cart"></div>
+<h2>Factura del POS</h2><div id="fac"></div>
+<h2>Meses adelantados</h2><div class="fila"><span>Meses</span><div class="pgStep"><button type="button" onclick="mes(-1)">−</button><input id="m" value="1" readonly><button type="button" onclick="mes(1)">+</button></div></div>
+<script>
+var C=[{n:'Cargador 20 W',c:2},{n:'Cable USB-C',c:1}],F=[{n:'Servicio',c:3}];
+function pinta(){document.getElementById('cart').innerHTML=C.map(function(x,i){return '<div class="fila"><span>'+x.n+'</span><div class="citqty"><button type="button" onclick="q(C,'+i+',-1)">−</button><input class="citqty-in" value="'+x.c+'"><button type="button" onclick="q(C,'+i+',1)">+</button></div></div>';}).join('');
+ document.getElementById('fac').innerHTML=F.map(function(x,i){return '<div class="fila"><span>'+x.n+'</span><div class="stp"><button type="button" onclick="q(F,'+i+',-1)">−</button><input class="stp-in" value="'+x.c+'"><button type="button" onclick="q(F,'+i+',1)">+</button></div></div>';}).join('');}
+function q(L,i,d){var x=L[i];if(d>0&&x.c>=5)return;x.c=Math.max(1,x.c+d);pinta();}   // tope 5 y mínimo 1: ahí la cantidad NO cambia
+function mes(d){var e=document.getElementById('m');e.value=Math.max(1,(+e.value)+d);}
+pinta();
+</script><script src="../parches-stepper.js"></script></html>
