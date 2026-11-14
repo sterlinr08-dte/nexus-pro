@@ -36,6 +36,7 @@
 | Ficha Nuevo/Editar cliente y ficha resumen | 59.44 (`#nxFichaPane`) y 59.46 (`#nxCsPane`) |
 | Facturas, Clientes, Cobros e Historial de pagos | 59.45 (`#nxFactPane`), 59.48 (`#nxCliPane`) y 59.49 (`#nxCobPane`) |
 | Custodia de fondos y ventana «Cobros del cliente» | 59.50 (`#nxCusPane`); la palabra «custodia» en todo el sistema desde 59.39 |
+| «Cuenta segura» en Registrar pago (14-nov-2026): Transferencia/Depósito lleva comprobante (el administrador no); solo la cuenta del administrador se valida sola; la de otro agente la valida el administrador | Servidor: migración `20261112220000`; avisos: `parches-cobro-cuenta-segura.js` (apagar avisos: `nx_cuenta_segura_off`) |
 | Pólizas, Agentes, Empresas y Documentos | 59.51 (`#nxP4Pane`) |
 | Configuración/Usuarios, Contabilidad y ventanas | 59.52 (`#nxP5Pane`) |
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
