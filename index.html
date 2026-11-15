@@ -13032,6 +13032,14 @@ async function nxCargarOrg(){
       const u=await API.get('usuarios_sistema',`id=eq.${encodeURIComponent(sesion.id)}&select=organizacion_id,almacen_id`);
       if(u&&u[0]){ if(!orgId){orgId=u[0].organizacion_id||null; sesion.organizacion_id=orgId;} sesion.almacen_id=u[0].almacen_id||null; }
     }
+    // 15-nov-2026: un usuario que no es administrador no puede leer usuarios_sistema (RLS), así que su empresa
+    // quedaba sin resolver y veía la pantalla de Seguros vacía. Se le pregunta al servidor cuál es su empresa.
+    if(!orgId && API.token){
+      try{
+        const r=await fetch(API.url+'/rest/v1/rpc/mi_organizacion',{method:'POST',headers:{apikey:API.key,Authorization:'Bearer '+API.token,'Content-Type':'application/json'},body:'{}'});
+        if(r.ok){ const v=await r.json(); if(typeof v==='string'&&v){ orgId=v; sesion.organizacion_id=v; } }
+      }catch(e){}
+    }
     if(orgId){
       const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(orgId)}&select=*`);
       sesion.org=(orgs&&orgs[0])||null;
