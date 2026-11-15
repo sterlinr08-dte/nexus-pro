@@ -16,6 +16,8 @@
 <script id="nxTemaGlassOscuroOn">var NX_TEMA_GLASS_OSCURO=true,NX_TEMA_CLARO=true;(function(){var d=document.documentElement,t=null;
 try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1')NX_TEMA_GLASS_OSCURO=false;if(localStorage.getItem('nx_claro_off')==='1')NX_TEMA_CLARO=false;}catch(e){}
 window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
+/* 15-nov-2026 (dueño: «la apariencia ponla blanca, quítale el modo oscuro»): las empresas tipo tienda (POS y demo) siempre en modo claro. */
+try{if(localStorage.getItem('nx_org_tipo')==='tienda')t='clasico';}catch(e){}
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
 d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
@@ -374,7 +376,7 @@ body{background:transparent !important}
 .nc{background:#fff;border-radius:var(--r14);border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
 .nc.p2{border-top:3px solid var(--c2)}.nc.p3{border-top:3px solid var(--c3)}.nc.p4{border-top:3px solid var(--c4)}.nc.p5{border-top:3px solid var(--c5)}
 /* Modo TIENDA (organización tipo 'tienda'): ocultar TODA la navegación de seguros (menú lateral, barra inferior móvil, botón flotante y menú "Más"). Deja solo el Punto de Venta. */
-body.org-tienda .sb-nav,body.org-tienda .mobile-bottom-nav-clean,body.org-tienda .nx-fab,body.org-tienda .nx-menu-backdrop,body.org-tienda .mobile-more-sheet-clean{display:none!important}
+body.org-tienda #btnDarkMode{display:none!important}body.org-tienda .sb-nav,body.org-tienda .mobile-bottom-nav-clean,body.org-tienda .nx-fab,body.org-tienda .nx-menu-backdrop,body.org-tienda .mobile-more-sheet-clean{display:none!important}
 body.org-rifa .sb-nav,body.org-rifa .mobile-bottom-nav-clean,body.org-rifa .nx-fab,body.org-rifa .nx-menu-backdrop,body.org-rifa .mobile-more-sheet-clean{display:none!important}
 body.org-consultorio .sb-nav,body.org-consultorio .mobile-bottom-nav-clean,body.org-consultorio .nx-fab,body.org-consultorio .nx-menu-backdrop,body.org-consultorio .mobile-more-sheet-clean{display:none!important}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
@@ -11237,6 +11239,8 @@ function nxTemaDefecto(){return window.NX_TEMA_DEFECTO||'clasico';}
 // usuario elige; antes cada carga re-guardaba el tema y podía pisar las preferencias si la base aún no respondía).
 function aplicarTema(tema,guardar){
   const body=document.body, html=document.documentElement;
+  // 15-nov-2026 (dueño): las tiendas (POS y demo) siempre en modo claro; no se guarda como preferencia del usuario.
+  try{ if(body.classList.contains('org-tienda')||localStorage.getItem('nx_org_tipo')==='tienda'){ if(tema!=='clasico'){ tema='clasico'; guardar=false; } } }catch(e){}
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
@@ -13068,6 +13072,7 @@ function aplicarOrgSidebar(){
     const esRifa=tipo==='rifa';
     const esCons=tipo==='consultorio';
     document.body.classList.toggle('org-tienda', esTienda);
+    if(esTienda && !document.documentElement.classList.contains('tema-claro')){ try{ aplicarTema('clasico',false); }catch(e){} }
     if(!esTienda){ try{document.documentElement.classList.remove('nx-arranque-tienda');}catch(e){} }
     document.body.classList.toggle('org-rifa', esRifa);
     document.body.classList.toggle('org-consultorio', esCons);
