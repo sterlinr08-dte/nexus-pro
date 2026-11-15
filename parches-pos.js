@@ -3494,6 +3494,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       if (_posTab !== 'factura' && _posTab !== 'prefactura') return;
       if (e.key === 'F2') { e.preventDefault(); window.nxProdPicker('factura'); }
       else if (e.key === 'F10') { e.preventDefault(); if (_cart.length) { window.nxPosVaciar(); window.nxFacRepaint(); } }
+      else if (e.key === 'F9' && _posTab === 'prefactura') { e.preventDefault(); if (_cart.length) window.nxPrefGuardar(); }
     });
   }
 
@@ -3718,7 +3719,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const nItems = (v._items || []).length;
     if (window.nxReciboAnimado) {
       window.nxReciboAnimado({
-        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
+        empresa: bizNom(), titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
         filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }]
           .concat(ECF_TIPO[v.tipo_comprobante] ? [{ label: 'e-NCF', valor: v.ecf_security_code ? (v.ncf || '') : 'Pendiente' }] : []),
         folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
@@ -11655,7 +11656,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try { localStorage.setItem('nx_pos_pref_dias', String(n)); } catch (e) {}
     toast('ok', n ? 'Las prefacturas apartan ' + n + ' día' + (n === 1 ? '' : 's') : 'Las prefacturas apartan sin vencer');
   };
+  // 15-nov-2026 (traído de Bayol): candado contra el doble toque — un segundo «Guardar» mientras el primero viaja no crea otra prefactura.
+  let _prefGuardando = false;
   window.nxPrefGuardar = async function (imprimir) {
+    if (_prefGuardando) { toast('warn', 'Guardando…'); return; }
+    _prefGuardando = true;
+    try { return await prefGuardarReal(imprimir); } finally { _prefGuardando = false; }
+  };
+  async function prefGuardarReal(imprimir) {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const t = totales();
     let numero = null; try { numero = await nextSeq('prefactura'); } catch (e) {}
@@ -11681,7 +11689,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
         window.nxReciboAnimado({
-          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
+          empresa: bizNom(), titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
           filas: [{ label: 'Artículos', valor: nItemsPref }, { label: 'Válida hasta', valor: 'Facturar cuando toque' }],
           folio: numero
         }, [
@@ -11690,7 +11698,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ]);
       } else if (imprimir && r && r[0]) { try { window.nxPHImprimir(r[0].id); } catch (e) {} }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
-  };
+  }
   // ══════════════ COTIZACIÓN desde el mismo carrito (NEXUS PRO 2.5 Fase 2) ══════════════
   // "El usuario decide AL FINAL: Facturar / Guardar Preventa / Guardar Cotización" — mismo carrito,
   // sin navegar a ninguna pantalla nueva. Guarda la cotización armada en el carrito ACTUAL de
@@ -11978,21 +11986,28 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPHImprimir = function (id) {
     const p = (_prefHist || []).find(x => String(x.id) === String(id)); if (!p) return;
     const e = empInfo();
+    // 15-nov-2026 (traído de Bayol): sale en el mismo papel elegido para la factura (ticket 80 mm o carta) y la reimpresión se marca «COPIA».
+    const tk = facFmt() === 'ticket';
+    window.__nxPrefImpresas = window.__nxPrefImpresas || {};
+    const copia = !!window.__nxPrefImpresas[id] || !!(p.created_at && (Date.now() - new Date(p.created_at).getTime()) > 10 * 60000);
+    window.__nxPrefImpresas[id] = true;
     const items = Array.isArray(p.items) ? p.items : [];
     const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td class="r">${fmt(it.precio || 0)}</td><td class="r">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prefactura ${esc(p.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
-      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:540px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:${tk ? '300px' : '720px'};margin:0 auto;padding:${tk ? '10px' : '20px'};font-size:${tk ? '11.5px' : '12.5px'}}${tk ? '@page{size:80mm auto;margin:3mm}th,td{padding:3px 2px!important}' : '@page{size:letter;margin:14mm}'}.copia{text-align:center;font-weight:800;letter-spacing:.2em;border:1.5px solid #111;padding:2px;margin:6px 0}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:${tk ? '-10px -10px 10px' : '-20px -20px 14px'};padding:9px 14px"><button onclick="window.close()" style="min-height:44px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="min-height:44px;background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
-        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}${e.dir ? '<br>' + esc(e.dir) : ''}</div>
         <div class="line"></div>
+        ${copia ? '<div class="copia">COPIA</div>' : ''}
         <div class="c"><b>PREFACTURA / PROFORMA ${esc(p.numero || '')}</b></div>
         <div class="muted">Fecha: ${fechaDMY(p.created_at || p.fecha)} · Cliente: <b>${esc(p.cliente_nombre || 'Consumidor final')}</b></div>
         <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
         <table class="tot"><tr class="gran"><td>TOTAL</td><td class="r">${fmt(p.total)}</td></tr></table>
         ${p.notas ? `<div class="muted" style="margin-top:8px;padding-top:8px;border-top:1px dashed #ccc"><b>Nota / condiciones:</b> ${esc(p.notas)}</div>` : ''}
         <div class="muted" style="margin-top:8px">Documento no fiscal. No es una factura — vale como cotización / proforma.</div>
+        ${e.pie ? `<div class="c muted" style="margin-top:6px">${esc(e.pie)}</div>` : ''}
       </body></html>`;
     try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
