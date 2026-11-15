@@ -129,6 +129,7 @@
   - rotar la Global API Key de Cloudflare y actualizar el Vault (`cloudflare_api_token`);
   - borrar las Edge Functions de diagnóstico `nx-cf-dominio` y `nx-env-nombres`.
 - **En pausa o en estudio:** app nativa de iPhone con xtool (solo estudio) y app de servicios técnicos.
+  - **Plugin oficial de Xcode para Claude Code** (reel `DfvefG3Ou54`, 15-nov-2026; dueño: «Anótalo»): hecho por Apple; Claude Code arma la app, mira las pantallas en el simulador y la vuelve a probar. Se instala con `/plugin install xcode`. Pide: una Mac (**el dueño tiene una**), plan de Claude y, solo para publicar en la App Store, la cuenta de desarrollador de Apple (US$ 99 al año). No se ha instalado ni verificado: estos chats corren en Linux y ahí no hay Xcode; se usa desde Claude Code en la Mac. Sirve sin publicar: probar en el simulador y en el iPhone propio.
 - **OpenClaw:** es el agente del dueño en WhatsApp, en su PC, para Bayol. Se reactivó el 19-oct.
 
 ## 8. Errores que no se deben repetir
