@@ -117,6 +117,14 @@ try {
     ok(/Funda \(G\)/.test(t) && /Arroz selecto \(E\)/.test(t), `${w}px: el ticket marca cada línea (G) gravado / (E) exento`, t.slice(0, 400));
     ok(/Exento de ITBIS\s*RD\$ 185/.test(t) && /\(G\) gravado ITBIS 18 % · \(E\) exento/.test(t), `${w}px: el ticket trae «Exento de ITBIS RD$ 185» y la leyenda`, t.slice(0, 600));
     if (pop && OUT && w === 390) { await pop.setViewportSize({ width: 302, height: 900 }); await pop.screenshot({ path: OUT + '/itbis-ticket.png', fullPage: true }).catch(() => {}); }
+    if (pop) {
+      let nuevas = 0; const cuenta = () => nuevas++; s.ctx.on('page', cuenta);
+      await pop.evaluate(() => { const b = [...document.querySelectorAll('.noprint button')].find(x => /Factura completa/i.test(x.textContent)); if (b) b.click(); });
+      await pop.waitForTimeout(1800);
+      const t2 = await pop.evaluate(() => document.body.innerText).catch(() => '');
+      s.ctx.off('page', cuenta);
+      ok(/G = gravado ITBIS 18 % · E = exento/.test(t2) && nuevas === 0, `${w}px: «Factura completa» dentro del ticket cambia ESA pestaña a la factura carta (sin abrir otra)`, { nuevas, t: t2.slice(0, 160) });
+    }
     if (pop) await pop.close();
     const pc = await popup(s, () => window.nxFacDocVenta && window.nxFacDocVenta('00000000-0000-4000-8000-0000000000a1'));
     const c = pc ? await pc.evaluate(() => document.body.innerText) : '';
