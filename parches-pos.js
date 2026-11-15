@@ -580,14 +580,17 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   async function cargarDashKPI() {
     try {
       const d = new Date();
-      const desde = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T00:00:00';
+      // 15-nov-2026 (Muse): medianoche LOCAL con su zona (antes se comparaba como UTC) y se traen las ventas completas del día:
+      // «Últimas ventas» del Inicio las necesita y `_ventas` solo se llenaba al abrir el Historial.
+      const desde = encodeURIComponent(new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString());
       const [vs, garIt, comprasCred, comprasPag] = await Promise.all([
-        getAPI().get('pos_ventas', 'select=id,total&created_at=gte.' + desde + '&estado=neq.anulada').catch(() => []),
+        getAPI().get('pos_ventas', 'select=*&created_at=gte.' + desde + '&estado=neq.anulada&order=created_at.desc').catch(() => []),
         getAPI().get('pos_venta_items', 'select=id,garantia_hasta&garantia_hasta=not.is.null').catch(() => []),
         getAPI().get('pos_compras', 'select=total&a_credito=eq.true').catch(() => []),
         getAPI().get('pos_compra_pagos', 'select=monto').catch(() => [])
       ]);
       let tot = 0; (vs || []).forEach(v => tot += Number(v.total || 0));
+      try { const ya = new Set((_ventas || []).map(x => String(x.id))); const nuevas = (vs || []).filter(v => !ya.has(String(v.id))); if (nuevas.length) { _ventas = nuevas.concat(_ventas || []).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))); } } catch (e) {}
       let cajaEf = null;
       if (_caja) { try { const t = await totalesCaja(_caja); cajaEf = t ? t.esperado : null; } catch (e) {} }
       // Utilidad de hoy: misma fórmula que Reportes (importe sin ITBIS − costo del producto), acotada a hoy.
@@ -4227,7 +4230,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     // RNC/Cédula del comprador (de su ficha; para que un Crédito Fiscal B01 salga válido ante DGII)
     const _cliT = (v.cliente_id ? _clientes.find(x => String(x.id) === String(v.cliente_id)) : null) || null;
     const _cliRnc = (_cliT && _cliT.cedula) ? ((_cliT.tipo_persona === 'juridica' ? 'RNC: ' : 'Cédula: ') + esc(_cliT.cedula)) : '';
-    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
+    const _hayMezclaT = items.some(it => it.itbis === false) && items.some(it => it.itbis !== false);
+    const _exentoT = items.reduce((s2, it) => s2 + (it.itbis === false ? Number(it.importe || 0) : 0), 0);
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${_hayMezclaT ? (it.itbis === false ? ' (E)' : ' (G)') : ''}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${v.numero_factura ? 'Factura ' + esc(v.numero_factura) : 'Ticket No. ' + (v.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Cascadia Code,Consolas,Courier New,monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
@@ -4246,8 +4251,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <tr><td>Subtotal</td><td style="text-align:right">${fmt(v.subtotal)}</td></tr>
           ${Number(v.descuento || 0) > 0 ? `<tr><td>Descuento</td><td style="text-align:right">- ${fmt(v.descuento)}</td></tr>` : ''}
           <tr><td>ITBIS (18%)</td><td style="text-align:right">${fmt(v.itbis)}</td></tr>
+          ${_exentoT > 0 && _hayMezclaT ? `<tr><td>Exento de ITBIS</td><td style="text-align:right">${fmt(_exentoT)}</td></tr>` : ''}
           <tr class="tot big"><td>TOTAL</td><td style="text-align:right">${fmt(v.total)}</td></tr>
         </table>
+        ${_hayMezclaT ? '<div class="c muted" style="font-size:10px">(G) gravado ITBIS 18 % · (E) exento</div>' : ''}
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         ${ecfBloqueTicket(v)}
@@ -4282,9 +4289,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // Recibe un objeto ya normalizado — lo arman facDocDesdeCarrito() y nxFacDocVenta().
   function docFacturaHTML(d) {
     const e = facEmpresa();
+    // 15-nov-2026 (Muse): cada línea dice si lleva ITBIS (G = gravado 18 %) o va exenta (E); el total exento sale aparte.
+    const _hayMezclaC = (d.items || []).some(it => it.itbis === false) && (d.items || []).some(it => it.itbis !== false);
+    const _exentoC = (d.items || []).reduce((s2, it) => s2 + (it.itbis === false ? Number(it.importe || 0) : 0), 0);
     const filas = (d.items || []).map((it, i) => `<tr>
       <td class="n">${String(i + 1).padStart(2, '0')}</td>
-      <td><div class="nm">${esc(it.nombre || '')}</div>${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('') ? `<div class="sub">${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('')}</div>` : ''}</td>
+      <td><div class="nm">${esc(it.nombre || '')}${_hayMezclaC ? ' <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid #cbd5e1;color:#475569">' + (it.itbis === false ? 'E' : 'G') + '</span>' : ''}</div>${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('') ? `<div class="sub">${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('')}</div>` : ''}</td>
       <td class="r">${Number(it.cantidad || 0)}</td>
       <td class="r">${fmt(it.precio || 0)}</td>
       <td class="r">${Number(it.descMonto || 0) > 0 ? '− ' + fmt(it.descMonto) : '—'}</td>
@@ -4400,7 +4410,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             <div class="tr"><span>Subtotal</span><b>${fmt(d.subtotal)}</b></div>
             ${Number(d.descuento || 0) > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(d.descuento)}</b></div>` : ''}
             <div class="tr"><span>ITBIS (18%)</span><b>${fmt(d.itbis)}</b></div>
+            ${_exentoC > 0 && _hayMezclaC ? `<div class="tr"><span>Exento de ITBIS</span><b>${fmt(_exentoC)}</b></div>` : ''}
             <div class="tr big"><span>Total</span><b>${fmt(d.total)}</b></div>
+            ${_hayMezclaC ? '<div style="font-size:10.5px;color:#64748b;text-align:right;margin-top:4px">G = gravado ITBIS 18 % · E = exento</div>' : ''}
             ${Number(d.credito || 0) > 0 ? `<div class="tr deb"><span>Pendiente por pagar</span><b>${fmt(d.credito)}</b></div>` : ''}
           </div>
         </div>
@@ -4436,7 +4448,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           cantidad: it.cantidad, nombre: it.nombre, codigo: prodCodigo(it.producto_id),
           serial: (it.seriales || []).map(x => x.serial).join(', '),
           garantia: gd > 0 ? (gd >= 30 ? gm + (gm === 1 ? ' mes' : ' meses') : gd + ' días') : '',
-          precio: it.precio, descMonto: lineDescMonto(it), importe: lineImporte(it)
+          precio: it.precio, descMonto: lineDescMonto(it), importe: lineImporte(it), itbis: !!it.itbis
         };
       }),
       subtotal: t.subtotal, descuento: t.descuento, itbis: t.itbis, total: t.total,
@@ -4471,7 +4483,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         cantidad: it.cantidad, nombre: it.nombre, codigo: prodCodigo(it.producto_id), serial: it.serial || '',
         garantia: it.garantia_hasta ? ('hasta ' + fechaDMY(String(it.garantia_hasta).slice(0, 10))) : '',
         precio: it.precio, descMonto: Number(it.descuento || 0),
-        importe: it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0)
+        importe: it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0), itbis: it.itbis !== false
       })),
       subtotal: v.subtotal, descuento: v.descuento, itbis: v.itbis, total: v.total,
       pagos: pagos, devuelta: v.devuelta, credito: v.credito_monto,
@@ -8367,6 +8379,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCierre').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosConfirmarCierre()"><i class="ti ti-check"></i> Cerrar caja</button></div>
       </div>`;
     document.body.appendChild(ov);
+    window.nxPosCierreCalc(); // 15-nov-2026 (Muse): el descuadre se calcula desde que abre (antes decía RD$ 0 hasta escribir)
   };
   window.nxPosDenom = function () {
     let sum = 0;
