@@ -51,8 +51,24 @@ async function autorizado(req: Request): Promise<boolean> {
   if (!token) return false;
   const { data: u } = await db.auth.getUser(token);
   if (!u?.user) return false;
-  const { data: p } = await db.from("profiles").select("rol,activo").eq("id", u.user.id).maybeSingle();
-  return !!p && p.rol === "admin" && p.activo !== false;
+  const { data: p } = await db.from("profiles").select("rol,activo,usuario_sistema_id").eq("id", u.user.id).maybeSingle();
+  if (!p || p.rol !== "admin" || p.activo === false) return false;
+  return await orgAutorizada(p.usuario_sistema_id);
+}
+
+// 15-nov-2026 (seguridad multiempresa): la cuenta de MSeller es una sola. Solo emiten las empresas que el dueño del
+// sistema puso en pos_ecf_autorizadas (tabla sin políticas: solo se lee con la clave de servicio).
+async function orgAutorizada(usuarioSistemaId: string | null): Promise<boolean> {
+  if (!usuarioSistemaId) return false;
+  const { data: us } = await db.from("usuarios_sistema").select("organizacion_id").eq("id", usuarioSistemaId).maybeSingle();
+  if (!us?.organizacion_id) return false;
+  const { data: ok } = await db.from("pos_ecf_autorizadas").select("organizacion_id").eq("organizacion_id", us.organizacion_id).maybeSingle();
+  return !!ok;
+}
+async function usuarioPuedeEmitir(uid: string): Promise<boolean> {
+  const { data: p } = await db.from("profiles").select("rol,activo,usuario_sistema_id").eq("id", uid).maybeSingle();
+  if (!p || !p.rol || p.activo === false) return false;
+  return await orgAutorizada(p.usuario_sistema_id);
 }
 
 // Lecturas con la sesión del usuario (RLS) y escrituras de los campos e-CF con la clave de servicio. La tarea programada
@@ -157,6 +173,7 @@ Deno.serve(async (req) => {
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
     const { data: u } = token && token !== SERVICE_ROLE_KEY ? await db.auth.getUser(token) : { data: null };
     if (!u?.user) return json({ ok: false, error: "Inicie sesión en NEXUS." }, 401);
+    if (!(await usuarioPuedeEmitir(u.user.id))) return json({ ok: false, error: "La factura electrónica no está activada para esta empresa." }, 403);
     const ventaId = String(b?.venta_id || b?.nota_id || b?.debito_id || "");
     if (!/^[0-9a-f-]{36}$/i.test(ventaId)) return json({ ok: false, error: "Falta el documento." }, 400);
     const { faltan, cliente } = config();
