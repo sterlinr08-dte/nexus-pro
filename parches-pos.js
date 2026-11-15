@@ -320,7 +320,18 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // Nombre del negocio para mensajes y documentos nuevos (Fase 1): el de la organización; nunca un nombre fijo.
   function bizNom() { try { const _s = curSesPOS(); return (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio'; } catch (e) { return empNom() || 'Mi negocio'; } }
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
-  function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  // 15-nov-2026 POS estándar: los datos del negocio salen de pos_config (por empresa). Si la empresa no los ha
+  // llenado, se usa la configuración general de siempre; una tienda nunca imprime el nombre de otra empresa.
+  function empInfo() {
+    try {
+      const c = window.CFG || {}, p = _posCfg || {}; const _s = curSesPOS(); const o = (_s && _s.org) || null;
+      if (p.emp_nombre) return { nom: p.emp_nombre, rnc: p.emp_rnc || p.ecf_rnc || '', tel: p.emp_tel || '', dir: p.emp_dir || p.ecf_direccion || '', pie: p.ticket_pie || '' };
+      const esTienda = !!(o && o.tipo === 'tienda');
+      return { nom: (esTienda ? (o.nombre || 'Mi negocio') : (c.empNom || 'NEXUS PRO')), rnc: esTienda ? (p.ecf_rnc || '') : (c.empRNC || ''), tel: esTienda ? '' : (c.empTel || ''), dir: esTienda ? (p.ecf_direccion || '') : (c.empDir || ''), pie: p.ticket_pie || '' };
+    } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '', pie: '' }; }
+  }
+  // Módulos que el dueño de la empresa apagó para su negocio (vale para todos los roles). Inicio y Ajustes nunca se apagan.
+  function modApagado(mod) { try { if (mod === 'inicio' || mod === 'ajustes') return false; const m = (_posCfg && _posCfg.modulos_off) || []; return m.indexOf(mod) >= 0; } catch (e) { return false; } }
   function authUidPOS() {
     try {
       const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
@@ -373,6 +384,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // 27-oct-2026 Margen por producto (capa parches-pos-margen.js): lectura de artículos/categorías y del permiso de costos.
   window.__nxPosMargenCtx = { prods: () => _prods, cats: () => _cats, puedeVer: () => puedeVerMin(), api: () => getAPI() };
   function puedeVer(mod) {
+    if (modApagado(mod)) return false;
     const r = rolEfectivo();
     if (r === 'admin') return true;
     const a = (_acceso || []).find(x => x.rol === r);
@@ -483,7 +495,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '' }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '', emp_nombre: cf[0].emp_nombre || '', emp_rnc: cf[0].emp_rnc || '', emp_tel: cf[0].emp_tel || '', emp_dir: cf[0].emp_dir || '', ticket_pie: cf[0].ticket_pie || '', modulos_off: Array.isArray(cf[0].modulos_off) ? cf[0].modulos_off : [] }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -2729,8 +2741,43 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }).join('') : '<tr><td colspan="4" class="emptyrow">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
     return ajCard('ti-file-certificate', 'purple', 'Comprobantes Fiscales (NCF)', 'Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.') +
       `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>` + ajustesECF();
+      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>` + ajustesECF() + ajustesNegocio();
   }
+  // 15-nov-2026 POS estándar: tarjetas «Datos del negocio» (van en recibos y facturas) y «Módulos del negocio».
+  function ajustesNegocio() {
+    if (rolReal() !== 'admin') return '';
+    const c = _posCfg || {}; const e = empInfo(); const off = c.modulos_off || [];
+    const inp = (id, lbl, ic, v, ph, max, extra) => `<div class="fld"><label for="${id}">${lbl}</label><div class="inw"><i class="ti ${ic}"></i><input id="${id}" class="no-upper" style="height:48px;font-size:16px;text-transform:none" value="${esc(v || '')}" placeholder="${ph}" maxlength="${max}"${extra || ''}></div></div>`;
+    const chks = MODULOS.filter(m => m[0] !== 'inicio' && m[0] !== 'ajustes').map(m => `<label class="nxEntAfin" style="font-size:13px;min-height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 12px"><input type="checkbox" id="mof_${m[0]}"${off.indexOf(m[0]) >= 0 ? '' : ' checked'}> ${m[1]}</label>`).join('');
+    return ajCard('ti-building-store', 'blue', 'Datos del negocio', 'Salen en los recibos, facturas y reportes de su empresa.') +
+      inp('negNom', 'Nombre del negocio', 'ti-building-store', c.emp_nombre || e.nom, 'Como quiere que salga en el recibo', 80) +
+      inp('negRnc', 'RNC o cédula', 'ti-id', c.emp_rnc || e.rnc, '9 u 11 dígitos, sin guiones', 13, ' inputmode="numeric"') +
+      inp('negTel', 'Teléfono', 'ti-phone', c.emp_tel || e.tel, '809-000-0000', 20, ' inputmode="tel"') +
+      inp('negDir', 'Dirección', 'ti-map-pin', c.emp_dir || e.dir, 'Calle, número y sector', 120) +
+      inp('negPie', 'Mensaje al final del recibo', 'ti-message', c.ticket_pie, '¡Gracias por su compra!', 120) +
+      `<div class="fe"><button class="btn bc1" type="button" style="min-height:54px;text-transform:none" onclick="window.nxNegocioGuardar()"><i class="ti ti-device-floppy"></i> Guardar datos</button></div></div>` +
+      ajCard('ti-layout-grid', 'blue', 'Módulos del negocio', 'Desmarque lo que su negocio no usa. Deja de salir en el menú para todos los usuarios.') +
+      `<div id="negMods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${chks}</div>
+      <div class="fe"><button class="btn bc1" type="button" style="min-height:54px;text-transform:none" onclick="window.nxNegocioModsGuardar()"><i class="ti ti-device-floppy"></i> Guardar módulos</button></div></div>`;
+  }
+  async function negGuardar(body) {
+    const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+    if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, body);
+    else await getAPI().post('pos_config', body);
+    Object.assign(_posCfg, body);
+  }
+  window.nxNegocioGuardar = async function () {
+    const nom = (val('negNom') || '').trim(), rnc = rncDigitos(val('negRnc'));
+    if (!nom) { toast('err', 'Falta el nombre'); const el = document.getElementById('negNom'); if (el) el.focus(); return; }
+    if (rnc && !rncOk(rnc)) { toast('err', 'RNC inválido', 'Debe tener 9 u 11 dígitos.'); return; }
+    try { await negGuardar({ emp_nombre: nom, emp_rnc: rnc || null, emp_tel: (val('negTel') || '').trim() || null, emp_dir: (val('negDir') || '').trim() || null, ticket_pie: (val('negPie') || '').trim() || null }); toast('ok', 'Datos guardados'); }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxNegocioModsGuardar = async function () {
+    const off = MODULOS.filter(m => { const el = document.getElementById('mof_' + m[0]); return el && !el.checked; }).map(m => m[0]);
+    try { await negGuardar({ modulos_off: off }); toast('ok', 'Módulos guardados'); try { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) {} }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   // Tarjeta «Factura electrónica»: datos del emisor que van en cada e-CF (pos_config.ecf_*) y la conexión con MSeller.
   // Solo se muestra cuando hay una secuencia E o ya se llenaron los datos: para el resto de negocios no cambia nada.
   function ajustesECF() {
@@ -3447,6 +3494,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       if (_posTab !== 'factura' && _posTab !== 'prefactura') return;
       if (e.key === 'F2') { e.preventDefault(); window.nxProdPicker('factura'); }
       else if (e.key === 'F10') { e.preventDefault(); if (_cart.length) { window.nxPosVaciar(); window.nxFacRepaint(); } }
+      else if (e.key === 'F9' && _posTab === 'prefactura') { e.preventDefault(); if (_cart.length) window.nxPrefGuardar(); }
     });
   }
 
@@ -3671,7 +3719,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const nItems = (v._items || []).length;
     if (window.nxReciboAnimado) {
       window.nxReciboAnimado({
-        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
+        empresa: bizNom(), titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
         filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }]
           .concat(ECF_TIPO[v.tipo_comprobante] ? [{ label: 'e-NCF', valor: v.ecf_security_code ? (v.ncf || '') : 'Pendiente' }] : []),
         folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
@@ -4130,7 +4178,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         ${ecfBloqueTicket(v)}
         ${csBloque('ticket', v)}
         <div class="line"></div>
-        <div class="c muted">¡Gracias por su compra!</div>
+        <div class="c muted">${esc(e.pie || '¡Gracias por su compra!')}</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
     try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
@@ -6140,7 +6188,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (Object.keys(byc).length) {
           const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0) + _totalPagadoCuotas;
           const cxcRestante = Math.max(0, Number(v.credito_monto || 0) - _totalPagadoCuotas);
-          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxcRestante)].filter(Boolean);
+          // 15-nov-2026: la anulación también devuelve el costo al inventario, por el mismo monto que cargó el asiento de la venta.
+          let costoVta = 0;
+          try { const av = await getAPI().get('pos_asientos', 'select=id&tipo=eq.venta&origen_id=eq.' + v.id) || []; if (av[0]) { const lc = await getAPI().get('pos_asiento_lineas', 'select=debito&cuenta_codigo=eq.5101&asiento_id=eq.' + av[0].id) || []; costoVta = lc.reduce((s2, l) => s2 + Number(l.debito || 0), 0); } } catch (e) {}
+          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxcRestante), lnCta(byc, '1104', 'Inventario de mercancías', costoVta, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoVta)].filter(Boolean);
           if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Anulación venta ' + (v.numero_factura || ('No. ' + (v.numero || ''))), 'anulacion', v.id, ln, v.numero_factura || String(v.numero || ''));
         }
       } catch (e) {}
@@ -6329,7 +6380,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // si se rebaja a cuenta del cliente (fiado), bajar su saldo
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
       // asiento contable inverso a la venta
-      try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
+      try { postAsientoDevolucion(dev, t, metodo, v, items); } catch (e) {}
       docGuardado('dev', { id: dev.id, numero: dev.numero || numero, total: t.total, cliente_id: v.cliente_id, nombre: v.cliente_nombre || '', imprimir: () => nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v })),
         waTxt: 'Hola' + (v.cliente_nombre ? ' ' + String(v.cliente_nombre).split(' ')[0] : '') + ', registramos tu devolución en ' + bizNom() + '.\nNota de crédito ' + (dev.numero || numero) + (ncfDev ? ' · NCF ' + ncfDev : '') + '\nFactura ' + (v.numero_factura || v.numero || '') + '\n\n' + docItemsTxt(lineas) + '\n\nTOTAL: ' + fmt(t.total) + ' · ' + metodo });
       cerrarModal('nxDevForm');
@@ -6337,12 +6388,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (imprimir) nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
     } catch (e) { toast('err', 'No se pudo emitir', String(e && e.message || e)); }
   };
-  async function postAsientoDevolucion(dev, t, metodo, venta) {
+  async function postAsientoDevolucion(dev, t, metodo, venta, items) {
     try {
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       // Reversa de la venta: Debe Ventas + ITBIS / Haber Caja o CxC
       const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : '1101';
-      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0))];
+      // 15-nov-2026: lo devuelto vuelve al inventario contable a su costo (mismo criterio que la venta: costo del artículo, sin servicios).
+      let costoDev = 0;
+      (items || []).forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costoDev += Number(p.costo || 0) * Number(it.cantidad || 0); });
+      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0)), lnCta(byc, '1104', 'Inventario de mercancías', costoDev, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoDev)];
       await postAsientoConcepto(dev.fecha, 'Devolución ' + (dev.numero || '') + ' (fact. ' + (venta.numero_factura || '#' + venta.numero) + ')', 'devolucion', dev.id, lineas, dev.numero);
     } catch (e) {}
   }
@@ -8344,10 +8398,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function isoMesIni() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA'); }
   async function cargarContabilidad() {
     _cuentas = await getAPI().get('pos_cuentas', 'select=*&order=codigo.asc') || [];
-    _asientos = await getAPI().get('pos_asientos', 'select=*&order=fecha.desc,created_at.desc&limit=600') || [];
+    // 15-nov-2026: se lee por páginas (antes se cortaba en 600 asientos y 5,000 líneas sin avisar).
+    const todo = async (tabla, q) => { let out = [], off = 0; for (let i = 0; i < 60; i++) { const r = await getAPI().get(tabla, q + '&limit=1000&offset=' + off) || []; out = out.concat(r); if (r.length < 1000) break; off += 1000; } return out; };
+    _asientos = await todo('pos_asientos', 'select=*&order=fecha.desc,created_at.desc,id.asc');
     // Unir las líneas en JS (no depende de la detección de relación de PostgREST)
     try {
-      const lns = await getAPI().get('pos_asiento_lineas', 'select=*&limit=5000') || [];
+      const lns = await todo('pos_asiento_lineas', 'select=*&order=id.asc');
       const byA = {}; lns.forEach(l => { (byA[l.asiento_id] = byA[l.asiento_id] || []).push(l); });
       _asientos.forEach(a => { a.lineas = byA[a.id] || []; });
     } catch (e) { _asientos.forEach(a => { a.lineas = a.lineas || []; }); }
@@ -8801,9 +8857,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try {
       let cu = _cuentas;
       if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
+      // 15-nov-2026 POS estándar: una empresa nueva recibe su plan de cuentas base en la primera venta (antes no se contabilizaba nada hasta crearlo a mano).
+      if (!cu.length) { try { cu = await getAPI().post('pos_cuentas', PLAN_BASE.map(p => ({ codigo: p[0], nombre: p[1], tipo: p[2], naturaleza: p[3] }))) || []; _cuentas = cu; } catch (e) { cu = []; } }
       if (!cu.length) return; // sin plan de cuentas: no se contabiliza
       const byc = {}; cu.forEach(x => byc[x.codigo] = x);
-      const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: Math.round(d), credito: Math.round(h) }; };
+      const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (r2(d) === 0 && r2(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: r2(d), credito: r2(h) }; };
       // A5: la nota de crédito NO es efectivo — no debe entrar a Caja (1101). Si la org tiene
       // la cuenta 2105 (Notas de crédito por aplicar) usa esa; si no existe (plan de cuentas
       // viejo, sin recrear), cae al comportamiento anterior (todo a Caja) para no descuadrar.
@@ -8828,7 +8886,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
     const byc = {}; cu.forEach(x => byc[x.codigo] = x); return byc;
   }
-  function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: Math.round(d), credito: Math.round(h) }; }
+  function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (r2(d) === 0 && r2(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: r2(d), credito: r2(h) }; }
   // REGLAMENTO DE CONTABILIDAD: motor ÚNICO por el que pasa TODO asiento (automático o manual).
   // (1) Ningún asiento se guarda si Debe ≠ Haber — antes solo el asiento manual lo validaba; los
   //     automáticos posteaban sus líneas a ciegas, así que un error de redondeo/cálculo dejaba la
@@ -8840,8 +8898,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function guardarAsientoBalanceado(cab, lineas) {
     lineas = (lineas || []).filter(Boolean); if (lineas.length < 2) return null;
     const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
-    if (Math.round(td) !== Math.round(th)) {
-      try { (window.logAudit || function () {})('ASIENTO_DESCUADRADO', (cab && cab.concepto || 'Asiento') + ' · Debe ' + Math.round(td) + ' ≠ Haber ' + Math.round(th) + ' — no se registró', 'Contabilidad'); } catch (e) {}
+    if (Math.abs(r2(td) - r2(th)) > 0.01) {
+      try { (window.logAudit || function () {})('ASIENTO_DESCUADRADO', (cab && cab.concepto || 'Asiento') + ' · Debe ' + r2(td) + ' ≠ Haber ' + r2(th) + ' — no se registró', 'Contabilidad'); } catch (e) {}
       return null;
     }
     let aid = null;
@@ -11608,7 +11666,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try { localStorage.setItem('nx_pos_pref_dias', String(n)); } catch (e) {}
     toast('ok', n ? 'Las prefacturas apartan ' + n + ' día' + (n === 1 ? '' : 's') : 'Las prefacturas apartan sin vencer');
   };
+  // 15-nov-2026 (traído de Bayol): candado contra el doble toque — un segundo «Guardar» mientras el primero viaja no crea otra prefactura.
+  let _prefGuardando = false;
   window.nxPrefGuardar = async function (imprimir) {
+    if (_prefGuardando) { toast('warn', 'Guardando…'); return; }
+    _prefGuardando = true;
+    try { return await prefGuardarReal(imprimir); } finally { _prefGuardando = false; }
+  };
+  async function prefGuardarReal(imprimir) {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const t = totales();
     let numero = null; try { numero = await nextSeq('prefactura'); } catch (e) {}
@@ -11634,7 +11699,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
         window.nxReciboAnimado({
-          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
+          empresa: bizNom(), titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
           filas: [{ label: 'Artículos', valor: nItemsPref }, { label: 'Válida hasta', valor: 'Facturar cuando toque' }],
           folio: numero
         }, [
@@ -11643,7 +11708,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ]);
       } else if (imprimir && r && r[0]) { try { window.nxPHImprimir(r[0].id); } catch (e) {} }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
-  };
+  }
   // ══════════════ COTIZACIÓN desde el mismo carrito (NEXUS PRO 2.5 Fase 2) ══════════════
   // "El usuario decide AL FINAL: Facturar / Guardar Preventa / Guardar Cotización" — mismo carrito,
   // sin navegar a ninguna pantalla nueva. Guarda la cotización armada en el carrito ACTUAL de
@@ -11931,21 +11996,28 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPHImprimir = function (id) {
     const p = (_prefHist || []).find(x => String(x.id) === String(id)); if (!p) return;
     const e = empInfo();
+    // 15-nov-2026 (traído de Bayol): sale en el mismo papel elegido para la factura (ticket 80 mm o carta) y la reimpresión se marca «COPIA».
+    const tk = facFmt() === 'ticket';
+    window.__nxPrefImpresas = window.__nxPrefImpresas || {};
+    const copia = !!window.__nxPrefImpresas[id] || !!(p.created_at && (Date.now() - new Date(p.created_at).getTime()) > 10 * 60000);
+    window.__nxPrefImpresas[id] = true;
     const items = Array.isArray(p.items) ? p.items : [];
     const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td class="r">${fmt(it.precio || 0)}</td><td class="r">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prefactura ${esc(p.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
-      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:540px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:${tk ? '300px' : '720px'};margin:0 auto;padding:${tk ? '10px' : '20px'};font-size:${tk ? '11.5px' : '12.5px'}}${tk ? '@page{size:80mm auto;margin:3mm}th,td{padding:3px 2px!important}' : '@page{size:letter;margin:14mm}'}.copia{text-align:center;font-weight:800;letter-spacing:.2em;border:1.5px solid #111;padding:2px;margin:6px 0}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:${tk ? '-10px -10px 10px' : '-20px -20px 14px'};padding:9px 14px"><button onclick="window.close()" style="min-height:44px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="min-height:44px;background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
-        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}${e.dir ? '<br>' + esc(e.dir) : ''}</div>
         <div class="line"></div>
+        ${copia ? '<div class="copia">COPIA</div>' : ''}
         <div class="c"><b>PREFACTURA / PROFORMA ${esc(p.numero || '')}</b></div>
         <div class="muted">Fecha: ${fechaDMY(p.created_at || p.fecha)} · Cliente: <b>${esc(p.cliente_nombre || 'Consumidor final')}</b></div>
         <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
         <table class="tot"><tr class="gran"><td>TOTAL</td><td class="r">${fmt(p.total)}</td></tr></table>
         ${p.notas ? `<div class="muted" style="margin-top:8px;padding-top:8px;border-top:1px dashed #ccc"><b>Nota / condiciones:</b> ${esc(p.notas)}</div>` : ''}
         <div class="muted" style="margin-top:8px">Documento no fiscal. No es una factura — vale como cotización / proforma.</div>
+        ${e.pie ? `<div class="c muted" style="margin-top:6px">${esc(e.pie)}</div>` : ''}
       </body></html>`;
     try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
