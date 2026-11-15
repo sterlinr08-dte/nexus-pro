@@ -20,7 +20,7 @@
     /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
        WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
     if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
-    return base?(base+'&b=6038'):('?b=6038&'+d);
+    return base?(base+'&b=6039'):('?b=6039&'+d);
   })();
   function qv(){return QV;}
 
