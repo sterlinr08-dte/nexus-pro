@@ -1257,9 +1257,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // El botón de favorito es un <button> real — la fila NO puede serlo (los <button> no aceptan
       // <button> anidados, el navegador los reordenaría en silencio) — por eso es un <div> con
       // role="button"+tabindex+onkeydown, mismo patrón ya usado en las filas clicables de la tanda 1.
-      return `<div class="nxPosCard vrow" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" tabindex="0" role="button" onclick="window.nxVenderSel('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxVenderSel('${p.id}')}">
+      return `<div class="nxPosCard vrow" data-pid="${esc(String(p.id))}" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" tabindex="0" role="button" onclick="window.nxVenderSel('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxVenderSel('${p.id}')}">
         <div class="vthumb"><i class="ti ${serv ? 'ti-tool' : 'ti-box'}"></i></div>
-        <div class="vinfo"><div class="vnom">${esc(p.nombre || '')}${imeiChip}</div><div class="vsub">${esc(p.referencia || p.marca || '')}${cat ? (p.referencia || p.marca ? ' · ' : '') + esc(cat) : ''}</div></div>
+        <div class="vinfo"><div class="vnom">${esc(p.nombre || '')}${imeiChip}</div><div class="vsub">${esc(p.referencia || p.marca || '')}${cat ? (p.referencia || p.marca ? ' · ' : '') + esc(cat) : ''}<span class="vstkm ${stkCls}">${(p.referencia || p.marca || cat) ? ' · ' : ''}${stkTxt}</span></div></div>
         <div class="vstk"><span class="vstkb ${stkCls}"><i class="ti ti-circle-filled"></i>${stkTxt}</span></div>
         <div class="vprecio">${fmt(precioCli(p))}</div>
         <button type="button" class="vfav${p.favorito ? ' on' : ''}" onclick="event.stopPropagation();window.nxProdFavToggle('${p.id}')" aria-label="${favLbl}" title="${favLbl}"><i class="ti ${p.favorito ? 'ti-star-filled' : 'ti-star'}"></i></button>
@@ -1938,8 +1938,27 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     });
   };
   // Al elegir una sugerencia, abre la misma ventanilla (precios + IMEI) con ese artículo expandido
+  // 15-nov-2026 (prueba de Muse): tocar un artículo lo AGREGA al carrito. Solo los que llevan IMEI/serial abren la ventana
+  // (hay que elegir cuál). La ventana completa sigue en la lupa del buscador.
+  // Un solo aviso abajo que se actualiza con cada toque (no se apilan). Se va solo a los 1,6 s.
+  let _vAvisoT = null;
+  function venderAviso(t, sub) {
+    let el = document.getElementById('nxVAviso');
+    if (!el) { el = document.createElement('div'); el.id = 'nxVAviso'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
+    el.innerHTML = '<b>' + esc(t) + '</b><span>' + esc(sub || '') + '</span>';
+    el.classList.add('on'); clearTimeout(_vAvisoT); _vAvisoT = setTimeout(() => el.classList.remove('on'), 1600);
+  }
   window.nxVenderSel = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (!p.serial) {
+      if (window.nxPosAdd(id)) {
+        const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML();
+        const c = document.querySelector('#posGrid .nxPosCard[data-pid="' + String(id) + '"]'); if (c) { c.classList.add('vadd'); setTimeout(() => c.classList.remove('vadd'), 420); }
+        const en = _cart.find(x => String(x.producto_id) === String(id));
+        venderAviso('+1 ' + p.nombre, (en ? en.cantidad : 1) + ' en el carrito · ' + fmt(totales().total));
+      }
+      return;
+    }
     window.nxProdPicker('vender');
     _ppkOpen = String(id);
     const q = document.getElementById('ppkQ'); if (q) q.value = p.nombre;
@@ -4873,6 +4892,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .vnom{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .nxPf .vsub{font-size:10.5px;color:var(--pf-txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .nxPf .vstk{flex:0 0 auto;display:none}
+.nxPf .vstkm{font-weight:700}.nxPf .vstkm.ok{color:var(--pf-green)}.nxPf .vstkm.low{color:#d97706}.nxPf .vstkm.out{color:var(--pf-red)}.nxPf .vstkm.srv{color:var(--pf-blue-d)}
+#nxVAviso{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translate(-50%,12px);opacity:0;pointer-events:none;z-index:99999;display:grid;gap:1px;min-width:220px;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:14px;background:rgba(15,23,42,.92);color:#fff;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);font-size:14px;transition:opacity 180ms ease,transform 220ms cubic-bezier(.23,1,.32,1)}#nxVAviso b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#nxVAviso span{font-size:12.5px;opacity:.8}#nxVAviso.on{opacity:1;transform:translate(-50%,0)}@media(prefers-reduced-motion:reduce){#nxVAviso{transition:none}}
+.nxPf .vrow.vadd{animation:nxVadd 420ms cubic-bezier(.23,1,.32,1)}@keyframes nxVadd{0%{background:var(--pf-green-l)}100%{background:transparent}}@media(prefers-reduced-motion:reduce){.nxPf .vrow.vadd{animation:none}}
 .nxPf .vstkb{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;white-space:nowrap;padding:3px 9px 3px 7px;border-radius:999px}
 .nxPf .vstkb i{font-size:6px}
 .nxPf .vstkb.ok{background:var(--pf-green-l);color:var(--pf-green)}
@@ -4887,7 +4909,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .vfav.on:hover{background:var(--pf-orange-l)}
 .nxPf .vfav:focus-visible{outline:2px solid var(--pf-blue);outline-offset:1px;border-radius:6px}
 .nxPf .vrow[role="button"]:focus-visible{outline:2px solid var(--pf-blue);outline-offset:-2px}
-@media(min-width:620px){.nxPf .vstk{display:block;width:96px}}
+@media(min-width:620px){.nxPf .vstk{display:block;width:96px}.nxPf .vstkm{display:none}}
 .nxPf .pf2clibtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;border:0;background:transparent;padding:0;font:inherit;font-size:16px;font-weight:700;color:var(--pf-txt);cursor:pointer;text-align:left}
 .nxPf .pf2clibtn i{color:var(--pf-txt3);font-size:15px}
 .nxPf .pf2clirow{display:flex;flex-direction:column;gap:1px;padding:9px 12px;cursor:pointer}.nxPf .pf2clirow>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
