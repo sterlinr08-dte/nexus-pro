@@ -320,7 +320,18 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // Nombre del negocio para mensajes y documentos nuevos (Fase 1): el de la organización; nunca un nombre fijo.
   function bizNom() { try { const _s = curSesPOS(); return (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio'; } catch (e) { return empNom() || 'Mi negocio'; } }
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
-  function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  // 15-nov-2026 POS estándar: los datos del negocio salen de pos_config (por empresa). Si la empresa no los ha
+  // llenado, se usa la configuración general de siempre; una tienda nunca imprime el nombre de otra empresa.
+  function empInfo() {
+    try {
+      const c = window.CFG || {}, p = _posCfg || {}; const _s = curSesPOS(); const o = (_s && _s.org) || null;
+      if (p.emp_nombre) return { nom: p.emp_nombre, rnc: p.emp_rnc || p.ecf_rnc || '', tel: p.emp_tel || '', dir: p.emp_dir || p.ecf_direccion || '', pie: p.ticket_pie || '' };
+      const esTienda = !!(o && o.tipo === 'tienda');
+      return { nom: (esTienda ? (o.nombre || 'Mi negocio') : (c.empNom || 'NEXUS PRO')), rnc: esTienda ? (p.ecf_rnc || '') : (c.empRNC || ''), tel: esTienda ? '' : (c.empTel || ''), dir: esTienda ? (p.ecf_direccion || '') : (c.empDir || ''), pie: p.ticket_pie || '' };
+    } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '', pie: '' }; }
+  }
+  // Módulos que el dueño de la empresa apagó para su negocio (vale para todos los roles). Inicio y Ajustes nunca se apagan.
+  function modApagado(mod) { try { if (mod === 'inicio' || mod === 'ajustes') return false; const m = (_posCfg && _posCfg.modulos_off) || []; return m.indexOf(mod) >= 0; } catch (e) { return false; } }
   function authUidPOS() {
     try {
       const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
@@ -373,6 +384,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // 27-oct-2026 Margen por producto (capa parches-pos-margen.js): lectura de artículos/categorías y del permiso de costos.
   window.__nxPosMargenCtx = { prods: () => _prods, cats: () => _cats, puedeVer: () => puedeVerMin(), api: () => getAPI() };
   function puedeVer(mod) {
+    if (modApagado(mod)) return false;
     const r = rolEfectivo();
     if (r === 'admin') return true;
     const a = (_acceso || []).find(x => x.rol === r);
@@ -483,7 +495,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '' }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '', emp_nombre: cf[0].emp_nombre || '', emp_rnc: cf[0].emp_rnc || '', emp_tel: cf[0].emp_tel || '', emp_dir: cf[0].emp_dir || '', ticket_pie: cf[0].ticket_pie || '', modulos_off: Array.isArray(cf[0].modulos_off) ? cf[0].modulos_off : [] }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -2729,8 +2741,43 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }).join('') : '<tr><td colspan="4" class="emptyrow">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
     return ajCard('ti-file-certificate', 'purple', 'Comprobantes Fiscales (NCF)', 'Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.') +
       `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>` + ajustesECF();
+      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>` + ajustesECF() + ajustesNegocio();
   }
+  // 15-nov-2026 POS estándar: tarjetas «Datos del negocio» (van en recibos y facturas) y «Módulos del negocio».
+  function ajustesNegocio() {
+    if (rolReal() !== 'admin') return '';
+    const c = _posCfg || {}; const e = empInfo(); const off = c.modulos_off || [];
+    const inp = (id, lbl, ic, v, ph, max, extra) => `<div class="fld"><label for="${id}">${lbl}</label><div class="inw"><i class="ti ${ic}"></i><input id="${id}" class="no-upper" style="height:48px;font-size:16px;text-transform:none" value="${esc(v || '')}" placeholder="${ph}" maxlength="${max}"${extra || ''}></div></div>`;
+    const chks = MODULOS.filter(m => m[0] !== 'inicio' && m[0] !== 'ajustes').map(m => `<label class="nxEntAfin" style="font-size:13px;min-height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 12px"><input type="checkbox" id="mof_${m[0]}"${off.indexOf(m[0]) >= 0 ? '' : ' checked'}> ${m[1]}</label>`).join('');
+    return ajCard('ti-building-store', 'blue', 'Datos del negocio', 'Salen en los recibos, facturas y reportes de su empresa.') +
+      inp('negNom', 'Nombre del negocio', 'ti-building-store', c.emp_nombre || e.nom, 'Como quiere que salga en el recibo', 80) +
+      inp('negRnc', 'RNC o cédula', 'ti-id', c.emp_rnc || e.rnc, '9 u 11 dígitos, sin guiones', 13, ' inputmode="numeric"') +
+      inp('negTel', 'Teléfono', 'ti-phone', c.emp_tel || e.tel, '809-000-0000', 20, ' inputmode="tel"') +
+      inp('negDir', 'Dirección', 'ti-map-pin', c.emp_dir || e.dir, 'Calle, número y sector', 120) +
+      inp('negPie', 'Mensaje al final del recibo', 'ti-message', c.ticket_pie, '¡Gracias por su compra!', 120) +
+      `<div class="fe"><button class="btn bc1" type="button" style="min-height:54px;text-transform:none" onclick="window.nxNegocioGuardar()"><i class="ti ti-device-floppy"></i> Guardar datos</button></div></div>` +
+      ajCard('ti-layout-grid', 'blue', 'Módulos del negocio', 'Desmarque lo que su negocio no usa. Deja de salir en el menú para todos los usuarios.') +
+      `<div id="negMods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${chks}</div>
+      <div class="fe"><button class="btn bc1" type="button" style="min-height:54px;text-transform:none" onclick="window.nxNegocioModsGuardar()"><i class="ti ti-device-floppy"></i> Guardar módulos</button></div></div>`;
+  }
+  async function negGuardar(body) {
+    const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+    if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, body);
+    else await getAPI().post('pos_config', body);
+    Object.assign(_posCfg, body);
+  }
+  window.nxNegocioGuardar = async function () {
+    const nom = (val('negNom') || '').trim(), rnc = rncDigitos(val('negRnc'));
+    if (!nom) { toast('err', 'Falta el nombre'); const el = document.getElementById('negNom'); if (el) el.focus(); return; }
+    if (rnc && !rncOk(rnc)) { toast('err', 'RNC inválido', 'Debe tener 9 u 11 dígitos.'); return; }
+    try { await negGuardar({ emp_nombre: nom, emp_rnc: rnc || null, emp_tel: (val('negTel') || '').trim() || null, emp_dir: (val('negDir') || '').trim() || null, ticket_pie: (val('negPie') || '').trim() || null }); toast('ok', 'Datos guardados'); }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxNegocioModsGuardar = async function () {
+    const off = MODULOS.filter(m => { const el = document.getElementById('mof_' + m[0]); return el && !el.checked; }).map(m => m[0]);
+    try { await negGuardar({ modulos_off: off }); toast('ok', 'Módulos guardados'); try { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) {} }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   // Tarjeta «Factura electrónica»: datos del emisor que van en cada e-CF (pos_config.ecf_*) y la conexión con MSeller.
   // Solo se muestra cuando hay una secuencia E o ya se llenaron los datos: para el resto de negocios no cambia nada.
   function ajustesECF() {
@@ -4130,7 +4177,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         ${ecfBloqueTicket(v)}
         ${csBloque('ticket', v)}
         <div class="line"></div>
-        <div class="c muted">¡Gracias por su compra!</div>
+        <div class="c muted">${esc(e.pie || '¡Gracias por su compra!')}</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
     try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
