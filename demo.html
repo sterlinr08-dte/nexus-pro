@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pruebe NEXUS PRO — Punto de venta</title>
+<meta name="description" content="Pruebe el punto de venta NEXUS PRO con datos de ejemplo. Sin registro.">
+<meta name="theme-color" content="#F8FAFC">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Geist","Satoshi",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#F8FAFC;color:#0F172A;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
+main{width:100%;max-width:440px}
+.marca{font-weight:700;letter-spacing:.14em;font-size:13px;color:#2563EB}
+h1{font-size:clamp(30px,8vw,40px);line-height:1.08;letter-spacing:-.025em;margin:14px 0 12px;font-weight:700;text-wrap:balance}
+p{font-size:16px;line-height:1.5;color:#475569;margin:0 0 24px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;border:0;border-radius:14px;background:#2563EB;color:#fff;font:inherit;font-size:17px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.08),0 8px 20px -8px rgba(37,99,235,.5);transition:transform 160ms cubic-bezier(.23,1,.32,1),background 160ms ease}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{background:#94A3B8;box-shadow:none;cursor:default}
+@media (hover:hover){.btn:not([disabled]):hover{background:#1D4ED8}}
+.btn:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:3px}
+ul{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:12px}
+li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:15px;line-height:1.4;color:#334155}
+li svg{margin-top:1px}
+.nota{margin-top:28px;padding-top:18px;border-top:1px solid rgba(148,163,184,.3);font-size:13px;color:#64748B}
+#err{display:none;margin:14px 0 0;padding:12px 14px;border-radius:12px;background:#FEF2F2;color:#B91C1C;font-size:14px}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="marca">NEXUS PRO</div>
+  <h1>Pruebe el punto de venta</h1>
+  <p>Entre a una tienda de ejemplo y venda, cobre e imprima como lo haría en su negocio. Sin registro.</p>
+  <button class="btn" id="entrar" type="button">Entrar a la demo</button>
+  <div id="err" role="alert"></div>
+  <ul>
+    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span>Ventas, facturas y prefacturas</span></li>
+    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span>Inventario, compras y caja</span></li>
+    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg><span>Contabilidad y reportes</span></li>
+  </ul>
+  <div class="nota">Datos de ejemplo. Se reinician cada noche.</div>
+</main>
+<script>
+(function () {
+  var URL_FN = 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/demo-entrar';
+  var b = document.getElementById('entrar'), err = document.getElementById('err');
+  function falla(m) { err.textContent = m; err.style.display = 'block'; b.disabled = false; b.textContent = 'Entrar a la demo'; }
+  b.addEventListener('click', function () {
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = 'Abriendo…'; err.style.display = 'none';
+    fetch(URL_FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) {
+        if (!d || !d.ok || !d.access_token) return falla((d && d.error) || 'No se pudo abrir. Intente de nuevo.');
+        try { sessionStorage.removeItem('nx_sesion'); localStorage.removeItem('nx_sesion_persist'); } catch (e) {}
+        location.href = '/index.html#access_token=' + encodeURIComponent(d.access_token) + '&refresh_token=' + encodeURIComponent(d.refresh_token || '') + '&expires_in=' + (d.expires_in || 3600);
+      })
+      .catch(function () { falla('Sin conexión. Intente de nuevo.'); });
+  });
+})();
+</script>
+</body>
+</html>

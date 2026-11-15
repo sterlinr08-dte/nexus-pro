@@ -331,6 +331,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '', pie: '' }; }
   }
   // Módulos que el dueño de la empresa apagó para su negocio (vale para todos los roles). Inicio y Ajustes nunca se apagan.
+  // «Botones de WhatsApp» apagados para la empresa (clave 'whatsapp' en modulos_off): se esconden en todo el POS.
+  function aplicarSinWA() {
+    try {
+      const off = ((_posCfg && _posCfg.modulos_off) || []).indexOf('whatsapp') >= 0;
+      document.body.classList.toggle('nx-sin-wa', off);
+      if (off && !document.getElementById('nxSinWaCss')) { const st = document.createElement('style'); st.id = 'nxSinWaCss'; st.textContent = 'body.nx-sin-wa :is(a,button):has(.ti-brand-whatsapp),body.nx-sin-wa a[href*="wa.me"],body.nx-sin-wa a[href*="api.whatsapp.com"]{display:none!important}'; document.head.appendChild(st); }
+    } catch (e) {}
+  }
   function modApagado(mod) { try { if (mod === 'inicio' || mod === 'ajustes') return false; const m = (_posCfg && _posCfg.modulos_off) || []; return m.indexOf(mod) >= 0; } catch (e) { return false; } }
   function authUidPOS() {
     try {
@@ -496,6 +504,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
     if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '', emp_nombre: cf[0].emp_nombre || '', emp_rnc: cf[0].emp_rnc || '', emp_tel: cf[0].emp_tel || '', emp_dir: cf[0].emp_dir || '', ticket_pie: cf[0].ticket_pie || '', modulos_off: Array.isArray(cf[0].modulos_off) ? cf[0].modulos_off : [] }; }
+    aplicarSinWA();
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -2748,7 +2757,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (rolReal() !== 'admin') return '';
     const c = _posCfg || {}; const e = empInfo(); const off = c.modulos_off || [];
     const inp = (id, lbl, ic, v, ph, max, extra) => `<div class="fld"><label for="${id}">${lbl}</label><div class="inw"><i class="ti ${ic}"></i><input id="${id}" class="no-upper" style="height:48px;font-size:16px;text-transform:none" value="${esc(v || '')}" placeholder="${ph}" maxlength="${max}"${extra || ''}></div></div>`;
-    const chks = MODULOS.filter(m => m[0] !== 'inicio' && m[0] !== 'ajustes').map(m => `<label class="nxEntAfin" style="font-size:13px;min-height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 12px"><input type="checkbox" id="mof_${m[0]}"${off.indexOf(m[0]) >= 0 ? '' : ' checked'}> ${m[1]}</label>`).join('');
+    const chks = MODULOS.filter(m => m[0] !== 'inicio' && m[0] !== 'ajustes').concat([['whatsapp', 'Botones de WhatsApp']]).map(m => `<label class="nxEntAfin" style="font-size:13px;min-height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 12px"><input type="checkbox" id="mof_${m[0]}"${off.indexOf(m[0]) >= 0 ? '' : ' checked'}> ${m[1]}</label>`).join('');
     return ajCard('ti-building-store', 'blue', 'Datos del negocio', 'Salen en los recibos, facturas y reportes de su empresa.') +
       inp('negNom', 'Nombre del negocio', 'ti-building-store', c.emp_nombre || e.nom, 'Como quiere que salga en el recibo', 80) +
       inp('negRnc', 'RNC o cédula', 'ti-id', c.emp_rnc || e.rnc, '9 u 11 dígitos, sin guiones', 13, ' inputmode="numeric"') +
@@ -2774,8 +2783,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   window.nxNegocioModsGuardar = async function () {
-    const off = MODULOS.filter(m => { const el = document.getElementById('mof_' + m[0]); return el && !el.checked; }).map(m => m[0]);
-    try { await negGuardar({ modulos_off: off }); toast('ok', 'Módulos guardados'); try { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) {} }
+    const off = MODULOS.concat([['whatsapp', '']]).filter(m => { const el = document.getElementById('mof_' + m[0]); return el && !el.checked; }).map(m => m[0]);
+    try { await negGuardar({ modulos_off: off }); aplicarSinWA(); toast('ok', 'Módulos guardados'); try { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) {} }
     catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   // Tarjeta «Factura electrónica»: datos del emisor que van en cada e-CF (pos_config.ecf_*) y la conexión con MSeller.
