@@ -7749,6 +7749,10 @@ html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-
 }
 /* ⟦/59.72⟧ */
 </style>
+<!-- 15-nov-2026: una empresa tipo tienda no debe ver ni un instante la pantalla de Seguros al recargar. Si el navegador
+     ya sabe que la empresa es una tienda, la app queda oculta hasta que abre el POS (con salida de seguridad a los 9 s). -->
+<style id="nxArranqueTienda">html.nx-arranque-tienda #app{visibility:hidden!important}</style>
+<script>try{if(localStorage.getItem('nx_org_tipo')==='tienda'&&(sessionStorage.getItem('nx_sesion')||localStorage.getItem('nx_sesion_persist')||(location.hash||'').indexOf('access_token=')>=0)){document.documentElement.classList.add('nx-arranque-tienda');setTimeout(function(){document.documentElement.classList.remove('nx-arranque-tienda');},9000);}}catch(e){}</script>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -13044,6 +13048,7 @@ async function nxCargarOrg(){
       const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(orgId)}&select=*`);
       sesion.org=(orgs&&orgs[0])||null;
     }
+    try{ if(sesion.org&&sesion.org.tipo) localStorage.setItem('nx_org_tipo', sesion.org.tipo); else localStorage.removeItem('nx_org_tipo'); }catch(e){}
     try{ document.body.classList.toggle('org-tienda', !!(sesion.org && sesion.org.tipo==='tienda')); }catch(e){}
     try{ document.body.classList.toggle('org-rifa', !!(sesion.org && sesion.org.tipo==='rifa')); }catch(e){}
     try{ document.body.classList.toggle('org-consultorio', !!(sesion.org && sesion.org.tipo==='consultorio')); }catch(e){}
@@ -13063,6 +13068,7 @@ function aplicarOrgSidebar(){
     const esRifa=tipo==='rifa';
     const esCons=tipo==='consultorio';
     document.body.classList.toggle('org-tienda', esTienda);
+    if(!esTienda){ try{document.documentElement.classList.remove('nx-arranque-tienda');}catch(e){} }
     document.body.classList.toggle('org-rifa', esRifa);
     document.body.classList.toggle('org-consultorio', esCons);
     if(esTienda||esRifa||esCons){
@@ -13073,8 +13079,9 @@ function aplicarOrgSidebar(){
       // Abrir el POS directo una sola vez (reintenta si parches.js aún no cargó).
       _orgTiendaAplicada=true;
       const abrirPOS=(n)=>{
-        if(typeof window.nxAbrirPOS==='function'){ try{window.nxAbrirPOS();}catch(e){} }
+        if(typeof window.nxAbrirPOS==='function'){ try{window.nxAbrirPOS();}catch(e){} setTimeout(()=>{try{document.documentElement.classList.remove('nx-arranque-tienda');}catch(e){}},350); }
         else if(n<25){ setTimeout(()=>abrirPOS(n+1),150); }
+        else { try{document.documentElement.classList.remove('nx-arranque-tienda');}catch(e){} }
       };
       abrirPOS(0);
     }
