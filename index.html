@@ -262,6 +262,16 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 .nxs-brand{font-size:18px;font-weight:700;letter-spacing:.1px;color:#fff;opacity:0;animation:nxsUp .5s ease .1s forwards}
 .nxs-tag{font-size:12.5px;color:#8493ab;letter-spacing:.1px;opacity:0;animation:nxsUp .5s ease .22s forwards}
 @keyframes nxsUp{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}
+/* 16-nov-2026 (prueba de Muse: «la carga se ve muy simple»): el escudo va en su tarjeta azul en degradado (#30AFFD → #1848E5,
+   referencia del dueño), la marca en grande y una línea fina que corre. Mismo fondo y mismas ondas: sin saltos al cargar. */
+.nxs-badge i{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px!important;color:#fff!important;
+  background:linear-gradient(135deg,#30AFFD 0%,#1848E5 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 12px 28px -8px rgba(24,72,229,.55)}
+.nxs-wave{border-color:#30AFFD}
+.nxs-brand{font-size:22px;font-weight:800;letter-spacing:.06em}.nxs-brand b{font-weight:800;background:linear-gradient(135deg,#30AFFD,#1848E5);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nxs-bar{width:120px;height:3px;border-radius:3px;background:rgba(148,163,184,.22);overflow:hidden;opacity:0;animation:nxsUp .5s ease .3s forwards}
+.nxs-bar span{display:block;width:40%;height:100%;border-radius:3px;background:linear-gradient(90deg,#30AFFD,#1848E5);animation:nxsCorre 1.1s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes nxsCorre{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+@media (prefers-reduced-motion:reduce){.nxs-bar span{animation:none;width:100%}}
 @media (prefers-reduced-motion:reduce){
   .nxs-wave{animation-duration:.01ms!important;animation-iteration-count:1!important;opacity:0!important}
   .nxs-brand,.nxs-tag{animation-duration:.01ms!important;opacity:1!important;transform:none!important}
@@ -7777,8 +7787,9 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
       <span class="nxs-wave" style="animation-delay:.933s"></span>
       <i class="ti ti-shield"></i>
     </div>
-    <div class="nxs-brand">Cargando NEXUS PRO</div>
-    <div class="nxs-tag">Preparando tu espacio de trabajo...</div>
+    <div class="nxs-brand">NEXUS <b>PRO</b></div>
+    <div class="nxs-tag">Preparando su espacio de trabajo…</div>
+    <div class="nxs-bar" aria-hidden="true"><span></span></div>
   </div>
 </div>
 <div id="nxLoader" style="display:none" aria-hidden="true">

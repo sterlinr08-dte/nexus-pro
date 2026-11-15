@@ -294,7 +294,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
 `;
     (document.head || document.documentElement).appendChild(st);
   })();
-  function hoy() { return new Date().toISOString().slice(0, 10); }
+  // 16-nov-2026 (prueba de Muse): el día es el de RD, no el de Londres. Antes, después de las 8 p. m. «hoy» ya era mañana.
+  function hoy() { try { return new Date().toLocaleDateString('en-CA'); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+  // Día local (AAAA-MM-DD) de una fecha guardada: si ya es solo el día se respeta; si trae hora se pasa a la hora de RD.
+  function diaLocal(x) { const t = String(x || ''); if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t; const d = new Date(t); return isNaN(d) ? t.slice(0, 10) : d.toLocaleDateString('en-CA'); }
   // Lee una tabla completa en páginas de 1000 (el máximo que entrega la API por consulta). Antes las cargas de
   // financiamiento tenían tope (300/2000/3000) y al crecer la cartera se perdían justo las cuotas y pagos más nuevos.
   // Devuelve null si alguna página falla (igual que g() en la carga inicial), para no pintar una cartera incompleta.
@@ -310,7 +313,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       return out;
     } catch (e) { return null; }
   }
-  function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
+  // 16-nov-2026: una fecha guardada SOLO con el día (nota de crédito, asiento) se muestra tal cual, sin hora. Antes JavaScript la
+  // leía como medianoche de Londres y salía «14/11 20:00» para algo hecho el 15/11.
+  function fechaDMY(d) { try { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || '')); if (m) return m[3] + '/' + m[2] + '/' + m[1]; const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
   function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
   function val(id) { const e = document.getElementById(id); return e ? e.value : ''; }
@@ -590,6 +595,21 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         getAPI().get('pos_compra_pagos', 'select=monto').catch(() => [])
       ]);
       let tot = 0; (vs || []).forEach(v => tot += Number(v.total || 0));
+      // 16-nov-2026 (prueba de Muse): «Ventas de hoy» y «Utilidad» restan las notas de crédito de HOY (de ventas no anuladas).
+      let devHoy = 0, devUtil = 0;
+      try {
+        const ds = (await getAPI().get('pos_devoluciones', 'select=id,venta_id,total&created_at=gte.' + desde + '&estado=neq.anulada') || []);
+        const anul = new Set(); const vIdsD = ds.map(d => d.venta_id).filter(Boolean);
+        if (vIdsD.length) { (await getAPI().get('pos_ventas', 'select=id&estado=eq.anulada&id=in.(' + vIdsD.join(',') + ')') || []).forEach(x => anul.add(String(x.id))); }
+        const vale = ds.filter(d => !anul.has(String(d.venta_id)));
+        vale.forEach(d => devHoy += Number(d.total || 0));
+        if (vale.length) {
+          (await getAPI().get('pos_devolucion_items', 'select=producto_id,cantidad,importe,itbis&devolucion_id=in.(' + vale.map(d => d.id).join(',') + ')') || []).forEach(it => {
+            const imp = Number(it.importe || 0), cant = Number(it.cantidad || 0); devUtil += (it.itbis ? imp - imp * 18 / 118 : imp) - prodCosto(it.producto_id) * cant;
+          });
+        }
+      } catch (e) {}
+      tot -= devHoy;
       try { const ya = new Set((_ventas || []).map(x => String(x.id))); const nuevas = (vs || []).filter(v => !ya.has(String(v.id))); if (nuevas.length) { _ventas = nuevas.concat(_ventas || []).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))); } } catch (e) {}
       let cajaEf = null;
       if (_caja) { try { const t = await totalesCaja(_caja); cajaEf = t ? t.esperado : null; } catch (e) {} }
@@ -617,7 +637,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       let credTot = 0; (comprasCred || []).forEach(c => credTot += Number(c.total || 0));
       let pagTot = 0; (comprasPag || []).forEach(p => pagTot += Number(p.monto || 0));
       const comprasPendientes = Math.max(0, credTot - pagTot);
-      _dashKPI = { ventasHoy: tot, facturasHoy: (vs || []).length, cajaEf: cajaEf, utilidadHoy: utilidadHoy, garantiasVigentes: garVigentesProd + garVigentesRep, comprasPendientes: comprasPendientes };
+      utilidadHoy -= devUtil;
+      _dashKPI = { ventasHoy: tot, devHoy: devHoy, facturasHoy: (vs || []).length, cajaEf: cajaEf, utilidadHoy: utilidadHoy, garantiasVigentes: garVigentesProd + garVigentesRep, comprasPendientes: comprasPendientes };
     } catch (e) { _dashKPI = null; }
   }
   async function cargarVentas() {
@@ -921,10 +942,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
-      + sec('Inventario', it('productos', 'Inventario', 'ti-box') + it('inventario', 'Kardex', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
+    // 16-nov-2026 (prueba de Muse: «secciones repetidas»): un solo lugar para cada cosa. «Vender» crea documentos;
+    // «Documentos» guarda lo ya emitido. Finanzas queda solo con dinero.
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing'))
+      + sec('Vender', it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('cotizaciones', 'Cotización', 'ti-clipboard-text') + it('reparaciones', 'Reparaciones', 'ti-tool'))
+      + sec('Documentos', it('ventas', 'Facturas emitidas', 'ti-history') + it('prefhist', 'Prefacturas guardadas', 'ti-files') + it('notascredito', 'Notas de crédito', 'ti-file-minus'))
+      + sec('Inventario', it('productos', 'Inventario', 'ti-box') + it('inventario', 'Kardex', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
-      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Inteligencia', it('ia', 'IA NEXUS', 'ti-brain'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
@@ -973,7 +998,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const negocio = (_ses && _ses.org && _ses.org.nombre) || empNom() || 'Mi negocio';
     const h = new Date().getHours();
     const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-    const tile = (tab, label, icon, color) => puedeVer(tab) ? `<button type="button" class="nxApp" onclick="window.nxPosTab('${tab}')"><span class="nxAppIco" style="background:${color}1a;color:${color}"><i class="ti ${icon}"></i></span><span class="nxAppNom">${label}</span></button>` : '';
+    // 16-nov-2026: la capa «línea única» pasa los morados a azul; el fondo va con background-color para que esa regla no lo
+    // vuelva un cuadro azul sólido (se veía vacío, sin el icono). Morado → azul aquí mismo, para que icono y fondo vayan juntos.
+    const tile = (tab, label, icon, color0) => { const color = /^#(6d28d9|7c3aed|9333ea|4f46e5)$/i.test(color0) ? '#2563eb' : color0; return puedeVer(tab) ? `<button type="button" class="nxApp" onclick="window.nxPosTab('${tab}')"><span class="nxAppIco" style="background-color:${color}1a;color:${color}"><i class="ti ${icon}"></i></span><span class="nxAppNom">${label}</span></button>` : ''; };
     const grupo = (titulo, tiles) => tiles.trim() ? `<div class="nxAppSec"><div class="nxAppSecT">${titulo}</div><div class="nxAppGrid">${tiles}</div></div>` : '';
     // Dashboard Operativo (Fase 7): 8 indicadores en tiempo real — para TODOS los modos (tienda y admin).
     let kpis = '';
@@ -995,14 +1022,15 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       const margenPct = (k.ventasHoy || 0) > 0 && k.utilidadHoy != null ? Math.round(k.utilidadHoy / k.ventasHoy * 100) + '% margen' : 'Sin ventas hoy';
       const kpi = (c, ic, l, v, s) => `<div class="nxTKpi"><div class="nxTKpiL"><i class="ti ${ic}" style="color:${c}"></i> ${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
       kpis = `<div class="nxTKpis">
-          ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
+          ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), (k.devHoy ? `<span style="color:#dc2626;font-weight:800">−${fmt(k.devHoy)} devuelto</span> · ` : '') + trendHoy)}
           ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
           ${kpi('#7c3aed', 'ti-trending-up', 'Utilidad', k.utilidadHoy != null ? fmt(k.utilidadHoy) : '—', margenPct)}
-          ${puedeVer('reparaciones') ? kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día') : ''}
-          ${kpi('#2563eb', 'ti-shield-check', 'Garantías', k.garantiasVigentes != null ? String(k.garantiasVigentes) : '—', 'Vigentes')}
-          ${kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), criticos ? 'Revisar productos' : 'Todo en orden')}
-          ${kpi('#dc2626', 'ti-truck-delivery', 'Compras pendientes', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
-          ${kpi('#db2777', 'ti-clock', 'Clientes esperando', String(esperando), esperando ? fmt(esperandoVal) + ' por facturar' : 'Nadie esperando')}
+          ${puedeVer('reparaciones') && equiposPend ? kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día') : ''}
+          ${/* 16-nov-2026 (prueba de Muse: «demasiadas tarjetas»): siempre Ventas, Caja y Utilidad; las demás solo cuando hay algo que atender. */ ''}
+          ${Number(k.garantiasVigentes || 0) > 0 ? kpi('#2563eb', 'ti-shield-check', 'Garantías', String(k.garantiasVigentes), 'Vigentes') : ''}
+          ${criticos ? kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), 'Revisar productos') : ''}
+          ${Number(k.comprasPendientes || 0) > 0 ? kpi('#dc2626', 'ti-truck-delivery', 'Compras pendientes', fmt(k.comprasPendientes), 'Por pagar a proveedores') : ''}
+          ${esperando ? kpi('#db2777', 'ti-clock', 'Clientes esperando', String(esperando), fmt(esperandoVal) + ' por facturar') : ''}
         </div>`;
     }
     let ultVentas = '';
@@ -1024,7 +1052,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
+        ${grupo('Vender', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotización', 'ti-clipboard-text', '#7c3aed'))}
+        ${grupo('Documentos', tile('ventas', 'Facturas emitidas', 'ti-history', '#475569') + tile('prefhist', 'Prefacturas guardadas', 'ti-files', '#7c3aed') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c'))}
         ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -1235,7 +1264,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     let lista, vacioMsg;
     if (_posCat === '__fav__') {
       lista = _prods.filter(p => p.favorito);
-      vacioMsg = 'Sin favoritos todavía. Toca la ☆ de un producto para agregarlo.';
+      vacioMsg = 'Sin favoritos. Toque la ☆ de un producto y aparecerá aquí para venderlo más rápido.';
     } else if (_posCat === '__recientes__') {
       const byId = new Map(_prods.map(p => [String(p.id), p]));
       lista = (_prodsRecientesIds || []).map(id => byId.get(String(id))).filter(Boolean);
@@ -1256,7 +1285,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
       const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       const cat = catNombre(p.categoria_id);
-      const favLbl = p.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
+      const favLbl = p.favorito ? 'Quitar de Favoritos' : 'Guardar en Favoritos (acceso rápido)';
       // El botón de favorito es un <button> real — la fila NO puede serlo (los <button> no aceptan
       // <button> anidados, el navegador los reordenaría en silencio) — por eso es un <div> con
       // role="button"+tabindex+onkeydown, mismo patrón ya usado en las filas clicables de la tanda 1.
@@ -1338,6 +1367,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const nuevo = !p.favorito;
     p.favorito = nuevo; // optimista: se ve al instante, sin esperar la red
     const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML();
+    // 16-nov-2026 (prueba de Muse: «la estrella no se entiende»): dice qué hizo y dónde encontrarlo.
+    venderAviso(nuevo ? '⭐ En Favoritos' : 'Fuera de Favoritos', nuevo ? 'Lo encuentra arriba en «⭐ Favoritos»' : p.nombre);
     try { await getAPI().patch('pos_productos', 'id=eq.' + id, { favorito: nuevo }); }
     catch (e) { p.favorito = !nuevo; const g2 = document.getElementById('posGrid'); if (g2) g2.innerHTML = gridHTML(); toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
@@ -1372,6 +1403,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
 
   function pintarCarrito() {
+    if (!_cart.length) venderAvisoQuitar();
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
     nxPfEnsureCSS();
     volAjustar();
@@ -1949,8 +1981,15 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     let el = document.getElementById('nxVAviso');
     if (!el) { el = document.createElement('div'); el.id = 'nxVAviso'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
     el.innerHTML = '<b>' + esc(t) + '</b><span>' + esc(sub || '') + '</span>';
-    el.classList.add('on'); clearTimeout(_vAvisoT); _vAvisoT = setTimeout(() => el.classList.remove('on'), 1600);
+    el.classList.add('on'); clearTimeout(_vAvisoT); _vAvisoT = setTimeout(venderAvisoQuitar, 1600);
   }
+  // 16-nov-2026 (prueba de Muse): el aviso quedaba pegado abajo en todas las pantallas después de vender. Ahora se BORRA
+  // al terminar (no solo se esconde) y también al vaciarse el carrito o cambiar de pantalla.
+  function venderAvisoQuitar() {
+    clearTimeout(_vAvisoT); const el = document.getElementById('nxVAviso'); if (!el) return;
+    el.classList.remove('on'); setTimeout(() => { if (!el.classList.contains('on')) el.remove(); }, 260);
+  }
+  window.nxVenderAvisoQuitar = venderAvisoQuitar;
   window.nxVenderSel = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     if (!p.serial) {
@@ -4255,6 +4294,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <tr class="tot big"><td>TOTAL</td><td style="text-align:right">${fmt(v.total)}</td></tr>
         </table>
         ${_hayMezclaT ? '<div class="c muted" style="font-size:10px">(G) gravado ITBIS 18 % · (E) exento</div>' : ''}
+        ${(function () { const ns = ncsDeVenta(v); if (!ns.length) return ''; const dv = ns.reduce((a, d) => a + Number(d.total || 0), 0);
+          return '<div class="line"></div><table>' + ns.map(d => `<tr><td>Nota de crédito ${esc(d.numero || '')} · ${fechaDMY(d.fecha || d.created_at).slice(0, 10)}</td><td style="text-align:right">- ${fmt(d.total)}</td></tr>`).join('')
+            + `<tr class="tot"><td>NETO DESPUÉS DE DEVOLUCIÓN</td><td style="text-align:right">${fmt(Number(v.total || 0) - dv)}</td></tr></table>`; })()}
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         ${ecfBloqueTicket(v)}
@@ -6106,11 +6148,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
+  // 16-nov-2026 (prueba de Muse): la factura muestra lo que se le devolvió. La venta original NO se cambia (es el documento
+  // fiscal); se lee de sus notas de crédito. Las de una venta ANULADA no cuentan (la anulación ya quitó la venta entera).
+  function ncsDeVenta(v) { if (!v || (v.estado || '') === 'anulada' || v.anulada) return []; return (_notasCred || []).filter(d => String(d.venta_id) === String(v.id) && (d.estado || '') !== 'anulada'); }
+  function devueltoDe(v) { return ncsDeVenta(v).reduce((s, d) => s + Number(d.total || 0), 0); }
   // ── TAB: VENTAS ──
   function ventasFiltradas() {
     const q = (_histQ || '').trim().toLowerCase();
     return (_ventas || []).filter(v => {
-      const f = (v.fecha || v.created_at || '').slice(0, 10);
+      const f = diaLocal(v.fecha || v.created_at);
       if (_histDesde && f < _histDesde) return false;
       if (_histHasta && f > _histHasta) return false;
       if (q) { const hay = ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase(); if (!hay.includes(q)) return false; }
@@ -6119,8 +6165,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   function kpisHistorial() {
     const lista = ventasFiltradas();
-    const total = lista.filter(v => (v.estado || '') !== 'anulada').reduce((s, v) => s + Number(v.total || 0), 0);
-    const hoyN = (_ventas || []).filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy() && (v.estado || '') !== 'anulada').length;
+    const total = lista.filter(v => (v.estado || '') !== 'anulada').reduce((s, v) => s + Number(v.total || 0) - devueltoDe(v), 0);
+    const hoyN = (_ventas || []).filter(v => diaLocal(v.fecha || v.created_at) === hoy() && (v.estado || '') !== 'anulada').length;
     const ecfMal = (_ventas || []).filter(v => /^E3[12]/.test(String(v.ncf || '')) && (v.estado || '') !== 'anulada' && ECF_REVISAR.includes(v.ecf_estado)).length;
     return kpiPf('Facturas', lista.length, '#2563eb') + kpiPf('Total filtrado', fmt(total), '#059669') + kpiPf('Hoy', hoyN, '') + (ecfMal ? kpiPf('e-CF por revisar', ecfMal, '#dc2626') : '');
   }
@@ -6130,12 +6176,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return lista.map(v => {
       const anulada = (v.estado || '') === 'anulada';
       const esCred = !!v.a_credito;
+      const dev = devueltoDe(v), devTot = dev > 0 && dev >= Number(v.total || 0) - 0.5;
+      const devChip = dev > 0 ? ` <span title="${esc(ncsDeVenta(v).map(d => d.numero).join(', '))}" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#ffedd5;color:#9a3412;white-space:nowrap">${devTot ? 'DEVUELTA' : 'DEV. PARCIAL'}</span>` : '';
       return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
         <td style="font-weight:700;color:var(--pf-txt);white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
-        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}${ecfEstadoChip(v)}${ndChips(v)}</td>
-        <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
+        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}${devChip}${ecfEstadoChip(v)}${ndChips(v)}</td>
+        <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${dev > 0 ? `<s style="color:var(--pf-txt3);font-weight:600;font-size:11px">${fmt(v.total)}</s><br>${fmt(Number(v.total || 0) - dev)}` : fmt(v.total)}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada && ndPuede(v) ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxNdNueva('${v.id}')" title="Nota de débito (cargo adicional)" aria-label="Nota de débito (cargo adicional)"><i class="ti ti-receipt-tax" style="color:#7c3aed"></i></button>` : ''}${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
       </tr>`;
     }).join('');
@@ -6470,6 +6518,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // devolver stock
       for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); moverStock(p, 'devolucion', Number(l.cant || 0), { referencia: (dev.numero || ''), motivo: 'Devolución', almacenId: aid }).catch(() => {}); } } catch (e) {}
       }
+      // 16-nov-2026 (prueba de Muse): la devolución en EFECTIVO sale de la caja abierta (antes la caja no bajaba).
+      if (metodo === 'Efectivo' && _caja && _caja.id) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'salida', monto: t.total, concepto: 'Devolución ' + (dev.numero || numero) + ' · fact. ' + (v.numero_factura || v.numero || ''), fecha: new Date().toISOString(), created_by_name: nomAdmin() }); } catch (e) {} }
       // si se rebaja a cuenta del cliente (fiado), bajar su saldo
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
       // asiento contable inverso a la venta
@@ -6485,11 +6535,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try {
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       // Reversa de la venta: Debe Ventas + ITBIS / Haber Caja o CxC
-      const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : '1101';
+      // 16-nov-2026 (prueba de Muse): una devolución «Nota de crédito» NO sale de la caja: queda como saldo a favor del
+      // cliente en 2105 (la misma cuenta que se debita cuando después paga con esa nota). Antes se abonaba Caja.
+      const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : (/nota de cr/i.test(metodo) && byc['2105']) ? '2105' : '1101';
+      const haberNom = { '1103': 'Cuentas por cobrar (clientes)', '2105': 'Notas de crédito por aplicar', '1101': 'Caja' }[haberCod];
       // 15-nov-2026: lo devuelto vuelve al inventario contable a su costo (mismo criterio que la venta: costo del artículo, sin servicios).
       let costoDev = 0;
       (items || []).forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costoDev += Number(p.costo || 0) * Number(it.cantidad || 0); });
-      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0)), lnCta(byc, '1104', 'Inventario de mercancías', costoDev, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoDev)];
+      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberNom, 0, Number(t.total || 0)), lnCta(byc, '1104', 'Inventario de mercancías', costoDev, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoDev)];
       await postAsientoConcepto(dev.fecha, 'Devolución ' + (dev.numero || '') + ' (fact. ' + (venta.numero_factura || '#' + venta.numero) + ')', 'devolucion', dev.id, lineas, dev.numero);
     } catch (e) {}
   }
@@ -6517,7 +6570,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function ncFiltradas() {
     const q = (_ncQ || '').trim().toLowerCase();
     return (_notasCred || []).filter(d => {
-      const f = (d.fecha || d.created_at || '').slice(0, 10);
+      const f = diaLocal(d.fecha || d.created_at);
       if (_ncDesde && f < _ncDesde) return false;
       if (_ncHasta && f > _ncHasta) return false;
       if (q) { const hay = ((d.numero || '') + ' ' + (d.ncf || '') + ' ' + (d.cliente_nombre || '')).toLowerCase(); if (!hay.includes(q)) return false; }
@@ -6534,7 +6587,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function kpisNC() {
     const lista = ncFiltradas();
     const total = lista.reduce((s, d) => s + Number(d.total || 0), 0);
-    const hoyN = (_notasCred || []).filter(d => (d.fecha || d.created_at || '').slice(0, 10) === hoy()).length;
+    const hoyN = (_notasCred || []).filter(d => diaLocal(d.fecha || d.created_at) === hoy()).length;
     return kpiPf('Notas de crédito', lista.length, 'var(--pf-orange)') + kpiPf('Total filtrado', fmt(total), 'var(--pf-red)') + kpiPf('Hoy', hoyN, 'var(--pf-txt)');
   }
   function filasNC() {
@@ -9790,8 +9843,19 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const byV = {}; its.forEach(it => { (byV[it.venta_id] = byV[it.venta_id] || []).push(it); });
       _repVentas.forEach(v => { v._items = byV[v.id] || []; });
     } catch (e) {}
+    // 16-nov-2026 (prueba de Muse): las notas de crédito se restan de ventas, ganancia y productos más vendidos, el día de la nota.
+    try {
+      const ds = await getAPI().get('pos_devoluciones', 'select=id,venta_id,fecha,created_at,total,itbis,estado&estado=neq.anulada&order=created_at.desc&limit=2000') || [];
+      const vIds = new Set(_repVentas.map(v => String(v.id)));
+      _repDevs = ds.filter(d => vIds.has(String(d.venta_id)));
+      const ids = _repDevs.map(d => d.id);
+      const dit = ids.length ? (await getAPI().get('pos_devolucion_items', 'select=devolucion_id,producto_id,nombre,cantidad,precio,importe,itbis&devolucion_id=in.(' + ids.join(',') + ')') || []) : [];
+      const byD = {}; dit.forEach(it => { (byD[it.devolucion_id] = byD[it.devolucion_id] || []).push(it); });
+      _repDevs.forEach(d => { d._items = byD[d.id] || []; });
+    } catch (e) { _repDevs = []; }
   }
-  function repFecha(v) { return String(v.fecha || v.created_at || '').slice(0, 10); }
+  let _repDevs = [];
+  function repFecha(v) { return diaLocal(v.fecha || v.created_at); }
   function repItems(v) { return v._items || v.pos_venta_items || []; }
   function prodCosto(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.costo || 0) : 0; }
   function ventasRepRango() { return (_repVentas || []).filter(v => { const f = repFecha(v); return (!_repDesde || f >= _repDesde) && (!_repHasta || f <= _repHasta); }); }
@@ -9816,11 +9880,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         porProd[key].cant += cant; porProd[key].monto += imp;
       });
     });
+    let totDev = 0, nDev = 0;
+    (_repDevs || []).filter(d => { const f = diaLocal(d.fecha || d.created_at); return (!_repDesde || f >= _repDesde) && (!_repHasta || f <= _repHasta); }).forEach(d => {
+      nDev++; totDev += Number(d.total || 0); totVta -= Number(d.total || 0); totItbis -= Number(d.itbis || 0);
+      const f = diaLocal(d.fecha || d.created_at); porDia[f] = (porDia[f] || 0) - Number(d.total || 0);
+      (d._items || []).forEach(it => {
+        const cant = Number(it.cantidad || 0), imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant));
+        const sinItbis = it.itbis ? imp - (imp * 18 / 118) : imp;
+        const cst = prodCosto(it.producto_id) * cant; costoTot -= cst; ganancia -= sinItbis - cst;
+        const key = it.nombre || it.producto_id || '—';
+        if (!porProd[key]) porProd[key] = { cant: 0, monto: 0 };
+        porProd[key].cant -= cant; porProd[key].monto -= imp;
+      });
+    });
     const kpi = (l, v, c) => kpiPf(l, fmt(v), c);
     const dias = Object.keys(porDia).sort().slice(-14);
     const maxDia = Math.max(1, ...dias.map(d => porDia[d]));
     const barras = dias.length ? dias.map(d => { const h = Math.max(3, Math.round(porDia[d] / maxDia * 90)); const dd = d.slice(8) + '/' + d.slice(5, 7); return `<div class="nxRepBar"><div class="nxRepBarV" style="height:${h}px" title="${fmt(porDia[d])}"></div><div class="nxRepBarL">${dd}</div></div>`; }).join('') : '<div style="color:#475569;font-size:12px;padding:20px">Sin ventas en el período.</div>';
-    const top = Object.entries(porProd).sort((a, b) => b[1].monto - a[1].monto).slice(0, 10);
+    const top = Object.entries(porProd).filter(([, o]) => o.cant > 0).sort((a, b) => b[1].monto - a[1].monto).slice(0, 10);
     const topFilas = top.length ? top.map(([nom, o], i) => `<tr><td style="color:#475569;width:22px">${i + 1}</td><td style="font-weight:600">${esc(nom)}</td><td style="text-align:right">${o.cant}</td><td style="text-align:right;font-weight:700">${fmt(o.monto)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin datos</td></tr>';
     const totMet = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
     const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#475569;font-size:12px">Sin pagos registrados</div>';
@@ -9835,7 +9912,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
       </div>
       <div class="kpirow">
-        ${kpi('Ventas (total)', totVta, '#2563eb')}
+        ${kpi(totDev ? 'Ventas netas' : 'Ventas (total)', totVta, '#2563eb')}
+        ${totDev ? kpi('Devoluciones (' + nDev + ' NC)', -totDev, '#dc2626') : ''}
         ${kpi('Ganancia estimada', ganancia, ganancia >= 0 ? '#16a34a' : '#dc2626')}
         ${kpi('Costo de lo vendido', costoTot, '#ea580c')}
         ${kpi('ITBIS cobrado', totItbis, '#7c3aed')}
