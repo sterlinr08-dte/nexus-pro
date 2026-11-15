@@ -39,6 +39,20 @@ Después, abrir los `_mosaico.jpg` con **Read** y describir: quién sale, la esc
 ### ¿Usa el mismo audio que otro video?
 Se pasan los dos a crudo (`-vn -ac 1 -ar 8000 -f s16le x.raw`), se calcula la envolvente de volumen (RMS cada 50 ms) y la correlación con desfases de ±7 s. **0,8 o más es el mismo audio**; el desfase dice cuántos segundos está corrido. No hace falta numpy: con `array` y `math` de Python alcanza.
 
+## Escuchar lo que dicen (transcripción gratis, 15-nov-2026)
+Corre en el equipo, sin cuentas ni pago. Instalar con **`python3 -m pip`** (no `pip` a secas: instala para otra versión de Python y falla).
+
+```bash
+python3 -m pip install -q --target "$S/fw_pkg" faster-whisper
+ffmpeg -v error -i "<video>.mp4" -vn -ac 1 -ar 16000 "$S/a.wav" -y
+PYTHONPATH="$S/fw_pkg" python3 - <<'PY'
+from faster_whisper import WhisperModel
+m = WhisperModel("small", device="cpu", compute_type="int8", download_root="fw_model")
+for s in m.transcribe("a.wav", language="es")[0]: print(f"[{s.start:.1f}] {s.text}")
+PY
+```
+El modelo `small` baja solo la primera vez (~1 min) y transcribe ~2 min de audio en menos de un minuto. Puede fallar en nombres propios y siglas: contrastar con el texto en pantalla.
+
 ## Si falla
 - **«login required» o error 401:** el post es privado o Instagram pide sesión. Pedirle al dueño que **grabe la pantalla** del iPhone y mande el archivo por el chat.
 - **El enlace es una página de perfil y no un post:** pedir el enlace del post o reel (`/p/…` o `/reel/…`).

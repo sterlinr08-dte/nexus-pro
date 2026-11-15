@@ -89,6 +89,7 @@
 - **Regla firme:** no se construye nada para ocultar ventas, vender sin factura ni usar la proforma o la «venta interna» para descontar inventario sin facturar (evasión fiscal). Se ofrecen alternativas legales.
 
 ## 7. Pendientes y esperas
+- **POS estándar — decisiones del dueño (15-nov-2026):** solo República Dominicana; primero tienda general; las empresas se registran por la web; nombre comercial NEXUS PRO; demo sugerida en `demo.nexusprord.com` (opción A: demo primero, falta su «arranca»). Motivo: los interesados le piden una demo y no tiene qué enseñar. Para la página de precios, usar los 6 bloques del reel `Dftu0gdDtuT` (bitácora del 15-nov).
 - **POS como sistema estándar (análisis 15-nov-2026):** hoy no lo usa nadie a diario; el aislamiento por empresa está bien, pero falta alta de empresa con botón, datos y recibo por empresa, usuarios por empresa, suspensión real, contabilidad para todas (hoy fija a una), permisos de rol en la base y módulos por tipo de negocio. Detalle y fases en `docs/bitacora/2026-11-15-0934-claude-pos-estandar-analisis.md`. Espera decisión del dueño.
 - **Salidas de la custodia del administrador — 59.83 (PUBLICADO, 09-nov; base aplicada el mismo día):**
   - Problema: la custodia del administrador solo subía (RD$ 2.07 millones), porque no existía un movimiento de salida.
