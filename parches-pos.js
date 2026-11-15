@@ -991,7 +991,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
           ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
           ${kpi('#7c3aed', 'ti-trending-up', 'Utilidad', k.utilidadHoy != null ? fmt(k.utilidadHoy) : '—', margenPct)}
-          ${kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día')}
+          ${puedeVer('reparaciones') ? kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día') : ''}
           ${kpi('#2563eb', 'ti-shield-check', 'Garantías', k.garantiasVigentes != null ? String(k.garantiasVigentes) : '—', 'Vigentes')}
           ${kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), criticos ? 'Revisar productos' : 'Todo en orden')}
           ${kpi('#dc2626', 'ti-truck-delivery', 'Compras pendientes', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
@@ -7318,7 +7318,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ov = document.createElement('div'); ov.id = 'nxUnivS'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) window.nxBuscUnivCerrar(); });
     ov.innerHTML = `<div class="nxUnivBox">
-        <div class="nxUnivHead"><i class="ti ti-search"></i><input id="nxUnivIn" type="text" placeholder="Cliente, factura, IMEI, artículo, proveedor, recepción, garantía, orden…" oninput="window.nxBuscUnivInput(this.value)" onkeydown="window.nxBuscUnivKey(event)"><button type="button" class="nxUnivClose" onclick="window.nxBuscUnivCerrar()" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
+        <div class="nxUnivHead"><i class="ti ti-search"></i><input id="nxUnivIn" type="text" placeholder="${puedeVer('reparaciones') ? 'Cliente, factura, IMEI, artículo, proveedor, recepción, garantía, orden…' : 'Cliente, factura, artículo, proveedor…'}" oninput="window.nxBuscUnivInput(this.value)" onkeydown="window.nxBuscUnivKey(event)"><button type="button" class="nxUnivClose" onclick="window.nxBuscUnivCerrar()" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
         <div id="nxUnivResults" class="nxUnivResults"><div class="nxUnivHint">Escribe al menos 2 letras para buscar en todo el sistema.</div></div>
       </div>`;
     document.body.appendChild(ov);

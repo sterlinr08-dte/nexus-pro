@@ -58,7 +58,7 @@ begin
   insert into public.pos_config (organizacion_id, prefijo_contado, prefijo_credito, mora_pct, mora_dias_gracia, garantia_rep_dias,
     emp_nombre, emp_rnc, emp_tel, emp_dir, ticket_pie, modulos_off)
   values (v_org, 'CO', 'CR', 0, 0, 0, 'Tienda Demo', null, '809-555-0100', 'Av. Principal 123, Santiago',
-    'Datos de demostración. ¡Gracias por probar NEXUS PRO!', '["ia","reparaciones","whatsapp"]'::jsonb);
+    'Datos de demostración. ¡Gracias por probar NEXUS PRO!', '["ia","reparaciones","whatsapp","entidades","crm","rrhh","cuotas","apartados"]'::jsonb);
 
   insert into public.pos_almacenes (organizacion_id, nombre, es_principal, activo) values (v_org, 'Almacén Principal', true, true) returning id into v_alm;
 
