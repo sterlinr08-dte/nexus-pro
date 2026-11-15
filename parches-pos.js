@@ -1003,7 +1003,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       const dd = new Date();
       const hoyISO = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0');
       const metV = v => (v.a_credito || Number(v.credito_monto || 0) > 0) ? 'Fiado' : (Number(v.pagado_tarjeta || 0) > 0 ? 'Tarjeta' : Number(v.pagado_transferencia || 0) > 0 ? 'Transferencia' : Number(v.pagado_otro || 0) > 0 ? 'Otro' : 'Efectivo');
-      const vHoy = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 10) === hoyISO && !v.anulada).slice(0, 6);
+      // La fecha se compara en hora local: created_at viene en UTC y después de las 8 p. m. (RD) ya es «mañana» allá.
+      const diaLocal = v => { try { const d = new Date(v.created_at || v.fecha); return isNaN(d) ? String(v.created_at || v.fecha || '').slice(0, 10) : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } catch (e) { return ''; } };
+      const vHoy = (_ventas || []).filter(v => diaLocal(v) === hoyISO && !v.anulada && v.estado !== 'anulada').slice(0, 6);
       const rows = vHoy.length
         ? vHoy.map(v => {
           const fiado = v.a_credito || Number(v.credito_monto || 0) > 0;
@@ -4134,7 +4136,20 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // sí. Con esto, filtrar Auditoría por Facturas/POS ya muestra cada venta real, con quién/cuándo/
       // dispositivo/sucursal/IP (todo eso ya lo garantiza logAudit desde la Fase 8, sin tocar nada aquí).
       try { window.logAudit && window.logAudit('POS_VENTA_CREADA', (numFac || ('No. ' + (venta.numero || ''))) + ' · ' + fmt(c.total) + (cliNom ? ' · ' + cliNom : '') + ' · ' + metodoLabel, 'POS'); } catch (e2) {}
-      toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
+      // 15-nov-2026 (prueba de Muse): un solo número a la vista — el de la factura de la empresa. `venta.numero` es un contador interno.
+      toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', (numFac || ('No. ' + (venta.numero || ''))) + ' · ' + fmt(c.total));
+      // La venta recién hecha entra a la memoria de la pantalla: «Últimas ventas» del Inicio y el Historial la muestran al instante,
+      // y la existencia de cada artículo baja en Vender e Inventario sin recargar (el servidor ya la descontó).
+      try {
+        if (!(_ventas || []).some(x => String(x.id) === String(venta.id))) { _ventas = _ventas || []; _ventas.unshift(Object.assign({}, body, venta, { numero_factura: numFac || venta.numero_factura || null, ncf: ncfAsignado || venta.ncf || null, estado: venta.estado || 'completada', created_at: venta.created_at || new Date().toISOString() }, _ecfRes ? { ecf_estado: _ecfRes.ecf_estado || null, ecf_security_code: _ecfRes.ecf_security_code || null, ecf_qr_url: _ecfRes.ecf_qr_url || null, ecf_firmado: _ecfRes.ecf_firmado || null } : {})); }
+        const _almV = venta.almacen_id || body.almacen_id || (almPrincipal() && almPrincipal().id) || null;
+        items.forEach(it => {
+          const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p || p.tipo === 'servicio') return;
+          const q = Number(it.cantidad || 0);
+          p.stock = Math.max(0, Number(p.stock || 0) - q);
+          const k = _almV ? stockKey(p.id, _almV) : null; if (k && _stockAlmRows[k]) _stockAlmRows[k].stock = Math.max(0, Number(_stockAlmRows[k].stock || 0) - q);
+        });
+      } catch (eMem) {}
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items },
         _ecfRes ? { ecf_estado: _ecfRes.ecf_estado || null, ecf_security_code: _ecfRes.ecf_security_code || null, ecf_qr_url: _ecfRes.ecf_qr_url || null, ecf_firmado: _ecfRes.ecf_firmado || null } : {});
       _cart = [];
@@ -4162,7 +4177,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const _cliT = (v.cliente_id ? _clientes.find(x => String(x.id) === String(v.cliente_id)) : null) || null;
     const _cliRnc = (_cliT && _cliT.cedula) ? ((_cliT.tipo_persona === 'juridica' ? 'RNC: ' : 'Cédula: ') + esc(_cliT.cedula)) : '';
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${v.numero_factura ? 'Factura ' + esc(v.numero_factura) : 'Ticket No. ' + (v.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Cascadia Code,Consolas,Courier New,monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;display:flex;flex-wrap:wrap;gap:8px;background:#1e3a6e;margin:-12px -12px 10px;padding:9px 12px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-x"></i> Cerrar</button>${v.id ? `<button onclick="if(window.opener&&window.opener.nxFacDocVenta){window.opener.nxFacDocVenta('${v.id}');window.opener.focus();}else{alert('Abre este ticket desde el sistema para ver la factura completa.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif">📄 Factura completa</button>` : ''}${(v.id && !v.anulada) ? `<button onclick="if(window.opener&&window.opener.nxDevNueva){window.opener.nxDevNueva('${v.id}');window.opener.focus();window.close();}else{alert('Abre este ticket desde el sistema (no en una pestaña aparte) para poder hacer una devolución.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:Segoe UI,system-ui,-apple-system,sans-serif">↩︎ Devolver</button>` : ''}</div>
