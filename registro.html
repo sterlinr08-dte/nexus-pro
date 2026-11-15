@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Crear mi tienda — NEXUS PRO</title>
+<meta name="description" content="Cree su tienda en NEXUS PRO: ventas, inventario, caja y facturas. 14 días gratis.">
+<meta name="theme-color" content="#F8FAFC">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Geist","Satoshi",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#F8FAFC;color:#0F172A;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
+main{width:100%;max-width:440px}
+.marca{font-weight:700;letter-spacing:.14em;font-size:13px;color:#2563EB}
+h1{font-size:clamp(28px,7.4vw,36px);line-height:1.1;letter-spacing:-.025em;margin:14px 0 10px;font-weight:700;text-wrap:balance}
+p.sub{font-size:16px;line-height:1.5;color:#475569;margin:0 0 22px}
+form{display:grid;gap:14px}
+label{display:grid;gap:6px;font-size:14px;font-weight:600;color:#334155}
+label small{font-weight:400;color:#64748B;font-size:13px}
+input{height:48px;font:inherit;font-size:16px;padding:0 14px;border:1.5px solid #CBD5E1;border-radius:12px;background:#fff;color:#0F172A;width:100%}
+input:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+input[aria-invalid="true"]{border-color:#DC2626}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:420px){.fila{grid-template-columns:1fr}}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;border:0;border-radius:14px;background:#2563EB;color:#fff;font:inherit;font-size:17px;font-weight:600;cursor:pointer;margin-top:6px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 8px 20px -8px rgba(37,99,235,.5);transition:transform 160ms cubic-bezier(.23,1,.32,1),background 160ms ease}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{background:#94A3B8;box-shadow:none;cursor:default}
+@media (hover:hover){.btn:not([disabled]):hover{background:#1D4ED8}}
+.btn:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:3px}
+.miedo{text-align:center;font-size:13px;color:#64748B;margin:10px 0 0}
+#err{display:none;padding:12px 14px;border-radius:12px;background:#FEF2F2;color:#B91C1C;font-size:14px}
+.ok{display:none}
+.ok h1{margin-top:6px}
+.cred{background:#fff;border:1.5px solid #CBD5E1;border-radius:14px;padding:14px 16px;margin:0 0 18px;display:grid;gap:4px}
+.cred span{font-size:13px;color:#64748B}
+.cred b{font-size:20px;letter-spacing:.01em;word-break:break-all}
+.nota{margin-top:22px;padding-top:16px;border-top:1px solid rgba(148,163,184,.3);font-size:13px;color:#64748B}
+.nota a{color:#2563EB}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <section id="paso1">
+    <div class="marca">NEXUS PRO</div>
+    <h1>Cree su tienda</h1>
+    <p class="sub">Venda, cobre, controle su inventario y su caja. 14 días gratis.</p>
+    <form id="f" novalidate>
+      <label>Nombre del negocio<input id="negocio" autocomplete="organization" maxlength="60" required placeholder="Colmado La Esquina"></label>
+      <label>Su nombre<input id="nombre" autocomplete="name" maxlength="60" required placeholder="María Pérez"></label>
+      <label>WhatsApp<small>Para avisarle de su cuenta.</small><input id="telefono" type="tel" inputmode="tel" autocomplete="tel" maxlength="14" required placeholder="809-555-0000"></label>
+      <div class="fila">
+        <label>Usuario<input id="usuario" autocapitalize="none" autocomplete="username" maxlength="30" required placeholder="maria"></label>
+        <label>Clave<input id="clave" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="8 o más"></label>
+      </div>
+      <div id="err" role="alert"></div>
+      <button class="btn" id="crear" type="submit">Crear mi tienda</button>
+      <p class="miedo">Sin tarjeta. Sin permanencia.</p>
+    </form>
+    <div class="nota">¿Quiere verla antes? <a href="/demo">Pruebe la demo</a>.</div>
+  </section>
+  <section id="paso2" class="ok" aria-live="polite">
+    <div class="marca">NEXUS PRO</div>
+    <h1>Su tienda está lista</h1>
+    <p class="sub">Guarde su usuario: con él entra desde cualquier equipo.</p>
+    <div class="cred"><span>Su usuario para entrar</span><b id="entrarTxt"></b></div>
+    <button class="btn" id="ir" type="button">Entrar a mi tienda</button>
+    <p class="miedo" id="pruebaTxt"></p>
+  </section>
+</main>
+<script>
+(function () {
+  var URL_FN = 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/registro-tienda';
+  var f = document.getElementById('f'), b = document.getElementById('crear'), err = document.getElementById('err');
+  var ses = null;
+  function falla(m, campo) {
+    err.textContent = m; err.style.display = 'block'; b.disabled = false; b.textContent = 'Crear mi tienda';
+    document.querySelectorAll('input').forEach(function (i) { i.removeAttribute('aria-invalid'); });
+    if (campo) { var el = document.getElementById(campo); if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); } }
+  }
+  var u = document.getElementById('usuario');
+  u.addEventListener('input', function () { var v = u.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]/g, ''); if (v !== u.value) u.value = v; });
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (b.disabled) return;
+    var d = { negocio: document.getElementById('negocio').value.trim(), nombre: document.getElementById('nombre').value.trim(), telefono: document.getElementById('telefono').value.trim(), usuario: u.value.trim(), clave: document.getElementById('clave').value };
+    if (d.negocio.length < 3) return falla('Escriba el nombre del negocio.', 'negocio');
+    if (d.nombre.length < 3) return falla('Escriba su nombre.', 'nombre');
+    var t = d.telefono.replace(/\D/g, ''); if (t.length === 11 && t[0] === '1') t = t.slice(1);
+    if (!/^(809|829|849)\d{7}$/.test(t)) return falla('Escriba un WhatsApp de RD (809, 829 u 849).', 'telefono');
+    if (!/^[a-z0-9._-]{3,30}$/.test(d.usuario)) return falla('Usuario de 3 a 30 letras o números, sin espacios.', 'usuario');
+    if (d.clave.length < 8) return falla('La clave debe tener al menos 8 caracteres.', 'clave');
+    b.disabled = true; b.textContent = 'Creando su tienda…'; err.style.display = 'none';
+    fetch(URL_FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (r) {
+        if (!r || !r.ok) return falla((r && r.error) || 'No se pudo crear. Intente de nuevo.', r && r.campo);
+        ses = r;
+        document.getElementById('entrarTxt').textContent = r.entrar;
+        try { var h = new Date(r.prueba_hasta); document.getElementById('pruebaTxt').textContent = 'Prueba gratis hasta el ' + h.toLocaleDateString('es-DO', { day: 'numeric', month: 'long' }) + '.'; } catch (x) {}
+        document.getElementById('paso1').style.display = 'none'; document.getElementById('paso2').style.display = 'block';
+        document.getElementById('ir').focus();
+      })
+      .catch(function () { falla('Sin conexión. Intente de nuevo.'); });
+  });
+  document.getElementById('ir').addEventListener('click', function () {
+    if (!ses) return;
+    try { sessionStorage.removeItem('nx_sesion'); localStorage.removeItem('nx_sesion_persist'); localStorage.setItem('nx_org_tipo', 'tienda'); } catch (e) {}
+    if (ses.access_token) location.href = '/index.html#access_token=' + encodeURIComponent(ses.access_token) + '&refresh_token=' + encodeURIComponent(ses.refresh_token || '') + '&expires_in=' + (ses.expires_in || 3600);
+    else location.href = '/';
+  });
+})();
+</script>
+</body>
+</html>

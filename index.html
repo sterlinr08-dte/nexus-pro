@@ -10956,7 +10956,7 @@ async function doLoginAuth(user,pwd,err,btn){
   const lockT=parseInt(localStorage.getItem(lk+'_t')||'0');
   try{
     if(fails>=5&&Date.now()-lockT<300000){throw new Error('Cuenta bloqueada 5 min por intentos fallidos. Intenta más tarde.');}
-    const mail=String(user).toLowerCase()+'@nexus-pro.local';
+    const mail=String(user).toLowerCase()+(window.__nxMailDom||'@nexus-pro.local');
     const r=await fetch(API.url+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':API.key,'Content-Type':'application/json'},body:JSON.stringify({email:mail,password:pwd})});
     if(!r.ok){
       const nf=fails+1;localStorage.setItem(lk,nf);localStorage.setItem(lk+'_t',Date.now());
@@ -11104,6 +11104,7 @@ async function doLogin(){
 
   // Detectar formato usuario@organizacion
   let user=rawUser, baseNom='';
+  window.__nxMailDom='';
   if(rawUser.includes('@')){
     const partes=rawUser.split('@');
     user=partes[0];
@@ -11117,10 +11118,14 @@ async function doLogin(){
     try{
       const slug=(baseNom||'').trim().toLowerCase();
       if(slug){
-        const orgs=await fetch(`${SUPABASE_URL_FIXED}/rest/v1/organizaciones?slug=eq.${encodeURIComponent(slug)}&select=slug,nombre,dominio,activo,auth_url,auth_key,email_dominio`,
+        const orgs=await fetch(`${SUPABASE_URL_FIXED}/rest/v1/organizaciones?slug=eq.${encodeURIComponent(slug)}&select=slug,nombre,dominio,activo,activo_hasta,auth_url,auth_key,email_dominio`,
           {headers:{apikey:SUPABASE_KEY_FIXED,Authorization:'Bearer '+SUPABASE_KEY_FIXED}}).then(r=>r.ok?r.json():[]).catch(()=>[]);
         const org=orgs&&orgs[0];
         if(org&&org.activo===false){ err.textContent='La empresa "'+escHtml(baseNom)+'" está inactiva. Contacta al administrador.'; err.style.display='block'; return; }
+        // 15-nov-2026 (registro web): prueba o mensualidad vencida.
+        if(org&&org.activo_hasta&&new Date(org.activo_hasta).getTime()<Date.now()){ err.textContent='El acceso de "'+escHtml(org.nombre||baseNom)+'" venció. Escríbanos para activarlo.'; err.style.display='block'; return; }
+        // Tiendas de esta base con usuarios por empresa: el correo interno es usuario + email_dominio.
+        if(org&&!org.dominio&&org.email_dominio) window.__nxMailDom=String(org.email_dominio);
         if(org&&org.dominio){
           let dest=String(org.dominio).trim();
           if(!/^https?:\/\//i.test(dest)) dest='https://'+dest;

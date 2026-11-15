@@ -12622,7 +12622,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
       try { window.logAudit && window.logAudit('STAFF_CREADO', nombre.toUpperCase() + ' · usuario ' + j.login + ' · rol ' + j.rol, 'Usuarios'); } catch (e) {}
       cerrarModal('nxStaffM');
-      toast('ok', 'Usuario creado', j.login + ' (' + j.rol + ') — ya puede entrar con su clave');
+      toast('ok', 'Usuario creado', 'Entra como ' + (j.entrar || j.login) + ' (' + j.rol + ')');
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear usuario'; }
   };
