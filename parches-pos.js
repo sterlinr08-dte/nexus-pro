@@ -6188,7 +6188,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (Object.keys(byc).length) {
           const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0) + _totalPagadoCuotas;
           const cxcRestante = Math.max(0, Number(v.credito_monto || 0) - _totalPagadoCuotas);
-          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxcRestante)].filter(Boolean);
+          // 15-nov-2026: la anulación también devuelve el costo al inventario, por el mismo monto que cargó el asiento de la venta.
+          let costoVta = 0;
+          try { const av = await getAPI().get('pos_asientos', 'select=id&tipo=eq.venta&origen_id=eq.' + v.id) || []; if (av[0]) { const lc = await getAPI().get('pos_asiento_lineas', 'select=debito&cuenta_codigo=eq.5101&asiento_id=eq.' + av[0].id) || []; costoVta = lc.reduce((s2, l) => s2 + Number(l.debito || 0), 0); } } catch (e) {}
+          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxcRestante), lnCta(byc, '1104', 'Inventario de mercancías', costoVta, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoVta)].filter(Boolean);
           if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Anulación venta ' + (v.numero_factura || ('No. ' + (v.numero || ''))), 'anulacion', v.id, ln, v.numero_factura || String(v.numero || ''));
         }
       } catch (e) {}
@@ -6377,7 +6380,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // si se rebaja a cuenta del cliente (fiado), bajar su saldo
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
       // asiento contable inverso a la venta
-      try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
+      try { postAsientoDevolucion(dev, t, metodo, v, items); } catch (e) {}
       docGuardado('dev', { id: dev.id, numero: dev.numero || numero, total: t.total, cliente_id: v.cliente_id, nombre: v.cliente_nombre || '', imprimir: () => nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v })),
         waTxt: 'Hola' + (v.cliente_nombre ? ' ' + String(v.cliente_nombre).split(' ')[0] : '') + ', registramos tu devolución en ' + bizNom() + '.\nNota de crédito ' + (dev.numero || numero) + (ncfDev ? ' · NCF ' + ncfDev : '') + '\nFactura ' + (v.numero_factura || v.numero || '') + '\n\n' + docItemsTxt(lineas) + '\n\nTOTAL: ' + fmt(t.total) + ' · ' + metodo });
       cerrarModal('nxDevForm');
@@ -6385,12 +6388,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (imprimir) nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
     } catch (e) { toast('err', 'No se pudo emitir', String(e && e.message || e)); }
   };
-  async function postAsientoDevolucion(dev, t, metodo, venta) {
+  async function postAsientoDevolucion(dev, t, metodo, venta, items) {
     try {
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       // Reversa de la venta: Debe Ventas + ITBIS / Haber Caja o CxC
       const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : '1101';
-      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0))];
+      // 15-nov-2026: lo devuelto vuelve al inventario contable a su costo (mismo criterio que la venta: costo del artículo, sin servicios).
+      let costoDev = 0;
+      (items || []).forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costoDev += Number(p.costo || 0) * Number(it.cantidad || 0); });
+      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0)), lnCta(byc, '1104', 'Inventario de mercancías', costoDev, 0), lnCta(byc, '5101', 'Costo de mercancía vendida', 0, costoDev)];
       await postAsientoConcepto(dev.fecha, 'Devolución ' + (dev.numero || '') + ' (fact. ' + (venta.numero_factura || '#' + venta.numero) + ')', 'devolucion', dev.id, lineas, dev.numero);
     } catch (e) {}
   }
@@ -8392,10 +8398,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function isoMesIni() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA'); }
   async function cargarContabilidad() {
     _cuentas = await getAPI().get('pos_cuentas', 'select=*&order=codigo.asc') || [];
-    _asientos = await getAPI().get('pos_asientos', 'select=*&order=fecha.desc,created_at.desc&limit=600') || [];
+    // 15-nov-2026: se lee por páginas (antes se cortaba en 600 asientos y 5,000 líneas sin avisar).
+    const todo = async (tabla, q) => { let out = [], off = 0; for (let i = 0; i < 60; i++) { const r = await getAPI().get(tabla, q + '&limit=1000&offset=' + off) || []; out = out.concat(r); if (r.length < 1000) break; off += 1000; } return out; };
+    _asientos = await todo('pos_asientos', 'select=*&order=fecha.desc,created_at.desc,id.asc');
     // Unir las líneas en JS (no depende de la detección de relación de PostgREST)
     try {
-      const lns = await getAPI().get('pos_asiento_lineas', 'select=*&limit=5000') || [];
+      const lns = await todo('pos_asiento_lineas', 'select=*&order=id.asc');
       const byA = {}; lns.forEach(l => { (byA[l.asiento_id] = byA[l.asiento_id] || []).push(l); });
       _asientos.forEach(a => { a.lineas = byA[a.id] || []; });
     } catch (e) { _asientos.forEach(a => { a.lineas = a.lineas || []; }); }
@@ -8849,9 +8857,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try {
       let cu = _cuentas;
       if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
+      // 15-nov-2026 POS estándar: una empresa nueva recibe su plan de cuentas base en la primera venta (antes no se contabilizaba nada hasta crearlo a mano).
+      if (!cu.length) { try { cu = await getAPI().post('pos_cuentas', PLAN_BASE.map(p => ({ codigo: p[0], nombre: p[1], tipo: p[2], naturaleza: p[3] }))) || []; _cuentas = cu; } catch (e) { cu = []; } }
       if (!cu.length) return; // sin plan de cuentas: no se contabiliza
       const byc = {}; cu.forEach(x => byc[x.codigo] = x);
-      const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: Math.round(d), credito: Math.round(h) }; };
+      const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (r2(d) === 0 && r2(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: r2(d), credito: r2(h) }; };
       // A5: la nota de crédito NO es efectivo — no debe entrar a Caja (1101). Si la org tiene
       // la cuenta 2105 (Notas de crédito por aplicar) usa esa; si no existe (plan de cuentas
       // viejo, sin recrear), cae al comportamiento anterior (todo a Caja) para no descuadrar.
@@ -8876,7 +8886,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
     const byc = {}; cu.forEach(x => byc[x.codigo] = x); return byc;
   }
-  function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: Math.round(d), credito: Math.round(h) }; }
+  function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (r2(d) === 0 && r2(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: r2(d), credito: r2(h) }; }
   // REGLAMENTO DE CONTABILIDAD: motor ÚNICO por el que pasa TODO asiento (automático o manual).
   // (1) Ningún asiento se guarda si Debe ≠ Haber — antes solo el asiento manual lo validaba; los
   //     automáticos posteaban sus líneas a ciegas, así que un error de redondeo/cálculo dejaba la
@@ -8888,8 +8898,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function guardarAsientoBalanceado(cab, lineas) {
     lineas = (lineas || []).filter(Boolean); if (lineas.length < 2) return null;
     const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
-    if (Math.round(td) !== Math.round(th)) {
-      try { (window.logAudit || function () {})('ASIENTO_DESCUADRADO', (cab && cab.concepto || 'Asiento') + ' · Debe ' + Math.round(td) + ' ≠ Haber ' + Math.round(th) + ' — no se registró', 'Contabilidad'); } catch (e) {}
+    if (Math.abs(r2(td) - r2(th)) > 0.01) {
+      try { (window.logAudit || function () {})('ASIENTO_DESCUADRADO', (cab && cab.concepto || 'Asiento') + ' · Debe ' + r2(td) + ' ≠ Haber ' + r2(th) + ' — no se registró', 'Contabilidad'); } catch (e) {}
       return null;
     }
     let aid = null;
