@@ -39,7 +39,7 @@ function claveOk(c: unknown) {
   return typeof c === "string" && c.length >= 6 && c.length <= 72;
 }
 
-type Admin = { authId: string; usuarioId: string; orgId: string; nombre: string };
+type Admin = { authId: string; usuarioId: string; orgId: string; nombre: string; dom: string; porEmpresa: boolean };
 
 async function adminQueLlama(req: Request): Promise<Admin | null> {
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -50,7 +50,10 @@ async function adminQueLlama(req: Request): Promise<Admin | null> {
   if (!p || p.rol !== "admin" || p.activo === false || !p.usuario_sistema_id) return null;
   const { data: us } = await db.from("usuarios_sistema").select("organizacion_id,activo").eq("id", p.usuario_sistema_id).maybeSingle();
   if (!us?.organizacion_id || us.activo === false) return null;
-  return { authId: u.user.id, usuarioId: p.usuario_sistema_id, orgId: us.organizacion_id, nombre: p.nom || "Administrador" };
+  // 15-nov-2026 (registro web): las tiendas con `email_dominio` y sin app propia tienen usuarios por empresa.
+  const { data: org } = await db.from("organizaciones").select("email_dominio,dominio").eq("id", us.organizacion_id).maybeSingle();
+  const porEmpresa = !!(org?.email_dominio && !org?.dominio);
+  return { authId: u.user.id, usuarioId: p.usuario_sistema_id, orgId: us.organizacion_id, nombre: p.nom || "Administrador", dom: porEmpresa ? String(org!.email_dominio) : DOMINIO, porEmpresa };
 }
 
 // Usuario de la MISMA organización del admin (nunca de otra).
@@ -65,9 +68,9 @@ async function perfilDe(usuarioId: string) {
   return data;
 }
 
-async function crearAuthYPerfil(us: { id: string; nom: string; login: string; rol: string; activo: boolean }, clave: string) {
+async function crearAuthYPerfil(us: { id: string; nom: string; login: string; rol: string; activo: boolean }, clave: string, dom: string = DOMINIO) {
   const { data: nuevo, error: eAuth } = await db.auth.admin.createUser({
-    email: us.login + DOMINIO,
+    email: us.login + dom,
     password: clave,
     email_confirm: true,
     ...(us.activo === false ? { ban_duration: BLOQUEO } : {}),
@@ -126,13 +129,15 @@ Deno.serve(async (req) => {
       if (!loginOk(lg)) return fallo("El usuario debe tener de 3 a 40 letras o números, sin espacios");
       if (!claveOk(body?.clave)) return fallo("La contraseña debe tener al menos 6 caracteres");
       if (!ROLES.includes(rol)) return fallo("Rol no válido");
-      const { data: existe } = await db.from("usuarios_sistema").select("id").eq("login", lg).limit(1);
+      let qx = db.from("usuarios_sistema").select("id").eq("login", lg);
+      if (adm.porEmpresa) qx = qx.eq("organizacion_id", adm.orgId);
+      const { data: existe } = await qx.limit(1);
       if (existe && existe.length) return fallo("Ese usuario ya existe, elige otro", 409);
       const { data: usNuevo, error: eUs } = await db.from("usuarios_sistema")
         .insert({ nom, cargo: cargo || null, login: lg, rol, activo: true, organizacion_id: adm.orgId, creado_por: adm.usuarioId })
         .select("id,nom,login,rol,activo,cargo,organizacion_id,created_at").single();
       if (eUs || !usNuevo) return fallo("No se pudo guardar el usuario: " + (eUs?.message || ""), 500);
-      const r = await crearAuthYPerfil(usNuevo, String(body.clave));
+      const r = await crearAuthYPerfil(usNuevo, String(body.clave), adm.dom);
       if ("error" in r) {
         await db.from("usuarios_sistema").delete().eq("id", usNuevo.id);
         return fallo(r.error as string, 500);
@@ -155,7 +160,7 @@ Deno.serve(async (req) => {
       const lg = limpiarLogin(us.login);
       if (!loginOk(lg)) return fallo("Su usuario tiene espacios o letras raras: cámbialo primero");
       if (lg !== us.login) await db.from("usuarios_sistema").update({ login: lg }).eq("id", us.id);
-      const r = await crearAuthYPerfil({ ...us, login: lg }, String(body.clave));
+      const r = await crearAuthYPerfil({ ...us, login: lg }, String(body.clave), adm.dom);
       if ("error" in r) return fallo(r.error as string, 500);
       // La clave vieja (hash sin sal) deja de servir: una sola contraseña.
       await db.from("usuarios_sistema").update({ pwd: null, actualizado_por: adm.usuarioId, updated_at: new Date().toISOString() }).eq("id", us.id);
@@ -197,10 +202,12 @@ Deno.serve(async (req) => {
       const lg = limpiarLogin(body?.login);
       if (!loginOk(lg)) return fallo("El usuario debe tener de 3 a 40 letras o números, sin espacios");
       if (lg === us.login) return json({ ok: true });
-      const { data: existe } = await db.from("usuarios_sistema").select("id").eq("login", lg).neq("id", us.id).limit(1);
+      let qy = db.from("usuarios_sistema").select("id").eq("login", lg).neq("id", us.id);
+      if (adm.porEmpresa) qy = qy.eq("organizacion_id", adm.orgId);
+      const { data: existe } = await qy.limit(1);
       if (existe && existe.length) return fallo("Ese usuario ya existe, elige otro", 409);
       if (perfil) {
-        const { error: eA } = await db.auth.admin.updateUserById(perfil.id, { email: lg + DOMINIO, email_confirm: true });
+        const { error: eA } = await db.auth.admin.updateUserById(perfil.id, { email: lg + adm.dom, email_confirm: true });
         if (eA) return fallo("No se pudo cambiar el usuario: " + eA.message, 500);
         await db.from("profiles").update({ login: lg }).eq("id", perfil.id);
       }
