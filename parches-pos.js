@@ -5078,6 +5078,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxPf .savemenu button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer;font-family:inherit}
 .nxPf .savemenu button:hover{background:var(--pf-bg)}
 .nxPf .footbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;flex:1}
+.nxPf .footbar .ab{padding:0 16px;white-space:nowrap}
+.nxPf .footbar .pfynuevo{background:var(--pf-panel);color:var(--pf-green);border:1.5px solid var(--pf-green);height:48px}
+.nxPf .footbar .pfguardar{height:54px;font-size:14px;padding:0 22px}
+.nxPf .footbar .ab:disabled{opacity:.6;cursor:default}
+@media(max-width:640px){.nxPf .footbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nxPf .footbar .foothint{grid-column:1/-1;order:0;justify-content:flex-start;min-width:0}.nxPf .footbar .pfguardar{grid-column:1/-1;order:1}.nxPf .footbar>.ab:first-child{order:2;height:48px}.nxPf .footbar .pfynuevo{order:3}}
 .nxPf .foothint{font-size:10.5px;color:var(--pf-txt3);font-weight:700;display:flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:120px}
 .nxPf textarea.txa{width:100%;min-height:70px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-panel);padding:9px 11px;font:inherit;font-size:12.5px;color:var(--pf-txt);outline:0;resize:vertical;box-sizing:border-box}
 .nxPf textarea.txa:focus{border-color:var(--pf-blue);box-shadow:0 0 0 3px var(--pf-blue-l)}
@@ -5512,13 +5517,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="footbar">
             <button class="ab" type="button" style="background:var(--pf-panel);color:var(--pf-txt2);border:1.5px solid var(--pf-line);flex:0 0 auto" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-x"></i> Cancelar</button>
             <div class="foothint"><i class="ti ti-info-circle"></i> Los niveles nuevos se crean al Guardar</div>
-            <div class="savewrap" style="flex:0 0 auto">
-              <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${prodId}')"><i class="ti ti-device-floppy"></i> Guardar artículo</button>
-              <button class="ab g1 savechev" type="button" onclick="event.stopPropagation();window.nxPfSaveMenuToggle()" title="Más opciones de guardado" aria-label="Más opciones de guardado"><i class="ti ti-chevron-down"></i></button>
-              <div class="savemenu" id="nxPfSaveMenu">
-                <button type="button" onclick="window.nxPfGuardarYNuevo('${prodId}')"><i class="ti ti-plus"></i> Guardar y Nuevo</button>
-              </div>
-            </div>
+            ${/* 16-nov-2026 (dueño: «¿por qué el botón verde tiene un vacío?»): la flechita sin texto se cambió por un botón con su nombre. */ ''}
+            <button class="ab pfynuevo" id="nxPfBtnYNuevo" type="button" onclick="window.nxPfGuardarYNuevo('${prodId}')"><i class="ti ti-plus"></i> Guardar y nuevo</button>
+            <button class="ab g1 pfguardar" type="button" onclick="window.nxPosGuardarProd('${prodId}')"><i class="ti ti-device-floppy"></i> Guardar artículo</button>
           </div>
         </div>
       </div>`;
@@ -5856,7 +5857,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const modal = document.getElementById('nxPosProd'); if (!modal) return;
     const b1 = modal.querySelector('.footbar .ab.g1:not(.savechev)');
     const chev = modal.querySelector('.footbar .savechev');
-    const menuBtn = modal.querySelector('#nxPfSaveMenu button');
+    const menuBtn = modal.querySelector('#nxPfBtnYNuevo');
     if (b1) { b1.disabled = on; b1.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-device-floppy"></i> Guardar artículo'; }
     if (chev) chev.disabled = on;
     if (menuBtn) menuBtn.disabled = on;
