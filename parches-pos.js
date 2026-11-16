@@ -9960,7 +9960,150 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function prodCosto(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.costo || 0) : 0; }
   function ventasRepRango() { return (_repVentas || []).filter(v => { const f = repFecha(v); return (!_repDesde || f >= _repDesde) && (!_repHasta || f <= _repHasta); }); }
 
+  // ══════════════ REPORTES DE INVENTARIO (16-nov-2026, pedido del dueño: los 5 principales de Infoplus) ══════════════
+  // Resumen valorizado · Existencia baja · Movimientos (fichero/kardex) · Sin movimiento · Ajustes. Solo LEEN: existencia y
+  // costo salen de la ficha del artículo; los movimientos, del kardex (pos_inv_movimientos). Nada se recalcula ni se guarda.
+  let _riVista = '', _ri = { tab: 'resumen', alm: '', cat: '', marca: '', orden: 'nombre', pos: true, desde: '', hasta: '', tipos: '', dias: 30, q: '' }, _riMovs = null, _riCargando = false;
+  const RI_TABS = [['resumen', 'Resumen', 'ti-list-details'], ['baja', 'Existencia baja', 'ti-alert-triangle'], ['movs', 'Movimientos', 'ti-arrows-exchange'], ['sinmov', 'Sin movimiento', 'ti-zzz'], ['ajustes', 'Ajustes', 'ti-adjustments']];
+  const fmt2d = n => 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function riStock(p) { return _ri.alm ? stockEnAlm(p.id, _ri.alm) : Number(p.stock || 0); }
+  function riProds() {
+    const q = (_ri.q || '').trim().toLowerCase();
+    return invProductosStock().filter(p => p.activo !== false
+      && (!_ri.cat || String(p.categoria_id || '') === (_ri.cat === '__sin__' ? '' : _ri.cat))
+      && (!_ri.marca || String(p.marca || '') === _ri.marca)
+      && (!q || ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '')).toLowerCase().includes(q)));
+  }
+  function riOrdenar(l) {
+    const k = _ri.orden;
+    return l.slice().sort((a, b) => k === 'codigo' ? String(a.codigo || '').localeCompare(String(b.codigo || ''), 'es', { numeric: true })
+      : k === 'existencia' ? riStock(b) - riStock(a) : k === 'valor' ? riStock(b) * Number(b.costo || 0) - riStock(a) * Number(a.costo || 0)
+        : String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
+  }
+  // Cada reporte devuelve { titulo, cols:[{t, r?}], grupos:[{nombre, filas:[[…]], sub?:[…]}], total?:[…], nota }
+  function riDatos() {
+    const t = _ri.tab;
+    if (t === 'resumen' || t === 'sinmov') {
+      let l = riProds();
+      if (t === 'resumen' && _ri.pos) l = l.filter(p => riStock(p) > 0);
+      if (t === 'sinmov') { const conMov = new Set((_riMovs || []).map(m => String(m.producto_id))); l = l.filter(p => riStock(p) > 0 && !conMov.has(String(p.id))); }
+      const porCat = {}; riOrdenar(l).forEach(p => { const c = catNombre(p.categoria_id) || 'Sin categoría'; (porCat[c] = porCat[c] || []).push(p); });
+      let tu = 0, tv = 0;
+      const grupos = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'es')).map(c => {
+        let u = 0, v = 0;
+        const filas = porCat[c].map(p => { const s = riStock(p), ct = r2(s * Number(p.costo || 0)); u += s; v += ct; return [p.codigo || '', p.referencia || '', p.nombre || '', fmtN(s), fmt2d(p.costo), fmt2d(ct)]; });
+        tu += u; tv += v; return { nombre: c, filas: filas, sub: ['', '', 'Subtotal ' + c, fmtN(u), '', fmt2d(v)] };
+      });
+      return { titulo: t === 'resumen' ? 'Resumen de inventario' : 'Artículos sin movimiento · últimos ' + _ri.dias + ' días', cols: [{ t: 'Código' }, { t: 'Referencia' }, { t: 'Descripción' }, { t: 'Existencia', r: 1 }, { t: t === 'resumen' ? 'Costo actual' : 'Costo unitario', r: 1 }, { t: 'Costo total', r: 1 }],
+        grupos: grupos, total: ['', '', 'TOTAL GENERAL', fmtN(tu), '', fmt2d(tv)], kpis: [['Artículos', fmtN(l.length)], ['Unidades', fmtN(tu)], [t === 'resumen' ? 'Valor a costo' : 'Dinero parado', fmt2d(tv)]],
+        nota: t === 'sinmov' ? 'Con existencia y sin ventas, compras ni ajustes en el período.' : '' };
+    }
+    if (t === 'baja') {
+      const l = riOrdenar(riProds().filter(p => Number(p.stock_min || 0) > 0 && riStock(p) <= Number(p.stock_min || 0)));
+      const filas = l.map(p => { const s = riStock(p), m = Number(p.stock_min || 0); return [p.codigo || '', p.nombre || '', p.referencia || '', fmtN(s), fmtN(m), fmtN(Math.max(0, m - s)), catNombre(p.categoria_id) || '']; });
+      return { titulo: 'Existencia baja', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Referencia' }, { t: 'Existencia', r: 1 }, { t: 'Mínimo', r: 1 }, { t: 'Falta', r: 1 }, { t: 'Categoría' }], grupos: [{ nombre: '', filas: filas }],
+        kpis: [['En o bajo el mínimo', fmtN(l.length)], ['Agotados', fmtN(l.filter(p => riStock(p) <= 0).length)]], nota: 'Artículos con mínimo definido cuya existencia está en el mínimo o por debajo.' };
+    }
+    // Movimientos y Ajustes: del kardex
+    const pm = {}; (_prods || []).forEach(p => { pm[String(p.id)] = p; });
+    let movs = (_riMovs || []).filter(m => { const p = pm[String(m.producto_id)]; if (_ri.cat && (!p || String(p.categoria_id || '') !== (_ri.cat === '__sin__' ? '' : _ri.cat))) return false; if (_ri.marca && (!p || String(p.marca || '') !== _ri.marca)) return false;
+      const q = (_ri.q || '').trim().toLowerCase(); return !q || ((m.producto_nombre || '') + ' ' + (m.referencia || '') + ' ' + ((p && p.codigo) || '')).toLowerCase().includes(q); });
+    if (t === 'movs') {
+      if (_ri.tipos) movs = movs.filter(m => m.tipo === _ri.tipos);
+      let en = 0, sa = 0;
+      const filas = movs.map(m => { const c = Number(m.cantidad || 0); if (c > 0) en += c; else sa += -c; return [fechaDMY(m.fecha), m.producto_nombre || '', m.referencia || '', (MOV_LBL[m.tipo] || [m.tipo])[0], m.motivo || '', m.created_by_name || '', c > 0 ? fmtN(c) : '', c < 0 ? fmtN(-c) : '', fmtN(m.stock_nuevo)]; });
+      return { titulo: 'Movimientos de inventario', cols: [{ t: 'Fecha' }, { t: 'Artículo' }, { t: 'Documento' }, { t: 'Movimiento' }, { t: 'Descripción' }, { t: 'Usuario' }, { t: 'Entrada', r: 1 }, { t: 'Salida', r: 1 }, { t: 'Existencia', r: 1 }],
+        grupos: [{ nombre: '', filas: filas }], total: ['', '', '', '', '', 'TOTAL', fmtN(en), fmtN(sa), ''], kpis: [['Movimientos', fmtN(movs.length)], ['Entradas', fmtN(en)], ['Salidas', fmtN(sa)]], nota: '' };
+    }
+    // ajustes
+    const grp = { 'Entrada de mercancía': [], 'Inventario inicial': [], 'Salida de mercancía': [] }; const tot = {};
+    movs.filter(m => m.tipo === 'ajuste' || m.tipo === 'apertura').forEach(m => {
+      const c = Number(m.cantidad || 0), k = m.tipo === 'apertura' ? 'Inventario inicial' : c >= 0 ? 'Entrada de mercancía' : 'Salida de mercancía';
+      const p = pm[String(m.producto_id)], val = r2(Math.abs(c) * Number((p && p.costo) || 0)); tot[k] = (tot[k] || 0) + val;
+      grp[k].push([fechaDMY(m.fecha), m.producto_nombre || '', m.referencia || '', m.motivo || '', m.created_by_name || '', (c > 0 ? '+' : '') + fmtN(c), fmt2d(val)]);
+    });
+    const grupos = Object.keys(grp).filter(k => grp[k].length).map(k => ({ nombre: k, filas: grp[k], sub: ['', '', '', '', 'Subtotal', fmtN(grp[k].length) + ' mov.', fmt2d(tot[k])] }));
+    return { titulo: 'Ajustes de inventario', cols: [{ t: 'Fecha' }, { t: 'Artículo' }, { t: 'Documento' }, { t: 'Motivo' }, { t: 'Usuario' }, { t: 'Cantidad', r: 1 }, { t: 'Valor a costo', r: 1 }], grupos: grupos,
+      kpis: [['Entradas', fmt2d(tot['Entrada de mercancía'] || 0)], ['Inventario inicial', fmt2d(tot['Inventario inicial'] || 0)], ['Salidas', fmt2d(tot['Salida de mercancía'] || 0)]], nota: 'El valor usa el costo actual del artículo.' };
+  }
+  function riNecesitaMovs() { return _ri.tab === 'movs' || _ri.tab === 'sinmov' || _ri.tab === 'ajustes'; }
+  async function riCargar() {
+    if (!_ri.hasta) _ri.hasta = isoHoy(); if (!_ri.desde) _ri.desde = isoMesIni();
+    if (!Object.keys(_stockAlmRows || {}).length && _almacenes.length) { try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) {} }
+    if (!riNecesitaMovs()) { _riMovs = null; return; }
+    // El día es el de RD: de las 00:00 a las 23:59:59 locales, convertido a la hora del servidor.
+    let d0, d1;
+    if (_ri.tab === 'sinmov') { const h = new Date(); d0 = new Date(h.getFullYear(), h.getMonth(), h.getDate() - Number(_ri.dias || 30)); d1 = new Date(h.getFullYear(), h.getMonth(), h.getDate() + 1); }
+    else { const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number); d0 = new Date(a[0], a[1] - 1, a[2]); d1 = new Date(b[0], b[1] - 1, b[2] + 1); }
+    const sel = _ri.tab === 'sinmov' ? 'producto_id' : '*';
+    _riMovs = await getTodasPOS('pos_inv_movimientos', 'select=' + sel + '&fecha=gte.' + encodeURIComponent(d0.toISOString()) + '&fecha=lt.' + encodeURIComponent(d1.toISOString()) + '&order=fecha.desc,id.asc');
+  }
+  async function riRefrescar() {
+    _riCargando = true; let v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    try { await riCargar(); } catch (e) { _riMovs = null; }
+    _riCargando = false; v = document.getElementById('v-pos'); if (v && _posTab === 'reportes' && _riVista === 'inv') renderPOS(v);
+  }
+  window.nxRepInvAbrir = function () { _riVista = 'inv'; riRefrescar(); };
+  window.nxRepInvCerrar = function () { _riVista = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRepInvSet = function (k, val) {
+    _ri[k] = k === 'pos' ? !!val : k === 'dias' ? Number(val) || 30 : val;
+    if (k === 'tab' || k === 'desde' || k === 'hasta' || k === 'dias') { riRefrescar(); return; }
+    const c = document.getElementById('riCuerpo'); if (c) c.innerHTML = riCuerpoHTML(); else { const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+  };
+  function riTablaHTML(d, paraImprimir) {
+    const th = d.cols.map(c => `<th${c.r ? ' style="text-align:right"' : ''}>${esc(c.t)}</th>`).join('');
+    const tr = (f, cls) => `<tr${cls ? ' class="' + cls + '"' : ''}>${f.map((x, i) => `<td${d.cols[i] && d.cols[i].r ? ' style="text-align:right;white-space:nowrap"' : ''}>${esc(x)}</td>`).join('')}</tr>`;
+    let n = 0; const cuerpo = d.grupos.map(g => { n += g.filas.length; return (g.nombre ? `<tr class="rig"><td colspan="${d.cols.length}">${esc(g.nombre)}</td></tr>` : '') + g.filas.map(f => tr(f)).join('') + (g.sub ? tr(g.sub, 'ris') : ''); }).join('');
+    if (!n) return '<div class="emptyrow" style="padding:26px 10px;text-align:center">' + (_riMovs === null && riNecesitaMovs() && !paraImprimir ? 'No se pudieron leer los movimientos. Toque el reporte otra vez.' : 'Nada que mostrar con estos filtros.') + '</div>';
+    return `<table class="ritab"><thead><tr>${th}</tr></thead><tbody>${cuerpo}${d.total ? tr(d.total, 'rit') : ''}</tbody></table>`;
+  }
+  function riCuerpoHTML() {
+    if (_riCargando) return '<div class="emptyrow" style="padding:30px;text-align:center"><i class="ti ti-loader-2 nxSpin"></i> Cargando…</div>';
+    const d = riDatos();
+    return `<div class="kpirow">${(d.kpis || []).map(k => kpiPf(k[0], k[1], '')).join('')}</div>${d.nota ? `<div style="font-size:11.5px;color:var(--pf-txt3);margin:0 2px 8px">${esc(d.nota)}</div>` : ''}<div class="nxRepCard" style="padding:0;overflow:hidden"><div class="tw" style="overflow-x:auto">${riTablaHTML(d)}</div></div>`;
+  }
+  function renderRepInv() {
+    nxPfEnsureCSS();
+    if (!document.getElementById('nxRiCSS')) { const st = document.createElement('style'); st.id = 'nxRiCSS'; st.textContent = '.nxRi .ritabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.nxRi .ritabs::-webkit-scrollbar{display:none}.nxRi .ritabs button{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit}.nxRi .ritabs button.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}.nxRi .rifil{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.nxRi .rifil label{display:grid;gap:3px;font-size:11.5px;font-weight:600;color:var(--pf-txt3)}.nxRi .rifil :is(select,input:not([type=checkbox])){height:48px;font-size:16px;border:1.5px solid var(--pf-line);border-radius:11px;padding:0 10px;background:var(--pf-panel);color:var(--pf-txt);width:100%;min-width:0;font-family:inherit}.nxRi .rifil .richk{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border:1.5px solid var(--pf-line);border-radius:11px;background:var(--pf-panel);font-size:13px;color:var(--pf-txt);align-self:end}.nxRi .rifil .richk input{width:20px;height:20px}.nxRi .ritab{width:100%;border-collapse:collapse;font-size:12.5px}.nxRi .ritab th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--pf-txt3);padding:10px;border-bottom:1.5px solid var(--pf-line);white-space:nowrap;background:var(--pf-bg)}.nxRi .ritab td{padding:9px 10px;border-bottom:1px solid var(--pf-line);color:var(--pf-txt)}.nxRi .ritab .rig td{font-weight:800;background:var(--pf-blue-l);color:var(--pf-blue-d)}.nxRi .ritab .ris td{font-weight:700;background:var(--pf-bg)}.nxRi .ritab .rit td{font-weight:800;border-top:2px solid var(--pf-txt);font-size:13px}.nxRi .riacc{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.nxRi .riacc button{min-height:44px}'; document.head.appendChild(st); }
+    const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+    const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+    const f = [];
+    if ((t === 'resumen' || t === 'baja' || t === 'sinmov') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
+    f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
+    if (marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
+    if (t === 'resumen' || t === 'baja' || t === 'sinmov') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
+    if (t === 'movs' || t === 'ajustes') f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    if (t === 'movs') f.push(`<label>Movimiento${sel('tipos', [['', 'Todos']].concat(Object.keys(MOV_LBL).map(k => [k, MOV_LBL[k][0]])), _ri.tipos)}</label>`);
+    if (t === 'sinmov') f.push(`<label>Sin movimiento en${sel('dias', [[30, '30 días'], [60, '60 días'], [90, '90 días'], [180, '6 meses']], _ri.dias)}</label>`);
+    f.push(`<label>Buscar<input class="no-upper" value="${esc(_ri.q)}" placeholder="Nombre o código" oninput="window.nxRepInvSet('q',this.value)"></label>`);
+    if (t === 'resumen') f.push(`<label class="richk"><input type="checkbox"${_ri.pos ? ' checked' : ''} onchange="window.nxRepInvSet('pos',this.checked)"> Solo con existencia</label>`);
+    return `<div class="nxPf nxRepWrap nxRi">
+      <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
+      <div class="ritabs" role="tablist">${RI_TABS.map(x => `<button type="button" role="tab" aria-selected="${t === x[0]}" class="${t === x[0] ? 'on' : ''}" onclick="window.nxRepInvSet('tab','${x[0]}')"><i class="ti ${x[2]}"></i> ${x[1]}</button>`).join('')}</div>
+      <div class="rifil">${f.join('')}</div>
+      <div id="riCuerpo">${riCuerpoHTML()}</div></div>`;
+  }
+  window.nxRepInvCSV = function () {
+    const d = riDatos(); const filas = [d.cols.map(c => c.t)];
+    d.grupos.forEach(g => { if (g.nombre) filas.push([g.nombre]); g.filas.forEach(x => filas.push(x)); if (g.sub) filas.push(g.sub); }); if (d.total) filas.push(d.total);
+    if (filas.length < 2) { toast('warn', 'Nada que exportar'); return; }
+    const csv = filas.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })); a.download = 'inventario_' + _ri.tab + '_' + isoHoy() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+  window.nxRepInvImprimir = function () {
+    const d = riDatos(), e = empInfo();
+    const filtros = [_ri.alm ? 'Almacén: ' + almNombre(_ri.alm) : '', _ri.cat ? 'Categoría: ' + (_ri.cat === '__sin__' ? 'Sin categoría' : catNombre(_ri.cat)) : '', _ri.marca ? 'Marca: ' + _ri.marca : '', (_ri.tab === 'movs' || _ri.tab === 'ajustes') ? 'Del ' + fechaDMY(_ri.desde) + ' al ' + fechaDMY(_ri.hasta) : ''].filter(Boolean).join(' · ');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.titulo)}</title>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:980px;margin:0 auto;padding:20px;font-size:11.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.rig td{font-weight:800;background:#eef2ff}.ris td{font-weight:700;background:#f6f6f6}.rit td{font-weight:800;border-top:2px solid #111;font-size:12.5px}.bar{position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px}.bar button{border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}@media print{.bar{display:none}body{padding:0}}</style></head>
+      <body><div class="bar"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff">Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e">Imprimir</button></div>
+      <h1>${esc(e.nom)}</h1><div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+      <div class="c" style="margin-top:8px"><b>${esc(d.titulo.toUpperCase())}</b></div><div class="c muted">${esc(filtros)}${filtros ? ' · ' : ''}Generado: ${fechaDMY(new Date().toISOString())}</div>
+      ${riTablaHTML(d, true)}</body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+
   function renderReportes() {
+    if (_riVista === 'inv') return renderRepInv();
     nxPfEnsureCSS();
     const list = ventasRepRango();
     let totVta = 0, totItbis = 0, ganancia = 0, costoTot = 0;
@@ -10007,6 +10150,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div style="font-size:11px;color:var(--pf-txt3);align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end;flex-wrap:wrap">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
+          <button class="btn bsm bc1" type="button" onclick="window.nxRepInvAbrir()"><i class="ti ti-packages"></i> Reportes de inventario</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRepImei()"><i class="ti ti-device-mobile-message"></i> Historial de IMEI</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
         </div>
