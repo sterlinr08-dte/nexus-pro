@@ -171,3 +171,5 @@
 - Demo 6048 (PR #487): arreglos de la prueba de Muse (devoluciones visibles, asiento NC a 2105, fechas, Inicio, menú, carga).
 - Decisión: **Compras sin paso «Recibir»** (opción A): la mercancía entra al guardar.
 - Pendiente: borrar tienda de prueba `colmado-prueba-claude`; resumen contable de la demo (punto 10); proveedores de ejemplo en `demo_reiniciar()`.
+- 6049 (PR #489): correcciones de Boutique Aura — numeración real del servidor (`nextSeq` con PATCH condicionado), compra de contado sale de caja, inventario inicial/ajustes asentados (no retroactivo), categoría desde la ficha. Datos viejos de Boutique Aura sin tocar (necesita autorización).
+- Siguiente (dueño, 16-nov): variantes talla/color; 5 reportes de inventario de Infoplus (Resumen valorizado, Alta/Baja existencia, Fichero/Kardex, Sin movimiento, Ajustes; hay 19 más); e-CF allowlist antes de anunciar el registro; demo con proveedores y ventas; contabilidad Bayol.
