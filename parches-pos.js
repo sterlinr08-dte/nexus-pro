@@ -1069,11 +1069,19 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     try {
       const s = (_secuencias || []).find(x => x.tipo === tipo && x.activo !== false);
       if (!s) return null;
-      const num = Number(s.proximo || 1);
-      const fmt = (s.prefijo || '') + String(num).padStart(Number(s.longitud || 5), '0');
-      await getAPI().patch('pos_secuencias', 'id=eq.' + s.id, { proximo: num + 1 });
-      s.proximo = num + 1;
-      return fmt;
+      // 16-nov-2026 (Boutique Aura: venta y compra con el mismo AS-00001): el servidor también numera (la compra v2 crea su
+      // asiento allá), así que el contador en memoria quedaba viejo. Ahora se lee el número REAL y se reserva solo si nadie lo
+      // tomó en el medio (PATCH condicionado a proximo=eq.num); si otro lo tomó, se reintenta con el siguiente.
+      for (let intento = 0; intento < 5; intento++) {
+        let num = Number(s.proximo || 1);
+        try { const f = await getAPI().get('pos_secuencias', 'select=proximo&id=eq.' + s.id); if (f && f[0] && f[0].proximo != null) num = Math.max(1, Number(f[0].proximo)); } catch (e) {}
+        const r = await getAPI().patch('pos_secuencias', 'id=eq.' + s.id + '&proximo=eq.' + num, { proximo: num + 1 });
+        if (Array.isArray(r) && !r.length) { s.proximo = num + 1; continue; } // otro la tomó: probar de nuevo
+        s.proximo = num + 1;
+        return (s.prefijo || '') + String(num).padStart(Number(s.longitud || 5), '0');
+      }
+      // Sin confirmación tras 5 intentos: se usa el número leído (comportamiento anterior) para no frenar la venta.
+      const n2 = Number(s.proximo || 1); s.proximo = n2 + 1; return (s.prefijo || '') + String(n2).padStart(Number(s.longitud || 5), '0');
     } catch (e) { return null; }
   }
 
@@ -5332,7 +5340,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                   <div class="infobasica">
                     <div class="cols">
                       <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
-                      <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                      <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat" onchange="if(this.value==='__nueva__')window.nxPfCatNueva(this)"><option value="">— Sin categoría —</option>${catOpts}<option value="__nueva__">+ Nueva categoría…</option></select><i class="ti ti-chevron-down chev"></i></div></div>
                       <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Ej: 1004 (opcional)"></div></div>
                       <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
                       <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
@@ -6136,6 +6144,19 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
       </div>`;
     document.body.appendChild(ov);
+  };
+  // 16-nov-2026 (Boutique Aura: «no se puede crear categoría»): se crea desde la misma ficha del artículo y queda elegida.
+  window.nxPfCatNueva = async function (sel) {
+    const nom = (prompt('Nombre de la nueva categoría (ej.: Blusas, Pantalones, Accesorios)') || '').trim();
+    if (!nom) { sel.value = ''; return; }
+    try {
+      const r = await getAPI().post('pos_categorias', { nombre: nom, orden: _cats.length });
+      const c = r && r[0]; if (!c) throw new Error('sin respuesta');
+      _cats.push(c);
+      const op = document.createElement('option'); op.value = c.id; op.textContent = nom;
+      sel.insertBefore(op, sel.querySelector('option[value="__nueva__"]')); sel.value = c.id;
+      toast('ok', 'Categoría creada', nom);
+    } catch (e) { sel.value = ''; toast('err', 'No se pudo crear la categoría', String(e && e.message || e)); }
   };
   window.nxPosAddCat = async function () {
     const nom = (val('posCatNom') || '').trim(); if (!nom) { toast('err', 'Escribe el nombre'); return; }
@@ -7953,6 +7974,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const compra = core && core.compra; if (!core || core.ok !== true || !compra) throw new Error('COMPRA_ATOMICA_SIN_CONFIRMACION');
       _compraOperacionId = null;
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + totalProv; }
+      // 16-nov-2026 (Boutique Aura: la caja ignoraba la compra): una compra de CONTADO sale de la caja abierta, igual que en la
+      // contabilidad (Haber Caja). Sin caja abierta no se registra movimiento (se pagó por fuera de la caja).
+      if (!aCred && _caja && _caja.id && totalProv > 0) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'salida', monto: r2(totalProv * (v2 && mon !== 'DOP' ? tasa : 1)), concepto: 'Compra No. ' + (compra.numero || '') + (provNom ? ' · ' + provNom : ''), fecha: new Date().toISOString(), created_by_name: nomAdmin() }); } catch (e) {} }
       if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
       _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
@@ -8651,7 +8675,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function ctaUltMov() {
     const list = (_asientos || []).slice(0, 6);
     if (!list.length) return '<div class="emptyrow">Sin movimientos registrados.</div>';
-    return list.map(a => { const ls = asLineas(a); const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0); const orig = (a.tipo && a.tipo !== 'manual') ? a.tipo : ''; return `<div class="ctamov" onclick="window.nxCtaTab('diario')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="mi"><div class="mt">${esc(a.concepto || 'Asiento')}</div><div class="md">${a.numero ? esc(a.numero) + ' · ' : ''}${fechaDMY(a.fecha)}${orig ? ' · ' + esc(orig) : ''}</div></div><div class="mv">${fmt(td)}</div></div>`; }).join('');
+    // 16-nov-2026 (Boutique Aura: «VENTA RD$2,600» por una factura de RD$1,650): el monto que se muestra es el del DOCUMENTO.
+    // En venta, devolución y anulación el par costo/inventario (5101/1104) va aparte y no se suma.
+    return list.map(a => { const ls = asLineas(a); const sinCosto = /^(venta|devolucion|anulacion)$/.test(String(a.tipo || '')); const td = ls.reduce((s, l) => { const cod = String(l.cuenta_codigo || ((ctaById(l.cuenta_id) || {}).codigo) || ''); return (sinCosto && (cod === '5101' || cod === '1104')) ? s : s + Number(l.debito || 0); }, 0); const orig = (a.tipo && a.tipo !== 'manual') ? a.tipo : ''; return `<div class="ctamov" onclick="window.nxCtaTab('diario')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="mi"><div class="mt">${esc(a.concepto || 'Asiento')}</div><div class="md">${a.numero ? esc(a.numero) + ' · ' : ''}${fechaDMY(a.fecha)}${orig ? ' · ' + esc(orig) : ''}</div></div><div class="mv">${fmt(td)}</div></div>`; }).join('');
   }
   function ctaResumen() {
     const s = saldosCta();
@@ -9358,7 +9384,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!_stockAlmRows[k]) _stockAlmRows[k] = { id: null, stock: 0 };
       _stockAlmRows[k].stock = Number(res.stock_almacen_nuevo || 0);
     }
+    // 16-nov-2026 (Boutique Aura: el Balance decía Inventario RD$550 con RD$15,050 en existencia): la existencia que entra o
+    // sale SIN compra ni venta también va a la contabilidad, a costo. Compra, venta, devolución y anulación ya tienen su asiento.
+    if ((tipo === 'apertura' || tipo === 'ajuste') && prod.tipo !== 'servicio') { postAsientoInventario(prod, tipo, delta, opts).catch(() => {}); }
     return prod.stock;
+  }
+  // Inventario inicial: Debe Inventario / Haber Capital (aporte de mercancía). Sobrante: Debe Inventario / Haber Otros ingresos.
+  // Faltante o merma: Debe Gastos varios / Haber Inventario. Sin costo en la ficha no hay nada que asentar.
+  async function postAsientoInventario(prod, tipo, delta, opts) {
+    const monto = r2(Math.abs(Number(delta || 0)) * Number(prod.costo || 0)); if (!(monto > 0)) return;
+    const byc = await ctasMap(); if (!Object.keys(byc).length) return;
+    const nom = prod.nombre || 'artículo';
+    let lineas, concepto;
+    if (tipo === 'apertura') { concepto = 'Inventario inicial · ' + nom; lineas = [lnCta(byc, '1104', 'Inventario de mercancías', monto, 0), lnCta(byc, '3101', 'Capital', 0, monto)]; }
+    else if (delta > 0) { concepto = 'Sobrante de inventario · ' + nom; lineas = [lnCta(byc, '1104', 'Inventario de mercancías', monto, 0), lnCta(byc, '4102', 'Otros ingresos', 0, monto)]; }
+    else { concepto = 'Faltante de inventario · ' + nom; lineas = [lnCta(byc, '6104', 'Gastos varios', monto, 0), lnCta(byc, '1104', 'Inventario de mercancías', 0, monto)]; }
+    await postAsientoConcepto(isoHoy(), concepto + (opts && opts.motivo ? ' (' + opts.motivo + ')' : ''), tipo === 'apertura' ? 'inventario_inicial' : 'ajuste_inventario', prod.id, lineas, (opts && opts.referencia) || null);
   }
   async function cargarInventario() {
     try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
