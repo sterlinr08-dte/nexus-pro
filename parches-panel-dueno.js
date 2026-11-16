@@ -22,7 +22,9 @@
       var pend = !o.aprobado ? '<span style="background:#fef3c7;color:#b45309;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;margin-left:6px">POR APROBAR</span>' : '';
       var btn = function (acc, txt, col) { return '<button type="button" onclick="window.nxSuperOrgAccion(\'' + o.id + '\',\'' + acc + '\')" style="min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid ' + col + ';background:#fff;color:' + col + ';font-weight:700;font-size:12.5px;cursor:pointer">' + txt + '</button>'; };
       web = '<div style="margin-top:8px;font-size:12px;color:#334155">Registro web' + pend + '<br>' + _esc(o.contacto_nombre || '') + (tel ? ' · <a href="https://wa.me/1' + tel + '" target="_blank" rel="noopener" style="color:#16a34a;font-weight:700">' + _esc(o.contacto_tel) + '</a>' : '') + (o.created_at ? ' · ' + _esc(new Date(o.created_at).toLocaleDateString('es-DO', { day: '2-digit', month: 'short' })) : '') + '</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (!o.aprobado ? btn('aprobar', 'Aprobar', '#16a34a') : '') + btn('mas30', '+30 días', '#2563eb') + (o.activo ? btn('suspender', 'Suspender', '#dc2626') : btn('activar', 'Activar', '#16a34a')) + '</div>';
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (!o.aprobado ? btn('aprobar', 'Aprobar', '#16a34a') : '') + btn('mas30', '+30 días', '#2563eb') + (o.activo ? btn('suspender', 'Suspender', '#dc2626') : btn('activar', 'Activar', '#16a34a')) +
+        // 16-nov-2026: borrar un registro falso o de prueba. Solo sin ventas (el servidor lo vuelve a comprobar).
+        (!Number(o.pos_ventas || 0) ? '<button type="button" onclick="window.nxSuperOrgBorrar(\'' + o.id + '\',\'' + _esc(String(o.nombre || '').replace(/[\\\'"]/g, '')) + '\')" style="min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid #94a3b8;background:#fff;color:#475569;font-weight:700;font-size:12.5px;cursor:pointer"><i class="ti ti-trash"></i> Borrar</button>' : '') + '</div>';
     }
     return '<div style="border:1px solid #e8edf3;border-radius:13px;padding:12px;margin-bottom:10px;background:#fff">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="min-width:0"><div style="font-weight:800;font-size:14px;color:#0f172a">' + _esc(o.nombre || '') + '</div><div style="font-size:11px;color:#64748b">@' + _esc(o.slug || '') + ' · ' + _esc(o.tipo || '') + dom + '</div>' + vence + '</div>' + act + '</div>' +
@@ -37,6 +39,15 @@
     if (!confirm(txt + '?')) return;
     try { await getAPI().post('rpc/superadmin_org_accion', { p_org: id, p_accion: acc }); try { toast('ok', 'Listo'); } catch (e) {} window.nxAbrirSuperadmin(); }
     catch (e) { try { toast('err', 'No se pudo', String(e && e.message || e)); } catch (x) {} }
+  };
+  window.nxSuperOrgBorrar = async function (id, nombre) {
+    if (!confirm('¿Borrar la tienda «' + nombre + '» con sus usuarios y datos? No se puede deshacer.')) return;
+    try { await getAPI().post('rpc/superadmin_org_borrar', { p_org: id }); try { toast('ok', 'Tienda borrada', nombre); } catch (e) {} window.nxAbrirSuperadmin(); }
+    catch (e) {
+      var m = String(e && e.message || e);
+      var msg = /TIENE_VENTAS/.test(m) ? 'Ya tiene ventas: suspéndala en vez de borrarla.' : /SOLO_REGISTROS_WEB|EMPRESA_PROTEGIDA/.test(m) ? 'Esta empresa no se puede borrar desde aquí.' : m;
+      try { toast('err', 'No se pudo borrar', msg); } catch (x) {}
+    }
   };
   window.nxAbrirSuperadmin = async function () {
     var prev = document.getElementById('nxSuper'); if (prev) prev.remove();
