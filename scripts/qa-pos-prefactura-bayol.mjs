@@ -73,6 +73,7 @@ async function abrir(b, ancho, off) {
     if (t === 'rpc/pos_orden_compra_crear') { const n = D.pos_ordenes_compra.length + 1; const pv = D.pos_proveedores.find(x => x.id === body.p_proveedor); let tot = 0; const o = { id: 'oc' + n, numero: 'OC-0000' + n, proveedor_id: body.p_proveedor, proveedor_nombre: pv ? pv.nombre : null, fecha_esperada: body.p_fecha_esperada, notas: body.p_notas, estado: 'abierta', created_at: new Date().toISOString() }; body.p_items.forEach((it, i) => { tot += it.cantidad * it.costo; D.pos_orden_compra_items.push({ id: o.id + 'i' + i, orden_id: o.id, producto_id: it.producto_id, nombre: (D.pos_productos.find(x => x.id === it.producto_id) || {}).nombre, cantidad: it.cantidad, costo: it.costo, recibido: 0 }); }); o.total_estimado = tot; D.pos_ordenes_compra.unshift(o); return send({ ok: true, id: o.id, numero: o.numero, items: body.p_items.length, total: tot }); }
     if (t === 'rpc/pos_orden_compra_recibir') { const o = D.pos_ordenes_compra.find(x => x.id === body.p_orden); if (!['abierta', 'parcial'].includes(o.estado)) return send({ message: 'ORDEN_NO_ABIERTA' }, 400); const ci = globalThis.__ULT_COMPRA || []; ci.forEach(c => { const it = D.pos_orden_compra_items.find(i => i.orden_id === o.id && i.producto_id === c.producto_id); if (it) it.recibido += Number(c.cantidad); }); const its = D.pos_orden_compra_items.filter(i => i.orden_id === o.id); const falta = its.reduce((a, i) => a + Math.max(0, i.cantidad - i.recibido), 0); o.estado = falta > 0 ? 'parcial' : 'recibida'; return send({ ok: true, estado: o.estado, falta }); }
     if (t === 'rpc/pos_orden_compra_cerrar') { const o = D.pos_ordenes_compra.find(x => x.id === body.p_orden); if (body.p_estado === 'anulada' && o.estado === 'parcial') return send({ message: 'YA_RECIBIO_ALGO' }, 400); o.estado = body.p_estado; o.motivo = body.p_motivo; return send({ ok: true, estado: o.estado }); }
+    if (t === 'rpc/pos_accesos_rapidos_guardar') { if (globalThis.__RAP_FALLA) return send({ message: 'NO_AUTORIZADO' }, 403); return send({ ok: true, accesos: body.p_ids && body.p_ids.length ? body.p_ids : null }); }
     if (t === 'rpc/pos_registrar_compra_atomica') { globalThis.__ULT_COMPRA = (body.p_items || []); return send({ ok: true, compra: { id: 'cmp1', numero: 10, fecha: new Date().toLocaleDateString('en-CA') }, total_desembarcado: (body.p_compra || {}).subtotal }); }
     if (t === 'rpc/pos_mover_stock_atomico') return send({ ok: true, stock_nuevo: Number(body.p_delta || 0), stock_almacen_nuevo: Number(body.p_delta || 0) });
     if (t === 'rpc/pos_agregar_costo') { const pr = D.pos_productos.find(x => x.id === body.p_producto); const nuevo = Math.round((pr.costo + body.p_monto / pr.stock) * 100) / 100; const fila = { id: 'ca1', producto_id: pr.id, producto_nombre: pr.nombre, producto_codigo: pr.codigo, monto: body.p_monto, unidades: pr.stock, costo_anterior: pr.costo, costo_nuevo: nuevo, motivo: body.p_motivo, metodo: body.p_metodo, created_by_name: 'Esterlin', fecha: new Date().toISOString() }; D.pos_costos_agregados = [fila]; return send({ ok: true, id: 'ca1', costo_anterior: pr.costo, costo_nuevo: nuevo, unidades: pr.stock, monto: body.p_monto }); }
@@ -110,7 +111,7 @@ const b = await chromium.launch();
 try {
   for (const w of [390, 1024, 1440]) {
     globalThis.__HOY = new Date().toLocaleDateString('en-CA'); globalThis.__VENTAS_HOY = []; globalThis.__DEVS = []; globalThis.__HIST = []; globalThis.__ACT = [];
-    globalThis.__PRODS = [{ id: 'p1', nombre: 'BATERIA SAMSUNG A12', codigo: '2139', precio: 1500, costo: 600, stock: 10, itbis: false, activo: true, tipo: 'producto' }, { id: 'p3', nombre: 'PROTECTOR CRISTAL IPHONE 13 DE 6.1', codigo: '3301', precio: 350, costo: 100, stock: 20, itbis: false, activo: true, tipo: 'producto' }, { id: 'p4', nombre: 'Envio - Mensajeria', codigo: '1161', precio: 100, costo: 0, stock: 0, itbis: false, activo: true, tipo: 'servicio' }];
+    globalThis.__PRODS = [{ id: 'p1', nombre: 'BATERIA SAMSUNG A12', codigo: '2139', precio: 1500, costo: 600, stock: 10, itbis: false, activo: true, tipo: 'producto' }, { id: 'p3', nombre: 'PROTECTOR CRISTAL IPHONE 13 DE 6.1', codigo: '3301', precio: 350, costo: 100, stock: 20, itbis: false, activo: true, tipo: 'producto', favorito: true }, { id: 'p4', nombre: 'Envio - Mensajeria', codigo: '1161', precio: 100, costo: 0, stock: 0, itbis: false, activo: true, tipo: 'servicio' }];
     globalThis.__EXTRA = { pos_vendedores: [{ id: 'vd1', nombre: 'Esterlin Espinal', activo: true }, { id: 'vd2', nombre: 'Robinson', activo: true }], pos_niveles_precio: [{ id: 'n1', nombre: 'Mayorista', orden: 1, activo: true }], pos_producto_niveles: [{ id: 'pn1', producto_id: 'p1', nivel_id: 'n1', precio_contado: 1200 }] };
     const s = await abrir(b, w); const page = s.page; await page.setViewportSize({ width: w, height: 900 });
     await page.evaluate(() => window.nxPosTab('prefactura')); await page.waitForTimeout(1500);
@@ -137,9 +138,9 @@ try {
     ok(Number(String(pr).replace(/,/g, '')) === 1200 && Number(String(pr2).replace(/,/g, '')) === 1500, `${w}px: «Precio» cambia el nivel de todo el documento (Mayorista 1,200 → De lista 1,500)`, [pr, pr2]);
     // accesos rápidos
     const rap = await page.evaluate(() => [...document.querySelectorAll('.pfbRapB')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
-    ok(rap.length >= 1 && /Envio - Mensajeria/.test(rap[0]), `${w}px: accesos rápidos debajo del buscador (servicios primero)`, rap);
-    await page.click('.pfbRapB'); await page.waitForTimeout(400);
-    ok(await page.evaluate(() => /Agregado/.test(document.querySelector('.pfbRapB').innerText) && document.querySelectorAll('#facTabla tbody tr').length === 3), `${w}px: tocar el acceso agrega el artículo y queda «Agregado»`);
+    ok(rap.length >= 2 && /Protector Cristal/.test(rap[0]) && /Envio - Mensajeria/.test(rap[1]), `${w}px: accesos automáticos: favoritos (★) primero y luego servicios`, rap);
+    await page.click('.pfbRapB >> nth=1'); await page.waitForTimeout(400);
+    ok(await page.evaluate(() => /Agregado/.test(document.querySelectorAll('.pfbRapB')[1].innerText) && document.querySelectorAll('#facTabla tbody tr').length === 3), `${w}px: tocar el acceso agrega el artículo y queda «Agregado»`);
     // WhatsApp primero: cliente existente (Juan Pérez 8095550000)
     await page.fill('#pfbWa', '809-555-0000'); await page.dispatchEvent('#pfbWa', 'input'); await page.waitForTimeout(500);
     const cli = await page.evaluate(() => ({ chip: document.querySelector('.pfbCN').innerText, nom: document.getElementById('pfbNom').value, av: (document.querySelector('#pfbAviso') || {}).innerText }));
@@ -162,6 +163,11 @@ try {
     const pc = s.pedidos.find(p => p.t === 'pos_clientes' && p.m === 'POST'), pf = s.pedidos.find(p => p.t === 'pos_prefacturas' && p.m === 'POST');
     ok(pc && pc.body.nombre === 'Cliente Nuevo Demo' && pc.body.telefono === '829-555-9999' && pc.body.cedula === '00112345678', `${w}px: al guardar se registra el cliente nuevo (nombre, WhatsApp, cédula)`, pc && pc.body);
     ok(pf && pf.body.vendedor_id === 'vd1' && pf.body.vendedor_nombre === 'Esterlin Espinal' && pf.body.cliente_nombre === 'Cliente Nuevo Demo' && /^pos_clientes_n/.test(pf.body.cliente_id || '') && pf.body.items[0].nombre === 'BATERIA SAMSUNG A12', `${w}px: la prefactura guarda cliente, vendedor y el nombre original del artículo`, pf && { v: pf.body.vendedor_id, c: pf.body.cliente_nombre, id: pf.body.cliente_id, n: pf.body.items[0].nombre });
+    // «Limpiar» (barra de acciones) vacía la prefactura al confirmar, a la primera (Muse 16-nov)
+    await page.evaluate(() => { document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); window.nxFacAdd('p1'); }); await page.waitForTimeout(300);
+    await page.evaluate(() => { const b = [...document.querySelectorAll('#facOtrasSlot button')].find(x => /Limpiar/i.test(x.innerText)); b.click(); }); await page.waitForTimeout(300);
+    await page.click('#nxConfirmaOk'); await page.waitForTimeout(500);
+    ok(await page.evaluate(() => !document.querySelectorAll('#facTabla tbody tr .dnm').length), `${w}px: «Limpiar» vacía la prefactura a la primera`);
     // «Nueva» con algo en pantalla pregunta en su propia ventana
     await page.evaluate(() => { document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); window.nxFacAdd('p1'); }); await page.waitForTimeout(300);
     let dlg = false; page.on('dialog', d => { dlg = true; d.dismiss(); });
@@ -174,21 +180,30 @@ try {
     ok(await page.evaluate(() => { const e = document.querySelector('.pfbRapEd'); return !!e && e.getBoundingClientRect().height >= 44; }), `${w}px: hay «Cambiar accesos» (admin)`);
     await page.click('.pfbRapEd'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => !!document.getElementById('nxRapM') && /Envio - Mensajeria/.test(document.getElementById('rapLista').innerText)), `${w}px: el editor abre con los accesos actuales`);
+    const ini = await page.evaluate(() => document.getElementById('rapLista').innerText.replace(/\s+/g, ' '));
+    ok(/1 Protector Cristal.*2 Envio - Mensajeria.*3 Bateria Samsung A12/.test(ini), `${w}px: automáticos = favoritos (★), servicios y lo más prefacturado`, ini.slice(0, 160));
+    await page.evaluate(() => window.nxRapQuitar(2)); await page.waitForTimeout(100);
     await page.evaluate(() => window.nxArtPicker('rapArtSlot')); await page.waitForTimeout(300); await page.evaluate(() => window.nxProdPickFiltrar('bateria')); await page.waitForTimeout(150);
     await page.click('#rapArtSlot .nxPpkIt'); await page.click('#rapArtSlot .nxPpkElegir'); await page.waitForTimeout(300);
-    await page.evaluate(() => window.nxRapMover(1, -1)); await page.waitForTimeout(150);
+    await page.evaluate(() => { window.nxRapMover(2, -1); window.nxRapQuitar(0); }); await page.waitForTimeout(150);
     const lst = await page.evaluate(() => document.getElementById('rapLista').innerText.replace(/\s+/g, ' '));
-    ok(/1 Bateria Samsung A12.*2 Envio - Mensajeria/.test(lst), `${w}px: se agrega con el buscador de Factura y se ordena con ↑ ↓`, lst.slice(0, 120));
+    ok(/1 Bateria Samsung A12.*2 Envio - Mensajeria/.test(lst) && !/Protector/.test(lst), `${w}px: se agrega con el buscador de Factura, se ordena con ↑ ↓ y se quita con ✕`, lst.slice(0, 120));
     s.pedidos.length = 0;
     await page.click('#rapGuardar'); await page.waitForTimeout(1200);
-    const pc2 = s.pedidos.find(p => p.t === 'pos_config' && p.m === 'PATCH');
-    ok(pc2 && JSON.stringify(pc2.body.accesos_rapidos) === JSON.stringify(['p1', 'p4', 'p3']), `${w}px: se guardan para la tienda en ese orden`, pc2 && pc2.body);
+    const pc2 = s.pedidos.find(p => p.t === 'rpc/pos_accesos_rapidos_guardar');
+    ok(pc2 && JSON.stringify(pc2.body.p_ids) === JSON.stringify(['p1', 'p4']) && !s.pedidos.some(p => p.t === 'pos_config' && p.m === 'PATCH'), `${w}px: se guardan por el servidor (no PATCH a pos_config) en ese orden`, pc2 && pc2.body);
     const rap2 = await page.evaluate(() => [...document.querySelectorAll('.pfbRapB b')].map(x => x.innerText));
-    ok(rap2.join('|') === 'Bateria Samsung A12|Envio - Mensajeria|Protector Cristal iPhone 13 de 6.1', `${w}px: la prefactura muestra los accesos elegidos`, rap2);
+    ok(rap2.join('|') === 'Bateria Samsung A12|Envio - Mensajeria', `${w}px: la prefactura muestra los accesos elegidos`, rap2);
+    // Si el servidor no confirma, NO dice «guardados» y la prefactura sigue igual (Muse 16-nov)
+    globalThis.__RAP_FALLA = true;
+    await page.click('.pfbRapEd'); await page.waitForTimeout(300); await page.evaluate(() => window.nxRapQuitar(0)); await page.click('#rapGuardar'); await page.waitForTimeout(1000);
+    const tr = await page.evaluate(() => ({ err: /No se guardaron los accesos/i.test(document.body.innerText), sigue: !!document.getElementById('nxRapM'), rap: [...document.querySelectorAll('.pfbRapB b')].map(x => x.innerText).join('|') }));
+    ok(tr.err && tr.sigue && tr.rap === 'Bateria Samsung A12|Envio - Mensajeria', `${w}px: si el servidor no confirma, avisa «No se guardaron» y no cambia nada`, tr);
+    globalThis.__RAP_FALLA = false; await page.evaluate(() => document.getElementById('nxRapM').remove());
     await page.click('.pfbRapEd'); await page.waitForTimeout(300); s.pedidos.length = 0;
     await page.evaluate(() => window.nxRapGuardar(true)); await page.waitForTimeout(1000);
-    const pc3 = s.pedidos.find(p => p.t === 'pos_config' && p.m === 'PATCH');
-    ok(pc3 && pc3.body.accesos_rapidos === null, `${w}px: «Volver a los automáticos» los limpia`, pc3 && pc3.body);
+    const pc3 = s.pedidos.find(p => p.t === 'rpc/pos_accesos_rapidos_guardar');
+    ok(pc3 && pc3.body.p_ids === null, `${w}px: «Volver a los automáticos» los limpia`, pc3 && pc3.body);
     // Foto en el Resumen de la ficha de artículo (dueño 16-nov)
     await page.evaluate(() => window.nxPosNuevoProd()); await page.waitForTimeout(1200);
     const f0 = await page.evaluate(() => { const b = [...document.querySelectorAll('#nxPfResImg button')].find(x => /Subir foto/i.test(x.innerText)); return { hay: !!b, h: b ? Math.round(b.getBoundingClientRect().height) : 0 }; });

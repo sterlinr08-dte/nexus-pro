@@ -1441,7 +1441,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const h = document.getElementById('devMet'); if (h) { h.value = b.getAttribute('data-met'); h.dispatchEvent(new Event('change')); }
     document.querySelectorAll('#devMetBtns button').forEach(x => { const on = x === b; x.setAttribute('aria-checked', on); x.style.borderColor = on ? '#2563eb' : '#cbd5e1'; x.style.background = on ? '#eff6ff' : '#fff'; x.style.color = on ? '#1d4ed8' : '#334155'; });
   };
-  window.nxPosVaciar = function () { if (!_cart.length) return; confirmarAccion('Vaciar el carrito', _cart.length + (_cart.length === 1 ? ' artículo' : ' artículos') + ' se quitarán.', 'Vaciar carrito', () => { _cart = []; pintarCarrito(); }); };
+  window.nxPosVaciar = function () { if (!_cart.length) return; confirmarAccion('Vaciar el carrito', _cart.length + (_cart.length === 1 ? ' artículo' : ' artículos') + ' se quitarán.', 'Vaciar carrito', () => { _cart = []; pintarCarrito(); try { if (document.getElementById('facTabla') && window.nxFacRepaint) window.nxFacRepaint(); } catch (e) {} }); };
 
   function pintarCarrito() {
     if (!_cart.length) venderAvisoQuitar();
@@ -1828,10 +1828,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     (_prefHist || []).concat(_prefs || []).slice(0, 300).forEach(pf => (Array.isArray(pf.items) ? pf.items : []).forEach(it => { const k = String(it.producto_id || ''); if (k) freq[k] = (freq[k] || 0) + 1; }));
     const act = (_prods || []).filter(p => p.activo !== false);
     const orden = (a, b) => (freq[String(b.id)] || 0) - (freq[String(a.id)] || 0) || String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es');
-    const serv = act.filter(p => p.tipo === 'servicio').sort(orden);
-    const otros = act.filter(p => p.tipo !== 'servicio' && freq[String(p.id)]).sort(orden);
+    // Muse 16-nov: los automáticos no coincidían con los favoritos (★) de Vender. Ahora van primero los favoritos.
+    const favs = act.filter(p => p.favorito).sort(orden);
+    const serv = act.filter(p => p.tipo === 'servicio' && !p.favorito).sort(orden);
+    const otros = act.filter(p => p.tipo !== 'servicio' && !p.favorito && freq[String(p.id)]).sort(orden);
     const conf = Array.isArray(_posCfg.accesos_rapidos) ? _posCfg.accesos_rapidos.map(id => act.find(p => String(p.id) === String(id))).filter(Boolean) : [];
-    const l = conf.length ? conf.slice(0, 8) : serv.concat(otros).slice(0, 4);
+    const l = conf.length ? conf.slice(0, 8) : favs.concat(serv, otros).slice(0, 4);
     const ed = puedeVerMin() ? `<button type="button" class="pfbRapEd" onclick="window.nxRapEditar()"><i class="ti ti-pencil" aria-hidden="true"></i> ${l.length ? 'Cambiar accesos' : 'Agregar accesos rápidos'}</button>` : '';
     if (!l.length) return ed ? `<div class="pfbRapPie">${ed}</div>` : '';
     return `<div class="pfbRap" role="group" aria-label="Accesos rápidos">${l.map(p => { const en = _cart.some(it => String(it.producto_id) === String(p.id));
@@ -1881,11 +1883,14 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const b = document.getElementById('rapGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
     const val2 = auto ? null : _rapEdit.slice(0, 8);
     try {
-      await negGuardar({ accesos_rapidos: val2 });
-      _posCfg = Object.assign({}, _posCfg, { accesos_rapidos: val2 });
+      // Muse 16-nov: con PATCH a pos_config el gerente «guardaba» sin que cambiara nada (solo el admin puede escribir
+      // ahí). Ahora va por la RPC, que deja a admin y gerente, y se usa lo que el servidor confirma.
+      const r0 = await getAPI().post('rpc/pos_accesos_rapidos_guardar', { p_ids: val2 });
+      const r = Array.isArray(r0) ? r0[0] : r0; if (!r || !r.ok) throw new Error('SIN_CONFIRMACION');
+      _posCfg = Object.assign({}, _posCfg, { accesos_rapidos: Array.isArray(r.accesos) ? r.accesos : null });
       cerrarModal('nxRapM'); toast('ok', auto ? 'Accesos automáticos' : 'Accesos guardados');
       const rp = document.getElementById('pfbRapSlot'); if (rp) rp.innerHTML = pfbRapidosHTML();
-    } catch (e) { if (b) b.disabled = false; toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+    } catch (e) { if (b) b.disabled = false; const m = String(e && e.message || e); toast('err', 'No se guardaron los accesos', /NO_AUTORIZADO/.test(m) ? 'Solo el administrador o el gerente.' : /ARTICULO_NO_EXISTE/.test(m) ? 'Un artículo ya no existe.' : m); }
   };
   function pfbCSS() {
     if (document.getElementById('nxPfbCSS')) return;
@@ -2038,7 +2043,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const d = pfbDig(_prefCliF.wa);
     const ya = d.length === 10 ? (_clientes || []).find(x => pfbDig(x.telefono) === d) : null;
     if (ya) { _factCli = String(ya.id); return; }
-    const r = await getAPI().post('pos_clientes', { nombre: nom, telefono: String(_prefCliF.wa || '').trim() || null, cedula: String(_prefCliF.ced || '').trim() || null, es_cliente: true, activo: true });
+    const telF = d.length === 10 ? d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6) : (String(_prefCliF.wa || '').trim() || null);
+    const r = await getAPI().post('pos_clientes', { nombre: nom, telefono: telF, cedula: String(_prefCliF.ced || '').trim() || null, es_cliente: true, activo: true });
     const nuevo = Array.isArray(r) ? r[0] : r;
     if (nuevo && nuevo.id) { _clientes.push(nuevo); _factCli = String(nuevo.id); _prefCliF = { wa: '', nom: '', ced: '' }; }
   }
