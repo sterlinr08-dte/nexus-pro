@@ -7692,6 +7692,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosProveedores()"><i class="ti ti-building-warehouse"></i> Proveedores</button>
         ${cv2() ? '<button class="btn bsm bghost" type="button" onclick="window.nxPosCxpAbrir()"><i class="ti ti-file-invoice"></i> Cuentas por pagar</button>' : ''}
+        <button class="btn bsm bghost" type="button" onclick="window.nxOcAbrir()"><i class="ti ti-file-text"></i> Órdenes de compra</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button>
       </div>
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody data-pag10="compras">${comprasHTML}</tbody></table></div>
@@ -7701,7 +7702,140 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Nueva compra — ya NO es un cuadro flotante, es una PANTALLA DEL SISTEMA (dentro del POS),
   // con secciones claras (Datos de la compra / Artículos / Resumen). El id oculto compProv/compEmp/
   // compArt y todos los campos se mantienen, así que nxPosGuardarCompra no cambia.
-  window.nxPosNuevaCompra = function () {
+  // ══════════════ ÓRDENES DE COMPRA (16-nov-2026, dueño: «Orden de compra»; reporte Infoplus «Faltante orden compra») ══════════════
+  // Se le pide mercancía a un proveedor (Abierta). Cuando llega, «Recibir» abre la compra de siempre ya llena con lo que falta; al
+  // guardarla, la existencia sube como siempre y aquí se anota cuánto llegó (Parcial o Recibida). La orden no mueve inventario ni dinero.
+  // Servidor: rpc/pos_orden_compra_crear (numera OC-00001), rpc/pos_orden_compra_recibir y rpc/pos_orden_compra_cerrar.
+  let _ocs = [], _ocItems = [], _ocEdit = null, _compraOcId = null, _compraOcNum = '';
+  const OC_EST = { abierta: ['Abierta', '#1d4ed8', '#dbeafe'], parcial: ['Parcial', '#b45309', '#fef3c7'], recibida: ['Recibida', '#166534', '#dcfce7'], cerrada: ['Cerrada', '#475569', '#f1f5f9'], anulada: ['Anulada', '#b91c1c', '#fee2e2'] };
+  async function ocCargar() {
+    _ocs = (await getTodasPOS('pos_ordenes_compra', 'select=*&order=created_at.desc,id.asc')) || [];
+    const ids = _ocs.slice(0, 300).map(o => o.id);
+    _ocItems = ids.length ? await riEnTrozos('pos_orden_compra_items', 'orden_id', ids, '*') : [];
+  }
+  function ocChip(e) { const x = OC_EST[e] || [e, '#475569', '#f1f5f9']; return `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:${x[2]};color:${x[1]};white-space:nowrap">${esc(x[0].toUpperCase())}</span>`; }
+  window.nxOcAbrir = async function () {
+    cerrarModal('nxOcs');
+    const ov = document.createElement('div'); ov.id = 'nxOcs'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:600px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-text"></i> Órdenes de compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxOcs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <button class="btn bc1" type="button" style="height:48px;margin-bottom:10px" onclick="window.nxOcNueva()"><i class="ti ti-plus"></i> Nueva orden</button>
+      <div id="ocLista" style="overflow-y:auto;flex:1"><div class="emptyrow" style="padding:24px;text-align:center"><i class="ti ti-loader-2 nxSpin"></i> Cargando…</div></div></div>`;
+    document.body.appendChild(ov);
+    try { await ocCargar(); } catch (e) { _ocs = []; }
+    ocPintarLista();
+  };
+  function ocPintarLista() {
+    const el = document.getElementById('ocLista'); if (!el) return;
+    if (!_ocs.length) { el.innerHTML = '<div class="emptyrow" style="padding:26px 10px;text-align:center">Aún no hay órdenes. Toque «Nueva orden» para pedirle mercancía a un proveedor.</div>'; return; }
+    const abierta = o => o.estado === 'abierta' || o.estado === 'parcial';
+    const orden = _ocs.slice().sort((a, b) => (abierta(a) ? 0 : 1) - (abierta(b) ? 0 : 1) || String(b.created_at).localeCompare(String(a.created_at)));
+    el.innerHTML = orden.map(o => {
+      const its = _ocItems.filter(i => String(i.orden_id) === String(o.id));
+      const lin = its.map(i => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.nombre || '')}</span><b style="white-space:nowrap">${Number(i.recibido) > 0 ? fmtN(i.recibido) + ' de ' : ''}${fmtN(i.cantidad)}</b></div>`).join('');
+      const acc = abierta(o) ? `<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px;margin-top:8px"><button class="btn bc1" type="button" style="min-height:44px" onclick="window.nxOcRecibir('${o.id}')"><i class="ti ti-package-import"></i> Recibir</button><button class="btn bghost" type="button" style="min-height:44px" onclick="window.nxOcImprimir('${o.id}')"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bghost" type="button" style="min-height:44px" onclick="window.nxOcCerrar('${o.id}')">${o.estado === 'parcial' ? 'Cerrar' : 'Anular'}</button></div>`
+        : `<div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn bsm bghost" type="button" style="min-height:44px" onclick="window.nxOcImprimir('${o.id}')"><i class="ti ti-printer"></i> Imprimir</button></div>`;
+      const pie = (o.estado === 'cerrada' || o.estado === 'anulada') ? esc(o.motivo || '') : [o.fecha_esperada ? 'Se espera el ' + fechaDMY(String(o.fecha_esperada).slice(0, 10)) : '', o.notas ? esc(o.notas) : ''].filter(Boolean).join(' · ');
+      return `<div style="border:1.5px solid var(--pf-line,#e2e8f0);border-radius:13px;padding:11px 12px;margin-bottom:8px;background:var(--pf-panel,#fff)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:14px">${esc(o.numero)}</b>${ocChip(o.estado)}</div>
+        <div style="font-size:12.5px;color:#475569;margin:3px 0 6px">${esc(o.proveedor_nombre || 'Sin proveedor')} · ${fechaDMY(o.created_at).slice(0, 10)} · ${esc(fmt2d(o.total_estimado))}</div>
+        ${lin}${pie ? `<div style="font-size:11.5px;color:#64748b;margin-top:5px">${pie}</div>` : ''}${acc}</div>`;
+    }).join('');
+  }
+  window.nxOcNueva = function () {
+    _ocEdit = { prov: '', fecha: '', notas: '', lineas: [] };
+    cerrarModal('nxOcForm');
+    const ov = document.createElement('div'); ov.id = 'nxOcForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
+    const lbl = 'display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0';
+    const provs = (_proveedores || []).filter(p => p.activo !== false).map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
+    const prods = invProductosStock().filter(p => p.activo !== false).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
+    ov.innerHTML = `<div class="modal" style="max-width:540px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-text"></i> Nueva orden de compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxOcForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label style="${lbl}">Proveedor<select id="ocProv" style="${est}" onchange="window.nxOcCampo('prov',this.value)"><option value="">Sin proveedor</option>${provs}</select></label>
+        <label style="${lbl}">Se espera para<input id="ocFecha" type="date" style="${est}" onchange="window.nxOcCampo('fecha',this.value)"></label>
+      </div>
+      <label style="${lbl};margin-top:10px">Agregar artículo<input id="ocArt" class="no-upper" list="ocArts" style="${est}" placeholder="Nombre o código" onchange="window.nxOcAgregar(this.value)"><datalist id="ocArts">${prods}</datalist></label>
+      <div id="ocLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
+      <label style="${lbl}">Notas para el proveedor<input id="ocNotas" class="no-upper" style="${est}" placeholder="Condiciones, forma de entrega…" onchange="window.nxOcCampo('notas',this.value)"></label>
+      <button class="btn bc1" type="button" id="ocGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxOcGuardar()"><i class="ti ti-device-floppy"></i> Guardar orden</button></div>`;
+    document.body.appendChild(ov);
+    ocPintarLineas();
+  };
+  window.nxOcCampo = function (k, v) { if (_ocEdit) _ocEdit[k] = v; };
+  window.nxOcAgregar = function (txt) {
+    const p = costoProdDe(txt) || (invProductosStock().find(x => String(x.nombre || '').toLowerCase() === String(txt || '').trim().toLowerCase()));
+    const inp = document.getElementById('ocArt');
+    if (!p) { if (txt) toast('warn', 'Elija el artículo de la lista'); return; }
+    const ex = _ocEdit.lineas.find(l => String(l.producto_id) === String(p.id));
+    if (ex) ex.cant += 1; else _ocEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1, costo: Number(p.costo || 0) });
+    if (inp) { inp.value = ''; inp.focus(); }
+    ocPintarLineas();
+  };
+  window.nxOcLinea = function (i, k, v) { const l = _ocEdit.lineas[i]; if (!l) return; const n = Number(String(v).replace(/[^0-9.]/g, '')); if (k === 'cant' && n > 0) l.cant = n; if (k === 'costo' && n >= 0) l.costo = r2(n); ocPintarLineas(); };
+  window.nxOcQuitar = function (i) { _ocEdit.lineas.splice(i, 1); ocPintarLineas(); };
+  function ocPintarLineas() {
+    const el = document.getElementById('ocLineas'); if (!el || !_ocEdit) return;
+    if (!_ocEdit.lineas.length) { el.innerHTML = '<div style="text-align:center;color:#64748b;font-size:12.5px;padding:16px">Agregue los artículos que va a pedir.</div>'; return; }
+    const inp = 'height:48px;font-size:16px;text-align:right;border:1.5px solid #cbd5e1;border-radius:10px;padding:0 8px;width:100%;box-sizing:border-box';
+    const tot = _ocEdit.lineas.reduce((s, l) => s + l.cant * l.costo, 0);
+    el.innerHTML = _ocEdit.lineas.map((l, i) => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nombre)}</div><button type="button" aria-label="Quitar ${esc(l.nombre)}" onclick="window.nxOcQuitar(${i})" style="flex:0 0 44px;width:44px;height:44px;border:0;background:#fee2e2;color:#b91c1c;border-radius:10px;cursor:pointer"><i class="ti ti-x"></i></button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;margin-top:4px"><label style="font-size:11px;color:#64748b">Cantidad<input inputmode="numeric" value="${l.cant}" onchange="window.nxOcLinea(${i},'cant',this.value)" style="${inp}"></label><label style="font-size:11px;color:#64748b">Costo c/u<input inputmode="decimal" value="${l.costo}" onchange="window.nxOcLinea(${i},'costo',this.value)" style="${inp}"></label><div style="text-align:right;font-size:13px;font-weight:700;align-self:end;padding-bottom:13px">${esc(fmt2d(l.cant * l.costo))}</div></div></div>`).join('')
+      + `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;padding:10px 2px"><span>Total estimado</span><span>${esc(fmt2d(tot))}</span></div>`;
+  }
+  window.nxOcGuardar = async function () {
+    const e = _ocEdit; if (!e) return;
+    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); const i = document.getElementById('ocArt'); if (i) i.focus(); return; }
+    const b = document.getElementById('ocGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
+    try {
+      const r0 = await getAPI().post('rpc/pos_orden_compra_crear', { p_proveedor: e.prov || null, p_fecha_esperada: e.fecha || null, p_notas: (e.notas || '').trim() || null, p_items: e.lineas.map(l => ({ producto_id: l.producto_id, cantidad: l.cant, costo: l.costo })) });
+      const r = Array.isArray(r0) ? r0[0] : r0; if (!r || !r.ok) throw new Error('SIN_CONFIRMACION');
+      cerrarModal('nxOcForm'); toast('ok', 'Orden ' + r.numero + ' guardada', fmt2d(r.total));
+      if (document.getElementById('nxOcs')) { await ocCargar(); ocPintarLista(); }
+    } catch (er) { if (b) b.disabled = false; toast('err', 'No se pudo guardar la orden', String(er && er.message || er)); }
+  };
+  // Recibir: abre la compra de siempre ya llena con lo que falta. Al guardarla (nxPosGuardarCompra) se anota en la orden.
+  window.nxOcRecibir = function (id) {
+    const o = _ocs.find(x => String(x.id) === String(id)); if (!o) return;
+    const its = _ocItems.filter(i => String(i.orden_id) === String(id) && Number(i.cantidad) > Number(i.recibido || 0));
+    const conImei = its.filter(i => (_prods.find(x => String(x.id) === String(i.producto_id)) || {}).serial);
+    cerrarModal('nxOcs');
+    window.nxPosNuevaCompra(o);
+    _compraItems = its.filter(i => conImei.indexOf(i) < 0).map(i => { const n = { producto_id: i.producto_id, nombre: i.nombre, cantidad: r2(Number(i.cantidad) - Number(i.recibido || 0)), costo: Number(i.costo || 0) }; if (cv2()) n.costo_original = Number(i.costo || 0); return n; });
+    const h = document.getElementById('compProv'); if (h && o.proveedor_id) { h.value = o.proveedor_id; window.nxCompraProvSync && window.nxCompraProvSync(); }
+    const on = document.getElementById('compOrden'); if (on && !on.value) on.value = o.numero;
+    try { pintarCompraItems(); } catch (e) {}
+    toast('ok', 'Recibiendo ' + o.numero, conImei.length ? 'Agregue con su IMEI: ' + conImei.map(i => i.nombre).join(', ') : 'Revise cantidades y costos, y guarde');
+  };
+  window.nxOcCerrar = async function (id) {
+    const o = _ocs.find(x => String(x.id) === String(id)); if (!o) return;
+    const est = o.estado === 'parcial' ? 'cerrada' : 'anulada';
+    const motivo = (prompt(est === 'cerrada' ? 'Motivo para cerrar (lo que falta no llegará)' : 'Motivo de la anulación') || '').trim();
+    if (!motivo) return;
+    try { await getAPI().post('rpc/pos_orden_compra_cerrar', { p_orden: id, p_estado: est, p_motivo: motivo }); toast('ok', est === 'cerrada' ? 'Orden cerrada' : 'Orden anulada'); await ocCargar(); ocPintarLista(); }
+    catch (e) { const m = String(e && e.message || e); toast('err', 'No se pudo', /YA_RECIBIO_ALGO/.test(m) ? 'Ya llegó parte: use «Cerrar».' : /ORDEN_NO_ABIERTA/.test(m) ? 'La orden ya no está abierta.' : m); }
+  };
+  window.nxOcImprimir = function (id) {
+    const o = _ocs.find(x => String(x.id) === String(id)); if (!o) return;
+    const e = empInfo(), its = _ocItems.filter(i => String(i.orden_id) === String(id));
+    const prov = (_proveedores || []).find(p => String(p.id) === String(o.proveedor_id)) || {};
+    const filas = its.map((i, k) => `<tr><td>${k + 1}</td><td>${esc(i.nombre || '')}</td><td class="r">${fmtN(i.cantidad)}</td><td class="r">${fmt2d(i.costo)}</td><td class="r">${fmt2d(Number(i.cantidad) * Number(i.costo || 0))}</td></tr>`).join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orden de compra ${esc(o.numero)}</title>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:17px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:12px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:2px solid #111;font-size:13.5px}.bar{position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px}.bar button{border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}.fz{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.fz div{border-top:1px solid #111;padding-top:6px}@media print{.bar{display:none}body{padding:0}}</style></head>
+      <body><div class="bar"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff">Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e">Imprimir</button></div>
+      <h1>${esc(e.nom)}</h1><div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}${e.dir ? '<br>' + esc(e.dir) : ''}</div>
+      <div class="c" style="margin-top:12px"><b>ORDEN DE COMPRA ${esc(o.numero)}</b></div>
+      <div class="muted" style="margin-top:8px">Proveedor: <b>${esc(o.proveedor_nombre || 'Sin proveedor')}</b>${prov.rnc ? ' · RNC ' + esc(prov.rnc) : ''}${prov.telefono ? ' · ' + esc(prov.telefono) : ''}<br>Fecha: ${fechaDMY(o.created_at).slice(0, 10)}${o.fecha_esperada ? ' · Se espera el ' + fechaDMY(String(o.fecha_esperada).slice(0, 10)) : ''}</div>
+      <table><thead><tr><th>#</th><th>Artículo</th><th class="r">Cantidad</th><th class="r">Costo</th><th class="r">Importe</th></tr></thead><tbody>${filas}<tr class="tot"><td></td><td>TOTAL ESTIMADO</td><td></td><td></td><td class="r">${fmt2d(o.total_estimado)}</td></tr></tbody></table>
+      ${o.notas ? `<div class="muted"><b>Notas:</b> ${esc(o.notas)}</div>` : ''}
+      <div class="fz"><div>Autorizado por</div><div>Recibido por el proveedor</div></div></body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+  window.nxPosNuevaCompra = function (oc) {
+    _compraOcId = oc && oc.id ? oc.id : null; _compraOcNum = oc && oc.id ? oc.numero : '';
     _compraItems = [];
     _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
     _compraOperacionId = null;
@@ -7710,7 +7844,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxPosCompraCancelar = function () {
-    _compraItems = [];
+    _compraItems = []; _compraOcId = null; _compraOcNum = '';
     _compraOperacionId = null;
     _compraVista = 'lista';
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -7728,6 +7862,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <button class="btn bsm bghost" type="button" onclick="window.nxCompOtroAdd()" style="border-style:dashed"><i class="ti ti-plus"></i> Otro gasto</button>
       <div id="compGResumen" style="margin-top:10px;padding:10px 12px;background:#faf5ff;border:1px solid #ede9fe;border-radius:10px;font-size:11px;color:#475569"></div>` : '';
     const datos = `
+      ${_compraOcId ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:600;margin-bottom:10px"><i class="ti ti-file-text"></i> Recibiendo la orden ${esc(_compraOcNum)}: ajuste lo que de verdad llegó y guarde.</div>` : ''}
       <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><input type="hidden" id="compProv"><button type="button" id="compProvBtn" onclick="window.nxCompraProvBuscar()" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compProvTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar proveedor…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor" aria-label="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
       <div class="fr"><label>Empleado (quién compra)</label><input type="hidden" id="compEmp"><button type="button" id="compEmpBtn" onclick="window.nxCompraEmpBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compEmpTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar empleado…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
       <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Vencimiento (crédito)</label><input id="compVenc" type="date"></div></div>
@@ -8038,6 +8173,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
       _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
+      // Compra que viene de una orden: se anota en la orden lo que llegó (el servidor lo cuenta de los renglones de esta compra).
+      if (_compraOcId) {
+        const ocId = _compraOcId, ocNum = _compraOcNum; _compraOcId = null; _compraOcNum = '';
+        try { const ro = await getAPI().post('rpc/pos_orden_compra_recibir', { p_orden: ocId, p_compra: compra.id }); const rr = Array.isArray(ro) ? ro[0] : ro; toast('ok', 'Orden ' + ocNum + (rr && rr.estado === 'recibida' ? ' recibida completa' : ' recibida en parte'), rr && Number(rr.falta) > 0 ? 'Faltan ' + fmtN(rr.falta) + ' unidades' : ''); }
+        catch (e) { const m = String(e && e.message || e); toast('warn', 'La compra se guardó, pero no se anotó en la orden ' + ocNum, /OTRO_PROVEEDOR/.test(m) ? 'La compra es de otro proveedor.' : 'Revísela en Órdenes de compra.'); }
+      }
       docGuardado('comp', { id: compra.id, numero: compra.numero, total: subtotal, imprimir: async () => { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) {} window.nxCompraImprimir(compra.id); } });
       _compraItems = []; _compraVista = 'lista';
       await cargarComprasTab(); await cargarPOS();
@@ -10148,12 +10289,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   const RI_REPS = {
     inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['cambios', 'Cambios de precio'], ['costos', 'Costos agregados'], ['series', 'Series no vendidas']],
     ven: [['ventas', 'Ventas'], ['ganancias', 'Ganancias por artículo'], ['gandia', 'Ganancias por día'], ['empleado', 'Ventas por empleado'], ['clientes', 'Ventas por cliente']],
-    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén'], ['solic', 'Solicitudes de inventario'], ['requis', 'Requisiciones pendientes']],
+    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén'], ['solic', 'Solicitudes de inventario'], ['requis', 'Requisiciones pendientes'], ['ordenes', 'Órdenes de compra'], ['faltoc', 'Faltante orden de compra']],
     act: [['activos', 'Activos fijos']]
   };
   function riGrupo(t) { return Object.keys(RI_REPS).find(g => RI_REPS[g].some(x => x[0] === (t || _ri.tab))) || 'inv'; }
-  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || t === 'costos' || g === 'ven' || (g === 'com' && t !== 'requis'); }
-  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [], costos: [], peds: [], pitems: [] };
+  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || t === 'costos' || g === 'ven' || (g === 'com' && t !== 'requis' && t !== 'faltoc'); }
+  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [], costos: [], peds: [], pitems: [], ocs: [], ocitems: [] };
   const RI_METODO = { efectivo: 'Efectivo', banco: 'Banco', por_pagar: 'Por pagar' };
   const RI_CAMPO = { precio: 'Precio', precio_mayor: 'Precio por mayor', precio_minimo: 'Precio mínimo', costo: 'Costo' };
   // Depreciación en línea recta: (costo − residual) / vida útil, por cada mes cumplido desde la compra. Solo para el reporte.
@@ -10181,6 +10322,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
       _riX.transf = (await getTodasPOS('pos_transferencias', 'select=*&created_at=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&created_at=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=created_at.desc')) || [];
       _riX.titems = _riX.transf.length ? await riEnTrozos('pos_transferencia_items', 'transferencia_id', _riX.transf.map(x => x.id), '*') : [];
+      return true;
+    }
+    if (t === 'faltoc' || t === 'ordenes') {
+      const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
+      const rango = t === 'ordenes' ? '&created_at=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&created_at=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) : '&estado=in.(abierta,parcial)';
+      _riX.ocs = (await getTodasPOS('pos_ordenes_compra', 'select=*' + rango + '&order=created_at.desc,id.asc')) || [];
+      _riX.ocitems = _riX.ocs.length ? await riEnTrozos('pos_orden_compra_items', 'orden_id', _riX.ocs.map(o => o.id), '*') : [];
       return true;
     }
     if (t === 'solic' || t === 'requis') {
@@ -10220,6 +10368,26 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       return { titulo: 'Inventario físico · hoja de conteo', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Referencia' }, { t: 'Existencia', r: 1 }, { t: 'Conteo', r: 1 }, { t: 'Diferencia', r: 1 }], grupos: grupos, kpis: [['Artículos', fmtN(l.length)], ['Unidades en sistema', fmtN(tu)]], nota: 'Imprima la hoja, cuente y anote. Las diferencias se corrigen en Kardex → Ajustar.' };
     }
 
+
+    if (t === 'ordenes') {
+      const l = (_riX.ocs || []).filter(o => hay(o.numero + ' ' + (o.proveedor_nombre || '') + ' ' + (o.notas || '')));
+      const filas = l.map(o => { const its = (_riX.ocitems || []).filter(i => String(i.orden_id) === String(o.id)); const c = its.reduce((s, i) => s + Number(i.cantidad || 0), 0), r = its.reduce((s, i) => s + Number(i.recibido || 0), 0);
+        return [fechaDMY(o.created_at).slice(0, 10), o.numero, o.proveedor_nombre || 'Sin proveedor', o.fecha_esperada ? fechaDMY(String(o.fecha_esperada).slice(0, 10)) : '', fmtN(c), fmtN(r), fmt2d(o.total_estimado), (OC_EST[o.estado] || [o.estado])[0], o.motivo || '']; });
+      const T = l.reduce((s, o) => s + Number(o.total_estimado || 0), 0);
+      return { titulo: 'Órdenes de compra', cols: [{ t: 'Fecha' }, { t: 'Orden' }, { t: 'Proveedor' }, { t: 'Se espera' }, { t: 'Pedido', r: 1 }, { t: 'Recibido', r: 1 }, { t: 'Total estimado', r: 1 }, { t: 'Estado' }, { t: 'Motivo' }], grupos: [{ nombre: '', filas: filas }],
+        total: ['', '', '', '', '', 'TOTAL', fmt2d(T), '', ''], kpis: [['Órdenes', fmtN(l.length)], ['Abiertas', fmtN(l.filter(o => o.estado === 'abierta' || o.estado === 'parcial').length)], ['Total estimado', fmt2d(T)]], nota: 'Las órdenes se hacen en Compras → Órdenes de compra.', vacio: 'No hay órdenes en estas fechas. Se hacen en Compras → Órdenes de compra.' };
+    }
+    if (t === 'faltoc') {
+      const oById = {}; (_riX.ocs || []).filter(o => o.estado === 'abierta' || o.estado === 'parcial').forEach(o => { oById[String(o.id)] = o; });
+      const l = (_riX.ocitems || []).map(i => ({ i: i, o: oById[String(i.orden_id)], falta: Math.max(0, Number(i.cantidad || 0) - Number(i.recibido || 0)) }))
+        .filter(x => x.o && x.falta > 0 && pasaProd(x.i.producto_id) && hay(x.i.nombre + ' ' + x.o.numero + ' ' + (x.o.proveedor_nombre || '')));
+      const hoyD = isoHoy(); const por = {}; l.forEach(x => { const k = x.o.proveedor_nombre || 'Sin proveedor'; (por[k] = por[k] || []).push(x); }); let F = 0, V = 0;
+      const grupos = Object.keys(por).sort((a, b) => a.localeCompare(b, 'es')).map(k => { let v1 = 0;
+        const filas = por[k].map(x => { const val = r2(x.falta * Number(x.i.costo || 0)); F += x.falta; V += val; v1 += val; const fe = x.o.fecha_esperada ? String(x.o.fecha_esperada).slice(0, 10) : ''; return [x.o.numero, fe ? fechaDMY(fe) + (fe < hoyD ? ' (atrasada)' : '') : '', x.i.nombre || '', fmtN(x.i.cantidad), fmtN(x.i.recibido), fmtN(x.falta), fmt2d(x.i.costo), fmt2d(val)]; });
+        return { nombre: k, filas: filas, sub: ['', '', 'Subtotal ' + k, '', '', '', '', fmt2d(v1)] }; });
+      return { titulo: 'Faltante de órdenes de compra', cols: [{ t: 'Orden' }, { t: 'Se espera' }, { t: 'Artículo' }, { t: 'Pedido', r: 1 }, { t: 'Recibido', r: 1 }, { t: 'Falta', r: 1 }, { t: 'Costo', r: 1 }, { t: 'Valor faltante', r: 1 }], grupos: grupos,
+        total: ['', '', 'TOTAL', '', '', fmtN(F), '', fmt2d(V)], kpis: [['Renglones', fmtN(l.length)], ['Unidades por llegar', fmtN(F)], ['Valor por llegar', fmt2d(V)]], nota: 'Lo pedido a proveedores que todavía no ha llegado (órdenes abiertas o parciales).', vacio: 'No hay nada pendiente de llegar.' };
+    }
     if (t === 'solic') {
       const l = (_riX.peds || []).filter(p => (!_ri.pest || p.estado === _ri.pest) && hay(p.numero + ' ' + almNombre(p.pide_id) + ' ' + almNombre(p.surte_id) + ' ' + (p.notas || '')));
       const nIt = {}, uIt = {}; (_riX.pitems || []).forEach(i => { nIt[i.pedido_id] = (nIt[i.pedido_id] || 0) + 1; uIt[i.pedido_id] = (uIt[i.pedido_id] || 0) + Number(i.cantidad || 0); });
@@ -10374,7 +10542,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const f = [];
-    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios', 'costos', 'requis'].indexOf(t) >= 0;
+    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios', 'costos', 'requis', 'faltoc'].indexOf(t) >= 0;
     f.push(`<label>Reporte${sel('tab', RI_REPS[g], t)}</label>`);
     if ((t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
