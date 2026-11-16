@@ -10031,14 +10031,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Mismo motor que los 5 de inventario: solo LEEN. Las ventas y sus notas de crédito son las que ya carga Reportes.
   const RI_GRUPOS = [['inv', 'Inventario', 'ti-packages'], ['ven', 'Ventas', 'ti-cash'], ['com', 'Compras y despachos', 'ti-truck-delivery'], ['act', 'Activos fijos', 'ti-building']];
   const RI_REPS = {
-    inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['cambios', 'Cambios de precio'], ['series', 'Series no vendidas']],
+    inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['cambios', 'Cambios de precio'], ['costos', 'Costos agregados'], ['series', 'Series no vendidas']],
     ven: [['ventas', 'Ventas'], ['ganancias', 'Ganancias por artículo'], ['gandia', 'Ganancias por día'], ['empleado', 'Ventas por empleado'], ['clientes', 'Ventas por cliente']],
     com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén']],
     act: [['activos', 'Activos fijos']]
   };
   function riGrupo(t) { return Object.keys(RI_REPS).find(g => RI_REPS[g].some(x => x[0] === (t || _ri.tab))) || 'inv'; }
-  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || g === 'ven' || g === 'com'; }
-  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [] };
+  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || t === 'costos' || g === 'ven' || g === 'com'; }
+  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [], costos: [] };
+  const RI_METODO = { efectivo: 'Efectivo', banco: 'Banco', por_pagar: 'Por pagar' };
   const RI_CAMPO = { precio: 'Precio', precio_mayor: 'Precio por mayor', precio_minimo: 'Precio mínimo', costo: 'Costo' };
   // Depreciación en línea recta: (costo − residual) / vida útil, por cada mes cumplido desde la compra. Solo para el reporte.
   function activoDep(a) {
@@ -10072,6 +10073,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       _riX.cambios = (await getTodasPOS('pos_precio_historial', 'select=*&fecha=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&fecha=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=fecha.desc,id.asc')) || [];
       return true;
     }
+    if (t === 'costos') {
+      const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
+      _riX.costos = (await getTodasPOS('pos_costos_agregados', 'select=*&fecha=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&fecha=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=fecha.desc,id.asc')) || [];
+      return true;
+    }
     if (t === 'activos') { _riX.activos = (await getTodasPOS('pos_activos_fijos', 'select=*&order=nombre.asc,id.asc')) || []; return true; }
     if (t === 'series') { _riX.series = (await getTodasPOS('pos_seriales', 'select=id,producto_id,serial,almacen_id,color,created_at&estado=eq.disponible&order=created_at.desc,id.asc')) || []; return true; }
     return t === 'fisico' || t === 'precios';
@@ -10095,6 +10101,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const filas = l.map(c => { const a = Number(c.anterior || 0), n = Number(c.nuevo || 0); return [fechaDMY(c.fecha), c.producto_codigo || '', c.producto_nombre || '', RI_CAMPO[c.campo] || c.campo, fmt2d(a), fmt2d(n), a > 0 ? (n >= a ? '+' : '') + Math.round((n - a) / a * 100) + ' %' : '', c.usuario || '']; });
       return { titulo: 'Cambios de precio', cols: [{ t: 'Fecha' }, { t: 'Código' }, { t: 'Artículo' }, { t: 'Qué cambió' }, { t: 'Antes', r: 1 }, { t: 'Ahora', r: 1 }, { t: 'Cambio', r: 1 }, { t: 'Usuario' }], grupos: [{ nombre: '', filas: filas }],
         kpis: [['Cambios', fmtN(l.length)], ['Subidas', fmtN(l.filter(c => Number(c.nuevo || 0) > Number(c.anterior || 0)).length)], ['Bajadas', fmtN(l.filter(c => Number(c.nuevo || 0) < Number(c.anterior || 0)).length)]], nota: 'Se registra solo desde el 16-nov-2026: cada vez que cambia el precio o el costo de un artículo.' };
+    }
+    if (t === 'costos') {
+      const l = (_riX.costos || []).filter(c => pasaProd(c.producto_id) && hay((c.producto_nombre || '') + ' ' + (c.producto_codigo || '') + ' ' + (c.motivo || '')));
+      let M = 0; const filas = l.map(c => { M += Number(c.monto || 0); return [fechaDMY(c.fecha), c.producto_codigo || '', c.producto_nombre || '', c.motivo || '', fmtN(c.unidades), fmt2d(c.monto), fmt2d(c.costo_anterior), fmt2d(c.costo_nuevo), RI_METODO[c.metodo] || c.metodo || '', c.created_by_name || '']; });
+      return { titulo: 'Costos agregados', cols: [{ t: 'Fecha' }, { t: 'Código' }, { t: 'Artículo' }, { t: 'Motivo' }, { t: 'Unidades', r: 1 }, { t: 'Monto', r: 1 }, { t: 'Costo antes', r: 1 }, { t: 'Costo ahora', r: 1 }, { t: 'Pago' }, { t: 'Usuario' }], grupos: [{ nombre: '', filas: filas }], total: ['', '', '', 'TOTAL', '', fmt2d(M), '', '', '', ''],
+        kpis: [['Costos agregados', fmtN(l.length)], ['Monto', fmt2d(M)]], nota: 'Costo extra sumado a artículos ya comprados (reacondicionado, flete, reparación). Se reparte entre las unidades en existencia.', vacio: 'Aún no hay costos agregados. Toque «+ Costo» para registrar uno.' };
     }
     if (t === 'activos') {
       const l = (_riX.activos || []).filter(a => (_ri.baja || a.estado !== 'baja') && hay((a.nombre || '') + ' ' + (a.codigo || '') + ' ' + (a.categoria || '') + ' ' + (a.ubicacion || '')));
@@ -10221,7 +10233,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const f = [];
-    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios'].indexOf(t) >= 0;
+    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios', 'costos'].indexOf(t) >= 0;
     f.push(`<label>Reporte${sel('tab', RI_REPS[g], t)}</label>`);
     if ((t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
@@ -10235,11 +10247,65 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     f.push(`<label>Buscar<input class="no-upper" value="${esc(_ri.q)}" placeholder="Nombre o código" oninput="window.nxRepInvSet('q',this.value)"></label>`);
     if (t === 'resumen') f.push(`<label class="richk"><input type="checkbox"${_ri.pos ? ' checked' : ''} onchange="window.nxRepInvSet('pos',this.checked)"> Solo con existencia</label>`);
     return `<div class="nxPf nxRepWrap nxRi">
-      <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span>${t === 'activos' ? `<button class="btn bsm bc1" type="button" onclick="window.nxActivoForm('')"><i class="ti ti-plus"></i> Activo</button>` : ''}<button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
+      <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span>${t === 'activos' ? `<button class="btn bsm bc1" type="button" onclick="window.nxActivoForm('')"><i class="ti ti-plus"></i> Activo</button>` : ''}${t === 'costos' ? `<button class="btn bsm bc1" type="button" onclick="window.nxCostoForm()"><i class="ti ti-plus"></i> Costo</button>` : ''}<button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
       <div class="ritabs" role="tablist">${RI_GRUPOS.map(x => `<button type="button" role="tab" aria-selected="${g === x[0]}" class="${g === x[0] ? 'on' : ''}" onclick="window.nxRepInvSet('grupo','${x[0]}')"><i class="ti ${x[2]}"></i> ${x[1]}</button>`).join('')}</div>
       <div class="rifil">${f.join('')}</div>
       <div id="riCuerpo">${riCuerpoHTML()}</div></div>`;
   }
+  // ── «Agregar costo» (dueño, 16-nov-2026): costo extra a un artículo YA comprado (reacondicionado, flete, reparación) ──
+  // El servidor (rpc/pos_agregar_costo) reparte el monto entre las unidades en existencia y sube el costo, todo o nada.
+  // Aquí solo se asienta: Debe Inventario / Haber Caja, Banco o Cuentas por pagar; y si fue en efectivo, sale de la caja abierta.
+  function costoProdDe(txt) { const t = String(txt || '').trim().toLowerCase(); if (!t) return null; const l = invProductosStock().filter(p => p.activo !== false); return l.find(p => ((p.codigo ? p.codigo + ' · ' : '') + p.nombre).toLowerCase() === t) || l.find(p => String(p.codigo || '').toLowerCase() === t) || l.find(p => String(p.nombre || '').toLowerCase() === t) || null; }
+  window.nxCostoForm = function () {
+    cerrarModal('nxCosto');
+    const ov = document.createElement('div'); ov.id = 'nxCosto'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const campo = (lbl, html) => `<label style="display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0">${lbl}${html}</label>`;
+    const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
+    const ops = invProductosStock().filter(p => p.activo !== false && Number(p.stock || 0) > 0).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
+    ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-coin"></i> Agregar costo</span><button class="nxBack" type="button" onclick="document.getElementById('nxCosto').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1;display:grid;gap:10px;padding:2px">
+        ${campo('Artículo', `<input id="caArt" class="no-upper" style="${est}" list="caArts" placeholder="Nombre o código" oninput="window.nxCostoVista()"><datalist id="caArts">${ops}</datalist>`)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${campo('Monto RD$', `<input id="caMon" inputmode="decimal" style="${est};text-align:right" placeholder="0.00" oninput="window.nxCostoVista()">`)}
+          ${campo('Pagado con', `<select id="caMet" style="${est}"><option value="efectivo">Efectivo</option><option value="banco">Banco</option><option value="por_pagar">Por pagar</option></select>`)}
+        </div>
+        ${campo('Motivo', `<input id="caMot" class="no-upper" style="${est}" list="caMots" placeholder="Reacondicionado"><datalist id="caMots">${['Reacondicionado', 'Reparación', 'Flete', 'Empaque', 'Accesorios'].map(x => `<option value="${x}">`).join('')}</datalist>`)}
+        <div id="caVista" style="min-height:48px;padding:10px 12px;border-radius:11px;background:#f1f5f9;font-size:13px;color:#475569;display:flex;align-items:center">Elija el artículo y escriba el monto.</div>
+      </div>
+      <button class="btn bc1" type="button" id="caGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxCostoGuardar()"><i class="ti ti-device-floppy"></i> Agregar costo</button></div>`;
+    document.body.appendChild(ov);
+    setTimeout(() => { const i = document.getElementById('caArt'); if (i) i.focus(); }, 60);
+  };
+  window.nxCostoVista = function () {
+    const el = document.getElementById('caVista'); if (!el) return;
+    const p = costoProdDe(val('caArt')), m = afNum('caMon');
+    if (!p) { el.style.color = '#475569'; el.textContent = val('caArt') ? 'Elija un artículo de la lista (con existencia).' : 'Elija el artículo y escriba el monto.'; return; }
+    const s = Number(p.stock || 0);
+    if (s <= 0) { el.style.color = '#b91c1c'; el.textContent = 'Este artículo no tiene existencia.'; return; }
+    const nuevo = r2(Number(p.costo || 0) + (m > 0 ? m / s : 0));
+    el.style.color = '#0f172a';
+    el.innerHTML = m > 0 ? `<span>${fmtN(s)} en existencia · <b>+${esc(fmt2d(m / s))}</b> c/u<br>Costo: ${esc(fmt2d(p.costo))} → <b>${esc(fmt2d(nuevo))}</b></span>` : `<span>${fmtN(s)} en existencia · costo actual <b>${esc(fmt2d(p.costo))}</b></span>`;
+  };
+  window.nxCostoGuardar = async function () {
+    const p = costoProdDe(val('caArt')), monto = r2(afNum('caMon')), met = val('caMet') || 'efectivo', motivo = (val('caMot') || '').trim();
+    if (!p) { toast('err', 'Elija un artículo de la lista'); const i = document.getElementById('caArt'); if (i) i.focus(); return; }
+    if (!(monto > 0)) { toast('err', 'Escriba el monto'); const i = document.getElementById('caMon'); if (i) i.focus(); return; }
+    const b = document.getElementById('caGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
+    try {
+      const r0 = await getAPI().post('rpc/pos_agregar_costo', { p_producto: p.id, p_monto: monto, p_motivo: motivo || null, p_metodo: met });
+      const r = Array.isArray(r0) ? r0[0] : r0; if (!r || r.ok !== true) throw new Error('SIN_CONFIRMACION');
+      p.costo = Number(r.costo_nuevo);
+      const conc = 'Costo agregado · ' + p.nombre + (motivo ? ' (' + motivo + ')' : '');
+      try { const byc = await ctasMap(); if (Object.keys(byc).length) { const h = met === 'banco' ? ['1102', 'Banco'] : met === 'por_pagar' ? ['2101', 'Cuentas por pagar (proveedores)'] : ['1101', 'Caja']; await postAsientoConcepto(isoHoy(), conc, 'costo_agregado', r.id, [lnCta(byc, '1104', 'Inventario de mercancías', monto, 0), lnCta(byc, h[0], h[1], 0, monto)], null); } } catch (e) {}
+      if (met === 'efectivo' && _caja && _caja.id) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'salida', monto: monto, concepto: conc, fecha: new Date().toISOString(), created_by_name: nomAdmin() }); } catch (e) {} }
+      cerrarModal('nxCosto'); toast('ok', 'Costo agregado', p.nombre + ' · ahora ' + fmt2d(r.costo_nuevo)); riRefrescar();
+    } catch (e) {
+      if (b) b.disabled = false; const m = String(e && e.message || e);
+      toast('err', 'No se pudo agregar', /NO_AUTORIZADO|42501/.test(m) ? 'Solo el dueño o el gerente pueden agregar costos.' : /SIN_EXISTENCIA/.test(m) ? 'El artículo no tiene existencia.' : /ES_SERVICIO/.test(m) ? 'Los servicios no llevan costo de inventario.' : m);
+    }
+  };
   // Alta y edición de un activo fijo. No se borra: se da de baja (queda en el historial).
   window.nxActivoForm = function (id) {
     const a = id ? (_riX.activos || []).find(x => String(x.id) === String(id)) : null; if (id && !a) return;

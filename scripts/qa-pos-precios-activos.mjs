@@ -46,7 +46,7 @@ function db() {
     pos_venta_items: [{ id: 'vi1', venta_id: 'h1', producto_id: 'p1', nombre: 'Agua purificada', cantidad: 4, precio: 29.5, importe: 118, itbis: true, costo_unitario: 10 }, { id: 'vi2', venta_id: 'h2', producto_id: 'p3', nombre: 'Arroz selecto', cantidad: 2, precio: 200, importe: 400, itbis: false }],
     pos_devoluciones: globalThis.__DEVS || [],
     pos_devolucion_items: [{ id: 'di1', devolucion_id: 'd1', producto_id: 'p1', nombre: 'Agua purificada', cantidad: 1, precio: 25, importe: 25, itbis: true }],
-    pos_cuentas: [['1101', 'Caja', 'activo'], ['1103', 'CxC', 'activo'], ['1104', 'Inventario', 'activo'], ['2102', 'ITBIS por pagar', 'pasivo'], ['2105', 'Notas de crédito por aplicar', 'pasivo'], ['4101', 'Ventas', 'ingreso'], ['5101', 'Costo', 'costo'], ['3101', 'Capital', 'capital'], ['4102', 'Otros ingresos', 'ingreso'], ['6104', 'Gastos varios', 'gasto']].map(([c, n, t]) => ({ id: 'cta' + c, codigo: c, nombre: n, tipo: t, activo: true })),
+    pos_cuentas: [['1101', 'Caja', 'activo'], ['1103', 'CxC', 'activo'], ['1104', 'Inventario', 'activo'], ['2102', 'ITBIS por pagar', 'pasivo'], ['2105', 'Notas de crédito por aplicar', 'pasivo'], ['4101', 'Ventas', 'ingreso'], ['5101', 'Costo', 'costo'], ['1102', 'Banco', 'activo'], ['2101', 'CxP', 'pasivo'], ['3101', 'Capital', 'capital'], ['4102', 'Otros ingresos', 'ingreso'], ['6104', 'Gastos varios', 'gasto']].map(([c, n, t]) => ({ id: 'cta' + c, codigo: c, nombre: n, tipo: t, activo: true })),
     pos_garantias: [], pos_compra_pagos: [], pos_categorias: [{ id: 'k1', nombre: 'Bebidas', orden: 1 }, { id: 'k2', nombre: 'Alimentos', orden: 2 }],
     pos_secuencias: [{ id: 'sqA', tipo: 'asiento', prefijo: 'AS-', longitud: 5, proximo: 1, activo: true }]
   };
@@ -71,6 +71,7 @@ async function abrir(b, ancho, off) {
     if (t === 'rpc/pos_abrir_mi_caja') { D.pos_cajas = [{ id: 'cjN', estado: 'abierta', apertura: new Date().toISOString(), monto_inicial: Number((body || {}).p_monto_inicial || 0) }]; return send(D.pos_cajas[0]); }
     if (t === 'rpc/pos_registrar_compra_atomica') return send({ ok: true, compra: { id: 'cmp1', numero: 10, fecha: new Date().toLocaleDateString('en-CA') }, total_desembarcado: (body.p_compra || {}).subtotal });
     if (t === 'rpc/pos_mover_stock_atomico') return send({ ok: true, stock_nuevo: Number(body.p_delta || 0), stock_almacen_nuevo: Number(body.p_delta || 0) });
+    if (t === 'rpc/pos_agregar_costo') { const pr = D.pos_productos.find(x => x.id === body.p_producto); const nuevo = Math.round((pr.costo + body.p_monto / pr.stock) * 100) / 100; const fila = { id: 'ca1', producto_id: pr.id, producto_nombre: pr.nombre, producto_codigo: pr.codigo, monto: body.p_monto, unidades: pr.stock, costo_anterior: pr.costo, costo_nuevo: nuevo, motivo: body.p_motivo, metodo: body.p_metodo, created_by_name: 'Esterlin', fecha: new Date().toISOString() }; D.pos_costos_agregados = [fila]; return send({ ok: true, id: 'ca1', costo_anterior: pr.costo, costo_nuevo: nuevo, unidades: pr.stock, monto: body.p_monto }); }
     if (t.startsWith('rpc/')) return send(null);
     if (req.method() === 'POST') { const arr = (Array.isArray(body) ? body : [body]).map((x, i) => Object.assign({ id: t + '_n' + (D[t] ? D[t].length : 0) + '_' + i, created_at: new Date().toISOString() }, x)); D[t] = (D[t] || []).concat(arr); return send(arr); }
     if (req.method() === 'PATCH' && t === 'pos_secuencias') { const id = u.searchParams.get('id').slice(3); const pr = u.searchParams.get('proximo'); const row = D.pos_secuencias.find(x => x.id === id); if (!row || (pr && String(row.proximo) !== pr.slice(3))) return send([]); Object.assign(row, body); return send([row]); }
@@ -143,6 +144,29 @@ try {
     const pat = s.pedidos.filter(p => p.t === 'pos_activos_fijos' && p.m === 'PATCH').pop();
     ok(pat && pat.body.estado === 'baja' && !s.pedidos.some(p => p.t === 'pos_activos_fijos' && p.m === 'DELETE'), `${w}px: dar de baja cambia el estado; nunca borra`, pat && pat.body);
     if (OUT) await page.screenshot({ path: `${OUT}/activos-${w}.png` });
+    // «Agregar costo»: RD$ 100 entre 10 unidades → costo 15 → 25
+    await page.evaluate(() => window.nxRepInvSet('tab', 'costos')); await page.waitForTimeout(1300); t = await txt();
+    ok(/Aún no hay costos agregados/i.test(t) && await page.evaluate(() => [...document.querySelectorAll('.nxRi .riacc button')].some(x => /Costo/i.test(x.innerText))), `${w}px: Costos agregados: vacío con su botón «+ Costo»`, t);
+    await page.evaluate(() => window.nxCostoForm()); await page.waitForTimeout(400);
+    await page.evaluate(() => window.nxCostoGuardar()); await page.waitForTimeout(300);
+    ok(!s.pedidos.some(p => p.t === 'rpc/pos_agregar_costo'), `${w}px: sin artículo ni monto no envía nada`);
+    await page.evaluate(() => { const f = (id, v) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('input')); }; f('caArt', 'A-01 · Agua purificada'); f('caMon', '100'); f('caMot', 'Reacondicionado'); });
+    const vista = await page.evaluate(() => document.getElementById('caVista').innerText.replace(/\s+/g, ' '));
+    ok(/10 en existencia · \+RD\$ 10\.00 c\/u/i.test(vista) && /RD\$ 15\.00 → RD\$ 25\.00/.test(vista), `${w}px: antes de guardar muestra el reparto: +RD$ 10 c/u, costo 15 → 25`, vista);
+    const cm = await page.evaluate(() => { const i = document.getElementById('caArt'), g = document.getElementById('caGuardar'); return { h: Math.round(i.getBoundingClientRect().height), fs: getComputedStyle(i).fontSize, btn: Math.round(g.getBoundingClientRect().height) }; });
+    ok(cm.h >= 48 && cm.fs === '16px' && cm.btn >= 54, `${w}px: ficha de costo: 48 px / 16 px, botón 54 px`, cm);
+    if (OUT) await page.screenshot({ path: `${OUT}/costo-form-${w}.png` });
+    const n9 = s.pedidos.length; await page.evaluate(() => window.nxCostoGuardar()); await page.waitForTimeout(2200);
+    const nv9 = s.pedidos.slice(n9), rpc = nv9.find(p => p.t === 'rpc/pos_agregar_costo');
+    ok(rpc && rpc.body.p_producto === 'p1' && rpc.body.p_monto === 100 && rpc.body.p_metodo === 'efectivo' && rpc.body.p_motivo === 'Reacondicionado', `${w}px: llama al servidor con artículo, monto, motivo y pago`, rpc && rpc.body);
+    const li9 = nv9.filter(p => p.t === 'pos_asiento_lineas' && p.m === 'POST').flatMap(p => Array.isArray(p.body) ? p.body : [p.body]);
+    ok(li9.some(l => l.cuenta_codigo === '1104' && Number(l.debito) === 100) && li9.some(l => l.cuenta_codigo === '1101' && Number(l.credito) === 100), `${w}px: asiento Debe Inventario 100 / Haber Caja 100`, li9);
+    const mv9 = nv9.find(p => p.t === 'pos_caja_movimientos' && p.m === 'POST');
+    ok(mv9 && mv9.body.tipo === 'salida' && Number(mv9.body.monto) === 100, `${w}px: en efectivo sale de la caja abierta`, mv9 && mv9.body);
+    t = await txt();
+    ok(/Agua purificada Reacondicionado 10 RD\$ 100\.00 RD\$ 15\.00 RD\$ 25\.00 Efectivo/i.test(t), `${w}px: el reporte lista el costo agregado`, t.slice(0, 400));
+    ok(nv9.filter(p => p.t === 'rpc/pos_agregar_costo').length === 1 && !nv9.some(p => p.t === 'pos_productos' && p.m !== 'GET'), `${w}px: una sola llamada; el costo lo cambia el servidor, no la pantalla`);
+    if (OUT) await page.screenshot({ path: `${OUT}/costos-${w}.png` });
     ok(s.errs.length === 0, `${w}px: 0 errores de JS`, s.errs); await s.ctx.close();
   }
 } finally { await b.close(); }
