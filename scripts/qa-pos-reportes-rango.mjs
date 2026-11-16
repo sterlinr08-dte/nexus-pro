@@ -111,7 +111,7 @@ try {
     globalThis.__HOY = new Date().toLocaleDateString('en-CA'); globalThis.__DEVS = []; globalThis.__HIST = []; globalThis.__ACT = [];
     globalThis.__PRODS = [{ id: 'p1', nombre: 'Agua purificada', codigo: 'A-01', categoria_id: 'k1', precio: 30, costo: 15, stock: 10, itbis: false, activo: true, tipo: 'producto' }];
     const ahora = new Date().toISOString();
-    globalThis.__VENTAS_HOY = Array.from({ length: 2500 }, (_, i) => ({ id: 'vv' + i, numero: i + 1, total: 100, subtotal: 100, itbis: 0, created_at: ahora, fecha: ahora, estado: 'completada', tipo_comprobante: 'sin' }));
+    globalThis.__VENTAS_HOY = Array.from({ length: 2500 }, (_, i) => ({ id: 'vv' + i, numero: i + 1, total: i === 0 ? 50 : 100, subtotal: 100, itbis: 0, created_at: ahora, fecha: ahora, estado: 'completada', tipo_comprobante: 'sin' }));
     const s = await abrir(b, w); const page = s.page;
     s.D.pos_venta_items = globalThis.__VENTAS_HOY.map((v, i) => ({ id: 'vi' + i, venta_id: v.id, producto_id: 'p1', nombre: 'Agua purificada', cantidad: 1, precio: 100, importe: 100, itbis: false, costo_unitario: 15 }));
     await page.waitForTimeout(800);
@@ -125,16 +125,32 @@ try {
     ok(vq.length >= 3 && vq.every(p => !/limit=2000/.test(p.q)) && vq.some(p => /offset=2000/.test(p.q)), `${w}px: Reportes trae las ventas por páginas de 1,000 (sin tope de 2,000)`, vq.map(p => p.q.slice(0, 60)));
     const q0 = decodeURIComponent(vq[0].q);
     ok(/fecha\.gte\./.test(q0) && /fecha\.is\.null,created_at\.gte\./.test(q0), `${w}px: pide solo el rango de fechas (por fecha y, si falta, por creación)`, q0.slice(0, 220));
+    const tp = await page.evaluate(() => document.getElementById('v-pos').innerText.replace(/\s+/g, ' '));
+    ok(/Ticket promedio RD\$ ?99\.98/i.test(tp), `${w}px: el ticket promedio lleva centavos (249,950 / 2,500 = 99.98)`, (tp.match(/Ticket promedio.{0,30}/i) || [''])[0]);
     await page.evaluate(() => window.nxRepInvAbrir()); await page.waitForTimeout(800);
     await page.evaluate(() => window.nxRepInvSet('grupo', 'ven')); await page.waitForTimeout(2500);
     const t = await page.evaluate(() => document.getElementById('riCuerpo').innerText.replace(/\s+/g, ' '));
-    ok(/2,500/.test(t) && /250,000/.test(t), `${w}px: el reporte de Ventas cuenta las 2,500 ventas (RD$250,000), no 2,000`, t.slice(0, 260));
+    ok(/2,500/.test(t) && /249,950/.test(t), `${w}px: el reporte de Ventas cuenta las 2,500 ventas (RD$249,950), no 2,000`, t.slice(0, 260));
     // cambiar a un rango ya cargado no vuelve a pedir; uno más viejo sí
     s.pedidos.length = 0;
     await page.evaluate(() => { window.nxRepInvCerrar(); }); await page.waitForTimeout(800);
     await page.evaluate(() => window.nxRepRango('d', '2025-01-01')); await page.waitForTimeout(5000);
     const vq2 = s.pedidos.filter(p => p.t === 'pos_ventas' && /pos_venta_items/.test(decodeURIComponent(p.q || '')));
     ok(vq2.length >= 1 && /2025-01-0/.test(decodeURIComponent(vq2[0].q)) || /2024-12-31/.test(decodeURIComponent(vq2[0] ? vq2[0].q : '')), `${w}px: elegir una fecha más vieja vuelve a cargar desde esa fecha`, vq2.map(p => decodeURIComponent(p.q).slice(0, 120)));
+    // Muse: teclear el año («0002») no debe recargar ni cambiar la fecha; el ticket promedio lleva centavos
+    s.pedidos.length = 0;
+    await page.evaluate(() => window.nxRepRango('d', '0002-11-16')); await page.waitForTimeout(1500);
+    ok(!s.pedidos.some(p => p.t === 'pos_ventas') && await page.evaluate(() => [...document.querySelectorAll('input[type=date]')].some(i => i.value === '2025-01-01')), `${w}px: un año a medio escribir (0002) no recarga ni cambia la fecha`);
+    globalThis.__nada = 0;
+    // Venta rápida: la cantidad escrita a mano cambia el total sin tocar «+»
+    await page.evaluate(() => { window.nxPosTab('vender'); }); await page.waitForTimeout(1500);
+    await page.evaluate(() => window.nxPosAdd('p1')); await page.waitForTimeout(500);
+    const qi = page.locator('.citqty-in').first();
+    if (await qi.count()) {
+      await qi.click({ clickCount: 3 }); await page.keyboard.type('4'); await page.waitForTimeout(1200);
+      const q = await page.evaluate(() => ({ v: document.querySelector('.citqty-in').value, foco: document.activeElement && document.activeElement.classList.contains('citqty-in'), txt: document.body.innerText.replace(/\s+/g, ' ') }));
+      ok(q.v === '4' && q.foco && /RD\$ ?120\.00/.test(q.txt), `${w}px: escribir 4 en la cantidad cambia el total a RD$120 sin tocar «+» y deja el cursor en el campo`, { v: q.v, foco: q.foco });
+    } else ok(false, `${w}px: no se encontró el campo de cantidad del carrito`);
     // pie de la ficha de artículo: 48 px los secundarios, 54 el principal
     await page.evaluate(() => window.nxPosNuevoProd()); await page.waitForTimeout(1200);
     const pie = await page.evaluate(() => [...document.querySelectorAll('#nxPosProd .footbar button')].map(x => [x.innerText.trim(), Math.round(x.getBoundingClientRect().height)]));

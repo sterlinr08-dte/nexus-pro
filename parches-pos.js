@@ -1408,6 +1408,18 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     it.cantidad = n;
     pintarCarrito();
   };
+  // Muse 16-nov: al escribir la cantidad a mano el total no cambiaba hasta tocar «+». Ahora se aplica al dejar de escribir y el cursor sigue en el campo.
+  let _qtyT = null;
+  window.nxPosQtyVivo = function (idx, el) {
+    clearTimeout(_qtyT);
+    _qtyT = setTimeout(function () {
+      const n = Math.floor(Number(el.value)); if (!Number.isFinite(n) || n < 1) return;
+      const it = _cart[idx]; if (!it || it.cantidad === n) return;
+      el.onchange = null; el.removeAttribute('onchange'); el.oninput = null; // que el repintado no dispare otro «cambio» al perder el foco
+      window.nxPosQtySet(idx, n);
+      const nuevo = document.querySelectorAll('.citqty-in')[idx]; if (nuevo) { nuevo.focus(); try { const v = nuevo.value; nuevo.value = ''; nuevo.value = v; } catch (e) {} }
+    }, 450);
+  };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
 
@@ -1420,7 +1432,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const filas = _cart.length ? _cart.map((it, i) => `<div class="cartitem">
         <div class="citthumb"><i class="ti ti-shopping-bag"></i></div>
         <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u${it.itbis ? '' : ' ' + chipExento}</div>${volLinea(it, i, 'vender')}</div>
-        <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
+        <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" oninput="window.nxPosQtyVivo(${i},this)" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
       </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>Carrito vacío.<br>Toca un producto para agregarlo.</div>';
@@ -10586,6 +10598,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxRepInvIr = function (tab) { window.nxPosTab('reportes'); setTimeout(() => { _riVista = 'inv'; _ri.tab = tab; riRefrescar(); }, 150); };
   window.nxRepInvCerrar = function () { _riVista = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepInvSet = function (k, val) {
+    if ((k === 'desde' || k === 'hasta') && !/^\d{4}-\d{2}-\d{2}$/.test(String(val || '')) || ((k === 'desde' || k === 'hasta') && Number(String(val).slice(0, 4)) < 1990)) return;
     if (k === 'grupo') { k = 'tab'; val = RI_REPS[val] ? RI_REPS[val][0][0] : 'resumen'; }
     _ri[k] = (k === 'pos' || k === 'baja') ? !!val : k === 'dias' ? Number(val) || 30 : val;
     if (k === 'tab' || k === 'desde' || k === 'hasta' || k === 'dias') { riRefrescar(); return; }
@@ -10821,7 +10834,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpi('Costo de lo vendido', costoTot, '#ea580c')}
         ${kpi('ITBIS cobrado', totItbis, '#7c3aed')}
         ${kpiPf('No. de ventas', String(list.length), '')}
-        ${kpi('Ticket promedio', list.length ? Math.round(totVta / list.length) : 0, '#0891b2')}
+        ${kpi('Ticket promedio', list.length ? r2(totVta / list.length) : 0, '#0891b2')}
       </div>
       <div class="nxRepGrid">
         <div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-chart-bar"></i> Ventas por día (últimos ${dias.length})</div><div class="nxRepBars">${barras}</div></div>
@@ -10831,7 +10844,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Monto</th></tr></thead><tbody>${topFilas}</tbody></table></div>
       </div></div>`;
   }
-  window.nxRepRango = async function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; try { await cargarReportes(_repDesde, _repHasta); } catch (e) {} const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  // Muse 16-nov: al teclear el año, cada número hacía un cambio («0002») que repintaba la pantalla y se perdía lo escrito.
+  const fechaCompleta = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && Number(String(v).slice(0, 4)) >= 1990;
+  window.nxRepRango = async function (k, val) { if (!fechaCompleta(val)) return; if (k === 'd') _repDesde = val; else _repHasta = val; try { await cargarReportes(_repDesde, _repHasta); } catch (e) {} const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepComisiones = function () {
     const list = ventasRepRango();
     const acc = {};
