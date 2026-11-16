@@ -727,7 +727,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   }
   // La fila de nivel que le toca a un producto según el cliente elegido (o null).
   // Prefactura estilo Bayol: «Precio» puede forzar un nivel (o el de lista) para todo el documento.
-  function nivelForzado() { try { return (esPreTab() && _prefNivel) ? _prefNivel : ''; } catch (e) { return ''; } }
+  // Dueño 16-nov (2.º pedido): «el nivel del precio solo se pueda facturar o prefacturar a los clientes que lo tengan asignado».
+  // Ya no se fuerza un nivel por documento: siempre manda el nivel asignado al cliente.
+  function nivelForzado() { return ''; }
   function filaNivel(p) {
     const c = clienteSel(), f = nivelForzado(); if (f === '__lista') return null;
     const nid = f || (c && c.nivel_id); if (!nid) return null;
@@ -1810,7 +1812,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             <button type="button" class="pfbCam" onclick="window.nxFacCliToggle()">${c ? 'Cambiar' : 'Buscar'}</button></div></div>
         <button type="button" class="pfbPil" aria-expanded="${_prefPil}" onclick="window.nxPfbPil()"><span>${esc(pil)}</span><i class="ti ti-chevron-down" aria-hidden="true"></i></button>
         <div class="pfbOpc${_prefPil ? ' on' : ''}">
-          <div class="pfbF"><label class="pfbL" for="pfbNivel">Precio</label><select id="pfbNivel" onchange="window.nxPfbNivel(this.value)"><option value="">Del cliente</option><option value="__lista"${_prefNivel === '__lista' ? ' selected' : ''}>De lista</option>${nivs.map(n => `<option value="${n.id}"${String(_prefNivel) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('')}</select></div>
+          <div class="pfbF"><span class="pfbL" id="pfbNivelL">Precio</span><div id="pfbNivel" class="pfbFijo" role="note" aria-labelledby="pfbNivelL" title="Es el nivel asignado al cliente. Solo el administrador o el gerente lo cambia, en la ficha del cliente."><i class="ti ti-lock" aria-hidden="true"></i> ${esc(pfbNivelTxt())}</div></div>
           ${_almacenes.length > 1 ? `<div class="pfbF"><label class="pfbL" for="facAlmSel">Almacén</label><select id="facAlmSel" onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
           <div class="pfbF"><label class="pfbL" for="pfbVend">Vendedor</label><select id="pfbVend" onchange="window.nxPfbVend(this.value)"><option value="">Ninguno</option>${(_vendedores || []).map(v => `<option value="${v.id}"${vId === String(v.id) ? ' selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>
         </div>
@@ -1913,6 +1915,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
 .nxPfB .pfbL{font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0}
 .nxPfB .pfbF select,.nxPfB .pfbF input{height:48px;font-size:16px;border:1.5px solid #e2e8f0;border-radius:12px;padding:0 12px;background:#fff;width:100%;box-sizing:border-box;min-width:0;color:#0f172a;font-family:inherit}
 .nxPfB .pfbF input[readonly]{background:#f8fafc;color:#334155}
+.nxPfB .pfbFijo{height:48px;display:flex;align-items:center;gap:6px;border:1.5px dashed #e2e8f0;border-radius:12px;padding:0 12px;background:#f8fafc;color:#334155;font-size:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}
 .nxPfB .pfbChip{display:flex;align-items:center;gap:8px;height:48px;background:#fff;border:1.5px solid #e2e8f0;border-radius:24px;padding:0 6px 0 6px;min-width:0}
 .nxPfB .pfbAv{width:34px;height:34px;border-radius:50%;background:#fde8e1;color:#c2410c;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 34px}
 .nxPfB .pfbCN{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;text-transform:none}
@@ -2013,7 +2016,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   }
   function pfbRepreciar() { _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && !it._combo) it.precio = precioCli(p); }); pintarFactura(); }
   window.nxPfbPil = function () { _prefPil = !_prefPil; pfbRepintarCli(); };
-  window.nxPfbNivel = function (v) { _prefNivel = v || ''; pfbRepreciar(); pfbRepintarCli(); };
+
   window.nxPfbVend = function (v) { _prefVend = v || ''; pfbRepintarCli(); };
   window.nxPfbCampo = function (k, v) { _prefCliF[k] = v; if (k === 'nom') { const a = document.getElementById('pfbAviso'); if (a) a.innerHTML = String(v || '').trim() ? '<div class="pfbAviso nuevo"><span>Cliente nuevo: se registra al guardar.</span></div>' : ''; } };
   // WhatsApp primero: al llegar a 10 cifras busca el cliente por su teléfono (no duplica); si se cambia el número de un
@@ -2037,13 +2040,26 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     confirmarAccion('Prefactura nueva', 'Se quitan el cliente y los artículos sin guardar.', 'Empezar nueva', pfbLimpiar);
   };
   // Al guardar: si se escribió un cliente que no existe, se registra (nombre, WhatsApp y cédula) y se usa ese.
-  async function pfbAsegurarCliente() {
+  // 16-nov-2026 (Muse 6062: un guardado creó el cliente dos veces): un alta a la vez y, antes de crear, se pregunta a la
+  // base si ese WhatsApp ya existe (sirve también con otra pestaña abierta).
+  let _pfbAltaP = null;
+  function pfbAsegurarCliente() {
+    if (!_pfbAltaP) _pfbAltaP = pfbAsegurarClienteReal().finally(() => { _pfbAltaP = null; });
+    return _pfbAltaP;
+  }
+  async function pfbAsegurarClienteReal() {
     if (!pfbOn() || clienteSel()) return;
     const nom = String(_prefCliF.nom || '').trim(); if (!nom) return;
     const d = pfbDig(_prefCliF.wa);
-    const ya = d.length === 10 ? (_clientes || []).find(x => pfbDig(x.telefono) === d) : null;
-    if (ya) { _factCli = String(ya.id); return; }
+    let ya = d.length === 10 ? (_clientes || []).find(x => pfbDig(x.telefono) === d) : null;
     const telF = d.length === 10 ? d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6) : (String(_prefCliF.wa || '').trim() || null);
+    if (!ya && d.length === 10) {
+      try {
+        const enBase = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&telefono=in.(' + encodeURIComponent('"' + d + '","' + telF + '"') + ')&limit=1');
+        if (enBase && enBase[0]) { ya = enBase[0]; if (!(_clientes || []).find(x => String(x.id) === String(ya.id))) _clientes.push(ya); }
+      } catch (e) {}
+    }
+    if (ya) { _factCli = String(ya.id); _prefCliF = { wa: '', nom: '', ced: '' }; return; }
     const r = await getAPI().post('pos_clientes', { nombre: nom, telefono: telF, cedula: String(_prefCliF.ced || '').trim() || null, es_cliente: true, activo: true });
     const nuevo = Array.isArray(r) ? r[0] : r;
     if (nuevo && nuevo.id) { _clientes.push(nuevo); _factCli = String(nuevo.id); _prefCliF = { wa: '', nom: '', ced: '' }; }
@@ -7201,7 +7217,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="card" id="entClienteBox">
             <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
             <div class="g2">
-              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${(e.nivel_id ? String(e.nivel_id) === String(n.id) : String(n.id) === String(nivelPorDefectoId())) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Nivel de precio${puedeVerMin() ? '' : ' <i class="ti ti-lock" title="Solo el administrador o el gerente lo cambia"></i>'}</label><div class="inw"><select id="entNivel"${puedeVerMin() ? '' : ' disabled aria-describedby="entNivelAyu"'} onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${(e.nivel_id ? String(e.nivel_id) === String(n.id) : String(n.id) === String(nivelPorDefectoId())) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div>${puedeVerMin() ? '' : '<div id="entNivelAyu" style="font-size:12px;color:#64748b;margin-top:4px;text-transform:none">Solo el administrador o el gerente cambia el nivel.</div>'}</div>
               <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">RD$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
             </div>
           </div>
@@ -7260,6 +7276,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const aceptaWaAntes = !!(id && (_clientes.find(x => String(x.id) === String(id)) || {}).acepta_whatsapp);
     const aceptaWaAhora = !!(document.getElementById('entAceptaWa') || {}).checked;
     const nivelVal = val('entNivel') || 'final';
+    const nivelPuede = puedeVerMin(); // dueño 16-nov: los empleados no cambian el nivel; la base lo bloquea también (trg_pos_clientes_nivel_candado)
     const nivelEsCustom = nivelVal.indexOf('nivel:') === 0;
     const nivelObj = nivelEsCustom ? _niveles.find(n => String(n.id) === nivelVal.slice(6)) : null;
     const body = Object.assign({
@@ -7271,6 +7288,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       limite_credito: parseMoney(val('entLim')),
       acepta_whatsapp: aceptaWaAhora
     }, roles);
+    if (!nivelPuede) {
+      if (id) { delete body.nivel_id; delete body.nivel_precio; }
+      else { const d = (_niveles || []).find(n => n.es_default); body.nivel_id = d ? d.id : null; body.nivel_precio = 'final'; } // solo el marcado «por defecto» (si no hay, sin nivel): igual que exige la base
+    }
     if (aceptaWaAhora && !aceptaWaAntes) body.acepta_whatsapp_fecha = new Date().toISOString();
     if (!body.nombre) { toast('err', 'Falta el nombre / razón social'); return; }
     // Detección de duplicados (solo al CREAR): normaliza teléfono y cédula, busca coincidencia.
@@ -7301,7 +7322,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
       const cb = _entAlGuardar; _entAlGuardar = null;
       if (cb && entId) { const ent = _clientes.find(x => String(x.id) === String(entId)); if (ent) { try { cb(ent); } catch (e) {} } }
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+    } catch (e) { const m = String(e && e.message || e); toast('err', 'No se pudo guardar', /NIVEL_SOLO_ADMIN/.test(m) ? 'Solo el administrador o el gerente cambia el nivel de precio.' : m); }
   };
   // Crea/actualiza la ficha de RRHH enlazada a una entidad-empleado (salario/puesto se completan en RRHH)
   async function syncEmpleadoEntidad(entId, body) {

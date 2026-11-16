@@ -86,7 +86,7 @@ async function abrir(b, ancho, off) {
     if (req.method() === 'PATCH' && t === 'pos_activos_fijos') { const id = u.searchParams.get('id').slice(3); const row = (D[t] || []).find(x => x.id === id); if (row) Object.assign(row, body); return send(row ? [row] : []); }
     if (req.method() !== 'GET') return send([]);
     let filas = D[t] || [];
-    for (const [k, v] of u.searchParams) { if (/^(select|order|limit|offset|on_conflict)$/.test(k)) continue; if (v === 'not.is.null') { filas = filas.filter(x => x[k] != null); continue; } const m = /^eq\.(.*)$/.exec(v); if (m) filas = filas.filter(x => x[k] === undefined || String(x[k]) === m[1]); }
+    for (const [k, v] of u.searchParams) { if (/^(select|order|limit|offset|on_conflict)$/.test(k)) continue; if (v === 'not.is.null') { filas = filas.filter(x => x[k] != null); continue; } const m = /^eq\.(.*)$/.exec(v); if (m) filas = filas.filter(x => x[k] === undefined || String(x[k]) === m[1]); const mi = /^in\.\((.*)\)$/.exec(v); if (mi) { const vs = mi[1].split(',').map(z => z.replace(/^"|"$/g, '')); filas = filas.filter(x => vs.includes(String(x[k]))); } }
     const off0 = Number(u.searchParams.get('offset') || 0);
     return send(filas.slice(off0, off0 + 1000));
   });
@@ -114,6 +114,8 @@ try {
     globalThis.__PRODS = [{ id: 'p1', nombre: 'BATERIA SAMSUNG A12', codigo: '2139', precio: 1500, costo: 600, stock: 10, itbis: false, activo: true, tipo: 'producto' }, { id: 'p3', nombre: 'PROTECTOR CRISTAL IPHONE 13 DE 6.1', codigo: '3301', precio: 350, costo: 100, stock: 20, itbis: false, activo: true, tipo: 'producto', favorito: true }, { id: 'p4', nombre: 'Envio - Mensajeria', codigo: '1161', precio: 100, costo: 0, stock: 0, itbis: false, activo: true, tipo: 'servicio' }];
     globalThis.__EXTRA = { pos_vendedores: [{ id: 'vd1', nombre: 'Esterlin Espinal', activo: true }, { id: 'vd2', nombre: 'Robinson', activo: true }], pos_niveles_precio: [{ id: 'n1', nombre: 'Mayorista', orden: 1, activo: true }], pos_producto_niveles: [{ id: 'pn1', producto_id: 'p1', nivel_id: 'n1', precio_contado: 1200 }] };
     const s = await abrir(b, w); const page = s.page; await page.setViewportSize({ width: w, height: 900 });
+    s.D.pos_clientes.push({ id: 'c9', nombre: 'Mayorista Demo', telefono: '8095558888', nivel_id: 'n1', nivel_precio: 'mayor', activo: true, es_cliente: true });
+    await page.evaluate(() => window.nxAbrirPOS && window.nxAbrirPOS()); await page.waitForTimeout(2500);
     await page.evaluate(() => window.nxPosTab('prefactura')); await page.waitForTimeout(1500);
     ok(await page.evaluate(() => !!document.querySelector('#v-pos .nxPfB #facCliInfoWrap[data-doc="pfb"]')), `${w}px: la Prefactura usa el diseño estilo Bayol`);
     // vendedor automático = el usuario de la sesión
@@ -130,12 +132,13 @@ try {
     const nom = await page.evaluate(() => ({ t: [...document.querySelectorAll('#facTabla .dnm')].map(e => e.innerText.trim()), tt: getComputedStyle(document.querySelector('#facTabla .dnm')).textTransform }));
     ok(nom.t.join('|') === 'Bateria Samsung A12|Protector Cristal iPhone 13 de 6.1' && nom.tt === 'none', `${w}px: nombres en minúscula normal (como Bayol)`, nom);
     if (w < 761) { const hs = await page.evaluate(() => [...document.querySelectorAll('#facTabla tbody tr')].map(r => Math.round(r.getBoundingClientRect().height))); ok(hs.every(h => h <= 140), `${w}px: cada artículo en 2 filas (≤ 140 px)`, hs); }
-    // nivel de precio para todo el documento
-    await page.selectOption('#pfbNivel', 'n1'); await page.waitForTimeout(400);
-    let pr = await page.evaluate(() => document.querySelector('#facTabla .pin').value);
-    await page.selectOption('#pfbNivel', '__lista'); await page.waitForTimeout(400);
+    // Nivel de precio: SOLO el asignado al cliente; nadie lo fuerza en la prefactura (dueño 16-nov)
+    ok(await page.evaluate(() => !document.querySelector('select#pfbNivel') && /Cliente final/i.test(document.getElementById('pfbNivel').innerText)), `${w}px: «Precio» es solo informativo (nivel del cliente, sin selector)`);
+    await page.evaluate(() => window.nxFacSetCli('c9')); await page.waitForTimeout(500);
+    const pr = await page.evaluate(() => ({ p: document.querySelector('#facTabla .pin').value, n: document.getElementById('pfbNivel').innerText }));
+    await page.evaluate(() => window.nxFacSetCli('')); await page.waitForTimeout(500);
     const pr2 = await page.evaluate(() => document.querySelector('#facTabla .pin').value);
-    ok(Number(String(pr).replace(/,/g, '')) === 1200 && Number(String(pr2).replace(/,/g, '')) === 1500, `${w}px: «Precio» cambia el nivel de todo el documento (Mayorista 1,200 → De lista 1,500)`, [pr, pr2]);
+    ok(Number(String(pr.p).replace(/,/g, '')) === 1200 && /Mayorista/i.test(pr.n) && Number(String(pr2).replace(/,/g, '')) === 1500, `${w}px: el precio Mayorista solo sale con el cliente que lo tiene asignado (1,200) y vuelve a 1,500 sin él`, [pr, pr2]);
     // accesos rápidos
     const rap = await page.evaluate(() => [...document.querySelectorAll('.pfbRapB')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
     ok(rap.length >= 2 && /Protector Cristal/.test(rap[0]) && /Envio - Mensajeria/.test(rap[1]), `${w}px: accesos automáticos: favoritos (★) primero y luego servicios`, rap);
@@ -163,6 +166,22 @@ try {
     const pc = s.pedidos.find(p => p.t === 'pos_clientes' && p.m === 'POST'), pf = s.pedidos.find(p => p.t === 'pos_prefacturas' && p.m === 'POST');
     ok(pc && pc.body.nombre === 'Cliente Nuevo Demo' && pc.body.telefono === '829-555-9999' && pc.body.cedula === '00112345678', `${w}px: al guardar se registra el cliente nuevo (nombre, WhatsApp, cédula)`, pc && pc.body);
     ok(pf && pf.body.vendedor_id === 'vd1' && pf.body.vendedor_nombre === 'Esterlin Espinal' && pf.body.cliente_nombre === 'Cliente Nuevo Demo' && /^pos_clientes_n/.test(pf.body.cliente_id || '') && pf.body.items[0].nombre === 'BATERIA SAMSUNG A12', `${w}px: la prefactura guarda cliente, vendedor y el nombre original del artículo`, pf && { v: pf.body.vendedor_id, c: pf.body.cliente_nombre, id: pf.body.cliente_id, n: pf.body.items[0].nombre });
+    // Muse 6062: un guardado creó el cliente dos veces. Dos guardados a la vez → un solo cliente.
+    await page.evaluate(() => { window.nxFacAdd('p1'); window.nxFacSetCli(''); }); await page.waitForTimeout(300);
+    await page.evaluate(() => { window.nxPfbWa('829-555-4321'); window.nxPfbCampo('nom', 'Cliente Doble Toque'); }); await page.waitForTimeout(200);
+    s.pedidos.length = 0;
+    await page.evaluate(() => { window.nxPrefGuardar(); window.nxPrefGuardar(); window.nxDocAccion && window.nxDocAccion('pref', 'guardar'); }); await page.waitForTimeout(2500);
+    const altas = s.pedidos.filter(p => p.t === 'pos_clientes' && p.m === 'POST').length, pfs = s.pedidos.filter(p => p.t === 'pos_prefacturas' && p.m === 'POST').length;
+    ok(altas === 1 && pfs === 1, `${w}px: varios «Guardar» seguidos crean 1 cliente y 1 prefactura`, { altas, pfs, pf: (s.pedidos.find(p => p.t === 'pos_prefacturas') || {}).body?.cliente_id, gets: s.pedidos.filter(p => p.t === 'pos_clientes').map(p => p.m + ' ' + (p.q || p.url || '')).slice(0, 3) });
+    // Un WhatsApp que ya está en la base (aunque esta pantalla no lo tenga cargado) no se vuelve a crear
+    s.D.pos_clientes.push({ id: 'cBase', nombre: 'Cliente En Base', telefono: '849-555-6666', activo: true, es_cliente: true });
+    await page.evaluate(() => { document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); window.nxFacAdd('p1'); window.nxFacSetCli(''); }); await page.waitForTimeout(300);
+    await page.evaluate(() => { window.nxPfbWa('8495556666'); window.nxPfbCampo('nom', 'Otro Nombre'); }); await page.waitForTimeout(200);
+    s.pedidos.length = 0;
+    await page.evaluate(() => window.nxPrefGuardar()); await page.waitForTimeout(2500);
+    const alta2 = s.pedidos.filter(p => p.t === 'pos_clientes' && p.m === 'POST').length, pf2 = s.pedidos.find(p => p.t === 'pos_prefacturas' && p.m === 'POST');
+    ok(alta2 === 0 && pf2 && pf2.body.cliente_id === 'cBase', `${w}px: si el WhatsApp ya existe en la base, usa ese cliente y no crea otro`, { alta2, cli: pf2 && pf2.body.cliente_id });
+    await page.evaluate(() => document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()));
     // «Limpiar» (barra de acciones) vacía la prefactura al confirmar, a la primera (Muse 16-nov)
     await page.evaluate(() => { document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); window.nxFacAdd('p1'); }); await page.waitForTimeout(300);
     await page.evaluate(() => { const b = [...document.querySelectorAll('#facOtrasSlot button')].find(x => /Limpiar/i.test(x.innerText)); b.click(); }); await page.waitForTimeout(300);
@@ -216,6 +235,19 @@ try {
     await page.evaluate(() => { const b = [...document.querySelectorAll('#nxPfResImg button')].find(x => /Quitar/i.test(x.innerText)); b.click(); }); await page.waitForTimeout(300);
     ok(await page.evaluate(() => !document.querySelector('#nxPfResImg img') && document.getElementById('ppImg').value === ''), `${w}px: «Quitar» deja el artículo sin foto`);
     await page.evaluate(() => { const m = document.getElementById('nxPosProd'); if (m) m.remove(); });
+    // Ficha del cliente: el nivel solo lo cambia admin/gerente (dueño 16-nov)
+    await page.evaluate(() => window.nxPosNuevoCli()); await page.waitForTimeout(800);
+    ok(await page.evaluate(() => !document.getElementById('entNivel').disabled), `${w}px: el administrador sí puede elegir el nivel del cliente`);
+    await page.evaluate(() => { const m = document.getElementById('nxEntForm'); if (m) m.remove(); window.nxRolPreview('cajero'); }); await page.waitForTimeout(800);
+    await page.evaluate(() => window.nxPosNuevoCli()); await page.waitForTimeout(800);
+    const emp = await page.evaluate(() => ({ dis: document.getElementById('entNivel').disabled, ayu: /Solo el administrador o el gerente/.test((document.getElementById('entNivelAyu') || {}).innerText || '') }));
+    ok(emp.dis && emp.ayu, `${w}px: un cajero ve el nivel bloqueado con su aviso`, emp);
+    s.pedidos.length = 0;
+    await page.evaluate(() => { document.getElementById('entNom').value = 'Cliente de Cajero'; const e = document.getElementById('ent_es_cliente'); if (e && !e.checked) e.click(); window.nxEntGuardar(''); }); await page.waitForTimeout(1500);
+    const alta = s.pedidos.find(p => p.t === 'pos_clientes' && p.m === 'POST');
+    ok(alta && alta.body.nivel_precio === 'final' && alta.body.nivel_id === null, `${w}px: el cliente que crea un cajero queda con el nivel por defecto`, alta && { id: alta.body.nivel_id, np: alta.body.nivel_precio });
+    await page.evaluate(() => { const m = document.getElementById('nxEntForm'); if (m) m.remove(); window.nxRolPreview(''); }); await page.waitForTimeout(800);
+    await page.evaluate(() => window.nxPosTab('prefactura')); await page.waitForTimeout(800);
     // Factura no cambia; y el interruptor apaga el diseño
     await page.evaluate(() => window.nxPosTab('factura')); await page.waitForTimeout(1000);
     ok(await page.evaluate(() => !document.querySelector('#v-pos .nxPfB') && !!document.querySelector('#v-pos .nxDoc')), `${w}px: la Factura sigue igual`);
