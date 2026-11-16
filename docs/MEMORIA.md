@@ -165,3 +165,9 @@
 - `AGENTS.md` (estado vivo, en `origin/main`), `CLAUDE.md`, `REGLAMENTOS.md`, `HERRAMIENTAS.md`, `docs/TRASPASO-CLAUDE.md`, `docs/bitacora/` y `docs/MEMORIA-TECNICA.md`.
 
 - **Puntos de control (dueño, 23-oct-2026, reel de VibeWise):** antes de código no trivial, 2–3 opciones con ventajas y desventajas (maqueta si se puede), él decide; después informe de qué cambió y qué pruebas pasaron. Skill `puntos-de-control` en los 3 proyectos.
+
+## POS de tiendas — estado 16-nov-2026
+- Registro web en vivo (6047, PR #486): /registro crea la tienda con 14 días; usuarios `usuario@tienda`; el dueño aprueba/suspende en su panel.
+- Demo 6048 (PR #487): arreglos de la prueba de Muse (devoluciones visibles, asiento NC a 2105, fechas, Inicio, menú, carga).
+- Decisión: **Compras sin paso «Recibir»** (opción A): la mercancía entra al guardar.
+- Pendiente: borrar tienda de prueba `colmado-prueba-claude`; resumen contable de la demo (punto 10); proveedores de ejemplo en `demo_reiniciar()`.
