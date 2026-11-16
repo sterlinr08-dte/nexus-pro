@@ -137,8 +137,8 @@ try {
     // Un segundo pedido para rechazar
     await page.evaluate(() => window.nxPedidoNuevo()); await page.waitForTimeout(400);
     await page.evaluate(() => { window.nxPedidoAgregar('A-01 · Agua purificada'); }); await page.evaluate(() => window.nxPedidoGuardar()); await page.waitForTimeout(1300);
-    page.once('dialog', d => d.accept('No hay existencia'));
-    await page.evaluate(() => window.nxPedidoCerrar('ped2', 'rechazado')); await page.waitForTimeout(1300);
+    await page.evaluate(() => window.nxPedidoCerrar('ped2', 'rechazado')); await page.waitForTimeout(400);
+    await page.fill('#nxMotivoTxt', 'No hay existencia'); await page.click('#nxMotivoOk'); await page.waitForTimeout(1300);
     const rz = s.pedidos.find(p => p.t === 'rpc/pos_pedido_almacen_atender' && p.body.p_estado === 'rechazado');
     ok(rz && rz.body.p_motivo === 'No hay existencia', `${w}px: rechazar pide motivo`, rz && rz.body);
     // Despachar el primero: la transferencia se abre llena y bloqueada a esos almacenes; Principal tiene solo 8 aguas

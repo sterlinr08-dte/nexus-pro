@@ -7439,8 +7439,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // esquema, sin flujo de OC formal, pero es el único dato real que se llama "orden" en
   // todo el módulo — no se confunde con "Recepción", que es su propia categoría aparte).
   let _univS = { q: '', timer: null, token: 0, sel: -1, flat: [], resultados: [], cargando: false };
-  const UNIV_CAT_LBL = { cliente: 'Clientes', factura: 'Facturas', articulo: 'Artículos', imei: 'IMEI / Serie', recepcion: 'Recepciones', garantia: 'Garantías', proveedor: 'Proveedores', orden: 'Órdenes' };
-  const UNIV_CAT_ORDEN = ['cliente', 'factura', 'articulo', 'imei', 'recepcion', 'garantia', 'proveedor', 'orden'];
+  const UNIV_CAT_LBL = { cliente: 'Clientes', factura: 'Facturas', articulo: 'Artículos', imei: 'IMEI / Serie', recepcion: 'Recepciones', garantia: 'Garantías', proveedor: 'Proveedores', orden: 'Órdenes', pantalla: 'Pantallas', reporte: 'Reportes' };
+  const UNIV_CAT_ORDEN = ['pantalla', 'reporte', 'cliente', 'factura', 'articulo', 'imei', 'recepcion', 'garantia', 'proveedor', 'orden'];
+  // Muse 16-nov: «Faltante» en el buscador daba «Sin resultados» porque los reportes viven dentro de Reportes → Inventario, ventas y compras.
+  function univBuscarReportes(qn) {
+    const out = [];
+    const pant = [['Órdenes de compra', 'Compras', 'ti-file-text', () => { window.nxPosTab('compras'); setTimeout(() => window.nxOcAbrir(), 120); }],
+      ['Pedidos entre almacenes', 'Kardex · Almacenes', 'ti-clipboard-list', () => { window.nxPosTab('inventario'); setTimeout(() => window.nxPedidosAbrir(), 120); }],
+      ['Agregar costo', 'Costo extra a lo ya comprado (reacondicionado)', 'ti-coin', () => window.nxCostoForm()]];
+    pant.forEach(x => { if (univNorm(x[0]).includes(qn)) out.push({ cat: 'pantalla', icono: x[2], titulo: x[0], sub: x[1], accion: x[3] }); });
+    try { RI_GRUPOS.forEach(g => (RI_REPS[g[0]] || []).forEach(r => { if (univNorm(r[1]).includes(qn)) out.push({ cat: 'reporte', icono: 'ti-report-analytics', titulo: r[1], sub: 'Reportes · ' + g[1], accion: () => window.nxRepInvIr(r[0]) }); })); } catch (e) {}
+    return out.slice(0, 6);
+  }
   function univNorm(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function univIlike(q) { return encodeURIComponent(String(q || '').replace(/[%_,*()]/g, ' ').trim()); }
   // ── Categorías EN MEMORIA (instantáneas, ya cargadas por cargarPOS — sin red) ──
@@ -7525,7 +7535,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (q.length < 2) { _univS.resultados = []; _univS.cargando = false; if (el) el.innerHTML = '<div class="nxUnivHint">Escribe al menos 2 letras para buscar en todo el sistema.</div>'; return; }
     const qn = univNorm(q);
     const myToken = ++_univS.token;
-    _univS.resultados = [].concat(univBuscarClientes(qn), univBuscarArticulos(qn), univBuscarProveedores(qn), univBuscarRecepciones(qn));
+    _univS.resultados = [].concat(univBuscarReportes(qn), univBuscarClientes(qn), univBuscarArticulos(qn), univBuscarProveedores(qn), univBuscarRecepciones(qn));
     _univS.cargando = true;
     pintarUnivResultados();
     _univS.timer = setTimeout(async () => {
@@ -7838,11 +7848,25 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     try { pintarCompraItems(); } catch (e) {}
     toast('ok', 'Recibiendo ' + o.numero, conImei.length ? 'Agregue con su IMEI: ' + conImei.map(i => i.nombre).join(', ') : 'Revise cantidades y costos, y guarde');
   };
-  window.nxOcCerrar = async function (id) {
+  // Ventana propia para pedir el motivo (Muse 16-nov: la ventana «prompt» del navegador puede estar bloqueada y el botón «no hacía nada»).
+  function pedirMotivo(titulo, ayuda, boton, alConfirmar) {
+    cerrarModal('nxMotivo');
+    const ov = document.createElement('div'); ov.id = 'nxMotivo'; ov.className = 'overlay open'; ov.style.zIndex = '100000';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px">
+      <div class="mt"><span>${esc(titulo)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxMotivo').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <label style="display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0">${esc(ayuda)}<input id="nxMotivoTxt" class="no-upper" maxlength="200" autocomplete="off" style="height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit" placeholder="Escriba el motivo"></label>
+      <button class="btn bc1" type="button" id="nxMotivoOk" style="height:54px;width:100%;margin-top:12px;font-size:15px;font-weight:800">${esc(boton)}</button></div>`;
+    document.body.appendChild(ov);
+    const inp = document.getElementById('nxMotivoTxt'), ok = document.getElementById('nxMotivoOk');
+    const ir = () => { const m = (inp.value || '').trim(); if (m.length < 3) { toast('err', 'Escriba el motivo'); inp.focus(); return; } ov.remove(); alConfirmar(m); };
+    ok.onclick = ir; inp.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); ir(); } };
+    setTimeout(() => inp.focus(), 60);
+  }
+  window.nxOcCerrar = async function (id, motivo) {
     const o = _ocs.find(x => String(x.id) === String(id)); if (!o) return;
     const est = o.estado === 'parcial' ? 'cerrada' : 'anulada';
-    const motivo = (prompt(est === 'cerrada' ? 'Motivo para cerrar (lo que falta no llegará)' : 'Motivo de la anulación') || '').trim();
-    if (!motivo) return;
+    if (!motivo) return pedirMotivo(est === 'cerrada' ? 'Cerrar ' + o.numero : 'Anular ' + o.numero, est === 'cerrada' ? 'Lo que falta ya no llegará. ¿Por qué?' : '¿Por qué se anula?', est === 'cerrada' ? 'Cerrar orden' : 'Anular orden', m => window.nxOcCerrar(id, m));
     try { await getAPI().post('rpc/pos_orden_compra_cerrar', { p_orden: id, p_estado: est, p_motivo: motivo }); toast('ok', est === 'cerrada' ? 'Orden cerrada' : 'Orden anulada'); await ocCargar(); ocPintarLista(); }
     catch (e) { const m = String(e && e.message || e); toast('err', 'No se pudo', /YA_RECIBIO_ALGO/.test(m) ? 'Ya llegó parte: use «Cerrar».' : /ORDEN_NO_ABIERTA/.test(m) ? 'La orden ya no está abierta.' : m); }
   };
@@ -9907,9 +9931,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     abrirTransfer();
     const n = document.getElementById('trNotas'); if (n) n.value = _transEdit.notas;
   };
-  window.nxPedidoCerrar = async function (id, estado) {
-    const motivo = (prompt(estado === 'rechazado' ? 'Motivo del rechazo (ej.: no hay existencia)' : 'Motivo de la anulación') || '').trim();
-    if (!motivo) return;
+  window.nxPedidoCerrar = async function (id, estado, motivo) {
+    if (!motivo) return pedirMotivo(estado === 'rechazado' ? 'Rechazar pedido' : 'Anular pedido', estado === 'rechazado' ? 'Motivo del rechazo (ej.: no hay existencia)' : '¿Por qué se anula?', estado === 'rechazado' ? 'Rechazar pedido' : 'Anular pedido', m => window.nxPedidoCerrar(id, estado, m));
     try { await getAPI().post('rpc/pos_pedido_almacen_atender', { p_pedido: id, p_estado: estado, p_motivo: motivo }); toast('ok', estado === 'rechazado' ? 'Pedido rechazado' : 'Pedido anulado'); await pedCargar(); pedPintarLista(); }
     catch (e) { const m = String(e && e.message || e); toast('err', 'No se pudo', /PEDIDO_YA_ATENDIDO/.test(m) ? 'Ese pedido ya fue atendido.' : m); }
   };
@@ -10547,6 +10570,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     _riCargando = false; v = document.getElementById('v-pos'); if (v && _posTab === 'reportes' && _riVista === 'inv') renderPOS(v);
   }
   window.nxRepInvAbrir = function () { _riVista = 'inv'; riRefrescar(); };
+  window.nxRepInvIr = function (tab) { window.nxPosTab('reportes'); setTimeout(() => { _riVista = 'inv'; _ri.tab = tab; riRefrescar(); }, 150); };
   window.nxRepInvCerrar = function () { _riVista = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepInvSet = function (k, val) {
     if (k === 'grupo') { k = 'tab'; val = RI_REPS[val] ? RI_REPS[val][0][0] : 'resumen'; }

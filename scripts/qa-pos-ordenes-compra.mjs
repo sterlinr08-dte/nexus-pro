@@ -171,10 +171,16 @@ try {
     await page.evaluate(() => window.nxOcAbrir()); await page.waitForTimeout(1300);
     lt = await page.evaluate(() => document.getElementById('ocLista').innerText.replace(/\s+/g, ' '));
     ok(/OC-00001 PARCIAL/i.test(lt) && /Agua purificada 20 de 24/i.test(lt) && /Arroz selecto 10 de 10/i.test(lt) && /Cerrar/i.test(lt), `${w}px: la orden queda Parcial: 20 de 24 aguas; ofrece «Cerrar»`, lt.slice(0, 260));
-    page.once('dialog', d => d.accept('El proveedor no tiene más'));
     // Segunda orden para anular
     await page.evaluate(() => window.nxOcNueva()); await page.evaluate(() => { const p = document.getElementById('ocProv'); p.value = 'pv2'; p.dispatchEvent(new Event('change')); window.nxOcAgregar('A-01 · Agua purificada'); }); await page.evaluate(() => window.nxOcGuardar()); await page.waitForTimeout(1300);
-    await page.evaluate(() => window.nxOcCerrar('oc2')); await page.waitForTimeout(1300);
+    let dlg = false; page.on('dialog', d => { dlg = true; d.dismiss(); });
+    await page.evaluate(() => window.nxOcCerrar('oc2')); await page.waitForTimeout(400);
+    const mv = await page.evaluate(() => ({ abre: !!document.getElementById('nxMotivo'), tit: (document.querySelector('#nxMotivo .mt') || {}).innerText, h: Math.round(document.getElementById('nxMotivoTxt').getBoundingClientRect().height), fs: getComputedStyle(document.getElementById('nxMotivoTxt')).fontSize, b: Math.round(document.getElementById('nxMotivoOk').getBoundingClientRect().height) }));
+    ok(mv.abre && /Anular OC-00002/i.test(mv.tit) && mv.h >= 48 && mv.fs === '16px' && mv.b >= 54 && !dlg, `${w}px: «Anular» abre su propia ventana de motivo (no la del navegador); 48/16, botón 54`, mv);
+    if (OUT) await page.screenshot({ path: `${OUT}/oc-motivo-${w}.png` });
+    await page.click('#nxMotivoOk'); await page.waitForTimeout(300);
+    ok(!s.pedidos.some(p => p.t === 'rpc/pos_orden_compra_cerrar') && await page.evaluate(() => !!document.getElementById('nxMotivo')), `${w}px: sin motivo no anula`);
+    await page.fill('#nxMotivoTxt', 'El proveedor no tiene más'); await page.keyboard.press('Enter'); await page.waitForTimeout(1300);
     const an = s.pedidos.find(p => p.t === 'rpc/pos_orden_compra_cerrar');
     ok(an && an.body.p_orden === 'oc2' && an.body.p_estado === 'anulada' && an.body.p_motivo === 'El proveedor no tiene más', `${w}px: «Anular» pide motivo`, an && an.body);
     ok(!s.pedidos.some(p => /pos_orden/.test(p.t) && p.m !== 'GET' && !/^rpc\//.test(p.t)), `${w}px: la pantalla nunca escribe directo en las tablas de órdenes`);
@@ -190,6 +196,15 @@ try {
     await page.evaluate(() => window.nxRepInvSet('tab', 'ordenes')); await page.waitForTimeout(1300);
     t = await page.evaluate(() => document.getElementById('riCuerpo').innerText.replace(/\s+/g, ' '));
     ok(/ÓRDENES 2/i.test(t) && /OC-00001 Distribuidora Uno 01\/11\/2026 34 30 RD\$ ?1,760\.00 Parcial/i.test(t) && /OC-00002 Suplidora Dos .* Anulada El proveedor no tiene más/i.test(t), `${w}px: reporte Órdenes de compra con pedido, recibido, estado y motivo`, t.slice(0, 420));
+    // Buscador general (Muse: «Faltante» daba «Sin resultados»)
+    await page.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => o.remove()); window.nxBuscadorUniversal(); }); await page.waitForTimeout(300);
+    await page.fill('#nxUnivIn', 'faltante'); await page.evaluate(() => window.nxBuscUnivInput('faltante')); await page.waitForTimeout(900);
+    const ub = await page.evaluate(() => document.getElementById('nxUnivS').innerText.replace(/\s+/g, ' '));
+    ok(/Faltante orden de compra/i.test(ub) && /Reportes · Compras y despachos/i.test(ub), `${w}px: el buscador general encuentra «Faltante orden de compra»`, ub.slice(0, 200));
+    await page.evaluate(() => { const i = [...document.querySelectorAll('#nxUnivS [onclick*="nxBuscUnivElegir"]')].findIndex(x => /Faltante/i.test(x.innerText)); window.nxBuscUnivElegir(i); }); await page.waitForTimeout(2000);
+    ok(await page.evaluate(() => !!document.getElementById('riCuerpo') && /UNIDADES POR LLEGAR/i.test(document.getElementById('riCuerpo').innerText)), `${w}px: tocarlo abre el reporte directo`);
+    await page.evaluate(() => window.nxBuscadorUniversal()); await page.waitForTimeout(300); await page.evaluate(() => window.nxBuscUnivInput('órdenes de compra')); await page.waitForTimeout(900);
+    ok(await page.evaluate(() => /Pantallas/i.test(document.getElementById('nxUnivS').innerText) && /Órdenes de compra/i.test(document.getElementById('nxUnivS').innerText)), `${w}px: también encuentra la pantalla «Órdenes de compra»`);
     ok(s.errs.length === 0, `${w}px: 0 errores de JS`, s.errs); await s.ctx.close();
   }
 } finally { await b.close(); }
