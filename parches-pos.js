@@ -9983,6 +9983,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Cada reporte devuelve { titulo, cols:[{t, r?}], grupos:[{nombre, filas:[[…]], sub?:[…]}], total?:[…], nota }
   function riDatos() {
     const t = _ri.tab;
+    const _ex = riDatosExtra(); if (_ex) return _ex;
     if (t === 'resumen' || t === 'sinmov') {
       let l = riProds();
       if (t === 'resumen' && _ri.pos) l = l.filter(p => riStock(p) > 0);
@@ -10026,10 +10027,129 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return { titulo: 'Ajustes de inventario', cols: [{ t: 'Fecha' }, { t: 'Artículo' }, { t: 'Documento' }, { t: 'Motivo' }, { t: 'Usuario' }, { t: 'Cantidad', r: 1 }, { t: 'Valor a costo', r: 1 }], grupos: grupos,
       kpis: [['Entradas', fmt2d(tot['Entrada de mercancía'] || 0)], ['Inventario inicial', fmt2d(tot['Inventario inicial'] || 0)], ['Salidas', fmt2d(tot['Salida de mercancía'] || 0)]], nota: 'El valor usa el costo actual del artículo.' };
   }
+  // ── Más reportes estilo Infoplus (16-nov-2026): ventas, ganancias, compras, despachos, series, conteo físico y precios ──
+  // Mismo motor que los 5 de inventario: solo LEEN. Las ventas y sus notas de crédito son las que ya carga Reportes.
+  const RI_GRUPOS = [['inv', 'Inventario', 'ti-packages'], ['ven', 'Ventas', 'ti-cash'], ['com', 'Compras y despachos', 'ti-truck-delivery']];
+  const RI_REPS = {
+    inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['series', 'Series no vendidas']],
+    ven: [['ventas', 'Ventas'], ['ganancias', 'Ganancias por artículo'], ['gandia', 'Ganancias por día'], ['empleado', 'Ventas por empleado'], ['clientes', 'Ventas por cliente']],
+    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén']]
+  };
+  function riGrupo(t) { return Object.keys(RI_REPS).find(g => RI_REPS[g].some(x => x[0] === (t || _ri.tab))) || 'inv'; }
+  function riConFechas() { const t = _ri.tab; return t === 'movs' || t === 'ajustes' || riGrupo() !== 'inv'; }
+  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [] };
+  function riEnRango(f) { return (!_ri.desde || f >= _ri.desde) && (!_ri.hasta || f <= _ri.hasta); }
+  function riCostoItem(it) { return it.costo_unitario != null ? Number(it.costo_unitario) : prodCosto(it.producto_id); }
+  function riSinItbis(it) { const cant = Number(it.cantidad || 0), imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant)); return it.itbis ? imp - (imp * 18 / 118) : imp; }
+  async function riEnTrozos(tabla, campo, ids, sel) { const out = []; for (let i = 0; i < ids.length; i += 80) { const r = await getAPI().get(tabla, 'select=' + sel + '&' + campo + '=in.(' + ids.slice(i, i + 80).join(',') + ')&limit=5000') || []; out.push.apply(out, r); } return out; }
+  async function riCargarExtra() {
+    const t = _ri.tab, g = riGrupo();
+    if (g === 'ven') { if (!(_repVentas || []).length) { try { await cargarReportes(); } catch (e) {} } return true; }
+    if (t === 'compras' || t === 'recep') {
+      const h = _ri.hasta.split('-').map(Number), sig = new Date(h[0], h[1] - 1, h[2] + 1).toLocaleDateString('en-CA');
+      _riX.compras = ((await getTodasPOS('pos_compras', 'select=*&fecha=gte.' + _ri.desde + '&fecha=lt.' + sig + '&order=fecha.desc,numero.desc')) || []).filter(c => c.estado !== 'anulada');
+      _riX.citems = t === 'recep' && _riX.compras.length ? await riEnTrozos('pos_compra_items', 'compra_id', _riX.compras.map(c => c.id), '*') : [];
+      return true;
+    }
+    if (t === 'desp' || t === 'despalm') {
+      const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
+      _riX.transf = (await getTodasPOS('pos_transferencias', 'select=*&created_at=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&created_at=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=created_at.desc')) || [];
+      _riX.titems = _riX.transf.length ? await riEnTrozos('pos_transferencia_items', 'transferencia_id', _riX.transf.map(x => x.id), '*') : [];
+      return true;
+    }
+    if (t === 'series') { _riX.series = (await getTodasPOS('pos_seriales', 'select=id,producto_id,serial,almacen_id,color,created_at&estado=eq.disponible&order=created_at.desc,id.asc')) || []; return true; }
+    return t === 'fisico' || t === 'precios';
+  }
+  function riDatosExtra() {
+    const t = _ri.tab, q = (_ri.q || '').trim().toLowerCase(), hay = s => !q || String(s || '').toLowerCase().includes(q);
+    const pm = {}; (_prods || []).forEach(p => { pm[String(p.id)] = p; });
+    const pasaProd = pid => { const p = pm[String(pid)]; if (_ri.cat && (!p || String(p.categoria_id || '') !== (_ri.cat === '__sin__' ? '' : _ri.cat))) return false; return !(_ri.marca && (!p || String(p.marca || '') !== _ri.marca)); };
+    if (t === 'fisico' || t === 'precios') {
+      const l = riOrdenar(riProds());
+      if (t === 'precios') {
+        const filas = l.map(p => { const pr = Number(p.precio || 0), sin = p.itbis !== false ? pr / 1.18 : pr, c = Number(p.costo || 0); return [p.codigo || '', p.nombre || '', catNombre(p.categoria_id) || '', fmt2d(c), fmt2d(pr), p.precio_mayor ? fmt2d(p.precio_mayor) : '', sin > 0 ? Math.round((sin - c) / sin * 100) + ' %' : '']; });
+        return { titulo: 'Lista de precios', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Categoría' }, { t: 'Costo', r: 1 }, { t: 'Precio', r: 1 }, { t: 'Por mayor', r: 1 }, { t: 'Margen', r: 1 }], grupos: [{ nombre: '', filas: filas }], kpis: [['Artículos', fmtN(l.length)]], nota: 'El margen se calcula sobre el precio sin ITBIS.' };
+      }
+      const porCat = {}; l.forEach(p => { const c = catNombre(p.categoria_id) || 'Sin categoría'; (porCat[c] = porCat[c] || []).push(p); }); let tu = 0;
+      const grupos = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'es')).map(c => ({ nombre: c, filas: porCat[c].map(p => { const s = riStock(p); tu += s; return [p.codigo || '', p.nombre || '', p.referencia || '', fmtN(s), '', '']; }) }));
+      return { titulo: 'Inventario físico · hoja de conteo', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Referencia' }, { t: 'Existencia', r: 1 }, { t: 'Conteo', r: 1 }, { t: 'Diferencia', r: 1 }], grupos: grupos, kpis: [['Artículos', fmtN(l.length)], ['Unidades en sistema', fmtN(tu)]], nota: 'Imprima la hoja, cuente y anote. Las diferencias se corrigen en Kardex → Ajustar.' };
+    }
+    if (t === 'series') {
+      const l = (_riX.series || []).filter(s => pasaProd(s.producto_id) && hay(s.serial + ' ' + ((pm[String(s.producto_id)] || {}).nombre || '')));
+      const por = {}; let val = 0; l.forEach(s => { const p = pm[String(s.producto_id)] || {}; val += Number(p.costo || 0); (por[p.nombre || 'Artículo'] = por[p.nombre || 'Artículo'] || []).push([s.serial || '', almNombre(s.almacen_id) || '', s.color || '', fechaDMY(s.created_at).slice(0, 10)]); });
+      const grupos = Object.keys(por).sort((a, b) => a.localeCompare(b, 'es')).map(n => ({ nombre: n + ' · ' + por[n].length, filas: por[n] }));
+      return { titulo: 'Series (IMEI) no vendidas', cols: [{ t: 'Serie / IMEI' }, { t: 'Almacén' }, { t: 'Color' }, { t: 'Entrada' }], grupos: grupos, kpis: [['Series disponibles', fmtN(l.length)], ['Artículos', fmtN(grupos.length)], ['Valor a costo', fmt2d(val)]], nota: '' };
+    }
+    if (riGrupo() === 'ven') {
+      const vs = (_repVentas || []).filter(v => riEnRango(repFecha(v)));
+      const devs = (_repDevs || []).filter(d => riEnRango(diaLocal(d.fecha || d.created_at)));
+      const devDeVenta = {}; (_repDevs || []).forEach(d => { devDeVenta[String(d.venta_id)] = (devDeVenta[String(d.venta_id)] || 0) + Number(d.total || 0); });
+      if (t === 'ventas') {
+        let tt = 0, td = 0;
+        const filas = vs.filter(v => hay((v.numero_factura || '') + ' ' + (v.cliente_nombre || '') + ' ' + (v.ncf || ''))).map(v => { const d = devDeVenta[String(v.id)] || 0; tt += Number(v.total || 0); td += d; return [fechaDMY(v.created_at || v.fecha), v.numero_factura || String(v.numero || ''), v.cliente_nombre || 'Consumidor final', v.ncf || '', v.a_credito ? 'Crédito' : 'Contado', v.vendedor_nombre || v.created_by_name || '', fmt2d(v.total), d ? '- ' + fmt2d(d) : '', fmt2d(Number(v.total || 0) - d)]; });
+        return { titulo: 'Ventas', cols: [{ t: 'Fecha' }, { t: 'Factura' }, { t: 'Cliente' }, { t: 'NCF' }, { t: 'Condición' }, { t: 'Vendedor' }, { t: 'Total', r: 1 }, { t: 'Devuelto', r: 1 }, { t: 'Neto', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', '', '', '', '', 'TOTAL', fmt2d(tt), td ? '- ' + fmt2d(td) : '', fmt2d(tt - td)],
+          kpis: [['Facturas', fmtN(filas.length)], ['Total', fmt2d(tt)], ['Neto', fmt2d(tt - td)]], nota: 'Devuelto = notas de crédito de esa factura.' };
+      }
+      if (t === 'ganancias') {
+        const por = {}; const suma = (it, sg) => { if (!pasaProd(it.producto_id)) return; const k = String(it.producto_id || it.nombre); const o = por[k] = por[k] || { cod: (pm[String(it.producto_id)] || {}).codigo || '', nom: it.nombre || (pm[String(it.producto_id)] || {}).nombre || '', cant: 0, vta: 0, cst: 0 }; const c = Number(it.cantidad || 0); o.cant += sg * c; o.vta += sg * riSinItbis(it); o.cst += sg * riCostoItem(it) * c; };
+        vs.forEach(v => repItems(v).forEach(it => suma(it, 1))); devs.forEach(d => (d._items || []).forEach(it => suma(it, -1)));
+        let tv = 0, tc = 0; const l = Object.values(por).filter(o => hay(o.nom + ' ' + o.cod) && (o.cant || o.vta)).sort((a, b) => (b.vta - b.cst) - (a.vta - a.cst));
+        const filas = l.map(o => { tv += o.vta; tc += o.cst; return [o.cod, o.nom, fmtN(o.cant), fmt2d(o.vta), fmt2d(o.cst), fmt2d(o.vta - o.cst), o.vta > 0 ? Math.round((o.vta - o.cst) / o.vta * 100) + ' %' : '']; });
+        return { titulo: 'Ganancias por artículo', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Cantidad', r: 1 }, { t: 'Venta sin ITBIS', r: 1 }, { t: 'Costo', r: 1 }, { t: 'Ganancia', r: 1 }, { t: 'Margen', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', 'TOTAL', '', fmt2d(tv), fmt2d(tc), fmt2d(tv - tc), tv > 0 ? Math.round((tv - tc) / tv * 100) + ' %' : ''],
+          kpis: [['Venta sin ITBIS', fmt2d(tv)], ['Costo', fmt2d(tc)], ['Ganancia', fmt2d(tv - tc)]], nota: 'Ya restadas las notas de crédito del período.' };
+      }
+      if (t === 'gandia') {
+        const por = {}; const dia = f => por[f] = por[f] || { n: 0, tot: 0, vta: 0, cst: 0 };
+        vs.forEach(v => { const o = dia(repFecha(v)); o.n++; o.tot += Number(v.total || 0); repItems(v).forEach(it => { o.vta += riSinItbis(it); o.cst += riCostoItem(it) * Number(it.cantidad || 0); }); });
+        devs.forEach(d => { const o = dia(diaLocal(d.fecha || d.created_at)); o.tot -= Number(d.total || 0); (d._items || []).forEach(it => { o.vta -= riSinItbis(it); o.cst -= riCostoItem(it) * Number(it.cantidad || 0); }); });
+        let T = { n: 0, tot: 0, vta: 0, cst: 0 };
+        const filas = Object.keys(por).sort().reverse().map(f => { const o = por[f]; T.n += o.n; T.tot += o.tot; T.vta += o.vta; T.cst += o.cst; return [fechaDMY(f), fmtN(o.n), fmt2d(o.tot), fmt2d(o.vta), fmt2d(o.cst), fmt2d(o.vta - o.cst)]; });
+        return { titulo: 'Ganancias por día', cols: [{ t: 'Día' }, { t: 'Facturas', r: 1 }, { t: 'Ventas netas', r: 1 }, { t: 'Sin ITBIS', r: 1 }, { t: 'Costo', r: 1 }, { t: 'Ganancia', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['TOTAL', fmtN(T.n), fmt2d(T.tot), fmt2d(T.vta), fmt2d(T.cst), fmt2d(T.vta - T.cst)],
+          kpis: [['Días con ventas', fmtN(filas.length)], ['Ventas netas', fmt2d(T.tot)], ['Ganancia', fmt2d(T.vta - T.cst)]], nota: 'La nota de crédito se resta el día en que se emitió.' };
+      }
+      // empleado / clientes
+      const esEmp = t === 'empleado', por = {}; const devRango = {}; devs.forEach(d => { devRango[String(d.venta_id)] = (devRango[String(d.venta_id)] || 0) + Number(d.total || 0); });
+      const vById = {}; (_repVentas || []).forEach(v => { vById[String(v.id)] = v; });
+      const clave = v => esEmp ? (v.vendedor_nombre || v.created_by_name || 'Sin asignar') : (v.cliente_id ? String(v.cliente_id) : (v.cliente_nombre || 'Consumidor final'));
+      const de = v => por[clave(v)] = por[clave(v)] || { nom: esEmp ? clave(v) : (v.cliente_nombre || 'Consumidor final'), n: 0, tot: 0, dev: 0, ult: '' };
+      vs.forEach(v => { const o = de(v); o.n++; o.tot += Number(v.total || 0); const f = repFecha(v); if (f > o.ult) o.ult = f; });
+      Object.keys(devRango).forEach(id => { const v = vById[id]; if (v) de(v).dev += devRango[id]; });
+      let T = { n: 0, tot: 0, dev: 0 };
+      const filas = Object.values(por).filter(o => hay(o.nom)).sort((a, b) => (b.tot - b.dev) - (a.tot - a.dev)).map(o => { T.n += o.n; T.tot += o.tot; T.dev += o.dev; return [o.nom, fmtN(o.n), fmt2d(o.tot), o.dev ? '- ' + fmt2d(o.dev) : '', fmt2d(o.tot - o.dev), esEmp ? (o.n ? fmt2d((o.tot - o.dev) / o.n) : '') : (o.ult ? fechaDMY(o.ult) : '')]; });
+      return { titulo: esEmp ? 'Ventas por empleado' : 'Ventas por cliente', cols: [{ t: esEmp ? 'Empleado' : 'Cliente' }, { t: 'Facturas', r: 1 }, { t: 'Total', r: 1 }, { t: 'Devuelto', r: 1 }, { t: 'Neto', r: 1 }, { t: esEmp ? 'Promedio' : 'Última compra', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['TOTAL', fmtN(T.n), fmt2d(T.tot), T.dev ? '- ' + fmt2d(T.dev) : '', fmt2d(T.tot - T.dev), ''],
+        kpis: [[esEmp ? 'Empleados' : 'Clientes', fmtN(filas.length)], ['Facturas', fmtN(T.n)], ['Neto', fmt2d(T.tot - T.dev)]], nota: esEmp ? 'Si la venta no tiene vendedor asignado, cuenta para quien la registró.' : '' };
+    }
+    if (t === 'compras' || t === 'recep') {
+      const cs = (_riX.compras || []);
+      if (t === 'compras') {
+        let S = 0, I = 0, T = 0, cr = 0;
+        const filas = cs.filter(c => hay((c.proveedor_nombre || '') + ' ' + (c.numero || '') + ' ' + (c.ncf || ''))).map(c => { S += Number(c.subtotal || 0); I += Number(c.itbis || 0); T += Number(c.total || 0); if (c.a_credito) cr += Number(c.total || 0); return [fechaDMY(c.fecha), String(c.numero || ''), c.proveedor_nombre || 'Sin proveedor', c.ncf || '', c.a_credito ? 'Crédito' : 'Contado', fmt2d(c.subtotal), fmt2d(c.itbis), fmt2d(c.total)]; });
+        return { titulo: 'Compras', cols: [{ t: 'Fecha' }, { t: 'No.' }, { t: 'Proveedor' }, { t: 'NCF' }, { t: 'Condición' }, { t: 'Subtotal', r: 1 }, { t: 'ITBIS', r: 1 }, { t: 'Total', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', '', '', '', 'TOTAL', fmt2d(S), fmt2d(I), fmt2d(T)], kpis: [['Compras', fmtN(filas.length)], ['Total', fmt2d(T)], ['A crédito', fmt2d(cr)]], nota: '' };
+      }
+      const cById = {}; cs.forEach(c => { cById[String(c.id)] = c; }); let U = 0, M = 0;
+      const filas = (_riX.citems || []).filter(it => cById[String(it.compra_id)] && hay((it.nombre || '') + ' ' + (cById[String(it.compra_id)].proveedor_nombre || ''))).sort((a, b) => String(cById[String(b.compra_id)].fecha).localeCompare(String(cById[String(a.compra_id)].fecha)))
+        .map(it => { const c = cById[String(it.compra_id)]; U += Number(it.cantidad || 0); M += Number(it.importe || 0); return [fechaDMY(c.fecha), String(c.numero || ''), c.proveedor_nombre || 'Sin proveedor', it.nombre || '', fmtN(it.cantidad), fmt2d(it.costo), fmt2d(it.importe)]; });
+      return { titulo: 'Recepciones de mercancía', cols: [{ t: 'Fecha' }, { t: 'Compra' }, { t: 'Proveedor' }, { t: 'Artículo' }, { t: 'Cantidad', r: 1 }, { t: 'Costo', r: 1 }, { t: 'Importe', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', '', '', 'TOTAL', fmtN(U), '', fmt2d(M)], kpis: [['Renglones', fmtN(filas.length)], ['Unidades recibidas', fmtN(U)], ['Importe', fmt2d(M)]], nota: 'La mercancía entra al guardar la compra.' };
+    }
+    if (t === 'desp' || t === 'despalm') {
+      const tById = {}; (_riX.transf || []).forEach(x => { tById[String(x.id)] = x; });
+      const its = (_riX.titems || []).filter(it => tById[String(it.transferencia_id)]);
+      if (t === 'desp') {
+        let U = 0; const filas = its.filter(it => hay((it.nombre || '') + ' ' + (tById[String(it.transferencia_id)].numero || ''))).map(it => { const x = tById[String(it.transferencia_id)]; U += Number(it.cantidad || 0); return [fechaDMY(x.created_at || x.fecha), x.numero || '', x.origen_nombre || almNombre(x.origen_id) || '', x.destino_nombre || almNombre(x.destino_id) || '', it.nombre || '', fmtN(it.cantidad)]; });
+        return { titulo: 'Despachos', cols: [{ t: 'Fecha' }, { t: 'No.' }, { t: 'Origen' }, { t: 'Destino' }, { t: 'Artículo' }, { t: 'Cantidad', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', '', '', '', 'TOTAL', fmtN(U)], kpis: [['Despachos', fmtN((_riX.transf || []).length)], ['Unidades', fmtN(U)]], nota: '' };
+      }
+      const por = {}; (_riX.transf || []).forEach(x => { const k = (x.origen_nombre || almNombre(x.origen_id) || '') + '|' + (x.destino_nombre || almNombre(x.destino_id) || ''); (por[k] = por[k] || { n: 0, u: 0 }).n++; });
+      its.forEach(it => { const x = tById[String(it.transferencia_id)]; const k = (x.origen_nombre || almNombre(x.origen_id) || '') + '|' + (x.destino_nombre || almNombre(x.destino_id) || ''); por[k].u += Number(it.cantidad || 0); });
+      let N = 0, U = 0; const filas = Object.keys(por).sort().map(k => { const p = k.split('|'); N += por[k].n; U += por[k].u; return [p[0], p[1], fmtN(por[k].n), fmtN(por[k].u)]; });
+      return { titulo: 'Despachos por almacén', cols: [{ t: 'Origen' }, { t: 'Destino' }, { t: 'Despachos', r: 1 }, { t: 'Unidades', r: 1 }], grupos: [{ nombre: '', filas: filas }], total: ['', 'TOTAL', fmtN(N), fmtN(U)], kpis: [['Despachos', fmtN(N)], ['Unidades', fmtN(U)]], nota: '' };
+    }
+    return null;
+  }
   function riNecesitaMovs() { return _ri.tab === 'movs' || _ri.tab === 'sinmov' || _ri.tab === 'ajustes'; }
   async function riCargar() {
     if (!_ri.hasta) _ri.hasta = isoHoy(); if (!_ri.desde) _ri.desde = isoMesIni();
     if (!Object.keys(_stockAlmRows || {}).length && _almacenes.length) { try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) {} }
+    if (await riCargarExtra()) { _riMovs = null; return; }
     if (!riNecesitaMovs()) { _riMovs = null; return; }
     // El día es el de RD: de las 00:00 a las 23:59:59 locales, convertido a la hora del servidor.
     let d0, d1;
@@ -10046,6 +10166,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxRepInvAbrir = function () { _riVista = 'inv'; riRefrescar(); };
   window.nxRepInvCerrar = function () { _riVista = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepInvSet = function (k, val) {
+    if (k === 'grupo') { k = 'tab'; val = RI_REPS[val] ? RI_REPS[val][0][0] : 'resumen'; }
     _ri[k] = k === 'pos' ? !!val : k === 'dias' ? Number(val) || 30 : val;
     if (k === 'tab' || k === 'desde' || k === 'hasta' || k === 'dias') { riRefrescar(); return; }
     const c = document.getElementById('riCuerpo'); if (c) c.innerHTML = riCuerpoHTML(); else { const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
@@ -10068,18 +10189,20 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const f = [];
-    if ((t === 'resumen' || t === 'baja' || t === 'sinmov') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
-    f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
-    if (marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
-    if (t === 'resumen' || t === 'baja' || t === 'sinmov') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
-    if (t === 'movs' || t === 'ajustes') f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias'].indexOf(t) >= 0;
+    f.push(`<label>Reporte${sel('tab', RI_REPS[g], t)}</label>`);
+    if ((t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
+    if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
+    if (conProd && marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
+    if (t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico' || t === 'precios') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
+    if (riConFechas()) f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
     if (t === 'movs') f.push(`<label>Movimiento${sel('tipos', [['', 'Todos']].concat(Object.keys(MOV_LBL).map(k => [k, MOV_LBL[k][0]])), _ri.tipos)}</label>`);
     if (t === 'sinmov') f.push(`<label>Sin movimiento en${sel('dias', [[30, '30 días'], [60, '60 días'], [90, '90 días'], [180, '6 meses']], _ri.dias)}</label>`);
     f.push(`<label>Buscar<input class="no-upper" value="${esc(_ri.q)}" placeholder="Nombre o código" oninput="window.nxRepInvSet('q',this.value)"></label>`);
     if (t === 'resumen') f.push(`<label class="richk"><input type="checkbox"${_ri.pos ? ' checked' : ''} onchange="window.nxRepInvSet('pos',this.checked)"> Solo con existencia</label>`);
     return `<div class="nxPf nxRepWrap nxRi">
       <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
-      <div class="ritabs" role="tablist">${RI_TABS.map(x => `<button type="button" role="tab" aria-selected="${t === x[0]}" class="${t === x[0] ? 'on' : ''}" onclick="window.nxRepInvSet('tab','${x[0]}')"><i class="ti ${x[2]}"></i> ${x[1]}</button>`).join('')}</div>
+      <div class="ritabs" role="tablist">${RI_GRUPOS.map(x => `<button type="button" role="tab" aria-selected="${g === x[0]}" class="${g === x[0] ? 'on' : ''}" onclick="window.nxRepInvSet('grupo','${x[0]}')"><i class="ti ${x[2]}"></i> ${x[1]}</button>`).join('')}</div>
       <div class="rifil">${f.join('')}</div>
       <div id="riCuerpo">${riCuerpoHTML()}</div></div>`;
   }
@@ -10092,7 +10215,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxRepInvImprimir = function () {
     const d = riDatos(), e = empInfo();
-    const filtros = [_ri.alm ? 'Almacén: ' + almNombre(_ri.alm) : '', _ri.cat ? 'Categoría: ' + (_ri.cat === '__sin__' ? 'Sin categoría' : catNombre(_ri.cat)) : '', _ri.marca ? 'Marca: ' + _ri.marca : '', (_ri.tab === 'movs' || _ri.tab === 'ajustes') ? 'Del ' + fechaDMY(_ri.desde) + ' al ' + fechaDMY(_ri.hasta) : ''].filter(Boolean).join(' · ');
+    const filtros = [_ri.alm ? 'Almacén: ' + almNombre(_ri.alm) : '', _ri.cat ? 'Categoría: ' + (_ri.cat === '__sin__' ? 'Sin categoría' : catNombre(_ri.cat)) : '', _ri.marca ? 'Marca: ' + _ri.marca : '', riConFechas() ? 'Del ' + fechaDMY(_ri.desde) + ' al ' + fechaDMY(_ri.hasta) : ''].filter(Boolean).join(' · ');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.titulo)}</title>
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:980px;margin:0 auto;padding:20px;font-size:11.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.rig td{font-weight:800;background:#eef2ff}.ris td{font-weight:700;background:#f6f6f6}.rit td{font-weight:800;border-top:2px solid #111;font-size:12.5px}.bar{position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px}.bar button{border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}@media print{.bar{display:none}body{padding:0}}</style></head>
       <body><div class="bar"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff">Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e">Imprimir</button></div>
@@ -10150,7 +10273,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div style="font-size:11px;color:var(--pf-txt3);align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end;flex-wrap:wrap">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
-          <button class="btn bsm bc1" type="button" onclick="window.nxRepInvAbrir()"><i class="ti ti-packages"></i> Reportes de inventario</button>
+          <button class="btn bsm bc1" type="button" onclick="window.nxRepInvAbrir()"><i class="ti ti-packages"></i> Inventario, ventas y compras</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRepImei()"><i class="ti ti-device-mobile-message"></i> Historial de IMEI</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
         </div>
