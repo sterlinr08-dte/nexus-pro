@@ -117,7 +117,7 @@ try {
     const txt = () => page.evaluate(() => document.getElementById('riCuerpo').innerText.replace(/\s+/g, ' '));
     const ir = async t => { await page.evaluate(x => window.nxRepInvSet('tab', x), t); await page.waitForTimeout(1300); return txt(); };
     const grupos = await page.evaluate(() => [...document.querySelectorAll('.nxRi .ritabs button')].map(x => x.innerText.trim()));
-    ok(grupos.length === 3 && /inventario/i.test(grupos[0]) && /ventas/i.test(grupos[1]) && /compras/i.test(grupos[2]), `${w}px: tres grupos: Inventario, Ventas, Compras y despachos`, grupos);
+    ok(grupos.length === 4 && /activos/i.test(grupos[3]) && /inventario/i.test(grupos[0]) && /ventas/i.test(grupos[1]) && /compras/i.test(grupos[2]), `${w}px: cuatro grupos: Inventario, Ventas, Compras y despachos, Activos fijos`, grupos);
     await page.evaluate(() => window.nxRepInvSet('grupo', 'ven')); await page.waitForTimeout(1300);
     const ops = await page.evaluate(() => [...document.querySelector('.nxRi .rifil select').options].map(o => o.textContent));
     ok(ops.length === 5 && ops[0] === 'Ventas', `${w}px: el grupo Ventas ofrece sus 5 reportes`, ops);
