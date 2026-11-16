@@ -150,10 +150,13 @@ try {
     await page.evaluate(() => window.nxCostoForm()); await page.waitForTimeout(400);
     await page.evaluate(() => window.nxCostoGuardar()); await page.waitForTimeout(300);
     ok(!s.pedidos.some(p => p.t === 'rpc/pos_agregar_costo'), `${w}px: sin artículo ni monto no envía nada`);
-    await page.evaluate(() => { const f = (id, v) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('input')); }; f('caArt', 'A-01 · Agua purificada'); f('caMon', '100'); f('caMot', 'Reacondicionado'); });
+    await page.evaluate(() => window.nxArtPicker('caArtSlot')); await page.waitForTimeout(250); await page.evaluate(() => window.nxProdPickFiltrar('agua')); await page.waitForTimeout(150);
+    await page.click('#caArtSlot .nxPpkIt'); await page.click('#caArtSlot .nxPpkElegir'); await page.waitForTimeout(200);
+    ok(await page.evaluate(() => document.getElementById('caArt').value === 'A-01 · Agua purificada' && /Agua purificada/i.test(document.getElementById('caArtSlotTxt').textContent)), `${w}px: el artículo se elige con el buscador de Factura`);
+    await page.evaluate(() => { const f = (id, v) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('input')); }; f('caMon', '100'); f('caMot', 'Reacondicionado'); });
     const vista = await page.evaluate(() => document.getElementById('caVista').innerText.replace(/\s+/g, ' '));
     ok(/10 en existencia · \+RD\$ 10\.00 c\/u/i.test(vista) && /RD\$ 15\.00 → RD\$ 25\.00/.test(vista), `${w}px: antes de guardar muestra el reparto: +RD$ 10 c/u, costo 15 → 25`, vista);
-    const cm = await page.evaluate(() => { const i = document.getElementById('caArt'), g = document.getElementById('caGuardar'); return { h: Math.round(i.getBoundingClientRect().height), fs: getComputedStyle(i).fontSize, btn: Math.round(g.getBoundingClientRect().height) }; });
+    const cm = await page.evaluate(() => { const i = document.querySelector('#caArtSlot button.scan'), g = document.getElementById('caGuardar'); return { h: Math.round(i.getBoundingClientRect().height), fs: getComputedStyle(document.getElementById('caMon')).fontSize, btn: Math.round(g.getBoundingClientRect().height) }; });
     ok(cm.h >= 48 && cm.fs === '16px' && cm.btn >= 54, `${w}px: ficha de costo: 48 px / 16 px, botón 54 px`, cm);
     if (OUT) await page.screenshot({ path: `${OUT}/costo-form-${w}.png` });
     const n9 = s.pedidos.length; await page.evaluate(() => window.nxCostoGuardar()); await page.waitForTimeout(2200);

@@ -2047,17 +2047,28 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     return '<button type="button" class="scan" id="facSearchBox" onclick="window.nxProdPicker(\'factura\')" aria-label="Buscar artículo">'
       + '<i class="ti ti-scan"></i><span>Escanea o busca por nombre, código, IMEI o serial…</span><kbd>F2</kbd></button>';
   }
+  // Dueño 16-nov-2026: «que todas [las ventanas de buscar artículo] sean iguales a la de prefactura y factura».
+  // Otras pantallas (compras, órdenes, pedidos, transferencias, cotización, kardex, agregar costo) reservan un espacio con
+  // artPickerSlot(); el botón abre ESTE mismo buscador en ese lugar y al «Elegir» llama a la función de la pantalla.
+  let _ppkExt = null; const _ppkCfg = {};
+  function ppkBotonHTML(ext) {
+    const t = ext.label ? ext.label() : '';
+    return `<button type="button" class="scan" onclick="window.nxArtPicker('${ext.slot}')" aria-label="Buscar artículo" style="display:flex;align-items:center;gap:10px;min-height:48px;box-sizing:border-box;width:100%;margin:0;padding:10px 14px"><i class="ti ti-scan"></i><span id="${ext.slot}Txt"${t ? ' style="color:#1e293b"' : ''}>${esc(t || ext.txt || 'Busca por nombre, código o marca…')}</span></button>`;
+  }
+  function artPickerSlot(slot, cfg) { _ppkCfg[slot] = Object.assign({ slot: slot }, cfg); return `<div id="${slot}" class="nxArtSlot" style="min-width:0">${ppkBotonHTML(_ppkCfg[slot])}</div>`; }
+  window.nxArtPicker = function (slot) { const c = _ppkCfg[slot]; if (c && document.getElementById(slot)) window.nxProdPicker('ext', c); };
   window.nxProdPickCerrar = function () {
     const slot = document.getElementById('facSearchSlot');
     if (slot && slot.querySelector('#nxProdPick')) { slot.innerHTML = facSearchBoxHTML(); return; }
+    if (_ppkExt) { const s2 = document.getElementById(_ppkExt.slot); if (s2 && s2.querySelector('#nxProdPick')) { s2.innerHTML = ppkBotonHTML(_ppkExt); return; } }
     const ov = document.getElementById('nxProdPick'); if (ov) ov.remove();
   };
-  window.nxProdPicker = function (destino) {
-    _prodPickDest = destino || 'factura'; _ppkOpen = ''; _ppkSerSel = [];
+  window.nxProdPicker = function (destino, ext) {
     window.nxProdPickCerrar();
+    _prodPickDest = destino || 'factura'; _ppkOpen = ''; _ppkSerSel = []; _ppkExt = _prodPickDest === 'ext' ? ext : null;
     const clienteHTML = (_prodPickDest === 'factura' && clienteSel())
       ? `<div style="font-size:11px;color:#2563eb;margin:8px 0 0;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${esc(nivelDelCliente(clienteSel()))} (se carga solo)</div>` : '';
-    const slot = _prodPickDest === 'factura' ? document.getElementById('facSearchSlot') : null;
+    const slot = _prodPickDest === 'factura' ? document.getElementById('facSearchSlot') : (_ppkExt ? document.getElementById(_ppkExt.slot) : null);
     if (slot) {
       slot.innerHTML = `<div id="nxProdPick" class="nxPpkInline">
           <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="window.nxProdPickCerrar()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
@@ -2081,22 +2092,22 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // por apertura), mismo criterio que ya usa nxBusca-c para no acumular listeners nunca.
   if (!window.__nxPpkInlineBound) {
     window.__nxPpkInlineBound = true;
+    const pkSlot = () => { const pk = document.getElementById('nxProdPick'); return pk && pk.classList.contains('nxPpkInline') ? pk.parentElement : null; };
     document.addEventListener('click', function (ev) {
-      const slot = document.getElementById('facSearchSlot');
-      if (!slot || !slot.querySelector('#nxProdPick') || slot.contains(ev.target)) return;
+      const slot = pkSlot();
+      if (!slot || slot.contains(ev.target)) return;
       window.nxProdPickCerrar();
     }, true);
     document.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Escape') return;
-      const slot = document.getElementById('facSearchSlot');
-      if (slot && slot.querySelector('#nxProdPick')) window.nxProdPickCerrar();
+      if (pkSlot()) window.nxProdPickCerrar();
     });
   }
   function pintarProdPick(q, animate) {
     const wrap = document.getElementById('ppkList'); if (!wrap) return;
     q = (q || '').toLowerCase().trim();
-    let lista = _prods;
-    if (q) lista = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(q));
+    let lista = _ppkExt && _ppkExt.lista ? _ppkExt.lista() : _prods;
+    if (q) lista = lista.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(q));
     const total = lista.length; const show = lista.slice(0, 400);
     const cliMayor = (clienteSel() || {}).nivel_precio === 'mayor';
     const rows = show.map(p => {
@@ -2115,7 +2126,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // al cliente le toca un precio distinto, se muestra el de lista tachado
       // encima del que se va a cobrar — se explica solo, sin palabra rara.
       const hayDif = aplica > 0 && Math.abs(aplica - pf) > 0.5;
-      const aplicaHTML = aplica > 0
+      const aplicaHTML = (_ppkExt && _ppkExt.costo) ? `<div style="font-size:9.5px;color:#94a3b8;font-weight:700">COSTO</div><b style="color:#2563eb;font-size:14px">${fmt(p.costo || 0)}</b>`
+        : aplica > 0
         ? `${hayDif ? `<div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-decoration:line-through">${fmt(pf)}</div>` : ''}<b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
         : '<span class="nxPosStkB" style="background:#fffbeb;color:#d97706">SIN PRECIO</span>';
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
@@ -2127,7 +2139,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
     wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + `<div class="nxPpkGrid">${rows}</div>`;
     if (animate) nxPpkSetupReveal();
-    if (_ppkOpen) { const p = _prods.find(x => String(x.id) === String(_ppkOpen)); if (p && p.serial) nxCargarSerialesDet(p.id); }
+    if (_ppkOpen && !_ppkExt) { const p = _prods.find(x => String(x.id) === String(_ppkOpen)); if (p && p.serial) nxCargarSerialesDet(p.id); }
   }
   // Animación "reveal": las tarjetas del buscador entran suavemente al hacer scroll.
   function nxPpkSetupReveal() {
@@ -2161,7 +2173,13 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     // nivel sin precio configurado muestra "—", no un RD$ 0 que no es verdad.
     const nivs = (_niveles || []).slice().sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
     let cabHTML;
-    if (nivs.length) {
+    if (_ppkExt && _ppkExt.costo) {
+      cabHTML = `<div class="nxPpkH">
+            <div class="nxPpkHi"><span>Costo</span><b class="ap">${fmt(p.costo || 0)}</b></div>
+            <div class="nxPpkHsep"></div>
+            <div class="nxPpkHi"><span>Precio de venta</span><b>${fmt(pf)}</b></div>
+          </div>`;
+    } else if (nivs.length) {
       cabHTML = `<div class="nxPpkH nxPpkHmulti">${nivs.map(n => {
         const r = _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(n.id));
         const v = r ? Number(r.precio_contado || 0) : 0;
@@ -2180,8 +2198,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           ${cabHTML}
           ${(puedeVerMin() && Number(p.precio_minimo || 0) > 0) ? `<div style="text-align:right;font-size:9px;color:#b7bfd0;font-weight:800;margin:-2px 0 2px"><i class="ti ti-lock"></i> mín ${fmt(p.precio_minimo)}</div>` : ''}
           <div class="nxPpkExiH"><span class="nxPpkExiL">Existencia</span>${exiHTML}</div>
-          ${p.serial ? '<div id="ppkSer" style="margin-top:4px"><div style="font-size:10px;color:#475569">Cargando seriales…</div></div>' : ''}
-          <button class="nxPpkElegir" type="button" onclick="event.stopPropagation();window.nxProdPickElegir('${p.id}')"><i class="ti ti-circle-plus"></i> Elegir — ${fmt(aplica)}</button>
+          ${(p.serial && !_ppkExt) ? '<div id="ppkSer" style="margin-top:4px"><div style="font-size:10px;color:#475569">Cargando seriales…</div></div>' : ''}
+          <button class="nxPpkElegir" type="button" onclick="event.stopPropagation();window.nxProdPickElegir('${p.id}')"><i class="ti ti-circle-plus"></i> Elegir${(_ppkExt && _ppkExt.costo) ? '' : ' — ' + fmt(aplica)}</button>
         </div>
       </div>`;
   }
@@ -2344,6 +2362,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   };
   window.nxProdPickElegir = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (_ppkExt) { const fn = _ppkExt.fn; _ppkOpen = ''; window.nxProdPickCerrar(); if (window[fn]) window[fn](p.id); return; }
     if (p.serial) {
       // Con IMEI: agrega y abre la ventanilla para elegirlos (mismo flujo del chip 📱)
       window.nxPpkImei(id);
@@ -7743,21 +7762,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${lin}${pie ? `<div style="font-size:11.5px;color:#64748b;margin-top:5px">${pie}</div>` : ''}${acc}</div>`;
     }).join('');
   }
-  // Buscador de artículos con resultados debajo (Muse 16-nov: la lista nativa del navegador no mostraba sugerencias en el iPhone ni en PC).
-  function artBuscar(q) {
-    q = String(q || '').trim().toLowerCase(); if (!q) return [];
-    return invProductosStock().filter(p => p.activo !== false && ((p.codigo || '') + ' ' + (p.nombre || '') + ' ' + (p.marca || '')).toLowerCase().includes(q)).slice(0, 8);
-  }
-  window.nxArtSug = function (inp, box, fn) {
-    const el = document.getElementById(box); if (!el) return;
-    const l = artBuscar(inp.value);
-    el.innerHTML = !String(inp.value || '').trim() ? '' : (l.length ? l.map(p => `<button type="button" onmousedown="event.preventDefault()" onclick="window.${fn}('${p.id}')" style="display:flex;justify-content:space-between;gap:8px;width:100%;min-height:44px;align-items:center;padding:0 12px;border:0;border-bottom:1px solid #f1f5f9;background:#fff;text-align:left;cursor:pointer;font-size:14px;color:#0f172a;font-family:inherit"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre)}</span><span style="color:#64748b;font-size:12px;white-space:nowrap">${esc(p.codigo || '')}</span></button>`).join('') : '<div style="padding:12px;color:#64748b;font-size:13px">Sin resultados</div>');
-    el.style.display = el.innerHTML ? 'block' : 'none';
-  };
-  window.nxArtSugEnter = function (inp, box, fn) { const l = artBuscar(inp.value); if (l.length) window[fn](l[0].id); };
-  function artBuscadorHTML(id, box, fn, est) {
-    return `<div style="position:relative"><input id="${id}" class="no-upper" autocomplete="off" style="${est}" placeholder="Nombre o código" oninput="window.nxArtSug(this,'${box}','${fn}')" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxArtSugEnter(this,'${box}','${fn}')}else if(event.key==='Escape'){document.getElementById('${box}').style.display='none'}"><div id="${box}" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:5;margin-top:4px;background:#fff;border:1.5px solid #cbd5e1;border-radius:11px;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.14);max-height:280px;overflow-y:auto"></div></div>`;
-  }
   window.nxOcNueva = function () {
     _ocEdit = { prov: '', fecha: '', notas: '', lineas: [] };
     cerrarModal('nxOcForm');
@@ -7772,7 +7776,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <label style="${lbl};min-width:0">Proveedor<select id="ocProv" style="${est};min-width:0;text-overflow:ellipsis" onchange="window.nxOcCampo('prov',this.value)"><option value="">Sin proveedor</option>${provs}</select></label>
         <label style="${lbl};min-width:0">Se espera para<input id="ocFecha" type="date" style="${est};min-width:0;max-width:100%" onchange="window.nxOcCampo('fecha',this.value)"></label>
       </div>
-      <div style="${lbl};margin-top:10px">Agregar artículo${artBuscadorHTML('ocArt', 'ocSug', 'nxOcAgregarId', est)}</div>
+      <div style="${lbl};margin-top:10px">Agregar artículo${artPickerSlot('ocArtSlot', { fn: 'nxOcAgregarId', costo: true, lista: () => invProductosStock().filter(p => p.activo !== false) })}</div>
       <div id="ocLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
       <label style="${lbl}">Notas para el proveedor<input id="ocNotas" class="no-upper" style="${est}" placeholder="Condiciones, forma de entrega…" onchange="window.nxOcCampo('notas',this.value)"></label>
       <button class="btn bc1" type="button" id="ocGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxOcGuardar()"><i class="ti ti-device-floppy"></i> Guardar orden</button></div>`;
@@ -7787,7 +7791,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxOcAgregarId = function (id) {
     const p = invProductosStock().find(x => String(x.id) === String(id)); if (!p || !_ocEdit) return;
-    const inp = document.getElementById('ocArt'), sg = document.getElementById('ocSug'); if (sg) { sg.innerHTML = ''; sg.style.display = 'none'; }
+    const inp = null;
     const ex = _ocEdit.lineas.find(l => String(l.producto_id) === String(p.id));
     if (ex) ex.cant += 1; else _ocEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1, costo: Number(p.costo || 0) });
     if (inp) { inp.value = ''; inp.focus(); }
@@ -7812,7 +7816,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   window.nxOcGuardar = async function () {
     const e = _ocEdit; if (!e) return;
-    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); const i = document.getElementById('ocArt'); if (i) i.focus(); return; }
+    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); window.nxArtPicker('ocArtSlot'); return; }
     const b = document.getElementById('ocGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
     try {
       const r0 = await getAPI().post('rpc/pos_orden_compra_crear', { p_proveedor: e.prov || null, p_fecha_esperada: e.fecha || null, p_notas: (e.notas || '').trim() || null, p_items: e.lineas.map(l => ({ producto_id: l.producto_id, cantidad: l.cant, costo: l.costo })) });
@@ -7897,7 +7901,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}`;
     const articulos = `
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:10px">
-        <div class="fr" style="margin-bottom:6px"><input type="hidden" id="compArt"><button type="button" id="compArtBtn" onclick="window.nxCompraArtBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compArtTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar artículo…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
+        <div class="fr" style="margin-bottom:6px"><input type="hidden" id="compArt">${artPickerSlot('compArtS', { fn: 'nxCompraArtPick', costo: true, lista: () => _prods.filter(p => p.activo !== false), label: () => { const p = _prods.find(x => String(x.id) === String(val('compArt'))); return p ? p.nombre : ''; } })}</div>
         <div id="compImeiArea" style="display:none;margin-bottom:6px">
           <div style="font-size:9px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px">IMEI / Serial — agrega uno por uno con +</div>
           <div style="display:flex;gap:6px"><input id="compImeiIn" class="no-upper" inputmode="numeric" placeholder="Escribe un IMEI y toca +" style="flex:1;min-width:0;padding:9px;border:1.5px solid #ddd6fe;border-radius:9px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCompraImeiAdd();}"><button aria-label="Agregar un IMEI" class="btn bc1 bsm" type="button" onclick="window.nxCompraImeiAdd()"><i class="ti ti-plus"></i></button></div>
@@ -8013,6 +8017,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // Solo cambia CÓMO se elige el artículo. El id oculto #compArt se mantiene, así que
   // nxCompraArtCambio / nxPosCompraAddItem / nxCompraEditItem lo leen igual (cero cambio de guardado).
   window.nxCompraArtBuscar = function () {
+    if (document.getElementById('compArtS')) return window.nxArtPicker('compArtS');
     cerrarModal('nxCompArtM');
     const ov = document.createElement('div'); ov.id = 'nxCompArtM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -8047,7 +8052,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   // Refresca el texto del botón según el artículo elegido (o el placeholder si no hay ninguno)
   window.nxCompraArtSync = function () {
-    const t = document.getElementById('compArtTxt'); if (!t) return;
+    const t = document.getElementById('compArtSTxt') || document.getElementById('compArtTxt'); if (!t) return;
     const p = _prods.find(x => String(x.id) === String(val('compArt')));
     t.textContent = p ? p.nombre : 'Buscar artículo…';
     t.style.color = p ? '#1e293b' : '#94a3b8';
@@ -9415,7 +9420,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     nxPfEnsureCSS();
     cerrarModal('nxCotForm');
     const cliOpts = '<option value="">— Cliente / consumidor final —</option>' + _clientes.map(c => `<option value="${c.id}"${String(_cotEdit.cliente_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
-    const prodList = _prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     const ov = document.createElement('div'); ov.id = 'nxCotForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPf" style="max-width:640px;max-height:94vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
@@ -9434,7 +9438,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           </div>
           <div class="card">
             <h4><span class="bdg blue"><i class="ti ti-shopping-cart"></i></span> Productos</h4>
-            <div class="nxFacAdd" style="margin:0 0 10px"><i class="ti ti-search"></i><input list="cotProds" id="cotBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxCotAdd(this.value)"><datalist id="cotProds">${prodList}</datalist></div>
+            <div style="margin:0 0 10px">${artPickerSlot('cotArtSlot', { fn: 'nxCotAddId', lista: () => _prods.filter(p => p.activo !== false) })}</div>
             <div id="cotTabla"></div>
             <div id="cotTot" class="nxAsTot" style="margin-top:8px"></div>
           </div>
@@ -9450,6 +9454,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   window.nxCotSetCli = function (id) { _cotEdit.cliente_id = id; const c = _clientes.find(x => String(x.id) === String(id)); _cotEdit.cliente_nombre = c ? c.nombre : ''; };
   window.nxCotField = function (k, v) { _cotEdit[k] = (k === 'validez_dias') ? (parseInt(v, 10) || 15) : v; };
+  window.nxCotAddId = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (p) window.nxCotAdd(p.nombre + (p.codigo ? ' [' + p.codigo + ']' : '')); };
   window.nxCotAdd = function (txt) {
     if (!txt) return;
     const t = String(txt).toLowerCase();
@@ -9649,7 +9654,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       ? `<div class="nxRepCard" style="margin-bottom:12px;border-color:#fecaca;background:#fff7f7"><div class="nxRepTit" style="color:#b91c1c"><i class="ti ti-alert-triangle"></i> Conciliación pendiente (${_invDescuadres.length})</div><div style="font-size:11.5px;color:#7f1d1d">${_invDescuadres.map(x => `${esc(x.producto_nombre)}: global ${fmtN(x.stock_global)} · almacenes ${fmtN(x.stock_almacenes)}`).join('<br>')}</div></div>`
       : (_almacenes.length ? '<div style="font-size:11px;color:#15803d;font-weight:700;margin:0 0 10px"><i class="ti ti-circle-check"></i> Inventario conciliado: stock global = suma de almacenes</div>' : '');
     const kpi = (l, v, c) => kpiPf(l, v, c);
-    const prodList = prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     let detalle = '';
     if (_invProdSel) {
       const p = _prods.find(x => String(x.id) === String(_invProdSel));
@@ -9677,7 +9681,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
         <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
-        <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
+        <div style="flex:1;min-width:180px;margin:0">${artPickerSlot('invArtSlot', { fn: 'nxInvVerProd', costo: true, txt: 'Ver kardex de un artículo…', lista: () => prods })}</div>
       </div>
       ${conciliacion}${almSec}${detalle}${bajosHTML}${recientes}</div>`;
   }
@@ -9851,7 +9855,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <label style="${lbl}">¿Quién pide?<select id="pfPide" style="${est}" onchange="window.nxPedidoCampo('pide',this.value)">${almOps(_pedEdit.pide)}</select></label>
         <label style="${lbl}">¿A quién?<select id="pfSurte" style="${est}" onchange="window.nxPedidoCampo('surte',this.value)">${almOps(_pedEdit.surte)}</select></label>
       </div>
-      <div style="${lbl};margin-top:10px">Agregar artículo${artBuscadorHTML('pfArt', 'pfSug', 'nxPedidoAgregarId', est)}</div>
+      <div style="${lbl};margin-top:10px">Agregar artículo${artPickerSlot('pfArtSlot', { fn: 'nxPedidoAgregarId', costo: true, lista: () => invProductosStock().filter(p => p.activo !== false) })}</div>
       <div id="pfLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
       <label style="${lbl}">Notas<input id="pfNotas" class="no-upper" style="${est}" placeholder="Para cuándo, motivo…" onchange="window.nxPedidoCampo('notas',this.value)"></label>
       <button class="btn bc1" type="button" id="pfGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxPedidoGuardar()"><i class="ti ti-send"></i> Enviar pedido</button></div>`;
@@ -9867,7 +9871,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPedidoAgregarId = function (id) {
     const p = invProductosStock().find(x => String(x.id) === String(id)); if (!p || !_pedEdit) return;
-    const inp = document.getElementById('pfArt'), sg = document.getElementById('pfSug'); if (sg) { sg.innerHTML = ''; sg.style.display = 'none'; }
+    const inp = null;
     const ex = _pedEdit.lineas.find(l => String(l.producto_id) === String(p.id));
     if (ex) ex.cant += 1; else _pedEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
     if (inp) { inp.value = ''; inp.focus(); }
@@ -9884,7 +9888,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPedidoGuardar = async function () {
     const e = _pedEdit; if (!e) return;
     if (String(e.pide) === String(e.surte)) { toast('err', 'Elija dos almacenes distintos'); return; }
-    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); const i = document.getElementById('pfArt'); if (i) i.focus(); return; }
+    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); window.nxArtPicker('pfArtSlot'); return; }
     const b = document.getElementById('pfGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
     try {
       const r0 = await getAPI().post('rpc/pos_pedido_almacen_crear', { p_pide: e.pide, p_surte: e.surte, p_notas: (e.notas || '').trim() || null, p_items: e.lineas.map(l => ({ producto_id: l.producto_id, cantidad: l.cant })) });
@@ -9918,7 +9922,6 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function abrirTransfer() {
     cerrarModal('nxAlmTransf');
     const almOpts = (sel) => _almacenes.map(a => `<option value="${a.id}"${String(sel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
-    const prodList = invProductosStock().map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     const ov = document.createElement('div'); ov.id = 'nxAlmTransf'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:94vh;display:flex;flex-direction:column">
@@ -9928,7 +9931,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="fr"><label>Hacia *</label><select id="trDest"${_transEdit.pedidoId ? ' disabled' : ''} onchange="window.nxTransField('destino',this.value)">${almOpts(_transEdit.destino)}</select></div>
           <div class="fr"><label>Fecha</label><input type="date" id="trFecha" value="${_transEdit.fecha}" onchange="window.nxTransField('fecha',this.value)"></div>
         </div>
-        <div class="nxFacAdd" style="margin:2px 0 10px"><i class="ti ti-search"></i><input list="trProds" id="trBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxTransAdd(this.value)"><datalist id="trProds">${prodList}</datalist></div>
+        <div style="margin:2px 0 10px">${artPickerSlot('trArtSlot', { fn: 'nxTransAddId', costo: true, lista: () => invProductosStock().filter(p => p.activo !== false) })}</div>
         <div id="trTabla" style="overflow-y:auto;flex:1"></div>
         <div class="fr"><label>Notas / motivo</label><input id="trNotas" class="no-upper" placeholder="Ej: surtido a sucursal" onchange="window.nxTransField('notas',this.value)"></div>
         <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxAlmTransf').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAlmGuardarTransfer()"><i class="ti ti-transfer"></i> Transferir y despachar</button></div>
@@ -9949,6 +9952,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       pintarTransTabla();
     }
   };
+  window.nxTransAddId = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (p) window.nxTransAdd(p.nombre + (p.codigo ? ' [' + p.codigo + ']' : '')); };
   window.nxTransAdd = function (txt) {
     if (!txt) return; const t = String(txt).toLowerCase();
     let p = _prods.find(x => (x.nombre + (x.codigo ? ' [' + x.codigo + ']' : '')).toLowerCase() === t) || _prods.find(x => String(x.nombre).toLowerCase() === t);
@@ -10598,12 +10602,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ov = document.createElement('div'); ov.id = 'nxCosto'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     const campo = (lbl, html) => `<label style="display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0">${lbl}${html}</label>`;
+    // El buscador va en un bloque y no en <label>: dentro de una etiqueta, tocar una fila «pulsaba» su botón Cerrar.
+    const campoDiv = (lbl, html) => `<div style="display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0">${lbl}${html}</div>`;
     const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
-    const ops = invProductosStock().filter(p => p.activo !== false && Number(p.stock || 0) > 0).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:94vh;display:flex;flex-direction:column">
       <div class="mt"><span><i class="ti ti-coin"></i> Agregar costo</span><button class="nxBack" type="button" onclick="document.getElementById('nxCosto').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="overflow-y:auto;flex:1;display:grid;gap:10px;padding:2px">
-        ${campo('Artículo', `<input id="caArt" class="no-upper" style="${est}" list="caArts" placeholder="Nombre o código" oninput="window.nxCostoVista()"><datalist id="caArts">${ops}</datalist>`)}
+        ${campoDiv('Artículo', `<input type="hidden" id="caArt">${artPickerSlot('caArtSlot', { fn: 'nxCostoArtId', costo: true, lista: () => invProductosStock().filter(p => p.activo !== false && Number(p.stock || 0) > 0), label: () => { const p = costoProdDe(val('caArt')); return p ? p.nombre : ''; } })}`)}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${campo('Monto RD$', `<input id="caMon" inputmode="decimal" style="${est};text-align:right" placeholder="0.00" oninput="window.nxCostoVista()">`)}
           ${campo('Pagado con', `<select id="caMet" style="${est}"><option value="efectivo">Efectivo</option><option value="banco">Banco</option><option value="por_pagar">Por pagar</option></select>`)}
@@ -10614,6 +10619,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <button class="btn bc1" type="button" id="caGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxCostoGuardar()"><i class="ti ti-device-floppy"></i> Agregar costo</button></div>`;
     document.body.appendChild(ov);
     setTimeout(() => { const i = document.getElementById('caArt'); if (i) i.focus(); }, 60);
+  };
+  window.nxCostoArtId = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); const h = document.getElementById('caArt'); if (!p || !h) return;
+    h.value = (p.codigo ? p.codigo + ' · ' : '') + p.nombre;
+    const t = document.getElementById('caArtSlotTxt'); if (t) { t.textContent = p.nombre; t.style.color = '#1e293b'; }
+    window.nxCostoVista(); const m = document.getElementById('caMon'); if (m) m.focus();
   };
   window.nxCostoVista = function () {
     const el = document.getElementById('caVista'); if (!el) return;

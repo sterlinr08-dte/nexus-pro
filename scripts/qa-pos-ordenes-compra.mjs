@@ -122,14 +122,20 @@ try {
     await page.evaluate(() => window.nxOcGuardar()); await page.waitForTimeout(300);
     ok(!s.pedidos.some(p => p.t === 'rpc/pos_orden_compra_crear'), `${w}px: sin artículos no envía`);
     await page.evaluate(() => { const p = document.getElementById('ocProv'); p.value = 'pv1'; p.dispatchEvent(new Event('change')); const f = document.getElementById('ocFecha'); f.value = '2026-11-01'; f.dispatchEvent(new Event('change')); });
-    // Buscador (Muse): escribir muestra sugerencias; tocar una la agrega; Enter agrega la primera
-    await page.click('#ocArt'); await page.keyboard.type('agua'); await page.waitForTimeout(200);
-    const sug = await page.evaluate(() => { const b = document.querySelector('#ocSug button'); return { vis: getComputedStyle(document.getElementById('ocSug')).display, n: document.querySelectorAll('#ocSug button').length, t: b ? b.innerText.replace(/\s+/g, ' ') : '', h: b ? Math.round(b.getBoundingClientRect().height) : 0 }; });
-    ok(sug.vis === 'block' && sug.n === 1 && /Agua purificada A-01/i.test(sug.t) && sug.h >= 44, `${w}px: al escribir «agua» sugiere el artículo (toque de 44 px)`, sug);
+    // Buscador: es el mismo de Factura (dueño): se abre en su lugar, filtra al escribir, muestra costo y existencia; tocar → Elegir
+    await page.evaluate(() => window.nxArtPicker('ocArtSlot')); await page.waitForTimeout(300);
+    await page.fill('#ppkQ', 'agua'); await page.evaluate(() => window.nxProdPickFiltrar('agua')); await page.waitForTimeout(200);
+    const sug = await page.evaluate(() => { const r = document.querySelectorAll('#ocArtSlot .nxPpkIt'); return { inline: !!document.querySelector('#ocArtSlot #nxProdPick.nxPpkInline'), n: r.length, t: r[0] ? r[0].innerText.replace(/\s+/g, ' ') : '', h: r[0] ? Math.round(r[0].getBoundingClientRect().height) : 0 }; });
+    ok(sug.inline && sug.n === 1 && /Agua purificada/i.test(sug.t) && /COSTO RD\$ ?15\.00/i.test(sug.t) && /STOCK: 10/i.test(sug.t) && sug.h >= 44, `${w}px: el buscador de Factura se abre en la orden, filtra «agua» y muestra costo y existencia`, sug);
     if (OUT) await page.screenshot({ path: `${OUT}/oc-buscador-${w}.png` });
-    await page.click('#ocSug button'); await page.waitForTimeout(200);
-    await page.click('#ocArt'); await page.keyboard.type('B-01'); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
-    ok(await page.evaluate(() => document.querySelectorAll('#ocLineas input').length === 4 && document.getElementById('ocArt').value === '' && document.getElementById('ocSug').style.display === 'none'), `${w}px: tocar la sugerencia y Enter agregan los dos artículos`);
+    await page.click('#ocArtSlot .nxPpkIt'); await page.waitForTimeout(200);
+    const det = await page.evaluate(() => document.querySelector('#ocArtSlot .nxPpkDet') ? document.querySelector('#ocArtSlot .nxPpkDet').innerText.replace(/\s+/g, ' ') : '');
+    ok(/Costo RD\$ ?15\.00/i.test(det) && /Precio de venta RD\$ ?30\.00/i.test(det) && /Elegir/i.test(det), `${w}px: al tocarlo muestra costo, precio y «Elegir»`, det);
+    await page.click('#ocArtSlot .nxPpkElegir'); await page.waitForTimeout(200);
+    await page.evaluate(() => window.nxArtPicker('ocArtSlot')); await page.waitForTimeout(200);
+    await page.evaluate(() => window.nxProdPickFiltrar('B-01')); await page.waitForTimeout(150);
+    await page.click('#ocArtSlot .nxPpkIt'); await page.click('#ocArtSlot .nxPpkElegir'); await page.waitForTimeout(200);
+    ok(await page.evaluate(() => document.querySelectorAll('#ocLineas input').length === 4 && !document.querySelector('#ocArtSlot #nxProdPick') && !!document.querySelector('#ocArtSlot button.scan')), `${w}px: «Elegir» agrega el artículo y el buscador vuelve a su botón`);
     // Totales en vivo (Muse): al escribir la cantidad cambia el importe sin salir del campo
     await page.click('#ocLineas input >> nth=0', { clickCount: 3 }); await page.keyboard.type('24'); await page.waitForTimeout(150);
     const viv = await page.evaluate(() => ({ lt: document.getElementById('ocLt0').textContent, tot: document.getElementById('ocTot').textContent, foco: document.activeElement === document.querySelectorAll('#ocLineas input')[0] }));
@@ -137,7 +143,7 @@ try {
     await page.evaluate(() => document.querySelectorAll('#ocLineas input')[0].dispatchEvent(new Event('change')));
     await page.evaluate(() => { const i = document.querySelectorAll('#ocLineas input'); i[3].value = '140'; i[3].dispatchEvent(new Event('change')); });
     await page.evaluate(() => { const i = document.querySelectorAll('#ocLineas input'); i[2].value = '10'; i[2].dispatchEvent(new Event('change')); });
-    const lin = await page.evaluate(() => ({ t: document.getElementById('ocLineas').innerText.replace(/\s+/g, ' '), h: Math.round(document.querySelector('#ocLineas input').getBoundingClientRect().height), fs: getComputedStyle(document.querySelector('#ocLineas input')).fontSize, x: Math.round(document.querySelector('#ocLineas button').getBoundingClientRect().height), g: Math.round(document.getElementById('ocGuardar').getBoundingClientRect().height), sel: Math.round(document.getElementById('ocProv').getBoundingClientRect().height), ancho: document.documentElement.scrollWidth <= window.innerWidth + 1, dentro: (() => { const m = document.querySelector('#nxOcForm .modal').getBoundingClientRect(); return ['ocProv', 'ocFecha', 'ocArt'].every(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.right <= m.right + 0.5 && r.left >= m.left - 0.5; }); })() }));
+    const lin = await page.evaluate(() => ({ t: document.getElementById('ocLineas').innerText.replace(/\s+/g, ' '), h: Math.round(document.querySelector('#ocLineas input').getBoundingClientRect().height), fs: getComputedStyle(document.querySelector('#ocLineas input')).fontSize, x: Math.round(document.querySelector('#ocLineas button').getBoundingClientRect().height), g: Math.round(document.getElementById('ocGuardar').getBoundingClientRect().height), sel: Math.round(document.getElementById('ocProv').getBoundingClientRect().height), ancho: document.documentElement.scrollWidth <= window.innerWidth + 1, dentro: (() => { const m = document.querySelector('#nxOcForm .modal').getBoundingClientRect(); return ['ocProv', 'ocFecha', 'ocArtSlot'].every(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.right <= m.right + 0.5 && r.left >= m.left - 0.5; }); })() }));
     ok(/Total estimado RD\$ ?1,760\.00/i.test(lin.t) && lin.h >= 48 && lin.sel >= 48 && lin.fs === '16px' && lin.x >= 44 && lin.g >= 54 && lin.ancho && lin.dentro, `${w}px: 24×15 + 10×140 = 1,760; campos 48/16, quitar 44, guardar 54`, lin);
     if (OUT) await page.screenshot({ path: `${OUT}/oc-form-${w}.png` });
     await page.evaluate(() => window.nxOcGuardar()); await page.waitForTimeout(1500);
