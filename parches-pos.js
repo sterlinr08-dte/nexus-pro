@@ -9499,7 +9499,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       almSec = `<div class="nxRepCard" style="margin-bottom:12px;text-align:center"><div style="font-size:12.5px;color:#475569;margin-bottom:8px"><b>Multi-almacén</b> — maneja el stock por almacén o sucursal. Crea tu almacén principal para empezar (tu stock actual se asigna ahí).</div><button class="btn bsm bc1" onclick="window.nxAlmInit()"><i class="ti ti-building-warehouse"></i> Activar multi-almacén</button></div>`;
     } else {
       const cards = _almacenes.map(a => `<div class="nxAlmCard"><div style="min-width:0"><b>${esc(a.nombre)}</b>${a.es_principal ? ' <span class="nxEntRol">Principal</span>' : ''}<div style="font-size:10px;color:#475569">${esc(a.direccion || '')}</div></div><div style="text-align:right;white-space:nowrap"><div style="font-weight:800;color:#0d9488">${fmtN(almTotalUnidades(a.id))}</div><div style="font-size:9px;color:#94a3b8">unidades</div></div></div>`).join('');
-      almSec = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-building-warehouse"></i> Almacenes</span><span style="display:flex;gap:6px">${_almacenes.length > 1 ? '<button class="btn bsm bc1" onclick="window.nxAlmTransferir()"><i class="ti ti-transfer"></i> Transferencia</button>' : ''}<button class="btn bsm bghost" onclick="window.nxAlmNuevo()"><i class="ti ti-plus"></i> Almacén</button></span></div><div class="nxAlmGrid">${cards}</div></div>`;
+      almSec = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-building-warehouse"></i> Almacenes</span><span style="display:flex;gap:6px">${_almacenes.length > 1 ? '<button class="btn bsm bghost" onclick="window.nxPedidosAbrir()"><i class="ti ti-clipboard-list"></i> Pedidos</button><button class="btn bsm bc1" onclick="window.nxAlmTransferir()"><i class="ti ti-transfer"></i> Transferencia</button>' : ''}<button class="btn bsm bghost" onclick="window.nxAlmNuevo()"><i class="ti ti-plus"></i> Almacén</button></span></div><div class="nxAlmGrid">${cards}</div></div>`;
     }
     const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody data-pag10="bajo-stock">${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button aria-label="Ajustar el inventario de este artículo" class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
     const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody data-pag10="movimientos-inv">${_invMovs.map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
@@ -9631,6 +9631,116 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   let _transEdit = null;
   let _transSerOpen = null; // índice de la línea con el selector de IMEI abierto (uno a la vez)
   let _transSerCache = {}; // 'producto_id|almacen_id' -> [{id,serial,color}], se invalida al cambiar origen
+  // ══════════════ PEDIDOS ENTRE ALMACENES (16-nov-2026, dueño: «Pedido entre almacén») ══════════════
+  // Un almacén pide mercancía a otro (Pendiente). Quien surte la despacha con la transferencia de siempre, ya llena con el pedido,
+  // y al confirmarla el pedido queda «Despachado» con lo que de verdad salió. El pedido nunca mueve inventario por sí solo.
+  // Servidor: rpc/pos_pedido_almacen_crear (numera PA-00001, todo o nada) y rpc/pos_pedido_almacen_atender (solo desde Pendiente).
+  let _peds = [], _pedItems = [], _pedEdit = null;
+  const PED_EST = { pendiente: ['Pendiente', '#b45309', '#fef3c7'], despachado: ['Despachado', '#166534', '#dcfce7'], rechazado: ['Rechazado', '#b91c1c', '#fee2e2'], anulado: ['Anulado', '#475569', '#f1f5f9'] };
+  async function pedCargar() {
+    _peds = (await getTodasPOS('pos_pedidos_almacen', 'select=*&order=created_at.desc,id.asc')) || [];
+    const ids = _peds.slice(0, 300).map(p => p.id);
+    _pedItems = ids.length ? await riEnTrozos('pos_pedido_almacen_items', 'pedido_id', ids, '*') : [];
+  }
+  function pedChip(e) { const x = PED_EST[e] || [e, '#475569', '#f1f5f9']; return `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;background:${x[2]};color:${x[1]};white-space:nowrap">${esc(x[0].toUpperCase())}</span>`; }
+  window.nxPedidosAbrir = async function () {
+    if (_almacenes.length < 2) { toast('err', 'Necesita al menos 2 almacenes'); return; }
+    cerrarModal('nxPedidos');
+    const ov = document.createElement('div'); ov.id = 'nxPedidos'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:600px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-clipboard-list"></i> Pedidos entre almacenes</span><button class="nxBack" type="button" onclick="document.getElementById('nxPedidos').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <button class="btn bc1" type="button" style="height:48px;margin-bottom:10px" onclick="window.nxPedidoNuevo()"><i class="ti ti-plus"></i> Nuevo pedido</button>
+      <div id="pedLista" style="overflow-y:auto;flex:1"><div class="emptyrow" style="padding:24px;text-align:center"><i class="ti ti-loader-2 nxSpin"></i> Cargando…</div></div></div>`;
+    document.body.appendChild(ov);
+    try { await pedCargar(); } catch (e) { _peds = []; }
+    pedPintarLista();
+  };
+  function pedPintarLista() {
+    const el = document.getElementById('pedLista'); if (!el) return;
+    if (!_peds.length) { el.innerHTML = '<div class="emptyrow" style="padding:26px 10px;text-align:center">Aún no hay pedidos. Toque «Nuevo pedido» cuando un almacén necesite mercancía de otro.</div>'; return; }
+    const orden = _peds.slice().sort((a, b) => (a.estado === 'pendiente' ? 0 : 1) - (b.estado === 'pendiente' ? 0 : 1) || String(b.created_at).localeCompare(String(a.created_at)));
+    el.innerHTML = orden.map(p => {
+      const its = _pedItems.filter(i => String(i.pedido_id) === String(p.id));
+      const lin = its.map(i => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.nombre || '')}</span><b style="white-space:nowrap">${p.estado === 'despachado' ? fmtN(i.despachado) + ' de ' : ''}${fmtN(i.cantidad)}</b></div>`).join('');
+      const acc = p.estado === 'pendiente' ? `<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:8px"><button class="btn bc1" type="button" style="min-height:44px" onclick="window.nxPedidoDespachar('${p.id}')"><i class="ti ti-truck-delivery"></i> Despachar</button><button class="btn bghost" type="button" style="min-height:44px" onclick="window.nxPedidoCerrar('${p.id}','rechazado')">Rechazar</button><button class="btn bghost" type="button" style="min-height:44px" onclick="window.nxPedidoCerrar('${p.id}','anulado')">Anular</button></div>` : '';
+      const pie = p.estado === 'despachado' ? `Despachado con ${esc(p.transferencia_numero || '')}${p.atendido_por ? ' · ' + esc(p.atendido_por) : ''}` : (p.estado === 'rechazado' || p.estado === 'anulado') ? `${esc(p.motivo || '')}${p.atendido_por ? ' · ' + esc(p.atendido_por) : ''}` : (p.notas ? esc(p.notas) : '');
+      return `<div style="border:1.5px solid var(--pf-line,#e2e8f0);border-radius:13px;padding:11px 12px;margin-bottom:8px;background:var(--pf-panel,#fff)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:14px">${esc(p.numero)}</b>${pedChip(p.estado)}</div>
+        <div style="font-size:12.5px;color:#475569;margin:3px 0 6px">${esc(almNombre(p.pide_id) || '—')} pide a ${esc(almNombre(p.surte_id) || '—')} · ${fechaDMY(p.created_at)}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
+        ${lin}${pie ? `<div style="font-size:11.5px;color:#64748b;margin-top:5px">${pie}</div>` : ''}${acc}</div>`;
+    }).join('');
+  }
+  window.nxPedidoNuevo = function () {
+    const prin = almPrincipal() || _almacenes[0], otro = _almacenes.find(a => String(a.id) !== String(prin.id)) || _almacenes[1];
+    _pedEdit = { pide: otro.id, surte: prin.id, notas: '', lineas: [] };
+    cerrarModal('nxPedidoForm');
+    const ov = document.createElement('div'); ov.id = 'nxPedidoForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
+    const lbl = 'display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0';
+    const almOps = sel => _almacenes.map(a => `<option value="${a.id}"${String(sel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
+    const prods = invProductosStock().filter(p => p.activo !== false).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
+    ov.innerHTML = `<div class="modal" style="max-width:520px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-clipboard-list"></i> Nuevo pedido</span><button class="nxBack" type="button" onclick="document.getElementById('nxPedidoForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label style="${lbl}">¿Quién pide?<select id="pfPide" style="${est}" onchange="window.nxPedidoCampo('pide',this.value)">${almOps(_pedEdit.pide)}</select></label>
+        <label style="${lbl}">¿A quién?<select id="pfSurte" style="${est}" onchange="window.nxPedidoCampo('surte',this.value)">${almOps(_pedEdit.surte)}</select></label>
+      </div>
+      <label style="${lbl};margin-top:10px">Agregar artículo<input id="pfArt" class="no-upper" list="pfArts" style="${est}" placeholder="Nombre o código" onchange="window.nxPedidoAgregar(this.value)"><datalist id="pfArts">${prods}</datalist></label>
+      <div id="pfLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
+      <label style="${lbl}">Notas<input id="pfNotas" class="no-upper" style="${est}" placeholder="Para cuándo, motivo…" onchange="window.nxPedidoCampo('notas',this.value)"></label>
+      <button class="btn bc1" type="button" id="pfGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxPedidoGuardar()"><i class="ti ti-send"></i> Enviar pedido</button></div>`;
+    document.body.appendChild(ov);
+    pedPintarLineas();
+    setTimeout(() => { const i = document.getElementById('pfArt'); if (i) i.focus(); }, 60);
+  };
+  window.nxPedidoCampo = function (k, v) { if (_pedEdit) { _pedEdit[k] = v; pedPintarLineas(); } };
+  window.nxPedidoAgregar = function (txt) {
+    const p = costoProdDe(txt) || (invProductosStock().find(x => String(x.nombre || '').toLowerCase() === String(txt || '').trim().toLowerCase()));
+    const inp = document.getElementById('pfArt');
+    if (!p) { if (txt) toast('warn', 'Elija el artículo de la lista'); return; }
+    const ex = _pedEdit.lineas.find(l => String(l.producto_id) === String(p.id));
+    if (ex) ex.cant += 1; else _pedEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
+    if (inp) { inp.value = ''; inp.focus(); }
+    pedPintarLineas();
+  };
+  window.nxPedidoCant = function (i, v) { const l = _pedEdit.lineas[i]; if (!l) return; const n = Number(String(v).replace(/[^0-9.]/g, '')); if (n > 0) l.cant = n; pedPintarLineas(); };
+  window.nxPedidoQuitar = function (i) { _pedEdit.lineas.splice(i, 1); pedPintarLineas(); };
+  function pedPintarLineas() {
+    const el = document.getElementById('pfLineas'); if (!el || !_pedEdit) return;
+    if (!_pedEdit.lineas.length) { el.innerHTML = '<div style="text-align:center;color:#64748b;font-size:12.5px;padding:16px">Agregue los artículos que necesita.</div>'; return; }
+    el.innerHTML = _pedEdit.lineas.map((l, i) => { const hay = stockEnAlm(l.producto_id, _pedEdit.surte), aqui = stockEnAlm(l.producto_id, _pedEdit.pide);
+      return `<div style="display:grid;grid-template-columns:1fr 84px 44px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9"><div style="min-width:0"><div style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nombre)}</div><div style="font-size:11.5px;color:${hay < l.cant ? '#b91c1c' : '#64748b'}">Tiene ${esc(almNombre(_pedEdit.surte))}: ${fmtN(hay)} · aquí: ${fmtN(aqui)}</div></div><input inputmode="numeric" value="${l.cant}" aria-label="Cantidad de ${esc(l.nombre)}" onchange="window.nxPedidoCant(${i},this.value)" style="height:48px;font-size:16px;text-align:right;border:1.5px solid #cbd5e1;border-radius:10px;padding:0 10px;width:100%;box-sizing:border-box"><button type="button" aria-label="Quitar ${esc(l.nombre)}" onclick="window.nxPedidoQuitar(${i})" style="width:44px;height:44px;border:0;background:#fee2e2;color:#b91c1c;border-radius:10px;cursor:pointer"><i class="ti ti-x"></i></button></div>`; }).join('');
+  }
+  window.nxPedidoGuardar = async function () {
+    const e = _pedEdit; if (!e) return;
+    if (String(e.pide) === String(e.surte)) { toast('err', 'Elija dos almacenes distintos'); return; }
+    if (!e.lineas.length) { toast('err', 'Agregue al menos un artículo'); const i = document.getElementById('pfArt'); if (i) i.focus(); return; }
+    const b = document.getElementById('pfGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
+    try {
+      const r0 = await getAPI().post('rpc/pos_pedido_almacen_crear', { p_pide: e.pide, p_surte: e.surte, p_notas: (e.notas || '').trim() || null, p_items: e.lineas.map(l => ({ producto_id: l.producto_id, cantidad: l.cant })) });
+      const r = Array.isArray(r0) ? r0[0] : r0; if (!r || !r.ok) throw new Error('SIN_CONFIRMACION');
+      cerrarModal('nxPedidoForm'); toast('ok', 'Pedido ' + r.numero + ' enviado', almNombre(e.surte));
+      if (document.getElementById('nxPedidos')) { await pedCargar(); pedPintarLista(); }
+    } catch (er) { if (b) b.disabled = false; toast('err', 'No se pudo enviar el pedido', String(er && er.message || er)); }
+  };
+  // Despachar: abre la transferencia de siempre, ya llena. Lo despachado queda anotado al confirmarla (nxAlmGuardarTransfer).
+  window.nxPedidoDespachar = function (id) {
+    const p = _peds.find(x => String(x.id) === String(id)); if (!p) return;
+    const its = _pedItems.filter(i => String(i.pedido_id) === String(id));
+    _transEdit = { origen: p.surte_id, destino: p.pide_id, fecha: isoHoy(), notas: 'Pedido ' + p.numero, pedidoId: p.id, pedidoNumero: p.numero,
+      lineas: its.map(i => { const pr = _prods.find(x => String(x.id) === String(i.producto_id)) || {}; return pr.serial ? { producto_id: i.producto_id, nombre: i.nombre, cant: 0, serial: true, seriales: [] } : { producto_id: i.producto_id, nombre: i.nombre, cant: Math.min(Number(i.cantidad), Math.max(0, stockEnAlm(i.producto_id, p.surte_id))) || Number(i.cantidad) }; }) };
+    _transSerOpen = null; _transSerCache = {};
+    abrirTransfer();
+    const n = document.getElementById('trNotas'); if (n) n.value = _transEdit.notas;
+  };
+  window.nxPedidoCerrar = async function (id, estado) {
+    const motivo = (prompt(estado === 'rechazado' ? 'Motivo del rechazo (ej.: no hay existencia)' : 'Motivo de la anulación') || '').trim();
+    if (!motivo) return;
+    try { await getAPI().post('rpc/pos_pedido_almacen_atender', { p_pedido: id, p_estado: estado, p_motivo: motivo }); toast('ok', estado === 'rechazado' ? 'Pedido rechazado' : 'Pedido anulado'); await pedCargar(); pedPintarLista(); }
+    catch (e) { const m = String(e && e.message || e); toast('err', 'No se pudo', /PEDIDO_YA_ATENDIDO/.test(m) ? 'Ese pedido ya fue atendido.' : m); }
+  };
   window.nxAlmTransferir = function () {
     if (_almacenes.length < 2) { toast('err', 'Necesitas al menos 2 almacenes'); return; }
     _transEdit = { origen: _almacenes[0].id, destino: _almacenes[1].id, fecha: isoHoy(), notas: '', lineas: [] };
@@ -9644,10 +9754,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ov = document.createElement('div'); ov.id = 'nxAlmTransf'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:94vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-transfer"></i> Transferencia / Despacho</span><button class="nxBack" type="button" onclick="document.getElementById('nxAlmTransf').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="mt"><span><i class="ti ti-transfer"></i> ${_transEdit.pedidoNumero ? 'Despachar pedido ' + esc(_transEdit.pedidoNumero) : 'Transferencia / Despacho'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAlmTransf').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr-row">
-          <div class="fr"><label>Desde *</label><select id="trOrig" onchange="window.nxTransField('origen',this.value)">${almOpts(_transEdit.origen)}</select></div>
-          <div class="fr"><label>Hacia *</label><select id="trDest" onchange="window.nxTransField('destino',this.value)">${almOpts(_transEdit.destino)}</select></div>
+          <div class="fr"><label>Desde *</label><select id="trOrig"${_transEdit.pedidoId ? ' disabled' : ''} onchange="window.nxTransField('origen',this.value)">${almOpts(_transEdit.origen)}</select></div>
+          <div class="fr"><label>Hacia *</label><select id="trDest"${_transEdit.pedidoId ? ' disabled' : ''} onchange="window.nxTransField('destino',this.value)">${almOpts(_transEdit.destino)}</select></div>
           <div class="fr"><label>Fecha</label><input type="date" id="trFecha" value="${_transEdit.fecha}" onchange="window.nxTransField('fecha',this.value)"></div>
         </div>
         <div class="nxFacAdd" style="margin:2px 0 10px"><i class="ti ti-search"></i><input list="trProds" id="trBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxTransAdd(this.value)"><datalist id="trProds">${prodList}</datalist></div>
@@ -9766,6 +9876,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!res || !res.id) throw new Error('No se pudo transferir');
       cerrarModal('nxAlmTransf');
       toast('ok', 'Despacho ' + res.numero, lineas.length + ' artículo(s)');
+      if (_transEdit.pedidoId) {
+        try { await getAPI().post('rpc/pos_pedido_almacen_atender', { p_pedido: _transEdit.pedidoId, p_estado: 'despachado', p_transferencia: res.id }); toast('ok', 'Pedido ' + (_transEdit.pedidoNumero || '') + ' despachado'); }
+        catch (e) { toast('warn', 'La mercancía se movió, pero el pedido sigue pendiente', 'Márquelo de nuevo desde Pedidos'); }
+        if (document.getElementById('nxPedidos')) { try { await pedCargar(); pedPintarLista(); } catch (e) {} }
+      }
       transDespachoImprimir({ numero: res.numero, fecha: _transEdit.fecha || isoHoy(), origen_nombre: almNombre(oid), destino_nombre: almNombre(did), notas: (_transEdit.notas || '').trim() || null, _items: lineas.map(l => ({ nombre: l.nombre, cantidad: l.cant })) });
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) {
@@ -10033,12 +10148,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   const RI_REPS = {
     inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['cambios', 'Cambios de precio'], ['costos', 'Costos agregados'], ['series', 'Series no vendidas']],
     ven: [['ventas', 'Ventas'], ['ganancias', 'Ganancias por artículo'], ['gandia', 'Ganancias por día'], ['empleado', 'Ventas por empleado'], ['clientes', 'Ventas por cliente']],
-    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén']],
+    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén'], ['solic', 'Solicitudes de inventario'], ['requis', 'Requisiciones pendientes']],
     act: [['activos', 'Activos fijos']]
   };
   function riGrupo(t) { return Object.keys(RI_REPS).find(g => RI_REPS[g].some(x => x[0] === (t || _ri.tab))) || 'inv'; }
-  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || t === 'costos' || g === 'ven' || g === 'com'; }
-  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [], costos: [] };
+  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || t === 'costos' || g === 'ven' || (g === 'com' && t !== 'requis'); }
+  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [], costos: [], peds: [], pitems: [] };
   const RI_METODO = { efectivo: 'Efectivo', banco: 'Banco', por_pagar: 'Por pagar' };
   const RI_CAMPO = { precio: 'Precio', precio_mayor: 'Precio por mayor', precio_minimo: 'Precio mínimo', costo: 'Costo' };
   // Depreciación en línea recta: (costo − residual) / vida útil, por cada mes cumplido desde la compra. Solo para el reporte.
@@ -10068,6 +10183,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       _riX.titems = _riX.transf.length ? await riEnTrozos('pos_transferencia_items', 'transferencia_id', _riX.transf.map(x => x.id), '*') : [];
       return true;
     }
+    if (t === 'solic' || t === 'requis') {
+      const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
+      const rango = t === 'solic' ? '&created_at=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&created_at=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) : '';
+      _riX.peds = (await getTodasPOS('pos_pedidos_almacen', 'select=*' + rango + '&order=created_at.desc,id.asc')) || [];
+      const ids = _riX.peds.filter(p => t === 'solic' || p.estado === 'pendiente' || p.estado === 'despachado').map(p => p.id);
+      _riX.pitems = ids.length ? await riEnTrozos('pos_pedido_almacen_items', 'pedido_id', ids, '*') : [];
+      return true;
+    }
     if (t === 'cambios') {
       const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
       _riX.cambios = (await getTodasPOS('pos_precio_historial', 'select=*&fecha=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&fecha=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=fecha.desc,id.asc')) || [];
@@ -10095,6 +10218,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const porCat = {}; l.forEach(p => { const c = catNombre(p.categoria_id) || 'Sin categoría'; (porCat[c] = porCat[c] || []).push(p); }); let tu = 0;
       const grupos = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'es')).map(c => ({ nombre: c, filas: porCat[c].map(p => { const s = riStock(p); tu += s; return [p.codigo || '', p.nombre || '', p.referencia || '', fmtN(s), '', '']; }) }));
       return { titulo: 'Inventario físico · hoja de conteo', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Referencia' }, { t: 'Existencia', r: 1 }, { t: 'Conteo', r: 1 }, { t: 'Diferencia', r: 1 }], grupos: grupos, kpis: [['Artículos', fmtN(l.length)], ['Unidades en sistema', fmtN(tu)]], nota: 'Imprima la hoja, cuente y anote. Las diferencias se corrigen en Kardex → Ajustar.' };
+    }
+
+    if (t === 'solic') {
+      const l = (_riX.peds || []).filter(p => (!_ri.pest || p.estado === _ri.pest) && hay(p.numero + ' ' + almNombre(p.pide_id) + ' ' + almNombre(p.surte_id) + ' ' + (p.notas || '')));
+      const nIt = {}, uIt = {}; (_riX.pitems || []).forEach(i => { nIt[i.pedido_id] = (nIt[i.pedido_id] || 0) + 1; uIt[i.pedido_id] = (uIt[i.pedido_id] || 0) + Number(i.cantidad || 0); });
+      const filas = l.map(p => [fechaDMY(p.created_at), p.numero, almNombre(p.pide_id) || '', almNombre(p.surte_id) || '', fmtN(nIt[p.id] || 0), fmtN(uIt[p.id] || 0), (PED_EST[p.estado] || [p.estado])[0], p.transferencia_numero || p.motivo || '', p.created_by_name || '']);
+      const cuenta = e => l.filter(p => p.estado === e).length;
+      return { titulo: 'Solicitudes de inventario', cols: [{ t: 'Fecha' }, { t: 'Pedido' }, { t: 'Pide' }, { t: 'A quién' }, { t: 'Artículos', r: 1 }, { t: 'Unidades', r: 1 }, { t: 'Estado' }, { t: 'Despacho / motivo' }, { t: 'Usuario' }], grupos: [{ nombre: '', filas: filas }],
+        kpis: [['Pedidos', fmtN(l.length)], ['Pendientes', fmtN(cuenta('pendiente'))], ['Despachados', fmtN(cuenta('despachado'))]], nota: 'Los pedidos se hacen en Kardex → Almacenes → Pedidos.', vacio: 'No hay pedidos en estas fechas. Se hacen en Kardex → Almacenes → Pedidos.' };
+    }
+    if (t === 'requis') {
+      const pById = {}; (_riX.peds || []).forEach(p => { pById[String(p.id)] = p; });
+      const l = (_riX.pitems || []).map(i => { const p0 = pById[String(i.pedido_id)], p = p0 && (p0.estado === 'pendiente' || p0.estado === 'despachado') ? p0 : null; const falta = !p ? 0 : p.estado === 'pendiente' ? Number(i.cantidad || 0) : Math.max(0, Number(i.cantidad || 0) - Number(i.despachado || 0)); return { i: i, p: p, falta: falta }; })
+        .filter(x => x.p && x.falta > 0 && pasaProd(x.i.producto_id) && hay(x.i.nombre + ' ' + x.p.numero));
+      const por = {}; l.forEach(x => { const k = almNombre(x.p.surte_id) || 'Almacén'; (por[k] = por[k] || []).push(x); }); let F = 0;
+      const grupos = Object.keys(por).sort().map(k => ({ nombre: 'Le piden a ' + k, filas: por[k].map(x => { F += x.falta; return [fechaDMY(x.p.created_at), x.p.numero, almNombre(x.p.pide_id) || '', x.i.nombre || '', fmtN(x.i.cantidad), fmtN(x.p.estado === 'pendiente' ? 0 : x.i.despachado), fmtN(x.falta), fmtN(stockEnAlm(x.i.producto_id, x.p.surte_id)), x.p.estado === 'pendiente' ? 'Sin despachar' : 'Despacho incompleto']; }) }));
+      return { titulo: 'Requisiciones pendientes', cols: [{ t: 'Fecha' }, { t: 'Pedido' }, { t: 'Pide' }, { t: 'Artículo' }, { t: 'Pedido', r: 1 }, { t: 'Despachado', r: 1 }, { t: 'Falta', r: 1 }, { t: 'Hay donde surten', r: 1 }, { t: 'Situación' }], grupos: grupos,
+        total: ['', '', '', 'TOTAL', '', '', fmtN(F), '', ''], kpis: [['Renglones', fmtN(l.length)], ['Unidades por despachar', fmtN(F)]], nota: 'Lo pedido que todavía no ha salido: pedidos pendientes y despachos incompletos.', vacio: 'No hay nada pendiente por despachar.' };
     }
     if (t === 'cambios') {
       const l = (_riX.cambios || []).filter(c => (!_ri.campo || c.campo === _ri.campo) && pasaProd(c.producto_id) && hay((c.producto_nombre || '') + ' ' + (c.producto_codigo || '')));
@@ -10233,13 +10374,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const f = [];
-    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios', 'costos'].indexOf(t) >= 0;
+    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios', 'costos', 'requis'].indexOf(t) >= 0;
     f.push(`<label>Reporte${sel('tab', RI_REPS[g], t)}</label>`);
     if ((t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
     if (conProd && marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
     if (t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico' || t === 'precios') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
     if (riConFechas()) f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    if (t === 'solic') f.push(`<label>Estado${sel('pest', [['', 'Todos']].concat(Object.keys(PED_EST).map(k => [k, PED_EST[k][0]])), _ri.pest || '')}</label>`);
     if (t === 'cambios') f.push(`<label>Qué cambió${sel('campo', [['', 'Todo']].concat(Object.keys(RI_CAMPO).map(k => [k, RI_CAMPO[k]])), _ri.campo || '')}</label>`);
     if (t === 'activos') f.push(`<label class="richk"><input type="checkbox"${_ri.baja ? ' checked' : ''} onchange="window.nxRepInvSet('baja',this.checked)"> Incluir dados de baja</label>`);
     if (t === 'movs') f.push(`<label>Movimiento${sel('tipos', [['', 'Todos']].concat(Object.keys(MOV_LBL).map(k => [k, MOV_LBL[k][0]])), _ri.tipos)}</label>`);
