@@ -10029,15 +10029,25 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   // ── Más reportes estilo Infoplus (16-nov-2026): ventas, ganancias, compras, despachos, series, conteo físico y precios ──
   // Mismo motor que los 5 de inventario: solo LEEN. Las ventas y sus notas de crédito son las que ya carga Reportes.
-  const RI_GRUPOS = [['inv', 'Inventario', 'ti-packages'], ['ven', 'Ventas', 'ti-cash'], ['com', 'Compras y despachos', 'ti-truck-delivery']];
+  const RI_GRUPOS = [['inv', 'Inventario', 'ti-packages'], ['ven', 'Ventas', 'ti-cash'], ['com', 'Compras y despachos', 'ti-truck-delivery'], ['act', 'Activos fijos', 'ti-building']];
   const RI_REPS = {
-    inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['series', 'Series no vendidas']],
+    inv: [['resumen', 'Resumen de inventario'], ['baja', 'Existencia baja'], ['movs', 'Movimientos'], ['sinmov', 'Sin movimiento'], ['ajustes', 'Ajustes'], ['fisico', 'Inventario físico (conteo)'], ['precios', 'Lista de precios'], ['cambios', 'Cambios de precio'], ['series', 'Series no vendidas']],
     ven: [['ventas', 'Ventas'], ['ganancias', 'Ganancias por artículo'], ['gandia', 'Ganancias por día'], ['empleado', 'Ventas por empleado'], ['clientes', 'Ventas por cliente']],
-    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén']]
+    com: [['compras', 'Compras'], ['recep', 'Recepciones'], ['desp', 'Despachos'], ['despalm', 'Despachos por almacén']],
+    act: [['activos', 'Activos fijos']]
   };
   function riGrupo(t) { return Object.keys(RI_REPS).find(g => RI_REPS[g].some(x => x[0] === (t || _ri.tab))) || 'inv'; }
-  function riConFechas() { const t = _ri.tab; return t === 'movs' || t === 'ajustes' || riGrupo() !== 'inv'; }
-  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [] };
+  function riConFechas() { const t = _ri.tab, g = riGrupo(); return t === 'movs' || t === 'ajustes' || t === 'cambios' || g === 'ven' || g === 'com'; }
+  let _riX = { compras: [], citems: [], transf: [], titems: [], series: [], cambios: [], activos: [] };
+  const RI_CAMPO = { precio: 'Precio', precio_mayor: 'Precio por mayor', precio_minimo: 'Precio mínimo', costo: 'Costo' };
+  // Depreciación en línea recta: (costo − residual) / vida útil, por cada mes cumplido desde la compra. Solo para el reporte.
+  function activoDep(a) {
+    const costo = Number(a.costo || 0), res = Math.min(costo, Number(a.valor_residual || 0)), vida = Math.max(1, Number(a.vida_util_meses || 0));
+    let meses = 0; if (a.fecha_compra) { const f = String(a.fecha_compra).slice(0, 10).split('-').map(Number), h = new Date(); meses = (h.getFullYear() - f[0]) * 12 + (h.getMonth() + 1 - f[1]) - (h.getDate() < f[2] ? 1 : 0); }
+    meses = Math.max(0, Math.min(vida, meses));
+    const acum = r2((costo - res) / vida * meses);
+    return { meses: meses, vida: vida, acum: acum, libros: r2(costo - acum) };
+  }
   function riEnRango(f) { return (!_ri.desde || f >= _ri.desde) && (!_ri.hasta || f <= _ri.hasta); }
   function riCostoItem(it) { return it.costo_unitario != null ? Number(it.costo_unitario) : prodCosto(it.producto_id); }
   function riSinItbis(it) { const cant = Number(it.cantidad || 0), imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant)); return it.itbis ? imp - (imp * 18 / 118) : imp; }
@@ -10057,6 +10067,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       _riX.titems = _riX.transf.length ? await riEnTrozos('pos_transferencia_items', 'transferencia_id', _riX.transf.map(x => x.id), '*') : [];
       return true;
     }
+    if (t === 'cambios') {
+      const a = _ri.desde.split('-').map(Number), b = _ri.hasta.split('-').map(Number);
+      _riX.cambios = (await getTodasPOS('pos_precio_historial', 'select=*&fecha=gte.' + encodeURIComponent(new Date(a[0], a[1] - 1, a[2]).toISOString()) + '&fecha=lt.' + encodeURIComponent(new Date(b[0], b[1] - 1, b[2] + 1).toISOString()) + '&order=fecha.desc,id.asc')) || [];
+      return true;
+    }
+    if (t === 'activos') { _riX.activos = (await getTodasPOS('pos_activos_fijos', 'select=*&order=nombre.asc,id.asc')) || []; return true; }
     if (t === 'series') { _riX.series = (await getTodasPOS('pos_seriales', 'select=id,producto_id,serial,almacen_id,color,created_at&estado=eq.disponible&order=created_at.desc,id.asc')) || []; return true; }
     return t === 'fisico' || t === 'precios';
   }
@@ -10073,6 +10089,21 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const porCat = {}; l.forEach(p => { const c = catNombre(p.categoria_id) || 'Sin categoría'; (porCat[c] = porCat[c] || []).push(p); }); let tu = 0;
       const grupos = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'es')).map(c => ({ nombre: c, filas: porCat[c].map(p => { const s = riStock(p); tu += s; return [p.codigo || '', p.nombre || '', p.referencia || '', fmtN(s), '', '']; }) }));
       return { titulo: 'Inventario físico · hoja de conteo', cols: [{ t: 'Código' }, { t: 'Descripción' }, { t: 'Referencia' }, { t: 'Existencia', r: 1 }, { t: 'Conteo', r: 1 }, { t: 'Diferencia', r: 1 }], grupos: grupos, kpis: [['Artículos', fmtN(l.length)], ['Unidades en sistema', fmtN(tu)]], nota: 'Imprima la hoja, cuente y anote. Las diferencias se corrigen en Kardex → Ajustar.' };
+    }
+    if (t === 'cambios') {
+      const l = (_riX.cambios || []).filter(c => (!_ri.campo || c.campo === _ri.campo) && pasaProd(c.producto_id) && hay((c.producto_nombre || '') + ' ' + (c.producto_codigo || '')));
+      const filas = l.map(c => { const a = Number(c.anterior || 0), n = Number(c.nuevo || 0); return [fechaDMY(c.fecha), c.producto_codigo || '', c.producto_nombre || '', RI_CAMPO[c.campo] || c.campo, fmt2d(a), fmt2d(n), a > 0 ? (n >= a ? '+' : '') + Math.round((n - a) / a * 100) + ' %' : '', c.usuario || '']; });
+      return { titulo: 'Cambios de precio', cols: [{ t: 'Fecha' }, { t: 'Código' }, { t: 'Artículo' }, { t: 'Qué cambió' }, { t: 'Antes', r: 1 }, { t: 'Ahora', r: 1 }, { t: 'Cambio', r: 1 }, { t: 'Usuario' }], grupos: [{ nombre: '', filas: filas }],
+        kpis: [['Cambios', fmtN(l.length)], ['Subidas', fmtN(l.filter(c => Number(c.nuevo || 0) > Number(c.anterior || 0)).length)], ['Bajadas', fmtN(l.filter(c => Number(c.nuevo || 0) < Number(c.anterior || 0)).length)]], nota: 'Se registra solo desde el 16-nov-2026: cada vez que cambia el precio o el costo de un artículo.' };
+    }
+    if (t === 'activos') {
+      const l = (_riX.activos || []).filter(a => (_ri.baja || a.estado !== 'baja') && hay((a.nombre || '') + ' ' + (a.codigo || '') + ' ' + (a.categoria || '') + ' ' + (a.ubicacion || '')));
+      const por = {}; l.forEach(a => { const c = a.categoria || 'Sin categoría'; (por[c] = por[c] || []).push(a); }); let C = 0, D = 0;
+      const grupos = Object.keys(por).sort((a, b) => a.localeCompare(b, 'es')).map(c => { let c1 = 0, d1 = 0; const ids = [];
+        const filas = por[c].map(a => { const d = activoDep(a); if (a.estado !== 'baja') { c1 += Number(a.costo || 0); d1 += d.acum; } ids.push(a.id); return [a.codigo || '', a.nombre + (a.estado === 'baja' ? ' (de baja)' : ''), a.ubicacion || '', a.fecha_compra ? fechaDMY(String(a.fecha_compra).slice(0, 10)) : '', fmt2d(a.costo), d.meses + ' de ' + d.vida + ' meses', fmt2d(d.acum), fmt2d(d.libros)]; });
+        C += c1; D += d1; return { nombre: c, filas: filas, ids: ids, sub: ['', 'Subtotal ' + c, '', '', fmt2d(c1), '', fmt2d(d1), fmt2d(c1 - d1)] }; });
+      return { titulo: 'Activos fijos', cols: [{ t: 'Código' }, { t: 'Activo' }, { t: 'Ubicación' }, { t: 'Compra' }, { t: 'Costo', r: 1 }, { t: 'Uso', r: 1 }, { t: 'Deprec. acumulada', r: 1 }, { t: 'Valor en libros', r: 1 }], grupos: grupos, total: ['', 'TOTAL GENERAL', '', '', fmt2d(C), '', fmt2d(D), fmt2d(C - D)],
+        kpis: [['Activos en uso', fmtN(l.filter(x => x.estado !== 'baja').length)], ['Costo', fmt2d(C)], ['Valor en libros', fmt2d(C - D)]], nota: 'Depreciación en línea recta, solo informativa: no crea asientos contables. Los dados de baja no suman. Toque un activo para editarlo.', vacio: 'Aún no hay activos. Toque «+ Activo» para registrar el primero.' };
     }
     if (t === 'series') {
       const l = (_riX.series || []).filter(s => pasaProd(s.producto_id) && hay(s.serial + ' ' + ((pm[String(s.producto_id)] || {}).nombre || '')));
@@ -10167,15 +10198,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxRepInvCerrar = function () { _riVista = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepInvSet = function (k, val) {
     if (k === 'grupo') { k = 'tab'; val = RI_REPS[val] ? RI_REPS[val][0][0] : 'resumen'; }
-    _ri[k] = k === 'pos' ? !!val : k === 'dias' ? Number(val) || 30 : val;
+    _ri[k] = (k === 'pos' || k === 'baja') ? !!val : k === 'dias' ? Number(val) || 30 : val;
     if (k === 'tab' || k === 'desde' || k === 'hasta' || k === 'dias') { riRefrescar(); return; }
     const c = document.getElementById('riCuerpo'); if (c) c.innerHTML = riCuerpoHTML(); else { const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
   };
   function riTablaHTML(d, paraImprimir) {
     const th = d.cols.map(c => `<th${c.r ? ' style="text-align:right"' : ''}>${esc(c.t)}</th>`).join('');
     const tr = (f, cls) => `<tr${cls ? ' class="' + cls + '"' : ''}>${f.map((x, i) => `<td${d.cols[i] && d.cols[i].r ? ' style="text-align:right;white-space:nowrap"' : ''}>${esc(x)}</td>`).join('')}</tr>`;
-    let n = 0; const cuerpo = d.grupos.map(g => { n += g.filas.length; return (g.nombre ? `<tr class="rig"><td colspan="${d.cols.length}">${esc(g.nombre)}</td></tr>` : '') + g.filas.map(f => tr(f)).join('') + (g.sub ? tr(g.sub, 'ris') : ''); }).join('');
-    if (!n) return '<div class="emptyrow" style="padding:26px 10px;text-align:center">' + (_riMovs === null && riNecesitaMovs() && !paraImprimir ? 'No se pudieron leer los movimientos. Toque el reporte otra vez.' : 'Nada que mostrar con estos filtros.') + '</div>';
+    const trId = (f, id) => `<tr class="ric" tabindex="0" role="button" onclick="window.nxActivoForm('${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">${f.map((x, i) => `<td${d.cols[i] && d.cols[i].r ? ' style="text-align:right;white-space:nowrap"' : ''}>${esc(x)}</td>`).join('')}</tr>`;
+    let n = 0; const cuerpo = d.grupos.map(g => { n += g.filas.length; return (g.nombre ? `<tr class="rig"><td colspan="${d.cols.length}">${esc(g.nombre)}</td></tr>` : '') + g.filas.map((f, i) => g.ids && !paraImprimir ? trId(f, g.ids[i]) : tr(f)).join('') + (g.sub ? tr(g.sub, 'ris') : ''); }).join('');
+    if (!n) return '<div class="emptyrow" style="padding:26px 10px;text-align:center">' + (_riMovs === null && riNecesitaMovs() && !paraImprimir ? 'No se pudieron leer los movimientos. Toque el reporte otra vez.' : (d.vacio || 'Nada que mostrar con estos filtros.')) + '</div>';
     return `<table class="ritab"><thead><tr>${th}</tr></thead><tbody>${cuerpo}${d.total ? tr(d.total, 'rit') : ''}</tbody></table>`;
   }
   function riCuerpoHTML() {
@@ -10185,27 +10217,80 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   function renderRepInv() {
     nxPfEnsureCSS();
-    if (!document.getElementById('nxRiCSS')) { const st = document.createElement('style'); st.id = 'nxRiCSS'; st.textContent = '.nxRi .ritabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.nxRi .ritabs::-webkit-scrollbar{display:none}.nxRi .ritabs button{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit}.nxRi .ritabs button.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}.nxRi .rifil{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.nxRi .rifil label{display:grid;gap:3px;font-size:11.5px;font-weight:600;color:var(--pf-txt3)}.nxRi .rifil :is(select,input:not([type=checkbox])){height:48px;font-size:16px;border:1.5px solid var(--pf-line);border-radius:11px;padding:0 10px;background:var(--pf-panel);color:var(--pf-txt);width:100%;min-width:0;font-family:inherit}.nxRi .rifil .richk{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border:1.5px solid var(--pf-line);border-radius:11px;background:var(--pf-panel);font-size:13px;color:var(--pf-txt);align-self:end}.nxRi .rifil .richk input{width:20px;height:20px}.nxRi .ritab{width:100%;border-collapse:collapse;font-size:12.5px}.nxRi .ritab th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--pf-txt3);padding:10px;border-bottom:1.5px solid var(--pf-line);white-space:nowrap;background:var(--pf-bg)}.nxRi .ritab td{padding:9px 10px;border-bottom:1px solid var(--pf-line);color:var(--pf-txt)}.nxRi .ritab .rig td{font-weight:800;background:var(--pf-blue-l);color:var(--pf-blue-d)}.nxRi .ritab .ris td{font-weight:700;background:var(--pf-bg)}.nxRi .ritab .rit td{font-weight:800;border-top:2px solid var(--pf-txt);font-size:13px}.nxRi .riacc{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.nxRi .riacc button{min-height:44px}'; document.head.appendChild(st); }
+    if (!document.getElementById('nxRiCSS')) { const st = document.createElement('style'); st.id = 'nxRiCSS'; st.textContent = '.nxRi .ritabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.nxRi .ritabs::-webkit-scrollbar{display:none}.nxRi .ritabs button{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit}.nxRi .ritabs button.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}.nxRi .rifil{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.nxRi .rifil label{display:grid;gap:3px;font-size:11.5px;font-weight:600;color:var(--pf-txt3)}.nxRi .rifil :is(select,input:not([type=checkbox])){height:48px;font-size:16px;border:1.5px solid var(--pf-line);border-radius:11px;padding:0 10px;background:var(--pf-panel);color:var(--pf-txt);width:100%;min-width:0;font-family:inherit}.nxRi .rifil .richk{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border:1.5px solid var(--pf-line);border-radius:11px;background:var(--pf-panel);font-size:13px;color:var(--pf-txt);align-self:end}.nxRi .rifil .richk input{width:20px;height:20px}.nxRi .ritab{width:100%;border-collapse:collapse;font-size:12.5px}.nxRi .ritab th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--pf-txt3);padding:10px;border-bottom:1.5px solid var(--pf-line);white-space:nowrap;background:var(--pf-bg)}.nxRi .ritab td{padding:9px 10px;border-bottom:1px solid var(--pf-line);color:var(--pf-txt)}.nxRi .ritab .rig td{font-weight:800;background:var(--pf-blue-l);color:var(--pf-blue-d)}.nxRi .ritab .ris td{font-weight:700;background:var(--pf-bg)}.nxRi .ritab .rit td{font-weight:800;border-top:2px solid var(--pf-txt);font-size:13px}.nxRi .riacc{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.nxRi .riacc button{min-height:44px}.nxRi .ritab .ric{cursor:pointer}.nxRi .ritab .ric:hover td{background:var(--pf-blue-l)}.nxRi .ritab .ric td{padding-top:13px;padding-bottom:13px}'; document.head.appendChild(st); }
     const t = _ri.tab, sel = (k, ops, v) => `<select onchange="window.nxRepInvSet('${k}',this.value)">${ops.map(o => `<option value="${esc(o[0])}"${String(v) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const marcas = Array.from(new Set((_prods || []).map(p => p.marca).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const f = [];
-    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias'].indexOf(t) >= 0;
+    const g = riGrupo(), inv5 = ['resumen', 'baja', 'movs', 'sinmov', 'ajustes'].indexOf(t) >= 0, conProd = inv5 || ['fisico', 'precios', 'series', 'ganancias', 'cambios'].indexOf(t) >= 0;
     f.push(`<label>Reporte${sel('tab', RI_REPS[g], t)}</label>`);
     if ((t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico') && _almacenes.length > 1) f.push(`<label>Almacén${sel('alm', [['', 'Todos']].concat(_almacenes.map(a => [a.id, a.nombre])), _ri.alm)}</label>`);
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
     if (conProd && marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
     if (t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico' || t === 'precios') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
     if (riConFechas()) f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    if (t === 'cambios') f.push(`<label>Qué cambió${sel('campo', [['', 'Todo']].concat(Object.keys(RI_CAMPO).map(k => [k, RI_CAMPO[k]])), _ri.campo || '')}</label>`);
+    if (t === 'activos') f.push(`<label class="richk"><input type="checkbox"${_ri.baja ? ' checked' : ''} onchange="window.nxRepInvSet('baja',this.checked)"> Incluir dados de baja</label>`);
     if (t === 'movs') f.push(`<label>Movimiento${sel('tipos', [['', 'Todos']].concat(Object.keys(MOV_LBL).map(k => [k, MOV_LBL[k][0]])), _ri.tipos)}</label>`);
     if (t === 'sinmov') f.push(`<label>Sin movimiento en${sel('dias', [[30, '30 días'], [60, '60 días'], [90, '90 días'], [180, '6 meses']], _ri.dias)}</label>`);
     f.push(`<label>Buscar<input class="no-upper" value="${esc(_ri.q)}" placeholder="Nombre o código" oninput="window.nxRepInvSet('q',this.value)"></label>`);
     if (t === 'resumen') f.push(`<label class="richk"><input type="checkbox"${_ri.pos ? ' checked' : ''} onchange="window.nxRepInvSet('pos',this.checked)"> Solo con existencia</label>`);
     return `<div class="nxPf nxRepWrap nxRi">
-      <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
+      <div class="riacc"><button class="btn bsm bghost" type="button" onclick="window.nxRepInvCerrar()"><i class="ti ti-arrow-left"></i> Reportes</button><span style="flex:1"></span>${t === 'activos' ? `<button class="btn bsm bc1" type="button" onclick="window.nxActivoForm('')"><i class="ti ti-plus"></i> Activo</button>` : ''}<button class="btn bsm bghost" type="button" onclick="window.nxRepInvCSV()"><i class="ti ti-download"></i> Excel (CSV)</button><button class="btn bsm bc1" type="button" onclick="window.nxRepInvImprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
       <div class="ritabs" role="tablist">${RI_GRUPOS.map(x => `<button type="button" role="tab" aria-selected="${g === x[0]}" class="${g === x[0] ? 'on' : ''}" onclick="window.nxRepInvSet('grupo','${x[0]}')"><i class="ti ${x[2]}"></i> ${x[1]}</button>`).join('')}</div>
       <div class="rifil">${f.join('')}</div>
       <div id="riCuerpo">${riCuerpoHTML()}</div></div>`;
   }
+  // Alta y edición de un activo fijo. No se borra: se da de baja (queda en el historial).
+  window.nxActivoForm = function (id) {
+    const a = id ? (_riX.activos || []).find(x => String(x.id) === String(id)) : null; if (id && !a) return;
+    const e = a || { vida_util_meses: 60, estado: 'activo', fecha_compra: isoHoy() };
+    cerrarModal('nxActivo');
+    const ov = document.createElement('div'); ov.id = 'nxActivo'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const campo = (lbl, html) => `<label style="display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0">${lbl}${html}</label>`;
+    const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
+    ov.innerHTML = `<div class="modal" style="max-width:480px;max-height:94vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-building"></i> ${a ? 'Editar activo' : 'Nuevo activo'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxActivo').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1;display:grid;gap:10px;padding:2px">
+        ${campo('Nombre', `<input id="afNom" class="no-upper" style="${est}" value="${esc(e.nombre || '')}" placeholder="Nevera exhibidora">`)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${campo('Código', `<input id="afCod" class="no-upper" style="${est}" value="${esc(e.codigo || '')}" placeholder="AF-001">`)}
+          ${campo('Categoría', `<input id="afCat" class="no-upper" style="${est}" value="${esc(e.categoria || '')}" placeholder="Equipos" list="afCats"><datalist id="afCats">${['Equipos', 'Mobiliario', 'Vehículos', 'Computadoras', 'Mejoras al local'].map(x => `<option value="${x}">`).join('')}</datalist>`)}
+        </div>
+        ${campo('Ubicación', `<input id="afUbi" class="no-upper" style="${est}" value="${esc(e.ubicacion || '')}" placeholder="Tienda principal">`)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${campo('Fecha de compra', `<input id="afFec" type="date" style="${est}" value="${esc(String(e.fecha_compra || '').slice(0, 10))}">`)}
+          ${campo('Costo RD$', `<input id="afCos" inputmode="decimal" style="${est};text-align:right" value="${e.costo ? Number(e.costo) : ''}" placeholder="0.00">`)}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${campo('Vida útil en años', `<input id="afVid" inputmode="decimal" style="${est};text-align:right" value="${Math.round(Number(e.vida_util_meses || 60) / 12 * 10) / 10}">`)}
+          ${campo('Valor al final RD$', `<input id="afRes" inputmode="decimal" style="${est};text-align:right" value="${e.valor_residual ? Number(e.valor_residual) : ''}" placeholder="0.00">`)}
+        </div>
+        ${campo('Notas', `<input id="afNot" class="no-upper" style="${est}" value="${esc(e.notas || '')}" placeholder="Serie, factura, garantía">`)}
+      </div>
+      <div style="display:grid;gap:8px;margin-top:12px">
+        <button class="btn bc1" type="button" id="afGuardar" style="height:54px;font-size:15px;font-weight:800" onclick="window.nxActivoGuardar('${a ? a.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar activo</button>
+        ${a ? `<button class="btn bghost" type="button" style="height:48px" onclick="window.nxActivoBaja('${a.id}',${a.estado === 'baja' ? 'false' : 'true'})">${a.estado === 'baja' ? '<i class="ti ti-rotate"></i> Reactivar' : '<i class="ti ti-archive"></i> Dar de baja'}</button>` : ''}
+      </div></div>`;
+    document.body.appendChild(ov);
+    if (!a) setTimeout(() => { const i = document.getElementById('afNom'); if (i) i.focus(); }, 60);
+  };
+  const afNum = id => Number(String(val(id) || '').replace(/[^0-9.]/g, '')) || 0;
+  window.nxActivoGuardar = async function (id) {
+    const nombre = (val('afNom') || '').trim(); if (!nombre) { toast('err', 'Escriba el nombre'); const i = document.getElementById('afNom'); if (i) i.focus(); return; }
+    const costo = r2(afNum('afCos')), res = r2(afNum('afRes'));
+    if (res > costo) { toast('err', 'El valor al final no puede ser mayor que el costo'); return; }
+    const body = { nombre: nombre, codigo: (val('afCod') || '').trim() || null, categoria: (val('afCat') || '').trim() || null, ubicacion: (val('afUbi') || '').trim() || null, fecha_compra: val('afFec') || null, costo: costo, vida_util_meses: Math.max(1, Math.round((afNum('afVid') || 5) * 12)), valor_residual: res, notas: (val('afNot') || '').trim() || null };
+    const b = document.getElementById('afGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
+    try {
+      if (id) await getAPI().patch('pos_activos_fijos', 'id=eq.' + id, body); else await getAPI().post('pos_activos_fijos', Object.assign(body, { created_by_name: nomAdmin() }));
+      cerrarModal('nxActivo'); toast('ok', id ? 'Activo actualizado' : 'Activo registrado', nombre); riRefrescar();
+    } catch (e) { if (b) b.disabled = false; toast('err', 'No se pudo guardar', /row-level security|permission/i.test(String(e && e.message)) ? 'Solo el dueño o el gerente pueden registrar activos.' : String(e && e.message || e)); }
+  };
+  window.nxActivoBaja = async function (id, baja) {
+    try { await getAPI().patch('pos_activos_fijos', 'id=eq.' + id, { estado: baja ? 'baja' : 'activo' }); cerrarModal('nxActivo'); toast('ok', baja ? 'Activo dado de baja' : 'Activo reactivado'); riRefrescar(); }
+    catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
   window.nxRepInvCSV = function () {
     const d = riDatos(); const filas = [d.cols.map(c => c.t)];
     d.grupos.forEach(g => { if (g.nombre) filas.push([g.nombre]); g.filas.forEach(x => filas.push(x)); if (g.sub) filas.push(g.sub); }); if (d.total) filas.push(d.total);
