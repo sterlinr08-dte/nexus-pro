@@ -142,6 +142,16 @@ try {
     await page.evaluate(() => window.nxRepRango('d', '0002-11-16')); await page.waitForTimeout(1500);
     ok(!s.pedidos.some(p => p.t === 'pos_ventas') && await page.evaluate(() => [...document.querySelectorAll('input[type=date]')].some(i => i.value === '2025-01-01')), `${w}px: un año a medio escribir (0002) no recarga ni cambia la fecha`);
     globalThis.__nada = 0;
+    // Escribir la fecha de corrido con el teclado (Muse: quedaba «112025»): se aplica al dejar de escribir y queda 2024-03-05
+    s.pedidos.length = 0;
+    const fd = page.locator('#v-pos input[type=date][min="1990-01-01"]').first();
+    await fd.click(); await page.keyboard.press('Home').catch(() => {}); await page.keyboard.type('03052024', { delay: 40 }); await page.waitForTimeout(2500);
+    const fv = await page.evaluate(() => document.querySelector('#v-pos input[type=date][min="1990-01-01"]').value);
+    const recargas = s.pedidos.filter(p => p.t === 'pos_ventas' && /offset=0(&|$)/.test(p.q)).length;
+    ok(/^2024-\d{2}-\d{2}$/.test(fv) && recargas === 1, `${w}px: escribir la fecha de corrido deja un año 2024 válido (no «112025») y recarga una sola vez al terminar`, { fv, recargas });
+    // Fecha imposible al salir del campo: avisa y vuelve a la anterior
+    await page.evaluate(() => { const i = document.querySelector('#v-pos input[type=date][min="1990-01-01"]'); i.value = '1500-01-01'; i.dispatchEvent(new Event('change')); i.dispatchEvent(new Event('blur')); }); await page.waitForTimeout(1500);
+    ok(await page.evaluate(v => document.querySelector('#v-pos input[type=date][min="1990-01-01"]').value === v, fv) && await page.evaluate(() => /Fecha no válida/i.test(document.body.innerText)), `${w}px: una fecha fuera de 1990–2100 avisa «Fecha no válida» y deja la anterior`);
     // Venta rápida: la cantidad escrita a mano cambia el total sin tocar «+»
     await page.evaluate(() => { window.nxPosTab('vender'); }); await page.waitForTimeout(1500);
     await page.evaluate(() => window.nxPosAdd('p1')); await page.waitForTimeout(500);
@@ -151,6 +161,12 @@ try {
       const q = await page.evaluate(() => ({ v: document.querySelector('.citqty-in').value, foco: document.activeElement && document.activeElement.classList.contains('citqty-in'), txt: document.body.innerText.replace(/\s+/g, ' ') }));
       ok(q.v === '4' && q.foco && /RD\$ ?120\.00/.test(q.txt), `${w}px: escribir 4 en la cantidad cambia el total a RD$120 sin tocar «+» y deja el cursor en el campo`, { v: q.v, foco: q.foco });
     } else ok(false, `${w}px: no se encontró el campo de cantidad del carrito`);
+    // Vaciar carrito con su propia ventana (Muse: confirm() bloqueado)
+    let dlg = false; page.on('dialog', d => { dlg = true; d.dismiss(); });
+    await page.evaluate(() => window.nxPosVaciar()); await page.waitForTimeout(400);
+    ok(await page.evaluate(() => !!document.getElementById('nxConfirma')) && !dlg, `${w}px: «Vaciar» abre su propia ventana (no la del navegador)`);
+    await page.click('#nxConfirmaOk'); await page.waitForTimeout(500);
+    ok(await page.evaluate(() => document.querySelectorAll('.citqty-in').length === 0), `${w}px: al confirmar, el carrito queda vacío`);
     // pie de la ficha de artículo: 48 px los secundarios, 54 el principal
     await page.evaluate(() => window.nxPosNuevoProd()); await page.waitForTimeout(1200);
     const pie = await page.evaluate(() => [...document.querySelectorAll('#nxPosProd .footbar button')].map(x => [x.innerText.trim(), Math.round(x.getBoundingClientRect().height)]));

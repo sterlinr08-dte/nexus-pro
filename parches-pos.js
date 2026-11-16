@@ -508,7 +508,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '', emp_nombre: cf[0].emp_nombre || '', emp_rnc: cf[0].emp_rnc || '', emp_tel: cf[0].emp_tel || '', emp_dir: cf[0].emp_dir || '', ticket_pie: cf[0].ticket_pie || '', modulos_off: Array.isArray(cf[0].modulos_off) ? cf[0].modulos_off : [] }; }
+    if (cf && cf[0]) { _posCfg = { accesos_rapidos: Array.isArray(cf[0].accesos_rapidos) ? cf[0].accesos_rapidos : null, prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72), ecf_rnc: cf[0].ecf_rnc || '', ecf_razon_social: cf[0].ecf_razon_social || '', ecf_direccion: cf[0].ecf_direccion || '', emp_nombre: cf[0].emp_nombre || '', emp_rnc: cf[0].emp_rnc || '', emp_tel: cf[0].emp_tel || '', emp_dir: cf[0].emp_dir || '', ticket_pie: cf[0].ticket_pie || '', modulos_off: Array.isArray(cf[0].modulos_off) ? cf[0].modulos_off : [] }; }
     aplicarSinWA();
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
@@ -726,12 +726,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     return String((d || ns[0]).id);
   }
   // La fila de nivel que le toca a un producto según el cliente elegido (o null).
+  // Prefactura estilo Bayol: «Precio» puede forzar un nivel (o el de lista) para todo el documento.
+  function nivelForzado() { try { return (esPreTab() && _prefNivel) ? _prefNivel : ''; } catch (e) { return ''; } }
   function filaNivel(p) {
-    const c = clienteSel(); if (!c || !c.nivel_id) return null;
-    return _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(c.nivel_id)) || null;
+    const c = clienteSel(), f = nivelForzado(); if (f === '__lista') return null;
+    const nid = f || (c && c.nivel_id); if (!nid) return null;
+    return _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(nid)) || null;
   }
   function precioCli(p) {
     const c = clienteSel();
+    if (nivelForzado() === '__lista') return Number(p.precio || 0);
     const r = filaNivel(p);
     if (r) {
       // REGLAMENTO parte A: si la factura es A CRÉDITO se cobra el precio de crédito del
@@ -740,7 +744,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       if (_facCredito && Number(r.precio_credito || 0) > 0) return Number(r.precio_credito);
       if (Number(r.precio_contado || 0) > 0) return Number(r.precio_contado);
     }
-    if (c && c.nivel_precio === 'mayor' && Number(p.precio_mayor || 0) > 0) return Number(p.precio_mayor);
+    if (!nivelForzado() && c && c.nivel_precio === 'mayor' && Number(p.precio_mayor || 0) > 0) return Number(p.precio_mayor);
     return Number(p.precio || 0);
   }
   // El piso de negociación: manda el del NIVEL del cliente si lo tiene; si no, el global del
@@ -1421,7 +1425,23 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }, 450);
   };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
-  window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
+  // Muse 16-nov: «Vaciar» no hacía nada porque la ventana confirm() del navegador estaba bloqueada. Ahora pregunta en su propia ventana.
+  function confirmarAccion(titulo, texto, boton, alConfirmar) {
+    cerrarModal('nxConfirma');
+    const ov = document.createElement('div'); ov.id = 'nxConfirma'; ov.className = 'overlay open'; ov.style.zIndex = '100000';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:380px"><div class="mt"><span>${esc(titulo)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxConfirma').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      ${texto ? `<div style="font-size:14px;color:#475569;margin-bottom:12px;text-transform:none">${esc(texto)}</div>` : ''}
+      <button class="btn bc1" type="button" id="nxConfirmaOk" style="height:54px;width:100%;font-size:15px;font-weight:800">${esc(boton)}</button></div>`;
+    document.body.appendChild(ov);
+    const ok = document.getElementById('nxConfirmaOk'); ok.onclick = () => { ov.remove(); alConfirmar(); }; setTimeout(() => ok.focus(), 60);
+  }
+  // Muse 16-nov: el desplegable de «Cómo se devuelve» no se dejaba elegir con un toque; ahora son 4 botones.
+  window.nxDevMet = function (b) {
+    const h = document.getElementById('devMet'); if (h) { h.value = b.getAttribute('data-met'); h.dispatchEvent(new Event('change')); }
+    document.querySelectorAll('#devMetBtns button').forEach(x => { const on = x === b; x.setAttribute('aria-checked', on); x.style.borderColor = on ? '#2563eb' : '#cbd5e1'; x.style.background = on ? '#eff6ff' : '#fff'; x.style.color = on ? '#1d4ed8' : '#334155'; });
+  };
+  window.nxPosVaciar = function () { if (!_cart.length) return; confirmarAccion('Vaciar el carrito', _cart.length + (_cart.length === 1 ? ' artículo' : ' artículos') + ' se quitarán.', 'Vaciar carrito', () => { _cart = []; pintarCarrito(); }); };
 
   function pintarCarrito() {
     if (!_cart.length) venderAvisoQuitar();
@@ -1738,6 +1758,291 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       .then(() => { _facRecCargando = false; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); });
   }
   function facUltRefrescar() { _facHoy = null; _facRecientes = null; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); }
+  // ══════════════ PREFACTURA ESTILO BAYOL CELL (16-nov-2026) ══════════════
+  // Dueño: «La ventana de prefactura yo quiero que replique la de Bayol Cell taller». Eligió las 4 partes:
+  //  1) PC (≥ 1280 px): Resumen fijo a la derecha con el total y «Guardar e imprimir» / «Guardar».
+  //  2+3) Arriba: Cliente · Precio · Almacén · Vendedor (en el celular, una píldora que se abre) y WhatsApp primero:
+  //       al llegar a 10 cifras busca el cliente por su teléfono y lo elige; si no existe, se registra al guardar.
+  //  4+5+6) Artículos en 2 filas en el celular, nombres en minúscula normal (solo en pantalla) y encabezado limpio.
+  //  7) Accesos rápidos debajo del buscador (servicios y lo que más se prefactura).
+  // Solo cambia cómo se ve la Prefactura: usa el mismo carrito, los mismos precios, el mismo guardado (nxPrefGuardar)
+  // y las mismas acciones (nxDocAccion). La Factura no cambia. Apagar: window.NX_PFB=false o localStorage nx_pfb_off='1'.
+  let _prefNivel = '', _prefVend = null, _prefCliF = { wa: '', nom: '', ced: '' }, _prefPil = false, _facVendPre = null;
+  function pfbOn() { if (!esPreTab()) return false; try { if (window.NX_PFB === false || localStorage.getItem('nx_pfb_off') === '1') return false; } catch (e) {} return true; }
+  const PFB_MENOR = { de: 1, del: 1, la: 1, el: 1, los: 1, las: 1, para: 1, con: 1, y: 1, en: 1, a: 1, por: 1, sin: 1, o: 1 };
+  const PFB_FIJO = { IPHONE: 'iPhone', IPAD: 'iPad', AIRPODS: 'AirPods', MAGSAFE: 'MagSafe', MACBOOK: 'MacBook', IWATCH: 'iWatch', WIFI: 'WiFi', TYPE: 'Type' };
+  // Igual que bcPfcBonito de Bayol: «BATERIA SAMSUNG A12» → «Bateria Samsung A12». Lo guardado no cambia.
+  function nombreLindo(s) {
+    s = String(s || ''); let i = 0;
+    return s.replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]+/g, function (w) {
+      const pos = i++;
+      if (PFB_FIJO[w]) return PFB_FIJO[w];
+      if (/[a-zñáéíóúü]/.test(w)) return w;
+      if (/\d/.test(w) || (w.length <= 3 && !PFB_MENOR[w.toLowerCase()])) return w;
+      const m = w.toLowerCase();
+      if (pos > 0 && PFB_MENOR[m]) return m;
+      return m.charAt(0).toUpperCase() + m.slice(1);
+    });
+  }
+  function pfbVendSel() { if (_prefVend === null) { const a = _posVendAuto(); return a ? String(a.id) : ''; } return _prefVend || ''; }
+  function pfbNivelTxt() {
+    if (_prefNivel === '__lista') return 'Precio de lista';
+    if (_prefNivel) { const n = (_niveles || []).find(x => String(x.id) === String(_prefNivel)); return n ? n.nombre : 'Precio'; }
+    const c = clienteSel();
+    if (c && c.nivel_id) { const n = (_niveles || []).find(x => String(x.id) === String(c.nivel_id)); if (n) return n.nombre; }
+    return c && c.nivel_precio === 'mayor' ? 'Por mayor' : 'Cliente final';
+  }
+  function pfbDig(t) { return String(t || '').replace(/\D/g, '').slice(-10); }
+  function pfbCliHTML(c) {
+    const almNom = (_almacenes.find(a => String(a.id) === String(_almacenSel)) || {}).nombre || '';
+    const vId = pfbVendSel(), vNom = vId ? ((_vendedores.find(v => String(v.id) === vId) || {}).nombre || '') : '';
+    const pil = [pfbNivelTxt(), almNom, vNom || 'Sin vendedor'].filter(Boolean).join(' · ');
+    const nivs = (_niveles || []).slice().sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+    const ini = c ? String(c.nombre || '?').trim().charAt(0).toUpperCase() : '';
+    const tel = c ? (c.telefono || '') : _prefCliF.wa, nom = c ? (c.nombre || '') : _prefCliF.nom, ced = c ? (c.cedula || '') : _prefCliF.ced;
+    const aviso = c
+      ? `<div class="pfbAviso ok"><span>Cliente registrado: <b>${esc(c.nombre)}</b>${saldoCli(c) > 0 ? ' · Balance <b>' + esc(fmt(saldoCli(c))) + '</b>' : ''}</span><button type="button" onclick="window.nxCliente360('${c.id}')">Ver perfil</button></div>`
+      : (String(_prefCliF.nom || '').trim() ? '<div class="pfbAviso nuevo"><span>Cliente nuevo: se registra al guardar.</span></div>' : '');
+    return `<div class="pfbCli">
+      <div class="pfbFila${_almacenes.length > 1 ? '' : ' a3'}">
+        <div class="pfbF pfbFCli"><span class="pfbL">Cliente</span>
+          <div class="pfbChip"><span class="pfbAv"${c ? '' : ' aria-hidden="true"'}>${c ? esc(ini) : '<i class="ti ti-user"></i>'}</span><span class="pfbCN">${c ? esc(c.nombre) : 'Consumidor final'}</span>
+            <button type="button" class="pfbCam" onclick="window.nxFacCliToggle()">${c ? 'Cambiar' : 'Buscar'}</button></div></div>
+        <button type="button" class="pfbPil" aria-expanded="${_prefPil}" onclick="window.nxPfbPil()"><span>${esc(pil)}</span><i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+        <div class="pfbOpc${_prefPil ? ' on' : ''}">
+          <div class="pfbF"><label class="pfbL" for="pfbNivel">Precio</label><select id="pfbNivel" onchange="window.nxPfbNivel(this.value)"><option value="">Del cliente</option><option value="__lista"${_prefNivel === '__lista' ? ' selected' : ''}>De lista</option>${nivs.map(n => `<option value="${n.id}"${String(_prefNivel) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('')}</select></div>
+          ${_almacenes.length > 1 ? `<div class="pfbF"><label class="pfbL" for="facAlmSel">Almacén</label><select id="facAlmSel" onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
+          <div class="pfbF"><label class="pfbL" for="pfbVend">Vendedor</label><select id="pfbVend" onchange="window.nxPfbVend(this.value)"><option value="">Ninguno</option>${(_vendedores || []).map(v => `<option value="${v.id}"${vId === String(v.id) ? ' selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>
+        </div>
+      </div>
+      <div class="pfbDatos">
+        <div class="pfbF"><label class="pfbL" for="pfbWa">WhatsApp</label><input id="pfbWa" class="no-upper" inputmode="tel" autocomplete="off" placeholder="809-000-0000" value="${esc(tel)}" oninput="window.nxPfbWa(this.value)"></div>
+        <div class="pfbF"><label class="pfbL" for="pfbNom">Nombre</label><input id="pfbNom" class="no-upper" autocomplete="off" placeholder="Nombre del cliente" value="${esc(nom)}"${c ? ' readonly' : ''} oninput="window.nxPfbCampo('nom',this.value)"></div>
+        <div class="pfbF"><label class="pfbL" for="pfbCed">Cédula o RNC</label><input id="pfbCed" class="no-upper" inputmode="numeric" autocomplete="off" placeholder="Opcional" value="${esc(ced)}"${c ? ' readonly' : ''} oninput="window.nxPfbCampo('ced',this.value)"></div>
+      </div>
+      <div id="pfbAviso">${aviso}</div>
+    </div>`;
+  }
+  function pfbRapidosHTML() {
+    const freq = {};
+    (_prefHist || []).concat(_prefs || []).slice(0, 300).forEach(pf => (Array.isArray(pf.items) ? pf.items : []).forEach(it => { const k = String(it.producto_id || ''); if (k) freq[k] = (freq[k] || 0) + 1; }));
+    const act = (_prods || []).filter(p => p.activo !== false);
+    const orden = (a, b) => (freq[String(b.id)] || 0) - (freq[String(a.id)] || 0) || String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es');
+    const serv = act.filter(p => p.tipo === 'servicio').sort(orden);
+    const otros = act.filter(p => p.tipo !== 'servicio' && freq[String(p.id)]).sort(orden);
+    const conf = Array.isArray(_posCfg.accesos_rapidos) ? _posCfg.accesos_rapidos.map(id => act.find(p => String(p.id) === String(id))).filter(Boolean) : [];
+    const l = conf.length ? conf.slice(0, 8) : serv.concat(otros).slice(0, 4);
+    const ed = puedeVerMin() ? `<button type="button" class="pfbRapEd" onclick="window.nxRapEditar()"><i class="ti ti-pencil" aria-hidden="true"></i> ${l.length ? 'Cambiar accesos' : 'Agregar accesos rápidos'}</button>` : '';
+    if (!l.length) return ed ? `<div class="pfbRapPie">${ed}</div>` : '';
+    return `<div class="pfbRap" role="group" aria-label="Accesos rápidos">${l.map(p => { const en = _cart.some(it => String(it.producto_id) === String(p.id));
+      return `<button type="button" class="pfbRapB${en ? ' on' : ''}" onclick="window.nxFacAdd('${p.id}')"><b>${esc(nombreLindo(p.nombre))}</b><small>${en ? 'Agregado' : esc(fmt(precioCli(p)))}</small></button>`; }).join('')}</div>${ed ? `<div class="pfbRapPie">${ed}</div>` : ''}`;
+  }
+  // Dueño 16-nov: «Habilita una opción donde uno pueda agregar los botones de acceso directo y cambiarlo».
+  // Se guardan para toda la tienda en pos_config.accesos_rapidos (hasta 8, en orden). Vacío = automáticos.
+  let _rapEdit = [];
+  function rapActuales() {
+    const act = (_prods || []).filter(p => p.activo !== false);
+    if (Array.isArray(_posCfg.accesos_rapidos) && _posCfg.accesos_rapidos.length) return _posCfg.accesos_rapidos.filter(id => act.some(p => String(p.id) === String(id))).map(String);
+    const tmp = document.createElement('div'); tmp.innerHTML = pfbRapidosHTML();
+    return [...tmp.querySelectorAll('.pfbRapB')].map(b => (/nxFacAdd\('([^']+)'\)/.exec(b.getAttribute('onclick') || '') || [])[1]).filter(Boolean);
+  }
+  window.nxRapEditar = function () {
+    if (!puedeVerMin()) { toast('warn', 'Solo el administrador o el gerente'); return; }
+    _rapEdit = rapActuales().slice(0, 8);
+    cerrarModal('nxRapM');
+    const ov = document.createElement('div'); ov.id = 'nxRapM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-bolt"></i> Accesos rápidos</span><button class="nxBack" type="button" onclick="document.getElementById('nxRapM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:13px;color:#475569;margin-bottom:10px;text-transform:none">Salen debajo del buscador de la Prefactura. Hasta 8, en este orden.</div>
+      <div id="rapLista" style="overflow-y:auto;flex:1;min-height:60px"></div>
+      <div style="display:grid;gap:4px;margin-top:10px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none">Agregar artículo${artPickerSlot('rapArtSlot', { fn: 'nxRapAgregar', lista: () => (_prods || []).filter(p => p.activo !== false) })}</div>
+      <button class="btn bc1" type="button" id="rapGuardar" style="height:54px;margin-top:12px;font-size:15px;font-weight:800" onclick="window.nxRapGuardar()"><i class="ti ti-device-floppy"></i> Guardar accesos</button>
+      <button class="btn bghost" type="button" style="min-height:44px;margin-top:6px;text-transform:none" onclick="window.nxRapGuardar(true)">Volver a los automáticos</button></div>`;
+    document.body.appendChild(ov);
+    rapPintar();
+  };
+  function rapPintar() {
+    const el = document.getElementById('rapLista'); if (!el) return;
+    if (!_rapEdit.length) { el.innerHTML = '<div style="text-align:center;color:#64748b;font-size:13px;padding:16px;text-transform:none">Sin accesos. Agregue artículos abajo.</div>'; return; }
+    const bt = 'min-width:44px;min-height:44px;border:1.5px solid #e2e8f0;background:#fff;border-radius:10px;cursor:pointer;font-size:16px';
+    el.innerHTML = _rapEdit.map((id, i) => { const p = _prods.find(x => String(x.id) === String(id)) || {};
+      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f1f5f9"><span style="flex:0 0 22px;color:#64748b;font-weight:700">${i + 1}</span><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;text-transform:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(nombreLindo(p.nombre || ''))}</div><div style="font-size:12px;color:#64748b">${esc(fmt(precioCli(p)))}</div></div>
+        <button type="button" aria-label="Subir" style="${bt}" ${i ? '' : 'disabled'} onclick="window.nxRapMover(${i},-1)">↑</button><button type="button" aria-label="Bajar" style="${bt}" ${i < _rapEdit.length - 1 ? '' : 'disabled'} onclick="window.nxRapMover(${i},1)">↓</button><button type="button" aria-label="Quitar ${esc(p.nombre || '')}" style="${bt};color:#b91c1c;background:#fee2e2;border-color:#fecaca" onclick="window.nxRapQuitar(${i})">✕</button></div>`; }).join('');
+  }
+  window.nxRapAgregar = function (id) {
+    if (_rapEdit.some(x => String(x) === String(id))) { toast('warn', 'Ya está en la lista'); return; }
+    if (_rapEdit.length >= 8) { toast('warn', 'Máximo 8 accesos'); return; }
+    _rapEdit.push(String(id)); rapPintar();
+  };
+  window.nxRapMover = function (i, d) { const j = i + d; if (j < 0 || j >= _rapEdit.length) return; const t = _rapEdit[i]; _rapEdit[i] = _rapEdit[j]; _rapEdit[j] = t; rapPintar(); };
+  window.nxRapQuitar = function (i) { _rapEdit.splice(i, 1); rapPintar(); };
+  window.nxRapGuardar = async function (auto) {
+    const b = document.getElementById('rapGuardar'); if (b) { if (b.disabled) return; b.disabled = true; }
+    const val2 = auto ? null : _rapEdit.slice(0, 8);
+    try {
+      await negGuardar({ accesos_rapidos: val2 });
+      _posCfg = Object.assign({}, _posCfg, { accesos_rapidos: val2 });
+      cerrarModal('nxRapM'); toast('ok', auto ? 'Accesos automáticos' : 'Accesos guardados');
+      const rp = document.getElementById('pfbRapSlot'); if (rp) rp.innerHTML = pfbRapidosHTML();
+    } catch (e) { if (b) b.disabled = false; toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  function pfbCSS() {
+    if (document.getElementById('nxPfbCSS')) return;
+    const st = document.createElement('style'); st.id = 'nxPfbCSS';
+    st.textContent = `
+.nxPfB .pfbWrap{display:block}
+.nxPfB .pfbHd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid #eef0f4;margin-bottom:14px}
+.nxPfB .pfbHd .emp{font-size:18px;font-weight:800}
+.nxPfB .pfbSub{font-size:13px;color:#64748b;text-transform:none;margin-top:2px}
+.nxPfB .pfbHdR{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.nxPfB .pfbHdR .dnumrow{margin:0}
+.nxPfB .pfbHdR input[type=date]{height:44px;font-size:16px;border:1.5px solid #e2e8f0;border-radius:11px;padding:0 10px;background:#fff}
+.nxPfB .pfbNueva{min-height:44px;border:1.5px solid #e2e8f0;background:#fff;border-radius:22px;padding:0 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.nxPfB .pfbCli{background:#f6f3ee;border:1px solid #e9e2d6;border-radius:16px;padding:12px;margin-bottom:12px}
+.nxPfB .pfbFila{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.nxPfB .pfbFila.a3{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr))}
+.nxPfB .pfbOpc{display:contents}
+.nxPfB .pfbF select{text-overflow:ellipsis}
+.nxPfB .pfbF{display:grid;gap:4px;min-width:0}
+.nxPfB .pfbL{font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0}
+.nxPfB .pfbF select,.nxPfB .pfbF input{height:48px;font-size:16px;border:1.5px solid #e2e8f0;border-radius:12px;padding:0 12px;background:#fff;width:100%;box-sizing:border-box;min-width:0;color:#0f172a;font-family:inherit}
+.nxPfB .pfbF input[readonly]{background:#f8fafc;color:#334155}
+.nxPfB .pfbChip{display:flex;align-items:center;gap:8px;height:48px;background:#fff;border:1.5px solid #e2e8f0;border-radius:24px;padding:0 6px 0 6px;min-width:0}
+.nxPfB .pfbAv{width:34px;height:34px;border-radius:50%;background:#fde8e1;color:#c2410c;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 34px}
+.nxPfB .pfbCN{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;text-transform:none}
+.nxPfB .pfbCam{min-height:44px;border:0;background:none;color:#c2410c;font-weight:700;font-size:14px;cursor:pointer;padding:0 10px;font-family:inherit}
+.nxPfB .pfbPil{display:none}
+.nxPfB .pfbDatos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.nxPfB .pfbAviso{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;border-radius:12px;padding:6px 6px 6px 12px;font-size:13px;text-transform:none}
+.nxPfB .pfbAviso.ok{background:#e8f0ff;color:#1e3a8a;border:1px solid #c7d7fe}
+.nxPfB .pfbAviso.nuevo{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:12px}
+.nxPfB .pfbAviso button{min-height:44px;border:0;background:none;color:#1d4ed8;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit}
+.nxPfB .pfbRap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 4px}
+.nxPfB .pfbRapB{min-height:52px;border:1.5px solid #e2e8f0;background:#fff;border-radius:14px;padding:6px 10px;text-align:left;cursor:pointer;display:grid;gap:2px;font-family:inherit;min-width:0}
+.nxPfB .pfbRapB b{font-size:13.5px;text-transform:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxPfB .pfbRapB small{font-size:12px;color:#64748b;text-transform:none}
+.nxPfB .pfbRapPie{display:flex;justify-content:flex-end;margin:2px 0 6px}
+.nxPfB .pfbRapEd{min-height:44px;border:0;background:none;color:#2563eb;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;text-transform:none}
+.nxPfB .pfbRapB.on{border-color:#34d399;background:#ecfdf5}.nxPfB .pfbRapB.on small{color:#047857;font-weight:700}
+.nxPfB .dnm,.nxPfB .pfbCN,.nxPfB .pfbRapB b{text-transform:none!important}
+#v-pos .nxPfB.nx-invoice-pro .docTbl .pin{min-height:44px!important;font-size:16px}
+.nxPfB .pfbRes{margin-top:14px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.nxPfB .pfbRes h3{margin:0 0 8px;font-size:14px;font-weight:800}
+.nxPfB .pfbRes .facTot{border:0;padding:0;background:none;box-shadow:none}
+.nxPfB .facTot .acc,.nxPfB .facTot .cancel{display:none!important}
+.nxPfB .pfbAcc{display:none;gap:8px;margin-top:12px}
+.nxPfB .pfbAcc .pfbGI,.nxPfB .pfbAcc .pfbG{min-height:54px;border:0;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;font-family:inherit}
+.nxPfB .pfbAcc .pfbGI{background:#0f172a}.nxPfB .pfbAcc .pfbG{background:#6d28d9}
+.nxPfB .pfbAcc button:disabled{opacity:.45;cursor:default}
+.nxPfB .pfbMini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.nxPfB .pfbMini button{min-height:44px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#334155}
+.nxPfB .pfbMini button[aria-disabled=true]{opacity:.45}
+@media(min-width:1280px){
+  .nxPfB .pfbWrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:start}
+  .nxPfB .pfbRes{margin-top:0;position:sticky;top:12px}
+  .nxPfB .pfbAcc{display:grid}
+}
+@media(max-width:760px){
+  .nxPfB .pfbFila{grid-template-columns:1fr}
+  .nxPfB .pfbPil{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;width:100%;border:1.5px solid #e2e8f0;background:#fff;border-radius:24px;padding:0 16px;font-size:15px;cursor:pointer;color:#0f172a;text-align:left;font-family:inherit;text-transform:none}
+  .nxPfB .pfbPil span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nxPfB .pfbPil[aria-expanded=true] i{transform:rotate(180deg)}
+  .nxPfB .pfbFila,.nxPfB .pfbFila.a3{grid-template-columns:1fr}.nxPfB .pfbFCli{grid-column:auto}
+  .nxPfB .pfbOpc{display:none;grid-template-columns:1fr;gap:10px}.nxPfB .pfbOpc.on{display:grid}
+  .nxPfB .pfbDatos{grid-template-columns:1fr}
+  .nxPfB .pfbRap{grid-template-columns:1fr 1fr}
+  .nxPfB .pfbHd{flex-direction:column}.nxPfB .pfbHdR{justify-content:flex-start}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"d i x" "p q c";column-gap:8px;row-gap:8px;padding:10px 12px!important;align-items:center;background:#fff}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td,#v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr:last-child td{padding:0!important;border:0!important;display:flex!important;width:auto!important;min-width:0;background:transparent!important;box-shadow:none!important}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td::before{display:none!important}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td.cN{display:none!important}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Descripción"]{grid-area:d;display:block!important}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Importe"]{grid-area:i;justify-content:flex-end;font-weight:800}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Quitar"]{grid-area:x;justify-content:flex-end}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Precio"]{grid-area:p}#v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Precio"] .pin{width:100%;min-height:44px;font-size:16px}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Cant."]{grid-area:q;justify-content:center}
+  #v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Desc."]{grid-area:c;justify-content:flex-end}
+}`;
+    document.head.appendChild(st);
+  }
+  function renderPrefB(c, emp, numBloque) {
+    pfbCSS();
+    return `<div class="nxPf nx-invoice-pro nxDoc nxPfB">
+      <div class="pfbWrap">
+        <div class="nxDocCard pfbMain">
+          <div class="nxDocPad">
+            <div class="pfbHd">
+              <div><div class="emp">${esc(emp.nom)}</div><div class="pfbSub">Prefactura</div></div>
+              <div class="pfbHdR">${numBloque}<input type="date" id="facFecha" aria-label="Fecha del documento" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"><button type="button" class="pfbNueva" onclick="window.nxPfbNueva()"><i class="ti ti-plus" aria-hidden="true"></i> Nueva</button></div>
+            </div>
+            <div id="facCliInfoWrap" data-doc="pfb">${pfbCliHTML(c)}</div>
+            <div id="facSearchSlot">${facSearchBoxHTML()}</div>
+            <div id="pfbRapSlot">${pfbRapidosHTML()}</div>
+            <div id="facTabla"></div>
+            <div class="facOtras">
+              <div id="facOtrasSlot">${facOtrasHTML()}</div>
+              <details class="nx-inv-notedet" style="margin:11px 0 0"${_facNota ? ' open' : ''}>
+                <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones al documento'}</summary>
+                <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
+              </details>
+            </div>
+          </div>
+          <div class="keys"><span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar</span></div>
+        </div>
+        <aside class="pfbRes" aria-label="Resumen de la prefactura"><h3>Resumen</h3><div class="facTot" id="facResumen"></div></aside>
+      </div>
+    </div>`;
+  }
+  // Botones del Resumen (en PC; en pantallas menores sigue la barra de abajo de siempre).
+  function pfbAccHTML() {
+    const dis = _cart.length ? '' : ' disabled';
+    const mini = docAcciones('pref').filter(a => a.k === 'wa' || a.k === 'reimp' || a.k === 'cancelar');
+    return `<div class="pfbAcc"><button type="button" class="pfbGI"${dis} onclick="window.nxPrefGuardar(true)"><i class="ti ti-printer" aria-hidden="true"></i> Guardar e imprimir</button><button type="button" class="pfbG"${dis} onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy" aria-hidden="true"></i> Guardar</button>
+      <div class="pfbMini">${mini.map(a => `<button type="button"${a.on ? '' : ' aria-disabled="true"'} title="${esc(a.why)}" onclick="${a.on ? `window.nxDocAccion('pref','${a.k}')` : ''}">${esc(a.k === 'wa' ? 'WhatsApp' : a.k === 'reimp' ? 'Imprimir' : a.t)}</button>`).join('')}</div></div>`;
+  }
+  function pfbRepintarCli(enfoca) {
+    const w = document.getElementById('facCliInfoWrap'); if (!w || w.getAttribute('data-doc') !== 'pfb') return;
+    w.innerHTML = pfbCliHTML(clienteSel());
+    if (enfoca) { const i = document.getElementById(enfoca); if (i) { i.focus(); try { const v = i.value; i.value = ''; i.value = v; } catch (e) {} } }
+  }
+  function pfbRepreciar() { _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && !it._combo) it.precio = precioCli(p); }); pintarFactura(); }
+  window.nxPfbPil = function () { _prefPil = !_prefPil; pfbRepintarCli(); };
+  window.nxPfbNivel = function (v) { _prefNivel = v || ''; pfbRepreciar(); pfbRepintarCli(); };
+  window.nxPfbVend = function (v) { _prefVend = v || ''; pfbRepintarCli(); };
+  window.nxPfbCampo = function (k, v) { _prefCliF[k] = v; if (k === 'nom') { const a = document.getElementById('pfbAviso'); if (a) a.innerHTML = String(v || '').trim() ? '<div class="pfbAviso nuevo"><span>Cliente nuevo: se registra al guardar.</span></div>' : ''; } };
+  // WhatsApp primero: al llegar a 10 cifras busca el cliente por su teléfono (no duplica); si se cambia el número de un
+  // cliente ya elegido, se suelta ese cliente y se escribe uno nuevo.
+  window.nxPfbWa = function (v) {
+    _prefCliF.wa = v; const d = pfbDig(v), c = clienteSel();
+    if (c && d !== pfbDig(c.telefono)) { _prefCliF.nom = ''; _prefCliF.ced = ''; window.nxFacSetCli(''); pfbRepintarCli('pfbWa'); return; }
+    if (!c && d.length === 10) {
+      const hallado = (_clientes || []).find(x => x.es_cliente !== false && pfbDig(x.telefono) === d);
+      if (hallado) { window.nxFacSetCli(hallado.id); pfbRepintarCli('pfbWa'); toast('ok', 'Cliente encontrado', hallado.nombre); }
+    }
+  };
+  function pfbLimpiar() {
+    _cart = []; _factCli = ''; _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos'; _facNota = '';
+    _prefCliF = { wa: '', nom: '', ced: '' }; _prefNivel = '';
+    const view = document.getElementById('v-pos'); if (view && _posTab === 'prefactura') renderPOS(view);
+  }
+  window.nxPfbNueva = function () {
+    const hay = _cart.length > 0 || !!_factCli || !!String(_prefCliF.nom || '').trim();
+    if (!hay) return pfbLimpiar();
+    confirmarAccion('Prefactura nueva', 'Se quitan el cliente y los artículos sin guardar.', 'Empezar nueva', pfbLimpiar);
+  };
+  // Al guardar: si se escribió un cliente que no existe, se registra (nombre, WhatsApp y cédula) y se usa ese.
+  async function pfbAsegurarCliente() {
+    if (!pfbOn() || clienteSel()) return;
+    const nom = String(_prefCliF.nom || '').trim(); if (!nom) return;
+    const d = pfbDig(_prefCliF.wa);
+    const ya = d.length === 10 ? (_clientes || []).find(x => pfbDig(x.telefono) === d) : null;
+    if (ya) { _factCli = String(ya.id); return; }
+    const r = await getAPI().post('pos_clientes', { nombre: nom, telefono: String(_prefCliF.wa || '').trim() || null, cedula: String(_prefCliF.ced || '').trim() || null, es_cliente: true, activo: true });
+    const nuevo = Array.isArray(r) ? r[0] : r;
+    if (nuevo && nuevo.id) { _clientes.push(nuevo); _factCli = String(nuevo.id); _prefCliF = { wa: '', nom: '', ced: '' }; }
+  }
+  if (!window.__nxPfbResize) { window.__nxPfbResize = true; let t = null; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { try { if (_posTab === 'prefactura') facBarraSync(); } catch (e) {} }, 150); }); }
   function renderFactura() {
     nxPfEnsureCSS();
     if (!_prods.length) {
@@ -1752,6 +2057,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       ? `<div class="dnumrow"><button type="button" class="ibtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="color:#7c3aed"><i class="ti ti-search"></i></button><span class="npfx">Nº</span><span class="dnum" style="color:#7c3aed">${esc(peekPref())}</span></div>`
       : `<div class="dnumrow"><button type="button" class="ibtn" onclick="window.nxFacHist()" title="Ver todas las facturas" aria-label="Ver todas las facturas"><i class="ti ti-search"></i></button><span class="npfx">Nº</span><input id="facNumPrev" class="dnum dnumin" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" aria-label="Número de factura" title="Escribe un número y ENTER para traer esa factura" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"></div>`;
     const almSel = (_almacenes.length > 1) ? `<select id="facAlmSel" aria-label="Almacén" onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select>` : '';
+    if (pfbOn()) return renderPrefB(cliActual, emp, numBloque);
     return `<div class="nxPf nx-invoice-pro nxDoc">
       <div class="nxDocCard">
         <div class="nxDocPad">
@@ -1803,6 +2109,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const wrap = document.getElementById('facCliInfoWrap'); if (!wrap) return;
     const c = _clientes.find(x => String(x.id) === String(_factCli));
     // Factura/Prefactura usan el bloque de documento (2 columnas); Vender, la tarjeta compacta
+    if (wrap.getAttribute('data-doc') === 'pfb') { wrap.innerHTML = pfbCliHTML(c); return; }
     wrap.innerHTML = (wrap.getAttribute('data-doc') === '1') ? facPartesHTML(c) : facCliInfoHTML(c);
     programarCargaUltimaCompra(c && c.id);
   }
@@ -1828,7 +2135,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // (ver nxPosConfirmar) — mismo criterio probado, no una lógica nueva.
   window.nxFacCancelar = function () {
     const hayAlgo = _cart.length > 0 || !!_factCli || _facCredito || (_facNCF && _facNCF !== 'sin');
-    if (hayAlgo && !confirm('¿Cancelar? Se perderán el cliente, los artículos y los cambios sin guardar.')) return;
+    if (hayAlgo && !window.__nxFacCancelOk) { confirmarAccion('Cancelar', 'Se pierden el cliente, los artículos y los cambios sin guardar.', 'Sí, cancelar', () => { window.__nxFacCancelOk = true; try { window.nxFacCancelar(); } finally { window.__nxFacCancelOk = false; } }); return; }
+    _prefCliF = { wa: '', nom: '', ced: '' };
     _cart = [];
     _factCli = '';
     _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos'; _facNota = '';
@@ -3069,7 +3377,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       return `<tr>
         <td data-l="#" class="cN">${String(i + 1).padStart(2, '0')}</td>
         <td data-l="Descripción">
-          <div class="dnm">${esc(it.nombre)}</div>
+          <div class="dnm">${esc(pfbOn() ? nombreLindo(it.nombre) : it.nombre)}</div>
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${it.itbis ? '' : chipExento}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
           ${serLista}${volLinea(it, i, 'factura')}
         </td>
@@ -3105,6 +3413,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>
       ${pre ? '' : `<div class="facSmart" aria-live="polite">${facSmartHTML()}</div>`}`;
     try { const os = document.getElementById('facOtrasSlot'); if (os) os.innerHTML = facOtrasHTML(); } catch (e) {}
+    if (pfbOn()) { try { res.insertAdjacentHTML('beforeend', pfbAccHTML()); const rp = document.getElementById('pfbRapSlot'); if (rp) rp.innerHTML = pfbRapidosHTML(); } catch (e) {} }
     try { facBarraSync(); } catch (e) {}
   }
   // ── Motor COMPARTIDO de "barra de acciones fija" (spec ChatGPT, piloteado primero en Factura
@@ -3224,6 +3533,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   function facBarraSync() {
     var mostrar = (_posTab === 'factura' || _posTab === 'prefactura');
     if (mostrar) { var vpos = document.getElementById('v-pos'); mostrar = !!(vpos && vpos.classList.contains('on')); }
+    if (mostrar && pfbOn() && window.innerWidth >= 1280) mostrar = false;
     if (!mostrar) { nxStickyBarSet('nxFacBar', null); return; }
     var pre = esPreTab(), dis = _cart.length ? '' : 'disabled';
     var html;
@@ -3730,7 +4040,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <div class="nxPgOpts" id="pgOpts">
             <div class="nxPgF" id="posCliNomBox" style="margin-bottom:10px"><label class="nxPgFl" for="posCli">Nombre para el ticket (opcional)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente" style="text-align:left"></div>
             <div class="nxPgGrid">
-              ${_vendedores.length ? (() => { const _vAuto = _posVendAuto(); return `<div class="nxPgF"><label class="nxPgFl" for="posVendId">Vendedor${_vAuto ? ' <span class="nxPgAuto">AUTO</span>' : ''}</label><select id="posVendId" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}"${_vAuto && String(_vAuto.id) === String(v.id) ? ' selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>`; })() : ''}
+              ${_vendedores.length ? (() => { const _vAuto = (_facVendPre && _vendedores.find(v => String(v.id) === String(_facVendPre))) || _posVendAuto(); return `<div class="nxPgF"><label class="nxPgFl" for="posVendId">Vendedor${_vAuto ? ' <span class="nxPgAuto">AUTO</span>' : ''}</label><select id="posVendId" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}"${_vAuto && String(_vAuto.id) === String(v.id) ? ' selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>`; })() : ''}
               <div class="nxPgF"><label class="nxPgFl" for="posDesc">Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             </div>
           </div>
@@ -4225,7 +4535,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           curPadreId = padreDoc.documento_padre_id;
         }
       } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
-      _facOrigenDoc = null;
+      _facOrigenDoc = null; _facVendPre = null;
       // Reparación entregada vía Factura (ver nxRepEntregarGo): la venta YA está cobrada y
       // completa a esta altura (REGLAMENTOS §2 regla 10 — nunca se revierte por esto). Solo
       // falta marcar la reparación como entregada/con garantía; si eso falla, la factura
@@ -5526,7 +5836,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="colr">
             <div class="card">
               <h4><span class="bdg blue"><i class="ti ti-clipboard-text"></i></span> Resumen</h4>
-              ${e.imagen ? `<img src="${esc(e.imagen)}" style="width:100%;aspect-ratio:1.8/1;object-fit:cover;border-radius:12px;margin-bottom:10px" onerror="this.style.display='none'" alt="Imagen">` : `<div class="ph"><i class="ti ${e.tipo === 'servicio' ? 'ti-tool' : 'ti-box'}"></i></div>`}
+              <div id="nxPfResImg">${pfResImgHTML(e.imagen, e.tipo === 'servicio')}</div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <div style="font-size:13.5px;font-weight:800" id="nxPfResNom">${esc(e.nombre || 'Nuevo artículo')}</div>
                 <span class="estado-badge">${e.activo === false ? 'INACTIVO' : 'ACTIVO'}</span>
@@ -5656,7 +5966,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   // Repinta el recuadro de vista previa de la imagen (Información básica) mientras se escribe/borra
   // la URL — sigue siendo el mismo campo de texto de siempre (ppImg), solo se ve dentro de una caja.
+  // Dueño 16-nov: «en la creación de artículo, en Resumen, la opción para subir fotos». La foto del Resumen se toca para
+  // subirla o cambiarla (en el celular ofrece la cámara) y tiene «Quitar». Usa el mismo campo #ppImg y el mismo cargador.
+  function pfResImgHTML(url, serv) {
+    const bt = 'flex:1;min-height:44px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;text-transform:none;display:inline-flex;align-items:center;justify-content:center;gap:6px';
+    return (url ? `<button type="button" onclick="document.getElementById('ppImgFile').click()" aria-label="Cambiar la foto" style="display:block;width:100%;padding:0;border:0;background:none;cursor:pointer"><img src="${esc(url)}" style="width:100%;aspect-ratio:1.8/1;object-fit:cover;border-radius:12px;display:block" onerror="this.style.display='none'" alt="Foto del artículo"></button>`
+      : `<button type="button" class="ph" onclick="document.getElementById('ppImgFile').click()" aria-label="Subir foto" style="width:100%;border:1.5px dashed #cbd5e1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><i class="ti ${serv ? 'ti-tool' : 'ti-camera-plus'}"></i><span style="font-size:13px;font-weight:700;color:#475569;text-transform:none">Toque para subir foto</span></button>`)
+      + `<div style="display:flex;gap:6px;margin:8px 0 10px"><button type="button" style="${bt}" onclick="document.getElementById('ppImgFile').click()"><i class="ti ti-camera" aria-hidden="true"></i> ${url ? 'Cambiar foto' : 'Subir foto'}</button>${url ? `<button type="button" style="${bt};color:#b91c1c;flex:0 0 auto;padding:0 14px" onclick="const i=document.getElementById('ppImg');if(i){i.value='';window.nxPfImgSync();}">Quitar</button>` : ''}</div>`;
+  }
   window.nxPfImgSync = function () {
+    try { const r = document.getElementById('nxPfResImg'); if (r) r.innerHTML = pfResImgHTML((document.getElementById('ppImg') || {}).value || '', val('ppTipo') === 'servicio'); } catch (e) {}
     const box = document.getElementById('ppImgBox'); if (!box) return;
     const url = (document.getElementById('ppImg') || {}).value || '';
     const serv = val('ppTipo') === 'servicio';
@@ -6565,7 +6884,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div id="devLineas" style="overflow-y:auto;flex:1"></div>
         <div class="fr-row">
           <div class="fr"><label>Motivo</label><input id="devMot" class="no-upper" value="" placeholder="Ej: producto defectuoso"></div>
-          <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
+          <div class="fr"><label>Cómo se devuelve</label><input type="hidden" id="devMet" value="Efectivo"><div id="devMetBtns" role="radiogroup" aria-label="Cómo se devuelve" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${['Efectivo', 'Nota de crédito', 'Transferencia', 'Rebaja a cuenta (CxC)'].map((m, k) => `<button type="button" role="radio" aria-checked="${k === 0}" data-met="${esc(m)}" onclick="window.nxDevMet(this)" style="min-height:48px;border-radius:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;padding:6px 8px;border:1.5px solid ${k === 0 ? '#2563eb' : '#cbd5e1'};background:${k === 0 ? '#eff6ff' : '#fff'};color:${k === 0 ? '#1d4ed8' : '#334155'}">${esc(m)}</button>`).join('')}</div></div>
         </div>
         <div id="devTot" class="nxAsTot"></div>
         ${docAccPieHTML('dev')}
@@ -10629,7 +10948,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
     if (conProd && marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
     if (t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico' || t === 'precios') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
-    if (riConFechas()) f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    if (riConFechas()) f.push(`<label>Desde<input type="date" min="1990-01-01" max="2100-12-31" value="${_ri.desde}" onchange="window.nxFechaCampo(this,'nxRepInvSet','desde')" onblur="window.nxFechaSalir(this)"></label><label>Hasta<input type="date" min="1990-01-01" max="2100-12-31" value="${_ri.hasta}" onchange="window.nxFechaCampo(this,'nxRepInvSet','hasta')" onblur="window.nxFechaSalir(this)"></label>`);
     if (t === 'solic') f.push(`<label>Estado${sel('pest', [['', 'Todos']].concat(Object.keys(PED_EST).map(k => [k, PED_EST[k][0]])), _ri.pest || '')}</label>`);
     if (t === 'cambios') f.push(`<label>Qué cambió${sel('campo', [['', 'Todo']].concat(Object.keys(RI_CAMPO).map(k => [k, RI_CAMPO[k]])), _ri.campo || '')}</label>`);
     if (t === 'activos') f.push(`<label class="richk"><input type="checkbox"${_ri.baja ? ' checked' : ''} onchange="window.nxRepInvSet('baja',this.checked)"> Incluir dados de baja</label>`);
@@ -10817,8 +11136,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const totMet = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
     const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#475569;font-size:12px">Sin pagos registrados</div>';
     return `<div class="nxPf nxRepWrap"><div class="nxCtaRango">
-        <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
-        <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
+        <div class="nxFacF"><label>Desde</label><input type="date" min="1990-01-01" max="2100-12-31" value="${_repDesde}" onchange="window.nxFechaCampo(this,'nxRepRango','d')" onblur="window.nxFechaSalir(this)"></div>
+        <div class="nxFacF"><label>Hasta</label><input type="date" min="1990-01-01" max="2100-12-31" value="${_repHasta}" onchange="window.nxFechaCampo(this,'nxRepRango','h')" onblur="window.nxFechaSalir(this)"></div>
         <div style="font-size:11px;color:var(--pf-txt3);align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end;flex-wrap:wrap">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
@@ -10837,7 +11156,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpi('Ticket promedio', list.length ? r2(totVta / list.length) : 0, '#0891b2')}
       </div>
       <div class="nxRepGrid">
-        <div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-chart-bar"></i> Ventas por día (últimos ${dias.length})</div><div class="nxRepBars">${barras}</div></div>
+        <div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-chart-bar"></i> Ventas por día (${dias.length === 1 ? '1 día' : dias.length + ' días'})</div><div class="nxRepBars">${barras}</div></div>
         <div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-wallet"></i> Por método de pago</div>${metFilas}</div>
       </div>
       <div class="nxRepCard" style="margin-top:12px"><div class="nxRepTit"><i class="ti ti-trophy"></i> Productos más vendidos</div>
@@ -10845,7 +11164,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div></div>`;
   }
   // Muse 16-nov: al teclear el año, cada número hacía un cambio («0002») que repintaba la pantalla y se perdía lo escrito.
-  const fechaCompleta = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && Number(String(v).slice(0, 4)) >= 1990;
+  // Muse 16-nov (2.ª vez): escribiendo la fecha de corrido, se tomaba apenas el año tenía 4 cifras y lo siguiente se perdía
+  // («01/11/112025»). Ahora se aplica cuando deja de escribir (0,9 s) y solo con años 1990–2100; si al salir del campo la fecha
+  // no es válida, se avisa y vuelve a la que estaba.
+  const fechaOk = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && Number(String(v).slice(0, 4)) >= 1990 && Number(String(v).slice(0, 4)) <= 2100;
+  window.nxFechaCampo = function (el, fn, k) {
+    clearTimeout(el._nxT);
+    el._nxT = setTimeout(function () { if (fechaOk(el.value) && el.value !== el.defaultValue && window[fn]) window[fn](k, el.value); }, 900);
+  };
+  window.nxFechaSalir = function (el) {
+    if (el.value && !fechaOk(el.value)) { clearTimeout(el._nxT); toast('warn', 'Fecha no válida', 'Se dejó la anterior'); el.value = el.defaultValue; }
+  };
+  const fechaCompleta = v => fechaOk(v);
   window.nxRepRango = async function (k, val) { if (!fechaCompleta(val)) return; if (k === 'd') _repDesde = val; else _repHasta = val; try { await cargarReportes(_repDesde, _repHasta); } catch (e) {} const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepComisiones = function () {
     const list = ventasRepRango();
@@ -12766,11 +13096,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function prefGuardarReal(imprimir) {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const t = totales();
+    try { await pfbAsegurarCliente(); } catch (e) { toast('err', 'No se pudo registrar el cliente', String(e && e.message || e)); return; }
     let numero = null; try { numero = await nextSeq('prefactura'); } catch (e) {}
     if (!numero) numero = 'PF-' + String(_prefs.length + 1).padStart(5, '0');
     const cli = clienteSel();
+    const vId = pfbOn() ? pfbVendSel() : '', vNom = vId ? ((_vendedores.find(v => String(v.id) === vId) || {}).nombre || null) : null;
     try {
-      const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, notas: _facNota || null, created_by_name: ((curSesPOS() || {}).nom) || null });
+      const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, notas: _facNota || null, created_by_name: ((curSesPOS() || {}).nom) || null, ...(vId ? { vendedor_id: vId, vendedor_nombre: vNom } : {}) });
       if (r && r[0]) { _prefs.unshift(r[0]); _prefHist.unshift(r[0]); }
       try { window.logAudit && window.logAudit('PREFACTURA_GUARDADA', numero + ' · ' + fmt(t.total) + (cli ? ' · ' + cli.nombre : ''), 'POS'); } catch (e) {}
       if (r && r[0]) {
@@ -12871,7 +13203,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (_cart.length && !confirm('El cuadro tiene artículos. ¿Reemplazarlos con la prefactura ' + (p.numero || '') + '?')) return;
     const _items = (Array.isArray(p.items) ? p.items : []).map(x => Object.assign({}, x));
     if (_posTab === 'prefactura') _cartFacSaved = _items; else _cart = _items;
-    _factCli = p.cliente_id || '';
+    _factCli = p.cliente_id || ''; _facVendPre = p.vendedor_id || null;
     try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'facturada' }); } catch (e) {}
     try { const doc = await buscarDocumentoDe('pos_prefacturas', id); if (doc) { _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id }; registrarEventoDoc(doc.id, 'convertido_a_carrito', 'Cargada en Factura para cobrar').catch(() => {}); } } catch (e) {}
     _prefs = _prefs.filter(x => String(x.id) !== String(id));
