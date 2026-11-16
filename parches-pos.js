@@ -7743,6 +7743,21 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${lin}${pie ? `<div style="font-size:11.5px;color:#64748b;margin-top:5px">${pie}</div>` : ''}${acc}</div>`;
     }).join('');
   }
+  // Buscador de artículos con resultados debajo (Muse 16-nov: la lista nativa del navegador no mostraba sugerencias en el iPhone ni en PC).
+  function artBuscar(q) {
+    q = String(q || '').trim().toLowerCase(); if (!q) return [];
+    return invProductosStock().filter(p => p.activo !== false && ((p.codigo || '') + ' ' + (p.nombre || '') + ' ' + (p.marca || '')).toLowerCase().includes(q)).slice(0, 8);
+  }
+  window.nxArtSug = function (inp, box, fn) {
+    const el = document.getElementById(box); if (!el) return;
+    const l = artBuscar(inp.value);
+    el.innerHTML = !String(inp.value || '').trim() ? '' : (l.length ? l.map(p => `<button type="button" onmousedown="event.preventDefault()" onclick="window.${fn}('${p.id}')" style="display:flex;justify-content:space-between;gap:8px;width:100%;min-height:44px;align-items:center;padding:0 12px;border:0;border-bottom:1px solid #f1f5f9;background:#fff;text-align:left;cursor:pointer;font-size:14px;color:#0f172a;font-family:inherit"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre)}</span><span style="color:#64748b;font-size:12px;white-space:nowrap">${esc(p.codigo || '')}</span></button>`).join('') : '<div style="padding:12px;color:#64748b;font-size:13px">Sin resultados</div>');
+    el.style.display = el.innerHTML ? 'block' : 'none';
+  };
+  window.nxArtSugEnter = function (inp, box, fn) { const l = artBuscar(inp.value); if (l.length) window[fn](l[0].id); };
+  function artBuscadorHTML(id, box, fn, est) {
+    return `<div style="position:relative"><input id="${id}" class="no-upper" autocomplete="off" style="${est}" placeholder="Nombre o código" oninput="window.nxArtSug(this,'${box}','${fn}')" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxArtSugEnter(this,'${box}','${fn}')}else if(event.key==='Escape'){document.getElementById('${box}').style.display='none'}"><div id="${box}" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:5;margin-top:4px;background:#fff;border:1.5px solid #cbd5e1;border-radius:11px;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.14);max-height:280px;overflow-y:auto"></div></div>`;
+  }
   window.nxOcNueva = function () {
     _ocEdit = { prov: '', fecha: '', notas: '', lineas: [] };
     cerrarModal('nxOcForm');
@@ -7751,14 +7766,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
     const lbl = 'display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0';
     const provs = (_proveedores || []).filter(p => p.activo !== false).map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
-    const prods = invProductosStock().filter(p => p.activo !== false).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
     ov.innerHTML = `<div class="modal" style="max-width:540px;max-height:94vh;display:flex;flex-direction:column">
       <div class="mt"><span><i class="ti ti-file-text"></i> Nueva orden de compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxOcForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <label style="${lbl}">Proveedor<select id="ocProv" style="${est}" onchange="window.nxOcCampo('prov',this.value)"><option value="">Sin proveedor</option>${provs}</select></label>
-        <label style="${lbl}">Se espera para<input id="ocFecha" type="date" style="${est}" onchange="window.nxOcCampo('fecha',this.value)"></label>
+      <div style="display:grid;gap:10px">
+        <label style="${lbl};min-width:0">Proveedor<select id="ocProv" style="${est};min-width:0;text-overflow:ellipsis" onchange="window.nxOcCampo('prov',this.value)"><option value="">Sin proveedor</option>${provs}</select></label>
+        <label style="${lbl};min-width:0">Se espera para<input id="ocFecha" type="date" style="${est};min-width:0;max-width:100%" onchange="window.nxOcCampo('fecha',this.value)"></label>
       </div>
-      <label style="${lbl};margin-top:10px">Agregar artículo<input id="ocArt" class="no-upper" list="ocArts" style="${est}" placeholder="Nombre o código" onchange="window.nxOcAgregar(this.value)"><datalist id="ocArts">${prods}</datalist></label>
+      <div style="${lbl};margin-top:10px">Agregar artículo${artBuscadorHTML('ocArt', 'ocSug', 'nxOcAgregarId', est)}</div>
       <div id="ocLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
       <label style="${lbl}">Notas para el proveedor<input id="ocNotas" class="no-upper" style="${est}" placeholder="Condiciones, forma de entrega…" onchange="window.nxOcCampo('notas',this.value)"></label>
       <button class="btn bc1" type="button" id="ocGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxOcGuardar()"><i class="ti ti-device-floppy"></i> Guardar orden</button></div>`;
@@ -7768,14 +7782,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxOcCampo = function (k, v) { if (_ocEdit) _ocEdit[k] = v; };
   window.nxOcAgregar = function (txt) {
     const p = costoProdDe(txt) || (invProductosStock().find(x => String(x.nombre || '').toLowerCase() === String(txt || '').trim().toLowerCase()));
-    const inp = document.getElementById('ocArt');
     if (!p) { if (txt) toast('warn', 'Elija el artículo de la lista'); return; }
+    window.nxOcAgregarId(p.id);
+  };
+  window.nxOcAgregarId = function (id) {
+    const p = invProductosStock().find(x => String(x.id) === String(id)); if (!p || !_ocEdit) return;
+    const inp = document.getElementById('ocArt'), sg = document.getElementById('ocSug'); if (sg) { sg.innerHTML = ''; sg.style.display = 'none'; }
     const ex = _ocEdit.lineas.find(l => String(l.producto_id) === String(p.id));
     if (ex) ex.cant += 1; else _ocEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1, costo: Number(p.costo || 0) });
     if (inp) { inp.value = ''; inp.focus(); }
     ocPintarLineas();
   };
-  window.nxOcLinea = function (i, k, v) { const l = _ocEdit.lineas[i]; if (!l) return; const n = Number(String(v).replace(/[^0-9.]/g, '')); if (k === 'cant' && n > 0) l.cant = n; if (k === 'costo' && n >= 0) l.costo = r2(n); ocPintarLineas(); };
+  window.nxOcLinea = function (i, k, v, vivo) {
+    const l = _ocEdit.lineas[i]; if (!l) return; const n = Number(String(v).replace(/[^0-9.]/g, '')); if (k === 'cant' && n > 0) l.cant = n; if (k === 'costo' && String(v).trim() !== '' && n >= 0) l.costo = r2(n);
+    if (!vivo) return ocPintarLineas();
+    // Mientras escribe: solo cambia los importes, sin repintar (no pierde el cursor).
+    const lt = document.getElementById('ocLt' + i); if (lt) lt.textContent = fmt2d(l.cant * l.costo);
+    const t = document.getElementById('ocTot'); if (t) t.textContent = fmt2d(_ocEdit.lineas.reduce((s, x) => s + x.cant * x.costo, 0));
+  };
   window.nxOcQuitar = function (i) { _ocEdit.lineas.splice(i, 1); ocPintarLineas(); };
   function ocPintarLineas() {
     const el = document.getElementById('ocLineas'); if (!el || !_ocEdit) return;
@@ -7783,8 +7807,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const inp = 'height:48px;font-size:16px;text-align:right;border:1.5px solid #cbd5e1;border-radius:10px;padding:0 8px;width:100%;box-sizing:border-box';
     const tot = _ocEdit.lineas.reduce((s, l) => s + l.cant * l.costo, 0);
     el.innerHTML = _ocEdit.lineas.map((l, i) => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nombre)}</div><button type="button" aria-label="Quitar ${esc(l.nombre)}" onclick="window.nxOcQuitar(${i})" style="flex:0 0 44px;width:44px;height:44px;border:0;background:#fee2e2;color:#b91c1c;border-radius:10px;cursor:pointer"><i class="ti ti-x"></i></button></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;margin-top:4px"><label style="font-size:11px;color:#64748b">Cantidad<input inputmode="numeric" value="${l.cant}" onchange="window.nxOcLinea(${i},'cant',this.value)" style="${inp}"></label><label style="font-size:11px;color:#64748b">Costo c/u<input inputmode="decimal" value="${l.costo}" onchange="window.nxOcLinea(${i},'costo',this.value)" style="${inp}"></label><div style="text-align:right;font-size:13px;font-weight:700;align-self:end;padding-bottom:13px">${esc(fmt2d(l.cant * l.costo))}</div></div></div>`).join('')
-      + `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;padding:10px 2px"><span>Total estimado</span><span>${esc(fmt2d(tot))}</span></div>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;margin-top:4px"><label style="font-size:11px;color:#64748b;min-width:0">Cantidad<input inputmode="decimal" value="${l.cant}" oninput="window.nxOcLinea(${i},'cant',this.value,1)" onchange="window.nxOcLinea(${i},'cant',this.value)" style="${inp}"></label><label style="font-size:11px;color:#64748b;min-width:0">Costo c/u<input inputmode="decimal" value="${l.costo}" oninput="window.nxOcLinea(${i},'costo',this.value,1)" onchange="window.nxOcLinea(${i},'costo',this.value)" style="${inp}"></label><div id="ocLt${i}" style="text-align:right;font-size:13px;font-weight:700;align-self:end;padding-bottom:13px">${esc(fmt2d(l.cant * l.costo))}</div></div></div>`).join('')
+      + `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;padding:10px 2px"><span>Total estimado</span><span id="ocTot">${esc(fmt2d(tot))}</span></div>`;
   }
   window.nxOcGuardar = async function () {
     const e = _ocEdit; if (!e) return;
@@ -9821,14 +9845,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const est = 'height:48px;font-size:16px;border:1.5px solid #cbd5e1;border-radius:11px;padding:0 12px;width:100%;box-sizing:border-box;background:#fff;color:#0f172a;font-family:inherit';
     const lbl = 'display:grid;gap:4px;font-size:12.5px;font-weight:600;color:#475569;text-transform:none;letter-spacing:0';
     const almOps = sel => _almacenes.map(a => `<option value="${a.id}"${String(sel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
-    const prods = invProductosStock().filter(p => p.activo !== false).slice(0, 1500).map(p => `<option value="${esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre)}">`).join('');
     ov.innerHTML = `<div class="modal" style="max-width:520px;max-height:94vh;display:flex;flex-direction:column">
       <div class="mt"><span><i class="ti ti-clipboard-list"></i> Nuevo pedido</span><button class="nxBack" type="button" onclick="document.getElementById('nxPedidoForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <label style="${lbl}">¿Quién pide?<select id="pfPide" style="${est}" onchange="window.nxPedidoCampo('pide',this.value)">${almOps(_pedEdit.pide)}</select></label>
         <label style="${lbl}">¿A quién?<select id="pfSurte" style="${est}" onchange="window.nxPedidoCampo('surte',this.value)">${almOps(_pedEdit.surte)}</select></label>
       </div>
-      <label style="${lbl};margin-top:10px">Agregar artículo<input id="pfArt" class="no-upper" list="pfArts" style="${est}" placeholder="Nombre o código" onchange="window.nxPedidoAgregar(this.value)"><datalist id="pfArts">${prods}</datalist></label>
+      <div style="${lbl};margin-top:10px">Agregar artículo${artBuscadorHTML('pfArt', 'pfSug', 'nxPedidoAgregarId', est)}</div>
       <div id="pfLineas" style="overflow-y:auto;flex:1;margin-top:8px;min-height:60px"></div>
       <label style="${lbl}">Notas<input id="pfNotas" class="no-upper" style="${est}" placeholder="Para cuándo, motivo…" onchange="window.nxPedidoCampo('notas',this.value)"></label>
       <button class="btn bc1" type="button" id="pfGuardar" style="height:54px;font-size:15px;font-weight:800;margin-top:12px" onclick="window.nxPedidoGuardar()"><i class="ti ti-send"></i> Enviar pedido</button></div>`;
@@ -9839,8 +9862,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPedidoCampo = function (k, v) { if (_pedEdit) { _pedEdit[k] = v; pedPintarLineas(); } };
   window.nxPedidoAgregar = function (txt) {
     const p = costoProdDe(txt) || (invProductosStock().find(x => String(x.nombre || '').toLowerCase() === String(txt || '').trim().toLowerCase()));
-    const inp = document.getElementById('pfArt');
     if (!p) { if (txt) toast('warn', 'Elija el artículo de la lista'); return; }
+    window.nxPedidoAgregarId(p.id);
+  };
+  window.nxPedidoAgregarId = function (id) {
+    const p = invProductosStock().find(x => String(x.id) === String(id)); if (!p || !_pedEdit) return;
+    const inp = document.getElementById('pfArt'), sg = document.getElementById('pfSug'); if (sg) { sg.innerHTML = ''; sg.style.display = 'none'; }
     const ex = _pedEdit.lineas.find(l => String(l.producto_id) === String(p.id));
     if (ex) ex.cant += 1; else _pedEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
     if (inp) { inp.value = ''; inp.focus(); }
