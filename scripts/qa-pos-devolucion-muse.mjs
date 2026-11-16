@@ -124,7 +124,9 @@ try {
     // Devolución nueva con «Nota de crédito» → asiento a 2105, sin salida de caja; luego una en efectivo → salida de caja
     for (const met of ['Nota de crédito', 'Efectivo']) {
       await page.evaluate(() => window.nxDevNueva('h1')); await page.waitForTimeout(900);
-      await page.evaluate(m => { const i = document.querySelector('#devLineas input[data-devc]'); if (i) { i.value = '1'; i.dispatchEvent(new Event('change')); } document.getElementById('devMet').value = m; }, met);
+      await page.evaluate(m => { const i = document.querySelector('#devLineas input[data-devc]'); if (i) { i.value = '1'; i.dispatchEvent(new Event('change')); } }, met);
+      await page.click(`#devMetBtns button[data-met="${met}"]`);
+      ok(await page.evaluate(m => document.getElementById('devMet').value === m && document.querySelector(`#devMetBtns button[data-met="${m}"]`).getAttribute('aria-checked') === 'true', met), `«Cómo se devuelve»: un toque elige «${met}»`);
       const n0 = s.pedidos.length; await page.evaluate(() => window.nxDevGuardar(false)); await page.waitForTimeout(1500);
       const nuevos = s.pedidos.slice(n0);
       const lin = nuevos.filter(p => p.t === 'pos_asiento_lineas' && p.m === 'POST').flatMap(p => Array.isArray(p.body) ? p.body : [p.body]);
@@ -136,7 +138,7 @@ try {
     await page.evaluate(() => window.nxPosTab('vender')); await page.waitForTimeout(1000);
     await page.evaluate(() => window.nxVenderSel('p1')); await page.waitForTimeout(300);
     const hay = await page.evaluate(() => !!document.querySelector('#nxVAviso.on'));
-    page.once('dialog', d => d.accept()); await page.evaluate(() => window.nxPosVaciar()); await page.waitForTimeout(600);
+    await page.evaluate(() => window.nxPosVaciar()); await page.waitForTimeout(300); await page.click('#nxConfirmaOk'); await page.waitForTimeout(600);
     const queda = await page.evaluate(() => !!document.getElementById('nxVAviso'));
     ok(hay && !queda, `${w}px: el aviso «+1 …» aparece y se borra al vaciar el carrito`, { hay, queda });
     if (OUT) await page.screenshot({ path: `${OUT}/vender-${w}.png` });

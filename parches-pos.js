@@ -1421,7 +1421,23 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }, 450);
   };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
-  window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
+  // Muse 16-nov: «Vaciar» no hacía nada porque la ventana confirm() del navegador estaba bloqueada. Ahora pregunta en su propia ventana.
+  function confirmarAccion(titulo, texto, boton, alConfirmar) {
+    cerrarModal('nxConfirma');
+    const ov = document.createElement('div'); ov.id = 'nxConfirma'; ov.className = 'overlay open'; ov.style.zIndex = '100000';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:380px"><div class="mt"><span>${esc(titulo)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxConfirma').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      ${texto ? `<div style="font-size:14px;color:#475569;margin-bottom:12px;text-transform:none">${esc(texto)}</div>` : ''}
+      <button class="btn bc1" type="button" id="nxConfirmaOk" style="height:54px;width:100%;font-size:15px;font-weight:800">${esc(boton)}</button></div>`;
+    document.body.appendChild(ov);
+    const ok = document.getElementById('nxConfirmaOk'); ok.onclick = () => { ov.remove(); alConfirmar(); }; setTimeout(() => ok.focus(), 60);
+  }
+  // Muse 16-nov: el desplegable de «Cómo se devuelve» no se dejaba elegir con un toque; ahora son 4 botones.
+  window.nxDevMet = function (b) {
+    const h = document.getElementById('devMet'); if (h) { h.value = b.getAttribute('data-met'); h.dispatchEvent(new Event('change')); }
+    document.querySelectorAll('#devMetBtns button').forEach(x => { const on = x === b; x.setAttribute('aria-checked', on); x.style.borderColor = on ? '#2563eb' : '#cbd5e1'; x.style.background = on ? '#eff6ff' : '#fff'; x.style.color = on ? '#1d4ed8' : '#334155'; });
+  };
+  window.nxPosVaciar = function () { if (!_cart.length) return; confirmarAccion('Vaciar el carrito', _cart.length + (_cart.length === 1 ? ' artículo' : ' artículos') + ' se quitarán.', 'Vaciar carrito', () => { _cart = []; pintarCarrito(); }); };
 
   function pintarCarrito() {
     if (!_cart.length) venderAvisoQuitar();
@@ -6565,7 +6581,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div id="devLineas" style="overflow-y:auto;flex:1"></div>
         <div class="fr-row">
           <div class="fr"><label>Motivo</label><input id="devMot" class="no-upper" value="" placeholder="Ej: producto defectuoso"></div>
-          <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
+          <div class="fr"><label>Cómo se devuelve</label><input type="hidden" id="devMet" value="Efectivo"><div id="devMetBtns" role="radiogroup" aria-label="Cómo se devuelve" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${['Efectivo', 'Nota de crédito', 'Transferencia', 'Rebaja a cuenta (CxC)'].map((m, k) => `<button type="button" role="radio" aria-checked="${k === 0}" data-met="${esc(m)}" onclick="window.nxDevMet(this)" style="min-height:48px;border-radius:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;padding:6px 8px;border:1.5px solid ${k === 0 ? '#2563eb' : '#cbd5e1'};background:${k === 0 ? '#eff6ff' : '#fff'};color:${k === 0 ? '#1d4ed8' : '#334155'}">${esc(m)}</button>`).join('')}</div></div>
         </div>
         <div id="devTot" class="nxAsTot"></div>
         ${docAccPieHTML('dev')}
@@ -10629,7 +10645,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (conProd) f.push(`<label>Categoría${sel('cat', [['', 'Todas']].concat(_cats.map(c => [c.id, c.nombre])).concat([['__sin__', 'Sin categoría']]), _ri.cat)}</label>`);
     if (conProd && marcas.length) f.push(`<label>Marca${sel('marca', [['', 'Todas']].concat(marcas.map(m => [m, m])), _ri.marca)}</label>`);
     if (t === 'resumen' || t === 'baja' || t === 'sinmov' || t === 'fisico' || t === 'precios') f.push(`<label>Ordenar por${sel('orden', [['nombre', 'Descripción'], ['codigo', 'Código'], ['existencia', 'Existencia'], ['valor', 'Costo total']], _ri.orden)}</label>`);
-    if (riConFechas()) f.push(`<label>Desde<input type="date" value="${_ri.desde}" onchange="window.nxRepInvSet('desde',this.value)"></label><label>Hasta<input type="date" value="${_ri.hasta}" onchange="window.nxRepInvSet('hasta',this.value)"></label>`);
+    if (riConFechas()) f.push(`<label>Desde<input type="date" min="1990-01-01" max="2100-12-31" value="${_ri.desde}" onchange="window.nxFechaCampo(this,'nxRepInvSet','desde')" onblur="window.nxFechaSalir(this)"></label><label>Hasta<input type="date" min="1990-01-01" max="2100-12-31" value="${_ri.hasta}" onchange="window.nxFechaCampo(this,'nxRepInvSet','hasta')" onblur="window.nxFechaSalir(this)"></label>`);
     if (t === 'solic') f.push(`<label>Estado${sel('pest', [['', 'Todos']].concat(Object.keys(PED_EST).map(k => [k, PED_EST[k][0]])), _ri.pest || '')}</label>`);
     if (t === 'cambios') f.push(`<label>Qué cambió${sel('campo', [['', 'Todo']].concat(Object.keys(RI_CAMPO).map(k => [k, RI_CAMPO[k]])), _ri.campo || '')}</label>`);
     if (t === 'activos') f.push(`<label class="richk"><input type="checkbox"${_ri.baja ? ' checked' : ''} onchange="window.nxRepInvSet('baja',this.checked)"> Incluir dados de baja</label>`);
@@ -10817,8 +10833,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const totMet = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
     const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#475569;font-size:12px">Sin pagos registrados</div>';
     return `<div class="nxPf nxRepWrap"><div class="nxCtaRango">
-        <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
-        <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
+        <div class="nxFacF"><label>Desde</label><input type="date" min="1990-01-01" max="2100-12-31" value="${_repDesde}" onchange="window.nxFechaCampo(this,'nxRepRango','d')" onblur="window.nxFechaSalir(this)"></div>
+        <div class="nxFacF"><label>Hasta</label><input type="date" min="1990-01-01" max="2100-12-31" value="${_repHasta}" onchange="window.nxFechaCampo(this,'nxRepRango','h')" onblur="window.nxFechaSalir(this)"></div>
         <div style="font-size:11px;color:var(--pf-txt3);align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end;flex-wrap:wrap">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
@@ -10845,7 +10861,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div></div>`;
   }
   // Muse 16-nov: al teclear el año, cada número hacía un cambio («0002») que repintaba la pantalla y se perdía lo escrito.
-  const fechaCompleta = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && Number(String(v).slice(0, 4)) >= 1990;
+  // Muse 16-nov (2.ª vez): escribiendo la fecha de corrido, se tomaba apenas el año tenía 4 cifras y lo siguiente se perdía
+  // («01/11/112025»). Ahora se aplica cuando deja de escribir (0,9 s) y solo con años 1990–2100; si al salir del campo la fecha
+  // no es válida, se avisa y vuelve a la que estaba.
+  const fechaOk = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && Number(String(v).slice(0, 4)) >= 1990 && Number(String(v).slice(0, 4)) <= 2100;
+  window.nxFechaCampo = function (el, fn, k) {
+    clearTimeout(el._nxT);
+    el._nxT = setTimeout(function () { if (fechaOk(el.value) && el.value !== el.defaultValue && window[fn]) window[fn](k, el.value); }, 900);
+  };
+  window.nxFechaSalir = function (el) {
+    if (el.value && !fechaOk(el.value)) { clearTimeout(el._nxT); toast('warn', 'Fecha no válida', 'Se dejó la anterior'); el.value = el.defaultValue; }
+  };
+  const fechaCompleta = v => fechaOk(v);
   window.nxRepRango = async function (k, val) { if (!fechaCompleta(val)) return; if (k === 'd') _repDesde = val; else _repHasta = val; try { await cargarReportes(_repDesde, _repHasta); } catch (e) {} const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepComisiones = function () {
     const list = ventasRepRango();
