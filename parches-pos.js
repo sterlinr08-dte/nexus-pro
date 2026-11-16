@@ -826,7 +826,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
-    if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
+    if (t === 'reportes') { try { await cargarReportes(null, null, true); } catch (e) {} }
     if (t === 'ia') { try { await Promise.all([cargarReportes(), cargarIAClientes()]); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
@@ -962,6 +962,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
             ${esTiendaPOS()
               ? '<button class="nxTLogout" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>'
               : '<button class="nxTLogout" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>'}
+            ${window.NX_BUILD ? `<div class="nxTVer" style="font-size:10.5px;font-weight:600;color:#94a3b8;text-align:center;margin-top:6px;letter-spacing:.02em">Versión ${esc(window.NX_BUILD)}</div>` : ''}
           </div>
         </aside>
         <div class="nxTMain">
@@ -10244,24 +10245,36 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO REPORTES (POS) — analítica sobre ventas existentes ──
   // ════════════════════════════════════════════════════════════════════
-  async function cargarReportes() {
+  // 16-nov-2026 (pendiente del dueño): antes se traían solo las ÚLTIMAS 2,000 ventas (y 20,000 renglones), así que un rango
+  // viejo o una tienda grande salía incompleto sin aviso. Ahora se trae TODO el rango pedido, por páginas, con sus renglones.
+  // Se recuerda qué rango ya está cargado; la IA siempre necesita los últimos 30 días, así que se incluyen.
+  let _repCarga = null;
+  async function cargarReportes(d, h, forzar) {
     if (!_repDesde) _repDesde = isoMesIni();
     if (!_repHasta) _repHasta = isoHoy();
-    _repVentas = await getAPI().get('pos_ventas', 'select=*&estado=eq.completada&order=created_at.desc&limit=2000') || [];
-    try {
-      const its = await getAPI().get('pos_venta_items', 'select=*&limit=20000') || [];
-      const byV = {}; its.forEach(it => { (byV[it.venta_id] = byV[it.venta_id] || []).push(it); });
-      _repVentas.forEach(v => { v._items = byV[v.id] || []; });
-    } catch (e) {}
+    const hace31 = new Date(Date.now() - 31 * 86400000).toLocaleDateString('en-CA');
+    d = [d || _repDesde, hace31].sort()[0]; h = [h || _repHasta, isoHoy()].sort()[1];
+    if (!forzar && _repCarga && _repCarga.d <= d && _repCarga.h >= h) return;
+    if (!forzar && _repCarga) { d = d < _repCarga.d ? d : _repCarga.d; h = h > _repCarga.h ? h : _repCarga.h; }
+    const a = d.split('-').map(Number), b = h.split('-').map(Number);
+    const ini = new Date(a[0], a[1] - 1, a[2]).toISOString(), fin = new Date(b[0], b[1] - 1, b[2] + 1).toISOString();
+    // Cuenta la fecha de la venta y, si no tiene, la de creación (igual que repFecha).
+    const rango = 'or=' + encodeURIComponent('(and(fecha.gte.' + ini + ',fecha.lt.' + fin + '),and(fecha.is.null,created_at.gte.' + ini + ',created_at.lt.' + fin + '))');
+    const vs = (await getTodasPOS('pos_ventas', 'select=*,pos_venta_items(*)&estado=eq.completada&' + rango + '&order=created_at.desc,id.asc')) || [];
+    const ids = vs.map(v => v.id);
+    if (vs.length && vs.every(v => v.pos_venta_items === undefined)) {
+      try { const its = await riEnTrozos('pos_venta_items', 'venta_id', ids, '*'); const byV = {}; its.forEach(it => { (byV[it.venta_id] = byV[it.venta_id] || []).push(it); }); vs.forEach(v => { v._items = byV[v.id] || []; }); } catch (e) {}
+    } else vs.forEach(v => { v._items = v.pos_venta_items || []; delete v.pos_venta_items; });
+    _repVentas = vs; _repCarga = { d: d, h: h };
     // 16-nov-2026 (prueba de Muse): las notas de crédito se restan de ventas, ganancia y productos más vendidos, el día de la nota.
     try {
-      const ds = await getAPI().get('pos_devoluciones', 'select=id,venta_id,fecha,created_at,total,itbis,estado&estado=neq.anulada&order=created_at.desc&limit=2000') || [];
-      const vIds = new Set(_repVentas.map(v => String(v.id)));
-      _repDevs = ds.filter(d => vIds.has(String(d.venta_id)));
-      const ids = _repDevs.map(d => d.id);
-      const dit = ids.length ? (await getAPI().get('pos_devolucion_items', 'select=devolucion_id,producto_id,nombre,cantidad,precio,importe,itbis&devolucion_id=in.(' + ids.join(',') + ')') || []) : [];
+      const vIds = new Set(ids.map(String));
+      const ds = ids.length ? (await riEnTrozos('pos_devoluciones', 'venta_id', ids, 'id,venta_id,fecha,created_at,total,itbis,estado')) : [];
+      _repDevs = ds.filter(x => x.estado !== 'anulada' && vIds.has(String(x.venta_id)));
+      const dIds = _repDevs.map(x => x.id);
+      const dit = dIds.length ? (await riEnTrozos('pos_devolucion_items', 'devolucion_id', dIds, 'devolucion_id,producto_id,nombre,cantidad,precio,importe,itbis')) : [];
       const byD = {}; dit.forEach(it => { (byD[it.devolucion_id] = byD[it.devolucion_id] || []).push(it); });
-      _repDevs.forEach(d => { d._items = byD[d.id] || []; });
+      _repDevs.forEach(x => { x._items = byD[x.id] || []; });
     } catch (e) { _repDevs = []; }
   }
   let _repDevs = [];
@@ -10365,7 +10378,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function riEnTrozos(tabla, campo, ids, sel) { const out = []; for (let i = 0; i < ids.length; i += 80) { const r = await getAPI().get(tabla, 'select=' + sel + '&' + campo + '=in.(' + ids.slice(i, i + 80).join(',') + ')&limit=5000') || []; out.push.apply(out, r); } return out; }
   async function riCargarExtra() {
     const t = _ri.tab, g = riGrupo();
-    if (g === 'ven') { if (!(_repVentas || []).length) { try { await cargarReportes(); } catch (e) {} } return true; }
+    if (g === 'ven') { try { await cargarReportes(_ri.desde, _ri.hasta); } catch (e) {} return true; }
     if (t === 'compras' || t === 'recep') {
       const h = _ri.hasta.split('-').map(Number), sig = new Date(h[0], h[1] - 1, h[2] + 1).toLocaleDateString('en-CA');
       _riX.compras = ((await getTodasPOS('pos_compras', 'select=*&fecha=gte.' + _ri.desde + '&fecha=lt.' + sig + '&order=fecha.desc,numero.desc')) || []).filter(c => c.estado !== 'anulada');
@@ -10818,7 +10831,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Monto</th></tr></thead><tbody>${topFilas}</tbody></table></div>
       </div></div>`;
   }
-  window.nxRepRango = function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRepRango = async function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; try { await cargarReportes(_repDesde, _repHasta); } catch (e) {} const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepComisiones = function () {
     const list = ventasRepRango();
     const acc = {};
