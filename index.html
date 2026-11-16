@@ -7644,6 +7644,8 @@ html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#
 html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf :is(button,.ab,[role=button]){min-height:44px!important;min-width:44px!important}
 html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf .ab{height:auto!important;margin:0!important}
 html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf :is(.actions,.savewrap) .ab.g1{min-height:54px!important}
+/* 16-nov-2026 (pendiente del dueño): los botones secundarios del pie (Cancelar, Guardar y nuevo) medían 44 px; la regla del 48 de DESIGN.md los pide de 48. */
+html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf :is(.actions,.savewrap) .footbar .ab:not(.g1){min-height:48px!important}
 @media (max-width:600px){
   html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf .head{padding:24px 16px 12px!important}
   html:not(.nx-fesp-off) :is(#nxPosProd,#nxEntForm,#nxCotForm,#nxCrmForm,#nxRepM,#nxApaM,#nxPfNivelM,#_fe#_fe#_fe#_fe#_fe#_fe) .modal.nxPf>:is(.body,div:not([class])){padding:11px 16px 11px!important}
