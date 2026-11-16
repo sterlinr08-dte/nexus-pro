@@ -5343,6 +5343,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                       <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat" onchange="if(this.value==='__nueva__')window.nxPfCatNueva(this)"><option value="">— Sin categoría —</option>${catOpts}<option value="__nueva__">+ Nueva categoría…</option></select><i class="ti ti-chevron-down chev"></i></div></div>
                       <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Ej: 1004 (opcional)"></div></div>
                       <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
+                      ${p && (e.variante_grupo || e.talla || e.color) ? `<div class="fld"><label>Talla</label><div class="inw"><i class="ti ti-ruler-2"></i><input id="ppTalla" class="no-upper" value="${esc(e.talla || '')}"></div></div><div class="fld"><label>Color</label><div class="inw"><i class="ti ti-palette"></i><input id="ppColor" class="no-upper" value="${esc(e.color || '')}"></div></div>` : ''}
                       <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
                       <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
                     </div>
@@ -5363,7 +5364,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                     ${puedeVerMin() ? `<div class="fld"><label><i class="ti ti-lock"></i> Precio mínimo</label><div class="inw"><span class="cur">RD$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
                     <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                     <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
-                    ${!p ? `<div class="fld"><label>Stock inicial</label><div class="inw"><i class="ti ti-stack-2"></i><input id="ppStk" inputmode="numeric" value="0" placeholder="0"></div><div style="font-size:10px;color:var(--pf-txt3)">Cantidad inicial disponible en inventario.</div></div>` : ''}
+                    ${!p ? `<div class="fld"><label>Stock inicial</label><div class="inw"><i class="ti ti-stack-2"></i><input id="ppStk" inputmode="numeric" value="0" placeholder="0"></div><div style="font-size:10px;color:var(--pf-txt3)">Cantidad inicial disponible en inventario.</div></div>
+                    <div class="fld" id="ppVarBox"><label>Tallas y colores <span style="font-weight:500;color:var(--pf-txt3)">· opcional</span></label>
+                      <div class="inw"><i class="ti ti-ruler-2"></i><input id="ppTallas" class="no-upper" placeholder="Tallas: S, M, L, XL" oninput="window.nxPfVarPintar()"></div>
+                      <div class="inw" style="margin-top:6px"><i class="ti ti-palette"></i><input id="ppColores" class="no-upper" placeholder="Colores: Negro, Blanco, Rojo" oninput="window.nxPfVarPintar()"></div>
+                      <div style="font-size:10px;color:var(--pf-txt3);margin-top:4px">Separe con comas. Se crea un artículo por cada talla y color, con su propia existencia.</div>
+                      <div id="ppVarGrid"></div></div>` : ''}
                   </div>
                   ${!_proveedores.length ? `<div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
                   <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
@@ -5759,8 +5765,48 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       proveedor_id: val('ppProv') || null,
       comision_pct: val('ppComPct') !== '' ? Number(val('ppComPct')) : null,
       descripcion: (val('ppDesc') || '').trim() || null,
-      notas: (val('ppNotas') || '').trim() || null
+      notas: (val('ppNotas') || '').trim() || null,
+      ...(document.getElementById('ppTalla') ? { talla: (val('ppTalla') || '').trim() || null, color: (val('ppColor') || '').trim() || null } : {})
     };
+  }
+  // ── Tallas y colores (16-nov-2026, Boutique Aura) ──────────────────────────────────────────────────────────────────
+  // Cada combinación es un artículo propio (su código, su existencia, su kardex), unidos por `variante_grupo`. Así ventas,
+  // compras, devoluciones, inventario y contabilidad funcionan igual que con cualquier artículo, sin lógica nueva de stock.
+  function varLista(id) { const vis = new Set(); return String(val(id) || '').split(/[,;\n]/).map(x => x.trim()).filter(x => { const k = x.toLowerCase(); if (!x || vis.has(k)) return false; vis.add(k); return true; }).slice(0, 12); }
+  function varCombos() {
+    const ts = varLista('ppTallas'), cs = varLista('ppColores');
+    if (!ts.length && !cs.length) return [];
+    const out = [];
+    (ts.length ? ts : [null]).forEach(t => (cs.length ? cs : [null]).forEach(c => out.push({ talla: t, color: c })));
+    return out;
+  }
+  window.nxPfVarPintar = function () {
+    const g = document.getElementById('ppVarGrid'); if (!g) return;
+    const combos = varCombos();
+    const stk = document.getElementById('ppStk'); if (stk) { stk.disabled = !!combos.length; if (combos.length) stk.value = '0'; }
+    if (!combos.length) { g.innerHTML = ''; return; }
+    const prev = {}; g.querySelectorAll('input[data-var]').forEach(i => { prev[i.getAttribute('data-var')] = i.value; });
+    g.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--pf-txt2);margin:10px 0 6px">Existencia de cada una · ${combos.length} artículo${combos.length === 1 ? '' : 's'}</div>`
+      + combos.map(c => { const k = (c.talla || '') + '|' + (c.color || ''); return `<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:0 10px;border:1px solid var(--pf-line);border-radius:10px;margin-bottom:6px;background:var(--pf-panel)"><span style="font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc([c.talla, c.color].filter(Boolean).join(' · '))}</span><input data-var="${esc(k)}" inputmode="numeric" value="${esc(prev[k] || '')}" placeholder="0" aria-label="Existencia de ${esc([c.talla, c.color].filter(Boolean).join(' '))}" style="width:84px;height:40px;font-size:16px;text-align:right;border:1.5px solid var(--pf-line);border-radius:9px;padding:0 10px;background:var(--pf-panel);color:var(--pf-txt)"></label>`; }).join('');
+  };
+  // Crea los artículos de la cuadrícula. Devuelve cuántos creó, o null si falló el primero (nada creado).
+  async function nxPfGuardarVariantes() {
+    const combos = varCombos(); const base = nxPfLeerProd(); delete base.stock;
+    let gid; try { gid = crypto.randomUUID(); } catch (e) { gid = null; }
+    const stkDe = {}; document.querySelectorAll('#ppVarGrid input[data-var]').forEach(i => { stkDe[i.getAttribute('data-var')] = Math.max(0, Number(String(i.value || '0').replace(/[^0-9.]/g, '')) || 0); });
+    let n = 0;
+    for (const c of combos) {
+      const et = [c.talla, c.color].filter(Boolean).join(' · ');
+      const body = Object.assign({}, base, { nombre: base.nombre + ' · ' + et, talla: c.talla, color: c.color, variante_grupo: gid, stock: 0,
+        codigo: base.codigo ? base.codigo + '-' + String(n + 1).padStart(2, '0') : null });
+      try {
+        const r = await getAPI().post('pos_productos', body); const prod = r && r[0]; if (!prod) throw new Error('sin respuesta');
+        const st = stkDe[(c.talla || '') + '|' + (c.color || '')] || 0;
+        if (st > 0) await moverStock(prod, 'apertura', st, { referencia: 'Alta de producto', motivo: 'Stock inicial' });
+        n++;
+      } catch (e) { toast('err', n ? 'Se crearon ' + n + ' de ' + combos.length : 'No se pudo guardar el artículo', String(e && e.message || e)); return n || null; }
+    }
+    return n;
   }
   // Validaciones antes de guardar (regla del rediseño: nunca bloquear por margen bajo, solo advertir;
   // sí bloquear nombre vacío, montos negativos y niveles nuevos con el nombre repetido).
@@ -5860,6 +5906,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     } finally { _pfGuardando = false; nxPfSetGuardando(false); }
   }
   window.nxPosGuardarProd = async function (id) {
+    if (!id && document.getElementById('ppVarGrid') && varCombos().length) {
+      const errorVal = nxPfValidarAntesDeGuardar(); if (errorVal) { toast('err', errorVal); return; }
+      if (_pfGuardando) return; _pfGuardando = true; nxPfSetGuardando(true);
+      let nv = null; try { nv = await nxPfGuardarVariantes(); } finally { _pfGuardando = false; nxPfSetGuardando(false); }
+      if (!nv) return;
+      toast('ok', nv + ' artículo' + (nv === 1 ? '' : 's') + ' creado' + (nv === 1 ? '' : 's'), (val('ppNom') || '').trim());
+      cerrarModal('nxPosProd'); await cargarPOS();
+      const view0 = document.getElementById('v-pos'); if (view0) renderPOS(view0);
+      return;
+    }
     const r = await nxPfGuardarTodo(id); if (!r) return;
     toast('ok', id ? 'Artículo actualizado' : 'Artículo agregado', r.nombre);
     cerrarModal('nxPosProd');
@@ -5867,6 +5923,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const view = document.getElementById('v-pos'); if (view) renderPOS(view);
   };
   window.nxPfGuardarYNuevo = async function (id) {
+    if (!id && document.getElementById('ppVarGrid') && varCombos().length) { await window.nxPosGuardarProd(null); return; }
     const r = await nxPfGuardarTodo(id); if (!r) return;
     toast('ok', 'Guardado', r.nombre + ' — listo para el siguiente');
     await cargarPOS();
@@ -9386,9 +9443,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     }
     // 16-nov-2026 (Boutique Aura: el Balance decía Inventario RD$550 con RD$15,050 en existencia): la existencia que entra o
     // sale SIN compra ni venta también va a la contabilidad, a costo. Compra, venta, devolución y anulación ya tienen su asiento.
-    if ((tipo === 'apertura' || tipo === 'ajuste') && prod.tipo !== 'servicio') { postAsientoInventario(prod, tipo, delta, opts).catch(() => {}); }
+    if ((tipo === 'apertura' || tipo === 'ajuste') && prod.tipo !== 'servicio') { _asInvCola = _asInvCola.then(() => postAsientoInventario(prod, tipo, delta, opts)).catch(() => {}); }
     return prod.stock;
   }
+  let _asInvCola = Promise.resolve(); // uno tras otro: varias tallas creadas juntas no pelean por el número de asiento
   // Inventario inicial: Debe Inventario / Haber Capital (aporte de mercancía). Sobrante: Debe Inventario / Haber Otros ingresos.
   // Faltante o merma: Debe Gastos varios / Haber Inventario. Sin costo en la ficha no hay nada que asentar.
   async function postAsientoInventario(prod, tipo, delta, opts) {
