@@ -108,7 +108,7 @@ try {
     ];
     const s = await abrir(b, w); const page = s.page; await page.waitForTimeout(1200);
     await page.evaluate(() => window.nxPosTab('reportes')); await page.waitForTimeout(1500);
-    ok(await page.evaluate(() => [...document.querySelectorAll('button')].some(x => /Reportes de inventario/i.test(x.innerText))), `${w}px: Reportes tiene el botón «Reportes de inventario»`);
+    ok(await page.evaluate(() => [...document.querySelectorAll('button')].some(x => /Inventario, ventas y compras/i.test(x.innerText))), `${w}px: Reportes tiene el botón «Inventario, ventas y compras»`);
     await page.evaluate(() => window.nxRepInvAbrir()); await page.waitForTimeout(1500);
     const txt = () => page.evaluate(() => document.getElementById('riCuerpo').innerText.replace(/\s+/g, ' '));
     let t = await txt();
