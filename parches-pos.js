@@ -1673,7 +1673,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p) return;
       const neto = lineImporte(it) / Math.max(1, Number(it.cantidad || 1)) / (it.itbis ? 1.18 : 1), costo = Number(p.costo || 0), mn = minimoDe(p);
       if (costo > 0 && neto < costo) bajoCosto.push({ it: it, costo: costo, neto: neto, pierde: (costo - neto) * Number(it.cantidad || 1) });
-      else if (mn > 0 && Number(it.precio || 0) < mn) out.push({ tone: 'warn', ic: 'ti-lock', t: esc(it.nombre) + ' está debajo del mínimo', s: 'Mínimo ' + fmt(mn) + ' · puesto ' + fmt(it.precio), a: 'Poner ' + fmt(mn), fn: `window.nxFacPrecio(${i},'${mn}')` });
+      else if (mn > 0 && Number(it.precio || 0) < mn) out.push({ tone: 'warn', ic: 'ti-lock', t: 'Precio bajo: ' + esc(it.nombre), s: 'Mínimo ' + fmt(mn) + ' · puesto ' + fmt(it.precio), a: 'Poner ' + fmt(mn), fn: `window.nxFacPrecio(${i},'${mn}')` });
     });
     if (bajoCosto.length === 1) { const x = bajoCosto[0]; out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: esc(x.it.nombre) + ' se vende por debajo del costo', s: 'Costo ' + fmt(x.costo) + ' · vendiendo a ' + fmt(x.neto) + ' sin ITBIS pierdes ' + fmt(x.pierde) }); }
     else if (bajoCosto.length > 1) out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: bajoCosto.length + ' artículos se venden por debajo del costo', s: 'Pierdes ' + fmt(bajoCosto.reduce((a, x) => a + x.pierde, 0)) + ': ' + bajoCosto.map(x => esc(x.it.nombre)).join(', ') });
@@ -4599,6 +4599,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       }
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
+      // 17-nov-2026 (Muse 6065): el tablero de Inicio se pone al día en segundo plano después de cada venta.
+      try { cargarDashKPI().then(() => { const v2 = document.getElementById('v-pos'); if (v2 && _posTab === 'inicio') renderPOS(v2); }).catch(() => {}); } catch (e) {}
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
       if (_ncAplicar.length) { for (const n of _ncAplicar) { getAPI().patch('pos_devoluciones', 'id=eq.' + n.id, { estado: 'aplicada' }).catch(() => {}); const nm = (_notasCred || []).find(x => String(x.id) === String(n.id)); if (nm) nm.estado = 'aplicada'; } }
