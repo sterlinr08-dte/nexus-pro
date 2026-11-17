@@ -20,7 +20,7 @@
     /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
        WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
     if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
-    return base?(base+'&b=6067'):('?b=6067&'+d);
+    return base?(base+'&b=6068'):('?b=6068&'+d);
   })();
   function qv(){return QV;}
   /* 16-nov-2026 (Muse): número de versión visible en el menú del POS; sale solo de esta misma línea b=NNNN. */
