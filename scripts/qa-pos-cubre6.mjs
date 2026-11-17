@@ -91,11 +91,14 @@ try {
     ok(/Precio debajo del m[ií]nimo/i.test(avisoMin) && /1,300/.test(avisoMin) && !/42501|PRECIO_DEBAJO/.test(avisoMin), `${w}px: la base rechaza un precio debajo del mínimo con un aviso claro`, avisoMin.slice(0, 200));
     globalThis.__PMIN = false;
     await page.evaluate(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); if (!document.getElementById('payEfe')) window.nxPosCobrar(); }); await page.waitForTimeout(900);
-    await page.evaluate(() => { const e = document.getElementById('payEfe'); if (e) { e.value = '13380'; e.dispatchEvent(new Event('input', { bubbles: true })); } }); await page.waitForTimeout(300);
+    await page.evaluate(() => { const e = document.getElementById('payEfe'); if (e) { e.value = '14000'; e.dispatchEvent(new Event('input', { bubbles: true })); } }); await page.waitForTimeout(300);
     await page.evaluate(() => window.nxPosConfirmar()); await page.waitForTimeout(2500);
     const rpc = s.pedidos.find(p => p.t === 'rpc/pos_registrar_venta_atomica');
     const it1 = rpc && rpc.body.p_items.find(x => x.producto_id === 'p1');
     ok(rpc && Number(rpc.body.p_venta.total) === 13380 && it1 && it1.descuento === 600 && it1.importe === 11200, `${w}px: la venta se guarda con descuento 600 en la línea y total 13,380`, rpc && { total: rpc.body.p_venta.total, it1 });
+    // 17-nov-2026 (Muse 6067): pagó 14,000 por 13,380 → en caja quedan 13,380 (la devuelta de 620 sale del efectivo)
+    { const ult = s.pedidos.filter(p => p.t === 'rpc/pos_registrar_venta_atomica').slice(-1)[0]; const pv = ult && ult.body.p_venta;
+      ok(pv && Number(pv.pagado_efectivo) === 13380 && Number(pv.recibido) === 14000 && Number(pv.devuelta) === 620, `${w}px: con devuelta, el efectivo que queda en caja es el total (no lo entregado)`, pv && { ef: pv.pagado_efectivo, rec: pv.recibido, dev: pv.devuelta }); }
     { const iR = s.pedidos.lastIndexOf(s.pedidos.filter(p => p.t === 'rpc/pos_registrar_venta_atomica').slice(-1)[0]); const desp = s.pedidos.slice(iR + 1).filter(p => p.m === 'GET' && p.t === 'pos_ventas');
       ok(iR >= 0 && desp.length >= 1, `${w}px: después de la venta el tablero de Inicio se recarga solo`, { iR, gets: desp.length }); }
     { const rec = await page.evaluate(() => { const d = document.querySelector('.nxRA-det'); if (!d) return null; const r = d.getBoundingClientRect(); return { txt: d.innerText, h: Math.round(r.height), sw: document.documentElement.scrollWidth - window.innerWidth, lineas: d.querySelectorAll('.l').length }; });

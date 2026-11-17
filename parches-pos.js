@@ -3966,7 +3966,10 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const pagado = efe + tar + tra + che + nc;
     const credito = Math.max(0, total - pagado);
     const devuelta = Math.max(0, pagado - total);
-    return { base: base, descPct: desc, descMonto: descMonto, total: total, itbis: itbis, subtotal: subtotal, efe: efe, tar: tar, tra: tra, che: che, nc: nc, pagado: pagado, credito: credito, devuelta: devuelta };
+    // 17-nov-2026 (Muse 6067): la devuelta sale del efectivo. Lo que QUEDA en caja es lo entregado menos la devuelta;
+    // antes se guardaba lo entregado y la caja y el asiento contaban la devuelta como si se hubiera quedado.
+    const efeNeto = Math.max(0, efe - devuelta);
+    return { base: base, descPct: desc, descMonto: descMonto, total: total, itbis: itbis, subtotal: subtotal, efe: efe, efeNeto: efeNeto, tar: tar, tra: tra, che: che, nc: nc, pagado: pagado, credito: credito, devuelta: devuelta };
   }
   // ── Ventana de cobro con PESTAÑAS por forma de pago (v49.66) ──
   // Los 5 campos REALES (payEfe/payTar/payTra/payChe/payNc) siguen SIEMPRE en el DOM (dentro
@@ -4495,7 +4498,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       cliente_id: cliId, cliente_nombre: cliNom, a_credito: c.credito > 0,
       subtotal: c.subtotal, itbis: c.itbis, total: c.total, descuento: c.descMonto,
       metodo_pago: metodoLabel, pagos: pagosArr,
-      pagado_efectivo: c.efe, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
+      pagado_efectivo: c.efeNeto, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
       credito_monto: c.credito, recibido: c.efe, devuelta: c.devuelta,
       tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
       vendedor_id: vendId, vendedor_nombre: vendNom,
@@ -9686,7 +9689,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // viejo, sin recrear), cae al comportamiento anterior (todo a Caja) para no descuadrar.
       const ncMonto = Number(c.nc || 0);
       const ncCta = byc['2105'] ? '2105' : '1101';
-      const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + (ncCta === '1101' ? ncMonto : 0);
+      const caja = Number(c.efeNeto != null ? c.efeNeto : (c.efe || 0)) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + (ncCta === '1101' ? ncMonto : 0);
       // Costo de ventas (COGS): baja el inventario contable en cada venta (Debe 5101 / Haber 1104).
       // Como pos_venta_items NO guarda costo, se lee de pos_productos.costo.
       let costo = 0;
