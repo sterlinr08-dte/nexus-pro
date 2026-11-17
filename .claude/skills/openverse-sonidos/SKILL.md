@@ -16,8 +16,10 @@ Openverse (openverse.org, de WordPress) es un buscador de audio con licencia abi
 - La IA **no oye**: elegir por duración, etiquetas y título, y verificar con `earshot` antes de decir que un sonido «queda bien».
 - En un **anuncio pagado de Meta**, avisar que la música puede recibir reclamos aunque sea libre; los efectos cortos no suelen darlos.
 
-## Ojo: la descarga puede estar bloqueada
-La búsqueda funciona, pero casi todos los archivos viven en `cdn.freesound.org`. El 17-nov-2026 la red de la sesión **bloqueaba ese sitio** (error 403 del proxy). Si pasa, hay que pedirle al dueño que apruebe ese sitio en el entorno; mientras tanto, usar los 78 sonidos de `real-sfx` o Pixabay.
+## Ojo: la descarga directa falla desde la nube
+La búsqueda funciona, pero casi todos los archivos viven en `cdn.freesound.org`, que el 17-nov-2026 respondió **403** a la descarga desde esta sesión (la red del entorno no tiene restricciones; la causa exacta no se determinó). **No disfrazar la descarga** (no cambiar el agente ni el origen para saltarlo). Si falla:
+- darle al dueño el enlace `foreign_landing_url` para que lo baje y lo mande por el chat;
+- o usar los 78 sonidos de `real-sfx`, Pixabay, o crear el sonido con `earshot forge`.
 
 ## Pasos
 

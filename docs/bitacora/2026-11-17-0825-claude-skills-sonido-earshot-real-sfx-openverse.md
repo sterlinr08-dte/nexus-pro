@@ -29,13 +29,13 @@ Tres capturas de un reel («Earshot», «Openverse», «real-sfx») y «Instala 
 | Prueba | Resultado |
 |---|---|
 | Openverse: buscar «whoosh» CC0 | Funciona (200; 240 resultados). |
-| Openverse: bajar el archivo | **Bloqueado**: `cdn.freesound.org` da 403 por la red de la sesión. Los 20 primeros resultados viven ahí. |
+| Openverse: bajar el archivo | **No baja**: `cdn.freesound.org` responde 403 vacío. Los 20 primeros resultados viven ahí. La red del entorno es sin restricciones, así que no es un bloqueo del entorno; **la causa exacta no la determiné** (parece que ese sitio rechaza descargas automáticas). |
 | earshot: instalar en el scratchpad | Funciona (Python 3.11, torch CPU, 1.8 GB). |
 | earshot: `describe` sobre `uisfx/studio/add-to-cart.mp3` | Funciona: «a success chime (z +2.9)», -20.6 LUFS, 0.43 s. Bajó los modelos de huggingface.co. |
 | real-sfx: `setup.py init/check` | **No lo verifiqué**: el control de seguridad de la sesión no dejó ejecutar los scripts descargados. ffmpeg, ffprobe, Python y Node sí están en la sesión. |
 
 ## Pendientes
-- Que el dueño apruebe `cdn.freesound.org` en el entorno, para poder bajar los sonidos de Openverse.
+- Openverse sirve hoy para **encontrar** el sonido y su licencia; la descarga directa falla (403). Salidas: que el dueño lo baje desde el enlace y lo mande, o usar los 78 sonidos de `real-sfx`, Pixabay, o crear el sonido con `earshot forge`.
 - Primera prueba de `real-sfx` con un video real (la próxima vez que se haga un reel).
 - Las otras dos casas (`bayolcell-taller`, `studio-rd`) no se tocaron; si el dueño las quiere allá, se copian.
 
