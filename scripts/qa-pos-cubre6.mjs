@@ -96,6 +96,8 @@ try {
     const rpc = s.pedidos.find(p => p.t === 'rpc/pos_registrar_venta_atomica');
     const it1 = rpc && rpc.body.p_items.find(x => x.producto_id === 'p1');
     ok(rpc && Number(rpc.body.p_venta.total) === 13380 && it1 && it1.descuento === 600 && it1.importe === 11200, `${w}px: la venta se guarda con descuento 600 en la línea y total 13,380`, rpc && { total: rpc.body.p_venta.total, it1 });
+    { const iR = s.pedidos.lastIndexOf(s.pedidos.filter(p => p.t === 'rpc/pos_registrar_venta_atomica').slice(-1)[0]); const desp = s.pedidos.slice(iR + 1).filter(p => p.m === 'GET' && p.t === 'pos_ventas');
+      ok(iR >= 0 && desp.length >= 1, `${w}px: después de la venta el tablero de Inicio se recarga solo`, { iR, gets: desp.length }); }
     ok(!s.errs.length, `${w}px: sin errores de JS`, s.errs);
     await s.ctx.close();
   }
