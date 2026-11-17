@@ -40,6 +40,7 @@ async function abrir(b, conE, ancho, edge) {
     const t = u.pathname.slice(9);
     pedidos.push({ m: req.method(), t, q: u.search, body });
     if (t === 'rpc/pos_registrar_venta_atomica') {
+      if (globalThis.__PMIN) return send({ code: '42501', message: 'PRECIO_DEBAJO_MINIMO: Bateria Samsung A12 (mínimo 1300.00)' }, 403);
       const v = Object.assign({ id: VID, numero: 7, fecha: '2026-10-26T15:00:00Z', organizacion_id: ORG }, body.p_venta);
       D.pos_ventas.push(v);
       return send({ ok: true, venta: v, items: body.p_items.map((it, i) => Object.assign({ id: 'it' + i }, it)) });
@@ -82,6 +83,14 @@ try {
     ok(/13,980/.test(t.Total) && !t.on, `${w}px: tocar otra vez lo quita`, t);
     await page.evaluate(() => window.nxFacCubre6()); await page.waitForTimeout(300);
     await page.evaluate(() => window.nxPosCobrar()); await page.waitForTimeout(900);
+    await page.evaluate(() => { const e = document.getElementById('payEfe'); if (e) { e.value = '13380'; e.dispatchEvent(new Event('input', { bubbles: true })); } }); await page.waitForTimeout(300);
+    // 17-nov-2026: si la base rechaza un precio debajo del mínimo, el aviso se entiende (y la venta no se pierde)
+    globalThis.__PMIN = true;
+    await page.evaluate(() => window.nxPosConfirmar()); await page.waitForTimeout(2000);
+    const avisoMin = await page.evaluate(() => [...document.querySelectorAll('.toast, [class*=toast]')].map(x => x.innerText).join(' | '));
+    ok(/Precio debajo del m[ií]nimo/i.test(avisoMin) && /1,300/.test(avisoMin) && !/42501|PRECIO_DEBAJO/.test(avisoMin), `${w}px: la base rechaza un precio debajo del mínimo con un aviso claro`, avisoMin.slice(0, 200));
+    globalThis.__PMIN = false;
+    await page.evaluate(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); if (!document.getElementById('payEfe')) window.nxPosCobrar(); }); await page.waitForTimeout(900);
     await page.evaluate(() => { const e = document.getElementById('payEfe'); if (e) { e.value = '13380'; e.dispatchEvent(new Event('input', { bubbles: true })); } }); await page.waitForTimeout(300);
     await page.evaluate(() => window.nxPosConfirmar()); await page.waitForTimeout(2500);
     const rpc = s.pedidos.find(p => p.t === 'rpc/pos_registrar_venta_atomica');
