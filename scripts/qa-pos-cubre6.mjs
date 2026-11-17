@@ -98,6 +98,9 @@ try {
     ok(rpc && Number(rpc.body.p_venta.total) === 13380 && it1 && it1.descuento === 600 && it1.importe === 11200, `${w}px: la venta se guarda con descuento 600 en la línea y total 13,380`, rpc && { total: rpc.body.p_venta.total, it1 });
     { const iR = s.pedidos.lastIndexOf(s.pedidos.filter(p => p.t === 'rpc/pos_registrar_venta_atomica').slice(-1)[0]); const desp = s.pedidos.slice(iR + 1).filter(p => p.m === 'GET' && p.t === 'pos_ventas');
       ok(iR >= 0 && desp.length >= 1, `${w}px: después de la venta el tablero de Inicio se recarga solo`, { iR, gets: desp.length }); }
+    { const rec = await page.evaluate(() => { const d = document.querySelector('.nxRA-det'); if (!d) return null; const r = d.getBoundingClientRect(); return { txt: d.innerText, h: Math.round(r.height), sw: document.documentElement.scrollWidth - window.innerWidth, lineas: d.querySelectorAll('.l').length }; });
+      ok(rec && /Subtotal/i.test(rec.txt) && /ITBIS/i.test(rec.txt) && /Efectivo/i.test(rec.txt) && rec.lineas >= 6 && rec.sw <= 1, `${w}px: el recibo animado muestra artículos, subtotal, ITBIS y pago como el ticket`, rec && { lineas: rec.lineas, h: rec.h, sw: rec.sw, txt: rec.txt.slice(0, 160) });
+      if (OUT) { await page.waitForTimeout(900); await page.screenshot({ path: OUT + `/recibo-${w}.png` }); } }
     ok(!s.errs.length, `${w}px: sin errores de JS`, s.errs);
     await s.ctx.close();
   }
