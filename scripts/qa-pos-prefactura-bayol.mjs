@@ -26,6 +26,7 @@ function db() {
     pos_transferencia_items: [{ id: 'ti1', transferencia_id: 't1', producto_id: 'p1', nombre: 'Agua purificada', cantidad: 12 }, { id: 'ti2', transferencia_id: 't2', producto_id: 'p3', nombre: 'Arroz selecto', cantidad: 3 }],
     pos_seriales: [{ id: 's1', producto_id: 'p2', serial: '356000000000001', estado: 'disponible', color: 'Negro', created_at: new Date().toISOString() }, { id: 's2', producto_id: 'p2', serial: '356000000000002', estado: 'disponible', created_at: new Date().toISOString() }],
     pos_productos: globalThis.__PRODS || [{ id: 'p1', nombre: 'Agua purificada', precio: 25, costo: 14, stock: 50, itbis: true, activo: true, tipo: 'producto' }, { id: 'p2', nombre: 'Arroz selecto', precio: 185, costo: 150, stock: 50, itbis: false, activo: true, tipo: 'producto' }],
+    pos_acceso: [{ id: 'ac1', rol: 'cajero', modulos: ['inicio', 'vender', 'factura', 'prefactura', 'cotizaciones', 'clientes', 'caja'] }],
     pos_clientes: [
       { id: 'c1', nombre: 'Juan Pérez', cedula: '', telefono: '8095550000', activo: true, es_cliente: true },
       { id: 'c2', nombre: 'EMPRESA SRL', cedula: '1-31-88065-7', telefono: '809-555-1234', tipo_persona: 'juridica', activo: true, es_cliente: true },
@@ -246,8 +247,20 @@ try {
     await page.evaluate(() => { document.getElementById('entNom').value = 'Cliente de Cajero'; const e = document.getElementById('ent_es_cliente'); if (e && !e.checked) e.click(); window.nxEntGuardar(''); }); await page.waitForTimeout(1500);
     const alta = s.pedidos.find(p => p.t === 'pos_clientes' && p.m === 'POST');
     ok(alta && alta.body.nivel_precio === 'final' && alta.body.nivel_id === null, `${w}px: el cliente que crea un cajero queda con el nivel por defecto`, alta && { id: alta.body.nivel_id, np: alta.body.nivel_precio });
-    await page.evaluate(() => { const m = document.getElementById('nxEntForm'); if (m) m.remove(); window.nxRolPreview(''); }); await page.waitForTimeout(800);
+    // Precio de cada línea: el cajero no lo cambia (dueño 16-nov, 6064)
+    await page.evaluate(() => { const m = document.getElementById('nxEntForm'); if (m) m.remove(); window.nxPosTab('prefactura'); }); await page.waitForTimeout(800);
+    await page.evaluate(() => { document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); window.nxFacAdd('p1'); }); await page.waitForTimeout(400);
+    const caj = await page.evaluate(() => { const fila = document.querySelector('#v-pos td[data-l="Precio"]'); const antes = fila ? fila.innerText.trim() : ''; const fx = fila && fila.querySelector('.nxPrecioFijo'); const altoM = fx ? Math.round(fx.getBoundingClientRect().height) : 0; window.nxFacPrecio(0, '1'); const f2 = document.querySelector('#v-pos td[data-l="Precio"]'); return { rows: document.querySelectorAll("#v-pos .docTbl tbody tr").length, fijo: !!(fila && fila.querySelector(".nxPrecioFijo")), input: !!(fila && fila.querySelector('input')), antes, despues: f2 ? f2.innerText.trim() : '', alto: altoM }; });
+    ok(caj.fijo && !caj.input && caj.antes === caj.despues && caj.antes !== '1' && caj.alto >= 44, `${w}px: el cajero ve el precio de la línea con candado y no lo puede cambiar`, caj);
+    if (OUT) { await page.evaluate(() => { const t = document.querySelector('#v-pos .docTbl'); if (t) t.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(300); await page.screenshot({ path: `${OUT}/cajero-precio-${w}.png` }); }
+    await page.evaluate(() => { window.nxCotNueva(); window.nxCotAddId('p1'); }); await page.waitForTimeout(800);
+    const cotC = await page.evaluate(() => { const td = document.querySelector('td.nxFacPre'); return { fijo: !!(td && td.querySelector('.nxPrecioFijo')), input: !!(td && td.querySelector('input')) }; });
+    ok(cotC.fijo && !cotC.input, `${w}px: en Cotización el cajero tampoco cambia el precio`, cotC);
+    await page.evaluate(() => { const m = document.getElementById('nxCotForm'); if (m) m.remove(); window.nxRolPreview(''); }); await page.waitForTimeout(800);
     await page.evaluate(() => window.nxPosTab('prefactura')); await page.waitForTimeout(800);
+    const adm = await page.evaluate(() => { const td = document.querySelector('#v-pos td[data-l="Precio"]'); window.nxFacPrecio(0, '777'); const t2 = document.querySelector('#v-pos td[data-l="Precio"] input'); return { input: !!(td && td.querySelector('input')), val: t2 ? t2.value : '' }; });
+    ok(adm.input && /777/.test(adm.val), `${w}px: el administrador sí cambia el precio de la línea`, adm);
+    await page.evaluate(() => { window.nxFacPrecio(0, '0'); document.querySelectorAll('.nxRA-ov').forEach(o => o.remove()); });
     // Factura no cambia; y el interruptor apaga el diseño
     await page.evaluate(() => window.nxPosTab('factura')); await page.waitForTimeout(1000);
     ok(await page.evaluate(() => !document.querySelector('#v-pos .nxPfB') && !!document.querySelector('#v-pos .nxDoc')), `${w}px: la Factura sigue igual`);

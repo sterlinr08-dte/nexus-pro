@@ -2771,11 +2771,17 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     }
     it.cantidad = n; pintarFactura();
   };
+  // 16-nov-2026 (dueño): el precio de cada línea solo lo cambia el administrador o el gerente; el empleado vende al
+  // precio del nivel del cliente. Única excepción: subirlo al mínimo cuando el sistema lo pide («Poner mínimo»).
+  const PRECIO_SOLO_ADMIN = 'Solo el administrador o el gerente cambia el precio.';
+  function precioFijoHTML(v, nom) { precioCssFijo(); return `<span class="pin nxPrecioFijo" role="note" title="${esc(PRECIO_SOLO_ADMIN)}" aria-label="Precio de ${esc(nom)}: ${r2(v)}. ${esc(PRECIO_SOLO_ADMIN)}"><i class="ti ti-lock" aria-hidden="true"></i>${r2(v)}</span>`; }
+  function precioCssFijo() { if (document.getElementById('nxPrecioFijoCSS')) return; const st = document.createElement('style'); st.id = 'nxPrecioFijoCSS'; st.textContent = '.pin.nxPrecioFijo,#v-pos .nxPfB.nx-invoice-pro .docTbl tbody tr td[data-l="Precio"] .pin.nxPrecioFijo{display:inline-flex!important;align-items:center;justify-content:flex-end;gap:6px;min-height:44px;padding:0 10px;box-sizing:border-box;cursor:not-allowed;background:transparent!important;border:1.5px dashed rgba(148,163,184,.55)!important;box-shadow:none!important;border-radius:10px;font-variant-numeric:tabular-nums;font-weight:700}.nxPrecioFijo i{font-size:14px;opacity:.55}'; (document.head || document.documentElement).appendChild(st); }
   window.nxFacPrecio = function (i, v) {
     const it = _cart[i]; if (!it) return;
     let nuevo = Math.max(0, parseMoney(v));
     const p = _prods.find(x => String(x.id) === String(it.producto_id));
     const min = p ? minimoDe(p) : 0;
+    if (!puedeVerMin() && !(min > 0 && nuevo === min && Number(it.precio || 0) < min)) { toast('warn', 'Precio fijo', PRECIO_SOLO_ADMIN); pintarFactura(); return; }
     if (min > 0 && nuevo < min && !puedeVerMin()) { nuevo = min; toast('warn', 'Precio ajustado al mínimo permitido', 'Ese artículo tiene un piso de negociación'); }
     it.precio = nuevo; it.precioManual = true; pintarFactura();
   };
@@ -3403,7 +3409,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${it.itbis ? '' : chipExento}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
           ${serLista}${volLinea(it, i, 'factura')}
         </td>
-        <td data-l="Precio" class="r"><input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
+        <td data-l="Precio" class="r">${puedeVerMin() ? `<input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)">` : precioFijoHTML(it.precio, it.nombre)}</td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
         <td data-l="Desc."><div class="dsc"><input inputmode="decimal" aria-label="Descuento de ${esc(it.nombre)}" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$" aria-label="Cambiar tipo de descuento a porcentaje o monto">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
         <td data-l="Importe" class="r imp">${fmt(lineImporte(it))}</td>
@@ -9849,7 +9855,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const inp = document.getElementById('cotBuscar'); if (inp) inp.value = '';
     pintarCotTabla();
   };
-  window.nxCotLinea = function (i, k, v) { const l = _cotEdit.lineas[i]; if (!l) return; if (k === 'cantidad') l.cantidad = Math.max(1, parseFloat(v) || 1); else if (k === 'precio') l.precio = parseMoney(v); else if (k === 'desc') l.desc = parseFloat(v) || 0; pintarCotTabla(); };
+  window.nxCotLinea = function (i, k, v) { const l = _cotEdit.lineas[i]; if (!l) return; if (k === 'cantidad') l.cantidad = Math.max(1, parseFloat(v) || 1); else if (k === 'precio') { if (!puedeVerMin()) { toast('warn', 'Precio fijo', PRECIO_SOLO_ADMIN); pintarCotTabla(); return; } l.precio = parseMoney(v); } else if (k === 'desc') l.desc = parseFloat(v) || 0; pintarCotTabla(); };
   window.nxCotDel = function (i) { _cotEdit.lineas.splice(i, 1); pintarCotTabla(); };
   function pintarCotTabla() {
     const wrap = document.getElementById('cotTabla'); if (!wrap) return;
@@ -9857,7 +9863,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const filas = _cotEdit.lineas.map((l, i) => `<tr>
         <td class="nxFacDesc">${esc(l.nombre)}</td>
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
-        <td class="nxFacPre"><input data-nx-money="sinsigno" inputmode="decimal" value="${r2(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
+        <td class="nxFacPre">${puedeVerMin() ? `<input data-nx-money="sinsigno" inputmode="decimal" value="${r2(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)">` : precioFijoHTML(l.precio, l.nombre || '')}</td>
         <td class="nxFacImp">${fmt(lineImporte(l))}</td>
         <td class="nxFacDel"><button aria-label="Quitar este producto" onclick="window.nxCotDel(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></td>
       </tr>`).join('');
