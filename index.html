@@ -20125,6 +20125,13 @@ function nxReciboAnimEnsureCSS(){
 .nxRA-cli{font-size:11.5px;color:#475569;text-align:center;margin-top:2px}
 .nxRA-div{border-top:2px dashed #dde3ea;margin:16px 0}
 .nxRA-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.nxRA-det{max-height:min(34vh,300px);overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;margin:0 0 10px;font-size:11px;color:#334155;text-align:left}
+.nxRA-det .h{text-align:center;color:#64748b;font-size:10.5px;line-height:1.45}
+.nxRA-det .l{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:3px 0;line-height:1.35}
+.nxRA-det .l span{min-width:0;overflow-wrap:anywhere}
+.nxRA-det .l b{color:#0f172a;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nxRA-det .q{color:#64748b}
+.nxRA-det .sep{border-top:1px dashed #cbd5e1;margin:6px 0}
 .nxRA-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#475569}
 .nxRA-row b{color:#0f172a;font-weight:700;text-align:right}
 .nxRA-monto{font-size:26px;font-weight:900;color:#0f172a;text-align:center;font-variant-numeric:tabular-nums;
@@ -20169,6 +20176,7 @@ window.nxReciboAnimado=function(datos,acciones){
         ${datos.cliente?`<div class="nxRA-cli">${_nxRAEsc(datos.cliente)}</div>`:''}
         <div class="nxRA-div"></div>
         <div class="nxRA-rows">${filasHTML}</div>
+        ${datos.detalle?`<div class="nxRA-det">${datos.detalle}</div>`:''}
         <div class="nxRA-monto">${montoTxt}</div>
         <div class="nxRA-barcode"></div>
         ${datos.folio?`<div class="nxRA-folio">${_nxRAEsc(datos.folio)}</div>`:''}

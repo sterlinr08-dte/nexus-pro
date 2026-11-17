@@ -4192,6 +4192,29 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
   // existía estaba dentro de una ventana que no se veía. Ahora el modal se queda abierto con
   // botones reales; cada uno abre su ventana desde el CLIC del usuario, no desde el callback async.
   let _ventaRecienCobrada = null;
+  // 17-nov-2026 (dueño): el recibo animado de «Venta cobrada» muestra lo mismo que el ticket real
+  // (tienda, NCF, fecha, artículos con precio, subtotal, descuento, ITBIS, exento, pagos y devuelta). Todo escapado.
+  function reciboDetalleHTML(v) {
+    try {
+      const e = empInfo(), items = v._items || [];
+      const mezcla = items.some(it => it.itbis === false) && items.some(it => it.itbis !== false);
+      const exento = items.reduce((a, it) => a + (it.itbis === false ? Number(it.importe || 0) : 0), 0);
+      const l = (t, val) => `<div class="l"><span>${t}</span><b>${val}</b></div>`;
+      const cab = [e.rnc ? 'RNC: ' + esc(e.rnc) : '', e.tel ? esc(e.tel) : ''].filter(Boolean).join(' · ');
+      const pagos = (Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]);
+      return `<div class="h">${cab}${e.dir ? (cab ? '<br>' : '') + esc(e.dir) : ''}${v.ncf && !/^E/.test(v.ncf) ? '<br>NCF: <b>' + esc(v.ncf) + '</b>' : ''}<br>${esc(fechaDMY(v.fecha || new Date().toISOString()))}</div>
+        <div class="sep"></div>
+        ${items.map(it => l(`<span class="q">${Number(it.cantidad || 0)}×</span> ${esc(it.nombre || '')}${mezcla ? (it.itbis === false ? ' (E)' : ' (G)') : ''}`, fmt(it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0)))).join('')}
+        <div class="sep"></div>
+        ${l('Subtotal', fmt(v.subtotal))}
+        ${Number(v.descuento || 0) > 0 ? l('Descuento', '- ' + fmt(v.descuento)) : ''}
+        ${l('ITBIS (18%)', fmt(v.itbis))}
+        ${exento > 0 && mezcla ? l('Exento de ITBIS', fmt(exento)) : ''}
+        <div class="sep"></div>
+        ${pagos.map(p => l(esc(p.metodo || 'Pago'), fmt(p.monto))).join('')}
+        ${Number(v.devuelta || 0) > 0 ? l('Devuelta', fmt(v.devuelta)) : ''}`;
+    } catch (er) { return ''; }
+  }
   function _posVentaExito(v) {
     _ventaRecienCobrada = v;
     const modal = document.querySelector('#nxPosPago .modal');
@@ -4204,7 +4227,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
         empresa: bizNom(), titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
         filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }]
           .concat(ECF_TIPO[v.tipo_comprobante] ? [{ label: 'e-NCF', valor: v.ecf_security_code ? (v.ncf || '') : 'Pendiente' }] : []),
-        folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
+        folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase(),
+        detalle: reciboDetalleHTML(v)
       }, [
         { label: 'Imprimir ticket', icon: 'ti-printer', onclick: () => window.nxPosVentaTicketVer() },
         { label: 'Factura completa', icon: 'ti-file-invoice', onclick: () => window.nxFacDocVenta(v.id) },
