@@ -4633,6 +4633,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       // Solo se libera la reserva IMEI si la venta NUNCA llegó a existir. Una venta ya
       // creada no se revierte por este catch — REGLAMENTOS §2 regla 10.
       if (!_imeiVentaCreada && _imeiReserva) await liberarReservaImeis(_imeiReserva);
+      // 17-nov-2026: la base no deja que un empleado venda por debajo del precio mínimo (trigger en pos_venta_items).
+      const _pm = /PRECIO_DEBAJO_MINIMO:\s*([^"\\]*?)\s*\(m[ií]nimo\s*([\d.,]+)\)/.exec(String(e && e.message || e));
+      if (_pm) { toast('err', 'Precio debajo del mínimo', (_pm[1] ? _pm[1] + ': ' : '') + 'mínimo ' + fmt(Number(String(_pm[2]).replace(/,/g, '')))); return; }
       toast('err', 'No se pudo cobrar', String(e && e.message || e));
     }
   };
