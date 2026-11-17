@@ -38,6 +38,9 @@
 | **Remotion** (skills `remotion-*`) | Videos hechos con código, como el de la web de BAYOL (`videos-remotion/`). | Instalado. |
 | **ffmpeg / yt-dlp** | Cortar, unir, poner audio y revisar cuadros. Bajar videos públicos. | En la sesión (scratchpad). |
 | **Pixabay** (pixabay.com) | Fotos, videos, música y efectos de sonido **gratis y de uso comercial, sin dar crédito**: fondos y música para reels y anuncios, fotos de comida (pizzería), carros (seguros) o celulares (Bayol). Reglas: no vender el archivo tal cual; personas o marcas reconocibles no se usan como si respaldaran el negocio; revisar la música antes de un anuncio pagado de Meta (puede haber reclamos). | Aprobado por el dueño para reels y anuncios (25-oct-2026). Sin conectar: su API pide una clave gratis; si se conecta, la clave va como secreto, nunca en el chat. |
+| **`real-sfx`** (skill, de Clipwing) | Poner efectos de sonido **reales grabados** en el cuadro exacto de un video (HyperFrames, grabación de pantalla o cualquier MP4), sin tocar la música ni la voz. Devuelve el MP4 nuevo y la pista de efectos aparte. Trae 78 sonidos de interfaz CC0. | Instalada (nexus-pro, 17-nov-2026). Gratis. Usa Python y ffmpeg de la sesión. **Falta la primera prueba con un video real.** |
+| **`earshot`** + **`real-sound`** (skills, de Leon Lin) | `earshot`: «oídos» para la IA — describe un sonido, dice si encaja, mide el volumen y la sincronía, y puede crear un sonido por código. `real-sound`: banda sonora completa (efectos, música, mezcla y créditos). | Skills instaladas (nexus-pro, 17-nov-2026). Gratis, todo en la máquina. El programa `earshot` se instala en el scratchpad cuando hace falta (ver la nota dentro de la skill). **Nunca usar su comando `llm`**: manda el audio a un servicio de pago. |
+| **Openverse** (skill `openverse-sonidos`) | Buscar y bajar efectos de sonido y música libres (CC0 o CC BY) con la API pública de openverse.org. | Instalada (nexus-pro, 17-nov-2026). Gratis y sin clave. Probada: responde. Preferir CC0; con CC BY hay que dar crédito. |
 
 ### Redes sociales e Instagram
 | Herramienta | Para qué | Estado |
@@ -149,6 +152,7 @@ Las cinco primeras vienen de `obra/superpowers` (MIT) y `find-skills` de `vercel
 |---|---|
 | «Hazme un video o reel» | `hyperframes` + Buzzy para escenas + revisión cuadro por cuadro |
 | «Mira este video de Instagram/TikTok» | `ver-video-redes` |
+| «Ponle sonidos al video» / «suena barato» | `openverse-sonidos` (buscar) → `real-sfx` (colocar) → `earshot` (comprobar) |
 | «Qué está funcionando en mi Instagram» | `analizar-instagram` + Supermetrics |
 | «Qué hace la competencia» | Biblioteca de anuncios de Meta + Firecrawl + Supermetrics (perfiles públicos) |
 | «Mejora esta pantalla» | `apple-design` / `impeccable` / `ui-ux-pro-max` |
