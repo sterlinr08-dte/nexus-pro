@@ -97,8 +97,11 @@ const caja = (page, sel) => page.evaluate(s => { const e = document.querySelecto
       ok(barra.length > 0 && chicos.length === 0, `${tt}: ${barra.length} botones de la barra ≥ 44 × 44 px`, { chicos, barra });
       if (m) { await page.evaluate(() => toggleSB()); await sleep(800); }
       const tg = await caja(page, 'nav#sbEl .nx-mc-tg'), circ = await caja(page, 'nav#sbEl .nx-mc-c');
-      ok(tg && tg.w >= 44 && tg.h >= 44, `${tt}: botón que abre/cierra el menú ${tg && tg.w}×${tg && tg.h} px`, tg);
-      if (!claro) ok(circ && circOff && Math.abs(circ.x - circOff.x) <= 1 && Math.abs(circ.y - circOff.y) <= 1, `${tt}: el círculo azul del menú queda en el mismo sitio (${circ && circ.x},${circ && circ.y} = ${circOff && circOff.x},${circOff && circOff.y})`, { circ, circOff });
+      // 18-nov-2026: con el menú de dos niveles (nav#nxM2) el menú de cristal queda escondido y no hay chevron: se abre con ☰ y se cierra tocando fuera o eligiendo.
+      const m2on = await page.evaluate(() => { const r = document.getElementById('nxM2'); return !!r && getComputedStyle(r).display !== 'none'; });
+      if (m2on) ok(true, `${tt}: menú de dos niveles activo (sin chevron del menú anterior)`);
+      else ok(tg && tg.w >= 44 && tg.h >= 44, `${tt}: botón que abre/cierra el menú ${tg && tg.w}×${tg && tg.h} px`, tg);
+      if (!claro && !m2on) ok(circ && circOff && Math.abs(circ.x - circOff.x) <= 1 && Math.abs(circ.y - circOff.y) <= 1, `${tt}: el círculo azul del menú queda en el mismo sitio (${circ && circ.x},${circ && circ.y} = ${circOff && circOff.x},${circOff && circOff.y})`, { circ, circOff });
       const pild = await page.evaluate(() => { const e = document.querySelector('nav#sbEl .nx-mc-st'); return e && e.offsetParent ? getComputedStyle(e).textTransform : 'oculto'; });
       ok(pild === 'none' || pild === 'oculto', `${tt}: píldora «Buscar…» del menú sin mayúsculas (${pild})`, pild);
       if (m) { await page.screenshot({ path: OUT + `menu-${width}-${claro ? 'claro' : 'oscuro'}.png` }); await page.evaluate(() => closeMobSB()); await sleep(600); }

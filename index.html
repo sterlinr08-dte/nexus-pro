@@ -4806,6 +4806,85 @@ html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-out{margin-left:
   html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-p,html:is(.tema-glass-oscuro,.tema-claro) body nav#sbEl.sb .nx-mc-c i{transform:none!important;transition:opacity .15s ease!important}
 }
 </style>
+<!-- ═══ MENÚ DE DOS NIVELES (18-nov-2026; dueño: estilo 7 «Two-level» del reel Df5TYQDoAQ3, ver docs/REFERENCIAS-DISENO.md).
+     A la izquierda, iconos de las secciones; al lado, las páginas de la sección elegida. Lo arma parches-menu-dos-niveles.js
+     con los MISMOS botones del menú de siempre (nav#sbEl sigue en la página, escondido: mismos permisos, contadores y acciones).
+     Solo temas Glass oscuro y Claro, y solo empresas de seguros (tienda, rifa y consultorio siguen igual).
+     APAGAR: localStorage.setItem('nx_m2_off','1') y recargar (vuelve el menú anterior). -->
+<script id="nxMenu2On">(function(){try{if(localStorage.getItem('nx_m2_off')!=='1')document.documentElement.classList.add('nx-m2');}catch(e){document.documentElement.classList.add('nx-m2');}})();</script>
+<style id="nxMenu2">
+#nxM2{display:none}
+html.nx-m2:is(.tema-glass-oscuro,.tema-claro) body:not(.org-tienda):not(.org-rifa):not(.org-consultorio) nav#sbEl.sb{display:none!important}
+html.nx-m2:is(.tema-glass-oscuro,.tema-claro) body:not(.org-tienda):not(.org-rifa):not(.org-consultorio) #nxM2{display:flex}
+html.nx-m2{
+  --m2-panel:var(--nx-mc-glass,linear-gradient(180deg,rgba(46,49,56,.58),rgba(22,24,28,.62)));--m2-edge:var(--nx-mc-edge,rgba(255,255,255,.09));
+  --m2-blur:var(--nx-mc-blur,blur(28px) saturate(140%));--m2-tx1:#F1F5F9;--m2-tx2:#CBD5E1;--m2-tx3:#94A3B8;--m2-hov:rgba(255,255,255,.06);
+  --m2-on:rgba(59,130,246,.18);--m2-on-tx:#fff;--m2-bar:#60A5FA;--m2-ring:rgba(96,165,250,.75);--m2-line:rgba(255,255,255,.08);--m2-dot:#121418}
+html.nx-m2.tema-claro{
+  --m2-panel:rgba(255,255,255,.94);--m2-edge:rgba(15,23,42,.08);--m2-blur:blur(20px) saturate(140%);--m2-tx1:#0F172A;--m2-tx2:#334155;--m2-tx3:#64748B;
+  --m2-hov:rgba(15,23,42,.05);--m2-on:rgba(37,99,235,.10);--m2-on-tx:#1D4ED8;--m2-bar:#2563EB;--m2-ring:rgba(37,99,235,.55);--m2-line:rgba(15,23,42,.08);--m2-dot:#fff}
+#nxM2{flex:0 0 auto;gap:8px;margin:12px 0 12px 12px;height:calc(100% - 24px);box-sizing:border-box;position:relative;z-index:20;font-family:inherit}
+#nxM2 *{box-sizing:border-box}
+/* el menú es texto normal: sin las mayúsculas globales; la luz de la capa nx-luz no va aquí (el elegido ya lleva su barra) */
+#nxM2,#nxM2 *{text-transform:none!important;letter-spacing:normal}#nxM2 nx-luz{display:none!important}
+#nxM2 kbd{font-family:inherit!important}
+#nxM2 .m2-rail,#nxM2 .m2-col{background:var(--m2-panel);border:1px solid var(--m2-edge);-webkit-backdrop-filter:var(--m2-blur);backdrop-filter:var(--m2-blur);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 24px 48px -30px rgba(2,8,20,.55);border-radius:24px}
+html.tema-claro #nxM2 .m2-rail,html.tema-claro #nxM2 .m2-col{box-shadow:0 10px 30px -14px rgba(15,23,42,.18)}
+/* nivel 1: secciones */
+#nxM2 .m2-rail{width:72px;flex:0 0 72px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 0;overflow-y:auto;scrollbar-width:none}
+#nxM2 .m2-rail::-webkit-scrollbar{display:none}
+#nxM2 .m2-mk{width:44px;height:44px;flex:0 0 44px;border-radius:14px;background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;
+  box-shadow:0 6px 18px -4px rgba(37,99,235,.55),inset 0 1px 0 rgba(255,255,255,.3)}
+#nxM2 button{font:inherit;margin:0;-webkit-tap-highlight-color:transparent;cursor:pointer;text-transform:none!important;letter-spacing:0!important}
+#nxM2 .m2-sec{position:relative;width:48px;height:48px;min-height:48px!important;flex:0 0 48px;border-radius:50%!important;border:0!important;padding:0!important;background:transparent!important;box-shadow:none!important;
+  color:var(--m2-tx2);display:flex;align-items:center;justify-content:center;font-size:21px;transition:background .15s ease,color .15s ease,box-shadow .2s ease}
+#nxM2 .m2-sec:hover{background:var(--m2-hov)!important;color:var(--m2-tx1)}
+#nxM2 .m2-sec[aria-current="true"]{color:var(--m2-on-tx);background:var(--m2-on)!important;box-shadow:inset 0 0 0 1.5px var(--m2-ring)!important}
+#nxM2 .m2-sec:focus-visible,#nxM2 .m2-pg:focus-visible,#nxM2 .m2-bus:focus-visible,#nxM2 .m2-user:focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
+#nxM2 .m2-sec .m2-dot{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:#EF4444;box-shadow:0 0 0 2px var(--m2-dot)}
+#nxM2 .m2-sp{flex:1 1 auto}
+#nxM2 .m2-av{width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+/* nivel 2: páginas de la sección */
+@media (min-width:769px){#nxM2.m2-solo .m2-col{display:none}}
+#nxM2 .m2-col{width:236px;flex:0 0 236px;display:flex;flex-direction:column;padding:16px 10px 10px;min-height:0}
+#nxM2 .m2-hd{display:flex;align-items:center;gap:10px;padding:2px 8px 12px}
+#nxM2 .m2-hd>i{font-size:20px;color:var(--m2-bar)}
+#nxM2 .m2-hd b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--m2-tx1);line-height:1.2}
+#nxM2 .m2-hd small{display:block;font-size:11.5px;color:var(--m2-tx3);font-weight:500;line-height:1.3}
+#nxM2 .m2-bus{display:flex;align-items:center;gap:10px;width:100%;height:44px;min-height:44px!important;padding:0 12px!important;margin:0 0 8px;border-radius:14px!important;border:1px solid var(--m2-line)!important;
+  background:var(--m2-hov)!important;box-shadow:none!important;color:var(--m2-tx2);font-size:13.5px;text-align:left}
+#nxM2 .m2-bus i{font-size:18px}#nxM2 .m2-bus kbd{margin-left:auto;font:600 11px/1 inherit;color:var(--m2-tx2);border:1px solid var(--m2-line);border-radius:6px;padding:3px 6px;background:transparent}
+#nxM2 .m2-list{flex:1 1 auto;overflow-y:auto;min-height:0;padding:2px 0;border-top:1px solid var(--m2-line);scrollbar-width:thin}
+#nxM2 .m2-pg{display:flex;align-items:center;gap:11px;width:100%;min-height:44px!important;height:44px;padding:0 12px!important;margin:2px 0;border:0!important;border-radius:12px!important;background:transparent!important;box-shadow:none!important;
+  color:var(--m2-tx2);font-size:14px;font-weight:500;text-align:left;transition:background .15s ease,color .15s ease}
+#nxM2 .m2-pg i{font-size:18px;flex:0 0 auto}
+#nxM2 .m2-pg span{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nxM2 .m2-pg:hover{background:var(--m2-hov)!important;color:var(--m2-tx1)}
+#nxM2 .m2-pg[aria-current="page"]{background:var(--m2-on)!important;color:var(--m2-on-tx);font-weight:600;box-shadow:inset 3px 0 0 var(--m2-bar)!important}
+#nxM2 .m2-pg em{font-style:normal;margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+#nxM2 .m2-ft{border-top:1px solid var(--m2-line);padding-top:8px;margin-top:6px}
+#nxM2 .m2-user{display:flex;align-items:center;gap:10px;width:100%;min-height:52px!important;padding:6px 8px!important;border:0!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important;color:var(--m2-tx1);text-align:left}
+#nxM2 .m2-user:hover{background:var(--m2-hov)!important}
+#nxM2 .m2-user .m2-av{width:36px;height:36px;flex-basis:36px;font-size:12px}
+#nxM2 .m2-user b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nxM2 .m2-user small{display:block;font-size:11px;color:var(--m2-tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nxM2 .m2-user>div{min-width:0;flex:1 1 auto}#nxM2 .m2-user>i{font-size:18px;color:var(--m2-tx3)}
+/* celular: el mismo menú de dos columnas dentro del cajón ☰ */
+@media (max-width:768px){
+  html.nx-m2:is(.tema-glass-oscuro,.tema-claro) body:not(.org-tienda):not(.org-rifa):not(.org-consultorio) #nxM2{position:fixed;left:0;top:0;bottom:0;height:auto;margin:0;z-index:10700;
+    width:min(336px,90vw);padding:calc(10px + env(safe-area-inset-top,0px)) 8px calc(10px + env(safe-area-inset-bottom,0px));
+    background:transparent;transform:translateX(-105%);visibility:hidden;transition:transform .3s cubic-bezier(.32,.72,0,1),visibility 0s linear .3s}
+  html.nx-m2:is(.tema-glass-oscuro,.tema-claro) body:not(.org-tienda):not(.org-rifa):not(.org-consultorio) #nxM2.m2-open{transform:none;visibility:visible;transition:transform .42s cubic-bezier(.32,.72,0,1)}
+  #nxM2 .m2-rail{width:64px;flex-basis:64px;border-radius:20px}
+  /* en el cajón el panel va casi sólido: la pantalla de atrás no se mezcla con los rótulos */
+  html.nx-m2 #nxM2 .m2-rail,html.nx-m2 #nxM2 .m2-col{background:rgba(24,26,31,.97);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 30px 70px -20px rgba(2,8,20,.8)}
+  html.nx-m2.tema-claro #nxM2 .m2-rail,html.nx-m2.tema-claro #nxM2 .m2-col{background:#fff;box-shadow:0 20px 50px -18px rgba(15,23,42,.35)}
+  #nxM2 .m2-col{width:auto;flex:1 1 auto;border-radius:20px}
+}
+@media (prefers-reduced-motion:reduce){#nxM2,#nxM2 *{transition:none!important}}
+@media (prefers-reduced-transparency:reduce){#nxM2 .m2-rail,#nxM2 .m2-col{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--tgo-solid,#16181c)}html.tema-claro #nxM2 .m2-rail,html.tema-claro #nxM2 .m2-col{background:#fff}}
+</style>
 <style id="nxPagoV3">
 /* ═══ 59.01 · «Registrar pago» ordenado (01-oct-2026) — capa única para #mAbono .nxPago:not(#_n):not(#_m). Orden: cliente → monto →
    cómo pagó (banco · referencia · cuenta · comprobante) → quién cobró → resumen → botón fijo. Mismos ids/funciones.
@@ -7979,6 +8058,7 @@ else if(t==='glass-oscuro'||document.documentElement.classList.contains('tema-cl
 <div id="app" style="display:none;flex-direction:column;height:100vh;height:100dvh">
   <div class="ticker" id="tkr"><div class="tki">NEXUS PRO v6 <span class="tu">ONLINE</span></div></div>
   <div class="abody">
+    <nav id="nxM2" aria-label="Menú principal"></nav>
     <nav class="sb" id="sbEl">
       <div class="sb-top">
         <div class="sb-mk" onclick="toggleSB()" style="cursor:pointer"><i class="ti ti-shield-check"></i></div>
@@ -20386,6 +20466,7 @@ setTimeout(verificarAutoFacturacion, 5000);
       cargar();
     }
     cargarConReintento('parches-busqueda-premium.js'); // 58.94: búsqueda «Premium» (lupa → píldora) de toda la app; estilos en style#nxBusquedaPremiumCSSCSS
+    cargarConReintento('parches-menu-dos-niveles.js'); // 18-nov-2026: menú de dos niveles (estilo 7); estilos en style#nxMenu2; apagar con localStorage nx_m2_off='1'
     cargarConReintento('parches-menu-cristal.js'); // 30-sep-2026: menú lateral de cristal (chevron, buscador, Esc, deslizar); estilos en style#nxMenuCristal
     cargarConReintento('parches-nav-botones.js'); // 01-oct-2026: botones Atrás/Cerrar de las ventanas al estilo Apple (círculos de cristal, ✕ a la derecha, ‹ a la izquierda solo en ventanas apiladas)
     cargarConReintento('parches-seguros.js');
