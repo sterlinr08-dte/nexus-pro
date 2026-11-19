@@ -8515,6 +8515,18 @@
           </div>
         </div>`;
 
+      // 19-nov-2026: botones distinguibles en todos los temas (en la tienda salían los dos azules e iguales).
+      modal.dataset.tipo = tipo;
+      if (!document.getElementById('nxConfirmCSS')) {
+        const st = document.createElement('style'); st.id = 'nxConfirmCSS';
+        // Prefijo de 4 ids + 3 en el botón: debe ganarle a la regla del modo claro (5 ids) y al vidrio morado.
+        const P = '#nxConfirmModal#nxConfirmModal#nxConfirmModal#nxConfirmModal .modal';
+        st.textContent = P + ' button:is(#nxConfirmOk,#nxConfirmCancel):is(#nxConfirmOk,#nxConfirmCancel){justify-content:center!important;text-align:center!important;min-height:48px!important;box-shadow:none!important;background-image:none!important}'
+          + P + ' button#nxConfirmCancel#nxConfirmCancel#nxConfirmCancel{background-color:#fff!important;border:1.5px solid #e2e8f0!important;color:#334155!important}'
+          + P + ' button#nxConfirmOk#nxConfirmOk#nxConfirmOk{background-color:#2563eb!important;border:1.5px solid #2563eb!important;color:#fff!important}'
+          + '#nxConfirmModal#nxConfirmModal#nxConfirmModal#nxConfirmModal[data-tipo="danger"] .modal button#nxConfirmOk#nxConfirmOk#nxConfirmOk{background-color:#dc2626!important;border-color:#dc2626!important}';
+        document.head.appendChild(st);
+      }
       modal.classList.add('open');
 
       const close = (val) => {
