@@ -1497,35 +1497,37 @@
   // ═══════════════════════════════════════════════════════════
   // CARGA DE DATOS (API directa)
   // ═══════════════════════════════════════════════════════════
+  // 19-nov-2026 (auditoría «cargando»): si una carga falla se anota, para no mostrar RD$ 0 como si fuera real.
+  let _dcFallo = false;
   async function cargarAbonos() {
     const api = getAPI();
-    if (!api || !api.get) return [];
+    if (!api || !api.get) { _dcFallo = true; return []; }
     try {
       const data = await api.get('abonos', 'select=*&order=fecha.desc&limit=5000');
       return Array.isArray(data) ? data : [];
     } catch(e) {
       console.warn('No se pudieron cargar abonos:', e);
-      return [];
+      _dcFallo = true; return [];
     }
   }
   async function cargarTransferencias() {
     const api = getAPI();
-    if (!api || !api.get) return [];
+    if (!api || !api.get) { _dcFallo = true; return []; }
     try {
       const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=1000');
       return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
+    } catch(e) { _dcFallo = true; return []; }
   }
 
   async function cargarEntregasAdmin() {
     const api = getAPI();
-    if (!api || !api.get) return [];
+    if (!api || !api.get) { _dcFallo = true; return []; }
     try {
       const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=2000');
       return Array.isArray(data) ? data : [];
     } catch(e) {
       console.warn('No se pudieron cargar entregas_admin:', e);
-      return [];
+      _dcFallo = true; return [];
     }
   }
 
@@ -2249,12 +2251,13 @@
         promise.catch(e => { console.warn('Carga falló:', e); return fallback; }),
         new Promise(resolve => setTimeout(() => {
           console.warn('Timeout después de ' + ms + 'ms');
-          resolve(fallback);
+          _dcFallo = true; resolve(fallback);
         }, ms))
       ]);
     }
 
     let abonos = [], transferencias = [], entregas = [];
+    _dcFallo = false;
     try {
       const resultados = await Promise.all([
         withTimeout(cargarAbonos(), 15000, []),
@@ -2264,6 +2267,7 @@
       abonos = resultados[0] || [];
       transferencias = resultados[1] || [];
       entregas = resultados[2] || [];
+      if (_dcFallo) throw new Error('Una de las cargas falló');
     } catch(err) {
       console.error('Error al cargar Detalles de Cobro:', err);
       cont.innerHTML = `
@@ -4892,9 +4896,11 @@
   // ═══════════════════════════════════════════════════════════════
   // CARGA DE DATOS
   // ═══════════════════════════════════════════════════════════════
+  // 19-nov-2026 (auditoría «cargando»): si una carga falla se anota, para no decir «no hay pendientes» sin saberlo.
+  let _slFallo = false;
   async function cargarEntregas() {
     const api = getAPI();
-    if (!api || !api.get) return [];
+    if (!api || !api.get) { _slFallo = true; return []; }
     try {
       const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
       // Bloque 4D-1: "anular" ya NO borra la fila (queda anulado=true, trazable) — se excluye
@@ -4902,15 +4908,15 @@
       // entrega anulada no se quede pegada en "por confirmar" ni en el historial visible.
       // El rastro sigue existiendo en Auditoría (ENTREGA_ANULADA), esto solo saca el ruido.
       return (Array.isArray(data) ? data : []).filter(e => !e.anulado);
-    } catch(e) { return []; }
+    } catch(e) { _slFallo = true; return []; }
   }
   async function cargarTransferencias() {
     const api = getAPI();
-    if (!api || !api.get) return [];
+    if (!api || !api.get) { _slFallo = true; return []; }
     try {
       const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=500');
       return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
+    } catch(e) { _slFallo = true; return []; }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -5055,12 +5061,13 @@
         promise.catch(e => { console.warn('Carga falló:', e); return fallback; }),
         new Promise(resolve => setTimeout(() => {
           console.warn('Timeout después de ' + ms + 'ms');
-          resolve(fallback);
+          _slFallo = true; resolve(fallback);
         }, ms))
       ]);
     }
 
     let entregas = [], transferencias = [];
+    _slFallo = false;
     try {
       const resultados = await Promise.all([
         withTimeout(cargarEntregas(), 15000, []),
@@ -5068,8 +5075,10 @@
       ]);
       entregas = resultados[0] || [];
       transferencias = resultados[1] || [];
+      if (_slFallo) throw new Error('Una de las cargas falló');
     } catch(err) {
       console.error('Error al cargar Solicitudes:', err);
+      window.__nxSolicitudesFallo = true;
       view.innerHTML = `
         <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626;margin:20px">
           <div style="font-size:32px;margin-bottom:10px">⚠️</div>
@@ -5083,6 +5092,7 @@
       return;
     }
     
+    window.__nxSolicitudesFallo = false;
     // FILTRAR según rol
     let entregasView = entregas;
     let transferenciasView = transferencias;
