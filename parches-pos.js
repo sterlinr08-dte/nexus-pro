@@ -888,6 +888,12 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const open = s.classList.toggle('open');
     try { document.body.classList.toggle('nxTDrawer', open); } catch (e) {}
   };
+  // 19-nov-2026 (prueba de Muse, velo pegado): tocar el fondo oscuro SIEMPRE cierra (antes alternaba y, si la
+  // pantalla se había vuelto a dibujar con el cajón abierto, lo reabría o dejaba el velo solo).
+  window.nxPosCerrarSide = function () {
+    const s = document.getElementById('nxTSide'); if (s) s.classList.remove('open');
+    try { document.body.classList.remove('nxTDrawer'); } catch (e) {}
+  };
 
   function renderPOS(view) {
     const prevRol = _rolPreview ? (ROLES_DEF.find(r => r[0] === _rolPreview) || [_rolPreview, _rolPreview])[1] : '';
@@ -959,7 +965,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
       + sec('Inteligencia', it('ia', 'IA NEXUS', 'ti-brain'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
-        <aside class="nxTSide" id="nxTSide">
+        <aside class="nxTSide${document.body.classList.contains('nxTDrawer') ? ' open' : ''}" id="nxTSide">
           <div class="nxTBrand"><div class="nxTLogo"><i class="ti ti-building-store"></i></div><div class="nxTBiz">${esc(biz)}<small>PUNTO DE VENTA</small></div></div>
           <button type="button" class="nxTSearchBtn" onclick="window.nxBuscadorUniversal()"><i class="ti ti-search"></i> Buscar todo <span class="nxTSearchKbd">Ctrl K</span></button>
           <div class="nxTScroll">${nav}</div>
@@ -977,7 +983,7 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
           ${body}
         </div>
       </div>
-      <div class="nxTBackdrop" onclick="window.nxPosToggleSide()"></div>`;
+      <div class="nxTBackdrop" onclick="window.nxPosCerrarSide()"></div>`;
   }
 
   // ── INICIO: lanzador de apps estilo Odoo ──
@@ -14223,6 +14229,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       '.nxTSearchBtnM{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:17px;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
       '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
+      '}',
+      /* 19-nov-2026: la entrada animada de las vistas (.view.on, fill both) dejaba transform/filter en #v-pos y el cajón
+         fijo medía lo que la página (1412 px) en vez de la pantalla. Al terminar, la vista queda sin transform. */
+      '@media(max-width:860px){',
+      '#v-pos.view.on{animation-fill-mode:backwards}',
       '}',
       /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
          (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur).
