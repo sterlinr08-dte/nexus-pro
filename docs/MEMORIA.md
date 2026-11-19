@@ -43,6 +43,7 @@
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | Menú de dos niveles (estilo 7): riel de secciones + páginas; solo empresas de seguros; con el Punto de venta abierto queda solo el riel | 6069 (`#nxM2`, `parches-menu-dos-niveles.js`; apagar `nx_m2_off`) |
+| «Multiempresa» en la sección Inicio del menú de dos niveles, solo para el dueño (`rpc/mi_es_superadmin`, botón `#niMultiM2`) | 6076 (PR #547). La pantalla en sí sigue abriendo para cualquier admin si llega por otro camino |
 | Cajón ☰ del Punto de venta en el iPhone: el fondo oscuro siempre cierra, no queda velo pegado tras el refresco de Inicio y mide la pantalla | 6070 (PR #534; `nxPosCerrarSide`, `#v-pos.view.on{animation-fill-mode:backwards}` ≤860 px) |
 | Candado contra el doble toque en botones de dinero: Confirmar venta, Nota de crédito, Caja y Anular venta (POS), Aceptar transferencia y Registrar pago con bauche | 6071 (PR #537; apagar POS con `nx_candado_off`). Pendiente: pantallas que dicen «No hay…»/RD$ 0 cuando falla la carga (bitácora de la auditoría, PR #536) |
 | Preguntas de «Anular venta» y «Cerrar sesión» en la ventana de NEXUS PRO (`nxConfirm`, botones blanco/azul/rojo en todos los temas) y sombra al pie de la lista del cajón del Punto de venta | 6072 (PR #539). Regla: no usar `confirm()` del navegador en acciones nuevas; usar `nxConfirm` |
