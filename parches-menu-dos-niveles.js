@@ -41,6 +41,7 @@
   function seccionDe(n) {
     var oc = n.getAttribute('onclick') || '';
     if (/navConfig\(/.test(oc)) return 'config';
+    if (/nxAbrirMultiempresa/.test(oc)) return 'inicio';
     var m = oc.match(/nav\(\s*['"]([\w-]+)['"]/);
     if (m && VISTA_SEC[m[1]]) return VISTA_SEC[m[1]];
     if (n.closest('#sbContab')) return 'conta';
@@ -181,7 +182,29 @@
     window.nxMenu2Repintar = programar;
     seguirCajon();
     pintar();
+    agregarMultiempresa();
     return true;
+  }
+
+  /* 19-nov-2026 (dueño: «MULTI EMPRESA PONLO EN INICIO PERO SOLO YO PUEDO VERLO»): página «Multiempresa» dentro de la
+     sección Inicio, solo si el servidor confirma que quien entró es el dueño del sistema (rpc mi_es_superadmin, la misma
+     comprobación del Panel del Dueño). Para cualquier otro usuario, administradores incluidos, no aparece. */
+  function agregarMultiempresa() {
+    if (document.getElementById('niMultiM2')) return;
+    var api = (typeof API !== 'undefined') ? API : window.API;
+    if (!api || !api.post) return;
+    api.post('rpc/mi_es_superadmin', {}).then(function (r) {
+      if (!(r === true || r === 'true') || document.getElementById('niMultiM2')) return;
+      if (typeof window.nxAbrirMultiempresa !== 'function') return;
+      var ini = navEl.querySelector('.ni[onclick*="nav(\'dashboard\'"]');
+      var b = document.createElement('div');
+      b.className = 'ni'; b.id = 'niMultiM2'; b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0');
+      b.setAttribute('onclick', "window.nxAbrirMultiempresa();var v=document.getElementById('v-multiempresa');if(v&&v.classList.contains('on'))this.classList.add('on')");
+      b.setAttribute('onkeydown', "if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}");
+      b.innerHTML = '<i class="ti ti-building-skyscraper ni-i"></i><span class="ni-l">Multiempresa</span>';
+      if (ini && ini.parentNode) ini.parentNode.insertBefore(b, ini.nextSibling); else navEl.appendChild(b);
+      programar();
+    }).catch(function () {});
   }
   if (!iniciar()) {
     var intentos = 0, t = setInterval(function () { if (iniciar() || ++intentos > 40) clearInterval(t); }, 250);
