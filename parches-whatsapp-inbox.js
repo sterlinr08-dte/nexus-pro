@@ -1725,7 +1725,17 @@ html.tema-glass-oscuro #v-waInbox .nxWaBaucheIa{color:#6ee7b7}
       hilosConReintentoProgramado.delete(hiloId);
       if (hiloAbiertoId !== hiloId || mensajesHiloId === hiloId) return; // ya no aplica, o ya se resolvio por otra via
       if (hilosCargando.has(hiloId)) { programarReintentoCarga(hiloId); return; }
-      cargarMensajes(hiloId).then(exito => { if (exito && hiloAbiertoId === hiloId) pintarDetalle(); });
+      cargarMensajes(hiloId).then(exito => {
+        if (exito && hiloAbiertoId === hiloId) { pintarDetalle(); return; }
+        // 19-nov-2026 (auditoría «cargando»): si sigue sin cargar, se avisa con «Reintentar» (antes quedaba
+        // «Cargando…» para siempre) y se vuelve a intentar solo en 10 s.
+        if (hiloAbiertoId !== hiloId || mensajesHiloId === hiloId || hilosCargando.has(hiloId)) return;
+        const caja = document.querySelector('#nxWaDetalle .nxWaMsgs');
+        if (caja) caja.innerHTML = '<div class="nxWaEmpty" role="alert">No se pudieron cargar los mensajes.<br><button type="button" class="nxWaReintentar" style="margin-top:10px;min-height:44px;padding:0 16px;border-radius:12px;border:0;background:#dc2626;color:#fff;font:inherit;font-weight:700;cursor:pointer">Reintentar</button></div>';
+        const bt = caja && caja.querySelector('.nxWaReintentar');
+        if (bt) bt.onclick = () => { bt.disabled = true; bt.textContent = 'Cargando…'; cargarMensajes(hiloId).then(ok => { if (ok && hiloAbiertoId === hiloId) pintarDetalle(); else { bt.disabled = false; bt.textContent = 'Reintentar'; } }); };
+        setTimeout(() => { if (hiloAbiertoId === hiloId && mensajesHiloId !== hiloId) programarReintentoCarga(hiloId); }, 7000);
+      });
     }, 3000);
   }
 

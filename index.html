@@ -12385,20 +12385,22 @@ async function cargarTimelineCliente(id){
     if(f.created_at)eventos.push({ts:f.created_at,ic:'ti-file-invoice',cls:'blue',tit:'Factura emitida',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''} · ${fmt(Number(f.prima_base||0)+Number(f.prima_deps||0))}`});
     if(f.estado==='Anulada'&&f.updated_at)eventos.push({ts:f.updated_at,ic:'ti-ban',cls:'err',tit:'Factura anulada',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''}`});
   });
+  let tlFallo=false; // 19-nov-2026: si falla una consulta no se dice «Sin eventos» como si fuera cierto
   try{
     const abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=30`)||[];
     abonos.forEach(a=>eventos.push({ts:a.created_at||a.fecha,ic:'ti-cash',cls:'ok',tit:'Pago recibido',desc:`${fmt(a.monto)} · ${a.metodo||''}`}));
-  }catch(e){}
+  }catch(e){tlFallo=true;}
   try{
     const aud=await API.get('auditoria',`cliente_id=eq.${id}&order=ts.desc&limit=30`)||[];
     const ICONS={CLIENTE_EDITADO:['ti-edit','blue','Cliente editado'],CLIENTE_INHABILITADO:['ti-user-off','err','Cliente inhabilitado'],DOCUMENTO_SUBIDO:['ti-file-upload','purple','Documento agregado'],AJUSTE_DEUDA_ANTERIOR:['ti-adjustments','warn','Deuda anterior ajustada'],FACTURA_PRECIO_CORREGIDO:['ti-pencil','warn','Precio de factura corregido']};
     aud.forEach(a=>{const info=ICONS[a.accion];if(!info)return;eventos.push({ts:a.ts,ic:info[0],cls:info[1],tit:info[2],desc:a.detalle||''});});
-  }catch(e){}
+  }catch(e){tlFallo=true;}
   if(!document.getElementById('sfTimeline'))return;// el modal pudo cerrarse mientras cargaba
-  if(!eventos.length){box.innerHTML='<div class="sf-empty">Sin eventos todavía</div>';return;}
+  const tlAviso=tlFallo?`<div role="alert" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;margin-bottom:8px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px"><span style="flex:1;min-width:160px">Parte del historial no se pudo cargar.</span><button type="button" onclick="cargarTimelineCliente('${id}')" style="min-height:44px;padding:0 12px;border-radius:10px;border:0;background:#dc2626;color:#fff;font-weight:700;cursor:pointer">Reintentar</button></div>`:'';
+  if(!eventos.length){box.innerHTML=tlAviso||'<div class="sf-empty">Sin eventos todavía</div>';return;}
   eventos.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
   const fCorta=s=>{try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s||'').slice(0,10);}};
-  box.innerHTML=eventos.slice(0,15).map(e=>`<div class="sf-tl-item">
+  box.innerHTML=tlAviso+eventos.slice(0,15).map(e=>`<div class="sf-tl-item">
       <div class="sf-tl-dot" style="background:var(--sf-${e.cls==='purple'?'primary':e.cls==='warn'?'warn':e.cls==='err'?'err':e.cls==='ok'?'ok':'primary'})"><i class="ti ${e.ic}" style="font-size:12px"></i></div>
       <div class="sf-tl-b"><b>${e.tit}</b><div class="when">${fCorta(e.ts)}</div><div class="desc">${escHtml(e.desc)}</div></div>
     </div>`).join('');
@@ -12745,9 +12747,17 @@ function pintarC360Tab(){
   const cache=_c360Cache[c.id]||{};
   const fns={resumen:c360TabResumen,financiamiento:c360TabFinanciamiento,pagos:c360TabPagos,facturas:c360TabFacturas,pos:c360TabPOS,equipos:c360TabEquipos,seguros:c360TabSeguros,documentos:c360TabDocumentos,actividad:c360TabActividad,historial:c360TabHistorial};
   const fn=fns[_c360Tab]||c360TabResumen;
-  body.innerHTML=fn(c,cache);
+  // 19-nov-2026 (auditoría «cargando»): si alguna consulta falló, se avisa; las pestañas vacías podrían no ser reales.
+  const aviso=cache._fallo?`<div role="alert" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;margin-bottom:10px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px"><span style="flex:1;min-width:180px">Parte de la información no se pudo cargar.</span><button type="button" onclick="c360Reintentar('${c.id}')" style="min-height:44px;padding:0 12px;border-radius:10px;border:0;background:#dc2626;color:#fff;font-weight:700;cursor:pointer">Reintentar</button></div>`:'';
+  body.innerHTML=aviso+fn(c,cache);
 }
 
+function c360Reintentar(id){
+  delete _c360Cache[id];
+  try{_c360OrgPrestamos=null;_c360OrgPrestamoClientes=null;_c360OrgPosClientes=null;}catch(e){}
+  try{if(typeof _c360OrgPosReparaciones!=='undefined')_c360OrgPosReparaciones=null;}catch(e){}
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(c){pintarC360Tab();c360CargarTodo(c);}
+}
 function c360Empty(msg){return `<div class="c360-empty-tab"><i class="ti ti-inbox" style="font-size:22px"></i><br>${escHtml(msg)}</div>`;}
 function c360Norm(s){return String(s||'').replace(/\D/g,'');}
 function c360Match(c,cedOtra,telOtro){
@@ -12765,39 +12775,39 @@ async function c360CargarTodo(c){
   const repintar=()=>{if(_c360Sel===id)pintarC360Tab();};
 
   if(cache.abonos===undefined){
-    try{cache.abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=100`)||[];}catch(e){cache.abonos=[];}
+    try{cache.abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=100`)||[];}catch(e){cache._fallo=true;cache.abonos=[];}
     repintar();
   }
   if(cache.auditoria===undefined){
-    try{cache.auditoria=await API.get('auditoria',`cliente_id=eq.${id}&order=ts.desc&limit=60`)||[];}catch(e){cache.auditoria=[];}
+    try{cache.auditoria=await API.get('auditoria',`cliente_id=eq.${id}&order=ts.desc&limit=60`)||[];}catch(e){cache._fallo=true;cache.auditoria=[];}
     repintar();
   }
   if(cache.prestamos===undefined){
     try{
       if(_c360OrgPrestamos===null)_c360OrgPrestamos=await API.get('prestamos','order=created_at.desc&limit=1000')||[];
       cache.prestamos=_c360OrgPrestamos.filter(p=>c360Match(c,p.cedula,p.telefono));
-    }catch(e){cache.prestamos=[];}
+    }catch(e){cache._fallo=true;cache.prestamos=[];}
     if(cache.prestamos.length){
-      try{cache.prestamoPagos=await API.get('prestamo_pagos','prestamo_id=in.('+cache.prestamos.map(p=>p.id).join(',')+')&order=fecha.desc')||[];}catch(e){cache.prestamoPagos=[];}
+      try{cache.prestamoPagos=await API.get('prestamo_pagos','prestamo_id=in.('+cache.prestamos.map(p=>p.id).join(',')+')&order=fecha.desc')||[];}catch(e){cache._fallo=true;cache.prestamoPagos=[];}
     }else cache.prestamoPagos=[];
     try{
       if(_c360OrgPrestamoClientes===null)_c360OrgPrestamoClientes=await API.get('prestamo_clientes','order=created_at.desc&limit=1000')||[];
       cache.prestamoCliente=_c360OrgPrestamoClientes.find(p=>c360Match(c,p.cedula,p.telefono))||null;
-    }catch(e){cache.prestamoCliente=null;}
+    }catch(e){cache._fallo=true;cache.prestamoCliente=null;}
     repintar();
   }
   if(cache.posCliente===undefined){
     try{
       if(_c360OrgPosClientes===null)_c360OrgPosClientes=await API.get('pos_clientes','order=created_at.desc&limit=2000')||[];
       cache.posCliente=_c360OrgPosClientes.find(p=>c360Match(c,p.cedula,p.telefono))||null;
-    }catch(e){cache.posCliente=null;}
+    }catch(e){cache._fallo=true;cache.posCliente=null;}
     if(cache.posCliente){
       const pcid=cache.posCliente.id;
-      try{cache.posVentas=await API.get('pos_ventas',`cliente_id=eq.${pcid}&order=fecha.desc&limit=100`)||[];}catch(e){cache.posVentas=[];}
-      try{cache.posFinanciamientos=await API.get('pos_financiamientos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=50`)||[];}catch(e){cache.posFinanciamientos=[];}
-      try{cache.posDocumentos=await API.get('pos_documentos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=100`)||[];}catch(e){cache.posDocumentos=[];}
+      try{cache.posVentas=await API.get('pos_ventas',`cliente_id=eq.${pcid}&order=fecha.desc&limit=100`)||[];}catch(e){cache._fallo=true;cache.posVentas=[];}
+      try{cache.posFinanciamientos=await API.get('pos_financiamientos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=50`)||[];}catch(e){cache._fallo=true;cache.posFinanciamientos=[];}
+      try{cache.posDocumentos=await API.get('pos_documentos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=100`)||[];}catch(e){cache._fallo=true;cache.posDocumentos=[];}
       if(cache.posVentas.length){
-        try{cache.posVentaItems=await API.get('pos_venta_items','venta_id=in.('+cache.posVentas.map(v=>v.id).join(',')+')')||[];}catch(e){cache.posVentaItems=[];}
+        try{cache.posVentaItems=await API.get('pos_venta_items','venta_id=in.('+cache.posVentas.map(v=>v.id).join(',')+')')||[];}catch(e){cache._fallo=true;cache.posVentaItems=[];}
       }else cache.posVentaItems=[];
     }else{cache.posVentas=[];cache.posFinanciamientos=[];cache.posDocumentos=[];cache.posVentaItems=[];}
     repintar();
@@ -12810,7 +12820,7 @@ async function c360CargarTodo(c){
         if(rTel.slice(-10).length===10&&cTel.length===10)return rTel.slice(-10)===cTel;
         return String(r.cliente_nombre||'').toLowerCase().trim()===String(c.nom||'').toLowerCase().trim();
       });
-    }catch(e){cache.posReparaciones=[];}
+    }catch(e){cache._fallo=true;cache.posReparaciones=[];}
     repintar();
   }
 }
@@ -13708,6 +13718,18 @@ let _asientosCargados=false,_asientosCargando=null;
 // crece, pero la Contabilidad NO es la pantalla de inicio. Por eso NO bloquea el
 // arranque: se trae en segundo plano y al terminar recalcula los saldos. Las
 // vistas que la usan (mayor/asientos/balance/pyg) la esperan vía nav().
+function nxAsiAviso(view,estado){
+  document.querySelectorAll('.nxAsiAviso').forEach(e=>e.remove());
+  if(!estado)return;
+  const v=document.getElementById('v-'+view);if(!v)return;
+  const d=document.createElement('div');d.className='nxAsiAviso';d.setAttribute('role',estado==='fallo'?'alert':'status');
+  d.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;border-radius:14px;font-size:14px;font-weight:600;'+(estado==='fallo'?'background:#fef2f2;border:1px solid #fecaca;color:#991b1b':'background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af');
+  d.innerHTML=estado==='fallo'
+    ?'<i class="ti ti-wifi-off" aria-hidden="true"></i><span style="flex:1;min-width:180px">No se pudieron cargar los asientos. Los saldos no están completos.</span><button type="button" style="min-height:44px;padding:0 14px;border-radius:12px;border:0;background:#dc2626;color:#fff;font:inherit;font-weight:700;cursor:pointer">Reintentar</button>'
+    :'<span class="spin" aria-hidden="true"></span><span>Cargando asientos… los saldos se completan en un momento.</span>';
+  const b=d.querySelector('button');if(b)b.onclick=()=>nav(view);
+  v.prepend(d);
+}
 function cargarAsientosBG(){
   if(_asientosCargados)return Promise.resolve();
   if(_asientosCargando)return _asientosCargando;
@@ -14089,8 +14111,10 @@ function nav(view,el){
   // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
   // terminen de bajar, los traemos y re-pintamos esa vista (sub-segundo).
   if(['mayor','asientos','balance','pyg'].includes(view)&&!_asientosCargados){
-    cargarAsientosBG().then(()=>{if(typeof fn[view]==='function')fn[view]();});
-  }
+    // 19-nov-2026 (auditoría «cargando»): mientras bajan los asientos se avisa; si fallan, «Reintentar» en vez de RD$ 0.
+    nxAsiAviso(view,'cargando');
+    cargarAsientosBG().then(()=>{if(_asientosCargados){nxAsiAviso(view,null);if(typeof fn[view]==='function')fn[view]();}else nxAsiAviso(view,'fallo');});
+  }else nxAsiAviso(view,null);
   // Limpiar campos de búsqueda al cambiar de ventana
   ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.querySelectorAll('.gs-input').forEach(i=>{i.value='';});
@@ -14362,8 +14386,8 @@ async function rChartCobros(){
     meses.push({mes,anio,lbl:MESES[mes-1].slice(0,3),total:0});
   }
   const hoyIso=hoyRD();
-  let abonos=[];
-  try{abonos=await nxInicioAbonos(hoyIso);}catch(e){abonos=[];}
+  let abonos=[],abonosFallo=false;
+  try{abonos=await nxInicioAbonos(hoyIso);}catch(e){abonos=[];abonosFallo=true;}
   const diaActual=diasEntre(cicloInicio(mc.anio,mc.mes),hoyIso); // día dentro del ciclo (0 = el 20)
   let mesAnt=mc.mes-1,anioAnt=mc.anio; if(mesAnt<1){mesAnt=12;anioAnt--;}
   const iniAnt=cicloInicio(anioAnt,mesAnt);
@@ -14396,6 +14420,8 @@ async function rChartCobros(){
     } else _kcs.textContent=`día ${diaActual+1} del ciclo`;
   }
   try{if(typeof nxIGCiclo==='function')nxIGCiclo({abonos,mc,diaActual,cobCiclo,antMismoDia});}catch(e){console.error('[Inicio glass]',e);}
+  // 19-nov-2026 (auditoría «cargando»): si no se pudieron traer los cobros, no se muestra RD$ 0 como si fuera real.
+  if(abonosFallo){try{nxInicioCobrosFallo();}catch(e){}}
   const vals=meses.map(m=>m.total);
   const max=Math.max(...vals,1);
   // Dimensiones del SVG
@@ -14447,6 +14473,17 @@ async function rChartCobros(){
 const _nxIG={porDia:null,nDia:null,calOff:0,crm:null,crmTs:0,crmP:null,agt:null,agtErr:false,agtTs:0,agtPer:'',agtP:null,hoyCobros:null};
 const NX_IG_TIPO={seguimiento:'Seguimiento',documento:'Documento',cobro:'Cobro',afiliacion:'Afiliación',renovacion:'Renovación',otro:'Otro'};
 function nxIGOn(){return document.documentElement.classList.contains('nx-ig')&&!!document.getElementById('nxIG');}
+function nxInicioCobrosFallo(){
+  const btn='<button type="button" onclick="event.stopPropagation();this.disabled=true;this.textContent=\'Cargando…\';try{rChartCobros();}catch(e){}" style="min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;font:inherit;font-weight:700;cursor:pointer">Reintentar</button>';
+  ['nxIGk1v'].forEach(id=>nxIGSet(id,'—'));
+  nxIGSet('nxIGk1c','No se pudo cargar');
+  nxIGSet('nxIGchs','No se pudieron cargar los cobros del ciclo. '+btn);
+  // «Hoy, en vivo» y el saludo tampoco dicen «0 cobros» sin saberlo.
+  _nxIG.hoyCobros=null;try{nxIGSub();}catch(e){}
+  const sub=document.getElementById('nxIGSub');if(sub)sub.innerHTML=sub.innerHTML.replace(/Hoy llevas <b>[^<]*<\/b>/,'No se pudieron cargar los cobros de hoy');
+  nxIGSet('nxCVtot','—');nxIGSet('nxCVmeta','No se pudieron cargar los cobros de hoy');
+  const kcm=document.getElementById('kpiCobMes');if(kcm)kcm.innerHTML='—';
+}
 function nxIGSet(id,html){const e=document.getElementById(id);if(e&&e.innerHTML!==html)e.innerHTML=html;return e;}
 function nxIGIni(nom){return String(nom||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'··';}
 const nxIGMes3=m=>MESES[m-1].slice(0,3).toLowerCase();
