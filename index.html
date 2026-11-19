@@ -11297,9 +11297,14 @@ async function doLogin(){
   }
 }
 
-function logout(forzado){
+function logout(forzado,_confirmado){
   // forzado=true: cierre automático (inactividad/inconsistencia), sin preguntar
-  if(forzado||confirm('¿Cerrar sesión?')){
+  // 19-nov-2026 (prueba de Muse): la pregunta va en la ventana de NEXUS PRO; sin ella, la del navegador.
+  if(!forzado&&!_confirmado&&typeof window.nxConfirm==='function'){
+    window.nxConfirm('¿Cerrar sesión?','',{ok:'Cerrar sesión',cancel:'Seguir aquí',tipo:'info'}).then(function(ok){if(ok)logout(false,true);});
+    return;
+  }
+  if(forzado||_confirmado||confirm('¿Cerrar sesión?')){
     try{logAudit('LOGOUT',forzado?'Sesión cerrada automáticamente':'Sesión cerrada por el usuario','Seguridad');}catch(e){}
     sessionStorage.removeItem('nx_sesion');
     sessionStorage.removeItem('nx_sesion_actividad');

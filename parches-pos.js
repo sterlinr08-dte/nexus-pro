@@ -888,6 +888,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const open = s.classList.toggle('open');
     try { document.body.classList.toggle('nxTDrawer', open); } catch (e) {}
   };
+  // 19-nov-2026 (prueba de Muse: «no se ve Contabilidad»): sombra al pie de la lista del cajón mientras quedan
+  // opciones más abajo; se quita al llegar al final.
+  function nxTMasAbajo(el) { try { if (el) el.classList.toggle('nxMas', el.scrollTop + el.clientHeight < el.scrollHeight - 4); } catch (e) {} }
+  window.nxTMasAbajo = nxTMasAbajo;
+  try {
+    document.addEventListener('scroll', function (e) { const t = e.target; if (t && t.classList && t.classList.contains('nxTScroll')) nxTMasAbajo(t); }, true);
+    new MutationObserver(function () { const el = document.querySelector('#nxTSide .nxTScroll'); if (el && !el.__nxMas) { el.__nxMas = 1; requestAnimationFrame(function () { nxTMasAbajo(el); }); } })
+      .observe(document.documentElement, { childList: true, subtree: true });
+    window.addEventListener('resize', function () { nxTMasAbajo(document.querySelector('#nxTSide .nxTScroll')); });
+  } catch (e) {}
   // 19-nov-2026 (prueba de Muse, velo pegado): tocar el fondo oscuro SIEMPRE cierra (antes alternaba y, si la
   // pantalla se había vuelto a dibujar con el cajón abierto, lo reabría o dejaba el velo solo).
   window.nxPosCerrarSide = function () {
@@ -6802,11 +6812,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         }
       } catch (e) {}
     }
-    const msgBase = '¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.';
-    const msg = _totalPagadoCuotas > 0
-      ? msgBase + '\n\nOJO: el cliente ya pagó ' + fmt(_totalPagadoCuotas) + ' en cuotas de este financiamiento. Ese dinero hay que devolvérselo (efectivo o nota de crédito) — el sistema NO lo hace solo, es a tu criterio.'
-      : msgBase;
-    if (!confirm(msg)) return;
+    // 19-nov-2026 (prueba de Muse): la pregunta va en la ventana de NEXUS PRO (antes, confirm() del navegador,
+    // que algunos navegadores o herramientas cierran sin mostrar). Sin la ventana propia, se usa la del navegador.
+    const tituloAnul = '¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '?';
+    const msgAnul = 'Se devolverá el stock.' + (_totalPagadoCuotas > 0
+      ? '\n\nOJO: el cliente ya pagó ' + fmt(_totalPagadoCuotas) + ' en cuotas de este financiamiento. Ese dinero hay que devolvérselo (efectivo o nota de crédito) — el sistema NO lo hace solo, es a tu criterio.'
+      : '');
+    const okAnul = (typeof window.nxConfirm === 'function')
+      ? await window.nxConfirm(tituloAnul, msgAnul, { ok: 'Sí, anular', cancel: 'No', tipo: 'danger' })
+      : confirm(tituloAnul + ' ' + msgAnul);
+    if (!okAnul) return;
     try {
       await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
       let _itemsAnul = [];
@@ -14121,6 +14136,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       '.nxTSearchBtn:active{background:rgba(255,255,255,.1)}',
       '.nxTSearchKbd{margin-left:auto;font-size:9px;font-weight:800;background:rgba(255,255,255,.12);border-radius:5px;padding:2px 6px;letter-spacing:.3px}',
       '.nxTScroll{flex:1;overflow-y:auto;padding:8px 9px 14px}',
+      '.nxTScroll.nxMas{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 44px),transparent)}',
       '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(231,234,242,.36);margin:13px 8px 5px}',
       '.nxTSec:first-child{margin-top:3px}',
       '.nxTNav{display:flex;align-items:center;gap:9px;width:100%;border:0;cursor:pointer;background:transparent;color:rgba(231,234,242,.68);text-align:left;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:1px;font-family:inherit}',
