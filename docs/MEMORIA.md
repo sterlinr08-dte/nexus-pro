@@ -44,6 +44,7 @@
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | Menú de dos niveles (estilo 7): riel de secciones + páginas; solo empresas de seguros; con el Punto de venta abierto queda solo el riel | 6069 (`#nxM2`, `parches-menu-dos-niveles.js`; apagar `nx_m2_off`) |
 | Cajón ☰ del Punto de venta en el iPhone: el fondo oscuro siempre cierra, no queda velo pegado tras el refresco de Inicio y mide la pantalla | 6070 (PR #534; `nxPosCerrarSide`, `#v-pos.view.on{animation-fill-mode:backwards}` ≤860 px) |
+| Candado contra el doble toque en botones de dinero: Confirmar venta, Nota de crédito, Caja y Anular venta (POS), Aceptar transferencia y Registrar pago con bauche | 6071 (PR #537; apagar POS con `nx_candado_off`). Pendiente: pantallas que dicen «No hay…»/RD$ 0 cuando falla la carga (bitácora de la auditoría, PR #536) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
 | Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
 | Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, **publicado** (PR #406, webhook v14); Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
