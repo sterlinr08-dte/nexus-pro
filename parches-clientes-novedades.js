@@ -54,9 +54,23 @@
     }catch(e){console.warn('[Novedades] sync',e);}
   }
 
+  // 19-nov-2026 (prueba de Muse): sin sesión (pantalla de entrada) o en una tienda no hay novedades de seguros que
+  // cargar; antes salía «No se pudieron cargar las novedades» al cerrar sesión.
+  function puedeCargar(){
+    try{
+      var s=window.sesion||(typeof sesion!=='undefined'?sesion:null);
+      if(!s){var raw=sessionStorage.getItem('nx_sesion');if(!raw)return false;s=JSON.parse(raw)||{};}
+      if(!s||!s.id)return false;
+      if(s.org&&s.org.tipo&&s.org.tipo!=='seguros')return false;
+      if(!s.org){var t=localStorage.getItem('nx_org_tipo');if(t&&t!=='seguros')return false;}
+      if(document.body&&/\borg-(tienda|rifa|consultorio)\b/.test(document.body.className))return false;
+      return true;
+    }catch(e){return false;}
+  }
   async function cargar(opts){
     opts=opts||{};
     if(cargando)return;
+    if(!puedeCargar())return;
     cargando=true;
     try{
       if(opts.sync)await rpcSync();

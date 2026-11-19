@@ -11304,6 +11304,7 @@ function logout(forzado,_confirmado){
     window.nxConfirm('¿Cerrar sesión?','',{ok:'Cerrar sesión',cancel:'Seguir aquí',tipo:'info'}).then(function(ok){if(ok)logout(false,true);});
     return;
   }
+  let _esDemo=false;try{_esDemo=!!(sesion&&sesion.org&&sesion.org.slug==='demo');}catch(e){}
   if(forzado||_confirmado||confirm('¿Cerrar sesión?')){
     try{logAudit('LOGOUT',forzado?'Sesión cerrada automáticamente':'Sesión cerrada por el usuario','Seguridad');}catch(e){}
     sessionStorage.removeItem('nx_sesion');
@@ -11320,6 +11321,8 @@ function logout(forzado,_confirmado){
     // conservar no se puede renovar al reabrir la app, y el sistema termina
     // pidiendo la contraseña igual — justo lo que se quería evitar.
     try{if(forzado&&nxRecordado()){if(_nxRefreshTimer)clearInterval(_nxRefreshTimer);}else{nxClearAuth();}}catch(e){}
+    // 19-nov-2026 (prueba de Muse): el visitante de la demo vuelve a «Entrar a la demo», no a la pantalla de usuario y clave.
+    if(!forzado&&_esDemo){location.href='/demo';return;}
     location.reload();
   }
 }
