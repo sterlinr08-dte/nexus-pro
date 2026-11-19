@@ -311,9 +311,27 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
     if (typeof window.regAbono !== 'function' || !window.__nxRegAbonoBauche) return false; // va por fuera de la capa del bauche
     window.__nxRegAbonoBaucheUnico = true;
     const orig = window.regAbono;
+    // 19-nov-2026 (auditoría «cargando»): mientras se verifica el comprobante el botón «Registrar pago» quedaba
+    // encendido; un segundo toque podía iniciar otro cobro. Ahora se apaga desde el primer toque.
+    let cobrando = false;
     window.regAbono = async function () {
       const ref = window._nxBaucheURL || null;
       if (!ref) return orig.apply(this, arguments);
+      if (cobrando) { toast('info', 'Guardando, espere'); return; }
+      cobrando = true;
+      const btn = document.getElementById('btnAbo');
+      const etiqueta = btn ? btn.innerHTML : null;
+      const estaba = btn ? btn.disabled : false;
+      let llegoAlCobro = false;
+      if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); btn.innerHTML = '<span class="spin"></span> Verificando comprobante…'; }
+      // Devuelve el botón tal como estaba, para que el cobro de siempre lo maneje igual que sin bauche.
+      const soltarBoton = () => { if (btn && btn.getAttribute('aria-busy') === 'true') { btn.innerHTML = etiqueta; btn.disabled = estaba; btn.removeAttribute('aria-busy'); } };
+      try {
+        return await cobrarConBauche.apply(this, [ref, soltarBoton, () => { llegoAlCobro = true; }].concat(Array.from(arguments)));
+      } finally { cobrando = false; if (!llegoAlCobro) soltarBoton(); }
+    };
+    async function cobrarConBauche(ref, soltarBoton, marcarCobro) {
+      const args = Array.from(arguments).slice(3);
       if (!V || V.ref !== ref) { revisarCambio(); }
       if (V && V.promesa) { try { await V.promesa; } catch (e) {} }
       const v = V;
@@ -340,7 +358,8 @@ html.tema-glass-oscuro #nxBaucheCheck .aviso{color:#FCD34D}
       }
       const ult = () => { try { return (typeof _ultimoAbono !== 'undefined') ? _ultimoAbono : window._ultimoAbono; } catch (e) { return window._ultimoAbono; } };
       const antes = ult();
-      const r = await orig.apply(this, arguments);
+      soltarBoton(); marcarCobro();
+      const r = await orig.apply(this, args);
       const desp = ult();
       if (idComp && desp && desp !== antes && desp.abonoId) {
         try { await rpc('comprobante_vincular', { p_id: idComp, p_abono_id: desp.abonoId }); } catch (e) { console.warn('[bauche único] vincular', e); }

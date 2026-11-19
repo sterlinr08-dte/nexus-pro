@@ -14944,6 +14944,51 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     } catch (e) { toast('err', 'La venta se registró pero el plan de cuotas falló', finErrTxt(e) + '. Crea el financiamiento desde Cuotas.'); }
   }
 
+  // ── 19-nov-2026 (auditoría «cargando»): candado contra el doble toque en las acciones de dinero ──
+  // Mientras una acción guarda, un segundo toque no hace nada (avisa «Guardando, espere») y el botón queda
+  // apagado. El candado se suelta siempre al terminar (finally), haya salido bien o mal.
+  // Apagar en un equipo: localStorage.nx_candado_off='1'.
+  (function () {
+    let apagado = false; try { apagado = localStorage.getItem('nx_candado_off') === '1'; } catch (e) {}
+    if (apagado) return;
+    const enCurso = {};
+    window.__nxPosEnCurso = enCurso;
+    function avisar() { try { toast('info', 'Guardando, espere'); } catch (e) {} }
+    function candado(nombre, clave, selBotones) {
+      const orig = window[nombre];
+      if (typeof orig !== 'function' || orig.__nxCandado) return;
+      const env = async function () {
+        const k = typeof clave === 'function' ? clave.apply(this, arguments) : clave;
+        if (enCurso[k]) { avisar(); return; }
+        enCurso[k] = true;
+        const bs = selBotones ? Array.from(document.querySelectorAll(typeof selBotones === 'function' ? selBotones.apply(this, arguments) : selBotones)).filter(b => !b.disabled) : [];
+        bs.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); b.classList.add('nxGuardando'); });
+        try { return await orig.apply(this, arguments); }
+        finally {
+          enCurso[k] = false;
+          bs.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); b.classList.remove('nxGuardando'); });
+        }
+      };
+      env.__nxCandado = true;
+      window[nombre] = env;
+    }
+    candado('nxPosConfirmar', 'venta', '.nxPgGo');
+    // «Confirmar» desde Factura llama a nxPosConfirmar; si ya hay una venta guardándose no debe tocar la ventana
+    // de impresión/WhatsApp de la primera.
+    const facOrig = window.nxFacConfirmar;
+    if (typeof facOrig === 'function') {
+      window.nxFacConfirmar = function () { if (enCurso.venta) { avisar(); return; } return facOrig.apply(this, arguments); };
+    }
+    candado('nxDevGuardar', 'notaCredito');
+    candado('nxPosAddMov', 'movCaja', '#nxPosMov .fe .btn.bc1');
+    candado('nxPosAnularVenta', function (id) { return 'anular:' + id; });
+    try {
+      const st = document.createElement('style'); st.id = 'nxCandadoCSS';
+      st.textContent = '.nxGuardando{opacity:.6;cursor:progress!important}';
+      document.head.appendChild(st);
+    } catch (e) {}
+  })();
+
 })();
 
 /* ── Señal: parches.js terminó de aplicar estilos (para ocultar el splash/loader) ── */

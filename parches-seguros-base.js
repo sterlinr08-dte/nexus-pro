@@ -5706,7 +5706,17 @@
   // Bloque 4C: pasa por transferencias_aceptar — valida autoridad, candado por agente
   // y saldo disponible del origen server-side (antes solo escribía estado='aceptada'
   // a ciegas, sin verificar si el que entrega de verdad tenía el dinero).
+  // 19-nov-2026 (auditoría «cargando»): un segundo toque mientras se acepta no hace nada; el botón queda apagado.
+  const _aceptandoTx = new Set();
   window.nxAceptarTransferencia = async function(id) {
+    if (_aceptandoTx.has(String(id))) { if (typeof window.toast === 'function') window.toast('info', 'Guardando, espere'); return; }
+    _aceptandoTx.add(String(id));
+    const _bts = Array.from(document.querySelectorAll('[onclick*="nxAceptarTransferencia"]')).filter(b => String(b.getAttribute('onclick')).indexOf(String(id)) >= 0);
+    _bts.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    try { return await _nxAceptarTransferenciaBase(id); }
+    finally { _aceptandoTx.delete(String(id)); _bts.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); }); }
+  };
+  async function _nxAceptarTransferenciaBase(id) {
     const api = getAPI();
     if (!api?.post) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
@@ -5726,7 +5736,7 @@
       console.error('Error al aceptar:', e);
       if (typeof window.toast === 'function') window.toast('err', 'No se pudo aceptar', rpcErr(e));
     }
-  };
+  }
 
   // Rechazar transferencia entrante — ahora con motivo (queda guardado y visible,
   // igual que rifa_boletos.motivo_rechazo). Antes no se pedía ningún motivo.
