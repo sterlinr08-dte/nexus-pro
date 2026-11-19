@@ -80,8 +80,12 @@
   const nombreMes = (m, a) => (MES[(m || 1) - 1] || '') + ' ' + a;
 
   /* Facturas */
+  // 19-nov-2026 (auditoría «cargando»): si la carga general falló, se dice eso y no «no hay…».
+  const cargaFallo = () => !!window.__nxCargaFallo;
+  const vacioFallo = () => vacioHTML('err', 'ti-wifi-off', 'No se pudieron cargar los datos', 'Revise la conexión y toque Reintentar.', [{ t: 'Reintentar', k: 'carga-reintentar' }]);
   function vacioFacturas(tb) {
     const e = soloVacio(tb); if (!e) return;
+    if (cargaFallo()) { tb.innerHTML = vacioFallo(); return; }
     const ST_ = G('ST') || {}; const fac = ST_.facturas || [];
     const mc = (G('mesCorte') || (() => ({ mes: new Date().getMonth() + 1, anio: new Date().getFullYear() })))();
     const mes = parseInt(val('fMes') || mc.mes, 10), anio = parseInt(val('fAnio') || mc.anio, 10);
@@ -117,6 +121,7 @@
   /* Cobros */
   function vacioCobros(tb) {
     if (!soloVacio(tb)) return;
+    if (cargaFallo()) { tb.innerHTML = vacioFallo(); return; }
     const q = val('cobQ').trim(), ag = val('fAgenteCob'), est = val('fCobEst');
     let h;
     if (q || ag) h = vacioHTML('', 'ti-search-off', 'Ningún cliente coincide', (q ? `Búsqueda: «${q}». ` : '') + 'Quite los filtros para ver a todos.', [{ t: 'Quitar filtros', k: 'cob-limpiar' }]);
@@ -151,6 +156,7 @@
     else if (k === 'cob-limpiar') { limpiarLupa('cobQLupa', 'cobQ'); setv('fAgenteCob', ''); setv('fCobEst', ''); llamar('rCob'); }
     else if (k === 'pag-limpiar') { limpiarLupa('pgBuscarLupa', 'pgBuscar'); ['pgEmpresa', 'pgAgente', 'pgMetodo', 'pgBanco'].forEach(id => setv(id, '')); llamar('pintarLupaPagos'); llamar('rPagos'); }
     else if (k === 'pag-reintentar') { llamar('rPagos'); }
+    else if (k === 'carga-reintentar') { b.disabled = true; b.textContent = 'Cargando…'; Promise.resolve(typeof cargarTodo === 'function' ? cargarTodo() : null).then(() => { llamar('rFact'); llamar('rCob'); }); }
   }, true);
 
   /* fecha legible y celdas vacías del historial */

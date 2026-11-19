@@ -54,12 +54,17 @@ html.tema-glass-oscuro #cnt .nxSL-pay-btn.rechazar{background:rgba(244,63,94,.16
 `;document.head.appendChild(s);
 }
 
+let ultimoFallo=0,errFallo=null;
 async function cargar(force=false){
   if(busy)return items;
-  if(!force&&Date.now()-lastLoad<20000)return items;
+  // Tras una falla, los reintentos automáticos esperan 20 s (antes: cada 2,5 s) y siguen diciendo que falló.
+  if(!force&&errFallo&&Date.now()-ultimoFallo<20000)throw errFallo;
+  if(!force&&!errFallo&&Date.now()-lastLoad<20000)return items;
   busy=true;
   try{
-    const r=await rpc('seguros_pagos_pendientes_validacion',{});
+    let r;
+    try{r=await rpc('seguros_pagos_pendientes_validacion',{});}catch(e){ultimoFallo=Date.now();errFallo=e;throw e;}
+    errFallo=null;
     let lista=Array.isArray(r)?r:(r?[r]:[]);
     /* 59.80 (dueño, 05-nov-2026: «¿por qué me sale dos veces?»): un depósito directo a la cuenta de otro sale arriba
        como entrega por confirmar Y abajo como validación bancaria. «Confirmar» arriba ya valida el pago
@@ -220,7 +225,22 @@ async function rechazar(id,ov){
 
 async function integrar(force=false){
   css();const view=$('#v-solicitudes');if(!view||!view.classList.contains('on'))return;
-  try{await cargar(force);fusionarSection()}catch(e){console.error('[Solicitudes pagos]',e)}
+  // Si la pantalla de Solicitudes ya muestra «Error al cargar · Reintentar», no se agrega nada encima.
+  if(window.__nxSolicitudesFallo)return;
+  try{await cargar(force);$('#nxSolPayFallo')?.remove();fusionarSection()}catch(e){console.error('[Solicitudes pagos]',e);pintarFallo()}
+}
+/* 19-nov-2026 (auditoría «cargando»): si la consulta de pagos por validar falla, antes quedaba el mensaje de la
+   base («no hay…» o «✓ No hay pagos pendientes por validar») como si fuera cierto. Ahora se dice que no cargó. */
+function pintarFallo(){
+  const view=$('#v-solicitudes');if(!view)return;
+  const sec=$$('.nxSL-section',view).find(x=>/pendiente|validar|entrega/i.test(x.textContent||''))||view;
+  $$('.nxSL-empty-soft,.nxSL-empty',sec).filter(el=>/entrega|pendiente|confirm/i.test(el.textContent||'')).forEach(el=>{el.style.display='none'});
+  let n=$('#nxSolPayFallo',view);
+  if(!n){n=document.createElement('div');n.id='nxSolPayFallo';n.setAttribute('role','alert');
+    n.style.cssText='margin:10px 0;padding:14px 16px;border-radius:14px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+    const head=$('.nxSL-section-head',sec);if(head)head.insertAdjacentElement('afterend',n);else sec.prepend(n);}
+  n.innerHTML='<i class="ti ti-wifi-off" aria-hidden="true"></i><span style="flex:1;min-width:180px">No se pudieron cargar los pagos por validar.</span><button type="button" class="btn bsm" style="min-height:44px">Reintentar</button>';
+  n.querySelector('button').onclick=()=>{n.remove();integrar(true)};
 }
 
 function envolver(){
