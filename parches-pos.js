@@ -646,15 +646,16 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const todas = await getTodasPOS('pos_ventas', 'select=*&order=created_at.desc,id.asc'); if (todas) _ventas = todas;
     try { _notasDeb = await getAPI().get('pos_notas_debito', 'select=*&order=created_at.desc&limit=500') || []; } catch (e) { _notasDeb = []; }
   }
+  let _saldosFallo = false, _repFallo = false; // 19-nov-2026 (auditoría «cargando»): falla de carga ≠ «en cero»
   async function cargarSaldosCli() {
-    _fiadoByCli = {}; _abonosByCli = {};
+    _fiadoByCli = {}; _abonosByCli = {}; _saldosFallo = false;
     try {
       // Fase 2: leídos completos (la API entrega a lo sumo 1000 filas por consulta y el saldo se quedaba corto).
-      const fi = await getTodasPOS('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada&order=id.asc') || [];
+      const fi0 = await getTodasPOS('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada&order=id.asc'); if (fi0 === null) _saldosFallo = true; const fi = fi0 || [];
       fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.credito_monto || 0); });
-      const ab = await getTodasPOS('pos_abonos', 'select=cliente_id,monto&order=id.asc') || [];
+      const ab0 = await getTodasPOS('pos_abonos', 'select=cliente_id,monto&order=id.asc'); if (ab0 === null) _saldosFallo = true; const ab = ab0 || [];
       ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
-    } catch (e) {}
+    } catch (e) { _saldosFallo = true; }
   }
   function saldoCli(c) { const id = c && c.id; return Math.max(0, (_fiadoByCli[id] || 0) - (_abonosByCli[id] || 0)); }
   function waNum(t) { let d = String(t || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
@@ -880,6 +881,9 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
 
+  function avisoFalloPOS(txt) {
+    return '<div role="alert" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;border-radius:14px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:14px;font-weight:600;text-transform:none"><i class="ti ti-wifi-off" aria-hidden="true"></i><span style="flex:1;min-width:180px;text-transform:none">' + esc(txt) + '</span><button type="button" onclick="window.nxPosTab(\'' + _posTab + '\')" style="min-height:44px;padding:0 14px;border-radius:12px;border:0;background:#dc2626;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-transform:none">Reintentar</button></div>';
+  }
   // ── Modo TIENDA: el POS se ve como sistema independiente (sidebar + dashboard) ──
   function esTiendaPOS() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return !!(s && s.org && s.org.tipo === 'tienda'); } catch (e) { return false; } }
   // Alterna el cajón (drawer) del sidebar en móvil
@@ -936,6 +940,8 @@ html.tema-glass-oscuro #v-pos .nx-invoice-pro .facSugTx b, body.tema-premium #v-
     else if (_posTab === 'apartados') body = renderApartados();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
+    // 19-nov-2026 (auditoría «cargando»): si falló la carga, se dice arriba (y no se confía en los ceros de abajo).
+    if ((_posTab === 'reportes' && _repFallo) || (_posTab === 'clientes' && _saldosFallo)) body = avisoFalloPOS(_posTab === 'reportes' ? 'No se pudieron cargar las ventas del período. Los totales no están completos.' : 'No se pudieron cargar los saldos a crédito. Los montos por cobrar no están completos.') + body;
     // Shell profesional (barra lateral índigo) para TODOS: tienda y admin.
     // Antes el admin veía 16 pestañas-pastilla amontonadas — se veía amateur (pedido del dueño).
     view.innerHTML = shellTienda(body, previewBar);
@@ -10677,7 +10683,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ini = new Date(a[0], a[1] - 1, a[2]).toISOString(), fin = new Date(b[0], b[1] - 1, b[2] + 1).toISOString();
     // Cuenta la fecha de la venta y, si no tiene, la de creación (igual que repFecha).
     const rango = 'or=' + encodeURIComponent('(and(fecha.gte.' + ini + ',fecha.lt.' + fin + '),and(fecha.is.null,created_at.gte.' + ini + ',created_at.lt.' + fin + '))');
-    const vs = (await getTodasPOS('pos_ventas', 'select=*,pos_venta_items(*)&estado=eq.completada&' + rango + '&order=created_at.desc,id.asc')) || [];
+    const vs0 = await getTodasPOS('pos_ventas', 'select=*,pos_venta_items(*)&estado=eq.completada&' + rango + '&order=created_at.desc,id.asc');
+    // Si la consulta falla no se guarda el rango como «ya cargado» (antes quedaba vacío hasta recargar la página).
+    if (vs0 === null) { _repFallo = true; _repVentas = []; _repCarga = null; return; }
+    _repFallo = false;
+    const vs = vs0;
     const ids = vs.map(v => v.id);
     if (vs.length && vs.every(v => v.pos_venta_items === undefined)) {
       try { const its = await riEnTrozos('pos_venta_items', 'venta_id', ids, '*'); const byV = {}; its.forEach(it => { (byV[it.venta_id] = byV[it.venta_id] || []).push(it); }); vs.forEach(v => { v._items = byV[v.id] || []; }); } catch (e) {}
