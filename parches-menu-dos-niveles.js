@@ -199,7 +199,7 @@
       var ini = navEl.querySelector('.ni[onclick*="nav(\'dashboard\'"]');
       var b = document.createElement('div');
       b.className = 'ni'; b.id = 'niMultiM2'; b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0');
-      b.setAttribute('onclick', "window.nxAbrirMultiempresa();var v=document.getElementById('v-multiempresa');if(v&&v.classList.contains('on'))this.classList.add('on')");
+      b.setAttribute('onclick', "window.nxAbrirMultiempresa()");
       b.setAttribute('onkeydown', "if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}");
       b.innerHTML = '<i class="ti ti-building-skyscraper ni-i"></i><span class="ni-l">Multiempresa</span>';
       if (ini && ini.parentNode) ini.parentNode.insertBefore(b, ini.nextSibling); else navEl.appendChild(b);

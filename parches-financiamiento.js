@@ -1220,12 +1220,27 @@
       </div>`;
   }
 
-  window.nxAbrirMultiempresa = function () {
+  // 19-nov-2026 (dueño: «Sí, ciérrala solo para mí»): la pantalla Multiempresa solo abre si el servidor confirma que
+  // quien entró es el dueño del sistema (rpc mi_es_superadmin, la misma comprobación del Panel del Dueño).
+  // Cualquier otro usuario, administradores incluidos, ve «Acceso restringido» y vuelve al Inicio.
+  let _nxEsDueno = null;
+  async function esDueno() {
+    if (_nxEsDueno !== null) return _nxEsDueno;
+    try { const r = await getAPI().post('rpc/mi_es_superadmin', {}); _nxEsDueno = (r === true || r === 'true'); return _nxEsDueno; }
+    catch (e) { return false; } // si falla la consulta no se guarda: se vuelve a preguntar la próxima vez
+  }
+  window.nxEsDuenoSistema = esDueno;
+  window.nxAbrirMultiempresa = async function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     // Modo TIENDA: el hub Multiempresa no aplica; rebota al Punto de Venta.
     try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda') { if (window.nxAbrirPOS) window.nxAbrirPOS(); return; } } catch (e) {}
     // Modo RIFA: el hub no aplica; rebota al módulo de Rifas.
     try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'rifa') { if (window.nxAbrirRifas) window.nxAbrirRifas(); return; } } catch (e) {}
+    if (!(await esDueno())) {
+      toast('err', 'Acceso restringido', 'Solo el dueño del sistema');
+      try { if (!document.querySelector('#cnt .view.on') || document.querySelector('#v-multiempresa.on')) { if (typeof nav === 'function') nav('dashboard', null); } } catch (e) {}
+      return;
+    }
     const view = ensureHubView();
     if (!view) return;
     try { window.nxGuardarLugar && window.nxGuardarLugar('multiempresa'); } catch (e) {}
@@ -1235,6 +1250,7 @@
     const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'MULTIEMPRESA';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
+    try { const ni = document.getElementById('niMultiM2'); if (ni) ni.classList.add('on'); } catch (e) {}
     renderHub(view);
   };
 
@@ -3653,6 +3669,10 @@
   function inyectarTile() {
     if (document.getElementById('qaMultiempresa')) return true;
     if (!esAdmin()) return false;
+    // 19-nov-2026: la tarjeta «Multiempresa» del tablero solo para el dueño del sistema.
+    if (typeof window.nxEsDuenoSistema !== 'function') return false;
+    if (window.__nxMeTileRevisado === undefined) { window.__nxMeTileRevisado = 'pendiente'; window.nxEsDuenoSistema().then(function (ok) { window.__nxMeTileRevisado = !!ok; if (ok) inyectarTile(); }); return false; }
+    if (window.__nxMeTileRevisado !== true) return window.__nxMeTileRevisado === false;
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
     const qa = vDash.querySelector('.qa');
