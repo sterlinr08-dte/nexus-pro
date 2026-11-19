@@ -44,7 +44,7 @@ async function abrir(browser, width, { off = false } = {}) {
     return await r.fulfill({ status: 200, contentType: /\.css|fonts\.googleapis/.test(u) ? 'text/css' : 'application/javascript', body: '' }); } catch (e) { /* contexto cerrado */ } });
   await page.addInitScript(({ off }) => {
     if (!sessionStorage.getItem('__qaIni')) {
-      sessionStorage.setItem('__qaIni', '1'); localStorage.setItem('nx_tema', 'clasico'); localStorage.removeItem('nx_tgo_off');
+      sessionStorage.setItem('__qaIni', '1'); localStorage.setItem('nx_tema', 'clasico'); localStorage.setItem('nx_m2_off', '1'); /* 18-nov-2026: mide el riel y el cajón del menú anterior; el de dos niveles en modo claro lo prueba qa-menu-dos-niveles.mjs */ localStorage.removeItem('nx_tgo_off');
       if (off) localStorage.setItem('nx_claro_off', '1'); else localStorage.removeItem('nx_claro_off');
     }
     localStorage.setItem('nx_auth_mode', 'legacy');

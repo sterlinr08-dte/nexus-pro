@@ -153,7 +153,12 @@ async function movil(browser, w, h, rol) {
   ok(r.main && r.main.l === 0 && r.main.w === w && r.tnav && r.tnav.l <= 12, `${tag} sin barra lateral: contenido y barra de arriba a todo el ancho (main x ${r.main && r.main.l}, ancho ${r.main && r.main.w})`, r);
   await page.click('.tnav .tn-tog'); await sleep(700);
   r = await page.evaluate(() => { const s = document.getElementById('sbEl'); const it = [...s.querySelectorAll('#sbNav .ni[onclick]')].filter(e => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0; }); const b = s.getBoundingClientRect(); return { abierto: s.classList.contains('mob-open'), vis: getComputedStyle(s).visibility, l: Math.round(b.left), w: Math.round(b.width), items: it.length, total: s.querySelectorAll('#sbNav .ni[onclick]').length }; });
-  ok(r.abierto && r.vis === 'visible' && r.l === 0 && r.w > 150 && r.items >= 8, `${tag} ☰ abre el cajón con los destinos del menú (${r.items} a la vista de ${r.total})`, r);
+  // 18-nov-2026: con el menú de dos niveles (nav#nxM2) el cajón es el nuevo: riel de secciones + páginas de la sección elegida.
+  const m2 = await page.evaluate(() => { const n = document.getElementById('nxM2'); if (!n || getComputedStyle(n).display === 'none') return null; const b = n.getBoundingClientRect();
+    const bt = [...n.querySelectorAll('.m2-sec,.m2-pg')].filter(e => { const x = e.getBoundingClientRect(); return x.width > 0 && x.right <= innerWidth && x.left >= 0; });
+    return { abierto: n.classList.contains('m2-open'), vis: getComputedStyle(n).visibility, l: Math.round(b.left), w: Math.round(b.width), items: bt.length }; });
+  if (m2) ok(m2.abierto && m2.vis === 'visible' && m2.l === 0 && m2.w > 150 && m2.items >= 6, `${tag} ☰ abre el cajón de dos niveles (${m2.items} botones a la vista)`, m2);
+  else ok(r.abierto && r.vis === 'visible' && r.l === 0 && r.w > 150 && r.items >= 8, `${tag} ☰ abre el cajón con los destinos del menú (${r.items} a la vista de ${r.total})`, r);
   if (w === 390 && rol === 'admin') await page.screenshot({ path: OUT + PFX + `sin-riel-cajon-${w}.png` });
   await page.evaluate(() => closeMobSB()); await sleep(500);
   const shot = async (n) => { if (w === 390 && (rol === 'admin' || /abono|busqueda/.test(n))) await page.screenshot({ path: OUT + PFX + `${n}-${w}${rol === 'agente' ? '-agente' : ''}.png` }); };
