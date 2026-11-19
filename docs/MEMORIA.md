@@ -42,6 +42,7 @@
 | Configuración/Usuarios, Contabilidad y ventanas | 59.52 (`#nxP5Pane`) |
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
+| Menú de dos niveles (estilo 7): riel de secciones + páginas; solo empresas de seguros; con el Punto de venta abierto queda solo el riel | 6069 (`#nxM2`, `parches-menu-dos-niveles.js`; apagar `nx_m2_off`) |
 | «Registrar pago»: meses por adelantado a la vista (cuotas, cuadrícula de meses, «pagado hasta») | 59.55 (`#nxAdelPane`, apagar `nx_adel_off`) |
 | Bauche repetido (foto/número bloquea, compartido, «posible repetido») | 59.56; Edge `comprobante-leer` v6 (clave «NEXUS PRO BAUCHE» activa desde el 25-oct) |
 | Cobro rápido con el bauche: la IA lee la foto apenas llega, chip «Bauche RD$… · Cobrar» en el chat y «Registrar pago» se llena solo (monto del bauche + aviso) | 59.58, **publicado** (PR #406, webhook v14); Edge `bauche-auto-leer`; columnas `bauche_ia`; RPC `comprobante_cuenta_sugerida`; apagar con el secreto `BAUCHE_AUTO_LEER=off` |
