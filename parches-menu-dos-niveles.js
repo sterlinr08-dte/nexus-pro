@@ -36,7 +36,7 @@
   var movil = function () { return window.innerWidth <= 768; };
   var mostrar = function (el) { return !!el && !el.hidden && getComputedStyle(el).display !== 'none'; };
 
-  var raiz, sb, navEl, viendo = null, ultimaActiva = null, programado = false;
+  var raiz, sb, navEl, viendo = null, ultimaActiva = null, programado = false, ultimoHtml = '';
 
   function seccionDe(n) {
     var oc = n.getAttribute('onclick') || '';
@@ -91,7 +91,7 @@
     if (!raiz || !navEl) return;
     var d = leer();
     var hay = SECCIONES.filter(function (s) { return d.grupos[s.id].length; });
-    if (!hay.length) { raiz.innerHTML = ''; return; }
+    if (!hay.length) { raiz.innerHTML = ''; ultimoHtml = ''; return; }
     // Módulo con su propia columna de páginas abierto (Punto de venta: #nxTSide): en PC queda solo el riel, para no ver tres columnas.
     var solo = !!document.querySelector('.view.on #nxTSide, .view.on .nxTShell');
     raiz.classList.toggle('m2-solo', solo);
@@ -125,7 +125,13 @@
       '<div class="m2-ft"><button type="button" class="m2-user" data-m2k="user" title="Cerrar sesión"><div class="m2-av" aria-hidden="true">' + ini + '</div><div><b>' +
       esc((nom && nom.textContent) || '') + '</b><small>' + esc((rol && rol.textContent) || '') + '</small></div><i class="ti ti-logout" aria-hidden="true"></i></button></div>';
 
-    raiz.innerHTML = '<div class="m2-rail">' + rail + '</div><div class="m2-col">' + col + '</div>';
+    // 25-nov-2026 (dueño, grabación del iPhone): dentro de un chat de WhatsApp la vista cambia de clase varias veces por
+    // segundo y esto se repintaba cada vez; al reemplazar los botones, el toque caía en uno que ya no existía y el menú
+    // «no respondía». Si el dibujo es el mismo, no se toca nada.
+    var html = '<div class="m2-rail">' + rail + '</div><div class="m2-col">' + col + '</div>';
+    if (html === ultimoHtml && raiz.firstChild) return;
+    ultimoHtml = html;
+    raiz.innerHTML = html;
     if (foco) { var f = raiz.querySelector('[data-m2k="' + foco + '"]'); if (f) f.focus({ preventScroll: true }); }
   }
   function programar() { if (programado) return; programado = true; requestAnimationFrame(pintar); }
