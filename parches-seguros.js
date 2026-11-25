@@ -20,7 +20,7 @@
     /* Build de esta publicación: fuerza a Safari/CDN a pedir frescas las capas
        WhatsApp/Solicitudes/Novedades sin tocar el index.html monolítico solo por una versión. */
     if(base&&base.indexOf('d=')<0&&base.indexOf('t=')<0)base+='&'+d;
-    return base?(base+'&b=6080'):('?b=6080&'+d);
+    return base?(base+'&b=6081'):('?b=6081&'+d);
   })();
   function qv(){return QV;}
   /* 16-nov-2026 (Muse): número de versión visible en el menú del POS; sale solo de esta misma línea b=NNNN. */
@@ -146,6 +146,9 @@
        Contactos en 2 columnas, filas de 2 líneas, campana y lupa de 44 px). Solo CSS ≤760 px.
        Apagar: localStorage.nx_whatsapp_movil_off='1'. */
     ['js','parches-whatsapp-movil.js'],
+    /* 25-nov-2026 (dueño, captura del iPhone): con el teclado abierto el chat ocupa justo la parte visible (cabecera arriba,
+       caja de escribir pegada al teclado), sin hueco ni mensajes debajo de la hora. Apagar: localStorage.nx_wa_teclado_off='1'. */
+    ['js','parches-whatsapp-teclado.js'],
     /* 59.78 (dueño 05-nov-2026): «Generar factura» de un solo cliente eligiendo el mes o los meses; se ofrece al
        registrar un cliente nuevo y la abre «Nueva factura» de la ficha. Apagar: localStorage.nx_fact_cli_off='1'. */
     ['js','parches-factura-cliente.js'],
