@@ -91,6 +91,7 @@
 
   function pintar() {
     programado = false;
+    agregarMultiempresa();
     if (!raiz || !navEl) return;
     var d = leer();
     var hay = SECCIONES.filter(function (s) { return d.grupos[s.id].length; });
@@ -198,13 +199,23 @@
   /* 19-nov-2026 (dueño: «MULTI EMPRESA PONLO EN INICIO PERO SOLO YO PUEDO VERLO»): página «Multiempresa» dentro de la
      sección Inicio, solo si el servidor confirma que quien entró es el dueño del sistema (rpc mi_es_superadmin, la misma
      comprobación del Panel del Dueño). Para cualquier otro usuario, administradores incluidos, no aparece. */
+  /* 25-nov-2026 (dueño: «el icono nuevo no sale»): la pregunta se hacía una sola vez, al cargar la página, muchas veces
+     ANTES de que la sesión estuviera lista; sin sesión la API firma con la clave pública, el servidor responde «no» y no se
+     volvía a preguntar. Ahora se pregunta solo con la sesión puesta (API.token) y otra vez si cambia (entra otro usuario). */
+  var multiToken = null, multiPreguntando = false;
   function agregarMultiempresa() {
-    if (document.getElementById('niMultiM2')) return;
     var api = (typeof API !== 'undefined') ? API : window.API;
-    if (!api || !api.post) return;
+    if (!api || !api.post || !api.token) return;
+    if (api.token === multiToken || multiPreguntando) return;
+    if (typeof window.nxAbrirMultiempresa !== 'function') return;
+    var tk = api.token; multiPreguntando = true;
     api.post('rpc/mi_es_superadmin', {}).then(function (r) {
-      if (!(r === true || r === 'true') || document.getElementById('niMultiM2')) return;
-      if (typeof window.nxAbrirMultiempresa !== 'function') return;
+      multiPreguntando = false;
+      if (api.token !== tk) return; // cambió la sesión mientras se preguntaba: la próxima llamada vuelve a preguntar
+      multiToken = tk;
+      var ya = document.getElementById('niMultiM2');
+      if (!(r === true || r === 'true')) { if (ya) { ya.remove(); programar(); } return; }
+      if (ya) return;
       var ini = navEl.querySelector('.ni[onclick*="nav(\'dashboard\'"]');
       var b = document.createElement('div');
       b.className = 'ni'; b.id = 'niMultiM2'; b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0');
@@ -213,7 +224,7 @@
       b.innerHTML = '<i class="ti ti-building-skyscraper ni-i"></i><span class="ni-l">Multiempresa</span>';
       if (ini && ini.parentNode) ini.parentNode.insertBefore(b, ini.nextSibling); else navEl.appendChild(b);
       programar();
-    }).catch(function () {});
+    }).catch(function () { multiPreguntando = false; }); // si falla la consulta no se guarda: se vuelve a preguntar
   }
   if (!iniciar()) {
     var intentos = 0, t = setInterval(function () { if (iniciar() || ++intentos > 40) clearInterval(t); }, 250);
