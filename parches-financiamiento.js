@@ -1223,10 +1223,14 @@
   // 19-nov-2026 (dueño: «Sí, ciérrala solo para mí»): la pantalla Multiempresa solo abre si el servidor confirma que
   // quien entró es el dueño del sistema (rpc mi_es_superadmin, la misma comprobación del Panel del Dueño).
   // Cualquier otro usuario, administradores incluidos, ve «Acceso restringido» y vuelve al Inicio.
-  let _nxEsDueno = null;
+  // 25-nov-2026: la respuesta se guarda por sesión (API.token). Sin sesión no se pregunta: el servidor diría «no» y ese
+  // «no» quedaba guardado para siempre aunque después entrara el dueño.
+  let _nxEsDueno = null, _nxEsDuenoTk = null;
   async function esDueno() {
-    if (_nxEsDueno !== null) return _nxEsDueno;
-    try { const r = await getAPI().post('rpc/mi_es_superadmin', {}); _nxEsDueno = (r === true || r === 'true'); return _nxEsDueno; }
+    const api = getAPI(); const tk = api && api.token;
+    if (!tk) return false;
+    if (_nxEsDueno !== null && _nxEsDuenoTk === tk) return _nxEsDueno;
+    try { const r = await api.post('rpc/mi_es_superadmin', {}); _nxEsDueno = (r === true || r === 'true'); _nxEsDuenoTk = tk; return _nxEsDueno; }
     catch (e) { return false; } // si falla la consulta no se guarda: se vuelve a preguntar la próxima vez
   }
   window.nxEsDuenoSistema = esDueno;
@@ -3671,7 +3675,11 @@
     if (!esAdmin()) return false;
     // 19-nov-2026: la tarjeta «Multiempresa» del tablero solo para el dueño del sistema.
     if (typeof window.nxEsDuenoSistema !== 'function') return false;
-    if (window.__nxMeTileRevisado === undefined) { window.__nxMeTileRevisado = 'pendiente'; window.nxEsDuenoSistema().then(function (ok) { window.__nxMeTileRevisado = !!ok; if (ok) inyectarTile(); }); return false; }
+    // 25-nov-2026: se revisa por sesión (API.token); sin sesión todavía no se decide (antes quedaba «no» para siempre).
+    const _api = getAPI(), _tk = _api && _api.token;
+    if (!_tk) return false;
+    if (window.__nxMeTileTk !== _tk) { window.__nxMeTileTk = _tk; window.__nxMeTileRevisado = undefined; }
+    if (window.__nxMeTileRevisado === undefined) { window.__nxMeTileRevisado = 'pendiente'; window.nxEsDuenoSistema().then(function (ok) { if (window.__nxMeTileTk !== _tk) return; window.__nxMeTileRevisado = !!ok; if (ok) inyectarTile(); }); return false; }
     if (window.__nxMeTileRevisado !== true) return window.__nxMeTileRevisado === false;
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
