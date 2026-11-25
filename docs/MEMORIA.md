@@ -43,7 +43,7 @@
 | CRM, Solicitudes, Pendientes, Avisos y Novedades | 59.53 (`#nxP6Pane`) |
 | Reportes (agente con ciclo 20→20, antigüedad, empresa y plan), filtros de Facturas en PC y botón del menú | 59.54 (`#nxP7Pane`) |
 | Menú de dos niveles (estilo 7): riel de secciones + páginas; solo empresas de seguros; con el Punto de venta abierto queda solo el riel | 6069 (`#nxM2`, `parches-menu-dos-niveles.js`; apagar `nx_m2_off`) |
-| «Multiempresa» en la sección Inicio del menú de dos niveles, solo para el dueño (`rpc/mi_es_superadmin`, botón `#niMultiM2`) | 6076 (PR #547) |
+| «Multiempresa» con icono propio (edificio) en el riel del menú de dos niveles, debajo de Inicio, solo para el dueño (`rpc/mi_es_superadmin`, botón `#niMultiM2`, sección `multi`) | 6076 (PR #547); icono propio en 6079 (PR #554) |
 | La pantalla Multiempresa y su tarjeta del tablero solo abren para el dueño (`window.nxEsDuenoSistema`); otros admins: «Acceso restringido». Los módulos (Financiamiento, Vehículos, Rifas, POS) no se cerraron | 6077 (PR #549) |
 | Menú de dos niveles dentro de un chat de WhatsApp: ya responde a los toques (antes se repintaba ~6 veces por segundo y el toque se perdía; ahora no toca el DOM si el dibujo no cambió) | 6078 (PR #552). Pendiente menor: el chat de atrás se desliza con el menú abierto |
 | Cajón ☰ del Punto de venta en el iPhone: el fondo oscuro siempre cierra, no queda velo pegado tras el refresco de Inicio y mide la pantalla | 6070 (PR #534; `nxPosCerrarSide`, `#v-pos.view.on{animation-fill-mode:backwards}` ≤860 px) |
