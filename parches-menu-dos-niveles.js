@@ -18,6 +18,9 @@
 
   var SECCIONES = [
     { id: 'inicio', ic: 'ti-home', t: 'Inicio', s: 'Resumen del día' },
+    // 25-nov-2026 (dueño: «pon el icono de Multiempresa junto a Inicio»): sección propia en el riel. Solo sale si existe el
+    // botón #niMultiM2, que se crea únicamente para el dueño del sistema (ver agregarMultiempresa).
+    { id: 'multi', ic: 'ti-building-skyscraper', t: 'Multiempresa', s: 'Todas las empresas' },
     { id: 'seguros', ic: 'ti-shield-check', t: 'Seguros', s: 'Cartera y cobros' },
     { id: 'mensajes', ic: 'ti-message-circle', t: 'Mensajes', s: 'WhatsApp y clientes' },
     { id: 'conta', ic: 'ti-chart-bar', t: 'Contabilidad', s: 'Libros y estados' },
@@ -41,7 +44,7 @@
   function seccionDe(n) {
     var oc = n.getAttribute('onclick') || '';
     if (/navConfig\(/.test(oc)) return 'config';
-    if (/nxAbrirMultiempresa/.test(oc)) return 'inicio';
+    if (/nxAbrirMultiempresa/.test(oc)) return 'multi';
     var m = oc.match(/nav\(\s*['"]([\w-]+)['"]/);
     if (m && VISTA_SEC[m[1]]) return VISTA_SEC[m[1]];
     if (n.closest('#sbContab')) return 'conta';
