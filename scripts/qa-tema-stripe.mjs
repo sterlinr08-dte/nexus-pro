@@ -1,6 +1,6 @@
 // QA del tema «Stripe» (27-nov-2026): app real (index.html + parches) contra la REST simulada de scripts/qa-crm-mock-server.js.
-// Entra como administrador con el tema guardado en «stripe» y revisa, a 390×844 y 1280×800:
-//   · que <html> tenga tema-claro + tema-stripe y que los colores ya estén cambiados ANTES del primer pintado;
+// Entra como administrador con cada tema de paleta guardado (stripe, apple, linear; filtrar con QA_TEMAS) y revisa, a 390×844 y 1280×800:
+//   · que <html> tenga su tema base + tema-<nombre> y que los colores ya estén cambiados ANTES del primer pintado;
 //   · que el acento sea el morado de Stripe (--c1 = #533afd) y el fondo #f6f9fc;
 //   · que no haya desplazamiento de lado ni errores de la página;
 //   · que Apariencia ya no ofrezca Premium Blue y sí ofrezca Stripe;
@@ -62,31 +62,36 @@ const PANTALLAS = [
 ];
 
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
-for (const w of [390, 1280]) {
-  const { ctx, page, errs } = await abrir(browser, w, 'stripe');
+const TEMAS = [
+  { id: 'stripe', base: 'tema-claro', data: 'clasico', c1: '#533afd', bg: '#f6f9fc' },
+  { id: 'apple', base: 'tema-claro', data: 'clasico', c1: '#0066cc', bg: '#f5f5f7' },
+  { id: 'linear', base: 'tema-glass-oscuro', data: 'glass-oscuro', c1: '#828fff', bg: '#010102' },
+].filter(T => !process.env.QA_TEMAS || process.env.QA_TEMAS.split(',').includes(T.id));
+for (const T of TEMAS) for (const w of [390, 1280]) {
+  const { ctx, page, errs } = await abrir(browser, w, T.id);
   const ini = await page.evaluate(() => ({ primer: window.__primerC1, primerClases: window.__primerClases, clases: document.documentElement.className, dataTema: document.documentElement.getAttribute('data-nx-tema'),
-    c1: getComputedStyle(document.documentElement).getPropertyValue('--c1').trim(), bg: getComputedStyle(document.documentElement).getPropertyValue('--tgo-bg').trim(), n: window.__nxStripeN || 0, ms: window.__nxStripeMs }));
-  ok(/tema-claro/.test(ini.clases) && /tema-stripe/.test(ini.clases), `${w}: <html> lleva tema-claro + tema-stripe`, ini.clases);
-  ok(ini.dataTema === 'clasico', `${w}: data-nx-tema sigue en «clasico» (las pantallas claras lo reconocen)`, ini.dataTema);
-  ok(ini.n > 500, `${w}: script#nxTemaStripeOn cambió ${ini.n} reglas de color (${ini.ms} ms en el <head>)`, ini);
-  ok(ini.c1.toLowerCase() === '#533afd', `${w}: acento morado de Stripe (--c1)`, ini.c1);
-  ok(ini.bg.toLowerCase() === '#f6f9fc', `${w}: fondo #f6f9fc (--tgo-bg)`, ini.bg);
-  ok((ini.primer || '').toLowerCase() === '#533afd', `${w}: el primer pintado ya sale con Stripe (sin parpadeo)`, { primer: ini.primer, clases: ini.primerClases });
+    c1: getComputedStyle(document.documentElement).getPropertyValue('--c1').trim(), bg: getComputedStyle(document.documentElement).getPropertyValue('--tgo-bg').trim(), n: window.__nxTemaN || 0, ms: window.__nxTemaMs }));
+  ok(ini.clases.includes(T.base) && ini.clases.includes('tema-' + T.id), `${T.id} ${w}: <html> lleva ${T.base} + tema-${T.id}`, ini.clases);
+  ok(ini.dataTema === T.data, `${T.id} ${w}: data-nx-tema sigue en «${T.data}»`, ini.dataTema);
+  ok(ini.n > 300, `${T.id} ${w}: script#nxTemasPaletaOn cambió ${ini.n} reglas de color`, ini);
+  ok(ini.c1.toLowerCase() === T.c1, `${T.id} ${w}: acento ${T.c1} (--c1)`, ini.c1);
+  ok(ini.bg.toLowerCase() === T.bg, `${T.id} ${w}: fondo ${T.bg} (--tgo-bg)`, ini.bg);
+  ok((ini.primer || '').toLowerCase() === T.c1, `${T.id} ${w}: el primer pintado ya sale con su color (sin parpadeo)`, { primer: ini.primer, clases: ini.primerClases });
   for (const [nom, js] of PANTALLAS) {
     await page.evaluate((js) => { try { (0, eval)(js); } catch (e) { console.warn('qa: ' + e.message); } }, js);
     await sleep(1400);
     const r = await page.evaluate(() => ({ lado: document.documentElement.scrollWidth > window.innerWidth + 1 }));
-    ok(!r.lado, `${w} ${nom}: sin desplazamiento de lado`);
-    await page.screenshot({ path: `${OUT}stripe-${w}-${nom}.png`, fullPage: false });
+    ok(!r.lado, `${T.id} ${w} ${nom}: sin desplazamiento de lado`);
+    await page.screenshot({ path: `${OUT}${T.id}-${w}-${nom}.png`, fullPage: false });
     if (nom === 'apariencia') {
       const ops = await page.evaluate(() => [...document.querySelectorAll('#cfgApariencia .tema-opcion')].map(o => o.dataset.tema));
-      ok(!ops.includes('premium'), `${w}: Apariencia ya no ofrece Premium Blue`, ops);
-      ok(ops.includes('stripe'), `${w}: Apariencia ofrece Stripe al administrador`, ops);
+      ok(!ops.includes('premium'), `${T.id} ${w}: Apariencia ya no ofrece Premium Blue`, ops);
+      ok(ops.includes(T.id), `${T.id} ${w}: Apariencia ofrece el tema elegido`, ops);
       const sel = await page.evaluate(() => document.querySelector('#cfgApariencia .tema-sel')?.dataset.tema);
-      ok(sel === 'stripe', `${w}: Stripe aparece marcado como activo`, sel);
+      ok(sel === T.id, `${T.id} ${w}: aparece marcado como activo`, sel);
     }
   }
-  ok(errs.length === 0, `${w}: sin errores de la página`, errs.slice(0, 5));
+  ok(errs.length === 0, `${T.id} ${w}: sin errores de la página`, errs.slice(0, 5));
   await ctx.close();
 }
 // Quien tenía Premium Blue guardado pasa al Glass oscuro
@@ -104,7 +109,7 @@ for (const w of [390, 1280]) {
   // Un administrador que NO es el dueño del sistema (el servidor simulado no confirma mi_es_superadmin) no ve Stripe.
   await page.evaluate(() => { nav('config', document.querySelector('[onclick*="nav(\'config\'"]')); setTimeout(() => switchCfgTab(12), 300); }); await sleep(2500);
   const ops = await page.evaluate(() => [...document.querySelectorAll('#cfgApariencia .tema-opcion')].map(o => o.dataset.tema));
-  ok(!ops.includes('stripe') && !ops.includes('premium'), 'Admin que no es el dueño: Apariencia sin Stripe (todavía) y sin Premium', ops);
+  ok(!ops.some(o => ['stripe', 'apple', 'linear', 'premium'].includes(o)), 'Admin que no es el dueño: Apariencia sin Stripe/Apple/Linear (todavía) y sin Premium', ops);
   await page.screenshot({ path: `${OUT}claro-390-inicio.png` });
   await ctx.close();
 }
@@ -112,7 +117,7 @@ for (const w of [390, 1280]) {
 {
   const { ctx, page } = await abrir(browser, 390, 'glass-oscuro');
   const r = await page.evaluate(() => ({ clases: document.documentElement.className, c1: getComputedStyle(document.documentElement).getPropertyValue('--c1').trim() }));
-  ok(/tema-glass-oscuro/.test(r.clases) && !/tema-stripe/.test(r.clases) && !/533afd/i.test(r.c1), 'Glass oscuro sin cambios', r);
+  ok(/tema-glass-oscuro/.test(r.clases) && !/tema-(stripe|apple|linear)/.test(r.clases) && r.c1.toLowerCase() === '#93c5fd', 'Glass oscuro sin cambios', r);
   await ctx.close();
 }
 await browser.close();

@@ -20,14 +20,17 @@ window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=win
 try{if(localStorage.getItem('nx_org_tipo')==='tienda')t='clasico';}catch(e){}
 /* 27-nov-2026 (dueño: «Quita el Premium Blue y empieza con Stripe»): Premium Blue ya no se ofrece; quien lo tenía pasa al
    Glass oscuro (si está apagado, Premium queda solo como respaldo interno). «Stripe» = el modo claro + la paleta Stripe:
-   html.tema-claro.tema-stripe. Los colores los cambia script#nxTemaStripeOn al final del <head> (antes del primer pintado).
+   html.tema-claro.tema-stripe. Los colores los cambia script#nxTemasPaletaOn al final del <head> (antes del primer pintado).
    data-nx-tema sigue en «clasico» para todo lo que pregunta por el claro. INTERRUPTOR: NX_TEMA_STRIPE=false → quien lo
    tenga ve el Claro. */
-var NX_TEMA_STRIPE=true;
+var NX_TEMA_STRIPE=true,NX_TEMA_APPLE=true,NX_TEMA_LINEAR=true;
+/* 27-nov-2026: también Apple (= Claro + su paleta) y Linear (= Glass oscuro + su paleta). Cada uno con su interruptor
+   NX_TEMA_APPLE / NX_TEMA_LINEAR (false → quien lo tenga ve su tema base). Ver style#nxTemasPaleta al final del <head>. */
 if(t==='premium'&&NX_TEMA_GLASS_OSCURO)t='glass-oscuro';
 if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?(NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'):'clasico';
-if(t==='stripe'){t='clasico';if(NX_TEMA_STRIPE&&NX_TEMA_CLARO)d.classList.add('tema-stripe');}
-window.NX_TEMA_STRIPE=NX_TEMA_STRIPE;
+var EXB={stripe:'clasico',apple:'clasico',linear:'glass-oscuro'},EXON={stripe:NX_TEMA_STRIPE,apple:NX_TEMA_APPLE,linear:NX_TEMA_LINEAR};
+if(EXB[t]){var ex=t;t=EXB[t];if(EXON[ex]&&(t==='clasico'?NX_TEMA_CLARO:NX_TEMA_GLASS_OSCURO))d.classList.add('tema-'+ex);}
+window.NX_TEMA_STRIPE=NX_TEMA_STRIPE;window.NX_TEMA_APPLE=NX_TEMA_APPLE;window.NX_TEMA_LINEAR=NX_TEMA_LINEAR;
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
 d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
 /* 59.22: premium y glass viven en <body>: la clase se pone en cuanto el parser crea el <body> (el aviso del MutationObserver corre antes
@@ -38,7 +41,7 @@ if(t==='premium'||t==='glass'){var cb=t==='premium'?'tema-premium':'tema-glass';
 /* 58.90 (velocidad): se pide después de `load` y en un momento libre: durante la carga la tapa el splash y descargarla/
    decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
 /* 59.22: cada tema pide la suya una sola vez: grafito → html.tgo-foto; modo claro (la oficina de siempre, ya desenfocada) → html.tgc-foto */
-window.nxTgoFoto=function(){if(d.classList.contains('tema-stripe'))return;var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
+window.nxTgoFoto=function(){if(/(^|\s)tema-(stripe|apple|linear)(\s|$)/.test(d.className))return;var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
 var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add(claro?'tgc-foto':'tgo-foto');};
 var m=window.innerWidth<=768;i.src=claro?(m?'assets/fondo-oficina-claro-movil.webp':'assets/fondo-oficina-claro.webp'):(m?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after (59.22: y html.tgc-foto::after) */
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
@@ -7855,17 +7858,20 @@ html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-
      ya sabe que la empresa es una tienda, la app queda oculta hasta que abre el POS (con salida de seguridad a los 9 s). -->
 <style id="nxArranqueTienda">html.nx-arranque-tienda #app{visibility:hidden!important}</style>
 <script>try{if(localStorage.getItem('nx_org_tipo')==='tienda'&&(sessionStorage.getItem('nx_sesion')||localStorage.getItem('nx_sesion_persist')||(location.hash||'').indexOf('access_token=')>=0)){document.documentElement.classList.add('nx-arranque-tienda');setTimeout(function(){document.documentElement.classList.remove('nx-arranque-tienda');},9000);}}catch(e){}</script>
-<!-- ═══ TEMA «STRIPE» (27-nov-2026, dueño: «Quita el Premium Blue y empieza con Stripe») ═══
-     Stripe = el modo claro (html.tema-claro, ya cubre todas las pantallas) + la paleta de Stripe (github.com/VoltAgent/
-     awesome-design-md → design-md/stripe/DESIGN.md: tinta #0d253d, morado #533afd, línea #e3e8ee, fondo #f6f9fc).
-     Cómo cambia los colores (script#nxTemaStripeOn): con html.tema-stripe puesto, recorre las hojas de estilo y, al lado de
-     cada regla que lleva un azul/tinta del Claro, inserta una COPIA con el color de Stripe y la condición
-     :where(html.tema-stripe) (que no suma prioridad). Así cada copia empata con su original y gana por ir justo después:
-     es como si esa regla tuviera el color de Stripe, sin alterar qué regla manda sobre cuál. Las reglas solo del Glass
-     oscuro, Premium o Liquid Glass se saltan. Corre aquí (al final del <head>, antes del primer pintado) y vigila los
-     <style>/<link> que los parches agregan después. Con el tema apagado no hace nada.
-     style#nxTemaStripe: lo hecho a mano (el degradado de arriba en lugar de la foto de la oficina). -->
-<style id="nxTemaStripe">
+<!-- ═══ TEMAS DE PALETA: STRIPE · APPLE · LINEAR (27-nov-2026, dueño: «Quita el Premium Blue y empieza con Stripe»;
+     «Vamos a revisar para continuar con los otros») ═══
+     Cada uno es un tema que YA cubre todas las pantallas + otra paleta (github.com/VoltAgent/awesome-design-md, MIT):
+       · Stripe = Claro (html.tema-claro) + tinta #0d253d, morado #533afd, fondo #f6f9fc y degradado de colores arriba.
+       · Apple  = Claro + tinta #1d1d1f, azul #0066cc, fondo gris perla #f5f5f7 (sin foto ni degradado).
+       · Linear = Glass oscuro (html.tema-glass-oscuro) + casi negro #010102, paneles #0f1011, acento lila #5e6ad2.
+     En <html> van la clase del tema base y tema-<nombre>; data-nx-tema sigue en el base («clasico» / «glass-oscuro»).
+     Cómo cambia los colores (script#nxTemasPaletaOn): con html.tema-<nombre> puesto, recorre las hojas de estilo y, al lado
+     de cada regla que lleva un color de la paleta del tema base, inserta una COPIA con el color nuevo y la condición
+     :where(html.tema-<nombre>) (que no suma prioridad): cada copia empata con su original y gana por ir justo después, así
+     no cambia qué regla manda sobre cuál. Se saltan las reglas de los OTROS temas. Corre aquí (al final del <head>, antes
+     del primer pintado) y vigila los <style>/<link> que los parches agregan después. Sin tema de paleta no hace nada.
+     style#nxTemasPaleta: lo hecho a mano (el fondo de cada uno en lugar de la foto de la oficina). -->
+<style id="nxTemasPaleta">
 html.tema-claro.tema-stripe{--tgo-bg:#f6f9fc;--tgc-velo-a:rgba(255,255,255,0);--tgc-velo-b:rgba(255,255,255,0)}
 html.tema-claro.tema-stripe::after,html.tema-claro.tema-stripe.tgc-foto::after{opacity:1;background:
   radial-gradient(38% 30% at 4% 0%,rgba(255,179,91,.55) 0%,rgba(255,179,91,0) 70%),
@@ -7879,53 +7885,74 @@ html.tema-claro.tema-stripe::after,html.tema-claro.tema-stripe.tgc-foto::after{o
   radial-gradient(70% 24% at 100% 4%,rgba(83,58,253,.36) 0%,rgba(83,58,253,0) 70%),
   radial-gradient(70% 18% at 24% 14%,rgba(128,233,255,.36) 0%,rgba(128,233,255,0) 70%),
   #f6f9fc!important}}
+/* Apple: gris perla liso, como las páginas de Apple (el producto habla; el fondo no) */
+html.tema-claro.tema-apple{--tgo-bg:#f5f5f7;--tgc-velo-a:rgba(255,255,255,0);--tgc-velo-b:rgba(255,255,255,0)}
+html.tema-claro.tema-apple::after,html.tema-claro.tema-apple.tgc-foto::after{opacity:1;background:#f5f5f7!important}
+/* Linear: casi negro con un halo lila muy suave arriba (el único color va en el acento) */
+html.tema-glass-oscuro.tema-linear{--tgo-bg:#010102;--tgo-glow:rgba(94,106,210,.05)}
+html.tema-glass-oscuro.tema-linear::after,html.tema-glass-oscuro.tema-linear.tgo-foto::after{opacity:1;background:
+  radial-gradient(70% 42% at 50% -6%,rgba(94,106,210,.20) 0%,rgba(94,106,210,0) 70%),#010102!important}
+html.tema-glass-oscuro.tema-linear::before{background:#010102!important}
 </style>
-<script id="nxTemaStripeOn">(function(){
+<script id="nxTemasPaletaOn">(function(){
 var d=document.documentElement;
-/* Claro → Stripe. Los navegadores devuelven los colores como rgb(r, g, b); en las variables (--c1…) queda el texto escrito (#2563EB o «37,99,235»). */
-var HEX={'#2563eb':'#533afd','#1d4ed8':'#4434d4','#1e50d6':'#4a33e8','#1e40af':'#2e2b8c','#1e3a8a':'#2e2b8c','#3b82f6':'#665efd','#60a5fa':'#8f87ff','#93c5fd':'#b9b9f9','#bfdbfe':'#d4d0ff','#dbeafe':'#e4e1ff','#eff6ff':'#f0eeff',
-'#0f172a':'#0d253d','#1e293b':'#1c2e45','#334155':'#273951','#475569':'#425466','#64748b':'#64748d','#eef1f5':'#f6f9fc','#e6eaf0':'#edf1f7','#f6f8fb':'#f9fbfd','#cbd5e1':'#c9d6e6','#e2e8f0':'#e3e8ee'};
-var RGB={};
-Object.keys(HEX).forEach(function(h){var a=[1,3,5].map(function(i){return parseInt(h.substr(i,2),16);}).join(','),b=[1,3,5].map(function(i){return parseInt(HEX[h].substr(i,2),16);}).join(',');RGB[a]=b;});
-var reHex=new RegExp(Object.keys(HEX).join('|')+'(?![0-9a-f])','gi');
+/* Paletas: color del tema base → color del tema nuevo. Los navegadores devuelven los colores como rgb(r, g, b); en las
+   variables (--c1…) queda el texto escrito (#2563EB o «37,99,235»): por eso se cambian las dos formas. */
+var TEMAS={
+ stripe:{base:'claro',hex:{'#2563eb':'#533afd','#1d4ed8':'#4434d4','#1e50d6':'#4a33e8','#1e40af':'#2e2b8c','#1e3a8a':'#2e2b8c','#3b82f6':'#665efd','#60a5fa':'#8f87ff','#93c5fd':'#b9b9f9','#bfdbfe':'#d4d0ff','#dbeafe':'#e4e1ff','#eff6ff':'#f0eeff',
+  '#0f172a':'#0d253d','#1e293b':'#1c2e45','#334155':'#273951','#475569':'#425466','#64748b':'#64748d','#eef1f5':'#f6f9fc','#e6eaf0':'#edf1f7','#f6f8fb':'#f9fbfd','#cbd5e1':'#c9d6e6','#e2e8f0':'#e3e8ee'}},
+ apple:{base:'claro',hex:{'#2563eb':'#0066cc','#1d4ed8':'#0058b0','#1e50d6':'#0062c4','#1e40af':'#004c99','#1e3a8a':'#003f80','#3b82f6':'#0071e3','#60a5fa':'#2997ff','#93c5fd':'#7cb8f5','#bfdbfe':'#c5def8','#dbeafe':'#dde9f8','#eff6ff':'#eef5fc',
+  '#0f172a':'#1d1d1f','#1e293b':'#1d1d1f','#334155':'#333336','#475569':'#424245','#64748b':'#6e6e73','#eef1f5':'#f5f5f7','#e6eaf0':'#ececf0','#f6f8fb':'#fafafc','#cbd5e1':'#d2d2d7','#e2e8f0':'#e0e0e0',
+  /* los morados del sistema (avatares, gráficas, botones de cobro) también pasan al azul: Apple usa UN solo color */
+  '#6d28d9':'#0058b0','#7c3aed':'#0066cc','#4f46e5':'#0062c4','#8b5cf6':'#0071e3','#6366f1':'#0071e3','#4338ca':'#004c99','#5b21b6':'#003f80','#9333ea':'#0066cc','#a855f7':'#2997ff',
+  '#a78bfa':'#2997ff','#818cf8':'#4aa3f7','#c4b5fd':'#9cc7f2','#ddd6fe':'#cfe2f7','#ede9fe':'#e3eefb','#f5f3ff':'#eef5fc','#faf5ff':'#f5f9fd'}},
+ linear:{base:'oscuro',hex:{'#2563eb':'#5e6ad2','#1d4ed8':'#4f5ac0','#1e50d6':'#5560c8','#1e40af':'#3f4796','#1e3a8a':'#363d80','#3b82f6':'#6c78e0','#60a5fa':'#7c87f0','#93c5fd':'#828fff','#bfdbfe':'#a9b2ff','#dbeafe':'#d7dbff','#eff6ff':'#eef0ff',
+  '#f8fafc':'#f7f8f8','#e2e8f0':'#d0d6e0','#cbd5e1':'#b4bcc8','#bcc7d6':'#9aa0aa','#94a3b8':'#8a8f98',
+  '#0e1013':'#010102','#16181c':'#0f1011','#08090b':'#010102','#1d1f24':'#141516','#121418':'#0f1011'},rgb:{'28,30,35':'15,16,17'}}
+};
+/* Reglas de OTROS temas que no se tocan (si no mencionan también el tema base). */
+var AJENO={claro:/tema-glass-oscuro|tema-premium|\.tema-glass(?![\w-])|tgo-foto/,oscuro:/\.tema-claro|tema-premium|\.tema-glass(?![\w-])|tgc-foto/};
+var PROPIO={claro:/\.tema-claro/,oscuro:/tema-glass-oscuro/};
 var reTri=/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g;
-function mapa(v){return v.replace(reHex,function(m){return HEX[m.toLowerCase()];}).replace(reTri,function(m,a,b,c){var k=a+','+b+','+c;return RGB[k]||m;});}
-var OTRO=/tema-glass-oscuro|tema-premium|\.tema-glass(?![\w-])|tgo-foto/;
+function preparar(T){if(T.mapa)return;var H=T.hex,R=T.rgb||{};
+  Object.keys(H).forEach(function(h){var a=[1,3,5].map(function(i){return parseInt(h.substr(i,2),16);}).join(','),b=[1,3,5].map(function(i){return parseInt(H[h].substr(i,2),16);}).join(',');if(!R[a])R[a]=b;});
+  var re=new RegExp(Object.keys(H).join('|')+'(?![0-9a-f])','gi');
+  T.mapa=function(v){return v.replace(re,function(m){return H[m.toLowerCase()];}).replace(reTri,function(m,a,b,c){return R[a+','+b+','+c]||m;});};
+  T.hechas=new WeakSet();T.n=0;}
 function partir(sel){var out=[],n=0,ini=0;for(var i=0;i<sel.length;i++){var c=sel[i];if(c==='(')n++;else if(c===')')n--;else if(c===','&&n===0){out.push(sel.slice(ini,i));ini=i+1;}}out.push(sel.slice(ini));return out;}
-function prefijo(s){s=s.trim();if(!s)return '';if(s.indexOf('.tema-claro')<0&&OTRO.test(s))return '';
-  if(/^html(?![\w-])/.test(s))return 'html:where(.tema-stripe)'+s.slice(4);
-  if(/^:root(?![\w-])/.test(s))return ':root:where(.tema-stripe)'+s.slice(5);
-  return ':where(html.tema-stripe) '+s;}
-var N=0;
-function copia(lista,i,r){var st=r.style,dec=[];
-  for(var k=0;k<st.length;k++){var p=st[k],v=st.getPropertyValue(p),nv=mapa(v);if(nv!==v)dec.push(p+':'+nv+(st.getPropertyPriority(p)?' !important':''));}
+function prefijo(id,T,s){s=s.trim();if(!s)return '';if(AJENO[T.base].test(s)&&!PROPIO[T.base].test(s))return '';
+  if(/^html(?![\w-])/.test(s))return 'html:where(.tema-'+id+')'+s.slice(4);
+  if(/^:root(?![\w-])/.test(s))return ':root:where(.tema-'+id+')'+s.slice(5);
+  return ':where(html.tema-'+id+') '+s;}
+function copia(id,T,lista,i,r){var st=r.style,dec=[];
+  for(var k=0;k<st.length;k++){var p=st[k],v=st.getPropertyValue(p),nv=T.mapa(v);if(nv!==v)dec.push(p+':'+nv+(st.getPropertyPriority(p)?' !important':''));}
   if(!dec.length)return;
-  var sel=partir(r.selectorText||'').map(prefijo).filter(Boolean).join(',');if(!sel)return;
-  try{lista.insertRule(sel+'{'+dec.join(';')+'}',i+1);N++;}catch(e){}}
-function recorrer(dueno){var rs;try{rs=dueno.cssRules;}catch(e){return;}if(!rs)return;
+  var sel=partir(r.selectorText||'').map(function(s){return prefijo(id,T,s);}).filter(Boolean).join(',');if(!sel)return;
+  try{lista.insertRule(sel+'{'+dec.join(';')+'}',i+1);T.n++;}catch(e){}}
+function recorrer(id,T,dueno){var rs;try{rs=dueno.cssRules;}catch(e){return;}if(!rs)return;
   for(var i=rs.length-1;i>=0;i--){var r=rs[i];
-    if(r.type===1)copia(dueno,i,r);
-    else if(r.type===4){var m=(r.media&&r.media.mediaText)||'';if(!/prefers-color-scheme\s*:\s*dark/i.test(m))recorrer(r);}
-    else if(r.type===12)recorrer(r);}}
-var hechas=new WeakSet();
-function hoja(s){if(!s||hechas.has(s))return;hechas.add(s);recorrer(s);}
+    if(r.type===1)copia(id,T,dueno,i,r);
+    else if(r.type===4){var m=(r.media&&r.media.mediaText)||'';if(!(T.base==='claro'&&/prefers-color-scheme\s*:\s*dark/i.test(m)))recorrer(id,T,r);}
+    else if(r.type===12)recorrer(id,T,r);}}
+function activo(){for(var id in TEMAS)if(d.classList.contains('tema-'+id))return id;return null;}
+function hoja(s){var id=activo();if(!id||!s)return;var T=TEMAS[id];preparar(T);if(T.hechas.has(s))return;T.hechas.add(s);recorrer(id,T,s);window.__nxTemaN=T.n;window.__nxStripeN=T.n;}
 function nodo(n){if(!n||n.nodeType!==1)return;
   if(n.tagName==='STYLE')hoja(n.sheet);
   else if(n.tagName==='LINK'&&/stylesheet/i.test(n.rel)){if(n.sheet)hoja(n.sheet);n.addEventListener('load',function(){hoja(n.sheet);});}}
-window.nxStripeProcesar=function(){
-  if(!d.classList.contains('tema-stripe'))return;
+window.nxTemaPaletaProcesar=function(){
+  if(!activo())return;
   var t0=performance.now();
   for(var i=0;i<document.styleSheets.length;i++)hoja(document.styleSheets[i]);
-  window.__nxStripeN=N;window.__nxStripeMs=Math.round(performance.now()-t0);
-  if(window.__nxStripeMO)return;
-  window.__nxStripeMO=new MutationObserver(function(ms){if(!d.classList.contains('tema-stripe'))return;
+  window.__nxTemaMs=window.__nxStripeMs=Math.round(performance.now()-t0);
+  if(window.__nxTemaMO)return;
+  window.__nxTemaMO=new MutationObserver(function(ms){if(!activo())return;
     for(var a=0;a<ms.length;a++){var m=ms[a];
       if(m.target&&m.target.tagName==='STYLE'){hoja(m.target.sheet);continue;}
-      for(var b=0;b<m.addedNodes.length;b++)nodo(m.addedNodes[b]);}
-    window.__nxStripeN=N;});
-  window.__nxStripeMO.observe(d,{childList:true,subtree:true});
+      for(var b=0;b<m.addedNodes.length;b++)nodo(m.addedNodes[b]);}});
+  window.__nxTemaMO.observe(d,{childList:true,subtree:true});
 };
-try{window.nxStripeProcesar();}catch(e){}
+window.nxStripeProcesar=window.nxTemaPaletaProcesar; // nombre anterior (27-nov)
+try{window.nxTemaPaletaProcesar();}catch(e){}
 })();</script>
 </head>
 <body>
@@ -11431,24 +11458,26 @@ function aplicarTema(tema,guardar){
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // 27-nov-2026: Premium Blue retirado de la lista → quien lo tenga pasa al Glass oscuro (y se guarda así).
   if(tema==='premium'&&window.NX_TEMA_GLASS_OSCURO){tema='glass-oscuro';if(guardar===false)guardar=true;}
-  // «Stripe» = el modo claro + la paleta Stripe (html.tema-claro.tema-stripe); sin el claro o con el interruptor apagado, Claro.
-  const stripe=tema==='stripe'&&window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO;
-  if(tema==='stripe'&&!stripe)tema='clasico';
+  // Temas de paleta (27-nov-2026): Stripe y Apple = el modo claro + su paleta; Linear = el Glass oscuro + su paleta
+  // (html.tema-<base> + html.tema-<nombre>). Con su interruptor apagado o sin su tema base, queda el tema base.
+  const EXB={stripe:'clasico',apple:'clasico',linear:'glass-oscuro'};
+  let extra=EXB[tema]?tema:null;
+  if(extra&&!(window['NX_TEMA_'+extra.toUpperCase()]!==false&&(EXB[extra]==='clasico'?window.NX_TEMA_CLARO:window.NX_TEMA_GLASS_OSCURO))){tema=EXB[extra];extra=null;}
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
-  html.classList.remove('tema-glass-oscuro','tema-claro','tema-stripe');
-  let temaReal=stripe?'clasico':tema;
+  html.classList.remove('tema-glass-oscuro','tema-claro','tema-stripe','tema-apple','tema-linear');
+  let temaReal=extra?EXB[extra]:tema;
   // AUTO: seguir preferencia del dispositivo (oscuro = Glass oscuro; Premium solo si el Glass está apagado)
   if(tema==='auto'){
     const oscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
     temaReal=oscuro?(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'):'clasico';
   }
-  if(stripe){
-    html.classList.add('tema-stripe');
-    try{window.nxStripeProcesar&&window.nxStripeProcesar();}catch(e){}
+  if(extra){
+    html.classList.add('tema-'+extra);
+    try{window.nxTemaPaletaProcesar&&window.nxTemaPaletaProcesar();}catch(e){}
   }
-  // Recordar el último tema claro elegido (Claro o Stripe) para el botón sol/luna.
-  if(tema==='clasico'||tema==='stripe'){try{localStorage.setItem('nx_tema_luz',tema);}catch(e){}}
+  // Recordar el último tema claro (Claro, Stripe o Apple) y el último oscuro (Glass oscuro o Linear) para el botón sol/luna.
+  try{if(tema==='clasico'||EXB[tema]==='clasico')localStorage.setItem('nx_tema_luz',tema);else if(tema==='glass-oscuro'||EXB[tema]==='glass-oscuro')localStorage.setItem('nx_tema_noche',tema);}catch(e){}
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
   else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
@@ -11562,10 +11591,16 @@ function cargarTemaGuardado(){
   aplicarTema(tema,false);
 }
 
-// ¿Se ofrece el tema Stripe? Para todos solo con NX_TEMA_STRIPE_TODOS; si no, al dueño del sistema (la respuesta del
-// servidor llega un momento después: al llegar, se vuelve a dibujar Apariencia) y a quien ya lo tenga elegido.
+// ¿Se ofrece un tema de paleta (stripe / apple / linear)? Para todos solo con NX_TEMA_<NOMBRE>_TODOS=true; si no, al dueño
+// del sistema (la respuesta del servidor llega un momento después: al llegar, se vuelve a dibujar Apariencia) y a quien ya
+// lo tenga elegido.
+function nxTemaPaletaVisible(id,actual){
+  if(window['NX_TEMA_'+id.toUpperCase()]===false)return false;
+  if(window['NX_TEMA_'+id.toUpperCase()+'_TODOS']||actual===id)return true;
+  return nxStripeVisible('__dueno');
+}
 function nxStripeVisible(actual){
-  if(window.NX_TEMA_STRIPE_TODOS||actual==='stripe')return true;
+  if(actual!=='__dueno'&&(window.NX_TEMA_STRIPE_TODOS||actual==='stripe'))return true;
   if(!(sesion&&sesion.rol==='admin')||typeof window.nxEsDuenoSistema!=='function')return false;
   const tk=(typeof API!=='undefined'&&API)?API.token:null;
   if(window.__nxStripeDuenoTk!==tk){window.__nxStripeDuenoTk=tk;window.__nxStripeDueno=false;
@@ -11583,7 +11618,9 @@ function rApariencia(){
       :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
     // 27-nov-2026: Premium Blue retirado (dueño). Stripe: solo lo ve el DUEÑO del sistema (rpc mi_es_superadmin) hasta que
     // lo apruebe para todos (NX_TEMA_STRIPE_TODOS=true); quien ya lo tenga elegido también lo ve marcado.
-    ...((window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO&&nxStripeVisible(temaActual))?[{id:'stripe',nom:'STRIPE',desc:'Claro con degradado de colores arriba, tinta azul marino y acento morado',ico:'🌈',preview:'radial-gradient(60% 90% at 0% 0%,#ffb35b,transparent 70%),radial-gradient(60% 90% at 60% 0%,#f96bee,transparent 70%),radial-gradient(70% 100% at 100% 0%,#533afd,transparent 70%),#f6f9fc'}]:[]),
+    ...((window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO&&nxTemaPaletaVisible('stripe',temaActual))?[{id:'stripe',nom:'STRIPE',desc:'Claro con degradado de colores arriba, tinta azul marino y acento morado',ico:'🌈',preview:'radial-gradient(60% 90% at 0% 0%,#ffb35b,transparent 70%),radial-gradient(60% 90% at 60% 0%,#f96bee,transparent 70%),radial-gradient(70% 100% at 100% 0%,#533afd,transparent 70%),#f6f9fc'}]:[]),
+    ...((window.NX_TEMA_CLARO&&nxTemaPaletaVisible('apple',temaActual))?[{id:'apple',nom:'APPLE',desc:'Claro, gris perla liso, tinta casi negra y un solo azul',ico:'🤍',preview:'linear-gradient(135deg,#f5f5f7 0%,#ffffff 60%,#e8f0fb 100%)'}]:[]),
+    ...((window.NX_TEMA_GLASS_OSCURO&&nxTemaPaletaVisible('linear',temaActual))?[{id:'linear',nom:'LINEAR',desc:'Casi negro, paneles grafito finos y acento lila',ico:'🌑',preview:'radial-gradient(70% 90% at 50% 0%,rgba(94,106,210,.45),transparent 70%),#010102'}]:[]),
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
     {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
   ];
@@ -12394,8 +12431,8 @@ document.addEventListener('click',e=>{
 function toggleDarkMode(){
   // Oscuro (premium o glass oscuro) → Clásico; claro → el oscuro del sistema (glass oscuro si está encendido).
   const real=document.documentElement.getAttribute('data-nx-tema')||nxPref('tema',nxTemaDefecto());
-  let luz='clasico';try{if(localStorage.getItem('nx_tema_luz')==='stripe')luz='stripe';}catch(e){}
-  aplicarTema((real==='premium'||real==='glass-oscuro')?luz:(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'));
+  let luz='clasico',noche='glass-oscuro';try{const l=localStorage.getItem('nx_tema_luz'),n=localStorage.getItem('nx_tema_noche');if(l==='stripe'||l==='apple')luz=l;if(n==='linear')noche=n;}catch(e){}
+  aplicarTema((real==='premium'||real==='glass-oscuro')?luz:(window.NX_TEMA_GLASS_OSCURO?noche:'premium'));
 }
 
 // ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────
