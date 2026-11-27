@@ -1,4 +1,4 @@
-# 2026-11-27 20:05 RD · Claude — Apariencia: se quita Premium Blue y entra el tema «Stripe» (sin publicar)
+# 2026-11-27 19:05 RD · Claude — Apariencia: se quita Premium Blue y entra el tema «Stripe» (sin publicar)
 
 ## Pedido del dueño
 - Le mostré el sistema de Seguros en 3 estilos (Apple, Stripe, Linear). Preguntó si podían ser temas de **Configuración → Apariencia**, quitando uno oscuro que se ve feo.
