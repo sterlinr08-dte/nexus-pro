@@ -11562,6 +11562,16 @@ function cargarTemaGuardado(){
   aplicarTema(tema,false);
 }
 
+// ¿Se ofrece el tema Stripe? Para todos solo con NX_TEMA_STRIPE_TODOS; si no, al dueño del sistema (la respuesta del
+// servidor llega un momento después: al llegar, se vuelve a dibujar Apariencia) y a quien ya lo tenga elegido.
+function nxStripeVisible(actual){
+  if(window.NX_TEMA_STRIPE_TODOS||actual==='stripe')return true;
+  if(!(sesion&&sesion.rol==='admin')||typeof window.nxEsDuenoSistema!=='function')return false;
+  const tk=(typeof API!=='undefined'&&API)?API.token:null;
+  if(window.__nxStripeDuenoTk!==tk){window.__nxStripeDuenoTk=tk;window.__nxStripeDueno=false;
+    window.nxEsDuenoSistema().then(ok=>{if(ok&&window.__nxStripeDuenoTk===tk){window.__nxStripeDueno=true;try{rApariencia();}catch(e){}}}).catch(()=>{});}
+  return !!window.__nxStripeDueno;
+}
 function rApariencia(){
   const cont=document.getElementById('cfgApariencia');
   if(!cont)return;
@@ -11571,8 +11581,9 @@ function rApariencia(){
     // 59.22: con el modo claro encendido, «Clásico» es el gemelo claro del Glass oscuro (mismo id, la preferencia guardada no cambia)
     (window.NX_TEMA_CLARO?{id:'clasico',nom:'CLARO',desc:'El mismo diseño del Glass oscuro, en blanco: cristal claro y acento azul NEXUS',ico:'☀️',preview:'linear-gradient(135deg,#EEF1F5,#FFFFFF 60%,#2563EB)'}
       :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
-    // 27-nov-2026: Premium Blue retirado (dueño). Stripe: solo lo ve el administrador hasta que el dueño lo apruebe para todos.
-    ...((window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO&&(window.NX_TEMA_STRIPE_TODOS||(sesion&&sesion.rol==='admin')))?[{id:'stripe',nom:'STRIPE',desc:'Claro con degradado de colores arriba, tinta azul marino y acento morado',ico:'🌈',preview:'radial-gradient(60% 90% at 0% 0%,#ffb35b,transparent 70%),radial-gradient(60% 90% at 60% 0%,#f96bee,transparent 70%),radial-gradient(70% 100% at 100% 0%,#533afd,transparent 70%),#f6f9fc'}]:[]),
+    // 27-nov-2026: Premium Blue retirado (dueño). Stripe: solo lo ve el DUEÑO del sistema (rpc mi_es_superadmin) hasta que
+    // lo apruebe para todos (NX_TEMA_STRIPE_TODOS=true); quien ya lo tenga elegido también lo ve marcado.
+    ...((window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO&&nxStripeVisible(temaActual))?[{id:'stripe',nom:'STRIPE',desc:'Claro con degradado de colores arriba, tinta azul marino y acento morado',ico:'🌈',preview:'radial-gradient(60% 90% at 0% 0%,#ffb35b,transparent 70%),radial-gradient(60% 90% at 60% 0%,#f96bee,transparent 70%),radial-gradient(70% 100% at 100% 0%,#533afd,transparent 70%),#f6f9fc'}]:[]),
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
     {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
   ];

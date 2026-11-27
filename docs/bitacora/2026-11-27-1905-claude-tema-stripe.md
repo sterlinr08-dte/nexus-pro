@@ -25,7 +25,8 @@
 - Premium queda solo como respaldo interno si alguien apaga el Glass oscuro (`NX_TEMA_GLASS_OSCURO=false`).
 
 ## Quién lo ve
-- **Stripe sale en Apariencia solo para el administrador.** Para todos, poner `window.NX_TEMA_STRIPE_TODOS=true` cuando el dueño lo apruebe.
+- **Stripe sale en Apariencia solo para el DUEÑO del sistema** (`rpc/mi_es_superadmin`, la misma comprobación que Multiempresa). Los demás administradores no lo ven todavía, salvo quien ya lo tenga elegido. Para todos: `window.NX_TEMA_STRIPE_TODOS=true` cuando el dueño lo apruebe.
+  - Probado: un administrador que no es el dueño no lo ve, y con «es el dueño» sí aparece.
 - El botón sol/luna vuelve al último tema claro elegido: Claro o Stripe (`nx_tema_luz`).
 - Interruptor: `NX_TEMA_STRIPE=false` en el `<head>` → quien lo tenga ve el Claro.
 - Las tiendas (POS y demo) siguen siempre en Claro, como antes.
@@ -36,7 +37,7 @@
 - No hay migración, RPC ni Edge Function.
 
 ## Pruebas (app real contra `scripts/qa-crm-mock-server.js`)
-- `qa-tema-stripe.mjs`: **37/37**, a 390 y 1280 px.
+- `qa-tema-stripe.mjs`: **38/38**, a 390 y 1280 px.
   - Clases correctas, morado `#533afd` y fondo `#f6f9fc`. El primer pintado ya sale con Stripe.
   - Sin desplazamiento de lado en Inicio, Clientes, Facturas, Cobros, Custodia, Registrar pago y Apariencia.
   - Apariencia: sin Premium, con Stripe marcado como activo.

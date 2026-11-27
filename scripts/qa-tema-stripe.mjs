@@ -101,6 +101,10 @@ for (const w of [390, 1280]) {
   const { ctx, page } = await abrir(browser, 390, 'clasico');
   const r = await page.evaluate(() => ({ clases: document.documentElement.className, c1: getComputedStyle(document.documentElement).getPropertyValue('--c1').trim() }));
   ok(/tema-claro/.test(r.clases) && !/tema-stripe/.test(r.clases) && r.c1.toLowerCase() === '#2563eb', 'Claro sigue azul y sin Stripe', r);
+  // Un administrador que NO es el dueño del sistema (el servidor simulado no confirma mi_es_superadmin) no ve Stripe.
+  await page.evaluate(() => { nav('config', document.querySelector('[onclick*="nav(\'config\'"]')); setTimeout(() => switchCfgTab(12), 300); }); await sleep(2500);
+  const ops = await page.evaluate(() => [...document.querySelectorAll('#cfgApariencia .tema-opcion')].map(o => o.dataset.tema));
+  ok(!ops.includes('stripe') && !ops.includes('premium'), 'Admin que no es el dueño: Apariencia sin Stripe (todavía) y sin Premium', ops);
   await page.screenshot({ path: `${OUT}claro-390-inicio.png` });
   await ctx.close();
 }
