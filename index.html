@@ -18,7 +18,16 @@ try{t=localStorage.getItem('nx_tema');if(localStorage.getItem('nx_tgo_off')==='1
 window.NX_TEMA_DEFECTO=NX_TEMA_GLASS_OSCURO?'glass-oscuro':'clasico';if(!t)t=window.NX_TEMA_DEFECTO;
 /* 15-nov-2026 (dueño: «la apariencia ponla blanca, quítale el modo oscuro»): las empresas tipo tienda (POS y demo) siempre en modo claro. */
 try{if(localStorage.getItem('nx_org_tipo')==='tienda')t='clasico';}catch(e){}
-if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'premium':'clasico';
+/* 27-nov-2026 (dueño: «Quita el Premium Blue y empieza con Stripe»): Premium Blue ya no se ofrece; quien lo tenía pasa al
+   Glass oscuro (si está apagado, Premium queda solo como respaldo interno). «Stripe» = el modo claro + la paleta Stripe:
+   html.tema-claro.tema-stripe. Los colores los cambia script#nxTemaStripeOn al final del <head> (antes del primer pintado).
+   data-nx-tema sigue en «clasico» para todo lo que pregunta por el claro. INTERRUPTOR: NX_TEMA_STRIPE=false → quien lo
+   tenga ve el Claro. */
+var NX_TEMA_STRIPE=true;
+if(t==='premium'&&NX_TEMA_GLASS_OSCURO)t='glass-oscuro';
+if(t==='auto')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?(NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'):'clasico';
+if(t==='stripe'){t='clasico';if(NX_TEMA_STRIPE&&NX_TEMA_CLARO)d.classList.add('tema-stripe');}
+window.NX_TEMA_STRIPE=NX_TEMA_STRIPE;
 if(t==='glass-oscuro'&&!NX_TEMA_GLASS_OSCURO)t='clasico';
 d.setAttribute('data-nx-tema',t);if(t==='glass-oscuro')d.classList.add('tema-glass-oscuro');else if(t==='clasico'&&NX_TEMA_CLARO)d.classList.add('tema-claro');
 /* 59.22: premium y glass viven en <body>: la clase se pone en cuanto el parser crea el <body> (el aviso del MutationObserver corre antes
@@ -29,7 +38,7 @@ if(t==='premium'||t==='glass'){var cb=t==='premium'?'tema-premium':'tema-glass';
 /* 58.90 (velocidad): se pide después de `load` y en un momento libre: durante la carga la tapa el splash y descargarla/
    decodificarla en los primeros cuadros retrasaba el primer pintado (~90 ms). La URL solo está en html.tgo-foto::after. */
 /* 59.22: cada tema pide la suya una sola vez: grafito → html.tgo-foto; modo claro (la oficina de siempre, ya desenfocada) → html.tgc-foto */
-window.nxTgoFoto=function(){var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
+window.nxTgoFoto=function(){if(d.classList.contains('tema-stripe'))return;var claro=d.classList.contains('tema-claro'),k=claro?'__nxTgcFoto':'__nxTgoFoto';if(window[k])return;window[k]=1;
 var go=function(){var i=new Image();i.decoding='async';i.onload=function(){d.classList.add(claro?'tgc-foto':'tgo-foto');};
 var m=window.innerWidth<=768;i.src=claro?(m?'assets/fondo-oficina-claro-movil.webp':'assets/fondo-oficina-claro.webp'):(m?'assets/fondo-login-movil-grafito.webp':'assets/fondo-login-grafito.webp');};/* 59.21: las mismas fotos que pinta html.tgo-foto::after (59.22: y html.tgc-foto::after) */
 var libre=function(){(window.requestIdleCallback||function(f){setTimeout(f,150);})(go,{timeout:1500});};
@@ -7846,6 +7855,78 @@ html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-
      ya sabe que la empresa es una tienda, la app queda oculta hasta que abre el POS (con salida de seguridad a los 9 s). -->
 <style id="nxArranqueTienda">html.nx-arranque-tienda #app{visibility:hidden!important}</style>
 <script>try{if(localStorage.getItem('nx_org_tipo')==='tienda'&&(sessionStorage.getItem('nx_sesion')||localStorage.getItem('nx_sesion_persist')||(location.hash||'').indexOf('access_token=')>=0)){document.documentElement.classList.add('nx-arranque-tienda');setTimeout(function(){document.documentElement.classList.remove('nx-arranque-tienda');},9000);}}catch(e){}</script>
+<!-- ═══ TEMA «STRIPE» (27-nov-2026, dueño: «Quita el Premium Blue y empieza con Stripe») ═══
+     Stripe = el modo claro (html.tema-claro, ya cubre todas las pantallas) + la paleta de Stripe (github.com/VoltAgent/
+     awesome-design-md → design-md/stripe/DESIGN.md: tinta #0d253d, morado #533afd, línea #e3e8ee, fondo #f6f9fc).
+     Cómo cambia los colores (script#nxTemaStripeOn): con html.tema-stripe puesto, recorre las hojas de estilo y, al lado de
+     cada regla que lleva un azul/tinta del Claro, inserta una COPIA con el color de Stripe y la condición
+     :where(html.tema-stripe) (que no suma prioridad). Así cada copia empata con su original y gana por ir justo después:
+     es como si esa regla tuviera el color de Stripe, sin alterar qué regla manda sobre cuál. Las reglas solo del Glass
+     oscuro, Premium o Liquid Glass se saltan. Corre aquí (al final del <head>, antes del primer pintado) y vigila los
+     <style>/<link> que los parches agregan después. Con el tema apagado no hace nada.
+     style#nxTemaStripe: lo hecho a mano (el degradado de arriba en lugar de la foto de la oficina). -->
+<style id="nxTemaStripe">
+html.tema-claro.tema-stripe{--tgo-bg:#f6f9fc;--tgc-velo-a:rgba(255,255,255,0);--tgc-velo-b:rgba(255,255,255,0)}
+html.tema-claro.tema-stripe::after,html.tema-claro.tema-stripe.tgc-foto::after{opacity:1;background:
+  radial-gradient(38% 30% at 4% 0%,rgba(255,179,91,.55) 0%,rgba(255,179,91,0) 70%),
+  radial-gradient(36% 30% at 50% 0%,rgba(249,107,238,.40) 0%,rgba(249,107,238,0) 70%),
+  radial-gradient(46% 36% at 100% 2%,rgba(83,58,253,.38) 0%,rgba(83,58,253,0) 70%),
+  radial-gradient(40% 30% at 26% 20%,rgba(128,233,255,.38) 0%,rgba(128,233,255,0) 70%),
+  #f6f9fc!important}
+@media (max-width:768px){html.tema-claro.tema-stripe::after,html.tema-claro.tema-stripe.tgc-foto::after{background:
+  radial-gradient(70% 22% at 0% 0%,rgba(255,179,91,.55) 0%,rgba(255,179,91,0) 70%),
+  radial-gradient(60% 20% at 60% 0%,rgba(249,107,238,.40) 0%,rgba(249,107,238,0) 70%),
+  radial-gradient(70% 24% at 100% 4%,rgba(83,58,253,.36) 0%,rgba(83,58,253,0) 70%),
+  radial-gradient(70% 18% at 24% 14%,rgba(128,233,255,.36) 0%,rgba(128,233,255,0) 70%),
+  #f6f9fc!important}}
+</style>
+<script id="nxTemaStripeOn">(function(){
+var d=document.documentElement;
+/* Claro → Stripe. Los navegadores devuelven los colores como rgb(r, g, b); en las variables (--c1…) queda el texto escrito (#2563EB o «37,99,235»). */
+var HEX={'#2563eb':'#533afd','#1d4ed8':'#4434d4','#1e50d6':'#4a33e8','#1e40af':'#2e2b8c','#1e3a8a':'#2e2b8c','#3b82f6':'#665efd','#60a5fa':'#8f87ff','#93c5fd':'#b9b9f9','#bfdbfe':'#d4d0ff','#dbeafe':'#e4e1ff','#eff6ff':'#f0eeff',
+'#0f172a':'#0d253d','#1e293b':'#1c2e45','#334155':'#273951','#475569':'#425466','#64748b':'#64748d','#eef1f5':'#f6f9fc','#e6eaf0':'#edf1f7','#f6f8fb':'#f9fbfd','#cbd5e1':'#c9d6e6','#e2e8f0':'#e3e8ee'};
+var RGB={};
+Object.keys(HEX).forEach(function(h){var a=[1,3,5].map(function(i){return parseInt(h.substr(i,2),16);}).join(','),b=[1,3,5].map(function(i){return parseInt(HEX[h].substr(i,2),16);}).join(',');RGB[a]=b;});
+var reHex=new RegExp(Object.keys(HEX).join('|')+'(?![0-9a-f])','gi');
+var reTri=/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g;
+function mapa(v){return v.replace(reHex,function(m){return HEX[m.toLowerCase()];}).replace(reTri,function(m,a,b,c){var k=a+','+b+','+c;return RGB[k]||m;});}
+var OTRO=/tema-glass-oscuro|tema-premium|\.tema-glass(?![\w-])|tgo-foto/;
+function partir(sel){var out=[],n=0,ini=0;for(var i=0;i<sel.length;i++){var c=sel[i];if(c==='(')n++;else if(c===')')n--;else if(c===','&&n===0){out.push(sel.slice(ini,i));ini=i+1;}}out.push(sel.slice(ini));return out;}
+function prefijo(s){s=s.trim();if(!s)return '';if(s.indexOf('.tema-claro')<0&&OTRO.test(s))return '';
+  if(/^html(?![\w-])/.test(s))return 'html:where(.tema-stripe)'+s.slice(4);
+  if(/^:root(?![\w-])/.test(s))return ':root:where(.tema-stripe)'+s.slice(5);
+  return ':where(html.tema-stripe) '+s;}
+var N=0;
+function copia(lista,i,r){var st=r.style,dec=[];
+  for(var k=0;k<st.length;k++){var p=st[k],v=st.getPropertyValue(p),nv=mapa(v);if(nv!==v)dec.push(p+':'+nv+(st.getPropertyPriority(p)?' !important':''));}
+  if(!dec.length)return;
+  var sel=partir(r.selectorText||'').map(prefijo).filter(Boolean).join(',');if(!sel)return;
+  try{lista.insertRule(sel+'{'+dec.join(';')+'}',i+1);N++;}catch(e){}}
+function recorrer(dueno){var rs;try{rs=dueno.cssRules;}catch(e){return;}if(!rs)return;
+  for(var i=rs.length-1;i>=0;i--){var r=rs[i];
+    if(r.type===1)copia(dueno,i,r);
+    else if(r.type===4){var m=(r.media&&r.media.mediaText)||'';if(!/prefers-color-scheme\s*:\s*dark/i.test(m))recorrer(r);}
+    else if(r.type===12)recorrer(r);}}
+var hechas=new WeakSet();
+function hoja(s){if(!s||hechas.has(s))return;hechas.add(s);recorrer(s);}
+function nodo(n){if(!n||n.nodeType!==1)return;
+  if(n.tagName==='STYLE')hoja(n.sheet);
+  else if(n.tagName==='LINK'&&/stylesheet/i.test(n.rel)){if(n.sheet)hoja(n.sheet);n.addEventListener('load',function(){hoja(n.sheet);});}}
+window.nxStripeProcesar=function(){
+  if(!d.classList.contains('tema-stripe'))return;
+  var t0=performance.now();
+  for(var i=0;i<document.styleSheets.length;i++)hoja(document.styleSheets[i]);
+  window.__nxStripeN=N;window.__nxStripeMs=Math.round(performance.now()-t0);
+  if(window.__nxStripeMO)return;
+  window.__nxStripeMO=new MutationObserver(function(ms){if(!d.classList.contains('tema-stripe'))return;
+    for(var a=0;a<ms.length;a++){var m=ms[a];
+      if(m.target&&m.target.tagName==='STYLE'){hoja(m.target.sheet);continue;}
+      for(var b=0;b<m.addedNodes.length;b++)nodo(m.addedNodes[b]);}
+    window.__nxStripeN=N;});
+  window.__nxStripeMO.observe(d,{childList:true,subtree:true});
+};
+try{window.nxStripeProcesar();}catch(e){}
+})();</script>
 </head>
 <body>
 <script id="nxTemaBodyOn">/* temas que viven en <body> (premium / glass claro): aplicados antes del primer pintado del <body> */
@@ -11348,15 +11429,26 @@ function aplicarTema(tema,guardar){
   // 15-nov-2026 (dueño): las tiendas (POS y demo) siempre en modo claro; no se guarda como preferencia del usuario.
   try{ if(body.classList.contains('org-tienda')||localStorage.getItem('nx_org_tipo')==='tienda'){ if(tema!=='clasico'){ tema='clasico'; guardar=false; } } }catch(e){}
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
+  // 27-nov-2026: Premium Blue retirado de la lista → quien lo tenga pasa al Glass oscuro (y se guarda así).
+  if(tema==='premium'&&window.NX_TEMA_GLASS_OSCURO){tema='glass-oscuro';if(guardar===false)guardar=true;}
+  // «Stripe» = el modo claro + la paleta Stripe (html.tema-claro.tema-stripe); sin el claro o con el interruptor apagado, Claro.
+  const stripe=tema==='stripe'&&window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO;
+  if(tema==='stripe'&&!stripe)tema='clasico';
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
-  html.classList.remove('tema-glass-oscuro','tema-claro');
-  let temaReal=tema;
-  // AUTO: seguir preferencia del dispositivo
+  html.classList.remove('tema-glass-oscuro','tema-claro','tema-stripe');
+  let temaReal=stripe?'clasico':tema;
+  // AUTO: seguir preferencia del dispositivo (oscuro = Glass oscuro; Premium solo si el Glass está apagado)
   if(tema==='auto'){
     const oscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
-    temaReal=oscuro?'premium':'clasico';
+    temaReal=oscuro?(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'):'clasico';
   }
+  if(stripe){
+    html.classList.add('tema-stripe');
+    try{window.nxStripeProcesar&&window.nxStripeProcesar();}catch(e){}
+  }
+  // Recordar el último tema claro elegido (Claro o Stripe) para el botón sol/luna.
+  if(tema==='clasico'||tema==='stripe'){try{localStorage.setItem('nx_tema_luz',tema);}catch(e){}}
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
   else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
@@ -11458,7 +11550,7 @@ function cargarTemaGuardado(){
   if(!_prefsListas){let t=null;try{t=localStorage.getItem('nx_tema');}catch(e){}aplicarTema(t||nxTemaDefecto(),false);return;}
   const nuncaTocado=!(_prefs&&Object.prototype.hasOwnProperty.call(_prefs,'tema'));
   let tema=nxPref('tema',nxTemaDefecto());
-  if(nuncaTocado&&nxPref('dark',false)===true){tema='premium';nxPrefSet('tema',tema);}
+  if(nuncaTocado&&nxPref('dark',false)===true){tema=window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium';nxPrefSet('tema',tema);}
   // 58.89 — «Glass oscuro» por defecto para todos (pedido del dueño 29-sep-2026), UNA sola vez por usuario: hasta hoy
   // cada carga guardaba 'clasico' aunque nadie lo eligiera, así que 'clasico' guardado no distingue una elección real.
   // Quien tenga 'clasico' pasa una vez a glass-oscuro; premium/glass/auto se respetan. Después de esta marca, lo que el
@@ -11470,6 +11562,16 @@ function cargarTemaGuardado(){
   aplicarTema(tema,false);
 }
 
+// ¿Se ofrece el tema Stripe? Para todos solo con NX_TEMA_STRIPE_TODOS; si no, al dueño del sistema (la respuesta del
+// servidor llega un momento después: al llegar, se vuelve a dibujar Apariencia) y a quien ya lo tenga elegido.
+function nxStripeVisible(actual){
+  if(window.NX_TEMA_STRIPE_TODOS||actual==='stripe')return true;
+  if(!(sesion&&sesion.rol==='admin')||typeof window.nxEsDuenoSistema!=='function')return false;
+  const tk=(typeof API!=='undefined'&&API)?API.token:null;
+  if(window.__nxStripeDuenoTk!==tk){window.__nxStripeDuenoTk=tk;window.__nxStripeDueno=false;
+    window.nxEsDuenoSistema().then(ok=>{if(ok&&window.__nxStripeDuenoTk===tk){window.__nxStripeDueno=true;try{rApariencia();}catch(e){}}}).catch(()=>{});}
+  return !!window.__nxStripeDueno;
+}
 function rApariencia(){
   const cont=document.getElementById('cfgApariencia');
   if(!cont)return;
@@ -11479,7 +11581,9 @@ function rApariencia(){
     // 59.22: con el modo claro encendido, «Clásico» es el gemelo claro del Glass oscuro (mismo id, la preferencia guardada no cambia)
     (window.NX_TEMA_CLARO?{id:'clasico',nom:'CLARO',desc:'El mismo diseño del Glass oscuro, en blanco: cristal claro y acento azul NEXUS',ico:'☀️',preview:'linear-gradient(135deg,#EEF1F5,#FFFFFF 60%,#2563EB)'}
       :{id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'}),
-    {id:'premium',nom:'PREMIUM BLUE',desc:'Azul noche y azul acero, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#021024,#052659 55%,#5483B3)'},
+    // 27-nov-2026: Premium Blue retirado (dueño). Stripe: solo lo ve el DUEÑO del sistema (rpc mi_es_superadmin) hasta que
+    // lo apruebe para todos (NX_TEMA_STRIPE_TODOS=true); quien ya lo tenga elegido también lo ve marcado.
+    ...((window.NX_TEMA_STRIPE!==false&&window.NX_TEMA_CLARO&&nxStripeVisible(temaActual))?[{id:'stripe',nom:'STRIPE',desc:'Claro con degradado de colores arriba, tinta azul marino y acento morado',ico:'🌈',preview:'radial-gradient(60% 90% at 0% 0%,#ffb35b,transparent 70%),radial-gradient(60% 90% at 60% 0%,#f96bee,transparent 70%),radial-gradient(70% 100% at 100% 0%,#533afd,transparent 70%),#f6f9fc'}]:[]),
     {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
     {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
   ];
@@ -12290,7 +12394,8 @@ document.addEventListener('click',e=>{
 function toggleDarkMode(){
   // Oscuro (premium o glass oscuro) → Clásico; claro → el oscuro del sistema (glass oscuro si está encendido).
   const real=document.documentElement.getAttribute('data-nx-tema')||nxPref('tema',nxTemaDefecto());
-  aplicarTema((real==='premium'||real==='glass-oscuro')?'clasico':(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'));
+  let luz='clasico';try{if(localStorage.getItem('nx_tema_luz')==='stripe')luz='stripe';}catch(e){}
+  aplicarTema((real==='premium'||real==='glass-oscuro')?luz:(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'));
 }
 
 // ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────
