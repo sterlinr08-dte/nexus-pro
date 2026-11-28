@@ -7866,9 +7866,9 @@ html:not(.nx-fesp-off) #mAbono#mAbono#mAbono#mAbono#mAbono#mAbono .modal{scroll-
        · Linear = Glass oscuro (html.tema-glass-oscuro) + casi negro #010102, paneles #0f1011, acento lila #5e6ad2.
      En <html> van la clase del tema base y tema-<nombre>; data-nx-tema sigue en el base («clasico» / «glass-oscuro»).
      Cómo cambia los colores (script#nxTemasPaletaOn): con html.tema-<nombre> puesto, recorre las hojas de estilo y, al lado
-     de cada regla que lleva un color de la paleta del tema base, inserta una COPIA con el color nuevo y la condición
-     :where(html.tema-<nombre>) (que no suma prioridad): cada copia empata con su original y gana por ir justo después, así
-     no cambia qué regla manda sobre cuál. Se saltan las reglas de los OTROS temas. Corre aquí (al final del <head>, antes
+     de cada regla que lleva un color de la paleta del tema base, inserta una COPIA con el color nuevo y el MISMO selector
+     (28-nov: sin condición; al cambiar de tema se borran): cada copia empata con su original y gana por ir justo después,
+     así no cambia qué regla manda sobre cuál. Se saltan las reglas de los OTROS temas. Corre aquí (al final del <head>, antes
      del primer pintado) y vigila los <style>/<link> que los parches agregan después. Sin tema de paleta no hace nada.
      style#nxTemasPaleta: lo hecho a mano (el fondo de cada uno en lugar de la foto de la oficina). -->
 <style id="nxTemasPaleta">
@@ -7910,7 +7910,13 @@ var TEMAS={
   '#f8fafc':'#f7f8f8','#e2e8f0':'#d0d6e0','#cbd5e1':'#b4bcc8','#bcc7d6':'#9aa0aa','#94a3b8':'#8a8f98',
   '#0e1013':'#010102','#16181c':'#0f1011','#08090b':'#010102','#1d1f24':'#141516','#121418':'#0f1011'},rgb:{'28,30,35':'15,16,17'}}
 };
-/* Reglas de OTROS temas que no se tocan (si no mencionan también el tema base). */
+/* 28-nov-2026 (velocidad, dueño: «Haz el arreglo de velocidad de los temas»): las copias van SIN condición, con el MISMO
+   selector que su original y justo después de ella (misma prioridad, gana por el orden). Antes llevaban :where(html.tema-x)
+   delante: el navegador tenía que subir hasta <html> por cada elemento en cada dibujo y cambiar de pantalla costaba
+   +25 a 40 % con la CPU lenta. Como en una página hay un solo tema de paleta a la vez, al cambiar de tema sin recargar se
+   BORRAN las copias del anterior (quitar()). Las reglas de otros temas se saltan solo para no hacer trabajo de más
+   (sus copias tampoco se aplicarían: llevan la clase del otro tema). */
+/* Reglas de OTROS temas que se saltan (si no mencionan también el tema base). Este comentario lo usa scripts/qa-tema-revision.mjs. */
 var AJENO={claro:/tema-glass-oscuro|tema-premium|\.tema-glass(?![\w-])|tgo-foto/,oscuro:/\.tema-claro|tema-premium|\.tema-glass(?![\w-])|tgc-foto/};
 var PROPIO={claro:/\.tema-claro/,oscuro:/tema-glass-oscuro/};
 var reTri=/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g;
@@ -7918,37 +7924,42 @@ function preparar(T){if(T.mapa)return;var H=T.hex,R=T.rgb||{};
   Object.keys(H).forEach(function(h){var a=[1,3,5].map(function(i){return parseInt(h.substr(i,2),16);}).join(','),b=[1,3,5].map(function(i){return parseInt(H[h].substr(i,2),16);}).join(',');if(!R[a])R[a]=b;});
   var re=new RegExp(Object.keys(H).join('|')+'(?![0-9a-f])','gi');
   T.mapa=function(v){return v.replace(re,function(m){return H[m.toLowerCase()];}).replace(reTri,function(m,a,b,c){return R[a+','+b+','+c]||m;});};
-  T.hechas=new WeakSet();T.n=0;}
+  /* filtro rápido (28-nov, velocidad): ¿la regla tiene ALGÚN color de la paleta? Se prueba una vez sobre su texto completo
+     y solo las que sí lo tienen se revisan propiedad por propiedad (~15 % de las reglas). */
+  T.tiene=new RegExp(Object.keys(H).join('|')+'(?![0-9a-f])|(?:^|[^\\d])(?:'+Object.keys(R).map(function(k){return k.split(',').join('\\s*,\\s*');}).join('|')+')(?!\\d)','i');}
 function partir(sel){var out=[],n=0,ini=0;for(var i=0;i<sel.length;i++){var c=sel[i];if(c==='(')n++;else if(c===')')n--;else if(c===','&&n===0){out.push(sel.slice(ini,i));ini=i+1;}}out.push(sel.slice(ini));return out;}
-/* 28-nov (revisión): lo que va dentro de :not(...) no cuenta para decidir si la regla es de otro tema
-   (html:not(.tema-glass-oscuro) body:not(.tema-premium) … SÍ se aplica en el Claro: marca y resaltado del menú). */
+/* lo que va dentro de :not(...) no cuenta para decidir si la regla es de otro tema (28-nov, revisión) */
 function sinNot(s){var o='',n=0;for(var i=0;i<s.length;i++){if(n===0&&s.substr(i,5)===':not('){n=1;i+=4;continue;}if(n>0){if(s[i]==='(')n++;else if(s[i]===')')n--;continue;}o+=s[i];}return o;}
-function prefijo(id,T,s){s=s.trim();if(!s)return '';var v=sinNot(s);if(AJENO[T.base].test(v)&&!PROPIO[T.base].test(v))return '';
-  if(/^html(?![\w-])/.test(s))return 'html:where(.tema-'+id+')'+s.slice(4);
-  if(/^:root(?![\w-])/.test(s))return ':root:where(.tema-'+id+')'+s.slice(5);
-  return ':where(html.tema-'+id+') '+s;}
-function copia(id,T,lista,i,r){var st=r.style,dec=[];
+function propia(T,s){s=s.trim();if(!s)return '';var v=sinNot(s);return (AJENO[T.base].test(v)&&!PROPIO[T.base].test(v))?'':s;}
+var ACT=null,COPIAS=[],HECHAS=new WeakSet(),N=0;
+function copia(T,lista,i,r){var st=r.style,dec=[];if(!T.tiene.test(st.cssText))return;
   for(var k=0;k<st.length;k++){var p=st[k],v=st.getPropertyValue(p),nv=T.mapa(v);if(nv!==v)dec.push(p+':'+nv+(st.getPropertyPriority(p)?' !important':''));}
   if(!dec.length)return;
-  var sel=partir(r.selectorText||'').map(function(s){return prefijo(id,T,s);}).filter(Boolean).join(',');if(!sel)return;
-  try{lista.insertRule(sel+'{'+dec.join(';')+'}',i+1);T.n++;}catch(e){}}
-function recorrer(id,T,dueno){var rs;try{rs=dueno.cssRules;}catch(e){return;}if(!rs)return;
+  var sel=partir(r.selectorText||'').map(function(s){return propia(T,s);}).filter(Boolean).join(',');if(!sel)return;
+  try{lista.insertRule(sel+'{'+dec.join(';')+'}',i+1);COPIAS.push([lista,lista.cssRules[i+1]]);N++;}catch(e){}}
+function recorrer(T,dueno){var rs;try{rs=dueno.cssRules;}catch(e){return;}if(!rs)return;
   for(var i=rs.length-1;i>=0;i--){var r=rs[i];
-    if(r.type===1)copia(id,T,dueno,i,r);
-    else if(r.type===4){var m=(r.media&&r.media.mediaText)||'';if(!(T.base==='claro'&&/prefers-color-scheme\s*:\s*dark/i.test(m)))recorrer(id,T,r);}
-    else if(r.type===12)recorrer(id,T,r);}}
+    if(r.type===1)copia(T,dueno,i,r);
+    else if(r.type===4){var m=(r.media&&r.media.mediaText)||'';if(!(T.base==='claro'&&/prefers-color-scheme\s*:\s*dark/i.test(m)))recorrer(T,r);}
+    else if(r.type===12)recorrer(T,r);}}
+/* Borra las copias del tema anterior (cambio de tema sin recargar). */
+function quitar(){for(var k=COPIAS.length-1;k>=0;k--){var l=COPIAS[k][0],r=COPIAS[k][1];try{var rs=l.cssRules;for(var x=rs.length-1;x>=0;x--)if(rs[x]===r){l.deleteRule(x);break;}}catch(e){}}
+  COPIAS=[];HECHAS=new WeakSet();N=0;}
 function activo(){for(var id in TEMAS)if(d.classList.contains('tema-'+id))return id;return null;}
-function hoja(s){var id=activo();if(!id||!s)return;var T=TEMAS[id];preparar(T);if(T.hechas.has(s))return;T.hechas.add(s);recorrer(id,T,s);window.__nxTemaN=T.n;window.__nxStripeN=T.n;}
+function hoja(s){if(!ACT||!s||activo()!==ACT||HECHAS.has(s))return;HECHAS.add(s);recorrer(TEMAS[ACT],s);window.__nxTemaN=window.__nxStripeN=N;}
 function nodo(n){if(!n||n.nodeType!==1)return;
   if(n.tagName==='STYLE')hoja(n.sheet);
   else if(n.tagName==='LINK'&&/stylesheet/i.test(n.rel)){if(n.sheet)hoja(n.sheet);n.addEventListener('load',function(){hoja(n.sheet);});}}
 window.nxTemaPaletaProcesar=function(){
-  if(!activo())return;
+  var id=activo();
+  if(id!==ACT){quitar();ACT=id;window.__nxTemaN=window.__nxStripeN=0;}
+  if(!id)return;
+  preparar(TEMAS[id]);
   var t0=performance.now();
   for(var i=0;i<document.styleSheets.length;i++)hoja(document.styleSheets[i]);
-  window.__nxTemaMs=window.__nxStripeMs=Math.round(performance.now()-t0);
+  window.__nxTemaMs=window.__nxStripeMs=Math.round(performance.now()-t0);if(window.__nxTemaMs0===undefined)window.__nxTemaMs0=window.__nxTemaMs; // el del arranque (antes del primer pintado)
   if(window.__nxTemaMO)return;
-  window.__nxTemaMO=new MutationObserver(function(ms){if(!activo())return;
+  window.__nxTemaMO=new MutationObserver(function(ms){if(!ACT)return;
     for(var a=0;a<ms.length;a++){var m=ms[a];
       if(m.target&&m.target.tagName==='STYLE'){hoja(m.target.sheet);continue;}
       for(var b=0;b<m.addedNodes.length;b++)nodo(m.addedNodes[b]);}});
@@ -11476,10 +11487,9 @@ function aplicarTema(tema,guardar){
     const oscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
     temaReal=oscuro?(window.NX_TEMA_GLASS_OSCURO?'glass-oscuro':'premium'):'clasico';
   }
-  if(extra){
-    html.classList.add('tema-'+extra);
-    try{window.nxTemaPaletaProcesar&&window.nxTemaPaletaProcesar();}catch(e){}
-  }
+  if(extra)html.classList.add('tema-'+extra);
+  // 28-nov: siempre (también sin tema de paleta): así, al salir de Stripe/Apple/Linear, se borran sus copias.
+  try{window.nxTemaPaletaProcesar&&window.nxTemaPaletaProcesar();}catch(e){}
   // Recordar el último tema claro (Claro, Stripe o Apple) y el último oscuro (Glass oscuro o Linear) para el botón sol/luna.
   // 27-nov (revisión): por usuario (sufijo con su id): en un equipo compartido, sol/luna no le pasa a otro el tema del dueño.
   try{const u=(typeof sesion!=='undefined'&&sesion&&sesion.id)?'_'+sesion.id:'';if(tema==='clasico'||EXB[tema]==='clasico')localStorage.setItem('nx_tema_luz'+u,tema);else if(tema==='glass-oscuro'||EXB[tema]==='glass-oscuro')localStorage.setItem('nx_tema_noche'+u,tema);}catch(e){}
