@@ -11457,7 +11457,7 @@ function aplicarTema(tema,guardar){
   try{ if(body.classList.contains('org-tienda')||localStorage.getItem('nx_org_tipo')==='tienda'){ if(tema!=='clasico'){ tema='clasico'; guardar=false; } } }catch(e){}
   if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // interruptor general apagado
   // 27-nov-2026: Premium Blue retirado de la lista → quien lo tenga pasa al Glass oscuro (y se guarda así).
-  if(tema==='premium'&&window.NX_TEMA_GLASS_OSCURO){tema='glass-oscuro';if(guardar===false)guardar=true;}
+  if(tema==='premium'&&window.NX_TEMA_GLASS_OSCURO){tema='glass-oscuro';if(guardar===false&&typeof _prefsListas!=='undefined'&&_prefsListas)guardar=true;} // 27-nov (revisión): solo con la base ya leída; antes, nxPrefSet mandaba {tema} solo y borraba las demás preferencias
   // Temas de paleta (27-nov-2026): Stripe y Apple = el modo claro + su paleta; Linear = el Glass oscuro + su paleta
   // (html.tema-<base> + html.tema-<nombre>). Con su interruptor apagado o sin su tema base, queda el tema base.
   const EXB={stripe:'clasico',apple:'clasico',linear:'glass-oscuro'};
@@ -11477,7 +11477,8 @@ function aplicarTema(tema,guardar){
     try{window.nxTemaPaletaProcesar&&window.nxTemaPaletaProcesar();}catch(e){}
   }
   // Recordar el último tema claro (Claro, Stripe o Apple) y el último oscuro (Glass oscuro o Linear) para el botón sol/luna.
-  try{if(tema==='clasico'||EXB[tema]==='clasico')localStorage.setItem('nx_tema_luz',tema);else if(tema==='glass-oscuro'||EXB[tema]==='glass-oscuro')localStorage.setItem('nx_tema_noche',tema);}catch(e){}
+  // 27-nov (revisión): por usuario (sufijo con su id): en un equipo compartido, sol/luna no le pasa a otro el tema del dueño.
+  try{const u=(typeof sesion!=='undefined'&&sesion&&sesion.id)?'_'+sesion.id:'';if(tema==='clasico'||EXB[tema]==='clasico')localStorage.setItem('nx_tema_luz'+u,tema);else if(tema==='glass-oscuro'||EXB[tema]==='glass-oscuro')localStorage.setItem('nx_tema_noche'+u,tema);}catch(e){}
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
   else if(temaReal==='glass-oscuro'){html.classList.add('tema-glass-oscuro');try{window.nxTgoFoto&&window.nxTgoFoto();}catch(e){}} // vive en <html>: el <head> la pone antes de pintar
@@ -12431,7 +12432,7 @@ document.addEventListener('click',e=>{
 function toggleDarkMode(){
   // Oscuro (premium o glass oscuro) → Clásico; claro → el oscuro del sistema (glass oscuro si está encendido).
   const real=document.documentElement.getAttribute('data-nx-tema')||nxPref('tema',nxTemaDefecto());
-  let luz='clasico',noche='glass-oscuro';try{const l=localStorage.getItem('nx_tema_luz'),n=localStorage.getItem('nx_tema_noche');if(l==='stripe'||l==='apple')luz=l;if(n==='linear')noche=n;}catch(e){}
+  let luz='clasico',noche='glass-oscuro';try{const u=(typeof sesion!=='undefined'&&sesion&&sesion.id)?'_'+sesion.id:'',l=localStorage.getItem('nx_tema_luz'+u),n=localStorage.getItem('nx_tema_noche'+u);if(l==='stripe'||l==='apple')luz=l;if(n==='linear')noche=n;}catch(e){}
   aplicarTema((real==='premium'||real==='glass-oscuro')?luz:(window.NX_TEMA_GLASS_OSCURO?noche:'premium'));
 }
 
