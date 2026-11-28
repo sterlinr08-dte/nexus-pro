@@ -7920,7 +7920,10 @@ function preparar(T){if(T.mapa)return;var H=T.hex,R=T.rgb||{};
   T.mapa=function(v){return v.replace(re,function(m){return H[m.toLowerCase()];}).replace(reTri,function(m,a,b,c){return R[a+','+b+','+c]||m;});};
   T.hechas=new WeakSet();T.n=0;}
 function partir(sel){var out=[],n=0,ini=0;for(var i=0;i<sel.length;i++){var c=sel[i];if(c==='(')n++;else if(c===')')n--;else if(c===','&&n===0){out.push(sel.slice(ini,i));ini=i+1;}}out.push(sel.slice(ini));return out;}
-function prefijo(id,T,s){s=s.trim();if(!s)return '';if(AJENO[T.base].test(s)&&!PROPIO[T.base].test(s))return '';
+/* 28-nov (revisión): lo que va dentro de :not(...) no cuenta para decidir si la regla es de otro tema
+   (html:not(.tema-glass-oscuro) body:not(.tema-premium) … SÍ se aplica en el Claro: marca y resaltado del menú). */
+function sinNot(s){var o='',n=0;for(var i=0;i<s.length;i++){if(n===0&&s.substr(i,5)===':not('){n=1;i+=4;continue;}if(n>0){if(s[i]==='(')n++;else if(s[i]===')')n--;continue;}o+=s[i];}return o;}
+function prefijo(id,T,s){s=s.trim();if(!s)return '';var v=sinNot(s);if(AJENO[T.base].test(v)&&!PROPIO[T.base].test(v))return '';
   if(/^html(?![\w-])/.test(s))return 'html:where(.tema-'+id+')'+s.slice(4);
   if(/^:root(?![\w-])/.test(s))return ':root:where(.tema-'+id+')'+s.slice(5);
   return ':where(html.tema-'+id+') '+s;}
@@ -11463,6 +11466,7 @@ function aplicarTema(tema,guardar){
   const EXB={stripe:'clasico',apple:'clasico',linear:'glass-oscuro'};
   let extra=EXB[tema]?tema:null;
   if(extra&&!(window['NX_TEMA_'+extra.toUpperCase()]!==false&&(EXB[extra]==='clasico'?window.NX_TEMA_CLARO:window.NX_TEMA_GLASS_OSCURO))){tema=EXB[extra];extra=null;}
+  if(tema==='glass-oscuro'&&!window.NX_TEMA_GLASS_OSCURO)tema='clasico'; // 28-nov (revisión): Linear con el Glass apagado cae aquí → Claro, igual que el <head>
   // Quitar todas las clases de tema
   body.classList.remove('tema-clasico','tema-premium','tema-glass');
   html.classList.remove('tema-glass-oscuro','tema-claro','tema-stripe','tema-apple','tema-linear');
